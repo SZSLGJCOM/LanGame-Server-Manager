@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [完整游戏支持](GAMES.md) · [了解 LanGame OS](https://langame.cn/products/langame-os/)
+[官网](https://langame.cn/) · [支持的游戏](#支持的游戏) · [了解 LanGame OS](https://langame.cn/products/langame-os/)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向个人服主和小型游戏社区的 **Windows 开服与管理工具**。为朋友维护一个长期存档，或在同一台主机上管理多个游戏实例，都可以在桌面界面中完成服务端安装、参数配置、启停、日志查看和备份。
 
@@ -20,25 +20,11 @@
 - **按游戏配置**：设置房间名称、人数、密码，以及对应游戏的世界规则、难度和倍率；可按名称或原生键名查找设置。
 - **管理多个实例**：分别维护实例的配置、端口和存档，集中启停服务器、查看日志与创建备份。
 - **主机监控**：查看 CPU、内存、磁盘、网络与实例运行状态。
-- **查看与管理玩家**：使用游戏支持的在线查询、访问名单或管理员操作，具体范围见[游戏能力清单](GAMES.md)。
 - **LAN AI 助手**：按需连接本地或远程模型服务，辅助处理开服与运维问题。
 
-## 热门游戏
+## 支持的游戏
 
-当前包含 **32 个游戏服务器集成**。以下是部分游戏可配置的内容：
-
-| 游戏 | 配置内容举例 |
-| --- | --- |
-| 幻兽帕鲁 | 经验与捕获倍率、工作速度、PvP |
-| Minecraft Java 原版 | 游戏模式、难度、世界种子、视距、白名单 |
-| Valheim | 世界名称、世界预设与修正器 |
-| ARK: Survival Ascended / Survival Evolved | 经验、驯服与采集倍率 |
-| 饥荒联机版 | 地表与洞穴分片、世界预设、季节规则 |
-| Rust | 世界种子、地图大小、玩家上限 |
-| 七日杀 | 世界类型与种子、僵尸上限、领地范围 |
-| 僵尸毁灭工程 | PvP、睡眠、安全屋、物资刷新 |
-
-[查看全部 32 个集成及能力范围](GAMES.md)。清单分别列出配置、在线名单与玩家管理能力，并说明各自的使用条件。
+当前包含 **32 个游戏服务器集成**，涵盖幻兽帕鲁、Minecraft Java 原版、Valheim、ARK: Survival Ascended / Survival Evolved、饥荒联机版、Rust、七日杀、僵尸毁灭工程等游戏。
 
 ## 平台与运行要求
 

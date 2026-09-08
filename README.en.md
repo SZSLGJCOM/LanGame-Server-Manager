@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Game support](GAMES.en.md) · [Explore LanGame OS](https://langame.cn/products/langame-os/)
+[Website](https://langame.cn/) · [Supported games](#supported-games) · [Explore LanGame OS](https://langame.cn/products/langame-os/)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
 
@@ -20,25 +20,11 @@ Server files, settings, and saves stay on your machine. No LanGame account is re
 - **Configure each game**: set the server name, player capacity, password, and supported world rules, difficulty, and multipliers. Find settings by their display name or native key.
 - **Manage instances**: maintain each instance's configuration, ports, and saves, with server controls, logs, and backups in one workspace.
 - **Monitor your host**: view CPU, memory, disk, network, and instance status.
-- **View and manage players**: use the online queries, access lists, and administrator actions available for each game. See the [capability catalog](GAMES.en.md) for the exact scope.
 - **Work with LAN**: connect the optional AI assistant to a local or remote model provider for help with server hosting and operation.
 
-## Popular games
+## Supported games
 
-The catalog contains **32 game server integrations**. Examples of available settings include:
-
-| Game | Example settings |
-| --- | --- |
-| Palworld | Experience and capture rates, work speed, PvP |
-| Minecraft Java Vanilla | Game mode, difficulty, world seed, view distance, whitelist |
-| Valheim | World name, presets, and modifiers |
-| ARK: Survival Ascended / Survival Evolved | Experience, taming, and harvesting multipliers |
-| Don't Starve Together | Surface and cave shards, world presets, seasons |
-| Rust | World seed, map size, player capacity |
-| 7 Days to Die | World type and seed, zombie cap, land claims |
-| Project Zomboid | PvP, sleep, safehouses, loot respawn |
-
-[Browse all 32 integrations and their capabilities](GAMES.en.md). The catalog separates configuration, online lists, and player administration, with the conditions for each capability.
+**32 game server integrations** are available, including Palworld, Minecraft Java Vanilla, Valheim, ARK: Survival Ascended / Survival Evolved, Don't Starve Together, Rust, 7 Days to Die, and Project Zomboid.
 
 ## Platform and requirements
 
