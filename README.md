@@ -2,51 +2,51 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [了解 LanGame OS](https://langame.cn/products/langame-os/) · [开服教程](https://langame.cn/hosting/)
+[官网](https://langame.cn/) · [完整游戏支持](GAMES.md) · [了解 LanGame OS](https://langame.cn/products/langame-os/)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向 Windows 的游戏服务器管理工具。在一个桌面工作区中完成服务端安装、配置和日常管理，服务器文件、设置、日志与备份均保留在本机。
+[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向个人服主和小型游戏社区的 **Windows 开服与管理工具**。为朋友维护一个长期存档，或在同一台主机上管理多个游戏实例，都可以在桌面界面中完成服务端安装、参数配置、启停、日志查看和备份。
 
-本项目属于 **LanGame 聚域游**产品系列。Server Manager 面向服主，负责游戏服务器的日常管理；**LanGame OS** 面向一起玩游戏的人，提供共享游戏空间。
+服务器文件、配置与存档保留在本机，应用无需 LanGame 账号即可使用。
 
-## 主要功能
+## 开服与日常管理
 
-- **安装与更新**：通过受支持的游戏模块获取和更新专用服务器。
-- **多实例管理**：为不同实例分别管理文件、端口和游戏原生设置。
-- **日常运维**：在同一工作区内启停服务器、查看日志和创建备份。
+- **安装服务端**：选择游戏，获取或更新对应的专用服务器。
+- **按游戏配置**：设置房间名称、人数、密码，以及对应游戏的世界规则、难度和倍率；可按名称或原生键名查找设置。
+- **管理多个实例**：分别维护实例的配置、端口和存档，集中启停服务器、查看日志与创建备份。
 - **主机监控**：查看 CPU、内存、磁盘、网络与实例运行状态。
-- **玩家管理**：使用对应游戏支持的玩家查询和管理员操作。
-- **LAN 助手**：按需连接本地或远程模型服务，辅助处理开服与运维问题。
+- **查看与管理玩家**：使用游戏支持的在线查询、访问名单或管理员操作，具体范围见[游戏能力清单](GAMES.md)。
+- **LAN AI 助手**：按需连接本地或远程模型服务，辅助处理开服与运维问题。
 
-## 游戏集成
+## 热门游戏
 
-当前包含 **32 款游戏的服务器集成**，其中包括：
+当前包含 **32 个游戏服务器集成**。以下是部分游戏可配置的内容：
 
-- 幻兽帕鲁
-- Minecraft
-- Valheim
-- ARK: Survival Ascended 与 ARK: Survival Evolved
-- 饥荒联机版
-- Rust
-- 七日杀
-- 僵尸毁灭工程
+| 游戏 | 配置内容举例 |
+| --- | --- |
+| 幻兽帕鲁 | 经验与捕获倍率、工作速度、PvP |
+| Minecraft Java 原版 | 游戏模式、难度、世界种子、视距、白名单 |
+| Valheim | 世界名称、世界预设与修正器 |
+| ARK: Survival Ascended / Survival Evolved | 经验、驯服与采集倍率 |
+| 饥荒联机版 | 地表与洞穴分片、世界预设、季节规则 |
+| Rust | 世界种子、地图大小、玩家上限 |
+| 七日杀 | 世界类型与种子、僵尸上限、领地范围 |
+| 僵尸毁灭工程 | PvP、睡眠、安全屋、物资刷新 |
 
-可用设置、玩家查询和管理员操作因游戏及服务端版本而异。
+[查看全部 32 个集成及能力范围](GAMES.md)。清单分别列出配置、在线名单与玩家管理能力，并说明各自的使用条件。
 
 ## 平台与运行要求
 
-支持 **Windows**，提供**简体中文和英文**界面。应用在本机运行，无需 LanGame 账号。LAN 为可选功能，模型服务的使用条件取决于所选服务。
+支持 **Windows**，提供**简体中文和英文**界面。不同游戏对硬件、存储、网络和运行环境有各自要求；公网联机还需要正确配置端口与防火墙。
 
-不同游戏对硬件、存储、网络和专用服务器运行环境有各自要求。[开服教程](https://langame.cn/hosting/)整理了服务端搭建、端口、存档和常见配置问题。
+部分设置需要重启服务器才会生效。LAN AI 助手为可选功能，模型服务的使用条件取决于所选服务。
 
 ## 了解 LanGame OS
 
-**LanGame OS** 面向宿舍、轰趴、网吧等共享游戏场景，整合手柄大屏游戏库、复古联机大厅和局域网游戏同步。
+Server Manager 专注于开服与运维。同属 **LanGame 聚域游**产品系列的 **[LanGame OS](https://langame.cn/products/langame-os/)** 面向宿舍、轰趴、网吧等共同游戏场景，整合手柄大屏游戏库、复古联机大厅和局域网游戏同步。
 
-前往 [LanGame OS 产品页](https://langame.cn/products/langame-os/)了解具体功能，也可以访问 [LanGame.cn 聚域游](https://langame.cn/)查找联机社区、相关工具和游戏教程。
+## 教程与反馈
 
-## 教程与支持
-
-- [开服教程](https://langame.cn/hosting/)：专用服务器搭建与日常管理。
+- 开服教程：[幻兽帕鲁](https://langame.cn/articles/langame-palworld-server-guide/)、[Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/)、[饥荒联机版](https://langame.cn/articles/langame-dst-server-guide/)，以及[更多游戏](https://langame.cn/hosting/)。
 - [联机教程](https://langame.cn/networking/)：局域网、端口与防火墙排障。
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues)：功能建议和项目反馈。请勿在公开内容中填写凭据、私有服务器信息或玩家数据。
 

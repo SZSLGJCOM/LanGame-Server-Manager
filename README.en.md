@@ -2,51 +2,51 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Explore LanGame OS](https://langame.cn/products/langame-os/) · [Server guides](https://langame.cn/hosting/)
+[Website](https://langame.cn/) · [Game support](GAMES.en.md) · [Explore LanGame OS](https://langame.cn/products/langame-os/)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a Windows desktop application for installing, configuring, and managing dedicated game servers. Keep server files, settings, logs, and backups on your own machine, and manage multiple instances from one workspace.
+[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
 
-Part of the **LanGame** family of tools for hosting games and playing together. Use Server Manager to operate your servers, and explore **LanGame OS** for a shared gaming space.
+Server files, settings, and saves stay on your machine. No LanGame account is required.
 
-## Main features
+## Hosting and daily operation
 
-- **Install and update** dedicated-server packages through the supported game integrations.
-- **Manage separate instances** with their own files, ports, and native game settings.
-- **Operate servers** with start, stop, log inspection, and backup controls.
-- **Monitor your host** through CPU, memory, disk, network, and instance overviews.
-- **Manage players** with the queries and administrator actions supported by each game.
-- **Work with LAN**, the optional AI assistant, using a configured local or remote model provider.
+- **Install servers**: select a game and acquire or update its dedicated-server package.
+- **Configure each game**: set the server name, player capacity, password, and supported world rules, difficulty, and multipliers. Find settings by their display name or native key.
+- **Manage instances**: maintain each instance's configuration, ports, and saves, with server controls, logs, and backups in one workspace.
+- **Monitor your host**: view CPU, memory, disk, network, and instance status.
+- **View and manage players**: use the online queries, access lists, and administrator actions available for each game. See the [capability catalog](GAMES.en.md) for the exact scope.
+- **Work with LAN**: connect the optional AI assistant to a local or remote model provider for help with server hosting and operation.
 
-## Game integrations
+## Popular games
 
-The current catalog contains **32 game integrations**, including:
+The catalog contains **32 game server integrations**. Examples of available settings include:
 
-- Palworld
-- Minecraft
-- Valheim
-- ARK: Survival Ascended and ARK: Survival Evolved
-- Don't Starve Together
-- Rust
-- 7 Days to Die
-- Project Zomboid
+| Game | Example settings |
+| --- | --- |
+| Palworld | Experience and capture rates, work speed, PvP |
+| Minecraft Java Vanilla | Game mode, difficulty, world seed, view distance, whitelist |
+| Valheim | World name, presets, and modifiers |
+| ARK: Survival Ascended / Survival Evolved | Experience, taming, and harvesting multipliers |
+| Don't Starve Together | Surface and cave shards, world presets, seasons |
+| Rust | World seed, map size, player capacity |
+| 7 Days to Die | World type and seed, zombie cap, land claims |
+| Project Zomboid | PvP, sleep, safehouses, loot respawn |
 
-Available settings, player queries, and administrator actions vary by game and server version.
+[Browse all 32 integrations and their capabilities](GAMES.en.md). The catalog separates configuration, online lists, and player administration, with the conditions for each capability.
 
 ## Platform and requirements
 
-LanGame Server Manager runs on **Windows** and provides **English and Simplified Chinese** interfaces. No LanGame account is required. LAN is optional; model-provider requirements depend on the selected service.
+LanGame Server Manager runs on **Windows** with **Simplified Chinese and English** interfaces. Each game has its own hardware, storage, network, and runtime requirements. Public connections also require suitable port and firewall configuration.
 
-Each game has its own hardware, storage, network, and dedicated-server requirements. The [server guides](https://langame.cn/hosting/) cover setup, ports, saves, and common configuration issues.
+Some settings take effect only after restarting the server. LAN is optional; model-provider requirements depend on the selected service.
 
 ## LanGame OS
 
-**LanGame OS** is designed for shared gaming spaces such as dorms, party venues, and internet cafés. It brings together a controller-friendly big-screen game library, retro multiplayer, and local-network game syncing.
+Server Manager focuses on hosting and server operation. **[LanGame OS](https://langame.cn/products/langame-os/)**, another product in the **LanGame** family, serves shared gaming spaces such as dorms, party venues, and internet cafés. It brings together a controller-friendly big-screen game library, retro multiplayer, and local-network game syncing.
 
-[Explore LanGame OS](https://langame.cn/products/langame-os/) for its product overview. Visit [LanGame.cn](https://langame.cn/) for the wider LanGame community, tools, and multiplayer guides.
+## Guides and feedback
 
-## Guides and support
-
-- [Server hosting guides](https://langame.cn/hosting/): dedicated-server setup and operation.
+- Server guides: [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/). These guides are in Chinese.
 - [Multiplayer and networking guides](https://langame.cn/networking/): local networks, ports, and firewall troubleshooting.
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues): feature suggestions and project feedback. Keep credentials, private server details, and player information out of public posts.
 
