@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [支持的游戏](#支持的游戏) · [了解 LanGame OS](https://langame.cn/products/langame-os/)
+[官网](https://langame.cn/) · [支持的游戏](#支持的游戏) · [了解 LanGame OS](https://langame.cn/products/langame-os/) · [公众号](#关注熵灵硅界)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向个人服主和小型游戏社区的 **Windows 开服与管理工具**。为朋友维护一个长期存档，或在同一台主机上管理多个游戏实例，都可以在桌面界面中完成服务端安装、参数配置、启停、日志查看和备份。
 
@@ -41,6 +41,12 @@ Server Manager 专注于开服与运维。同属 **LanGame 聚域游**产品系�
 - 开服教程：[幻兽帕鲁](https://langame.cn/articles/langame-palworld-server-guide/)、[Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/)、[饥荒联机版](https://langame.cn/articles/langame-dst-server-guide/)，以及[更多游戏](https://langame.cn/hosting/)。
 - [联机教程](https://langame.cn/networking/)：局域网、端口与防火墙排障。
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues)：功能建议和项目反馈。请勿在公开内容中填写凭据、私有服务器信息或玩家数据。
+
+## 关注熵灵硅界
+
+微信扫码关注 **熵灵硅界** 公众号，了解 LanGame OS、Server Manager 和更多 LanGame 产品。
+
+<a href="assets/wechat-official-account.jpg"><img src="assets/wechat-official-account.jpg" alt="熵灵硅界微信公众号二维码" width="215" height="215"></a>
 
 ## 关于本仓库
 

@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Supported games](#supported-games) · [Explore LanGame OS](https://langame.cn/products/langame-os/)
+[Website](https://langame.cn/) · [Supported games](#supported-games) · [Explore LanGame OS](https://langame.cn/products/langame-os/) · [WeChat](#follow-us-on-wechat)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
 
@@ -41,6 +41,12 @@ Server Manager focuses on hosting and server operation. **[LanGame OS](https://l
 - Server guides: [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/). These guides are in Chinese.
 - [Multiplayer and networking guides](https://langame.cn/networking/): local networks, ports, and firewall troubleshooting.
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues): feature suggestions and project feedback. Keep credentials, private server details, and player information out of public posts.
+
+## Follow us on WeChat
+
+Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)** and learn about LanGame OS, Server Manager, and other LanGame products.
+
+<a href="assets/wechat-official-account.jpg"><img src="assets/wechat-official-account.jpg" alt="QR code for the 熵灵硅界 (ENTROGENESIS) WeChat Official Account" width="215" height="215"></a>
 
 ## About this repository
 
