@@ -1,14 +1,7 @@
 <p align="center">
-  <a href="https://langame.cn/products/langame-server-manager/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
-      <img src="assets/logo.svg" alt="LanGame Server Manager" width="420" align="middle">
-    </picture>
-  </a>
+  <a href="https://langame.cn/products/langame-server-manager/"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo.svg" alt="LanGame Server Manager" width="420" align="middle"></picture></a>
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://langame.cn/">
-    <img src="assets/entrogenesis.svg" alt="熵灵硅界 · ENTROGENESIS" width="230" align="middle">
-  </a>
+  <a href="https://langame.cn/"><img src="assets/entrogenesis.svg" alt="熵灵硅界 · ENTROGENESIS" width="230" align="middle"></a>
 </p>
 
 # LanGame Server Manager
