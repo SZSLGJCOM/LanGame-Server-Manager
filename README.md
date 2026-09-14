@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [支持的游戏](#支持的游戏) · [了解 LanGame OS](https://langame.cn/products/langame-os/) · [公众号](#关注熵灵硅界)
+[官网](https://langame.cn/) · [产品页](https://langame.cn/products/langame-server-manager/) · [支持的游戏](#支持的游戏) · [LanGame 产品系列](#langame-产品系列) · [公众号](#关注熵灵硅界)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向个人服主和小型游戏社区的 **Windows 开服与管理工具**。为朋友维护一个长期存档，或在同一台主机上管理多个游戏实例，都可以在桌面界面中完成服务端安装、参数配置、启停、日志查看和备份。
 
@@ -32,9 +32,15 @@
 
 部分设置需要重启服务器才会生效。LAN AI 助手为可选功能，模型服务的使用条件取决于所选服务。
 
-## 了解 LanGame OS
+## LanGame 产品系列
 
-Server Manager 专注于开服与运维。同属 **LanGame 聚域游**产品系列的 **[LanGame OS](https://langame.cn/products/langame-os/)** 面向宿舍、轰趴、网吧等共同游戏场景，整合手柄大屏游戏库、复古联机大厅和局域网游戏同步。
+Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https://langame.cn/products/) 的还有：
+
+- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/)：面向 PC 玩家的 AI 游戏终端，汇集游戏库、经典模拟器、LINK 联机与 SOFA 串流
+- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/)：面向电竞空间与专业场馆的 AI 管理平台，统筹 Orbit 终端、游戏分发与席位运营
+- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/)：把 SOFA 串流核心放进 Android，与同一网络中的 Orbit 串流
+
+服主可用 Server Manager 安装与启动服务器；同网玩家可在 Orbit 中发现并加入受支持的服务。
 
 ## 教程与反馈
 
