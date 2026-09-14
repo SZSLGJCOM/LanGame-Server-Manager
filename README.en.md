@@ -35,7 +35,7 @@ LAN AI assistant uses BYOK and can help with logs and troubleshooting.
 
 ## Requirements
 
-Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Public connections also need suitable ports and firewall rules. Some settings take effect only after a server restart.
+Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Public connections still need suitable ports and firewall rules. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter. Some settings take effect only after a server restart.
 
 ## Guides and feedback
 
