@@ -20,17 +20,17 @@ Server files, settings, and saves stay on your machine. No LanGame account is re
 - **Configure each game**: set the server name, player capacity, password, and supported world rules, difficulty, and multipliers. Find settings by their display name or native key.
 - **Manage instances**: maintain each instance's configuration, ports, and saves, with server controls, logs, and backups in one workspace.
 - **Monitor your host**: view CPU, memory, disk, network, and instance status.
-- **Work with LAN**: connect the optional AI assistant to a local or remote model provider for help with server hosting and operation.
+- **Optional LAN AI assistant**: connect the optional AI assistant to a local or remote model provider for help with server hosting and operation.
 
 ## Supported games
 
-**32 game server integrations** are available, including Palworld, Minecraft Java Vanilla, Valheim, ARK: Survival Ascended / Survival Evolved, Don't Starve Together, Rust, 7 Days to Die, and Project Zomboid.
+**32 game server integrations** are available, including Palworld, Minecraft Java Vanilla, Valheim, ARK: Survival Ascended / Survival Evolved, Don't Starve Together, Rust, 7 Days to Die, and Project Zomboid. See the [product page](https://langame.cn/products/langame-server-manager/) for the full list.
 
 ## Platform and requirements
 
 LanGame Server Manager runs on **Windows** with **Simplified Chinese and English** interfaces. Each game has its own hardware, storage, network, and runtime requirements. Public connections also require suitable port and firewall configuration.
 
-Some settings take effect only after restarting the server. LAN is optional; model-provider requirements depend on the selected service.
+Some settings take effect only after restarting the server. The LAN AI assistant is optional; model-provider requirements depend on the selected service.
 
 ## LanGame OS
 
