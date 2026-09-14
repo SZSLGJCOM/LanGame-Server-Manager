@@ -8,11 +8,27 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Supported games](#supported-games) · [LanGame product family](#langame-product-family) · [WeChat](#follow-us-on-wechat)
+[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Screenshots](#screenshots) · [Supported games](#supported-games) · [LanGame product family](#langame-product-family) · [WeChat](#follow-us-on-wechat)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
 
 Server files, settings, and saves stay on your machine. No LanGame account is required.
+
+## Screenshots
+
+<p align="center">
+  <img src="assets/system-overview.jpg" alt="System overview: host telemetry and instance status" width="920">
+</p>
+
+<p align="center"><em>System overview: host telemetry, instance status, and default install paths.</em></p>
+
+<p align="center">
+  <img src="assets/lan-assistant.jpg" alt="LAN AI assistant" width="920">
+</p>
+
+<p align="center"><em>LAN AI assistant in the dark desktop UI, with suggested hosting and operations prompts.</em></p>
+
+Screenshots use demonstration data and do not represent real servers, players, or telemetry.
 
 ## Hosting and daily operation
 
@@ -46,7 +62,7 @@ Hosts can install and start servers with Server Manager; players on the same net
 
 - Server guides: [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/). These guides are in Chinese.
 - [Multiplayer and networking guides](https://langame.cn/networking/): local networks, ports, and firewall troubleshooting.
-- [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues): feature suggestions and project feedback. Keep credentials, private server details, and player information out of public posts.
+- [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues): feature suggestions and product feedback. Keep credentials, private server details, and player information out of public posts.
 
 ## Follow us on WeChat
 
@@ -56,6 +72,6 @@ Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)** and learn about LanGa
 
 ## About this repository
 
-This repository provides project information. It does not contain application source code or installation packages.
+This repository provides project information. See the [product page](https://langame.cn/products/langame-server-manager/) for installation, guides, and the full game list.
 
 Game names and trademarks belong to their respective owners. No dedicated-server binaries or proprietary game assets are distributed here.

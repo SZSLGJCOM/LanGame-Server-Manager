@@ -8,11 +8,27 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [产品页](https://langame.cn/products/langame-server-manager/) · [支持的游戏](#支持的游戏) · [LanGame 产品系列](#langame-产品系列) · [公众号](#关注熵灵硅界)
+[官网](https://langame.cn/) · [产品页](https://langame.cn/products/langame-server-manager/) · [界面预览](#界面预览) · [支持的游戏](#支持的游戏) · [LanGame 产品系列](#langame-产品系列) · [公众号](#关注熵灵硅界)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向个人服主和小型游戏社区的 **Windows 开服与管理工具**。为朋友维护一个长期存档，或在同一台主机上管理多个游戏实例，都可以在桌面界面中完成服务端安装、参数配置、启停、日志查看和备份。
 
 服务器文件、配置与存档保留在本机，应用无需 LanGame 账号即可使用。
+
+## 界面预览
+
+<p align="center">
+  <img src="assets/system-overview.jpg" alt="系统总览：主机监测与实例状态" width="920">
+</p>
+
+<p align="center"><em>系统总览：主机监测、实例状态与默认安装路径。</em></p>
+
+<p align="center">
+  <img src="assets/lan-assistant.jpg" alt="LAN AI 助手" width="920">
+</p>
+
+<p align="center"><em>LAN AI 助手：在深色界面中按当前状态给出开服与运维建议。</em></p>
+
+截图为演示数据，不代表真实服务器、玩家或监测数值。
 
 ## 开服与日常管理
 
@@ -56,6 +72,6 @@ Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https
 
 ## 关于本仓库
 
-本仓库用于项目介绍，不包含应用源码或安装包。
+本仓库用于项目介绍。安装、教程与完整游戏列表见 [产品页](https://langame.cn/products/langame-server-manager/)。
 
 游戏名称和商标归各自权利人所有。本仓库不分发专用服务器二进制文件或专有游戏资产。
