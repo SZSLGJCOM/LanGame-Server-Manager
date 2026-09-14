@@ -8,71 +8,48 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Screenshots](#screenshots) · [Supported games](#supported-games) · [LanGame product family](#langame-product-family) · [WeChat](#follow-us-on-wechat)
+[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Hosting guides](https://langame.cn/hosting/) · [WeChat](#follow-us-on-wechat)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
+[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows** game server manager. Use it on a Windows PC at home or in a machine room, or on a Windows Server host, to install dedicated servers, edit native settings, run multiple instances, and handle logs and backups from one desktop app.
 
-Server files, settings, and saves stay on your machine. No LanGame account is required.
-
-## Screenshots
+Hosting yourself usually means SteamCMD, config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the tray. Files, settings, and saves stay on the machine. No LanGame account is required.
 
 <p align="center">
   <img src="assets/lgsm-system-a5657e2e.webp" alt="System page: host resources and sample instances" width="920">
 </p>
 
-<p align="center"><em>System page: host resources, health, and sample instances.</em></p>
+<p align="center"><em>Current interface with sample data.</em></p>
 
-<p align="center">
-  <img src="assets/lgsm-library-94bdf501.webp" alt="Game library: current game templates" width="920">
-</p>
+## Main features
 
-<p align="center"><em>Game library: current templates and sample install status.</em></p>
+**32** game server integrations are available. See the [product page](https://langame.cn/products/langame-server-manager/) for the full list.
 
-<p align="center">
-  <img src="assets/lgsm-servers-84121396.webp" alt="Servers page: sample instances and console" width="920">
-</p>
+- Install and update dedicated servers
+- Edit native per-game settings
+- Manage multiple instances, ports, saves, and power controls
+- Host monitoring
+- Backup and restore
+- In-app console, with minimize-to-tray
 
-<p align="center"><em>Servers page: sample instances, runtime status, and console.</em></p>
+An optional LAN AI assistant can help with logs and troubleshooting.
 
-Screenshots show the current interface with sample data and do not represent real servers, players, or telemetry.
+## Requirements
 
-## Hosting and daily operation
-
-- **Install servers**: select a game and acquire or update its dedicated-server package.
-- **Configure each game**: set the server name, player capacity, password, and supported world rules, difficulty, and multipliers. Find settings by their display name or native key.
-- **Manage instances**: maintain each instance's configuration, ports, and saves, with server controls, logs, and backups in one workspace.
-- **Monitor your host**: view CPU, memory, disk, network, and instance status.
-- **Optional LAN AI assistant**: connect the optional AI assistant to a local or remote model provider for help with server hosting and operation.
-
-## Supported games
-
-**32 game server integrations** are available, including Palworld, Minecraft Java Vanilla, Valheim, ARK: Survival Ascended / Survival Evolved, Don't Starve Together, Rust, 7 Days to Die, and Project Zomboid. See the [product page](https://langame.cn/products/langame-server-manager/) for the full list.
-
-## Platform and requirements
-
-LanGame Server Manager runs on **Windows** with **Simplified Chinese and English** interfaces. Each game has its own hardware, storage, network, and runtime requirements. Public connections also require suitable port and firewall configuration.
-
-Some settings take effect only after restarting the server. The LAN AI assistant is optional; model-provider requirements depend on the selected service.
-
-## LanGame product family
-
-Server Manager focuses on Windows hosting and server operation. Related products in the [LanGame](https://langame.cn/products/) family include:
-
-- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players, with a game library, classic emulators, LINK multiplayer, and SOFA streaming
-- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces, coordinating Orbit terminals, game distribution, and seat operations
-- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): the SOFA streaming core on Android, for streaming from Orbit on the same network
-
-Hosts can install and start servers with Server Manager; players on the same network can discover and join supported services from Orbit.
+Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Public connections also need suitable ports and firewall rules. Some settings take effect only after a server restart.
 
 ## Guides and feedback
 
-- Server guides: [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/). These guides are in Chinese.
-- [Multiplayer and networking guides](https://langame.cn/networking/): local networks, ports, and firewall troubleshooting.
-- [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues): feature suggestions and product feedback. Keep credentials, private server details, and player information out of public posts.
+- Server guides (Chinese): [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/)
+- [Multiplayer and networking](https://langame.cn/networking/)
+- [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) for suggestions and feedback. Keep credentials, private server details, and player information out of public posts
+
+## LanGame product family
+
+Server Manager is the Windows hosting tool. Related products in the [LanGame](https://langame.cn/products/) family include [Orbit](https://langame.cn/products/langame-os-orbit/), [Stellar](https://langame.cn/products/langame-os-stellar/), and [Lunet](https://langame.cn/products/langame-os-lunet/). Players on the same network can discover and join supported services from Orbit.
 
 ## Follow us on WeChat
 
-Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)** and learn about LanGame OS, Server Manager, and other LanGame products.
+Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)**.
 
 <a href="assets/wechat-official-account.jpg"><img src="assets/wechat-official-account.jpg" alt="QR code for the 熵灵硅界 (ENTROGENESIS) WeChat Official Account" width="215" height="215"></a>
 
