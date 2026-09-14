@@ -24,7 +24,7 @@
 
 ## 支持的游戏
 
-当前包含 **32 个游戏服务器集成**，涵盖幻兽帕鲁、Minecraft Java 原版、Valheim、ARK: Survival Ascended / Survival Evolved、饥荒联机版、Rust、七日杀、僵尸毁灭工程等游戏。
+当前包含 **32 个游戏服务器集成**，涵盖幻兽帕鲁、Minecraft Java 原版、Valheim、ARK: Survival Ascended / Survival Evolved、饥荒联机版、Rust、七日杀、僵尸毁灭工程等游戏。完整列表见 [产品页](https://langame.cn/products/langame-server-manager/)。
 
 ## 平台与运行要求
 
