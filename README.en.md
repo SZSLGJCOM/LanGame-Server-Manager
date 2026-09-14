@@ -17,18 +17,24 @@ Server files, settings, and saves stay on your machine. No LanGame account is re
 ## Screenshots
 
 <p align="center">
-  <img src="assets/system-overview.jpg" alt="System overview: host telemetry and instance status" width="920">
+  <img src="assets/lgsm-system-a5657e2e.webp" alt="System page: host resources and sample instances" width="920">
 </p>
 
-<p align="center"><em>System overview: host telemetry, instance status, and default install paths.</em></p>
+<p align="center"><em>System page: host resources, health, and sample instances.</em></p>
 
 <p align="center">
-  <img src="assets/lan-assistant.jpg" alt="LAN AI assistant" width="920">
+  <img src="assets/lgsm-library-94bdf501.webp" alt="Game library: current game templates" width="920">
 </p>
 
-<p align="center"><em>LAN AI assistant in the dark desktop UI, with suggested hosting and operations prompts.</em></p>
+<p align="center"><em>Game library: current templates and sample install status.</em></p>
 
-Screenshots use demonstration data and do not represent real servers, players, or telemetry.
+<p align="center">
+  <img src="assets/lgsm-servers-84121396.webp" alt="Servers page: sample instances and console" width="920">
+</p>
+
+<p align="center"><em>Servers page: sample instances, runtime status, and console.</em></p>
+
+Screenshots show the current interface with sample data and do not represent real servers, players, or telemetry.
 
 ## Hosting and daily operation
 

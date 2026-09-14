@@ -17,18 +17,24 @@
 ## 界面预览
 
 <p align="center">
-  <img src="assets/system-overview.jpg" alt="系统总览：主机监测与实例状态" width="920">
+  <img src="assets/lgsm-system-a5657e2e.webp" alt="系统页：主机资源与示例实例" width="920">
 </p>
 
-<p align="center"><em>系统总览：主机监测、实例状态与默认安装路径。</em></p>
+<p align="center"><em>系统页：主机资源、运行健康与示例实例。</em></p>
 
 <p align="center">
-  <img src="assets/lan-assistant.jpg" alt="LAN AI 助手" width="920">
+  <img src="assets/lgsm-library-94bdf501.webp" alt="游戏库：当前游戏模板" width="920">
 </p>
 
-<p align="center"><em>LAN AI 助手：在深色界面中按当前状态给出开服与运维建议。</em></p>
+<p align="center"><em>游戏库：当前游戏模板与示例安装状态。</em></p>
 
-截图为演示数据，不代表真实服务器、玩家或监测数值。
+<p align="center">
+  <img src="assets/lgsm-servers-84121396.webp" alt="服务器页：示例实例与控制台" width="920">
+</p>
+
+<p align="center"><em>服务器页：示例实例、运行状态与控制台。</em></p>
+
+截图为当前界面与示例数据，不代表真实服务器、玩家或监测数值。
 
 ## 开服与日常管理
 
