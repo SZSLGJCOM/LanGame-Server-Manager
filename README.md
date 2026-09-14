@@ -12,7 +12,7 @@
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向 **Windows** 的游戏服务器管理工具。家里或机房里的 Windows 电脑、Windows Server 开服机，都可以在桌面里完成服务端安装、原生配置、多实例启停、日志和备份。
 
-自己开服往往要对付 SteamCMD、配置文件和一堆原生控制台窗口。这里把日常运维收进同一个应用：服务器在后台运行，桌面不堆黑窗口；需要时从托盘打开即可。文件、配置和存档留在本机，无需 LanGame 账号。
+自己开服往往要对付 SteamCMD、配置文件和一堆原生控制台窗口。这里把日常运维收进同一个应用：服务器在后台运行，桌面不堆黑窗口；需要时从托盘打开即可。文件、配置和存档留在本机。
 
 <p align="center">
   <img src="assets/lgsm-system-a5657e2e.webp" alt="系统页：主机资源与示例实例" width="920">
@@ -31,7 +31,7 @@
 - 备份与恢复
 - 控制台在应用内查看，可最小化到托盘
 
-LAN AI 助手为可选功能，用于结合日志协助排障。
+LAN AI 助手基于 BYOK，可结合日志协助排障。
 
 ## 运行环境
 
@@ -45,7 +45,13 @@ LAN AI 助手为可选功能，用于结合日志协助排障。
 
 ## LanGame 产品系列
 
-Server Manager 负责 Windows 开服。同属 [LanGame 聚域游](https://langame.cn/products/) 的还有 [Orbit](https://langame.cn/products/langame-os-orbit/)、[Stellar](https://langame.cn/products/langame-os-stellar/) 和 [Lunet](https://langame.cn/products/langame-os-lunet/)。同网玩家可在 Orbit 中发现并加入受支持的服务。
+Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https://langame.cn/products/) 的还有：
+
+- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/)：面向 PC 玩家的 AI 游戏终端，汇集游戏库、经典模拟器、LINK 联机与 SOFA 串流
+- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/)：面向电竞空间与专业场馆的 AI 管理平台，统筹 Orbit 终端、游戏分发与席位运营
+- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/)：把 SOFA 串流核心放进 Android，与同一网络中的 Orbit 串流
+
+服主可用 Server Manager 安装与启动服务器；同网玩家可在 Orbit 中发现并加入受支持的服务。
 
 ## 关注熵灵硅界
 

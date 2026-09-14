@@ -12,7 +12,7 @@
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows** game server manager. Use it on a Windows PC at home or in a machine room, or on a Windows Server host, to install dedicated servers, edit native settings, run multiple instances, and handle logs and backups from one desktop app.
 
-Hosting yourself usually means SteamCMD, config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the tray. Files, settings, and saves stay on the machine. No LanGame account is required.
+Hosting yourself usually means SteamCMD, config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the tray. Files, settings, and saves stay on the machine.
 
 <p align="center">
   <img src="assets/lgsm-system-a5657e2e.webp" alt="System page: host resources and sample instances" width="920">
@@ -31,7 +31,7 @@ Hosting yourself usually means SteamCMD, config files, and a pile of native cons
 - Backup and restore
 - In-app console, with minimize-to-tray
 
-An optional LAN AI assistant can help with logs and troubleshooting.
+LAN AI assistant uses BYOK and can help with logs and troubleshooting.
 
 ## Requirements
 
@@ -45,7 +45,13 @@ Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and 
 
 ## LanGame product family
 
-Server Manager is the Windows hosting tool. Related products in the [LanGame](https://langame.cn/products/) family include [Orbit](https://langame.cn/products/langame-os-orbit/), [Stellar](https://langame.cn/products/langame-os-stellar/), and [Lunet](https://langame.cn/products/langame-os-lunet/). Players on the same network can discover and join supported services from Orbit.
+Server Manager focuses on Windows hosting and server operation. Related products in the [LanGame](https://langame.cn/products/) family include:
+
+- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players, with a game library, classic emulators, LINK multiplayer, and SOFA streaming
+- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces, coordinating Orbit terminals, game distribution, and seat operations
+- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): the SOFA streaming core on Android, for streaming from Orbit on the same network
+
+Hosts can install and start servers with Server Manager; players on the same network can discover and join supported services from Orbit.
 
 ## Follow us on WeChat
 
