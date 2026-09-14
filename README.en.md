@@ -8,7 +8,7 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Supported games](#supported-games) · [Explore LanGame OS](https://langame.cn/products/langame-os/) · [WeChat](#follow-us-on-wechat)
+[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Supported games](#supported-games) · [LanGame product family](#langame-product-family) · [WeChat](#follow-us-on-wechat)
 
 [LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows game server manager for individual hosts and small gaming communities**. Maintain a persistent world for friends or manage several game instances on one machine, with desktop controls for installation, configuration, starting and stopping servers, logs, and backups.
 
@@ -32,9 +32,15 @@ LanGame Server Manager runs on **Windows** with **Simplified Chinese and English
 
 Some settings take effect only after restarting the server. The LAN AI assistant is optional; model-provider requirements depend on the selected service.
 
-## LanGame OS
+## LanGame product family
 
-Server Manager focuses on hosting and server operation. **[LanGame OS](https://langame.cn/products/langame-os/)**, another product in the **LanGame** family, serves shared gaming spaces such as dorms, party venues, and internet cafés. It brings together a controller-friendly big-screen game library, retro multiplayer, and local-network game syncing.
+Server Manager focuses on Windows hosting and server operation. Related products in the [LanGame](https://langame.cn/products/) family include:
+
+- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players, with a game library, classic emulators, LINK multiplayer, and SOFA streaming
+- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces, coordinating Orbit terminals, game distribution, and seat operations
+- [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): the SOFA streaming core on Android, for streaming from Orbit on the same network
+
+Hosts can install and start servers with Server Manager; players on the same network can discover and join supported services from Orbit.
 
 ## Guides and feedback
 
