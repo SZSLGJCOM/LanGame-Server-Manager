@@ -21,7 +21,7 @@ app-storage = { path = "../../../crates/app-storage" }
 app-steamcmd = { path = "../../../crates/app-steamcmd" }
 base64 = "0.23.1"
 dunce = "=1.0.5"
-dom_query = "=0.27.0"
+dom_query = "=0.28.0"
 encoding_rs = "0.8.40"
 if-addrs = "0.15.0"
 keyring = "4.2.0"
