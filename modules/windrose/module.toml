@@ -1,0 +1,77 @@
+id = "windrose"
+name = "Windrose Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Windrose via the official free Steam tool."
+steam_app_id = 4129620
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "windrose"
+verification_path = "WindroseServer.exe"
+
+[process]
+executable = "WindroseServer.exe"
+args_template = ["-log", "-NewConsole", "-stdout", "-FullStdOutLogOutput"]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Windrose reads R5/ServerDescription.json and owns its R5 save tree. First start lets the native server generate its identity and world, waiting up to 120 seconds for matching IDs and the current process's host-ready-for-connection output. After confirmed normal exit and complete process-tree shutdown, LanGame binds the generated world, applies instance settings and ports, and starts normally. Both phases route full native logging to managed standard output. Inactive Error instances can recover after process reconciliation. Cancellation or failure retains original configuration and generated data through a complete, atomically published recovery journal; unconfirmed cleanup prevents normal startup. This lifecycle does not establish real-server acceptance."
+
+[[default_ports]]
+name = "direct"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "direct_tcp"
+protocol = "tcp"
+port = 7777
+
+[[runtime.port_groups]]
+id = "direct_transport"
+members = ["direct", "direct_tcp"]
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "file_ipc"
+response_codec = "windrose_players"
+identity_kind = "session_id"
+refresh_interval_ms = 30000
+player_action_ids = []
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "unreal_console"
+command = "quit"
+wait_after_ms = 10000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "dedicated_moderation_protocol"
+reason = "The optional LgsmPlayerQuery server extension provides a read-only connection snapshot. No verified account-targeted moderation protocol is available."
+verification = "Keep player rows read-only. Verify a documented, authenticated moderation contract before exposing kick or ban controls."
+
+[storage]
+runtime_copy_exclusions = ["R5/Saved", "R5/ServerDescription.json", "R5/Content/Paks/~mods", "langame_player_query"]
+saves_path_template = "{{paths.install_root}}/R5/Saved/SaveProfiles/Default"
+retained_paths = ["R5/ServerDescription.json"]
+
+[mods.source]
+provider = "manual"
+label = "Nexus / CurseForge PAK mods"
+url = "https://hypeserv.com/en/blog/how-to-install-mods-on-a-windrose-server"
+install_note = "Windrose has no Steam Workshop or built-in mod manager. LanGame imports .pak, .ucas and .utoc files or extracts ZIP packages into R5/Content/Paks/~mods. Extract .7z archives separately before importing their payload files; many mods also require the same files on every client."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/R5/Content/Paks/~mods"
+target_label = "R5/Content/Paks/~mods"
+accepts = ["pak", "ucas", "utoc", "zip"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["direct", "direct_tcp"]

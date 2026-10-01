@@ -1,0 +1,141 @@
+{
+  "fixture_version": 1,
+  "module_id": "sonsoftheforest",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-07-13",
+    "build": "SteamCMD anonymous app 2465200",
+    "source_ids": [
+      "steamcmd_anonymous_app_2465200",
+      "installed_start_sotf_dedicated_bat",
+      "installed_verify_update_sotf_bat",
+      "installed_package_config_boundary",
+      "dedicatedserver_cfg",
+      "generated_current_dedicatedserver_cfg",
+      "runtime_initialize_on_loads_json",
+      "scripting_assemblies_json",
+      "aa_link_xml",
+      "aa_catalog_json",
+      "aa_settings_json",
+      "steambootstrapper_ukrainian_txt",
+      "owners_whitelist_file",
+      "launch_args"
+    ]
+  },
+  "coverage": {
+    "editable": 43,
+    "specialized": 1,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 4
+  },
+  "classifications": {
+    "editable": [
+      "dedicatedserver_cfg.ServerName",
+      "dedicatedserver_cfg.MaxPlayers",
+      "dedicatedserver_cfg.Password",
+      "dedicatedserver_cfg.LanOnly",
+      "dedicatedserver_cfg.GameMode",
+      "dedicatedserver_cfg.SaveSlot",
+      "dedicatedserver_cfg.SaveMode",
+      "dedicatedserver_cfg.SaveInterval",
+      "dedicatedserver_cfg.IdleDayCycleSpeed",
+      "dedicatedserver_cfg.IdleTargetFramerate",
+      "dedicatedserver_cfg.ActiveTargetFramerate",
+      "dedicatedserver_cfg.GameSettings.Gameplay.TreeRegrowth",
+      "dedicatedserver_cfg.GameSettings.Structure.Damage",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Multiplayer.Cheats",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Multiplayer.PvpDamage",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemySpawn",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemyHealth",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemyDamage",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemyArmour",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemyAggression",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.AnimalSpawnRate",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Vail.EnemySearchParties",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Environment.StartingSeason",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Environment.SeasonLength",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Environment.DayLength",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Environment.PrecipitationFrequency",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.ConsumableEffects",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.PlayerStatsDamage",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.ColdPenalties",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.StatRegenerationPenalty",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.ReducedFoodInContainers",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.SingleUseContainers",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.BuildingResistance",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.CreativeMode",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.PlayersImmortalMode",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.FreeForm.ForcePlaceFullLoad",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Construction.NoCuttingsSpawn",
+      "dedicatedserver_cfg.CustomGameModeSettings.GameSetting.Survival.OneHitToCutTrees",
+      "dedicatedserver_cfg.LogFilesEnabled",
+      "dedicatedserver_cfg.TimestampLogFilenames",
+      "dedicatedserver_cfg.TimestampLogEntries",
+      "dedicatedserver_cfg.SkipNetworkAccessibilityTest",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [
+      "owners_whitelist_file.ownerswhitelist.txt"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "dedicatedserver_cfg.IpAddress",
+      "dedicatedserver_cfg.GamePort",
+      "dedicatedserver_cfg.QueryPort",
+      "dedicatedserver_cfg.BlobSyncPort"
+    ]
+  },
+  "settings": {
+    "server_name": "森林之子 Δ",
+    "max_players": 8,
+    "server_password": "acceptance-sotf",
+    "owner_whitelist_steam_ids": "76561198000000001\n76561198000000002",
+    "game_mode": "Custom",
+    "save_slot": 3,
+    "save_mode": "New",
+    "save_interval": 60,
+    "idle_day_cycle_speed": 1,
+    "custom_pvp_damage": "Hard",
+    "custom_starting_season": "Winter",
+    "custom_one_hit_tree_cutting": true
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/dedicatedserver.cfg",
+        "format": "json",
+        "keys": {
+          "ServerName": "森林之子 Δ",
+          "MaxPlayers": 8,
+          "Password": "acceptance-sotf",
+          "GameMode": "Custom",
+          "SaveSlot": 3,
+          "SaveInterval": 60,
+          "/CustomGameModeSettings/GameSetting.Multiplayer.PvpDamage": "Hard",
+          "/CustomGameModeSettings/GameSetting.Environment.StartingSeason": "Winter",
+          "/CustomGameModeSettings/GameSetting.Survival.OneHitToCutTrees": true
+        }
+      },
+      {
+        "root": "instance",
+        "path": "data/ownerswhitelist.txt",
+        "format": "text",
+        "fragments": [
+          "76561198000000001\n76561198000000002"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "SonsOfTheForestDS.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-userdatapath",
+        "{{paths.data_dir}}"
+      ]
+    }
+  }
+}

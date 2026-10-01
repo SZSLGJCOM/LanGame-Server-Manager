@@ -1,0 +1,215 @@
+{
+  "fixture_version": 1,
+  "module_id": "sevendaystodie",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-08-10",
+    "build": "SteamCMD app 294420 build 24392395 / V2.6 b14",
+    "source_ids": [
+      "steamcmd_anonymous_app_294420",
+      "installed_serverconfig_xml",
+      "installed_startdedicated_bat",
+      "installed_admin_file_boundary",
+      "runtime_generated_serveradmin_v26",
+      "installed_console_ban_v26",
+      "serverconfig_xml",
+      "serveradmin_xml",
+      "runtime_telnet",
+      "seven_dtd_steam_settings",
+      "seven_dtd_steam_settings_examples",
+      "seven_dtd_data_xml",
+      "seven_dtd_data_json",
+      "seven_dtd_streamingassets_json",
+      "seven_dtd_serverdata_json_bundle",
+      "seven_dtd_serverdata_root_json_bundle",
+      "seven_dtd_platform_cfg",
+      "seven_dtd_mono_config_xml",
+      "seven_dtd_mono_browscap_ini",
+      "seven_dtd_runtime_initialize_on_loads_json",
+      "seven_dtd_scripting_assemblies_json"
+    ]
+  },
+  "coverage": {
+    "editable": 64,
+    "specialized": 6,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 6
+  },
+  "classifications": {
+    "editable": [
+      "serverconfig_xml.ServerName",
+      "serverconfig_xml.ServerDescription",
+      "serverconfig_xml.ServerWebsiteURL",
+      "serverconfig_xml.ServerLoginConfirmationText",
+      "serverconfig_xml.ServerPassword",
+      "serverconfig_xml.ServerMaxPlayerCount",
+      "serverconfig_xml.ServerVisibility",
+      "serverconfig_xml.Region",
+      "serverconfig_xml.Language",
+      "serverconfig_xml.ServerDisabledNetworkProtocols",
+      "serverconfig_xml.ServerAllowCrossplay",
+      "serverconfig_xml.IgnoreEOSSanctions",
+      "serverconfig_xml.ServerMaxWorldTransferSpeedKiBs",
+      "serverconfig_xml.ServerReservedSlots",
+      "serverconfig_xml.ServerReservedSlotsPermission",
+      "serverconfig_xml.ServerAdminSlots",
+      "serverconfig_xml.ServerAdminSlotsPermission",
+      "serverconfig_xml.PersistentPlayerProfiles",
+      "serverconfig_xml.GameWorld",
+      "serverconfig_xml.GameMode",
+      "serverconfig_xml.GameName",
+      "serverconfig_xml.WorldGenSeed",
+      "serverconfig_xml.WorldGenSize",
+      "serverconfig_xml.SandboxCode",
+      "serverconfig_xml.BuildCreate",
+      "serverconfig_xml.CameraRestrictionMode",
+      "serverconfig_xml.PlayerKillingMode",
+      "serverconfig_xml.PlayerSafeZoneLevel",
+      "serverconfig_xml.PlayerSafeZoneHours",
+      "serverconfig_xml.BedrollDeadZoneSize",
+      "serverconfig_xml.BedrollExpiryTime",
+      "serverconfig_xml.AllowSpawnNearFriend",
+      "serverconfig_xml.PartySharedKillRange",
+      "serverconfig_xml.MaxUncoveredMapChunksPerPlayer",
+      "serverconfig_xml.MaxChunkAge",
+      "serverconfig_xml.SaveDataLimit",
+      "serverconfig_xml.MaxSpawnedZombies",
+      "serverconfig_xml.MaxSpawnedAnimals",
+      "serverconfig_xml.ServerMaxAllowedViewDistance",
+      "serverconfig_xml.MaxQueuedMeshLayers",
+      "serverconfig_xml.LandClaimCount",
+      "serverconfig_xml.LandClaimSize",
+      "serverconfig_xml.LandClaimDeadZone",
+      "serverconfig_xml.LandClaimExpiryTime",
+      "serverconfig_xml.LandClaimDecayMode",
+      "serverconfig_xml.LandClaimOnlineDurabilityModifier",
+      "serverconfig_xml.LandClaimOfflineDurabilityModifier",
+      "serverconfig_xml.LandClaimOfflineDelay",
+      "serverconfig_xml.DynamicMeshEnabled",
+      "serverconfig_xml.DynamicMeshLandClaimOnly",
+      "serverconfig_xml.DynamicMeshLandClaimBuffer",
+      "serverconfig_xml.DynamicMeshMaxItemCache",
+      "serverconfig_xml.WebDashboardEnabled",
+      "serverconfig_xml.WebDashboardUrl",
+      "serverconfig_xml.EnableMapRendering",
+      "serverconfig_xml.TelnetEnabled",
+      "serverconfig_xml.TelnetPassword",
+      "serverconfig_xml.TelnetFailedLoginLimit",
+      "serverconfig_xml.TelnetFailedLoginsBlocktime",
+      "serverconfig_xml.TerminalWindowEnabled",
+      "serverconfig_xml.EACEnabled",
+      "serverconfig_xml.HideCommandExecutionLog",
+      "serverconfig_xml.TwitchServerPermission",
+      "serverconfig_xml.TwitchBloodMoonAllowed"
+    ],
+    "specialized": [
+      "serveradmin_xml.adminTools/users/user",
+      "serveradmin_xml.adminTools/users/group",
+      "serveradmin_xml.adminTools/whitelist/user",
+      "serveradmin_xml.adminTools/whitelist/group",
+      "serveradmin_xml.adminTools/blacklist/blacklisted",
+      "serveradmin_xml.adminTools/commands/permission"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "serverconfig_xml.ServerPort",
+      "serverconfig_xml.WebDashboardPort",
+      "serverconfig_xml.TelnetPort",
+      "serverconfig_xml.AdminFileName",
+      "serverconfig_xml.UserDataFolder",
+      "runtime_telnet.listplayers/kick/ban/save/shutdown"
+    ]
+  },
+  "settings": {
+    "server_name": "七日 & \"家园\" <A>",
+    "server_description": "生存 & 建造",
+    "server_password": "fixture-generated-valid-value",
+    "max_players": 32,
+    "game_world": "Navezgane",
+    "world_name": "AcceptanceWorld",
+    "world_seed": "种子&Seed",
+    "sandbox_code": "AAAJABJACJADJARFBNC",
+    "admin_users": [
+      {
+        "platform": "Steam",
+        "userid": "76561198077777777",
+        "name": "Ops \"One\"",
+        "permission_level": 0
+      }
+    ],
+    "admin_groups": [
+      {
+        "steam_id": "103582791434672565",
+        "name": "Steam Universe",
+        "permission_level_default": 1000,
+        "permission_level_mod": 0
+      }
+    ],
+    "whitelist_users": [
+      {
+        "platform": "EOS",
+        "userid": "0002604bc42244e099c1bf05145fb71f",
+        "name": "Friend"
+      }
+    ],
+    "whitelist_groups": [
+      {
+        "steam_id": "103582791434672566",
+        "name": "Friends Group"
+      }
+    ],
+    "blacklist_entries": [
+      {
+        "platform": "PSN",
+        "userid": "Raider-One_42",
+        "name": "Raider",
+        "unbandate": "2030-01-01",
+        "reason": "Griefing & spam"
+      }
+    ],
+    "command_permissions": [
+      {
+        "cmd": "help",
+        "permission_level": 1000
+      }
+    ]
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "serverconfig.xml",
+        "format": "xml",
+        "fragments": [
+          "name=\"ServerName\" value=\"七日 &amp; &quot;家园&quot; &lt;A&gt;\"",
+          "name=\"ServerDescription\" value=\"生存 &amp; 建造\"",
+          "name=\"WorldGenSeed\" value=\"种子&amp;Seed\""
+        ]
+      },
+      {
+        "root": "saves",
+        "path": "serveradmin.xml",
+        "format": "xml",
+        "fragments": [
+          "<user platform=\"Steam\" userid=\"76561198077777777\" name=\"Ops &quot;One&quot;\" permission_level=\"0\" />",
+          "<group steamID=\"103582791434672565\" name=\"Steam Universe\"",
+          "<user platform=\"EOS\" userid=\"0002604bc42244e099c1bf05145fb71f\"",
+          "<blacklisted platform=\"PSN\" userid=\"Raider-One_42\" name=\"Raider\" unbandate=\"2030-01-01\" reason=\"Griefing &amp; spam\" />",
+          "<permission cmd=\"help\" permission_level=\"1000\" />"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "7DaysToDieServer.exe",
+      "arguments": [
+        "-quit",
+        "-batchmode",
+        "-nographics",
+        "-configfile={{paths.config_dir}}/serverconfig.xml",
+        "-dedicated"
+      ]
+    }
+  }
+}

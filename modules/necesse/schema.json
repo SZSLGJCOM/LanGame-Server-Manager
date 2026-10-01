@@ -1,0 +1,243 @@
+{
+  "type": "object",
+  "title": "Necesse Dedicated Server",
+  "properties": {
+    "world_name": {
+      "type": "string",
+      "title": "World Name",
+      "description": "This becomes the live world save identity loaded by the dedicated server under this instance's managed Necesse saves root.",
+      "default": "LanGame World",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-world",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "max_slots": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "Dedicated server slot count. Necesse currently accepts values from 1 to 250.",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 250,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-slots",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "motd": {
+      "type": "string",
+      "title": "Message of the Day",
+      "description": "Shown to joining players. Use \\n if you want line breaks in the dedicated server message.",
+      "default": "Welcome to the server!",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-motd",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "owner_name": {
+      "type": "string",
+      "title": "Owner Player Name",
+      "description": "Player name that should automatically receive owner permissions when joining this server. LanGame materializes it into the native launch plan as -owner when non-empty and omits -owner when blank. Current dedicated-server builds ignore owner names containing '-' characters, so use the real in-game name you actually join with and avoid hyphens.",
+      "default": "",
+      "pattern": "^[^-\"\\r\\n]*$",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 100,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "plain",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-owner",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "password": {
+      "type": "string",
+      "title": "Join Password",
+      "description": "Join gate for the room. Clear it only if you intentionally want an open server.",
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-password",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "pause_when_empty": {
+      "type": "boolean",
+      "title": "Pause When Empty",
+      "description": "Pause world simulation whenever no players are currently online.",
+      "default": false,
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-pausewhenempty",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "strict_server_authority": {
+      "type": "boolean",
+      "title": "Enable Server Authority Checks",
+      "description": "Makes the dedicated server validate client actions more strictly.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-strictserverauthority",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "logging_enabled": {
+      "type": "boolean",
+      "title": "Write Session Logs",
+      "description": "Create a native Necesse log file for each dedicated-server session under the instance data root.",
+      "default": true,
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 220,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-logging",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "zip_saves": {
+      "type": "boolean",
+      "title": "Compress World Saves",
+      "description": "Keep the live world as a .zip save file under this instance's managed saves root.",
+      "default": true,
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 230,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-zipsaves",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "language": {
+      "type": "string",
+      "title": "Server Language",
+      "description": "Language code for occasional server-side messages and log text.",
+      "default": "en",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 240,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-language",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "ignore_seasons": {
+      "type": "boolean",
+      "title": "Disable Seasonal Content",
+      "description": "Turn off seasonal event content on this dedicated server.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 250,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-ignoreseasons",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "custom_launch_flags": {
+      "type": "string",
+      "title": "Advanced: Custom Launch Flags",
+      "description": "Additional Necesse launch flags appended to the launch plan.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 260,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "custom_launch_flags",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "max_client_latency_seconds": {
+      "type": "integer",
+      "title": "Maximum Client Latency (seconds)",
+      "description": "Disconnect timeout; native default is 30 seconds. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.maxClientLatencySeconds",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "unload_levels_cooldown": {
+      "type": "integer",
+      "title": "Level Unload Delay (seconds)",
+      "description": "How long a level remains loaded after the last player leaves; native default is 30 seconds. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.unloadLevelsCooldown",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": 2,
+      "maximum": 2147483647
+    },
+    "dropped_items_life_minutes": {
+      "type": "integer",
+      "title": "Dropped Item Lifetime (minutes)",
+      "description": "Zero or less keeps items indefinitely; native default is 0. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 302,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.droppedItemsLifeMinutes",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "unload_settlements": {
+      "type": "boolean",
+      "title": "Unload Empty Settlements",
+      "description": "Allow inactive settlements to unload; native default is disabled. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 303,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.unloadSettlements",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_settlements_per_player": {
+      "type": "integer",
+      "title": "Settlements per Player",
+      "description": "Minus one or less allows unlimited settlements; native default is -1. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 304,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.maxSettlementsPerPlayer",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "max_settlers_per_settlement": {
+      "type": "integer",
+      "title": "Settlers per Settlement",
+      "description": "Minus one or less allows unlimited settlers; native default is -1. Leave unset to preserve the current native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 305,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.maxSettlersPerSettlement",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "world_border_size": {
+      "type": "integer",
+      "title": "Island travel boundary",
+      "description": "Applies only to worlds with island-coordinate spawn locations, not the seamless world introduced in 1.0. -1 removes the boundary; 0 allows only the spawn island; positive values limit island-coordinate distance from spawn on either axis. Leave unset to preserve the native value.",
+      "x-lsgm-default-source": "existing_native_configuration",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 306,
+      "x-lsgm-source": "native_server_cfg_build_24926481",
+      "x-lsgm-source-key": "SERVER.worldBorderSize",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": -1,
+      "maximum": 2147483647
+    }
+  },
+  "required": [
+    "world_name",
+    "max_slots",
+    "owner_name",
+    "password"
+  ]
+}

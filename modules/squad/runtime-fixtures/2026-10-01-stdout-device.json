@@ -1,0 +1,86 @@
+{
+  "module_id": "squad",
+  "verified_at": "2026-10-01",
+  "status": "native_lifecycle_observed",
+  "steam_app_id": 403240,
+  "build_id": "25295557",
+  "binary": {
+    "relative_path": "SquadGame/Binaries/Win64/SquadGameServer.exe",
+    "sha256": "00b51bff86b999715a28d58f7a3deee7a595b5ab8f7932dea49a0d32c7e87740",
+    "size_bytes": 214210560
+  },
+  "stdout_device": {
+    "argument": "-stdout",
+    "utf16_literal_file_offset": 155163792,
+    "startup_parse_rva": "0x049a513e"
+  },
+  "stdout_verbosity": {
+    "argument": "-FullStdOutLogOutput",
+    "utf16_literal_file_offset": 155356840,
+    "argument_parse_rva": "0x012e89ac",
+    "allowed_verbosity_field_offset": 16,
+    "enabled_max_verbosity": 7
+  },
+  "observation": {
+    "run_id": 98,
+    "native_world_ready_at": "2026-10-01T08:10:29.690Z",
+    "native_session_created_at": "2026-10-01T08:10:33.120Z",
+    "managed_bytes_observed": 712695,
+    "managed_nonempty_lines_observed": 4200,
+    "managed_warning_lines": 1944,
+    "managed_error_lines": 921,
+    "managed_display_lines": 1335,
+    "managed_world_ready_markers": 0,
+    "managed_session_created_markers": 0
+  },
+  "scope": "Keep run 98's missing Log-level output as the pre-fix comparison. Run 106 with explicit stdout and FullStdOutLogOutput passed native world/session readiness, the bounded observation and normal RCON shutdown. UI sampling had five same-source mismatches during ready operation; the cause is not established by this evidence. The final stopped 400-line sample matched. Backend transcript agreement must not be read as universal UI equality, raw-byte completeness, or proof of player join or persistent-world saving. No health marker or acceptance assertion was relaxed.",
+  "observed_lifecycle": {
+    "run_id": 106,
+    "batch_id": "b017429c-0dbb-4d81-bebe-641d288e3d12",
+    "desktop_build_id": "a580014ff72bffc2fc24ddeb36fc606a66570eedf2b365f89b1f516ce75ac4da",
+    "evidence_files": {
+      "receipt": "parallel-existing-acceptance/b017429c-0dbb-4d81-bebe-641d288e3d12/squad.json",
+      "ui_observations": "campaign-complete-ui-observations.jsonl"
+    },
+    "backend_acceptance_passed": true,
+    "native_ready": true,
+    "health_status": "ready",
+    "steady_observation": {
+      "required_ms": 30000,
+      "samples": 32,
+      "passed": true
+    },
+    "normal_stop": {
+      "api_succeeded": true,
+      "verified": true,
+      "elapsed_ms": 2685,
+      "exit_codes": [
+        0
+      ],
+      "verification_scope": "api_receipt_tracked_identities_and_storage_readback",
+      "owned_tree_observation": "not_exposed_by_ipc",
+      "required_backend_contract": "normal_stop_returns_only_after_full_owned_tree_exits_without_force"
+    },
+    "managed_game_output": true,
+    "managed_capture_sound": true,
+    "retained_transcripts_match": true,
+    "log_readback_ok": true,
+    "settings_unchanged": true,
+    "ports_unchanged": true,
+    "ui_samples": {
+      "source": "managed_console",
+      "total": 21,
+      "same_source_comparable": 21,
+      "exact_text_matches": 16,
+      "text_mismatches": 5,
+      "not_comparable": 0,
+      "read_errors": 0,
+      "ready_samples": 16,
+      "ready_exact_text_matches": 11,
+      "final_stopped_exact_sample": {
+        "at_utc": "2026-10-01T08:59:07.109Z",
+        "nonempty_lines": 400
+      }
+    }
+  }
+}

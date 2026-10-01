@@ -1,0 +1,446 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "The prior SteamCMD anonymous app_update 896660 validate completed with Success! App '896660' fully installed; its manifest and Iron Gate's official dedicated-server guide were rechecked on 2026-07-13. The recorded package reports buildid 21981590, TargetBuildID 21981590, SizeOnDisk 1636649733, and depots 1004/896662. The official guide was checked again on 2026-09-07: Normal is an explicit preset, modifiers consume separate name and value arguments after the preset, and the documented world keys are nobuildcost, playerevents, passivemobs, and nomap. Configuration and argv acceptance checks cover these corrections. Separate private-mode native lifecycle evidence from 2026-09-20 is recorded below; public A2S and crossplay are not validated by that run."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: Publisher news records Valheim 1.0 on 2026-09-09 and Patch 1.0.16 on 2026-09-25. Installed app 896660 reports build 25527701. The six-page packaged Valheim Dedicated Server Manual.pdf (SHA256 d19ecbe906e5b7bef064df43342a1c9e80c9f80d9e4daf0e6904b902b9732b8b) and current official guide still document the 16 existing launch-parameter families; no new configuration option was found. Save cadence/backups and access lists keep their separate owners. The older 0.221.12 lifecycle evidence does not validate 1.0 networking or readiness."
+
+[[sources]]
+id = "steamcmd_anonymous_app_896660"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_896660.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 current installed manifest for Valheim Dedicated Server: StateFlags 4, buildid 21981590, TargetBuildID 21981590, SizeOnDisk 1636649733, installed depots 1004 and 896662."
+
+[[sources]]
+id = "private_steam_server_readiness"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: ZSteamMatchmaking.RegisterServer / UnregisterServer / ZNet.OpenServer"
+authority = "installed_valheim_0_221_12_and_steamworks_interface_contract"
+description = "Read-only IL inspection on 2026-09-20 of installed Valheim 0.221.12 (network version 36, Steam build 21981590) confirms RegisterServer first disables SetAdvertiseServerActive and enables it only when publicServer is true. Steamworks.NET documents that this switch also controls server-browser and LAN-discovery replies, so private mode does not promise an A2S response. ZNet.OpenServer starts the Steam host socket before logging Opened Steam server; the observed native run emitted that marker after world generation, while Game server connected appeared earlier. The smoke fixture selects public_server=0 and crossplay_enabled=false and requires owned game/query UDP sockets plus a current-run Opened Steam server marker. The real fixture completed creation, startup readiness, stop, generated-save backup, uninstall preserving seven save files, instance archival and cleanup on 2026-09-20. This run does not verify crossplay, public listing, public A2S responses or a player joining."
+url = "https://github.com/rlabrecque/Steamworks.NET/blob/master/com.rlabrecque.steamworks.net/Runtime/autogen/isteamgameserver.cs#L258-L270"
+
+[[sources]]
+id = "steam_query_port_offset"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: SteamManager.Awake / valheim_server_Data/Managed/com.rlabrecque.steamworks.net.dll: GameServer.Init"
+authority = "installed_valheim_0_221_12_and_official_dedicated_server_guide"
+description = "Read-only IL inspection on 2026-09-20 of installed Valheim 0.221.12 (network version 36, Steam build 21981590) confirms SteamManager.Awake always initializes Steam with the configured game port and query port game+1, including private mode. The installed Steamworks.NET wrapper passes those ports to SteamInternal_GameServer_Init. Iron Gate's official dedicated-server guide likewise states that Valheim uses the specified port and port+1, so the module allocates and updates game/query together with fixed offsets 0/1."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "official_package_start_headless_server_bat"
+kind = "launch_arg"
+path = "start_headless_server.bat"
+authority = "installed_valheim_dedicated_server_package"
+description = "Packaged Windows helper documents valheim_server -nographics -batchmode -name \"My server\" -port 2456 -world \"Dedicated\" -password \"secret\" -crossplay, plus minimum password length, 2456-2458 forwarding, and Ctrl-C exit notes."
+
+[[sources]]
+id = "official_package_manual_pdf"
+kind = "documentation"
+path = "Valheim Dedicated Server Manual.pdf"
+authority = "installed_valheim_dedicated_server_package"
+description = "The current anonymous package includes Valheim Dedicated Server Manual.pdf alongside valheim_server.exe and start_headless_server.bat."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "valheim_server.exe"
+authority = "official_valheim_dedicated_server_guide"
+description = "Valheim dedicated server command-line parameters documented by Iron Gate for room identity, world selection, save cadence, backups, visibility, crossplay, world presets/modifiers, instance ID, and log file routing."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "adminlist_file"
+kind = "generated_roster"
+path = "adminlist.txt"
+authority = "official_valheim_dedicated_server_guide"
+description = "Valheim admin platform-ID list read from the active save directory. LanGame renders and materializes it into the instance save root."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "bannedlist_file"
+kind = "generated_roster"
+path = "bannedlist.txt"
+authority = "official_valheim_dedicated_server_guide"
+description = "Valheim banned platform-ID list read from the active save directory. LanGame renders and materializes it into the instance save root."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "permittedlist_file"
+kind = "generated_roster"
+path = "permittedlist.txt"
+authority = "official_valheim_dedicated_server_guide"
+description = "Valheim permitted platform-ID list read from the active save directory. LanGame renders and materializes it into the instance save root."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "runtime_console"
+kind = "runtime_console"
+path = "Valheim in-game/admin console"
+authority = "official_valheim_dedicated_server_guide"
+description = "Valheim moderation commands are in-game admin console actions, not a verified server stdin or RCON control surface."
+url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+
+[[sources]]
+id = "valheim_mono_browscap_ini"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/browscap.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim server package includes Mono browser-capability metadata."
+
+[[sources]]
+id = "valheim_mono_config_xml"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/mconfig/config.xml"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim server package includes Mono XML runtime configuration."
+
+[[sources]]
+id = "valheim_steam_settings_achievements_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/achievements_EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example achievements profile."
+
+[[sources]]
+id = "valheim_steam_settings_branches_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/branches.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example branch config."
+
+[[sources]]
+id = "valheim_steam_settings_config_app_example"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/configs.app.EXAMPLE.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example app configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_main_example"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/configs.main.EXAMPLE.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example main configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_overlay_example"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/configs.overlay.EXAMPLE.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example overlay configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_user_example"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/configs.user.EXAMPLE.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example user overlay configuration."
+
+[[sources]]
+id = "valheim_steam_settings_default_items_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/default_items.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example default items list."
+
+[[sources]]
+id = "valheim_steam_settings_gc_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/gc.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example gameplay controller profile."
+
+[[sources]]
+id = "valheim_steam_settings_items_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/items.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example items list."
+
+[[sources]]
+id = "valheim_steam_settings_mods_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/mods.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example mods list."
+
+[[sources]]
+id = "valheim_steam_settings_stats_example_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/stats.EXAMPLE.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings example stats profile."
+
+[[sources]]
+id = "valheim_steam_settings_achievements_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/achievements.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings achievements definition."
+
+[[sources]]
+id = "valheim_steam_settings_branches_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/branches.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam settings branches definition."
+
+[[sources]]
+id = "valheim_steam_settings_config_app_ini"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/configs.app.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam app configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_main_ini"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/configs.main.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam main configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_overlay_ini"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/configs.overlay.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam overlay configuration."
+
+[[sources]]
+id = "valheim_steam_settings_config_user_ini"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/configs.user.ini"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam user configuration."
+
+[[sources]]
+id = "valheim_steam_settings_default_items_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/default_items.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam default items definition."
+
+[[sources]]
+id = "valheim_steam_settings_gc_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/gc.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam global config profile."
+
+[[sources]]
+id = "valheim_steam_settings_items_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/items.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam item configuration."
+
+[[sources]]
+id = "valheim_steam_settings_mods_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/mods.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam mods configuration."
+
+[[sources]]
+id = "valheim_steam_settings_stats_json"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/stats.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Steam stats configuration."
+
+[[sources]]
+id = "valheim_runtime_initialize_on_loads_json"
+kind = "config_file"
+path = "valheim_server_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim runtime initialize-on-load manifest."
+
+[[sources]]
+id = "valheim_scripting_assemblies_json"
+kind = "config_file"
+path = "valheim_server_Data/ScriptingAssemblies.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim scripting assemblies manifest."
+[[sources]]
+id = "valheim_steam_settings_bundle"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/*"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim steam settings files under valheim_server_Data/Plugins/x86_64/steam_settings."
+
+[[sources]]
+id = "valheim_steam_settings_bundle_examples"
+kind = "config_file"
+path = "valheim_server_Data/Plugins/x86_64/steam_settings/_examples/*"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim steam_settings example files."
+
+[[sources]]
+id = "valheim_mono_bundle"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/**/*"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim Mono runtime support files."
+
+[[sources]]
+id = "valheim_runtime_json"
+kind = "config_file"
+path = "valheim_server_Data/**/*.json"
+authority = "installed_valheim_dedicated_server_package"
+description = "Installed Valheim server runtime JSON payload files."
+
+[[items]]
+source = "launch_args"
+key = "-name"
+schema_key = "server_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-world"
+schema_key = "world_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-password"
+schema_key = "server_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-public"
+schema_key = "public_server"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-crossplay"
+schema_key = "crossplay_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-instanceid"
+schema_key = "instance_id"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-saveinterval"
+schema_key = "save_interval_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backups"
+schema_key = "backup_count"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backupshort"
+schema_key = "backup_short_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backuplong"
+schema_key = "backup_long_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-preset"
+schema_key = "world_preset"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-modifier"
+schema_key = "world_modifiers"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-setkey"
+schema_key = "world_set_keys"
+surface = "launch_arg"
+
+[[items]]
+source = "adminlist_file"
+key = "adminlist.txt"
+schema_key = "admin_list"
+surface = "generated_roster"
+
+[[items]]
+source = "bannedlist_file"
+key = "bannedlist.txt"
+schema_key = "banned_list"
+surface = "generated_roster"
+
+[[items]]
+source = "permittedlist_file"
+key = "permittedlist.txt"
+schema_key = "permitted_list"
+surface = "generated_roster"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-logFile"
+schema_key = "log_file"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-nographics"
+reason = "Fixed for background dedicated-server hosting; exposing it would break the managed headless launch posture."
+
+[[exclusions]]
+source = "launch_args"
+key = "-batchmode"
+reason = "Fixed for background dedicated-server hosting; exposing it would break the managed headless launch posture."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Game and query ports are instance port-binding state, not game-specific schema fields."
+
+[[exclusions]]
+source = "launch_args"
+key = "-savedir"
+reason = "LanGame owns the per-instance save root so worlds, adminlist, bannedlist, and permittedlist stay isolated."
+
+[[exclusions]]
+source = "runtime_console"
+key = "kick"
+reason = "Documented as an in-game admin console command; no verified server-side stdin/RCON transport is declared for LanGame."
+
+[[exclusions]]
+source = "runtime_console"
+key = "ban"
+reason = "Documented as an in-game admin console command; persistent ban state is represented by bannedlist.txt."
+
+[[exclusions]]
+source = "runtime_console"
+key = "unban"
+reason = "Documented as an in-game admin console command; persistent ban state is represented by bannedlist.txt."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://valheim.com/support/a-guide-to-dedicated-servers/"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 18 presentation entries reviewed in EN/ZH against the referenced package/docs. Disambiguates servers sharing the same MAC address and port; removed public-IP claim. Load existing named world or create it when absent. First backup interval versus subsequent backup interval distinguished. Log path help clarified. Boundaries: No new native runtime/gameplay acceptance is claimed; historical verification dates remain unchanged."

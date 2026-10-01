@@ -1,0 +1,185 @@
+id = "conanexiles"
+name = "Conan Exiles Enhanced Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Conan Exiles Enhanced via SteamCMD."
+steam_app_id = 443030
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "conanexiles"
+
+[storage]
+runtime_copy_exclusions = ["ConanSandbox/Saved", "ConanSandbox/Mods"]
+saves_path_template = "{{paths.install_root}}/ConanSandbox/Saved"
+retained_paths = ["ConanSandbox/Mods/modlist.txt"]
+
+[workshop]
+provider = "steam"
+consumer_app_id = 440900
+supports_collections = true
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/app/440900/workshop/"
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/ConanSandbox/Mods"
+target_label = "ConanSandbox/Mods"
+accepts = ["pak", "zip"]
+
+[mods.enablement]
+setting_key = "mod_workshop_ids"
+setting_label = "Workshop mod IDs"
+id_strategy = "numeric_prefix"
+
+[process]
+executable = "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+args_template = [
+  "ConanSandbox?listen",
+  "-Port={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
+  "-MaxPlayers={{settings.max_players}}",
+  "-ServerName={{settings.server_name}}",
+  "-RconPort={{ports.rcon.port}}",
+  "-server",
+  "-NullRHI",
+  "-Unattended",
+  "-NoSplash",
+  "-abslog={{paths.logs_dir}}/conan-server.log",
+  "-useallavailablecores",
+  "{{conanexiles.custom_launch_flags}}",
+  "-MULTIHOME={{instance.bind_ip}}",
+  "-MULTIHOMEHTTP={{instance.bind_ip}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Conan Exiles Enhanced runs the merged Exiled Lands and Isle of Siptah world from ConanSandbox. LanGame materializes the live WindowsServer config root, including optional region exclusions, then launches the UE5 shipping server directly and keeps logs in the instance log folder. Enhanced stores the active server database as ConanSandbox/Saved/game_0.db."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 25575
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[runtime.shutdown]
+grace_period_ms = 120000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "console_ctrl_c"
+command = "shutdown"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+wait_after_ms = 6000
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon"
+reason = "Conan Exiles Enhanced renders the RconPlugin settings and exposes listplayers/listbans plus kick, ban, and unban commands through the instance RCON port."
+verification = "Start ConanSandboxServer-Win64-Shipping.exe on Windows, confirm the rendered RCON settings are loaded, run listplayers/listbans, and verify kickplayer/banplayer/unbanplayer side effects against a test user ID."
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_player", "ban_player"]
+response_codec = "conan_list_players"
+identity_kind = "conan_user_id"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "List players"
+label_zh_cn = "玩家列表"
+transport = "source_rcon"
+command_template = "listplayers"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "List bans"
+label_zh_cn = "封禁列表"
+transport = "source_rcon"
+command_template = "listbans"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "kickplayer userid {{target}} LanGame"
+target_label = "User ID"
+target_label_zh_cn = "用户 ID"
+target_placeholder = "userid from listplayers"
+target_placeholder_zh_cn = "listplayers 输出中的 userid"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "source_rcon"
+command_template = "banplayer userid {{target}} LanGame"
+target_label = "User ID"
+target_label_zh_cn = "用户 ID"
+target_placeholder = "userid from listplayers"
+target_placeholder_zh_cn = "listplayers 输出中的 userid"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "source_rcon"
+command_template = "unbanplayer {{target}}"
+target_label = "User ID"
+target_label_zh_cn = "用户 ID"
+target_placeholder = "userid or platformid from listbans"
+target_placeholder_zh_cn = "listbans 输出中的 userid 或 platformid"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true

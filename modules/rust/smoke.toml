@@ -1,0 +1,14 @@
+schema_version = 1
+module_id = "rust"
+primary_process_key = "main"
+# Cold procedural-world generation precedes the query socket. Build 25129933
+# spent 144 seconds in world processing alone, then built its navigation mesh.
+readiness_timeout_ms = 600000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "a2s-query"
+kind = "player_query"
+port_name = "query"

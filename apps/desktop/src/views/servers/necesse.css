@@ -1,0 +1,43 @@
+:root {
+  --theme-necesse-card-bg: rgba(57, 39, 25, 0.28);
+  --theme-necesse-card-hover: rgba(84, 58, 34, 0.36);
+  --theme-necesse-card-active: rgba(122, 77, 27, 0.42);
+  --theme-necesse-card-border: rgba(217, 119, 6, 0.18);
+  --theme-necesse-card-active-border: #d97706;
+  --theme-necesse-accent: #d97706;
+  --theme-necesse-glow: 0 0 12px rgba(217, 119, 6, 0.24);
+}
+
+:root[data-theme="light"] {
+  --theme-necesse-card-bg: rgba(255, 247, 237, 0.96);
+  --theme-necesse-card-hover: rgba(254, 215, 170, 0.92);
+  --theme-necesse-card-active: rgba(253, 186, 116, 0.92);
+  --theme-necesse-card-border: rgba(180, 83, 9, 0.16);
+  --theme-necesse-card-active-border: #b45309;
+  --theme-necesse-accent: #b45309;
+  --theme-necesse-glow: 0 0 12px rgba(180, 83, 9, 0.18);
+}
+
+.theme-necesse.row-card {
+  background: var(--theme-necesse-card-bg);
+  border-color: var(--theme-necesse-card-border);
+}
+
+.theme-necesse.row-card:hover {
+  background: var(--theme-necesse-card-hover);
+}
+
+.theme-necesse.row-card.is-active {
+  background: var(--theme-necesse-card-active);
+  border-color: var(--theme-necesse-card-active-border);
+}
+
+.theme-necesse .row-card-accent {
+  background: var(--theme-necesse-accent);
+  opacity: 0.28;
+}
+
+.theme-necesse.is-active .row-card-accent {
+  opacity: 1;
+  box-shadow: var(--theme-necesse-glow);
+}

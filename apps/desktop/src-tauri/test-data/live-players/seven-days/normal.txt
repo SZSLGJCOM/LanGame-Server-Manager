@@ -1,0 +1,4 @@
+Logon successful.
+0. id=171, Builder, 北境, pos=(1.0, 2.0, 3.0), rot=(0.0, 90.0, 0.0), remote=True, health=100, deaths=0, zombies=5, players=0, score=5, level=2, pltfmid=Steam_76561190000000001, crossid=EOS_00000000000000000000000000000001, ip=192.0.2.1, ping=42
+1. id=183, Another Survivor, pos=(4.0, 5.0, 6.0), rot=(0.0, 0.0, 0.0), remote=True, health=80, deaths=1, zombies=8, players=0, score=7, level=3, pltfmid=Steam_76561190000000002, crossid=<unknown>, ip=2001:db8::2, ping=50
+Total of 2 in the game

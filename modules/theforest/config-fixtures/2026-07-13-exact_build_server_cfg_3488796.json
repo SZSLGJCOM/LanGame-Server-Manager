@@ -1,0 +1,135 @@
+{
+  "fixture_version": 1,
+  "module_id": "theforest",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 3488796; Assembly-CSharp.dll BC0C9B79B125CE9A6D96D532359FDE8A539159378BD9F558309572B9744A9D7E",
+    "source_ids": [
+      "steam_public_build_3488796",
+      "steamcmd_anonymous_app_556450",
+      "exact_build_server_cfg_3488796",
+      "server_cfg",
+      "launch_args",
+      "mono_browscap_ini",
+      "mono_mconfig_xml"
+    ]
+  },
+  "coverage": {
+    "editable": 22,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 6
+  },
+  "classifications": {
+    "editable": [
+      "server_cfg.serverName",
+      "server_cfg.serverPlayers",
+      "server_cfg.serverPassword",
+      "server_cfg.serverPasswordAdmin",
+      "server_cfg.serverSteamAccount",
+      "server_cfg.difficulty",
+      "server_cfg.slot",
+      "server_cfg.initType",
+      "server_cfg.serverAutoSaveInterval",
+      "server_cfg.enableVAC",
+      "server_cfg.showLogs",
+      "server_cfg.veganMode",
+      "server_cfg.vegetarianMode",
+      "server_cfg.resetHolesMode",
+      "server_cfg.treeRegrowMode",
+      "server_cfg.allowBuildingDestruction",
+      "server_cfg.allowEnemiesCreativeMode",
+      "server_cfg.allowCheats",
+      "server_cfg.realisticPlayerDamage",
+      "server_cfg.targetFpsIdle",
+      "server_cfg.targetFpsActive",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "server_cfg.serverIP",
+      "server_cfg.serverSteamPort",
+      "server_cfg.serverGamePort",
+      "server_cfg.serverQueryPort",
+      "server_cfg.saveFolderPath",
+      "exact_build_server_cfg_3488796.serverContact"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Forest",
+    "max_players": 8,
+    "server_password": "forest-pass",
+    "admin_password": "admin-pass",
+    "steam_account_token": "",
+    "difficulty": "HardSurvival",
+    "save_slot": 3,
+    "init_type": "Continue",
+    "autosave_interval_minutes": 45,
+    "vac_enabled": true,
+    "show_logs": true,
+    "vegan_mode": false,
+    "vegetarian_mode": true,
+    "allow_cheats": true,
+    "realistic_player_damage": true,
+    "reset_holes_on_load": false,
+    "tree_regrowth": true,
+    "building_destruction": false,
+    "enemies_in_creative": true,
+    "idle_target_fps": 10,
+    "active_target_fps": 60,
+    "extra_launch_args": "-log -silent-crashes"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "server.cfg",
+        "format": "properties",
+        "keys": {
+          "serverIP": "0.0.0.0:27015",
+          "serverSteamPort": "8766",
+          "serverGamePort": "27015",
+          "serverQueryPort": "27016",
+          "serverName": "LanGame Forest",
+          "serverPlayers": "8",
+          "serverPassword": "forest-pass",
+          "serverPasswordAdmin": "admin-pass",
+          "serverSteamAccount": "",
+          "difficulty": "HardSurvival",
+          "initType": "Continue",
+          "slot": "3",
+          "serverAutoSaveInterval": "45",
+          "enableVAC": "on",
+          "showLogs": "on",
+          "veganMode": "off",
+          "vegetarianMode": "on",
+          "resetHolesMode": "off",
+          "treeRegrowMode": "on",
+          "allowBuildingDestruction": "off",
+          "allowEnemiesCreativeMode": "on",
+          "allowCheats": "on",
+          "realisticPlayerDamage": "on",
+          "targetFpsIdle": "10",
+          "targetFpsActive": "60"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "TheForestDedicatedServer.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-nosteamclient",
+        "-dedicated",
+        "-configfilepath",
+        "{{paths.config_dir}}/server.cfg",
+        "-log",
+        "-silent-crashes"
+      ]
+    }
+  }
+}

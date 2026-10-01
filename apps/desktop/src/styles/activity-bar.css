@@ -1,0 +1,313 @@
+.shell-activity-bar {
+  min-width: 0;
+  height: 54px;
+  flex: 0 0 54px;
+  flex-wrap: nowrap;
+  overflow: visible;
+  gap: 12px;
+}
+
+.shell-activity-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+.shell-activity-message-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.shell-activity-slide { min-width: 0; width: 100%; animation: shell-activity-enter 180ms ease-out; }
+.shell-activity-controls { display: flex; align-items: center; flex: 0 0 auto; gap: 2px; }
+.shell-activity-controls button,
+.shell-activity-panel-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--shell-muted);
+  cursor: pointer;
+}
+.shell-activity-controls button:hover,
+.shell-activity-controls button[aria-pressed="true"],
+.shell-activity-controls button[aria-expanded="true"],
+.shell-activity-panel-close:hover { color: var(--shell-text); background: var(--theme-control-hover); }
+.shell-activity-controls button:focus-visible,
+.shell-activity-panel-close:focus-visible { outline: 2px solid var(--shell-text); outline-offset: -2px; }
+.shell-activity-controls svg,
+.shell-activity-panel-close svg { width: 15px; height: 15px; }
+.shell-activity-count { min-width: 40px; text-align: center; color: var(--shell-muted); font-variant-numeric: tabular-nums; }
+.shell-activity-expand { margin-left: 4px; }
+.shell-activity-progress { flex: 1; min-width: 0; }
+.shell-activity-message-row + .shell-activity-progress {
+  flex: 0 0 clamp(300px, 36%, 520px);
+  padding-left: 16px;
+  border-left: 1px solid var(--shell-line);
+}
+.shell-activity-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 16px;
+  width: min(680px, calc(100% - 32px));
+  max-height: min(440px, calc(100dvh - 140px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 10px;
+  background: var(--theme-card-elevated);
+  color: var(--shell-text);
+  box-shadow: 0 12px 36px #0003;
+  animation: shell-activity-enter 180ms ease-out;
+}
+.shell-activity-panel-heading { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--shell-line); }
+.shell-activity-panel-list { overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.shell-activity-panel-item { padding: 14px; }
+.shell-activity-panel-item + .shell-activity-panel-item { border-top: 1px solid var(--shell-line); }
+.shell-activity-panel .shell-activity-text,
+.shell-activity-panel .shell-activity-notice-text {
+  overflow: visible;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  user-select: text;
+  line-height: var(--line-height-body, 1.5);
+}
+.shell-activity-panel .shell-activity-notice,
+.shell-activity-panel .auto-refresh-status { align-items: flex-start; }
+.shell-activity-panel .shell-activity-notice-actions { flex-wrap: wrap; }
+.shell-task-diagnostics { display: none; }
+.shell-activity-panel .shell-task-activity { display: flex; flex-wrap: wrap; gap: 10px; }
+.shell-activity-panel .shell-task-summary { flex-basis: 100%; }
+.shell-activity-panel .shell-task-summary:has(+ .shell-task-diagnostics) { display: none; }
+.shell-activity-panel .shell-task-diagnostics { display: block; flex-basis: 100%; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+.shell-activity-panel .shell-task-meter { width: 120px; }
+@keyframes shell-activity-enter {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.shell-activity-notices:empty { display: none; }
+.shell-activity-notices {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.shell-activity-notices:not(:empty) ~ .shell-activity-text { display: none; }
+.shell-activity-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
+  color: var(--shell-text);
+}
+.shell-activity-notice.is-error { color: var(--theme-danger-text); }
+.shell-activity-notice.is-warning { color: var(--theme-warning-text); }
+.shell-activity-notice.is-success { color: var(--success, #22c55e); }
+.shell-activity-notice::before { content: ""; width: 6px; height: 6px; margin: 6px 2px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.shell-activity-notice-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.shell-activity-notice-actions { display: flex; flex-shrink: 0; gap: 4px; }
+.shell-update-progress { width: 120px; }
+.shell-activity-notice-actions > button {
+  min-height: 26px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.shell-activity-notice-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.shell-activity-notice-close svg { width: 14px; height: 14px; }
+.shell-activity-notice-close:hover { background: var(--shell-line); }
+.shell-activity-notice-close:focus-visible { outline: 2px solid var(--shell-text); outline-offset: -2px; }
+
+.shell-activity-feedback,
+.auto-refresh-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.shell-activity-feedback .is-error,
+.auto-refresh-status.is-paused,
+.auto-refresh-status.is-paused .shell-activity-text {
+  color: var(--theme-danger-text);
+}
+
+.shell-activity-feedback .is-warning,
+.auto-refresh-status.is-throttled,
+.auto-refresh-status.is-throttled .shell-activity-text {
+  color: var(--theme-warning-text);
+}
+
+.auto-refresh-status-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.auto-refresh-status-resume {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 4px;
+  background: var(--theme-card-elevated);
+  color: var(--shell-text);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.auto-refresh-status-resume:hover { background: var(--theme-control-hover); }
+.auto-refresh-status-resume:focus-visible { outline: 2px solid var(--shell-text); outline-offset: 2px; }
+
+/* Compact, fixed metric slots keep the right-hand group together without
+   moving the track when phases, byte units or number lengths change. */
+.shell-task-activity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 128px 34px 128px 80px 84px 24px;
+  align-items: center;
+  column-gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.shell-task-detail { margin-left: 8px; }
+.shell-task-summary { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.shell-task-summary .shell-activity-text { flex: 1; min-width: 0; }
+.shell-task-stop {
+  grid-column: 7;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--shell-muted);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  line-height: inherit;
+  cursor: pointer;
+}
+.shell-task-stop svg { width: 16px; height: 16px; fill: currentColor; stroke-width: 0; }
+.shell-task-stop:hover:not(:disabled) { color: var(--shell-text); background: var(--shell-line); }
+.shell-task-stop:focus-visible { outline: 2px solid var(--shell-text); outline-offset: 2px; }
+.shell-task-stop:disabled { cursor: default; opacity: 0.45; }
+
+.shell-task-meter {
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 2px;
+  background: var(--shell-line);
+}
+
+.shell-task-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--shell-text);
+}
+
+.shell-task-meter.is-indeterminate .shell-task-meter-fill {
+  width: 32%;
+  animation: shell-task-wait 1.8s ease-in-out infinite alternate;
+}
+
+.shell-task-percent,
+.shell-task-transfer,
+.shell-task-speed,
+.shell-task-elapsed {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--shell-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+  text-overflow: ellipsis;
+}
+
+.shell-task-percent { color: var(--shell-text); }
+.shell-task-elapsed {
+  grid-column: 6;
+}
+.shell-task-activity:not(.is-active) .shell-task-summary { grid-column: 1 / 6; }
+.shell-task-activity.is-error .shell-task-phase,
+.shell-task-activity.is-error .shell-task-detail { color: var(--theme-danger-text); }
+
+@keyframes shell-task-wait {
+  from { transform: translateX(0); }
+  to { transform: translateX(212.5%); }
+}
+
+@media (max-width: 1000px) {
+  .shell-task-activity {
+    grid-template-columns: minmax(0, 1fr) 112px 34px 128px 80px 84px 24px;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell-activity-bar { padding-inline: 12px; gap: 8px; }
+  .shell-activity-label { display: none; }
+  .shell-activity-content { gap: 8px; }
+  .shell-activity-message-row + .shell-activity-progress { flex-basis: 220px; padding-left: 8px; }
+}
+
+/* A separate, bounded progress group never competes with the message's actions.
+   Remove unused metric tracks entirely instead of leaving invisible gaps. */
+.shell-activity-message-row + .shell-activity-progress .shell-task-activity {
+  grid-template-columns: minmax(64px, 1fr) 64px 34px 72px 24px;
+  column-gap: 6px;
+}
+.shell-activity-message-row + .shell-activity-progress .shell-task-transfer,
+.shell-activity-message-row + .shell-activity-progress .shell-task-elapsed { display: none; }
+.shell-activity-message-row + .shell-activity-progress .shell-task-stop { grid-column: 5; }
+.shell-activity-message-row + .shell-activity-progress .shell-task-activity:not(.is-active) .shell-task-summary { grid-column: 1 / -1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-activity-slide, .shell-activity-panel { animation: none; }
+  .shell-task-meter.is-indeterminate .shell-task-meter-fill {
+    animation: none;
+    transform: translateX(106.25%);
+  }
+}

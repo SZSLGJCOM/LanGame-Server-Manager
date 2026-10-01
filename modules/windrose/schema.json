@@ -1,0 +1,308 @@
+{
+  "type": "object",
+  "title": "Windrose Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "default": "Windrose Server",
+      "x-lsgm-default-source": "instance_name",
+      "title": "Server Name",
+      "description": "Helps players distinguish servers with similar invite codes.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "ServerName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "default": "",
+      "title": "Join Password",
+      "description": "Leave empty to allow joining without a password.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "Password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "invite_code": {
+      "type": "string",
+      "default": "",
+      "title": "Invite Code",
+      "description": "Case-sensitive code with at least 6 letters or digits, used to find this server.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "InviteCode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "direct_connect_enabled": {
+      "type": "boolean",
+      "default": true,
+      "title": "Enable Direct Connections",
+      "description": "Accept direct client connections when enabled; otherwise use ICE peer-to-peer connections.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 101,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "UseDirectConnection",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "p2p_proxy_address": {
+      "type": "string",
+      "default": "",
+      "title": "P2P Listen Address",
+      "description": "Local IP address for P2P listening sockets. Leave empty to use Bind IP.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 102,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "P2pProxyAddress",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "direct_connection_proxy_address": {
+      "type": "string",
+      "default": "",
+      "title": "Direct Connection Listen Address",
+      "description": "Selects the local network interface for direct connections. 0.0.0.0 listens on all interfaces; leave empty to use Bind IP.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 104,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "DirectConnectionProxyAddress",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 32,
+      "title": "Max Players",
+      "description": "Maximum simultaneous players.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "MaxPlayerCount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "user_selected_region": {
+      "type": "string",
+      "default": "",
+      "enum": [
+        "",
+        "SEA",
+        "CIS",
+        "EU"
+      ],
+      "enum_labels": [
+        "Auto",
+        "SEA",
+        "CIS",
+        "EU"
+      ],
+      "title": "Connection Service Region",
+      "description": "SEA, CIS, or EU (also covers North America). Leave empty to select a region by latency.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "UserSelectedRegion",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_island_id": {
+      "type": "string",
+      "default": "",
+      "title": "World Island ID",
+      "description": "Exact existing world islandId. World parameters stay disabled until this matches one unambiguous RocksDB_v2 world folder and both native JSON identities.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "WorldIslandId",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_name": {
+      "type": "string",
+      "default": "The Archipelago",
+      "title": "World Name",
+      "description": "Written to the selected existing WorldDescription.json as WorldName.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldName",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "world_preset_type": {
+      "type": "string",
+      "default": "Medium",
+      "enum": [
+        "Easy",
+        "Medium",
+        "Hard"
+      ],
+      "enum_labels": [
+        "Easy",
+        "Medium",
+        "Hard"
+      ],
+      "title": "World Preset",
+      "description": "Written as WorldPresetType. Official presets are Easy, Medium, and Hard; custom WorldSettings make the game force Custom on the next launch.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 211,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldPresetType",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "coop_quests": {
+      "type": "boolean",
+      "default": true,
+      "title": "Shared Co-op Quests",
+      "description": "Completing a co-op quest completes it for players who currently have it active.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 220,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.BoolParameters.Coop.SharedQuests",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "easy_explore": {
+      "type": "boolean",
+      "default": false,
+      "title": "Immersive Exploration",
+      "description": "Legacy EasyExplore flag. Enabling it removes point-of-interest map markers and makes exploration harder.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 221,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.BoolParameters.EasyExplore",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "mob_health_multiplier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.2,
+      "maximum": 5.0,
+      "title": "Enemy Health Multiplier",
+      "description": "Scales enemy health. Official range: 0.2 to 5.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 230,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.MobHealthMultiplier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "mob_damage_multiplier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.2,
+      "maximum": 5.0,
+      "title": "Enemy Damage Multiplier",
+      "description": "Scales damage dealt by enemies. Official range: 0.2 to 5.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 231,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.MobDamageMultiplier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "ship_health_multiplier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.4,
+      "maximum": 5.0,
+      "title": "Enemy Ship Health Multiplier",
+      "description": "Scales enemy ship health. Official range: 0.4 to 5.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 232,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.ShipsHealthMultiplier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "ship_damage_multiplier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.2,
+      "maximum": 2.5,
+      "title": "Enemy Ship Damage Multiplier",
+      "description": "Scales damage dealt by enemy ships. Official range: 0.2 to 2.5.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 233,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.ShipsDamageMultiplier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "boarding_difficulty_multiplier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.2,
+      "maximum": 5.0,
+      "title": "Boarding Difficulty Multiplier",
+      "description": "Scales the sailors that must be defeated in boarding actions. Official range: 0.2 to 5.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 234,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.BoardingDifficultyMultiplier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "coop_stats_correction_modifier": {
+      "type": "number",
+      "default": 1.0,
+      "minimum": 0.0,
+      "maximum": 2.0,
+      "title": "Co-op Enemy Scaling",
+      "description": "Scales enemy health and posture loss by player count. Official range: 0.0 to 2.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 235,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.Coop.StatsCorrectionModifier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "coop_ship_stats_correction_modifier": {
+      "type": "number",
+      "default": 0.0,
+      "minimum": 0.0,
+      "maximum": 2.0,
+      "title": "Co-op Ship Scaling",
+      "description": "Scales enemy ship health by player count. Official range: 0.0 to 2.0.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 236,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.FloatParameters.Coop.ShipStatsCorrectionModifier",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "combat_difficulty": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Easy",
+        "Normal",
+        "Hard"
+      ],
+      "enum_labels": [
+        "Easy",
+        "Normal",
+        "Hard"
+      ],
+      "title": "Combat Difficulty",
+      "description": "Controls boss difficulty and general enemy aggression.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 237,
+      "x-lsgm-source": "world_description",
+      "x-lsgm-source-key": "WorldSettings.TagParameters.CombatDifficulty",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "auto_load_latest_backup_if_has_broken": {
+      "type": "boolean",
+      "default": true,
+      "title": "Auto-load Latest Backup",
+      "description": "Written to ServerDescription.json as AutoLoadLatestBackupIfHasBroken. When enabled, Windrose tries to restore broken save files from backups during launch.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 201,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "AutoLoadLatestBackupIfHasBroken",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "allow_multiple_server_instances": {
+      "type": "boolean",
+      "default": false,
+      "title": "Allow Multiple Server Instances",
+      "description": "Written to ServerDescription.json as CanLaunchMultipleServerInstances. Keep disabled unless each process uses an isolated Windrose database.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 202,
+      "x-lsgm-source": "server_description",
+      "x-lsgm-source-key": "CanLaunchMultipleServerInstances",
+      "x-lsgm-source-surface": "config_file"
+    }
+  }
+}

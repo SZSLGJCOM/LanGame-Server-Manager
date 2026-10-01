@@ -1,0 +1,129 @@
+{
+  "cases": [
+    {
+      "name": "raw projection and consecutive edits retain one native source",
+      "settings": {
+        "master_worldgenoverride_lua": "return {override_enabled=true,preset='SURVIVAL_TOGETHER',overrides={world_size='default'}}",
+        "master_ocean_bullkelp": "ocean_default",
+        "master_day": "onlynight",
+        "enable_caves": false,
+        "cluster_name": "Fixture"
+      },
+      "projectedShards": ["master"],
+      "expected": {},
+      "script": { "master": false, "caves": false },
+      "steps": [
+        {
+          "patch": { "master_day": "onlynight" },
+          "expected": { "master_day": "onlynight" },
+          "raw": "return {override_enabled=true,preset='SURVIVAL_TOGETHER',overrides={world_size='default',\n  day = \"onlynight\",\n}}"
+        },
+        {
+          "patch": { "master_day": "default" },
+          "expected": { "master_day": "default" },
+          "raw": "return {override_enabled=true,preset='SURVIVAL_TOGETHER',overrides={world_size='default',\n  day = \"default\",\n}}"
+        },
+        {
+          "patch": { "cluster_name": "Updated" },
+          "expected": { "cluster_name": "Updated" },
+          "raw": "return {override_enabled=true,preset='SURVIVAL_TOGETHER',overrides={world_size='default',\n  day = \"default\",\n}}"
+        }
+      ]
+    },
+    {
+      "name": "extra overrides project known values and retain unknown data",
+      "settings": {
+        "master_settings_preset": "RELAXED",
+        "master_day": "onlynight",
+        "master_world_overrides_extra": "-- keep this comment\nworld_size = 'huge',\ncustom_mod = { enabled = false, [2] = 'kept' },\nweather = 'rare',\n"
+      },
+      "projectedShards": [],
+      "expected": { "master_world_size": "huge", "master_weather": "rare" },
+      "script": { "master": false, "caves": false },
+      "steps": [
+        {
+          "patch": { "master_world_size": "default" },
+          "expected": { "master_world_size": "default" },
+          "extra": "-- keep this comment\nworld_size = \"default\",\ncustom_mod = { enabled = false, [2] = 'kept' },\nweather = 'rare',\n"
+        },
+        {
+          "patch": { "master_day": "default" },
+          "expected": { "master_day": "default" },
+          "extra": "-- keep this comment\nworld_size = \"default\",\ncustom_mod = { enabled = false, [2] = 'kept' },\nweather = 'rare',\n\nday = \"default\",\n"
+        }
+      ]
+    },
+    {
+      "name": "explicit presets override their shared fallback independently",
+      "settings": {
+        "master_worldgenoverride_lua": "return {override_enabled=true,preset='RELAXED',settings_preset='ENDLESS',overrides={}}"
+      },
+      "projectedShards": ["master"],
+      "expected": { "master_settings_preset": "ENDLESS", "master_worldgen_preset": "RELAXED" },
+      "script": { "master": false, "caves": false },
+      "steps": [
+        {
+          "patch": { "master_worldgen_preset": "LIGHTS_OUT" },
+          "expected": { "master_worldgen_preset": "LIGHTS_OUT" },
+          "raw": "return {override_enabled=true,preset='RELAXED',settings_preset='ENDLESS',overrides={},\n  worldgen_preset = \"LIGHTS_OUT\",\n}"
+        }
+      ]
+    },
+    {
+      "name": "custom native values use script mode without contaminating guided enums",
+      "settings": {
+        "master_worldgenoverride_lua": "return {override_enabled=true,overrides={weather='custom_weather',world_size='huge'}}"
+      },
+      "projectedShards": ["master"],
+      "expected": { "master_world_size": "huge" },
+      "script": { "master": true, "caves": false },
+      "steps": [
+        {
+          "patch": { "cluster_name": "Unrelated change", "master_weather": "always" },
+          "expected": { "cluster_name": "Unrelated change", "master_weather": "default" },
+          "raw": "return {override_enabled=true,overrides={weather='custom_weather',world_size='huge'}}"
+        }
+      ]
+    },
+    {
+      "name": "Lua UTF8 byte escapes and LFCR strings retain their original source",
+      "settings": {
+        "master_worldgenoverride_lua": "return {override_enabled=true, unknown='\\195\\169', text=[=[\n\rline\n\rnext]=], overrides={world_size='\\x64efault'}}"
+      },
+      "projectedShards": ["master"],
+      "expected": {},
+      "script": { "master": false, "caves": false },
+      "steps": [
+        {
+          "patch": { "master_world_size": "huge" },
+          "expected": { "master_world_size": "huge" },
+          "raw": "return {override_enabled=true, unknown='\\195\\169', text=[=[\n\rline\n\rnext]=], overrides={world_size=\"huge\"}}"
+        }
+      ]
+    },
+    {
+      "name": "nil extra entries inherit typed values across repeated saves",
+      "settings": {
+        "master_settings_preset": "RELAXED",
+        "master_day": "onlynight",
+        "master_world_size": "huge",
+        "master_world_overrides_extra": "-- inherit typed settings\nday=nil, world_size=nil, custom={enabled=false},"
+      },
+      "projectedShards": [],
+      "expected": {},
+      "script": { "master": false, "caves": false },
+      "steps": [
+        {
+          "patch": { "cluster_name": "Unrelated change" },
+          "expected": { "cluster_name": "Unrelated change" },
+          "extra": "-- inherit typed settings\nday=nil, world_size=nil, custom={enabled=false},"
+        },
+        {
+          "patch": { "master_day": "default" },
+          "expected": { "master_day": "default" },
+          "extra": "-- inherit typed settings\nday=\"default\", world_size=nil, custom={enabled=false},"
+        }
+      ]
+    }
+  ]
+}

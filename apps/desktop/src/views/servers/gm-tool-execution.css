@@ -1,0 +1,41 @@
+.gmt-command-results {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--shell-line);
+}
+
+.gmt-command-results h5,
+.gmt-command-results p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gmt-command-results ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 24px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.gmt-command-results li { min-width: 0; }
+.gmt-command-results code,
+.gmt-command-results pre {
+  display: block;
+  margin: 4px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--text-meta);
+}
+
+.gmt-command-results small { color: var(--shell-muted); }
+
+.gmt-tool-availability {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--shell-muted);
+  overflow-wrap: anywhere;
+}

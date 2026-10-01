@@ -1,0 +1,3 @@
+Idx | Char name         | Player name    | User ID          | Platform ID       | Platform Name
+  0 | Builder, 北境     | Builder#00001  | 0000000000000001 | 76561190000000001 | Steam
+  1 | Another Exile     | Exile#00002    | 0000000000000002 | unknown           | Other

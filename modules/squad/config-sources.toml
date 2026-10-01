@@ -1,0 +1,653 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "SteamCMD anonymous app_update 403240 validate succeeded against the validated package on 2026-07-13. The public manifest reports Squad Dedicated Server buildid 23797339, TargetBuildID 23797339, SizeOnDisk 14558146773, and depots 1004/403241/1123920. The current Server.cfg has 36 keys and Rcon.cfg has 7 keys; their key sets exactly match the typed LanGame templates, including AllowFireteamLayersInRotation added by the official 10.3 release. The validated package also includes Admins.cfg, LayerVoting.cfg, LayerVotingLowPlayers.cfg, LayerVotingNight.cfg, LayerRotation.cfg, LevelRotation.cfg, ServerMessages.cfg, MOTD.cfg, VoteConfig.cfg, and related exclusion/list files, each exposed through a managed native or raw-file surface."
+
+[[sources]]
+id = "native_stdout_build_25295557"
+kind = "documentation"
+path = "runtime-fixtures/2026-10-01-stdout-device.json"
+authority = "installed_squad_binary_static_analysis_and_current_run_log_comparison"
+description = "Run 98 on 2026-10-01 produced both exact world/session readiness markers in this run's native file, but neither appeared among 4200 managed Warning/Error/Display lines. Therefore log alone does not establish complete managed capture. Read-only inspection of installed build 25295557 confirms stdout parsing and FullStdOutLogOutput setting the output-device verbosity to 7. Both flags are now explicit while the original log flag, private desktop, launch entry, and non-forced RCON shutdown remain unchanged. Run 106 on desktop build a580014ff72b subsequently passed native readiness, 30 seconds of observation, retained transcript comparison and normal RCON stop (exit 0). UI sampling recorded 16 exact matches and five same-source mismatches, including an exact final 400-line stopped snapshot; it is not universal UI equality. No health marker or acceptance assertion was relaxed."
+
+[[sources]]
+id = "native_runtime_control_20261001"
+kind = "runtime_probe"
+path = "runtime-fixtures/2026-10-01-rcon-shutdown.json"
+authority = "installed_squad_authenticated_native_command_help_and_exit_observation"
+description = "2026-10-01, installed build 25295557: authenticated Source RCON ShowCommandInfo reports AdminKillServer <Force [0|1]>. AdminKillServer 0 returned completion EOF after transmission; the native log then recorded the requested engine exit, object subsystem closure, and Exiting within 2806 ms, followed by natural process exit. The failed Ctrl+C attempt is not reused as successful normal-stop evidence. The module now declares this non-forced native command through the existing rcon binding and rcon_password setting. -log requests the Unreal console on the private desktop. The subsequent run 98 showed that this alone still filters world/session Log-level output; native_stdout_build_25295557 records the required stdout verbosity correction. Run 106 subsequently verified the combined launch and normal RCON shutdown (exit 0) through the bounded acceptance contract. EOF alone is not proof of shutdown, and these observations do not establish persistent-world saving or a player join."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://www.joinsquad.com/updates"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The official news index lists 10.5.6 Hotfix on 2026-09-17. The installed app 403240 manifest reports build 25295557. Read-only packaged Server.cfg and Rcon.cfg key sets contain 36 and seven keys respectively and exactly match the module templates. No additional native key was found in these files. Administrator identities remain in Player Access, while role permissions stay in Configuration. Older lifecycle and EOS/A2S observations remain build-specific."
+
+[[sources]]
+id = "native_lifecycle_build_25149748"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "isolated_local_package_lifecycle_probe"
+description = "2026-09-21: the existing local appmanifest reports build 25149748. Source snapshot 7419b939f6d7 passed the native command lifecycle in 84.48 seconds: current-run LogGameState WaitingToStart and LogSquadOnlineServices session-created markers, an owned UDP game endpoint, authenticated complete ListPlayers response, stop, uninstall preserving 5 declared-data files and 20 native configuration files, verified instance archive, and cleanup. Squad has no recoverable persistent world save; declared-data file preservation does not establish world-save support. Earlier A2S requests to the same owned query port timed out while authenticated RCON succeeded. A 2026-09-21 standalone follow-up on the same build preserved the installed LayerVoting.cfg exactly as the production materializer does, loaded BP_GameMode_AAS_C with the default RedpointEOS provider, and confirmed the complete authenticated 80-byte empty roster. An AFD trace with socket lifetime and process ownership correlation recorded all eight query-port INFO datagrams reaching that endpoint, but no receive calls or replies there; the game port and independent loopback UDP control both received normally, with zero trace-event loss. This locates the timeout in native query-socket servicing, not response parsing or datagram delivery. The exact inactive branch in the default provider is not directly observed. A separate disposable-copy override selected STEAM as the default, but native autologin failed and FOnlineSessionSteam::CreateSession rejected unequal bUsesPresence and bUseLobbiesIfAvailable values before the SteamCreateServer task; full readiness was not achieved. That counterfactual is not a compatible repair, and no production provider or session flags are changed. This does not establish that every Squad mode lacks A2S. The smoke contract proves startup through independent world/session/management signals and does not certify A2S, public listing, a player join, or a fresh package download. The previous July package/config-key audit remains separately dated."
+
+[[sources]]
+id = "steamcmd_anonymous_app_403240"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_403240.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 403240 validate completed successfully. Manifest name Squad Dedicated Server, public buildid 23797339, TargetBuildID 23797339, SizeOnDisk 14558146773, installed depots 1004, 403241, and 1123920."
+
+[[sources]]
+id = "installed_server_config_files"
+kind = "config_file"
+path = "SquadGame/ServerConfig/Server.cfg / SquadGame/ServerConfig/Rcon.cfg / SquadGame/ServerConfig/Admins.cfg / SquadGame/ServerConfig/LayerVoting.cfg / SquadGame/ServerConfig/CustomOptions.cfg / SquadGame/ServerConfig/LayerRotation.cfg / SquadGame/ServerConfig/LayerVotingLowPlayers.cfg / SquadGame/ServerConfig/LayerVotingNight.cfg / SquadGame/ServerConfig/LevelRotation.cfg / SquadGame/ServerConfig/MOTD.cfg / SquadGame/ServerConfig/RemoteBanListHosts.cfg / SquadGame/ServerConfig/VoteConfig.cfg / SquadGame/ServerConfig/ExcludedFactions.cfg / SquadGame/ServerConfig/ExcludedLayers.cfg / SquadGame/ServerConfig/ExcludedLevels.cfg"
+authority = "installed_squad_dedicated_server_package"
+description = "The validated public build includes first-party SquadGame/ServerConfig files. The current Server.cfg and Rcon.cfg key sets exactly match the typed LanGame templates; voting, rotation, MOTD, exclusion, custom-option, and remote-list files remain available through raw managed fields."
+
+[[sources]]
+id = "server_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/Server.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad room identity, advertising, slots, and gameplay policy config."
+
+[[sources]]
+id = "official_match_transition_minimum"
+kind = "documentation"
+path = "https://www.joinsquad.com/updates/squad-9-0-release-notes"
+authority = "Offworld_Industries_official_release_notes"
+description = "Verified 2026-09-29: Squad 9.0 sets the minimum delay before voting or advancing to the next layer to 30 seconds. TimeBeforeVote and TimeBetweenMatches retain their installed Server.cfg defaults of 60 seconds; their schema validation enforces the documented minimum."
+
+[[sources]]
+id = "rcon_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/Rcon.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad RCON password and port config rendered by LanGame."
+
+[[sources]]
+id = "admins_cfg"
+kind = "generated_roster"
+path = "SquadGame/ServerConfig/Admins.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad admin/priority groups and Steam ID assignments generated from schema fields."
+
+[[sources]]
+id = "map_rotation_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/MapRotation.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad map rotation file rendered from instance settings."
+
+[[sources]]
+id = "server_messages_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/ServerMessages.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad server message file rendered from instance settings."
+
+[[sources]]
+id = "custom_options_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/CustomOptions.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad custom options file rendered from instance settings."
+
+[[sources]]
+id = "layer_voting_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/LayerVoting.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad layer voting configuration for default rotation and mode constraints."
+
+[[sources]]
+id = "staged_build_ini"
+kind = "config_file"
+path = "Engine/Config/StagedBuild_SquadGame.ini"
+authority = "installed_default_and_lsgm_template"
+description = "Installed Squad staged Unreal build config used as baseline runtime config for server process."
+
+[[sources]]
+id = "layer_rotation_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/LayerRotation.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad layer rotation file rendered from instance settings."
+
+[[sources]]
+id = "level_rotation_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/LevelRotation.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad level rotation file rendered from instance settings."
+
+[[sources]]
+id = "layer_voting_low_players_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/LayerVotingLowPlayers.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad low-player layer voting pool file rendered from instance settings."
+
+[[sources]]
+id = "layer_voting_night_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/LayerVotingNight.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad night-time layer voting pool file rendered from instance settings."
+
+[[sources]]
+id = "vote_config_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/VoteConfig.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad vote configuration file rendered from instance settings."
+
+[[sources]]
+id = "motd_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/MOTD.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad message of the day file rendered from instance settings."
+
+[[sources]]
+id = "remote_ban_list_hosts_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/RemoteBanListHosts.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad remote ban list host file rendered from instance settings."
+
+[[sources]]
+id = "remote_admin_list_hosts_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/RemoteAdminListHosts.cfg"
+authority = "installed_squad_server_package"
+description = "Squad remote admin list host file included in the installed dedicated server package."
+
+[[sources]]
+id = "bans_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/Bans.cfg"
+authority = "installed_squad_server_package"
+description = "Squad bans configuration file included in the installed dedicated server package."
+
+[[sources]]
+id = "license_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/License.cfg"
+authority = "installed_squad_server_package"
+description = "Squad license information file included in the installed dedicated server package."
+
+[[sources]]
+id = "excluded_factions_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/ExcludedFactions.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad excluded faction file rendered from instance settings."
+
+[[sources]]
+id = "excluded_layers_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/ExcludedLayers.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad excluded layer list file rendered from instance settings."
+
+[[sources]]
+id = "excluded_levels_cfg"
+kind = "config_file"
+path = "SquadGame/ServerConfig/ExcludedLevels.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Squad excluded level list file rendered from instance settings."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "SquadGameServer.exe"
+authority = "module_launch_surface"
+description = "Squad launch flags for network binding and advanced arguments. The fixed log flag requests the private Unreal console; explicit stdout and FullStdOutLogOutput expose enabled Log-level output. Current-run world and online-session signals remain required for health; run 106 verified the bounded native lifecycle, with separate limited UI sample results in the runtime fixture."
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "Squad RCON"
+authority = "module_runtime_surface"
+description = "Squad RCON player management actions and native non-forced AdminKillServer 0 shutdown declared in module.toml."
+
+
+[[sources]]
+id = "squad_windowsserver_ini"
+kind = "config_file"
+path = "*/Saved/Config/WindowsServer/*.ini"
+authority = "installed_squad_server_package"
+description = "Installed dedicated server Unreal WindowsServer ini artifacts. (2 discovered files)"
+
+
+[[sources]]
+id = "squad_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_squad_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (13 discovered files)"
+[[items]]
+source = "server_cfg"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "NumReservedSlots"
+schema_key = "reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "ShouldAdvertise"
+schema_key = "advertise"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "IsLANMatch"
+schema_key = "lan_only"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "Password"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[items]]
+source = "admins_cfg"
+key = "Admin=<steam64>:LanGameAdmin"
+schema_key = "admin_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "admins_cfg"
+key = "Admin=<steam64>:LanGameReserved"
+schema_key = "priority_join_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "admins_cfg"
+key = "Group=LanGameAdmin:<permissions>"
+schema_key = "admin_permissions"
+surface = "generated_roster"
+
+[[items]]
+source = "admins_cfg"
+key = "additional Admins.cfg lines"
+schema_key = "admins_cfg"
+surface = "generated_roster"
+
+[[items]]
+source = "map_rotation_cfg"
+key = "MapRotation.cfg lines"
+schema_key = "map_rotation"
+surface = "config_file"
+
+[[items]]
+source = "server_messages_cfg"
+key = "ServerMessages.cfg lines"
+schema_key = "server_message"
+surface = "config_file"
+
+[[items]]
+source = "custom_options_cfg"
+key = "CustomOptions.cfg lines"
+schema_key = "custom_options"
+surface = "config_file"
+
+[[items]]
+source = "layer_rotation_cfg"
+key = "LayerRotation.cfg lines"
+schema_key = "layer_rotation"
+surface = "config_file"
+
+[[items]]
+source = "level_rotation_cfg"
+key = "LevelRotation.cfg lines"
+schema_key = "level_rotation"
+surface = "config_file"
+
+[[items]]
+source = "layer_voting_cfg"
+key = "LayerVoting.cfg lines"
+schema_key = "layer_voting"
+surface = "config_file"
+
+[[items]]
+source = "layer_voting_low_players_cfg"
+key = "LayerVotingLowPlayers.cfg lines"
+schema_key = "layer_voting_low_players"
+surface = "config_file"
+
+[[items]]
+source = "layer_voting_night_cfg"
+key = "LayerVotingNight.cfg lines"
+schema_key = "layer_voting_night"
+surface = "config_file"
+
+[[items]]
+source = "vote_config_cfg"
+key = "VoteConfig.cfg lines"
+schema_key = "vote_config"
+surface = "config_file"
+
+[[items]]
+source = "motd_cfg"
+key = "MOTD.cfg lines"
+schema_key = "motd_cfg"
+surface = "config_file"
+
+[[items]]
+source = "remote_ban_list_hosts_cfg"
+key = "RemoteBanListHosts.cfg lines"
+schema_key = "remote_ban_hosts"
+surface = "config_file"
+
+[[items]]
+source = "remote_admin_list_hosts_cfg"
+key = "RemoteAdminListHosts.cfg lines"
+schema_key = "remote_admin_hosts"
+surface = "config_file"
+
+[[items]]
+source = "excluded_factions_cfg"
+key = "ExcludedFactions.cfg lines"
+schema_key = "excluded_factions"
+surface = "config_file"
+
+[[items]]
+source = "excluded_layers_cfg"
+key = "ExcludedLayers.cfg lines"
+schema_key = "excluded_layers"
+surface = "config_file"
+
+[[items]]
+source = "excluded_levels_cfg"
+key = "ExcludedLevels.cfg lines"
+schema_key = "excluded_levels"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowTeamChanges"
+schema_key = "allow_team_changes"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "PreventTeamChangeIfUnbalanced"
+schema_key = "prevent_team_change_if_unbalanced"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "EnforceTeamBalance"
+schema_key = "enforce_team_balance"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "RejoinSquadDelayAfterKick"
+schema_key = "rejoin_squad_delay_after_kick"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "RecordDemos"
+schema_key = "record_demos"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "PublicQueueLimit"
+schema_key = "public_queue_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "JoiningPlayerTimeout"
+schema_key = "joining_player_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "Tags"
+schema_key = "server_tags"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "Rules"
+schema_key = "server_rules"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "MapRotationMode"
+schema_key = "map_rotation_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "RandomizeAtStart"
+schema_key = "randomize_rotation_at_start"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "UseVoteFactions"
+schema_key = "use_vote_factions"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "UseVoteLevel"
+schema_key = "use_vote_level"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "UseVoteLayer"
+schema_key = "use_vote_layer"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowFireteamLayersInRotation"
+schema_key = "allow_fireteam_layers_in_rotation"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "NumPlayersDiffForTeamChanges"
+schema_key = "num_players_diff_for_team_changes"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllianceEnabled"
+schema_key = "alliance_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowPublicClientsToRecord"
+schema_key = "allow_public_clients_to_record"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "ServerMessageInterval"
+schema_key = "server_message_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "TKAutoKickEnabled"
+schema_key = "tk_auto_kick_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AutoTKBanNumberTKs"
+schema_key = "auto_tk_ban_number_tks"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AutoTKBanTime"
+schema_key = "auto_tk_ban_time_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "VehicleKitRequirementDisabled"
+schema_key = "vehicle_kit_requirement_disabled"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowCommunityAdminAccess"
+schema_key = "allow_community_admin_access"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "TimeBetweenMatches"
+schema_key = "time_between_matches_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "TimeBeforeVote"
+schema_key = "time_before_vote_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowDevProfiling"
+schema_key = "allow_dev_profiling"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "AllowQA"
+schema_key = "allow_qa"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "VehicleClaimingDisabled"
+schema_key = "vehicle_claiming_disabled"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "PrepTimeStandard"
+schema_key = "prep_time_standard_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "PrepTimeSmallScale"
+schema_key = "prep_time_small_scale_seconds"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "MaxConnections"
+schema_key = "rcon_max_connections"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "MaxConnectionsFromSameHost"
+schema_key = "rcon_max_connections_from_same_host"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "ConnectionTimeout"
+schema_key = "rcon_connection_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "SecondsBeforeTimeoutCheck"
+schema_key = "rcon_seconds_before_timeout_check"
+surface = "config_file"
+
+[[items]]
+source = "rcon_cfg"
+key = "AuthenticationTimeout"
+schema_key = "rcon_authentication_timeout_seconds"
+surface = "config_file"
+
+[[exclusions]]
+source = "rcon_cfg"
+key = "Port"
+reason = "RCON port is instance port-binding state."
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "MULTIHOME/PORT/QUERYPORT/RCONPORT"
+reason = "Network bind and ports are instance-level state."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "ListPlayers/AdminKick/AdminBan/AdminBroadcast"
+reason = "Runtime player actions are declared in module.toml instead of schema fields."
+
+[[exclusions]]
+source = "bans_cfg"
+key = "Bans.cfg runtime entries"
+reason = "Persistent bans are owned by Squad's runtime/admin ban workflow; Configuration must not overwrite the server-maintained ban database."
+
+[[exclusions]]
+source = "license_cfg"
+key = "License.cfg content"
+reason = "Commercial/server licensing material is externally provisioned and must not be exposed or rewritten as an ordinary Configuration field."
+
+[[sources]]
+id = "native_a2s_matrix_build_25149748"
+kind = "runtime_probe"
+path = "SquadGameServer.exe MULTIHOME=0.0.0.0 PORT=7787 QUERYPORT=27165 RCONPORT=21114 FIXEDMAXPLAYERS=80"
+authority = "isolated_local_package_owned_endpoint_udp_probe"
+description = "2026-09-21, existing local build 25149748, source snapshot aa0eba1f602d: after current-world/session readiness and authenticated complete RCON ListPlayers, eight A2S_INFO cases compared loopback versus local physical IPv4, connected versus unconnected UDP, and absent versus FFFFFFFF initial challenge. Each case had a 700-ms total budget; all 16 sends received zero UDP packets and no accepted INFO. The query endpoint was owned by the same fixture process generation before and after the matrix. One additional standard 25-byte INFO request to the same process's owned game UDP 7787 received zero packets within 300 ms, with unchanged process identity. Actual metadata: task-work/squad-a2s-wire-1789957143623069300.jsonl, squad-a2s-matrix-1789957143623069300.json, and squad-a2s-gameport-aa0eba1f602d.jsonl. Native output native-squad-verified-1789957143674815600.log reports one test passed in 132.11 seconds and completed cleanup, but the managed wrapper returned exit 1 as recorded in squad-a2s-driver-1789957143623069300.log; this is not an additional successful full lifecycle run. A2S remains unverified/nonresponsive, independently of RCON success. No shared parser, module defaults, installed package, or firewall policy was changed."
+
+[[sources]]
+id = "offworld_v7_eos_backend_boundary"
+kind = "documentation"
+path = "https://www.joinsquad.com/updates/squad-7-0-live-release-notes"
+authority = "Offworld_Industries_official_release_notes"
+description = "Rechecked 2026-09-21: Offworld's 7.0 release notes describe replacement of Steam backend calls with EOS while retaining Steam account authentication; its 7.1 notes confirm the server-browser migration. These statements do not explicitly establish removal of local A2S responses. The current native package initialized the Steam Game Server API but the probe did not establish Steam query advertisement activation. Treat disabled Steam advertisement as an unconfirmed hypothesis, not a demonstrated cause or proof that all current Squad A2S modes were removed."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://squad.fandom.com/wiki/Server_Configuration"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 62 presentation entries reviewed in EN/ZH against the referenced package/docs. Idle check interval labeled in seconds rather than connection establishment timeout. Layer rotation and excluded-layer labels aligned. Clarifies server replay recording. Boundaries: RCON timeout behavior is supported by package/wiki wording but no real inactivity-timeout experiment was performed."
+
+[[sources]]
+id = "semantic_reference_20260930_1"
+kind = "documentation"
+path = "https://squad.fandom.com/wiki/Server_Configuration"
+authority = "supplementary_community_reference"
+description = "2026-09-30: Supplementary server wiki, not asserted to be first-party; consulted for RCON idle-check interpretation."

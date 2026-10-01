@@ -1,0 +1,4 @@
+{
+  "cacheRequestBudgetMs": 20000,
+  "directSourceTimeoutMs": 8000
+}

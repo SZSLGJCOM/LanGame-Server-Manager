@@ -1,0 +1,10 @@
+Unknown command "LGM_PLAYER_QUERY_BEGIN_1234567890abcdef1234567890abcdef"!
+
+> players
+Players: 3/8
+ * Dwarf (opaque-one)
+ * Dwarf (opaque-two)
+ * 矮人 (矿工) (unverified-token)
+
+> LGM_PLAYER_QUERY_END_1234567890abcdef1234567890abcdef
+Unknown command "LGM_PLAYER_QUERY_END_1234567890abcdef1234567890abcdef"!

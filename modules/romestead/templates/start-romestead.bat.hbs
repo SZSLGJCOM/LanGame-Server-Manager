@@ -1,0 +1,7 @@
+@echo off
+setlocal EnableExtensions
+
+rem The managed launch plan supplies DOTNET_ROOT and DOTNET_ROOT_X64 when a
+rem compatible portable runtime exists in the configured tools directory.
+
+"%~dp0Server.exe" %*

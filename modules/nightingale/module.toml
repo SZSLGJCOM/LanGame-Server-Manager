@@ -1,0 +1,82 @@
+id = "nightingale"
+name = "Nightingale Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Nightingale via SteamCMD."
+steam_app_id = 3796810
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "nightingale"
+verification_path = "NWXServer.exe"
+
+[process]
+executable = "NWXServer.exe"
+args_template = [
+  "-log",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "-port={{ports.game.port}}",
+  "-multihome={{instance.bind_ip}}",
+  "-ini:Game:[/Script/Engine.GameSession]:MaxPlayers={{settings.max_players}}",
+  "{{nightingale.enable_cheats_flag}}",
+  "{{nightingale.status_endpoint_args}}",
+  "{{nightingale.json_logging_args}}",
+  "{{nightingale.extra_launch_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Nightingale runs NWXServer.exe from the install root. LanGame renders NWX/Config/ServerSettings.ini for connection/admin passwords and passes the documented port, bind IP, and max-player command-line arguments before launch."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "status"
+protocol = "tcp"
+port = 8080
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "http_api"
+player_action_ids = []
+response_codec = "nightingale_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "dedicated_server_console_or_upstream_admin_surface"
+reason = "Nightingale exposes read-only online names and counts through its optional HTTP status endpoint. LanGame has not verified a host-callable kick, ban, or unban transport for NWXServer.exe."
+verification = "Start NWXServer.exe with LanGame-rendered NWX/Config/ServerSettings.ini, optionally enable -statusPort in extra launch arguments, join with a test client, and prove any host-callable list/kick/ban/unban command surface before exposing player actions."
+
+[storage]
+runtime_copy_exclusions = ["NWX/Saved", "NWX/Config/ServerSettings.ini"]
+saves_path_template = "{{paths.install_root}}/NWX/Saved"
+retained_paths = ["NWX/Config/ServerSettings.ini"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["status"]

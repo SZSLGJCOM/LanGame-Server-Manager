@@ -1,0 +1,223 @@
+.system-top-metric--cpu {
+  grid-area: cpu;
+}
+
+.system-top-metric--memory {
+  grid-area: memory;
+}
+
+.system-top-metric--disk {
+  grid-area: disk;
+}
+
+.system-top-metric--network {
+  grid-area: network;
+}
+
+.system-top-metric {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto 18px;
+  grid-template-areas: "head value" "detail detail" "telemetry telemetry";
+  gap: 5px 10px;
+  padding: 14px 16px 12px;
+  color: var(--system-panel-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.system-top-metric:hover,
+.system-top-metric.is-core-active,
+.system-top-metric.is-core-selected {
+  border-color: var(--theme-card-active-border);
+  background: var(--theme-card-active-bg);
+}
+
+.system-top-metric:focus-visible,
+.system-instance-item:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 3px;
+}
+
+.system-top-metric-load-rail {
+  position: absolute;
+  inset: 16px auto 16px 0;
+  width: 3px;
+  overflow: hidden;
+  border-radius: 0 2px 2px 0;
+  background: color-mix(in srgb, var(--panel-accent) 12%, transparent);
+}
+
+.system-top-metric-load-rail i {
+  position: absolute;
+  inset: auto 0 0;
+  height: var(--metric-load);
+  background: var(--panel-accent);
+  transition: height 200ms ease;
+}
+
+.system-top-metric-sync {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  color: var(--panel-accent);
+  font-size: var(--text-meta);
+}
+
+.system-top-metric-sync b {
+  font-weight: var(--font-weight-medium);
+}
+
+.system-top-metric-head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.system-top-metric-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.system-metric-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  color: var(--panel-accent);
+  background: color-mix(in srgb, var(--panel-accent) 8%, transparent);
+}
+
+.system-metric-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.system-top-metric-title {
+  color: var(--system-panel-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.system-top-metric-channel,
+.system-top-metric-detail {
+  overflow: hidden;
+  color: var(--system-panel-muted);
+  font-size: var(--text-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-top-metric-detail {
+  grid-area: detail;
+}
+
+.system-top-metric-value {
+  grid-area: value;
+  display: flex;
+  align-items: baseline;
+  align-self: center;
+  gap: 3px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.system-top-metric-value strong {
+  font-size: var(--text-display);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: -0.04em;
+  line-height: var(--leading-heading);
+}
+
+.system-top-metric-value span {
+  color: var(--system-panel-muted);
+  font-size: var(--text-meta);
+}
+
+.system-top-metric--network .system-top-metric-value strong {
+  font-size: var(--text-display);
+}
+
+.system-top-metric-telemetry {
+  grid-area: telemetry;
+  min-width: 0;
+  align-self: end;
+  height: 18px;
+}
+
+.system-sparkline {
+  display: block;
+  width: 100%;
+  height: 18px;
+  overflow: visible;
+}
+
+.system-sparkline-grid {
+  fill: none;
+  stroke: var(--system-panel-border-soft);
+  stroke-width: 0.5;
+}
+
+.system-sparkline-line {
+  fill: none;
+  stroke: var(--panel-accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.system-sparkline-line--secondary {
+  stroke: var(--system-cpu);
+  stroke-dasharray: 3 2;
+}
+
+.system-sparkline-area {
+  fill: color-mix(in srgb, var(--panel-accent) 7%, transparent);
+}
+
+.system-sparkline-node {
+  fill: var(--panel-accent);
+}
+
+.system-sparkline-node--secondary {
+  fill: var(--system-cpu);
+}
+
+.system-top-metric.is-core-muted .system-top-metric-telemetry {
+  opacity: 0.55;
+}
+
+.system-top-metric-composition,
+.system-top-metric-threshold {
+  position: relative;
+  display: block;
+  height: 5px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--system-panel-border-soft);
+}
+
+.system-top-metric-composition > i,
+.system-top-metric-threshold > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--panel-accent);
+  transition: width 200ms ease;
+}
+
+.system-top-metric-composition > b {
+  position: relative;
+  display: inline-block;
+  width: 12.5%;
+  height: 100%;
+  border-right: 2px solid var(--system-panel-bg);
+}

@@ -1,0 +1,436 @@
+.server-runtime-surface-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.server-runtime-console-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  gap: 0;
+  border-color: var(--shell-line);
+  background: var(--theme-card-surface);
+}
+
+.server-runtime-surface-card > .workbench-card-head {
+  padding: 12px 14px 10px;
+}
+
+.server-runtime-surface-layout {
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.95fr);
+}
+
+.server-runtime-terminal-pane,
+.server-runtime-side-stack {
+  min-width: 0;
+}
+
+.server-runtime-terminal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.server-runtime-terminal-actions .secondary-button {
+  flex: 0 0 auto;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.server-runtime-log-path {
+  overflow-wrap: anywhere;
+}
+
+.server-runtime-terminal-pane .server-pill-group {
+  gap: 6px;
+}
+
+.server-runtime-console {
+  min-height: 320px;
+  max-height: 420px;
+}
+
+.server-runtime-console-frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--theme-log-surface);
+}
+
+.server-runtime-console-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--theme-card-muted);
+  color: var(--shell-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.server-runtime-console-toolbar--primary {
+  align-items: center;
+}
+
+.server-runtime-console-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.server-runtime-console-title span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-runtime-health-light {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  min-width: 8px !important;
+  border-radius: 999px;
+  overflow: visible !important;
+  background: var(--success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.server-runtime-health-light.is-warning {
+  background: var(--theme-warning-text);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-warning-text) 12%, transparent);
+}
+
+.server-runtime-health-light.is-idle {
+  background: var(--muted);
+  box-shadow: none;
+}
+
+.server-runtime-health-light.is-danger {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.server-runtime-console-source-select,
+.server-runtime-console-target-select {
+  min-width: 132px;
+  max-width: 180px;
+  height: 26px;
+  padding: 0 26px 0 9px;
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  font: inherit;
+  text-transform: none;
+}
+
+.server-runtime-console-source-select:disabled,
+.server-runtime-console-target-select:disabled {
+  opacity: 0.54;
+}
+
+.server-runtime-console-source-select option,
+.server-runtime-console-target-select option {
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+}
+
+.server-runtime-console-source-select:focus-visible,
+.server-runtime-console-target-select:focus-visible,
+.server-runtime-console-copy-button:focus-visible,
+.server-runtime-console-tab:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}
+
+.server-runtime-console-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  padding: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.server-runtime-console-copy-button:hover:not(:disabled) {
+  border-color: var(--theme-card-active-border);
+  background: var(--theme-control-hover);
+  color: var(--shell-text);
+}
+
+.server-runtime-console-copy-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.server-runtime-console-copy-button.is-copied {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, var(--theme-control-surface));
+  color: var(--success);
+}
+
+.server-runtime-console-copy-button.is-failed {
+  border-color: var(--theme-danger-border);
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
+
+.server-runtime-console-copy-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.server-runtime-console-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--shell-line);
+  background: var(--theme-card-muted);
+}
+
+.server-runtime-console-tab {
+  display: grid;
+  gap: 2px;
+  min-width: 132px;
+  min-height: 42px;
+  padding: 7px 10px;
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.server-runtime-console-tab:hover {
+  border-color: var(--theme-card-active-border);
+  background: var(--theme-control-hover);
+}
+
+.server-runtime-console-tab.is-active {
+  border-color: var(--theme-card-active-border);
+  background: var(--theme-card-active-bg);
+  color: var(--theme-card-active-text);
+}
+
+.server-runtime-console-tab span,
+.server-runtime-console-tab small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-runtime-console-tab span {
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-heading);
+}
+
+.server-runtime-console-tab small {
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+  color: var(--shell-muted);
+}
+
+.server-log-preview.server-runtime-console--primary {
+  flex: 1 1 auto;
+  margin: 0;
+  min-height: 0;
+  max-height: none;
+  border: none;
+  border-radius: 0;
+  background: var(--theme-log-surface);
+  color: var(--theme-log-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--leading-body);
+  overflow: auto;
+  box-shadow: none;
+}
+
+.server-runtime-console-command-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 12px;
+  border-top: 1px solid var(--shell-line);
+  background: var(--theme-control-surface);
+  color: var(--theme-log-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+.server-runtime-console-prompt {
+  color: var(--shell-text);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.server-runtime-console-command-input {
+  min-width: 0;
+  width: 100%;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--theme-log-text);
+  font: inherit;
+}
+
+.server-runtime-console-command-input::placeholder {
+  color: var(--theme-log-muted);
+}
+
+.server-runtime-console-command-input:disabled {
+  cursor: not-allowed;
+  color: var(--shell-muted);
+}
+
+.server-runtime-console-command-form:focus-within {
+  box-shadow: inset 0 2px 0 var(--shell-focus);
+}
+
+.server-runtime-console-errors {
+  color: var(--theme-danger-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.server-runtime-console-retry {
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.server-runtime-console-retry:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.server-runtime-console-retry:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}
+
+.server-runtime-window-list {
+  display: grid;
+  gap: 10px;
+}
+.server-runtime-window-empty {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--shell-line) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-card-elevated) 88%, transparent);
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.server-runtime-window-audit {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--shell-line) 64%, transparent);
+}
+
+.server-runtime-window-audit-summary {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--shell-line) 68%, transparent);
+  background: color-mix(in srgb, var(--theme-card-elevated) 90%, transparent);
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.server-runtime-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.server-runtime-stat {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--shell-line) 72%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-card-muted) 84%, transparent);
+}
+
+.server-runtime-stat .detail-value {
+  font-size: var(--text-body);
+  line-height: var(--leading-heading);
+}
+
+.server-runtime-strip--compact {
+  gap: 8px;
+}
+
+.server-runtime-strip--compact .server-runtime-stat {
+  min-height: 74px;
+}
+
+.server-log-preview {
+  max-height: 240px;
+}
+
+@media (max-width: 1360px) {
+  .server-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1180px) {
+  .server-runtime-surface-layout,
+  .server-runtime-strip,
+  .server-summary-grid,
+  .server-paths-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .server-detail-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .server-summary-item--wide {
+    grid-column: auto;
+  }
+}

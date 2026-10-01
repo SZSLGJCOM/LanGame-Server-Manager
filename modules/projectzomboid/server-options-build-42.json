@@ -1,0 +1,1132 @@
+{
+  "build": "24909836",
+  "class_sha256": "19bdc3e91cd248fce7c4df5874a63b3c577431b6106d15b8c9b70c2b31e91c20",
+  "options": [
+    {
+      "type": "Boolean",
+      "key": "PVP",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PVPLogToolChat",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PVPLogToolFile",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PauseEmpty",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "GlobalChat",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "ChatStreams",
+      "constructor_values": [
+        "s,r,a,w,y,sh,f,all",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "Open",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Text",
+      "key": "ServerWelcomeMessage",
+      "constructor_values": [
+        "Welcome to Project Zomboid Multiplayer! <LINE> <LINE> To interact with the Chat panel: press Tab, T, or Enter. <LINE> <LINE> The Tab key will change the target stream of the message. <LINE> <LINE> Global Streams: /all <LINE> Local Streams: /say, /yell <LINE> Special Steams: /whisper, /safehouse, /faction. <LINE> <LINE> Press the Up arrow to cycle through your message history. Click the Gear icon to customize chat. <LINE> <LINE> Happy surviving!",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisplayUserName",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "ShowFirstAndLastName",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "UsernameDisguises",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "HideDisguisedUserName",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SwitchZombiesOwnershipEachUpdate",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "SpawnPoint",
+      "constructor_values": [
+        "0,0,0",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafetySystem",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "ShowSafety",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SafetyToggleTimer",
+      "constructor_values": [
+        0,
+        1000,
+        2
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SafetyCooldownTimer",
+      "constructor_values": [
+        0,
+        1000,
+        3
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SafetyDisconnectDelay",
+      "constructor_values": [
+        0,
+        60,
+        60
+      ]
+    },
+    {
+      "type": "String",
+      "key": "SpawnItems",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "DefaultPort",
+      "constructor_values": [
+        0,
+        65535,
+        16261
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "UDPPort",
+      "constructor_values": [
+        0,
+        65535,
+        16262
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "ResetID",
+      "constructor_values": [
+        0,
+        2147483647,
+        1000000000,
+        {
+          "expression": "'zombie/core/random/Rand.Next(I)I'"
+        }
+      ]
+    },
+    {
+      "type": "String",
+      "key": "Mods",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "Map",
+      "constructor_values": [
+        "Muldraugh, KY",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DoLuaChecksum",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DenyLoginOnOverloadedServer",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "Public",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "PublicName",
+      "constructor_values": [
+        "My PZ Server",
+        64
+      ]
+    },
+    {
+      "type": "Text",
+      "key": "PublicDescription",
+      "constructor_values": [
+        "",
+        256
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MaxPlayers",
+      "constructor_values": [
+        1,
+        254,
+        32
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "PingLimit",
+      "constructor_values": [
+        0,
+        2147483647,
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehousePreventsLootRespawn",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DropOffWhiteListAfterDeath",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "NoFire",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AnnounceDeath",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AnnounceAnimalDeath",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SaveWorldEveryMinutes",
+      "constructor_values": [
+        0,
+        2147483647,
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PlayerSafehouse",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AdminSafehouse",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseAllowTrepass",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseAllowFire",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseAllowLoot",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseAllowRespawn",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SafehouseDaySurvivedToClaim",
+      "constructor_values": [
+        0,
+        2147483647,
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "SafeHouseRemovalTime",
+      "constructor_values": [
+        0,
+        2147483647,
+        144
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseAllowNonResidential",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SafehouseDisableDisguises",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MaxSafezoneSize",
+      "constructor_values": [
+        0,
+        2147483647,
+        20000
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AllowDestructionBySledgehammer",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SledgehammerOnlyInSafehouse",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "War",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "WarStartDelay",
+      "constructor_values": [
+        60,
+        2147483647,
+        600
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "WarDuration",
+      "constructor_values": [
+        60,
+        2147483647,
+        3600
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "WarSafehouseHitPoints",
+      "constructor_values": [
+        0,
+        2147483647,
+        3
+      ]
+    },
+    {
+      "type": "String",
+      "key": "ServerPlayerID",
+      "constructor_values": [
+        2147483647,
+        {
+          "expression": "'zombie/core/random/Rand.Next(I)I'"
+        },
+        {
+          "expression": "'java/lang/Integer.toString(I)Ljava/lang/String;'"
+        },
+        -1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "RCONPort",
+      "constructor_values": [
+        0,
+        65535,
+        27015
+      ]
+    },
+    {
+      "type": "String",
+      "key": "RCONPassword",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DiscordEnable",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "DiscordToken",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "DiscordChatChannel",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "DiscordLogChannel",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "DiscordCommandChannel",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "WebhookAddress",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "Password",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MaxAccountsPerUser",
+      "constructor_values": [
+        0,
+        2147483647,
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AllowCoop",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SleepAllowed",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SleepNeeded",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "KnockedDownAllowed",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SneakModeHideFromOtherPlayers",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "UltraSpeedDoesnotAffectToAnimals",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "WorkshopItems",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SteamScoreboard",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "SteamVAC",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "UPnP",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "VoiceEnable",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "VoiceMinDistance",
+      "constructor_values": [
+        0.0,
+        100000.0,
+        10.0
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "VoiceMaxDistance",
+      "constructor_values": [
+        0.0,
+        100000.0,
+        100.0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "Voice3D",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "SpeedLimit",
+      "constructor_values": [
+        10.0,
+        150.0,
+        70.0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "LoginQueueEnabled",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "LoginQueueConnectTimeout",
+      "constructor_values": [
+        20,
+        1200,
+        60
+      ]
+    },
+    {
+      "type": "String",
+      "key": "server_browser_announced_ip",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PlayerRespawnWithSelf",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PlayerRespawnWithOther",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "FastForwardMultiplier",
+      "constructor_values": [
+        1.0,
+        100.0,
+        40.0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableSafehouseWhenOwnerConnected",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "Faction",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "FactionDaySurvivedToCreate",
+      "constructor_values": [
+        0,
+        2147483647,
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "FactionPlayersRequiredForTag",
+      "constructor_values": [
+        1,
+        2147483647,
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioStaff",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioAdmin",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioGM",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioOverseer",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioModerator",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableRadioInvisible",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "ClientCommandFilter",
+      "constructor_values": [
+        "-vehicle.*;+vehicle.damageWindow;+vehicle.fixPart;+vehicle.installPart;+vehicle.uninstallPart",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "ClientActionLogs",
+      "constructor_values": [
+        "ISEnterVehicle;ISExitVehicle;ISTakeEngineParts;",
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PerkLogs",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "ItemNumbersLimitPerContainer",
+      "constructor_values": [
+        0,
+        9000,
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "BloodSplatLifespanDays",
+      "constructor_values": [
+        0,
+        365,
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "AllowNonAsciiUsername",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "BanKickGlobalSound",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "RemovePlayerCorpsesOnCorpseRemoval",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "TrashDeleteAll",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PVPMeleeWhileHitReaction",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "MouseOverToSeeDisplayName",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "HidePlayersBehindYou",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "PVPMeleeDamageModifier",
+      "constructor_values": [
+        0.0,
+        500.0,
+        30.0
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "PVPFirearmDamageModifier",
+      "constructor_values": [
+        0.0,
+        500.0,
+        50.0
+      ]
+    },
+    {
+      "type": "Double",
+      "key": "CarEngineAttractionModifier",
+      "constructor_values": [
+        0.0,
+        10.0,
+        0.5
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "PlayerBumpPlayer",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MapRemotePlayerVisibility",
+      "constructor_values": [
+        1,
+        4,
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "BackupsCount",
+      "constructor_values": [
+        1,
+        300,
+        5
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "BackupsOnStart",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "BackupsOnVersionChange",
+      "constructor_values": [
+        1
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "BackupsPeriod",
+      "constructor_values": [
+        0,
+        1500,
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableVehicleTowing",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableTrailerTowing",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableBurntTowing",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "BadWordListFile",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "String",
+      "key": "GoodWordListFile",
+      "constructor_values": [
+        "",
+        -1
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "BadWordPolicy",
+      "constructor_values": [
+        3,
+        3
+      ]
+    },
+    {
+      "type": "String",
+      "key": "BadWordReplacement",
+      "constructor_values": [
+        "[HIDDEN]",
+        16
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatSafety",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatSpeed",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatNoClip",
+      "constructor_values": [
+        4,
+        4
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatHit",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatPacketException",
+      "constructor_values": [
+        4,
+        4
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatPermission",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatXP",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatSafeHouse",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatPlayer",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Enum",
+      "key": "AntiCheatChecksum",
+      "constructor_values": [
+        4,
+        2
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MultiplayerStatisticsPeriod",
+      "constructor_values": [
+        0,
+        10,
+        1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "DisableScoreboard",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "HideAdminsInPlayerList",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "MaxPacketsPerSecond",
+      "constructor_values": [
+        100,
+        1000,
+        300
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "ShowCoordinates",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "String",
+      "key": "Seed",
+      "constructor_values": [
+        {
+          "expression": "'zombie/network/GameServer.seedLjava/lang/String;'"
+        },
+        -1
+      ]
+    },
+    {
+      "type": "Boolean",
+      "key": "UsePhysicsHitReaction",
+      "constructor_values": [
+        0
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "ChatMessageCharacterLimit",
+      "constructor_values": [
+        64,
+        1024,
+        200
+      ]
+    },
+    {
+      "type": "Integer",
+      "key": "ChatMessageSlowModeTime",
+      "constructor_values": [
+        1,
+        30,
+        3
+      ]
+    }
+  ]
+}

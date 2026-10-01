@@ -1,0 +1,188 @@
+id = "sevendaystodie"
+name = "7 Days to Die Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for 7 Days to Die via SteamCMD."
+steam_app_id = 294420
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "sevendaystodie"
+
+[process]
+executable = "7DaysToDieServer.exe"
+args_template = [
+  "-quit",
+  "-batchmode",
+  "-nographics",
+  "-configfile={{paths.config_dir}}/serverconfig.xml",
+  "-dedicated"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_native_window"
+host_notes = "7 Days to Die launches the dedicated server binary directly in batchmode and nographics mode, but the Windows build can still create a native Mono/WinForms server console. LanGame treats that as a managed native background window, keeps TerminalWindowEnabled=false in serverconfig.xml, and routes operator visibility through the app log/runtime surfaces."
+
+[[default_ports]]
+name = "game_udp"
+protocol = "udp"
+port = 26900
+
+[[default_ports]]
+name = "game_tcp"
+protocol = "tcp"
+port = 26900
+
+[[default_ports]]
+name = "web_dashboard"
+protocol = "tcp"
+port = 8080
+
+[[default_ports]]
+name = "telnet"
+protocol = "tcp"
+port = 8081
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "telnet"
+command_template = "say {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_player", "ban_player"]
+response_codec = "seven_days_players"
+identity_kind = "eos_id"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "List players"
+label_zh_cn = "玩家列表"
+transport = "telnet"
+command_template = "listplayers"
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "telnet"
+command_template = "kick {{target}} LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam_ or EOS_ account ID from the current player list"
+target_placeholder_zh_cn = "当前玩家列表中的 Steam_ 或 EOS_ 账号 ID"
+target_required = true
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban player (10 years)"
+label_zh_cn = "封禁玩家（10年）"
+transport = "telnet"
+command_template = "ban add {{target}} 10 years LanGame"
+target_label = "Online player identity"
+target_label_zh_cn = "在线玩家标识"
+target_placeholder = "Steam_ or EOS_ account ID from the current player list"
+target_placeholder_zh_cn = "当前玩家列表中的 Steam_ 或 EOS_ 账号 ID"
+target_required = true
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解除封禁"
+transport = "telnet"
+command_template = "ban remove {{target}}"
+target_label = "Platform account ID"
+target_label_zh_cn = "平台账号 ID"
+target_placeholder = "Combined platform account ID, such as Steam_76561198000000001 or EOS_ followed by the account ID"
+target_placeholder_zh_cn = "含平台前缀的账号 ID，例如 Steam_76561198000000001 或 EOS_ 加账号 ID"
+target_required = true
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "Ban list"
+label_zh_cn = "封禁列表"
+transport = "telnet"
+command_template = "ban list"
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+
+[runtime.shutdown]
+grace_period_ms = 10000
+
+[[runtime.shutdown.commands]]
+transport = "telnet"
+fallback_transport = "stdin"
+command = "saveworld"
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+wait_after_ms = 1500
+
+[[runtime.shutdown.commands]]
+transport = "telnet"
+fallback_transport = "stdin"
+command = "shutdown"
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+wait_after_ms = 5000
+
+[mods.source]
+provider = "nexus"
+label = "Nexus Mods"
+url = "https://www.nexusmods.com/7daystodie"
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/Mods"
+target_label = "Mods"
+accepts = ["folder", "zip"]
+
+# The dedicated package ships first-party files under Mods (including 0_TFP_Harmony).
+# Do not omit the whole Mods directory when copying a private runtime.
+[storage]
+saves_path_template = "{{paths.instance_root}}/saves"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "telnet_and_serveradmin_xml"
+reason = "7 Days to Die materializes cross-platform serveradmin.xml rosters as persistent truth. Telnet listplayers exposes platform and cross-platform accounts; online kick and 10-year ban actions bind the canonical stable account rather than a reusable entity ID. Unban accepts a namespaced platform account."
+verification = "Static IL from installed build 24994542 verifies listplayers, canonical account selection and command target parsing. Synthetic fixtures cover parsing and binding; live kick/ban/unban side effects require a test player on a running server."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game_udp", "game_tcp"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["web_dashboard", "telnet"]

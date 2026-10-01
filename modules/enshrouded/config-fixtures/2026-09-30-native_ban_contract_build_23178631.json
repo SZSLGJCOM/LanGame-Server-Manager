@@ -1,0 +1,54 @@
+{
+  "fixture_version": 1,
+  "module_id": "enshrouded",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-30",
+    "build": "Build 23178631 static type/serialization evidence; synthetic exact uint64 storage/output fixture, not a native ban/rejoin probe.",
+    "source_ids": [
+      "ban_records",
+      "native_ban_contract_build_23178631"
+    ]
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 1,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [
+      "ban_records.bans"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "banned_player_ids": "0,9007199254740993\n76561198000000001\n18446744073709551615"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "enshrouded_server.json",
+        "format": "json",
+        "keys": {
+          "/bans/0/accountId": 0,
+          "/bans/1/accountId": 9007199254740993,
+          "/bans/2/accountId": 76561198000000001,
+          "/bans/3/accountId": 18446744073709551615,
+          "/bans/3/displayName": "",
+          "/bans/3/characterName": "",
+          "/bans/3/banDate/value": 0
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "enshrouded_server.exe",
+      "arguments": []
+    }
+  }
+}

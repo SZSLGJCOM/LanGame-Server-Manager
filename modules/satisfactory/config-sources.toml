@@ -1,0 +1,369 @@
+status = "best_effort_verified"
+last_verified = "2026-09-08"
+notes = "Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
+
+[[sources]]
+id = "native_console_entry_build_24656085"
+kind = "install_probe"
+path = "FactoryServer.exe resources 201 and 202; Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe"
+authority = "read_only_installed_package_and_native_log_observation"
+description = "2026-10-01: build 24656085 bootstrap resource 201 selects Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe and resource 202 supplies FactoryGame. The bootstrap's CreateProcessW call at RVA 0x1f8b inherits handles but passes a zeroed STARTUPINFO without explicit standard handles. The native CL 502094 log confirms the Cmd executable receives -stdout and -FullStdOutLogOutput, yet the managed parent stream contains no game output. LanGame now directly launches that same packaged console entry with FactoryGame and all existing flags, working directory and profile environment, giving the child the runtime's explicit standard handles. This removes the intermediate launch boundary; output capture and normal stop still require real post-change verification."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=526870&count=8&maxlength=0&feeds=steam_community_announcements"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The official publisher feed lists 1.2.4.0 (2026-08-11) as its most recent versioned update. The installed app 1690800 manifest remains build 24656085. Existing provenance separately records the native integer-map options, creation-only 1.2 world parameters and maintenance-owned save/restart options; these are not duplicated as speculative INI controls. No additional native configuration key was established by the newer announcements. The public wiki body was unavailable during this review."
+
+[[sources]]
+id = "steam_public_build_23855705"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_update 1 +app_info_print 1690800 +quit"
+authority = "steam_public_branch"
+description = "Historical public-branch metadata probe: build 23855705, timeupdated 2026-06-24T17:21:39Z. Current native runtime evidence is recorded separately."
+
+[[sources]]
+id = "native_profile_isolation"
+kind = "install_probe"
+path = "FactoryServer.exe -UserDir=<instance-data>"
+authority = "installed_dedicated_server_build_24656085"
+description = "CL 502094: claim identity and SaveGame output were written beneath the child process USERPROFILE/AppData/Local/FactoryGame/Saved/SaveGames. -UserDir alone moved INI/log files but did not isolate the save profile. QueryServerState confirmed the new world was running; hashes of pre-existing global server identities were unchanged."
+
+[[sources]]
+id = "official_dedicated_server_documentation"
+kind = "documentation"
+path = "https://satisfactory.wiki.gg/wiki/Dedicated_servers"
+authority = "official_satisfactory_wiki"
+description = "Current 1.1+ installation, TCP/UDP 7777 and TCP 8888 networking, -Port, -ReliablePort, -ExternalReliablePort, and configuration-file guidance rechecked on 2026-07-13."
+
+[[sources]]
+id = "steamcmd_server_package"
+kind = "documentation"
+path = "<validated-install-root>"
+authority = "steamcmd_anonymous_app_1690800"
+description = "Anonymous SteamCMD validate for app 1690800 succeeded. The installed package provides FactoryServer.exe and Unreal content/manifests, but no plain Game.ini or Engine.ini template under FactoryGame/Saved/Config/WindowsServer."
+url = "steam://run/1690800"
+
+[[sources]]
+id = "game_ini"
+kind = "config_file"
+path = "<instance-data>/Saved/Config/WindowsServer/Game.ini"
+authority = "installed_default_and_lsgm_template"
+description = "Satisfactory Unreal Game.ini settings that the dedicated server reads for GameSession values."
+
+[[sources]]
+id = "engine_ini"
+kind = "config_file"
+path = "<instance-data>/Saved/Config/WindowsServer/Engine.ini"
+authority = "installed_default_and_lsgm_template"
+description = "Satisfactory Unreal Engine.ini networking, logging, and local API settings materialized before launch."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "FactoryServer.exe"
+authority = "module_launch_surface"
+description = "Satisfactory dedicated server launch flags controlled by LanGame and cross-checked against the official 1.1+ dedicated-server documentation."
+
+[[sources]]
+id = "runtime_api"
+kind = "runtime_api"
+path = "Satisfactory HTTPS API"
+authority = "upstream_dedicated_server_api"
+description = "Post-claim HTTPS API surface tracked for future runtime/player adapter work."
+
+
+[[sources]]
+id = "satisfactory_windowsserver_ini"
+kind = "config_file"
+path = "*/Saved/Config/WindowsServer/*.ini"
+authority = "installed_satisfactory_server_package"
+description = "Installed dedicated server Unreal WindowsServer ini artifacts. (2 discovered files)"
+
+
+[[sources]]
+id = "satisfactory_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_satisfactory_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (13 discovered files)"
+[[items]]
+source = "game_ini"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "OnlineSubsystemUtils.IpNetDriver.NetServerMaxTickRate"
+schema_key = "net_server_max_tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "OnlineSubsystemUtils.IpNetDriver.LanServerMaxTickRate"
+schema_key = "net_server_max_tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "SocketSubsystemEpic.EpicNetDriver.NetServerMaxTickRate"
+schema_key = "net_server_max_tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "SocketSubsystemEpic.EpicNetDriver.LanServerMaxTickRate"
+schema_key = "net_server_max_tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "Engine.Engine.NetClientTicksPerSecond"
+schema_key = "net_server_max_tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "ConnectionTimeout"
+schema_key = "net_connection_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "InitialConnectTimeout"
+schema_key = "net_initial_connect_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "MaxClientRate"
+schema_key = "net_max_client_rate"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "MaxInternetClientRate"
+schema_key = "net_max_internet_client_rate"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "FG.DedicatedServer.AllowInsecureLocalAccess"
+schema_key = "allow_insecure_local_api"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ExternalReliablePort"
+schema_key = "external_reliable_port"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-DisablePacketRouting"
+schema_key = "disable_packet_routing"
+surface = "launch_arg"
+
+[[items]]
+source = "engine_ini"
+key = "FGSaveSession.mNumRotatingAutosaves"
+schema_key = "rotating_autosaves"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "CrashReportClient.bImplicitSend"
+schema_key = "disable_crash_reporting"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-DisableSeasonalEvents"
+schema_key = "disable_seasonal_events"
+surface = "launch_arg"
+
+[[items]]
+source = "engine_ini"
+key = "LogOnline"
+schema_key = "server_query_log_level"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "extra Engine.ini lines"
+schema_key = "engine_ini_extra"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "extra Game.ini lines"
+schema_key = "game_ini_extra"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-unattended"
+reason = "Fixed by LanGame for background unattended dedicated-server hosting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Port"
+reason = "Game port is instance port-binding state, not a schema field."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ReliablePort"
+reason = "Reliable/API port is instance port-binding state, not a schema field."
+
+[[exclusions]]
+source = "engine_ini"
+key = "ReliableMessagingTCPFactory.PortRangeBegin/PortRangeLength/ExternalPortRangeBegin"
+reason = "The managed -ReliablePort launch flag selects a single reliable TCP port and supersedes the native 1.1 range defaults."
+
+[[exclusions]]
+source = "runtime_api"
+key = "claim/admin-auth/save-selection"
+reason = "Satisfactory still owns first claim, admin auth, and active save selection through its Server Manager/API after launch."
+
+[[sources]]
+id = "frm_player_api"
+kind = "runtime_api"
+path = "Ficsit Remote Monitoring: POST api/v1, function frm, endpoint getPlayer"
+authority = "frm_maintainer_documentation_and_source"
+url = "https://github.com/porisius/FicsitRemoteMonitoring/blob/main/docs/modules/ROOT/pages/dedicatedserver.adoc"
+description = "Reviewed 2026-09-08. Optional server mod provides a read-only unauthenticated getPlayer response. Only Online=true characters are projected; Actor IDs do not represent stable platform identities. The collector uses numeric loopback, no proxy/redirect/admin token, bounded response/deadline. On installed FRM 1.5.3, an HTTP GET to the configured service's api/getPlayer endpoint returned a complete empty array; the game HTTPS extension returned bad_function. Multiplayer fixtures model upstream source and are not live-player captures."
+
+
+[[sources]]
+id = "native_runtime_options_build_24656085"
+kind = "install_probe"
+path = "<instance-data>/Saved/Config/WindowsServer/GameUserSettings.ini"
+authority = "installed_dedicated_server_build_24656085"
+description = "Verified 2026-09-30 in an isolated instance of build 24656085 (CL 502094). GetServerOptions returned FG.DSAutoPause=True, FG.NetworkQuality=1 and FG.SendGameplayData=True. ApplyServerOptions with False/2/False persisted integer values 0/2/0 in /Script/FactoryGame.FGGameUserSettings.mIntValues. Auto-pause and network quality read back immediately; gameplay data remained pending a server restart. All three values persisted and read back after restart. LanGame merges only explicitly supplied settings into the native integer map, preserving unrelated entries including mod settings. The acceptance fixture adds synthetic unknown-option and FRM entries to exercise preservation; it is not a raw server capture. These observations cover these three options only, not all API settings or first-claim state."
+
+[[items]]
+source = "native_runtime_options_build_24656085"
+key = "/Script/FactoryGame.FGGameUserSettings.mIntValues.FG.DSAutoPause"
+schema_key = "auto_pause_when_empty"
+surface = "materializer"
+
+[[items]]
+source = "native_runtime_options_build_24656085"
+key = "/Script/FactoryGame.FGGameUserSettings.mIntValues.FG.NetworkQuality"
+schema_key = "network_quality"
+surface = "materializer"
+
+[[items]]
+source = "native_runtime_options_build_24656085"
+key = "/Script/FactoryGame.FGGameUserSettings.mIntValues.FG.SendGameplayData"
+schema_key = "send_gameplay_data"
+surface = "materializer"
+
+[[sources]]
+id = "official_1_2_world_creation_options"
+kind = "documentation"
+path = "https://store.steampowered.com/news/posts/?appgroupname=Satisfactory&appids=526870&enddate=1780413013&feed=steam_community_announcements"
+authority = "Coffee_Stain_Studios_official_release_notes"
+description = "The official 1.2 release describes six Game Mode options available only when creating a new game; once enabled they cannot be disabled for that save. Their FG.GameMode keys were independently found in the installed build 24656085 binaries on 2026-09-30. The current serialized enum mappings were subsequently verified in official IoStore assets: US_GM_NodePurity.uasset SHA256 0d818a235cf36b9b6e8143d9c5cf5d31781f60d34cf6de9f16334fa6d3b79e42 and US_GM_ResourceRandomization.uasset SHA256 cdad1f7f1b81830a508a8caf6e390a20a2f89ee8dcb2646d5037264e3017fd52. They belong to game-owned world creation through the API and are not editable configuration-file fields."
+
+[[sources]]
+id = "native_options_missing_settings"
+kind = "materializer"
+path = "crates/app-storage/src/templates_materialize/satisfactory.rs"
+authority = "langame_storage_contract"
+description = "Deterministic preservation case based on the integer-map format observed in build 24656085. An instance with no explicit overrides must retain its existing native pause, network-quality and gameplay-data values through settings normalization and pre-start materialization. The fixture contains synthetic unknown-option and FRM values; it is not an additional native-server probe."
+
+[[sources]]
+id = "native_options_single_override"
+kind = "materializer"
+path = "crates/app-storage/src/templates_materialize/satisfactory.rs"
+authority = "langame_storage_contract"
+description = "Deterministic preservation case based on the integer-map format observed in build 24656085. Updating only network quality must retain the existing native pause and gameplay-data values after settings normalization and pre-start materialization. The fixture contains synthetic unknown-option and FRM values; repeated normalization on the same instance is covered by the storage regression test, not by this independent fixture."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.SpacePartsCostMultiplier"
+reason = "Space Elevator cost multiplier is a creation-only world parameter. A future create-world API workflow must own it; ordinary Configuration edits must not imply an existing save can be changed."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.PartsCostMultiplier"
+reason = "Recipe cost multiplier is a creation-only world parameter owned by the create-world API workflow, not existing-server Configuration."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.EnergyCostMultiplier"
+reason = "Power cost multiplier is a creation-only world parameter owned by the create-world API workflow, not existing-server Configuration."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.NodeRandomization"
+reason = "Creation-only world parameter. Current US_GM_ResourceRandomization serializes 0 default, 1 random, 2 basic-rich, 3 advanced-rich, 4 fossil-rich. These belong to world creation, not existing-server Configuration."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.NodePuritySettings"
+reason = "Creation-only world parameter. Current US_GM_NodePurity serializes 0 default, 1 all-pure, 5 mostly-pure, 2 average, 6 mostly-impure, 3 all-impure, 4 random. UI order is not the serialized numeric order. These belong to world creation, not existing-server Configuration."
+
+[[exclusions]]
+source = "official_1_2_world_creation_options"
+key = "FG.GameMode.NodeRandomizationSeed"
+reason = "World seed is supplied during world creation. Editing a running server configuration must not imply that it changes an existing world."
+
+[[exclusions]]
+source = "native_runtime_options_build_24656085"
+key = "FG.DSAutoSaveOnDisconnect"
+reason = "Native save-on-disconnect policy belongs to Maintenance. It has no verified LanGame API adapter and must not be duplicated as a Configuration control."
+
+[[exclusions]]
+source = "native_runtime_options_build_24656085"
+key = "FG.AutosaveInterval"
+reason = "Native save cadence belongs to Maintenance alongside the existing rotating-autosave policy. This API option is not added to Configuration."
+
+[[exclusions]]
+source = "native_runtime_options_build_24656085"
+key = "FG.ServerRestartTimeSlot"
+reason = "Native restart scheduling belongs to Maintenance. Do not duplicate restart policy in Configuration or infer unsupported INI serialization."
+
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://satisfactory.wiki.gg/wiki/Dedicated_servers"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 19 presentation entries reviewed in EN/ZH against the referenced package/docs. Initial handshake versus established-connection timeout explained; seconds included. Simulation update cap labeled in Hz. Specifies seasonal FICSMAS content. Explains the packet-router switch and multihome interaction. Current-build consumer evidence below establishes bytes/second units and the effective per-client and non-LAN limit rules."
+
+[[sources]]
+id = "semantic_reference_20260930_1"
+kind = "documentation"
+path = "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Engine/UNetDriver"
+authority = "first_party_reference"
+description = "2026-09-30: Epic engine definitions distinguish initial connection and established connection timeouts and tick-rate cap."
+
+[[sources]]
+id = "native_semantics_build_24656085"
+kind = "install_probe"
+path = "Engine/Binaries/Win64/FactoryServer-Engine-Win64-Shipping.dll and matching shipped PDB"
+authority = "current_official_package_read_only_consumer_evidence"
+description = "2026-09-30: Read-only native code and matching PDB inspection: UNetDriver MaxInternetClientRate offset 0xcc and MaxClientRate 0xd0; UPlayer CurrentNetSpeed offset 0x38. NotifyControlMessage and SetNetSpeed clamp the negotiated value to MaxClientRate with floor 1800. UNetConnection::Tick multiplies CurrentNetSpeed by elapsed time and 8.0 before subtracting the bit budget, establishing bytes/second. UWorld::Listen checks the LAN option and lowers MaxClientRate to MaxInternetClientRate only when the latter is >2500 and below the former. Function RVAs: NotifyControlMessage 0x014f6c10, SetNetSpeed 0x0109de50, Tick 0x00dea600, Listen 0x014f3b60. SHA256: FactoryServer-Engine-Win64-Shipping.dll 0a0b567bf2853f4c4e9845d8a66a01881c354c15da52ecb8db7d33fa7f0a84d9."
+
+[[sources]]
+id = "native_weather_option_build_24656085"
+kind = "install_probe"
+path = "FactoryGame/Content/FactoryGame/Settings/OptionsMenu/World/US_WeatherPreset.uasset and Localization/StringTables/Options_Data.csv"
+authority = "current_official_package_serialized_option_contract"
+description = "2026-09-30: Read-only extraction of the official IoStore US_WeatherPreset asset (SHA256 e5da019e295859313c32a9f184928da607932e17c1aeeb1463f7f2f6e518855e) establishes StrId FG.WeatherPreset, bRelevantForDedicatedServer=true, IsSettingSessionWide=true, integer selector, and RequireSessionRestart. The serialized IntegerSelectionValues map 0 Default, 1 Dry, 2 Wet, 3 The Great MASSAGE-2 (AB)b, 4 Clear, 5 Raining Kittens and Puppies, 6 Extreme. Labels were cross-checked against the package Options_Data.csv, not inferred from release-note order. This uses the previously verified FGGameUserSettings integer-map serialization. The new fixture verifies normalization and native file writes, not a live weather simulation."
+
+[[items]]
+source = "native_weather_option_build_24656085"
+key = "/Script/FactoryGame.FGGameUserSettings.mIntValues.FG.WeatherPreset"
+schema_key = "weather_preset"
+surface = "materializer"

@@ -1,0 +1,235 @@
+id = "arksurvivalascended"
+name = "ARK: Survival Ascended Dedicated Server"
+version = "0.1.0"
+description = "Windows-first dedicated server module for ARK: Survival Ascended via SteamCMD."
+steam_app_id = 2430930
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "arksurvivalascended"
+
+[process]
+executable = "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+args_template = [
+  "{{arksa.server_url}}",
+  "-port={{ports.game.port}}",
+  "-WinLiveMaxPlayers={{settings.max_players}}",
+  "-NullRHI",
+  "-Unattended",
+  "-NoSplash",
+  "-abslog={{arksa.native_log_path}}",
+  "{{arksa.multihome_flag}}",
+  "{{arksa.cluster_dir_override_flag}}",
+  "{{arksa.mod_ids_flag}}",
+  "{{arksa.official_launch_flags}}",
+  "{{arksa.custom_launch_flags}}",
+]
+working_directory_template = "{{paths.install_root}}/ShooterGame/Binaries/Win64"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The dedicated server runs in the instance's private runtime. Native configuration, access lists, and cluster storage are prepared before launch; Unreal logs are written to the instance log directory."
+
+[storage]
+runtime_copy_exclusions = ["ShooterGame/Saved", "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt", "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt", "ShooterGame/Binaries/Win64/ShooterGame/Mods/83374"]
+saves_path_template = "{{paths.install_root}}/ShooterGame/Saved/{{instance.id}}"
+retained_paths = [
+  "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt",
+  "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt",
+]
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "peer"
+protocol = "udp"
+port = 7778
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 27020
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 300000
+
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "Broadcast {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_player", "ban_player"]
+response_codec = "ark_list_players"
+identity_kind = "eos_id"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "List players"
+label_zh_cn = "玩家列表"
+transport = "source_rcon"
+command_template = "ListPlayers"
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "KickPlayer {{target}}"
+target_label = "ARK account ID"
+target_label_zh_cn = "ARK 账户 ID"
+target_placeholder = "ARK/EOS account ID from ListPlayers"
+target_placeholder_zh_cn = "ListPlayers 输出中的 ARK/EOS 账户 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "source_rcon"
+command_template = "BanPlayer {{target}}"
+target_label = "ARK account ID"
+target_label_zh_cn = "ARK 账户 ID"
+target_placeholder = "ARK/EOS account ID from ListPlayers"
+target_placeholder_zh_cn = "ListPlayers 输出中的 ARK/EOS 账户 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "source_rcon"
+command_template = "UnbanPlayer {{target}}"
+target_label = "ARK account ID"
+target_label_zh_cn = "ARK 账户 ID"
+target_placeholder = "ARK/EOS account ID"
+target_placeholder_zh_cn = "ARK/EOS 账户 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "allow_no_check"
+label = "Allow no-check join immediately by account ID"
+label_zh_cn = "按账户 ID 立即允许免检加入"
+transport = "source_rcon"
+command_template = "AllowPlayerToJoinNoCheck {{target}}"
+target_label = "ARK account ID"
+target_label_zh_cn = "ARK 账户 ID"
+target_placeholder = "ARK/EOS account ID"
+target_placeholder_zh_cn = "ARK/EOS 账户 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "disallow_no_check"
+label = "Remove no-check join immediately by account ID"
+label_zh_cn = "按账户 ID 立即移出免检名单"
+transport = "source_rcon"
+command_template = "DisallowPlayerToJoinNoCheck {{target}}"
+target_label = "ARK account ID"
+target_label_zh_cn = "ARK 账户 ID"
+target_placeholder = "ARK/EOS account ID"
+target_placeholder_zh_cn = "ARK/EOS 账户 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[runtime.shutdown]
+# DoExit saves the world before engine and telemetry workers finish. Allow the
+# complete native process tree to exit after RCON closes its connection.
+grace_period_ms = 30000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "saveworld"
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+wait_after_ms = 5000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "DoExit"
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+wait_after_ms = 6000
+
+[mods.source]
+provider = "curseforge"
+label = "CurseForge"
+url = "https://www.curseforge.com/ark-survival-ascended"
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/ShooterGame/Binaries/Win64/ShooterGame/Mods/83374"
+target_label = "ShooterGame/Binaries/Win64/ShooterGame/Mods/83374"
+accepts = ["folder", "zip"]
+
+[mods.enablement]
+setting_key = "mod_ids_csv"
+setting_label = "ASA Mod IDs"
+id_strategy = "numeric_prefix"
+reference_strategy = "curseforge_project_id"
+reference_game_id = 83374
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon_and_server_rosters"
+reason = "ARK Survival Ascended renders RCON settings and schema-backed admin, exclusive join, and ban/no-check rosters. LanGame dispatches ListPlayers, kick, ban, unban, and no-check join commands through the instance RCON port."
+verification = "Start ShooterGameServer.exe on Windows, confirm GameUserSettings.ini and roster files are materialized, run ListPlayers over RCON, and verify kick/ban/unban/no-check join side effects against a test ARK account ID."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "peer", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

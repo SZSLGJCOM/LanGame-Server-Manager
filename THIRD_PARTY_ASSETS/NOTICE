@@ -1,0 +1,77 @@
+Third-Party Asset Redistribution Ledger
+=======================================
+
+Approved entries: Inter 4.1 variable UI fonts (see below).
+
+Approval applies only to the exact files listed below. This file does not
+infer permission from public availability, a download URL, a game
+installation, or an upstream product relationship.
+
+Before an asset can be listed here, its entry must identify all of the
+following:
+
+* exact repository path;
+* upstream owner and canonical source;
+* license name and version;
+* exact local evidence file or authoritative license URL;
+* required attribution or notice text; and
+* date on which the evidence was verified.
+
+Unknown, unverified, or proprietary assets must remain outside a public
+snapshot. Product names and trademarks remain the property of their respective
+owners.
+
+Inter 4.1 variable UI fonts
+--------------------------
+
+Repository paths:
+* apps/desktop/src/assets/fonts/InterVariable.woff2
+* apps/desktop/src/assets/fonts/InterVariable-Italic.woff2
+
+Upstream owner: The Inter Project Authors; project maintained by Rasmus Andersson.
+Canonical source: https://github.com/rsms/inter/releases/tag/v4.1
+Download: https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
+Archive entries: web/InterVariable.woff2, web/InterVariable-Italic.woff2
+License: SIL Open Font License, Version 1.1 (OFL-1.1).
+Local evidence: apps/desktop/public/fonts/inter/OFL.txt, copied byte-for-byte
+from LICENSE.txt in the same release archive. Vite copies it to
+dist/fonts/inter/OFL.txt; Tauri includes it with the frontend assets and as a
+separate installed resource at fonts/inter/OFL.txt.
+Required attribution: Copyright (c) 2016 The Inter Project Authors
+(https://github.com/rsms/inter). Retain this notice and the full OFL license
+with distributed copies. The fonts remain under OFL-1.1, not the repository
+source-available code license. Do not sell the font by itself or imply upstream endorsement.
+Modifications: none; the release WOFF2 files are bundled without subsetting,
+conversion or renaming of their internal font names.
+Evidence verified: 2026-09-27.
+
+SHA-256 (downloaded release and retained bytes):
+* Inter-4.1.zip: 9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e
+* InterVariable.woff2: 693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3
+* InterVariable-Italic.woff2: e564f652916db6c139570fefb9524a77c4d48f30c92928de9db19b6b5c7a262a
+* OFL.txt: 262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a
+
+The upstream release does not publish an asset digest; these digests pin the
+bytes retrieved from the author's official HTTPS release for future checks.
+
+Publication checks compare both retained fonts and OFL.txt against these
+reviewed digests. A same-name replacement or changed license must be reviewed
+and the ledger and scripts/third_party_asset_policy.py updated together. A
+snapshot containing a font must also contain its license. Hash agreement proves
+the reviewed bytes are retained, not independent ownership or legal clearance.
+
+Remote game media and project-created illustrations
+---------------------------------------------------
+
+Game covers, screenshots and trailers referenced by
+apps/desktop/src/data/module-store-data.json are runtime network resources,
+not approved third-party files in this ledger. The current build includes
+their URLs, not their downloaded image/video bytes. Runtime display, caching,
+authenticated LAN delivery, commercial use and redistribution each require
+an applicable upstream basis. A verified CDN origin, public URL or cacheable
+HTTP response is not that basis. Do not export a runtime media cache as source
+or add it to an installer on the strength of the network allowlist.
+
+The separately licensed Minecraft fallback illustration is recorded in NOTICE.
+Its reported in-house/AI creation does not license third-party game elements.
+Neither that record nor this ledger declares all game media cleared for release.

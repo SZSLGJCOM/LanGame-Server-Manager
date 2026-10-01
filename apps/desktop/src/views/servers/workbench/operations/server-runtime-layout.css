@@ -1,0 +1,43 @@
+.server-summary-shell {
+  display: grid;
+  gap: 12px;
+}
+
+.server-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+}
+
+.server-summary-item {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-card-muted) 84%, transparent);
+  border: 1px solid color-mix(in srgb, var(--shell-line) 68%, transparent);
+}
+
+.server-summary-item--wide {
+  grid-column: 1 / -1;
+}
+
+.server-summary-item--wide .detail-value {
+  overflow-wrap: anywhere;
+}
+
+.server-paths-shell {
+  display: grid;
+  gap: 8px;
+}
+
+.server-paths-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.server-path-item .detail-value {
+  overflow-wrap: anywhere;
+}

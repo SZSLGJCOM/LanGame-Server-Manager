@@ -1,0 +1,46 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalevolved",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-09-30",
+    "source_ids": ["map_processes"],
+    "build": "LGSM managed map process contract: shared INI and primary launch output. Per-map process ownership, ports and paths are verified by the ARK map runtime tests; native execution uses the separate opt-in lifecycle selector."
+  },
+  "coverage": { "editable": 0, "specialized": 1, "derived": 0, "generated": 0, "excluded": 0 },
+  "classifications": { "editable": [], "specialized": ["map_processes.additional_maps"], "derived": [], "generated": [], "excluded": [] },
+  "settings": {
+    "server_name": "LanGame Map Group",
+    "map_name": "TheIsland",
+    "max_players": 20,
+    "rcon_enabled": true,
+    "admin_password": "fixture-admin-password",
+    "cluster_id": "fixture-map-group",
+    "cluster_directory": "",
+    "auto_managed_mods": false,
+    "notify_admin_commands_in_chat": false,
+    "server_game_log": false,
+    "server_game_log_include_tribe_logs": false,
+    "no_transfer_from_filtering": false,
+    "additional_maps": [
+      { "id": "desert", "map_name": "ScorchedEarth_P", "name": "Scorched Earth", "enabled": true },
+      { "id": "paused", "map_name": "TheCenter", "name": "The Center", "enabled": false }
+    ]
+  },
+  "expected": {
+    "files": [{ "root": "config", "path": "GameUserSettings.ini", "format": "ini", "fragments": ["SessionName=LanGame Map Group", "RCONPort=27020"] }],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ShooterGameServer.exe",
+      "arguments": [
+        "TheIsland?AltSaveDirectoryName=acceptance-arksurvivalevolved?Port=7777?QueryPort=27015?MaxPlayers=20?SessionName=LanGame Map Group?RCONEnabled=true?RCONPort=27020",
+        "-NullRHI", "-Unattended", "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-evolved-server.log",
+        "-stdout",
+        "-AllowStdOutLogVerbosity",
+        "-FORCELOGFLUSH",
+        "-ClusterDirOverride={{paths.saves_dir}}\\acceptance-arksurvivalevolved\\cluster",
+        "-MaxNumOfSaveBackups=20", "-MinimumTimeBetweenInventoryRetrieval=3600", "-clusterid=fixture-map-group"
+      ]
+    }
+  }
+}

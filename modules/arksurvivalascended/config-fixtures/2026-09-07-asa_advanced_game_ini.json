@@ -1,0 +1,121 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-07",
+    "source_ids": [
+      "asa_advanced_game_ini"
+    ],
+    "build": "Beacon ASA exporters at 94cf4d4258aae0f5190781cddfe24a327c149503 (2026-08-27), Wildcard Community Crunch 468 (2025-07-25); native materialization contract only, no new game-server run"
+  },
+  "coverage": {
+    "editable": 15,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.SupplyCrateLootQualityMultiplier",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.OverrideMaxExperiencePointsPlayer",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.OverrideMaxExperiencePointsDino",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.bAutoUnlockAllEngrams",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.ConfigOverrideSupplyCrateItems",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.ConfigOverrideItemCraftingCosts",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.ConfigOverrideItemMaxQuantity",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.ConfigOverrideNPCSpawnEntriesContainer",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.ConfigSubtractNPCSpawnEntriesContainer",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.DinoSpawnWeightMultipliers",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.NPCReplacements",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.OverridePlayerLevelEngramPoints",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.EngramEntryAutoUnlocks",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoTamed<_type>[<integer>]",
+      "asa_advanced_game_ini./script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoWild[<integer>]"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "supply_crate_loot_quality_multiplier": 2.5,
+    "override_max_experience_points_player": 120000,
+    "override_max_experience_points_dino": 85000,
+    "auto_unlock_all_engrams": true,
+    "config_override_supply_crate_items": "(SupplyCrateClassString=\"SupplyCrate_Level03_C\",MinItemSets=1,MaxItemSets=1,NumItemSetsPower=1.0,bSetsRandomWithoutReplacement=true,ItemSets=((MinNumItems=1,MaxNumItems=1,NumItemsPower=1.0,SetWeight=1.0,bItemsRandomWithoutReplacement=true,ItemEntries=((EntryWeight=1.0,ItemClassStrings=(\"PrimalItemResource_Stone_C\"),ItemsWeights=(1.0),MinQuantity=10.0,MaxQuantity=10.0,MinQuality=0.0,MaxQuality=0.0,bForceBlueprint=false,ChanceToBeBlueprintOverride=0.0)))))",
+    "config_override_item_crafting_costs": "(ItemClassString=\"PrimalItem_WeaponStoneHatchet_C\",BaseCraftingResourceRequirements=((ResourceItemTypeString=\"PrimalItemResource_Stone_C\",BaseResourceRequirement=2.0,bCraftingRequireExactResourceType=false)))",
+    "config_override_item_max_quantity": "(ItemClassString=\"PrimalItemResource_Stone_C\",Quantity=(MaxItemQuantity=1000,bIgnoreMultiplier=true))",
+    "config_override_npc_spawn_entries_container": "(NPCSpawnEntriesContainerClassString=\"DinoSpawnEntriesBeach_C\",NPCSpawnEntries=((AnEntryName=\"Dodo\",EntryWeight=0.5,NPCsToSpawnStrings=(\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\"))),NPCSpawnLimits=((NPCClassString=\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\",MaxPercentageOfDesiredNumToAllow=0.25)))",
+    "config_subtract_npc_spawn_entries_container": "(NPCSpawnEntriesContainerClassString=\"DinoSpawnEntriesBeach_C\",NPCSpawnEntries=((NPCsToSpawnStrings=(\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\"))))",
+    "dino_spawn_weight_multipliers": "(DinoNameTag=\"Raptor\",SpawnWeightMultiplier=0.5,OverrideSpawnLimitPercentage=true,SpawnLimitPercentage=0.1)",
+    "npc_replacements": "(FromClassName=\"Raptor_Character_BP_C\",ToClassName=\"Dodo_Character_BP_C\")\n(FromClassName=\"Rex_Character_BP_C\",ToClassName=\"\")",
+    "override_player_level_engram_points": "8\n12\n0",
+    "engram_entry_auto_unlocks": "(EngramClassName=\"EngramEntry_StoneHatchet_C\",LevelToAutoUnlock=2)",
+    "per_level_stats_multiplier_dino_tamed_type_integer": "[0]=0.2\n_Add[0]=0.14\n_Affinity[0]=0.44\nPerLevelStatsMultiplier_DinoTamed[8]=0.17",
+    "per_level_stats_multiplier_dino_wild_integer": "0=1.5\n[7]=2.0",
+    "server_name": "LanGame ASA advanced configuration",
+    "admin_password": "fixture-admin-password",
+    "server_password": "fixture-server-password"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "Game.ini",
+        "format": "ini",
+        "fragments": [
+          "[/script/shootergame.shootergamemode]",
+          "SupplyCrateLootQualityMultiplier=2.5",
+          "OverrideMaxExperiencePointsPlayer=120000",
+          "OverrideMaxExperiencePointsDino=85000",
+          "bAutoUnlockAllEngrams=true",
+          "ConfigOverrideSupplyCrateItems=(SupplyCrateClassString=\"SupplyCrate_Level03_C\",MinItemSets=1,MaxItemSets=1,NumItemSetsPower=1.0,bSetsRandomWithoutReplacement=true,ItemSets=((MinNumItems=1,MaxNumItems=1,NumItemsPower=1.0,SetWeight=1.0,bItemsRandomWithoutReplacement=true,ItemEntries=((EntryWeight=1.0,ItemClassStrings=(\"PrimalItemResource_Stone_C\"),ItemsWeights=(1.0),MinQuantity=10.0,MaxQuantity=10.0,MinQuality=0.0,MaxQuality=0.0,bForceBlueprint=false,ChanceToBeBlueprintOverride=0.0)))))",
+          "ConfigOverrideItemCraftingCosts=(ItemClassString=\"PrimalItem_WeaponStoneHatchet_C\",BaseCraftingResourceRequirements=((ResourceItemTypeString=\"PrimalItemResource_Stone_C\",BaseResourceRequirement=2.0,bCraftingRequireExactResourceType=false)))",
+          "ConfigOverrideItemMaxQuantity=(ItemClassString=\"PrimalItemResource_Stone_C\",Quantity=(MaxItemQuantity=1000,bIgnoreMultiplier=true))",
+          "ConfigOverrideNPCSpawnEntriesContainer=(NPCSpawnEntriesContainerClassString=\"DinoSpawnEntriesBeach_C\",NPCSpawnEntries=((AnEntryName=\"Dodo\",EntryWeight=0.5,NPCsToSpawnStrings=(\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\"))),NPCSpawnLimits=((NPCClassString=\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\",MaxPercentageOfDesiredNumToAllow=0.25)))",
+          "ConfigSubtractNPCSpawnEntriesContainer=(NPCSpawnEntriesContainerClassString=\"DinoSpawnEntriesBeach_C\",NPCSpawnEntries=((NPCsToSpawnStrings=(\"/Game/PrimalEarth/Dinos/Dodo/Dodo_Character_BP.Dodo_Character_BP_C\"))))",
+          "DinoSpawnWeightMultipliers=(DinoNameTag=\"Raptor\",SpawnWeightMultiplier=0.5,OverrideSpawnLimitPercentage=true,SpawnLimitPercentage=0.1)",
+          "NPCReplacements=(FromClassName=\"Raptor_Character_BP_C\",ToClassName=\"Dodo_Character_BP_C\")",
+          "NPCReplacements=(FromClassName=\"Rex_Character_BP_C\",ToClassName=\"\")",
+          "OverridePlayerLevelEngramPoints=8",
+          "OverridePlayerLevelEngramPoints=12",
+          "OverridePlayerLevelEngramPoints=0",
+          "EngramEntryAutoUnlocks=(EngramClassName=\"EngramEntry_StoneHatchet_C\",LevelToAutoUnlock=2)",
+          "PerLevelStatsMultiplier_DinoTamed[0]=0.2",
+          "PerLevelStatsMultiplier_DinoTamed_Add[0]=0.14",
+          "PerLevelStatsMultiplier_DinoTamed_Affinity[0]=0.44",
+          "PerLevelStatsMultiplier_DinoTamed[8]=0.17",
+          "PerLevelStatsMultiplier_DinoWild[0]=1.5",
+          "PerLevelStatsMultiplier_DinoWild[7]=2.0"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "arguments": [
+        "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA advanced configuration?RCONEnabled=true?RCONPort=27020",
+        "-port=7777",
+        "-WinLiveMaxPlayers=30",
+        "-NullRHI",
+        "-Unattended",
+        "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+        "-servergamelog",
+        "-servergamelogincludetribelogs",
+        "-ServerRCONOutputTribeLogs",
+        "-NoTransferFromFiltering"
+      ]
+    }
+  }
+}

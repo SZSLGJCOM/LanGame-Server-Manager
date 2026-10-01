@@ -1,0 +1,188 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "Steam public build 23662689 (updated 2026-06-10 UTC) matches the local validated package. Its generated config.json contains nine server settings. LanGame models all nine, including nullable AutoCreateWorldSeed and the developer-documented SleepThresholdMs control. The Windows package remains framework-dependent on .NET 8, and the exact-build smoke reached Server ready and accepted list/save/stop through managed stdin."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/app/1805320/announcements/"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The official publisher feed identifies 0.26.1_6 on 2026-09-04; the 0.26.1_3 notes report a configuration-reset fix. The existing installed app 4763510 manifest reports build 25128761. Read-only config.json key inspection finds the same nine native keys: eight operator settings and the instance-owned Port. SleepThresholdMs remains covered. An existing generated file is not a clean-generation or latest-public-branch proof."
+
+[[sources]]
+id = "steam_public_build_23662689"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_update 1 +app_info_print 4763510 +quit"
+authority = "steam_public_branch"
+description = "Public branch build 23662689, timeupdated 2026-06-10T14:28:16Z; the local validated appmanifest matches this build."
+
+[[sources]]
+id = "installed_online_player_command"
+kind = "install_probe"
+path = "Server.dll: Server.Program.CommandChecker / CandideServer.dll: BaseServer.CheckCommand / ConnectedPeer.ToString"
+authority = "downloaded_steamcmd_server_package"
+description = "Read-only IL inspection of build 23662689 confirms redirected Console.In.ReadLine is queued to CheckCommand. list emits There are count players online: and available name (ID) - position - Peer ID - connection rows. LanGame requires every counted row in a fresh capture and exposes only character names; incomplete character loading cannot become an authoritative empty list."
+
+[[sources]]
+id = "installed_save_root_build_25128761"
+kind = "install_probe"
+path = "Server.dll: StandaloneServerManager / Program.Main; CandideServer.dll: BaseServer.CheckCommand / GameSaveManager"
+authority = "downloaded_steamcmd_server_package"
+description = "2026-09-20 read-only IL inspection of installed Steam build 25128761 verifies the save root independently of the older configuration and smoke evidence. StandaloneServerManager initializes SaveGamesFolder to saved_worlds and creates worlds under Path.Join(SaveGamesFolder, world.Name). Program.Main sets BaseServer.SaveGamePath to Path.Combine(SaveGamesFolder, world.Name); manual save, stop, and autosave pass that path through QueueSave to SaveGameToDirectory. GameSaveManager writes game_state and world_desc plus their temporary and backup files under that world directory. Preserve the complete saved_worlds directory while allowing server payload removal. Server.dll SHA256 8e11b02f594a1e08e9d1e8fc4ef663728193951b595eccd966425c5b1f2c8e69; CandideServer.dll SHA256 64434004d53b50908c6b18769f540c24ea5cf4105e4eec9c5f9656b202169a44. No server process was started for this inspection."
+
+[[sources]]
+id = "steamcmd_appinfo_4763510_2026_07_01"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_print 4763510 +quit"
+authority = "steamcmd_appinfo"
+description = "2026-07-01 app_info_print 4763510: name Romestead Dedicated Server, type Tool, parent 1805320, oslist windows,linux, osarch 64, freetodownload 1, installdir romestead-server, executable Server.exe."
+
+[[sources]]
+id = "steamcmd_app_update_4763510_2026_07_01"
+kind = "install_probe"
+path = "steamcmd +force_install_dir <validated-install-root> +login anonymous +app_update 4763510 validate +quit"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-01 anonymous SteamCMD app_update 4763510 validate succeeded and installed Server.exe plus framework-dependent .NET 8 server files under <validated-install-root>."
+
+[[sources]]
+id = "romestead_smoke_launch_2026_07_01"
+kind = "runtime_probe"
+path = "Server.exe with DOTNET_ROOT=<portable-dotnet-root> and rendered config.json"
+authority = "local_smoke_launch"
+description = "Local smoke launch first failed with missing .NET hostfxr, then succeeded with portable Microsoft.NETCore.App 8.0.28. The server created LanGameSmokeWorld, bound UDP 18050 on IPv4 and IPv6, reached Server ready, responded to list with zero players, saved, and stopped cleanly."
+
+[[sources]]
+id = "romestead_server_setup_guide_2026_05_28"
+kind = "documentation"
+path = "https://xgamingserver.com/blog/install-romestead-server-linux/"
+authority = "public_server_setup_guide"
+description = "Documents SteamCMD AppID 4763510, Windows Server.exe, Linux dotnet Server.dll, config.json, default UDP 8050, max players 8, and current server console commands."
+
+[[sources]]
+id = "config_json"
+kind = "config_file"
+path = "config.json"
+authority = "exact_installed_server_output"
+description = "The validated public build generated the complete nine-key root config.json surface, including AutoCreateWorldSeed and SleepThresholdMs."
+
+[[sources]]
+id = "romestead_hotfix_0_25_1_4"
+kind = "documentation"
+path = "Steam announcement 672870313012233904"
+authority = "official_developer_patch_notes"
+description = "The developer documents SleepThresholdMs default 10, active range 1.0-16.5 ms, and -1 as the no-sleep low-jitter mode."
+url = "https://steamcommunity.com/games/1805320/announcements/detail/672870313012233904"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "Server.exe command line"
+authority = "steamcmd_appinfo"
+description = "LanGame starts Server.exe from the install root and appends operator-provided raw launch arguments when needed."
+
+[[sources]]
+id = "start_romestead_bat"
+kind = "materializer"
+path = "start-romestead.bat"
+authority = "local_smoke_launch"
+description = "Historical 2026-07-01 wrapper smoke: the generated wrapper set DOTNET_ROOT and PATH to a portable LanGame .NET runtime when <portable-dotnet-root> was present, then started Server.exe with any operator-provided raw launch arguments. The 2026-09-20 launch-plan change resolves the configured tool root independently of install-directory depth; see dotnet_apphost_runtime_discovery."
+
+[[sources]]
+id = "dotnet_apphost_runtime_discovery"
+kind = "documentation"
+path = "DOTNET_ROOT_X64 / DOTNET_ROOT apphost runtime discovery"
+url = "https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables"
+authority = "official_microsoft_dotnet_documentation"
+description = "Verified 2026-09-20: generated x64 apphosts consult DOTNET_ROOT_X64 before DOTNET_ROOT. Microsoft app-launch troubleshooting also documents that a selected private .NET root can prevent discovery of an otherwise usable system installation (https://learn.microsoft.com/en-us/dotnet/core/runtime-discovery/troubleshoot-app-launch). LanGame supplies these child-process environment values only when the configured SteamCMD sibling dotnet directory contains dotnet.exe, a .NET 8 hostfxr.dll, and the Microsoft.NETCore.App runtime files coreclr.dll, hostpolicy.dll and System.Private.CoreLib.dll at a version matching Server.runtimeconfig.json; otherwise the existing system resolver remains unchanged. Unit and real two-instance creation regressions cover shared, private-copy, relocated install roots, missing files, incompatible versions, and exact-patch policy."
+
+[[sources]]
+id = "isolated_launch_lifecycle_2026_09_20"
+kind = "runtime_probe"
+path = "Steam app 4763510 build 25128761; isolated command-pipeline fixture"
+authority = "exact_installed_server_lifecycle_probe"
+description = "2026-09-20: the old install-relative wrapper reproducibly exited with x64 apphost 8.0.22 error 0x80008083, reporting no .NET location and no hostfxr.dll. Server.runtimeconfig.json requires Microsoft.NETCore.App 8.0.0. With the launch plan resolving the configured portable 8.0.28 runtime, both a fresh shared install and an actual second private-copy instance reached their owned UDP game endpoint, generated and retained four save files through stop and server-package removal, preserved backup data in the deleted-instance archive, and removed all disposable fixture resources. The second-instance run also verified the first unstarted instance's configuration and saves were unchanged, explicitly archived that instance, and checked that no instance database rows remained. Existing worlds were excluded from the independent package copies; the official package and tool runtime were read-only inputs. No client join or nonempty player-list claim is made."
+
+[[sources]]
+id = "player_management"
+kind = "documentation"
+path = "dedicated server console"
+authority = "public_server_setup_guide"
+description = "Public setup material documents list, say, kick, ban, unban, save, and stop console commands, but LanGame has not yet verified managed stdin command output and moderation side effects on Windows."
+
+[[items]]
+source = "config_json"
+key = "AutoStartWorldName"
+schema_key = "auto_start_world_name"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "AutoCreateAndLoadWorld"
+schema_key = "auto_create_and_load_world"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "AutoCreateWorldSize"
+schema_key = "auto_create_world_size"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "AutoCreateWorldSeed"
+schema_key = "auto_create_world_seed"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "Password"
+schema_key = "password"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "EnableCheats"
+schema_key = "enable_cheats"
+surface = "config_file"
+
+[[items]]
+source = "config_json"
+key = "SleepThresholdMs"
+schema_key = "sleep_threshold_ms"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "config_json"
+key = "Port"
+reason = "Port is owned by LanGame default port binding game/UDP 8050 and rendered from the instance port map, not exposed as a duplicate schema field."
+
+[[exclusions]]
+source = "player_management"
+key = "list/kick/ban runtime controls"
+reason = "Console command names are documented, but LanGame has not yet captured a Windows managed-stdin smoke with online clients, command responses, and moderation side effects."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/games/1805320/announcements/detail/672870313012233904"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 9 presentation entries reviewed in EN/ZH against the referenced package/docs. Name includes milliseconds; -1 disables sleeping and may increase CPU use. World name, seed and size explain creation-only effect; random seed preserves nullable native behavior. Boundaries: enable_cheats: official guide describes a reserved switch; no current native gameplay verification establishes whether it is effective."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "Server.dll"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Build 25128761 static IL confirms EnableCheats is active. Server.dll Program.Main (06000001), offsets 015D through 0169, applies it to loaded worlds; StandaloneServerManager.GenerateNewWorld (06000008), offsets 005D through 0069, applies it to new worlds. CandideServer.dll BossServerService.OnReceive_BossSpawnCheat (060005F8), SimpleInventoryServerService.OnReceive_AddItemCheat (06000737), TimeServerService.OnReceive_Time (0600074A), and WeatherServerService.OnReceive_SetWeather (06000776) return immediately when GameConfig.CheatsEnabled is false. Removed the stale reserved-for-future-use claim and described the confirmed server-side effects. This establishes the configuration gate, without claiming that client command accessibility was exercised. Primary binary SHA256 8e11b02f594a1e08e9d1e8fc4ef663728193951b595eccd966425c5b1f2c8e69."

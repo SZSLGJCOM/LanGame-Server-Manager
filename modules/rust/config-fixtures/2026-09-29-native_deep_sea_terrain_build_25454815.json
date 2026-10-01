@@ -1,0 +1,72 @@
+{
+  "fixture_version": 1,
+  "module_id": "rust",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-29",
+    "build": "Installed build 25454815 read-only metadata and IL; deterministic enabled terrain configuration",
+    "source_ids": [
+      "facepunch_september_terrain_2026",
+      "native_deep_sea_terrain_build_25454815"
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "native_deep_sea_terrain_build_25454815.deepsea.terrain_everywhere"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "LanGame Rust acceptance",
+    "max_players": 10,
+    "rcon_password": "acceptance-rust-rcon",
+    "deep_sea_terrain_everywhere": true
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/server.cfg",
+        "format": "text",
+        "fragments": [
+          "deepsea.terrain_everywhere true"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RustDedicated.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-logfile",
+        "-",
+        "+server.ip",
+        "0.0.0.0",
+        "+server.identity",
+        "acceptance-rust",
+        "+world.configfile",
+        "world-config.json",
+        "+server.port",
+        "28015",
+        "+server.queryport",
+        "28017",
+        "+rcon.port",
+        "28016",
+        "+rcon.password",
+        "acceptance-rust-rcon",
+        "+rcon.web",
+        "true"
+      ]
+    }
+  }
+}

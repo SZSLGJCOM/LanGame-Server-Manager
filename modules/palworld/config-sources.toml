@@ -1,0 +1,943 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "SteamCMD anonymous app_update 2394010 validate succeeded against the validated package on 2026-07-13. The installed manifest reports Palworld Dedicated Server buildid 24088465, TargetBuildID 24088465, and SizeOnDisk 6047845660. The packaged 1.0 DefaultPalWorldSettings.ini points operators to Pal/Saved/Config/WindowsServer/PalWorldSettings.ini; LanGame materializes that active path and covers the complete official OptionSettings keyset."
+
+[[sources]]
+id = "palworld_stdout_build_25247047"
+kind = "documentation"
+path = "modules/palworld/runtime-fixtures/2026-10-01-stdout-device.json"
+authority = "installed_palworld_binary_static_analysis"
+description = "Read-only inspection on 2026-10-01 identifies installed build 25247047. Its startup parses stdout before constructing and registering the output device; FullStdOutLogOutput sets that device's allowed verbosity to 7. The direct Cmd executable remains unchanged. The module now passes both flags, retaining game log-format settings. Run 103 on desktop build a580014ff72b subsequently passed current-instance native readiness, 30 seconds of observation, retained transcript comparison and normal stop (exit 0). All 24 comparable UI samples matched; one stopped-state sample was not comparable after selection changed. These observations do not establish indefinite capture, raw-byte completeness or every dialog path."
+
+[[sources]]
+id = "palworld_configuration_1_0_4"
+kind = "documentation"
+path = "Pal/Saved/Config/WindowsServer/PalWorldSettings.ini"
+authority = "Pocketpair"
+url = "https://docs.palworldgame.com/settings-and-operation/configuration/"
+description = "Official documentation version 1.0.4 checked on 2026-09-07 lists FishingDifficultyRate (0.1 to 1.0) and bAllowEnemyCampSpawnNearBaseCamp. It does not state their defaults; the renderer omits unset overrides. This source does not establish a new dedicated-server installation or runtime smoke result."
+
+[[sources]]
+id = "palworld_arguments_1_0_4"
+kind = "documentation"
+path = "PalServer-Win64-Shipping-Cmd.exe"
+authority = "Pocketpair"
+url = "https://docs.palworldgame.com/settings-and-operation/arguments/"
+description = "Official documentation version 1.0.4 checked on 2026-09-07 documents -enable-gamedata-api. The opt-in launch flag is omitted by default. The same page retains optional multithread flags and advises that leaving them unset may improve performance in 1.0 and later; LanGame already leaves these flags unset by default."
+
+[[items]]
+source = "palworld_configuration_1_0_4"
+key = "FishingDifficultyRate"
+schema_key = "fishing_difficulty_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_configuration_1_0_4"
+key = "bAllowEnemyCampSpawnNearBaseCamp"
+schema_key = "enemy_camp_spawn_near_base"
+surface = "config_file"
+
+[[items]]
+source = "palworld_arguments_1_0_4"
+key = "-enable-gamedata-api"
+schema_key = "gamedata_api_enabled"
+surface = "launch_arg"
+
+[[sources]]
+id = "steamcmd_anonymous_app_2394010"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_2394010.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 2394010 validate completed successfully. Manifest name Palworld Dedicated Server, buildid 24088465, TargetBuildID 24088465, SizeOnDisk 6047845660, installed depots 1004 and 2394011."
+
+[[sources]]
+id = "installed_default_palworld_settings"
+kind = "config_file"
+path = "DefaultPalWorldSettings.ini -> Pal/Saved/Config/WindowsServer/PalWorldSettings.ini"
+authority = "installed_palworld_dedicated_server_package"
+description = "DefaultPalWorldSettings.ini is a sample default server settings file and says Changes to this file will NOT be reflected on the server; active settings must be written to Pal/Saved/Config/WindowsServer/PalWorldSettings.ini. The validated sample includes CrossplayPlatforms=(Steam,Xbox,PS5,Mac)."
+
+[[sources]]
+id = "palworld_settings"
+kind = "config_file"
+path = "Pal/Saved/Config/WindowsServer/PalWorldSettings.ini"
+authority = "official_palworld_dedicated_server_settings"
+description = "Palworld PalWorldSettings.ini OptionSettings keys for room identity, services, world rules, PvP, rates, performance, and internal advanced flags."
+url = "https://docs.palworldgame.com/settings-and-operation/configuration/"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "PalServer-Win64-Shipping-Cmd.exe"
+authority = "official_palworld_dedicated_server_startup"
+description = "Palworld launch flags for public lobby publishing, advertised address, log format, performance threads, worker count, and ports."
+url = "https://docs.palworldgame.com/settings-and-operation/arguments/"
+
+[[sources]]
+id = "palworld_rest_players"
+kind = "documentation"
+path = "v1/api/players"
+authority = "official_palworld_rest_api"
+url = "https://docs.palworldgame.com/api/rest-api/players/"
+description = "The official 1.0.4 API schema inspected on 2026-09-07 defines players with name, accountName, playerId, userId, and ping. LanGame projects name, platform userId, and ping from authenticated local REST requests. Fixtures are synthetic schema cases, not connected-player captures."
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "Palworld RCON"
+authority = "official_palworld_rcon_commands"
+description = "Palworld RCON commands used by LanGame for Broadcast, ShowPlayers, KickPlayer, BanPlayer, UnBanPlayer, Save, and Shutdown."
+url = "https://docs.palworldgame.com/settings-and-operation/commands/"
+
+[[sources]]
+id = "palworld_default_palworld_settings"
+kind = "config_file"
+path = "DefaultPalWorldSettings.ini"
+authority = "installed_palworld_dedicated_server_package"
+description = "Upstream DefaultPalWorldSettings.ini packaged with Palworld dedicated server."
+
+[[sources]]
+id = "palworld_mod_settings_ini"
+kind = "config_file"
+path = "Mods/PalModSettings.ini"
+authority = "installed_palworld_dedicated_server_package"
+description = "Dedicated server mod settings bundle used by active PalMods runtime (if present)."
+
+[[sources]]
+id = "palworld_server_mods"
+kind = "config_file"
+path = "Pal/Binaries/Win64/Mods/PalModSettings.ini and Pal/Binaries/Win64/Mods/Workshop/*/Info.json"
+authority = "official_palworld_dedicated_server_mods"
+description = "Official Palworld dedicated-server mod workflow: stage Workshop item folders under Mods/Workshop and enable Info.json PackageName entries through Mods/PalModSettings.ini ActiveModList."
+url = "https://docs.palworldgame.com/settings-and-operation/mod/"
+
+[[sources]]
+id = "palworld_steam_settings"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_settings/*"
+authority = "installed_palworld_dedicated_server_package"
+description = "Steamworks runtime settings root shipped under steam_settings for Palworld."
+[[sources]]
+id = "palworld_steam_settings_examples"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_settings/_examples/*"
+authority = "installed_palworld_dedicated_server_package"
+description = "Steamworks example settings under steam_settings/_examples for Palworld."
+
+[[sources]]
+id = "palworld_steam_settings_bundle_recursive"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv153/Win64/steam_settings/**/*"
+authority = "installed_palworld_dedicated_server_package"
+description = "Installed Palworld Steamworks setting tree including examples and runtime JSON/INI payloads."
+
+[[sources]]
+id = "palworld_runtime_bundle_json"
+kind = "config_file"
+path = "Pal/**/*.json"
+authority = "installed_palworld_dedicated_server_package"
+description = "Installed Palworld JSON assets under Pal runtime directories."
+
+[[sources]]
+id = "palworld_runtime_bundle_ini"
+kind = "config_file"
+path = "Pal/**/*.ini"
+authority = "installed_palworld_dedicated_server_package"
+description = "Installed Palworld INI assets under Pal runtime directories."
+
+[[items]]
+source = "palworld_settings"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ServerDescription"
+schema_key = "server_description"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ServerPlayerMaxNum"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ServerPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AdminPassword"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-publiclobby"
+schema_key = "community_server"
+surface = "launch_arg"
+
+[[items]]
+source = "palworld_settings"
+key = "PublicIP"
+schema_key = "public_ip"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PublicPort"
+schema_key = "public_port"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "Region"
+schema_key = "region"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "CrossplayPlatforms"
+schema_key = "crossplay_platforms"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bUseAuth"
+schema_key = "use_auth"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bShowPlayerList"
+schema_key = "show_player_list"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bIsShowJoinLeftMessage"
+schema_key = "join_left_message"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowClientMod"
+schema_key = "allow_client_mod"
+surface = "config_file"
+
+[[items]]
+source = "palworld_server_mods"
+key = "Mods/PalModSettings.ini:ActiveModList"
+schema_key = "mod_package_names"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bIsUseBackupSaveData"
+schema_key = "use_backup_save_data"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "LogFormatType"
+schema_key = "log_format"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RCONEnabled"
+schema_key = "rcon_enabled"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RESTAPIEnabled"
+schema_key = "rest_api_enabled"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BanListURL"
+schema_key = "ban_list_url"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableFastTravel"
+schema_key = "enable_fast_travel"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableFastTravelOnlyBaseCamp"
+schema_key = "enable_fast_travel_only_base_camp"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableInvaderEnemy"
+schema_key = "enable_invader_enemy"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "EnablePredatorBossPal"
+schema_key = "enable_predator_boss_pal"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bBuildAreaLimit"
+schema_key = "build_area_limit"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bExistPlayerAfterLogout"
+schema_key = "exist_player_after_logout"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bIsStartLocationSelectByMap"
+schema_key = "is_start_location_select_by_map"
+surface = "config_file"
+
+[[exclusions]]
+source = "palworld_settings"
+key = "bIsMultiplay"
+reason = "The local-world title flow passes this flag as bListenServer to choose a local co-op host. The dedicated executable selects dedicated and multiplayer mode independently, so this is no longer offered or emitted by the dedicated-server module. Stored JSON and existing native entries are retained. See native_blueprint_semantics_build_25247047."
+
+[[exclusions]]
+source = "palworld_settings"
+key = "CoopPlayerMaxNum"
+reason = "The current dedicated executable build 25247047 takes the dedicated capacity branch using ServerPlayerMaxNum; CoopPlayerMaxNum belongs to the skipped co-op branch. It is no longer offered or emitted by this dedicated-server module. Existing stored JSON values are not migrated or deleted. See native_semantics_build_25247047."
+
+[[items]]
+source = "palworld_settings"
+key = "AutoSaveSpan"
+schema_key = "auto_save_span"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAutoResetGuildNoOnlinePlayers"
+schema_key = "auto_reset_guild_no_online_players"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AutoResetGuildTimeNoOnlinePlayers"
+schema_key = "auto_reset_guild_time_no_online_players"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowGlobalPalboxExport"
+schema_key = "allow_global_palbox_export"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowGlobalPalboxImport"
+schema_key = "allow_global_palbox_import"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowEnhanceStat_Health"
+schema_key = "allow_enhance_stat_health"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowEnhanceStat_Attack"
+schema_key = "allow_enhance_stat_attack"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowEnhanceStat_Stamina"
+schema_key = "allow_enhance_stat_stamina"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowEnhanceStat_Weight"
+schema_key = "allow_enhance_stat_weight"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAllowEnhanceStat_WorkSpeed"
+schema_key = "allow_enhance_stat_work_speed"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bHardcore"
+schema_key = "hardcore"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bCharacterRecreateInHardcore"
+schema_key = "character_recreate_in_hardcore"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RandomizerType"
+schema_key = "randomizer_type"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RandomizerSeed"
+schema_key = "randomizer_seed"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bIsRandomizerPalLevelRandom"
+schema_key = "is_randomizer_pal_level_random"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bInvisibleOtherGuildBaseCampAreaFX"
+schema_key = "invisible_other_guild_base_camp_area_fx"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bActiveUNKO"
+schema_key = "active_unko"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableAimAssistPad"
+schema_key = "enable_aim_assist_pad"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableAimAssistKeyboard"
+schema_key = "enable_aim_assist_keyboard"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bIsPvP"
+schema_key = "is_pvp"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnablePlayerToPlayerDamage"
+schema_key = "enable_player_to_player_damage"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableFriendlyFire"
+schema_key = "enable_friendly_fire"
+surface = "config_file"
+
+[[exclusions]]
+source = "palworld_settings"
+key = "bEnableDefenseOtherGuildPlayer"
+reason = "No effective dedicated-server configuration consumer is established for this flag. The current official parameter guide omits it; current native and decoded Blueprint evidence only establishes declaration, storage and preset assignment, not its gameplay effect. It is excluded as unsupported_semantics, not declared dead. Stored JSON and existing native entries are retained. See unsupported_boolean_semantics_build_25247047."
+
+[[items]]
+source = "palworld_settings"
+key = "bCanPickupOtherGuildDeathPenaltyDrop"
+schema_key = "can_pickup_other_guild_death_penalty_drop"
+surface = "config_file"
+
+[[exclusions]]
+source = "palworld_settings"
+key = "bEnableNonLoginPenalty"
+reason = "No effective dedicated-server configuration consumer is established for this flag. The current official parameter guide omits it; current native and decoded Blueprint evidence only establishes declaration, storage and preset assignment, not its gameplay effect. It is excluded as unsupported_semantics, not declared dead. Stored JSON and existing native entries are retained. See unsupported_boolean_semantics_build_25247047."
+
+[[items]]
+source = "palworld_settings"
+key = "DeathPenalty"
+schema_key = "death_penalty"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bPalLost"
+schema_key = "pal_lost"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BlockRespawnTime"
+schema_key = "block_respawn_time"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RespawnPenaltyDurationThreshold"
+schema_key = "respawn_penalty_duration_threshold"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "RespawnPenaltyTimeScale"
+schema_key = "respawn_penalty_time_scale"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bDisplayPvPItemNumOnWorldMap_BaseCamp"
+schema_key = "display_pvp_item_num_on_world_map_base_camp"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bDisplayPvPItemNumOnWorldMap_Player"
+schema_key = "display_pvp_item_num_on_world_map_player"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bAdditionalDropItemWhenPlayerKillingInPvPMode"
+schema_key = "additional_drop_item_when_player_killing_in_pvp_mode_enabled"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AdditionalDropItemWhenPlayerKillingInPvPMode"
+schema_key = "additional_drop_item_when_player_killing_in_pvp_mode"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AdditionalDropItemNumWhenPlayerKillingInPvPMode"
+schema_key = "additional_drop_item_num_when_player_killing_in_pvp_mode"
+surface = "config_file"
+
+[[exclusions]]
+source = "palworld_settings"
+key = "Difficulty"
+reason = "The dedicated startup branch copies individual configured values and skips the non-dedicated menu preset application. Difficulty remains a preset identifier and telemetry metadata, not a dedicated multiplier control; it is no longer offered or emitted. Stored JSON and existing native entries are retained. See native_blueprint_semantics_build_25247047."
+
+[[items]]
+source = "palworld_settings"
+key = "DayTimeSpeedRate"
+schema_key = "day_time_speed_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "NightTimeSpeedRate"
+schema_key = "night_time_speed_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ExpRate"
+schema_key = "exp_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalCaptureRate"
+schema_key = "pal_capture_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalSpawnNumRate"
+schema_key = "pal_spawn_num_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "WorkSpeedRate"
+schema_key = "work_speed_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "CollectionDropRate"
+schema_key = "collection_drop_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "CollectionObjectHpRate"
+schema_key = "collection_object_hp_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "CollectionObjectRespawnSpeedRate"
+schema_key = "collection_object_respawn_speed_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "EnemyDropItemRate"
+schema_key = "enemy_drop_item_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BuildObjectHpRate"
+schema_key = "build_object_hp_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BuildObjectDamageRate"
+schema_key = "build_object_damage_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BuildObjectDeteriorationDamageRate"
+schema_key = "build_object_deterioration_damage_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerDamageRateAttack"
+schema_key = "player_damage_rate_attack"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerDamageRateDefense"
+schema_key = "player_damage_rate_defense"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerStomachDecreaceRate"
+schema_key = "player_stomach_decreace_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerStaminaDecreaceRate"
+schema_key = "player_stamina_decreace_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerAutoHPRegeneRate"
+schema_key = "player_auto_hp_regene_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerAutoHpRegeneRateInSleep"
+schema_key = "player_auto_hp_regene_rate_in_sleep"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalDamageRateAttack"
+schema_key = "pal_damage_rate_attack"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalDamageRateDefense"
+schema_key = "pal_damage_rate_defense"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalStomachDecreaceRate"
+schema_key = "pal_stomach_decreace_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalStaminaDecreaceRate"
+schema_key = "pal_stamina_decreace_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalAutoHPRegeneRate"
+schema_key = "pal_auto_hp_regene_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalAutoHpRegeneRateInSleep"
+schema_key = "pal_auto_hp_regene_rate_in_sleep"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PalEggDefaultHatchingTime"
+schema_key = "pal_egg_default_hatching_time"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ItemWeightRate"
+schema_key = "item_weight_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "EquipmentDurabilityDamageRate"
+schema_key = "equipment_durability_damage_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ItemCorruptionMultiplier"
+schema_key = "item_corruption_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "DenyTechnologyList"
+schema_key = "deny_technology_list"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "SupplyDropSpan"
+schema_key = "supply_drop_span"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BaseCampMaxNum"
+schema_key = "base_camp_max_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BaseCampMaxNumInGuild"
+schema_key = "base_camp_max_num_in_guild"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BaseCampWorkerMaxNum"
+schema_key = "base_camp_worker_max_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "GuildPlayerMaxNum"
+schema_key = "guild_player_max_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "GuildRejoinCooldownMinutes"
+schema_key = "guild_rejoin_cooldown_minutes"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "MaxBuildingLimitNum"
+schema_key = "max_building_limit_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ServerReplicatePawnCullDistance"
+schema_key = "server_replicate_pawn_cull_distance"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ChatPostLimitPerMinute"
+schema_key = "chat_post_limit_per_minute"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "ItemContainerForceMarkDirtyInterval"
+schema_key = "item_container_force_mark_dirty_interval"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "DropItemAliveMaxHours"
+schema_key = "drop_item_alive_max_hours"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "DropItemMaxNum"
+schema_key = "drop_item_max_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "DropItemMaxNum_UNKO"
+schema_key = "drop_item_max_num_unko"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-useperfthreads/-NoAsyncLoadingThread/-UseMultithreadForDS"
+schema_key = "launch_perf_threads"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NumberOfWorkerThreadsServer:enabled"
+schema_key = "launch_worker_threads_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NumberOfWorkerThreadsServer"
+schema_key = "worker_thread_count"
+surface = "launch_arg"
+
+[[items]]
+source = "palworld_settings"
+key = "PhysicsActiveDropItemMaxNum"
+schema_key = "physics_active_drop_item_max_num"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "PlayerDataPalStorageUpdateCheckTickInterval"
+schema_key = "player_data_pal_storage_update_check_tick_interval"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "MonsterFarmActionSpeedRate"
+schema_key = "monster_farm_action_speed_rate"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AutoTransferMasterCheckIntervalSeconds"
+schema_key = "auto_transfer_master_check_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "AutoTransferMasterThresholdDays"
+schema_key = "auto_transfer_master_threshold_days"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "MaxGuildsPerFrame"
+schema_key = "max_guilds_per_frame"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableVoiceChat"
+schema_key = "enable_voice_chat"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "VoiceChatMaxVolumeDistance"
+schema_key = "voice_chat_max_volume_distance"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "VoiceChatZeroVolumeDistance"
+schema_key = "voice_chat_zero_volume_distance"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "bEnableBuildingPlayerUIdDisplay"
+schema_key = "enable_building_player_uid_display"
+surface = "config_file"
+
+[[items]]
+source = "palworld_settings"
+key = "BuildingNameDisplayCacheTTLSeconds"
+schema_key = "building_name_display_cache_ttl_seconds"
+surface = "config_file"
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "palworld_settings"
+key = "RCONPort"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "palworld_settings"
+key = "RESTAPIPort"
+reason = "REST API port is instance port-binding state."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "Broadcast/ShowPlayers/KickPlayer/BanPlayer/UnBanPlayer/Save/Shutdown"
+reason = "Runtime actions and shutdown commands are declared in module.toml rather than schema fields."
+
+[[sources]]
+id = "palworld_default_build_25080279"
+kind = "config_file"
+path = "DefaultPalWorldSettings.ini"
+authority = "official_steam_dedicated_server_package"
+description = "Read-only inspection on 2026-09-28 of installed Steam app 2394010 build 25080279. Packaged default SHA256 062b57202ed841de7227108c2ebb3e03e9a420e51c828859c3e314f3fe0a4d3c contains MaxBuildingLimitNumPerPlayer=0 separately from MaxBuildingLimitNum=0. The current 1.0.4 website omits this distinct native key. No runtime application is claimed."
+
+[[items]]
+source = "palworld_default_build_25080279"
+key = "MaxBuildingLimitNumPerPlayer"
+schema_key = "max_building_limit_num_per_player"
+surface = "config_file"
+
+[[sources]]
+id = "building_limit_documentation_review"
+kind = "documentation"
+path = "DefaultPalWorldSettings.ini / official configuration guide 1.0.4"
+authority = "official_palworld_configuration_and_packaged_defaults"
+url = "https://docs.palworldgame.com/settings-and-operation/configuration/"
+description = "2026-09-30: installed build 25247047 DefaultPalWorldSettings.ini SHA256 062b57202ed841de7227108c2ebb3e03e9a420e51c828859c3e314f3fe0a4d3c matches the previously reviewed file. The 1.0.4 guide calls MaxBuildingLimitNum a per-player cap and omits MaxBuildingLimitNumPerPlayer. Current native consumers instead check the former against the base containing the placement location and the latter against player-attributed buildings plus pending reservations. The controls now reflect those separate current-build checks; see native_semantics_build_25247047. No runtime gameplay test is claimed."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://docs.palworldgame.com/settings-and-operation/configuration/"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 118 active configuration fields in both languages. Current native consumers distinguish per-base and per-player building limits, conditional UNKO creation and its separate drop count. Blueprint consumers establish that bInvisibleOtherGuildBaseCampAreaFX hides other-guild base boundary effects. CoopPlayerMaxNum and bIsMultiplay are local-host controls skipped by dedicated paths; Difficulty is menu preset/telemetry metadata whose menu multipliers are not applied at dedicated startup. Those three controls are excluded. bEnableDefenseOtherGuildPlayer and bEnableNonLoginPenalty are also excluded as unsupported_semantics: their actual gameplay consumers remain unestablished, not proven absent. Existing stored JSON and native option values are retained; INI formatting may be normalized during merge. No new server/client gameplay run was performed; historical verification status is unchanged."
+
+[[sources]]
+id = "native_semantics_build_25247047"
+kind = "install_probe"
+path = "Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe"
+authority = "read_only_official_package_static_analysis"
+description = "2026-09-30 read-only build 25247047 analysis; executable SHA256 6f929673e7ac637d591d6f3454dbd396be7911093311cb8b24af3a152b217f49. RVAs use PE image base 0x140000000. FPalOptionWorldSettings field offsets are MaxBuildingLimitNum 0x18c, MaxBuildingLimitNumPerPlayer 0x190, bActiveUNKO 0x80, DropItemMaxNum_UNKO 0x8c, CoopPlayerMaxNum 0xcc and ServerPlayerMaxNum 0xd0. RVA 0x2f0bbd0 checks the 0x18c limit through PalPlayerState -> PalBaseCampManager -> GetInRangedBaseCamp -> GetBuildingNum for the placement location. RVA 0x2f254d0 independently checks 0x190 against player-attributed counts and pending reservations; either limit <=0 skips its check. RVA 0x317d9d0 gates Unko_S/Unko_L creation on bActiveUNKO, the separate ActiveUNKO feature flag and character conditions. RVAs 0x2fa0910/0x2fa5bd0 apply the separate UNKO-category drop count. Reflection enum metadata at file offset 0x6f96f30 lists None=0, Easy=1, Normal=2, Hard=3, Hardcore=4, Custom=5; this does not prove preset precedence. Capacity initialization at RVA 0x2dde8b0 calls the dedicated-server predicate through RVA 0x31ad330 -> 0x4e90390, which returns true in this dedicated executable; it reads ServerPlayerMaxNum and skips the CoopPlayerMaxNum branch. No native asset modification or server/client execution was performed."
+
+[[sources]]
+id = "native_blueprint_semantics_build_25247047"
+kind = "install_probe"
+path = "PalServer-Win64-Shipping-Cmd.exe; BP_BuildObject_PalBoxV2; BP_PalGameInstance; WBP_TitleLocalWorldSelect; WBP_Title_WorldSettings"
+authority = "read_only_official_package_static_analysis"
+description = "Build 25247047, executable SHA256 6f929673e7ac637d591d6f3454dbd396be7911093311cb8b24af3a152b217f49. Package index/directory and compressed entry hashes and decoded lengths were checked. Accepted Kismet functions consume the complete serialized stream and match declared runtime bytecode sizes. BP_BuildObject_PalBoxV2 .uexp SHA256 891f9e4a7b659d164e83245ff8df24a3036f02dc433fd7a5b4b99aa9140ef74e: ReceiveTick enters Ubergraph offset 98; offset 178 tests bInvisibleOtherGuildBaseCampAreaFX. True reaches UpdateVisibleAreaRange at 201, which calls SetHiddenInGame(!IsSameGuildInLocalPlayer,false) on AreaRange/AreaRange1; false skips this filtering. This affects boundary effects, not structures or map markers. WBP_TitleLocalWorldSelect .uexp SHA256 616a5d76c615629f3268313b2a365c7f57edb245b0550875971424ded8c47429: offset 1836 passes bIsMultiplay to StartGame as bListenServer. BP_PalGameInstance .uexp SHA256 793e7be0d693ea5b7bb5aff25d271f2b503cb6d3622708545011d582dd437839: offset 4884 branches on bListenServer; true reaches CreateSessionAsyncFunction at 5409, false loads the local level at 5625. Dedicated IsDedicatedServer and IsMultiplayer paths are independent of this flag. Native ApplyWorldPreset VA 0x142fbe8f0 writes menu preset multipliers; initialization at 0x142fcfacf takes the dedicated branch to 0x142fcfaec and copies explicit CDO OptionSettings at 0x142fcfb23, skipping the non-dedicated preset application at 0x142fcfad3..0x142fcfae5. Difficulty has a verified telemetry read at 0x142ddb799 and menu consumers, so it is not declared unused. No runtime gameplay execution is claimed."
+
+[[sources]]
+id = "unsupported_boolean_semantics_build_25247047"
+kind = "install_probe"
+path = "PalServer-Win64-Shipping-Cmd.exe; Pal/Content/Pal/Blueprint; official configuration guide 1.0.4"
+authority = "bounded_read_only_native_consumer_search"
+url = "https://docs.palworldgame.com/settings-and-operation/configuration/"
+description = "bEnableDefenseOtherGuildPlayer (struct offset 0xc3) and bEnableNonLoginPenalty (0xbe) are native reflected fields and receive world-mode preset assignments at VAs 0x142fbe8c7 and 0x142fbe8a9. The current official parameter guide omits both. Exact-property scans of 10,311 Blueprint .uasset files (85,082,888 decoded bytes) locate them only in menu/parameter carriers. Static native byte-read/compare candidates at displacements 0xbe/0xc3 and subsystem-relative 0x42e/0x433 resolve to known structure copies/serialization or unrelated structures, without an established gameplay effect consumer. This bounded search does not exclude indirect or wider-load consumers and is not proof the fields are dead. They are excluded as unsupported_semantics rather than exposed with invented defense or offline-penalty descriptions. Existing stored JSON and native option values remain retained."

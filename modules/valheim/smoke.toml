@@ -1,0 +1,33 @@
+schema_version = 1
+module_id = "valheim"
+primary_process_key = "main"
+readiness_timeout_ms = 90000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# Private Steam servers initialize both UDP ports but disable A2S replies.
+# Wait for the owned sockets and this run's post-world-generation host marker.
+[fixture.settings]
+public_server = 0
+crossplay_enabled = false
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "query-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "query"
+protocol = "udp"
+
+[[probes]]
+id = "steam-server-opened"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["Opened Steam server"]

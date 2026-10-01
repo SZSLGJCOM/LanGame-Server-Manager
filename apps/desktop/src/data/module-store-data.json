@@ -1,0 +1,2748 @@
+{
+  "abioticfactor": {
+    "storeSource": "steam",
+    "storeAppId": 427410,
+    "storeName": "非生物因素",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/27bcaebce13c30ba27d13c83ffcd763f6c685f9c/header_schinese.jpg?t=1785170446",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演",
+      "模拟"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "跨平台多人",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "可调整文字大小",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "无需应对快速反应事件",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "随时保存",
+      "立体声",
+      "字幕选项",
+      "环绕声",
+      "家庭共享"
+    ],
+    "developers": [
+      "Deep Field Games"
+    ],
+    "publishers": [
+      "Playstack"
+    ],
+    "releaseDate": "2025 年 7 月 22 日",
+    "storeUrl": "https://store.steampowered.com/app/427410/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/ss_f57e6a13592c1dee5d903218e31d4add71dbaa83.1920x1080.jpg?t=1785170446"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/ss_a0858ca74b521e17bc923f94d6e77c6ff224da2f.1920x1080.jpg?t=1785170446"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/57a1ab194abcbb53d007e2a467b6a3a0118a8e35/ss_57a1ab194abcbb53d007e2a467b6a3a0118a8e35.1920x1080.jpg?t=1785170446"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/702ec91ec4e414f11204895bf661ad3e0d84d69a/ss_702ec91ec4e414f11204895bf661ad3e0d84d69a.1920x1080.jpg?t=1785170446"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/ss_d8b3b99a793ebcbac59b7cca8bd14310d2fd0b06.1920x1080.jpg?t=1785170446"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/427410/7dc96fef7bd039d4c36d7d60f83f9bc908f5754c/ss_7dc96fef7bd039d4c36d7d60f83f9bc908f5754c.1920x1080.jpg?t=1785170446"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257331085,
+        "name": "Cosmic Companions",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257331085/97ed98b405c9dffdff826558c152dd512152b401/movie_600x337.jpg?t=1777914033",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/427410/1708069148/f4487052be58c80536fcd8a87b2efb7d371b3574/1777875543/hls_264_master.m3u8?t=1777914033",
+        "highlight": true
+      },
+      {
+        "id": 257172169,
+        "name": "Abiotic Factor - Cold Fusion | 1.0 Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257172169/0869094435a3118b8015fddcf5cac21ee78b2f33/movie_600x337.jpg?t=1753203386",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/427410/224664536/1f7f922a0395aba39ca5e1a5442f1da32ca93726/1753158448/hls_264_master.m3u8?t=1753203386",
+        "highlight": true
+      }
+    ]
+  },
+  "arksurvivalascended": {
+    "storeSource": "steam",
+    "storeAppId": 2399830,
+    "storeName": "方舟: 生存飞升",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/d934813ca531af0fce69fe36bc972f1c90d1aa19/header.jpg?t=1779293241",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "大型多人在线",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "大型多人在线",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "同屏/分屏合作",
+      "同屏/分屏",
+      "跨平台多人",
+      "Steam 成就",
+      "完全支持控制器",
+      "包含关卡编辑器",
+      "远程同乐",
+      "家庭共享"
+    ],
+    "developers": [
+      "Studio Wildcard",
+      "Grove Street Games",
+      "Instinct Games"
+    ],
+    "publishers": [
+      "Studio Wildcard",
+      "Snail Games USA"
+    ],
+    "releaseDate": "2023 年 10 月 25 日",
+    "storeUrl": "https://store.steampowered.com/app/2399830/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_44f74e86ebd6620a4f0a1f3f8ea97f73dc215e69.1920x1080.jpg?t=1779293241"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_65c0de5ced28281764990a299eb3926629b2863e.1920x1080.jpg?t=1779293241"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_0ce49e629369dbf9e8fba324667167568c05c66f.1920x1080.jpg?t=1779293241"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_63a6ea13596a948b7873ed6de4fd4d01f9cbe57b.1920x1080.jpg?t=1779293241"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_37b5cb9485658f91b856a0714a8cbdc69f1802b1.1920x1080.jpg?t=1779293241"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2399830/ss_f9e156d2b818d808c65476997283b5da8be8324f.1920x1080.jpg?t=1779293241"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257255264,
+        "name": "ARK: Lost Colony Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257255264/93555d172e64904b9e1037bbf481f2813ffa9967/movie_600x337.jpg?t=1766690734",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/2399830/2033414923/ef32e2128e60a80c485d076a33f8f691183fde6d/1766688383/hls_264_master.m3u8?t=1766690734",
+        "highlight": true
+      },
+      {
+        "id": 256978230,
+        "name": "ARK: Survival Ascended Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256978230/movie.293x165.jpg?t=1698255203",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/2399830/622596/5038b9195e3ec04b2647b861ee2d92f6f9584523/1750813753/hls_264_master.m3u8?t=1698255203",
+        "highlight": true
+      }
+    ]
+  },
+  "arksurvivalevolved": {
+    "storeSource": "steam",
+    "storeAppId": 346110,
+    "storeName": "ARK: Survival Evolved",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/header.jpg?t=1765677889",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "大型多人在线",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "大型多人在线",
+      "合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 创意工坊",
+      "Steam 云",
+      "已启用 Valve 反作弊保护",
+      "包含关卡编辑器",
+      "在平板上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Studio Wildcard",
+      "Instinct Games",
+      "Efecto Studios",
+      "Virtual Basement LLC"
+    ],
+    "publishers": [
+      "Studio Wildcard",
+      "Snail Games USA"
+    ],
+    "releaseDate": "2017 年 8 月 27 日",
+    "storeUrl": "https://store.steampowered.com/app/346110/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_2fd997a2f7151cb2187043a1f41589cc6a9ebf3a.1920x1080.jpg?t=1765677889"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_01cbef83fe28d64ee5a3d39a86043fb1e49abd31.1920x1080.jpg?t=1765677889"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_164a92a53f9bcbb728b391fc0719f9769c2e1249.1920x1080.jpg?t=1765677889"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_46778c08a1a5ac5bdbaf8a5bf844fa666f66a14b.1920x1080.jpg?t=1765677889"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_ffe9f0e2e23892f3bb6188e5a3eed0f60a08baf4.1920x1080.jpg?t=1765677889"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/346110/ss_cada382a940c062a1a5244db8da1326de55ddeae.1920x1080.jpg?t=1765677889"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256836250,
+        "name": "ARK: Ultimate Survivor Edition Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256836250/movie.293x165.jpg?t=1622089232",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/346110/372586/b23204cd58f68c42a07248e8472b9296c1c875c5/1750513376/hls_264_master.m3u8?t=1622089232",
+        "highlight": true
+      },
+      {
+        "id": 256693939,
+        "name": "ARK: Survival Evolved Global Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256693939/movie.293x165.jpg?t=1508277163",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/346110/120324/8f593865eaf45d86aadf62f50b607d889f2a3fee/1750513308/hls_264_master.m3u8?t=1508277163",
+        "highlight": true
+      }
+    ]
+  },
+  "astroneer": {
+    "storeSource": "steam",
+    "storeAppId": 361420,
+    "storeName": "ASTRONEER",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/1c44099d86c824a6fd1098a4215097878d68664e/header.jpg?t=1770767049",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "冒险",
+      "独立"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "DUALSHOCK 控制器支持",
+      "Steam 云",
+      "在平板上远程畅玩",
+      "在电视上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "System Era Softworks"
+    ],
+    "publishers": [
+      "System Era Softworks"
+    ],
+    "releaseDate": "2019 年 2 月 5 日",
+    "storeUrl": "https://store.steampowered.com/app/361420/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_539bc5211ccdad2bc6cc70e4af40194d74eb0256.1920x1080.jpg?t=1770767049"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_858b8bece04b753a6b35a009776a4de9dd6e0df7.1920x1080.jpg?t=1770767049"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_436f3ea0934a6ecd3fdd2f260ef535d80b8c185d.1920x1080.jpg?t=1770767049"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_13682f989b3f0d68afb92d5d50185b0258dd4767.1920x1080.jpg?t=1770767049"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_c7c54244add5ac921f2ae5b28f6f3efbc8470823.1920x1080.jpg?t=1770767049"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/361420/ss_63402300a9d8f1eff80a3034b872995db03158ab.1920x1080.jpg?t=1770767049"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256742413,
+        "name": "ASTRONEER - Release Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256742413/movie.293x165.jpg?t=1549606228",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/361420/208224/ccb243797b957af9258bbd600f8bae766e740455/1750517069/hls_264_master.m3u8?t=1549606228",
+        "highlight": true
+      },
+      {
+        "id": 256958140,
+        "name": "Custom Games Update Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256958140/movie.293x165.jpg?t=1689355882",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/361420/587438/0d1f05531a7014206817483fd44d6ffc841e4cb8/1750515955/hls_264_master.m3u8?t=1689355882",
+        "highlight": true
+      }
+    ]
+  },
+  "barotrauma": {
+    "storeSource": "steam",
+    "storeAppId": 602960,
+    "storeName": "Barotrauma 潜渊症",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/header_schinese.jpg?t=1776271911",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "独立",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "Steam 云",
+      "包含关卡编辑器",
+      "家庭共享",
+      "Steam 时间轴"
+    ],
+    "developers": [
+      "FakeFish",
+      "Undertow Games"
+    ],
+    "publishers": [
+      "Daedalic Entertainment"
+    ],
+    "releaseDate": "2023 年 3 月 13 日",
+    "storeUrl": "https://store.steampowered.com/app/602960/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_cdf5cbde141fb93a0b23c6adca5378f73e1beeca.1920x1080.jpg?t=1776271911"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_3f76fab8878cc134ec1e0032ab91797eed96722d.1920x1080.jpg?t=1776271911"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_c56f6f41ab1ec9f98bd449fa7167ec3456dcd306.1920x1080.jpg?t=1776271911"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_0158c673e50cf77c4f94e1fa75ae3fddd5629dd3.1920x1080.jpg?t=1776271911"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_af8b85b25acb48ffaab395f668366f60eeb38a03.1920x1080.jpg?t=1776271911"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/602960/ss_99e0455cbbf263fe6a900f11890519b3f340ffa3.1920x1080.jpg?t=1776271911"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257320286,
+        "name": "Expansion_Gameplaytrailer_CHs",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257320286/5315b50b4352c80aac0fe3e31b77f714c7252bc8/movie_600x337.jpg?t=1776271908",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/602960/414094849/aa02dd0d37b6a03ba25a124ef969c70a9414c76d/1776271293/hls_264_master.m3u8?t=1776271908",
+        "highlight": true
+      },
+      {
+        "id": 257067394,
+        "name": "UntoTheBreach_CHs",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257067394/5bea5cf73b205b8a843e6c5cb6ea33cb6541cd10/movie_600x337.jpg?t=1729607771",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/602960/775515/f2d719f766e863c3d050238843305f23ab368bc1/1750561008/hls_264_master.m3u8?t=1729607771",
+        "highlight": true
+      }
+    ]
+  },
+  "conanexiles": {
+    "storeSource": "steam",
+    "storeAppId": 440900,
+    "storeName": "Conan Exiles Enhanced",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/710f42dec831fa88bcf736d0715152822231505f/header.jpg?t=1784642443",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "大型多人在线",
+      "角色扮演",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "在平板上远程畅玩",
+      "在电视上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Funcom",
+      "Inflexion Games"
+    ],
+    "publishers": [
+      "Funcom"
+    ],
+    "releaseDate": "2018 年 5 月 8 日",
+    "storeUrl": "https://store.steampowered.com/app/440900/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/cbbfeaf930a1b0cda92091544ab9c9fc63050451/ss_cbbfeaf930a1b0cda92091544ab9c9fc63050451.1920x1080.jpg?t=1784642443"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/44871f5b1a43f3c3c2bbc197575549fc8acaa5c9/ss_44871f5b1a43f3c3c2bbc197575549fc8acaa5c9.1920x1080.jpg?t=1784642443"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/c9aacd18e76a2f32bace07b35cb41546c84ab918/ss_c9aacd18e76a2f32bace07b35cb41546c84ab918.1920x1080.jpg?t=1784642443"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/34b917c0fb86d7868f41263997a5bdd49849986c/ss_34b917c0fb86d7868f41263997a5bdd49849986c.1920x1080.jpg?t=1784642443"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/6b6dc7476b15905b69181f3f048b44d34ab3d56a/ss_6b6dc7476b15905b69181f3f048b44d34ab3d56a.1920x1080.jpg?t=1784642443"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/440900/6c1deec9379cbfb34b887cbcbf518294b38625b9/ss_6c1deec9379cbfb34b887cbcbf518294b38625b9.1920x1080.jpg?t=1784642443"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257331207,
+        "name": "Conan Exiles Enhanced - Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257331207/73b05c9bbe85d03da9d1f7a0bf2004658dd076ef/movie_600x337.jpg?t=1777993824",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/440900/487919629/ed730f94c738ea881b576f55b1e319a7a7303e0f/1777896634/hls_264_master.m3u8?t=1777993824",
+        "highlight": true
+      },
+      {
+        "id": 257381638,
+        "name": "Conan Exiles Enhanced - Legacy of the Giant-Kings Part One – Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257381638/2a8bb4d0d4fa4233ce21b0ca9d3b9b1cd4f683f9/movie_600x337.jpg?t=1784642441",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/440900/1417505199/3a5c9043e1f281cf7fc4ec10893ece5f32e13d52/1784631258/hls_264_master.m3u8?t=1784642441",
+        "highlight": true
+      }
+    ]
+  },
+  "corekeeper": {
+    "storeSource": "steam",
+    "storeAppId": 1621690,
+    "storeName": "护核纪元",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/header_schinese.jpg?t=1782408107",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "模拟"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "完全支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Pugstorm"
+    ],
+    "publishers": [
+      "Fireshine Games",
+      "bilibili"
+    ],
+    "releaseDate": "2024 年 8 月 27 日",
+    "storeUrl": "https://store.steampowered.com/app/1621690/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/632a42b91e005b2d2daf99fee946732c95a9737c/ss_632a42b91e005b2d2daf99fee946732c95a9737c.1920x1080.jpg?t=1782408107"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/bca1feb5ec1bf64543f80c74effdcaed4216033c/ss_bca1feb5ec1bf64543f80c74effdcaed4216033c.1920x1080.jpg?t=1782408107"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/804585b7772d3ae5c7d56fc80401469d5bf6fd27/ss_804585b7772d3ae5c7d56fc80401469d5bf6fd27.1920x1080.jpg?t=1782408107"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/ss_1e162c49418038f8042c92810fe3c753449e204b.1920x1080.jpg?t=1782408107"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/ss_2a6cdb26200932593b4edd5ab3d1cc2da5bc15ee.1920x1080.jpg?t=1782408107"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1621690/ss_8f3fd22bc5c385450d36309755323ca18efda4be.1920x1080.jpg?t=1782408107"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257294260,
+        "name": "Void and Voltage - Out Now",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257294260/d9e2a3dc8a4a3636806cef1702f4944e7cc890c9/movie_600x337.jpg?t=1772014474",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1621690/2040870540/530dbddb1393f13743b7cb62575edb0e1ccab748/1772013931/hls_264_master.m3u8?t=1772014474",
+        "highlight": true
+      },
+      {
+        "id": 257112445,
+        "name": "Bags & Blast Out Now! - SCH",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257112445/2f04e8f4e551ce6a65ac9e69aed5451c114f261d/movie_600x337.jpg?t=1756801537",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1621690/848156/38e13755d78545027bcdb3b84243d958a329a49b/1750712721/hls_264_master.m3u8?t=1756801537",
+        "highlight": true
+      }
+    ]
+  },
+  "dontstarve": {
+    "storeSource": "steam",
+    "storeAppId": 322330,
+    "storeName": "饥荒联机版",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/d404489221b72394a2e76fc39f2911fe71896cc5/header_alt_assets_50_schinese.jpg?t=1782413299",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "应用内购买",
+      "可调整文字大小",
+      "视角舒适度",
+      "可选颜色",
+      "自定义音量控制",
+      "可调整难度",
+      "可以仅用键盘",
+      "可以仅用鼠标",
+      "无需应对快速反应事件",
+      "随时保存",
+      "立体声",
+      "在手机上远程畅玩",
+      "在平板上远程畅玩",
+      "在电视上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Klei Entertainment"
+    ],
+    "publishers": [
+      "Klei Entertainment"
+    ],
+    "releaseDate": "2016 年 4 月 21 日",
+    "storeUrl": "https://store.steampowered.com/app/322330/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_d053a7220a03ab689da9312c6d15fe8211401f55.1920x1080.jpg?t=1782413299"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_37e30c4cf8c945f1958890c8fa7346af6bea547d.1920x1080.jpg?t=1782413299"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_f863729856b94b3485ee80e6fd11289595f6634c.1920x1080.jpg?t=1782413299"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_92f4145bd510f66d63028e1cdf27eb30bd44cea1.1920x1080.jpg?t=1782413299"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_9a7730946f2e060457b5c19ac2d870a78ab0f20b.1920x1080.jpg?t=1782413299"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/322330/ss_7f2ad9be835040a8995cd3653cd521553ef776cf.1920x1080.jpg?t=1782413299"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257354762,
+        "name": "Cursed Confrontation Part 1 CN",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257354762/9beeaf8509685774f14e6fb3f551cec5d61fe7a5/movie_600x337.jpg?t=1781196638",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/322330/930485073/08423dfca15c29a3ae6a57045711286684da165a/1781048520/hls_264_master.m3u8?t=1781196638",
+        "highlight": true
+      },
+      {
+        "id": 257320956,
+        "name": "Wx-78 Skill Spotlight CN",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257320956/6840c4ec9799e426db9fa7e32dba1575b30ebd17/movie_600x337.jpg?t=1776359428",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/322330/628505299/254cf240ba0bff8925be859f9541b8717307c799/1776356585/hls_264_master.m3u8?t=1776359428",
+        "highlight": true
+      }
+    ]
+  },
+  "enshrouded": {
+    "storeSource": "steam",
+    "storeAppId": 1203620,
+    "storeName": "雾锁王国 (Enshrouded)",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/062c788d22ecf236269da0f115150c0d3b7055a4/header.jpg?t=1782800102",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "可调整文字大小",
+      "视角舒适度",
+      "可选颜色",
+      "自定义音量控制",
+      "可调整难度",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "立体声",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Keen Games GmbH"
+    ],
+    "publishers": [
+      "Keen Games GmbH"
+    ],
+    "releaseDate": "2024 年 1 月 24 日",
+    "storeUrl": "https://store.steampowered.com/app/1203620/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/09a1e99c47ba7ffb2413c4708a9f5fbef1397652/ss_09a1e99c47ba7ffb2413c4708a9f5fbef1397652.1920x1080.jpg?t=1782800102"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/9c2db32975d266f1051f77e46d347a118c824c57/ss_9c2db32975d266f1051f77e46d347a118c824c57.1920x1080.jpg?t=1782800102"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/4cc606e46868db2159ced08f6fe585a03d7e360f/ss_4cc606e46868db2159ced08f6fe585a03d7e360f.1920x1080.jpg?t=1782800102"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/50ce17d5a264d10c9e4f65a3cbf3fba9d07bf8d6/ss_50ce17d5a264d10c9e4f65a3cbf3fba9d07bf8d6.1920x1080.jpg?t=1782800102"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/01ab6c97b4c33591719222c28bb74083e722f064/ss_01ab6c97b4c33591719222c28bb74083e722f064.1920x1080.jpg?t=1782800102"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1203620/85d9a4cc0e65ab61e93becb67f5cf5748e8a6307/ss_85d9a4cc0e65ab61e93becb67f5cf5748e8a6307.1920x1080.jpg?t=1782800102"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257229014,
+        "name": "Enshrouded - Wake of the Water | Official Update Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257229014/c00e2bec3cf228adce46b702c7adca0629f073c9/movie_600x337.jpg?t=1762780500",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1203620/1245750690/ff0d3eb6a271e14df7fdc0ba47a748b152f56981/1762762821/hls_264_master.m3u8?t=1762780500",
+        "highlight": true
+      },
+      {
+        "id": 257139185,
+        "name": "Enshrouded - Thralls of Twilight | Official Update Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257139185/0dec7b31d47390d439c92a3330ee42d9e348fc88/movie_600x337.jpg?t=1757538635",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1203620/1674239379/ce79cbddab0370f20fa92dfb8e0d1f7495c1d142/1750641612/hls_264_master.m3u8?t=1757538635",
+        "highlight": true
+      }
+    ]
+  },
+  "humanitz": {
+    "storeSource": "steam",
+    "storeAppId": 1766060,
+    "storeName": "HumanitZ",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/f6d26a2b241d9cb955c735738d45e5a6d4d78c25/header.jpg?t=1770400758",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "部分支持控制器",
+      "家庭共享"
+    ],
+    "developers": [
+      "Yodubzz Studios"
+    ],
+    "publishers": [
+      "indie.io"
+    ],
+    "releaseDate": "2026 年 2 月 6 日",
+    "storeUrl": "https://store.steampowered.com/app/1766060/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/4873f37f516dc207bd0f61ba5dcd16b0d2ca6070/ss_4873f37f516dc207bd0f61ba5dcd16b0d2ca6070.1920x1080.jpg?t=1770400758"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/4e3bc0578ec7b8ce048b7917e4bdc2b85f010095/ss_4e3bc0578ec7b8ce048b7917e4bdc2b85f010095.1920x1080.jpg?t=1770400758"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/2399a58a1647b50a3bd4c0a88dd006f07ee56130/ss_2399a58a1647b50a3bd4c0a88dd006f07ee56130.1920x1080.jpg?t=1770400758"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/e64f910aebbc95360bf644264de86e433fa0cc88/ss_e64f910aebbc95360bf644264de86e433fa0cc88.1920x1080.jpg?t=1770400758"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/7cb8730dd0a791d69e2e87734de14cab92102cf1/ss_7cb8730dd0a791d69e2e87734de14cab92102cf1.1920x1080.jpg?t=1770400758"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1766060/387b3d7be66f8b88de085c325f21958a952bc077/ss_387b3d7be66f8b88de085c325f21958a952bc077.1920x1080.jpg?t=1770400758"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257279352,
+        "name": "1.0 Launch",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257279352/fa758f828660647b713080ce7444c1915a75e397/movie_600x337.jpg?t=1770400709",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1766060/1120443466/d80587af87e6ccfdd5b8bfc65a14a811ce7de497/1770228186/hls_264_master.m3u8?t=1770400709",
+        "highlight": true
+      },
+      {
+        "id": 257264562,
+        "name": "1.0 RDA",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257264562/b7658af3baf84763442be65c43cfb7db3553018f/movie_600x337.jpg?t=1770400712",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1766060/1861121702/daf5f6a61cc77605cb1a037e28c6382948386f89/1768375439/hls_264_master.m3u8?t=1770400712",
+        "highlight": true
+      }
+    ]
+  },
+  "necesse": {
+    "storeSource": "steam",
+    "storeAppId": 1169040,
+    "storeName": "奈斯启示录 Necesse",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/2c2b507cf33191af41f996d218416542d4fd2256/header_alt_assets_5_schinese.jpg?t=1785482841",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "Steam 输入 API 支持",
+      "Steam 云",
+      "统计数据",
+      "家庭共享"
+    ],
+    "developers": [
+      "Fair Games ApS"
+    ],
+    "publishers": [
+      "Fair Games ApS"
+    ],
+    "releaseDate": "2025 年 10 月 16 日",
+    "storeUrl": "https://store.steampowered.com/app/1169040/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/8e73418f3635e6f80474a64080553123cc787eb1/ss_8e73418f3635e6f80474a64080553123cc787eb1.1920x1080.jpg?t=1785482841"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/418476bed069ce151c1e81081b9e167c1f5b8d0d/ss_418476bed069ce151c1e81081b9e167c1f5b8d0d.1920x1080.jpg?t=1785482841"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/ss_94e7f9f4e07b5fd7190ee650d35bdeefd7517e34.1920x1080.jpg?t=1785482841"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/ss_c6c639a500f4190d74a4a9947a291f1064baad91.1920x1080.jpg?t=1785482841"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/71d255cd8a2fca8c7738f1c7557d9aad5cd58536/ss_71d255cd8a2fca8c7738f1c7557d9aad5cd58536.1920x1080.jpg?t=1785482841"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1169040/de95cad6b3d188b6eeef6c104f145c3831ba74c8/ss_de95cad6b3d188b6eeef6c104f145c3831ba74c8.1920x1080.jpg?t=1785482841"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257388364,
+        "name": "Rust & Romance Trailer CN",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257388364/5c7ee9efe38f0366da52c7024747b0fb408a3253/movie_600x337.jpg?t=1785430623",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1169040/1345569222/a6190e6e3b18a7476cd02a1ddcb54a67af108a8b/1785413069/hls_264_master.m3u8?t=1785430623",
+        "highlight": true
+      },
+      {
+        "id": 257218827,
+        "name": "1.0 Launch Trailer CN",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257218827/2ac54fb520bc4f48d27aa95725a2f8d3e2a0f5b2/movie_600x337.jpg?t=1760633949",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1169040/1988003168/edd6ac88c45b9a163944abb3ab96c6e74ec89c95/1760626876/hls_264_master.m3u8?t=1760633949",
+        "highlight": true
+      }
+    ]
+  },
+  "nightingale": {
+    "storeSource": "steam",
+    "storeAppId": 1928980,
+    "storeName": "夜莺传说",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/header.jpg?t=1769102593",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 成就",
+      "DualSense 控制器支持",
+      "部分支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Inflexion Games"
+    ],
+    "publishers": [
+      "Inflexion Games"
+    ],
+    "releaseDate": "2024 年 2 月 20 日",
+    "storeUrl": "https://store.steampowered.com/app/1928980/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_d8ff9eb99dfc691756b757ef7409c0e88c25a608.1920x1080.jpg?t=1769102593"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_ef96bc708ecb47967afcd5eb06d8b1e502a5a7be.1920x1080.jpg?t=1769102593"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_aad9a8f7c9aa31e2571fb3d93ae4ee25a4f0b049.1920x1080.jpg?t=1769102593"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_e006235b6f57c22cdd28cc1ab73e0eaa5e61f14d.1920x1080.jpg?t=1769102593"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_52a742b7051f231eceedc012cad0f983fabb11dc.1920x1080.jpg?t=1769102593"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1928980/ss_ae16a27ac1e7aa5947e3fec2faa091294a04716f.1920x1080.jpg?t=1769102593"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257114108,
+        "name": "Nightingale City Update",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257114108/b6bf7bdeec02b965b0ef084033658ce8bc298698/movie_600x337.jpg?t=1741903560",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1928980/850672/119f82dece061ca355fbf81f9b78abcab4699d95/1750741339/hls_264_master.m3u8?t=1741903560",
+        "highlight": true
+      },
+      {
+        "id": 257054282,
+        "name": "Realms Rebuilt Update - Gameplay Video",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257054282/movie.293x165.jpg?t=1726155949",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1928980/754341/1bf5b28a40b4885a879dad1102d12584842442c5/1750741338/hls_264_master.m3u8?t=1726155949",
+        "highlight": true
+      }
+    ]
+  },
+  "palworld": {
+    "storeSource": "steam",
+    "storeAppId": 1623730,
+    "storeName": "Palworld / 幻兽帕鲁",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/1b0709ec8de093a97a0bf43e799933eae4faef35/header_schinese.jpg?t=1784714419",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "跨平台多人",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Pocketpair"
+    ],
+    "publishers": [
+      "Pocketpair"
+    ],
+    "releaseDate": "2026 年 7 月 9 日",
+    "storeUrl": "https://store.steampowered.com/app/1623730/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/ss_f81b7c4f20be3b99f76a1415c4cdb9b444c99b97.1920x1080.jpg?t=1784714419"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/648ed4266fc18f413292292741304ef648421c55/ss_648ed4266fc18f413292292741304ef648421c55.1920x1080.jpg?t=1784714419"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/ss_b3cea7c9f04a67d784d4c6a0c157a11d6268b189.1920x1080.jpg?t=1784714419"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/cd7b46028d10c21db8fc8217192094d309efcebc/ss_cd7b46028d10c21db8fc8217192094d309efcebc.1920x1080.jpg?t=1784714419"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/ss_06e27c15c7b4b10233c937b887cf6a6925c83009.1920x1080.jpg?t=1784714419"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/ss_a99fba5536acde781bd863cb3555c10b5b96c0ae.1920x1080.jpg?t=1784714419"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257373761,
+        "name": "《幻兽帕鲁》1.0正式版上线预告",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257373761/7e13113e161160ac94f46ef35ac809e374f7ab7e/movie_600x337.jpg?t=1783652948",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1623730/1406784481/1a548e52e298c57e43ed354e1e1dd59b1c47f0a2/1783609836/hls_264_master.m3u8?t=1783652948",
+        "highlight": true
+      },
+      {
+        "id": 257351748,
+        "name": "《幻兽帕鲁》1.0正式版CG预告",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257351748/aa6c1eb3713c2e6707bba09081ec940168052ab8/movie_600x337.jpg?t=1780702170",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1623730/219571255/1f1e714ee30b61408277cae990fcf2faf537869b/1780701624/hls_264_master.m3u8?t=1780702170",
+        "highlight": true
+      }
+    ]
+  },
+  "projectzomboid": {
+    "storeSource": "steam",
+    "storeAppId": 108600,
+    "storeName": "Project Zomboid",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/header.jpg?t=1785771763",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "独立",
+      "角色扮演",
+      "模拟",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "同屏/分屏合作",
+      "同屏/分屏",
+      "跨平台多人",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "部分支持控制器",
+      "远程同乐",
+      "家庭共享"
+    ],
+    "developers": [
+      "The Indie Stone"
+    ],
+    "publishers": [
+      "The Indie Stone"
+    ],
+    "releaseDate": "2013 年 11 月 8 日",
+    "storeUrl": "https://store.steampowered.com/app/108600/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/e0dd37d69051f7da85896d11027ab018d23893fa/ss_e0dd37d69051f7da85896d11027ab018d23893fa.1920x1080.jpg?t=1785771763"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/d9df2102dd12526700b15660bc5ec8f039dc8742/ss_d9df2102dd12526700b15660bc5ec8f039dc8742.1920x1080.jpg?t=1785771763"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/4c8860818ac52c685bbe0988aa137d52bad4aac5/ss_4c8860818ac52c685bbe0988aa137d52bad4aac5.1920x1080.jpg?t=1785771763"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/ss_eb1862af5109e4658e2538d897cbd16b87ad1818.1920x1080.jpg?t=1785771763"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/ss_507e952789822b69868d768e1e4476946f37b1fb.1920x1080.jpg?t=1785771763"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/108600/ss_eca8be032b3f5508bf5bea74cfbc823a4df047ce.1920x1080.jpg?t=1785771763"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257387571,
+        "name": "Build 42 Zomboid Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257387571/7413640d5700fc7020002682b958233c04463d0e/movie_600x337.jpg?t=1785324122",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/108600/619982392/141cfd121ea068a87c023951bdbfee87ca524de1/1785320937/hls_264_master.m3u8?t=1785324122",
+        "highlight": true
+      },
+      {
+        "id": 257387576,
+        "name": "Build 42 Map Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257387576/319e56e0fdf699518dfa5661e79b103fc8f12ad7/movie_600x337.jpg?t=1785324123",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/108600/1068764969/0b5bcb57cecb7b05c21f23de1ea92a8287c343e7/1785321988/hls_264_master.m3u8?t=1785324123",
+        "highlight": true
+      }
+    ]
+  },
+  "returntomoria": {
+    "storeSource": "steam",
+    "storeAppId": 2933130,
+    "storeName": "《指环王：重返墨瑞亚™》Return to Moria",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/6b8f8cf6304969c5c1d72fb3b33e5a31a1255f83/header.jpg?t=1776449367",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "跨平台多人",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Free Range Games"
+    ],
+    "publishers": [
+      "North Beach Games"
+    ],
+    "releaseDate": "2024 年 8 月 27 日",
+    "storeUrl": "https://store.steampowered.com/app/2933130/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/ss_9454e92cc8de822782883eda741a37d20775e290.1920x1080.jpg?t=1776449367"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/ss_49a8dea386588b65b123c774cc019cdcd0be77ef.1920x1080.jpg?t=1776449367"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/4a0fac033bb2a244008ec0c7685191fc7e034657/ss_4a0fac033bb2a244008ec0c7685191fc7e034657.1920x1080.jpg?t=1776449367"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/ss_b6aa4f64853798919e2f9ded08505796c289b64d.1920x1080.jpg?t=1776449367"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/ss_bf0f3767d394312db439d4ffddd2482dff5952b2.1920x1080.jpg?t=1776449367"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2933130/ss_c2e8267e544a51bd83a28aaa37765728d6a5f338.1920x1080.jpg?t=1776449367"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257014563,
+        "name": "The Lord of the Rings: Return to Moria™",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257014563/movie.293x165.jpg?t=1718147120",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/2933130/685274/b0071d4a617e8621f4592434bd455299187be4d4/1750821709/hls_264_master.m3u8?t=1718147120",
+        "highlight": true
+      }
+    ]
+  },
+  "rimworld": {
+    "storeSource": "steam",
+    "storeAppId": 294100,
+    "storeName": "边缘世界 RimWorld",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/0bd1adfad18e931b14529ce177fbdea0f5072760/header_schinese.jpg?t=1782756789",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "独立",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "Steam 创意工坊",
+      "可调整文字大小",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "可以仅用鼠标",
+      "无需应对快速反应事件",
+      "随时保存",
+      "部分支持控制器",
+      "Steam 云",
+      "在平板上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Ludeon Studios"
+    ],
+    "publishers": [
+      "Ludeon Studios"
+    ],
+    "releaseDate": "2018 年 10 月 17 日",
+    "storeUrl": "https://store.steampowered.com/app/294100/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/80e383ef19353058791efe17a6485849246c9c17/ss_80e383ef19353058791efe17a6485849246c9c17.1920x1080.jpg?t=1782756789"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/a6158c5cef23ac8157b37dd3eb17f3c2d2649e93/ss_a6158c5cef23ac8157b37dd3eb17f3c2d2649e93.1920x1080.jpg?t=1782756789"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/cccfece4c643fd32d438642fbea1b980bc519a48/ss_cccfece4c643fd32d438642fbea1b980bc519a48.1920x1080.jpg?t=1782756789"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/57c3e8d556d47bb5ad048699643528aefc652aa6/ss_57c3e8d556d47bb5ad048699643528aefc652aa6.1920x1080.jpg?t=1782756789"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/59a1400eff99e2b620d623d3d76a02c1592a72e7/ss_59a1400eff99e2b620d623d3d76a02c1592a72e7.1920x1080.jpg?t=1782756789"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/294100/1e3a2734b23daaa4eb60ea33dd87806aa65e0c8f/ss_1e3a2734b23daaa4eb60ea33dd87806aa65e0c8f.1920x1080.jpg?t=1782756789"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256731486,
+        "name": "Launch trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256731486/movie.293x165.jpg?t=1539788136",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/294100/189193/b88a55b0c4df1e292fa85455c5157a31ad1da17c/1750502942/hls_264_master.m3u8?t=1539788136",
+        "highlight": true
+      }
+    ]
+  },
+  "romestead": {
+    "storeSource": "steam",
+    "storeAppId": 1805320,
+    "storeName": "罗马拓荒录",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/7b4b95bbd6b67e283a8dfe36e9a9f64c3ca62036/header_schinese.jpg?t=1782998088",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Beartwigs"
+    ],
+    "publishers": [
+      "Three Friends"
+    ],
+    "releaseDate": "2026 年 5 月 25 日",
+    "storeUrl": "https://store.steampowered.com/app/1805320/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/e5ed4c7196b89ab450149a7deef39c697803dc4e/ss_e5ed4c7196b89ab450149a7deef39c697803dc4e.1920x1080.jpg?t=1782998088"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/bc7d097325bb49496a8879db31dbfa0376ecd8f5/ss_bc7d097325bb49496a8879db31dbfa0376ecd8f5.1920x1080.jpg?t=1782998088"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/4edabaea16dbed5086c1a9bf040ffb9ff038ef3f/ss_4edabaea16dbed5086c1a9bf040ffb9ff038ef3f.1920x1080.jpg?t=1782998088"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/a22600185755dd297b8a905c5c8641a0fe0dd7f7/ss_a22600185755dd297b8a905c5c8641a0fe0dd7f7.1920x1080.jpg?t=1782998088"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/57cbd185f3444a269247c0dfad33a8921368ee58/ss_57cbd185f3444a269247c0dfad33a8921368ee58.1920x1080.jpg?t=1782998088"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1805320/fd2f5cd9f730be4eeb4d7598296623c0c5563ec0/ss_fd2f5cd9f730be4eeb4d7598296623c0c5563ec0.1920x1080.jpg?t=1782998088"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257343801,
+        "name": "抢先体验发售预告片",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257343801/266a72f99f06927890385de8e12289edb509fff9/movie_600x337.jpg?t=1782388782",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1805320/1669897074/6bda51fdf6a9e642cd571d01a38b1c8d2e21d84e/1779948130/hls_264_master.m3u8?t=1782388782",
+        "highlight": true
+      },
+      {
+        "id": 257343174,
+        "name": "Romestead Early Access Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257343174/e2017f9139144d031ea258b822944568957ebe9f/movie_600x337.jpg?t=1779777081",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1805320/1724702134/c4bfc9e432c8fe4d4ee2764d71b6049acfadb6df/1779774786/hls_264_master.m3u8?t=1779777081",
+        "highlight": true
+      }
+    ]
+  },
+  "runescapedragonwilds": {
+    "storeSource": "steam",
+    "storeAppId": 1374490,
+    "storeName": "RuneScape: Dragonwilds 符文世界：龙之荒野",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/567dde769568783b8bbe4904954b8b7b9d0c0fa5/header_alt_assets_3_schinese.jpg?t=1785893866",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "可调整文字大小",
+      "自定义音量控制",
+      "随时保存",
+      "立体声",
+      "部分支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Jagex Ltd"
+    ],
+    "publishers": [
+      "Jagex Ltd",
+      "H2 Interactive Co., Ltd.",
+      "Graph"
+    ],
+    "releaseDate": "2025 年 4 月 15 日",
+    "storeUrl": "https://store.steampowered.com/app/1374490/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/1684f331a4a3fa142cd8a71bd88f084eae50ba43/ss_1684f331a4a3fa142cd8a71bd88f084eae50ba43.1920x1080.jpg?t=1785893866"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/82c5d5c1bf49162782e0450e4a9ba97f1284aeaa/ss_82c5d5c1bf49162782e0450e4a9ba97f1284aeaa.1920x1080.jpg?t=1785893866"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/365c7159a244b1f7f9b3190f01ee20df7841f3b5/ss_365c7159a244b1f7f9b3190f01ee20df7841f3b5.1920x1080.jpg?t=1785893866"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/c892fbf0bdd4ddd01031fdf7adc6e73fdf04b950/ss_c892fbf0bdd4ddd01031fdf7adc6e73fdf04b950.1920x1080.jpg?t=1785893866"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/b2897e311de35e03ec34d9c60db0f7cc6334e30b/ss_b2897e311de35e03ec34d9c60db0f7cc6334e30b.1920x1080.jpg?t=1785893866"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1374490/5b89d29e51783c66557b3a4607ac759a8a25ad64/ss_5b89d29e51783c66557b3a4607ac759a8a25ad64.1920x1080.jpg?t=1785893866"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257351220,
+        "name": "RuneScape: Dragonwilds - SGF Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257351220/74dc7bf4ed600e13e21e508b11740d827263cec5/movie_600x337.jpg?t=1780696629",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1374490/75031452/2372d12b4184fe7aa853c938d069cb5ee348d9f2/1780655956/hls_264_master.m3u8?t=1780696629",
+        "highlight": true
+      },
+      {
+        "id": 257363800,
+        "name": "RuneScape: Dragonwilds - Umbral Sands Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257363800/bde1d3ccf88a54c5aaa6c3d59cb3b232e537cadb/movie_600x337.jpg?t=1782205872",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1374490/1676514148/f0ef483da5f96931c9d39e15d3b98fc099478d48/1782156621/hls_264_master.m3u8?t=1782205872",
+        "highlight": true
+      }
+    ]
+  },
+  "rust": {
+    "storeSource": "steam",
+    "storeAppId": 252490,
+    "storeName": "Rust",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/header.jpg?t=1781536981",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "大型多人在线",
+      "角色扮演"
+    ],
+    "categories": [
+      "多人",
+      "大型多人在线",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "跨平台多人",
+      "Steam 成就",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "应用内购买",
+      "可调整文字大小",
+      "视角舒适度",
+      "可选颜色",
+      "自定义音量控制",
+      "可调整难度",
+      "立体声",
+      "字幕选项",
+      "环绕声",
+      "已启用 Valve 反作弊保护",
+      "统计数据",
+      "在平板上远程畅玩"
+    ],
+    "developers": [
+      "Facepunch Studios"
+    ],
+    "publishers": [
+      "Facepunch Studios"
+    ],
+    "releaseDate": "2018 年 2 月 8 日",
+    "storeUrl": "https://store.steampowered.com/app/252490/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_271feae67943bdc141c1249aba116349397e9ba9.1920x1080.jpg?t=1781536981"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_e825b087b95e51c3534383cfd75ad6e8038147c3.1920x1080.jpg?t=1781536981"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_0e646f1a70e5cb8eed00efef8adb9579d40d5b2e.1920x1080.jpg?t=1781536981"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/69dc23d53163b755e809a562a377bd276154c70e/ss_69dc23d53163b755e809a562a377bd276154c70e.1920x1080.jpg?t=1781536981"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_1c2d0d1eefee54f0c67626c74eb21699bbb0ef52.1920x1080.jpg?t=1781536981"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/ss_d0fdacaeef5a28a7cee525fd73376adfe083c964.1920x1080.jpg?t=1781536981"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256684736,
+        "name": "Official Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256684736/movie.293x165.jpg?t=1699598112",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/252490/102019/c573f5b01317174c7ae20a0abbcc3a39ccad32c2/1750487766/hls_264_master.m3u8?t=1699598112",
+        "highlight": true
+      },
+      {
+        "id": 257095612,
+        "name": "The Primitive Update",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257095612/39280f7c0269609c64da103a559d2476201324e4/movie_600x337.jpg?t=1738927715",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/252490/824633/5cc1654f16b5276ffc863ba20a16278255996ceb/1750487790/hls_264_master.m3u8?t=1738927715",
+        "highlight": true
+      }
+    ]
+  },
+  "satisfactory": {
+    "storeSource": "steam",
+    "storeAppId": 526870,
+    "storeName": "幸福工厂",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/header.jpg?t=1780413533",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "冒险",
+      "独立",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "跨平台多人",
+      "Steam 成就",
+      "可调整文字大小",
+      "视角舒适度",
+      "可选颜色",
+      "自定义音量控制",
+      "可调整难度",
+      "无需应对快速反应事件",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "随时保存",
+      "立体声",
+      "环绕声",
+      "部分支持控制器",
+      "Steam 云",
+      "在平板上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Coffee Stain Studios"
+    ],
+    "publishers": [
+      "Coffee Stain Publishing"
+    ],
+    "releaseDate": "2024 年 9 月 10 日",
+    "storeUrl": "https://store.steampowered.com/app/526870/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_9083ccf8fbb22c4068a6e233e3de343f815f9dc1.1920x1080.jpg?t=1780413533"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_6f456011887f970dc230af5e1720065ca3430aae.1920x1080.jpg?t=1780413533"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_b1104309f1c22c85de6ad6c401e6d889411c14d2.1920x1080.jpg?t=1780413533"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_3f47e401fc3e09fd86500d2026da954de08a015b.1920x1080.jpg?t=1780413533"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_077e7ea98621faeb5b4a73ea0aaa91f41c6f66c9.1920x1080.jpg?t=1780413533"
+      },
+      {
+        "id": 6,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/526870/ss_cff8791f06839134d09f4c865758193a7023b92f.1920x1080.jpg?t=1780413533"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257348587,
+        "name": "1.2 Update",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257348587/882ab11edd9a7d03707866b3668f353664b1c829/movie_600x337.jpg?t=1780412594",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/526870/462238411/2d668f54a6bd38f6653385c250d3050f98b1d684/1780411278/hls_264_master.m3u8?t=1780412594",
+        "highlight": true
+      },
+      {
+        "id": 257053861,
+        "name": "1.0!",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257053861/movie.293x165.jpg?t=1725980382",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/526870/753593/79f874ad17faa4ceebc26380fc79a1adafcec294/1750544336/hls_264_master.m3u8?t=1725980382",
+        "highlight": true
+      }
+    ]
+  },
+  "scum": {
+    "storeSource": "steam",
+    "storeAppId": 513710,
+    "storeName": "人渣",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/dc41d8c9bad51f61f618419b8e510f0b4617ad42/header_schinese.jpg?t=1784560168",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "大型多人在线"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "大型多人在线",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "Steam 集换式卡牌",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "立体声",
+      "环绕声",
+      "统计数据"
+    ],
+    "developers": [
+      "Gamepires"
+    ],
+    "publishers": [
+      "Gamepires"
+    ],
+    "releaseDate": "2025 年 6 月 17 日",
+    "storeUrl": "https://store.steampowered.com/app/513710/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/ss_0b75f5f5aa10f00a0d3e9776b15477fe3f9b6eb5.1920x1080.jpg?t=1784560168"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/ss_62f56143b1c35cb843a4f3e29290a09176532ee5.1920x1080.jpg?t=1784560168"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/ss_ecfffcc4a177083e0ed0727319f77019624f076a.1920x1080.jpg?t=1784560168"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/ef7f226e863f6e82d77550875f8296803d914f4b/ss_ef7f226e863f6e82d77550875f8296803d914f4b.1920x1080.jpg?t=1784560168"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/ss_facfc7ebc5dfd485cd269888d996ec51cdaae434.1920x1080.jpg?t=1784560168"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/513710/b8347f1c3a78f04c66fde7a794c1c11baf3e9e57/ss_b8347f1c3a78f04c66fde7a794c1c11baf3e9e57.1920x1080.jpg?t=1784560168"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257159200,
+        "name": "SCUM CTV Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257159200/73a2a7d776da904d5b1effb3eab1d9be375dea2a/movie_600x337.jpg?t=1779716232",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/513710/1791462078/de05145e8a02385a5ac586a8556132f7d15125e2/1750411544/hls_264_master.m3u8?t=1779716232",
+        "highlight": true
+      },
+      {
+        "id": 257157711,
+        "name": "SCUM 1.0 Release trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257157711/558f6526b5aa2c59ab4664ed23b60492f5d74679/movie_600x337.jpg?t=1779716233",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/513710/539506434/64d220b906d060aa11b91fb0d6e548bf41931960/1750147693/hls_264_master.m3u8?t=1779716233",
+        "highlight": true
+      }
+    ]
+  },
+  "sevendaystodie": {
+    "storeSource": "steam",
+    "storeAppId": 251570,
+    "storeName": "7 Days to Die",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/header.jpg?t=1785351975",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "模拟",
+      "策略"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "跨平台多人",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "包含关卡编辑器",
+      "在平板上远程畅玩",
+      "在电视上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "The Fun Pimps"
+    ],
+    "publishers": [
+      "The Fun Pimps Entertainment LLC"
+    ],
+    "releaseDate": "2024 年 7 月 25 日",
+    "storeUrl": "https://store.steampowered.com/app/251570/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/766ed3debfe7b894fbb5650aa89fa213fa254d5d/ss_766ed3debfe7b894fbb5650aa89fa213fa254d5d.1920x1080.jpg?t=1785351975"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/2d243d95de4989b37df448f29de123f0d662088c/ss_2d243d95de4989b37df448f29de123f0d662088c.1920x1080.jpg?t=1785351975"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/33edbeefc7f5ff8ccda4bda274b01eff84eb4eb8/ss_33edbeefc7f5ff8ccda4bda274b01eff84eb4eb8.1920x1080.jpg?t=1785351975"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/70c05a775f747e9d556435bfd8795536ddd4117d/ss_70c05a775f747e9d556435bfd8795536ddd4117d.1920x1080.jpg?t=1785351975"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/8aff547df25c2d393fbdef2977dc109806de3112/ss_8aff547df25c2d393fbdef2977dc109806de3112.1920x1080.jpg?t=1785351975"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/251570/d7b2bba330c25e1eae848d8d8bb7321b9b1833d0/ss_d7b2bba330c25e1eae848d8d8bb7321b9b1833d0.1920x1080.jpg?t=1785351975"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257032424,
+        "name": "Gameplay Trailer 1.0",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257032424/movie.293x165.jpg?t=1718836140",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/251570/716092/d75e4c32543a286465ed22b50b4b3285097323e0/1750497144/hls_264_master.m3u8?t=1718836140",
+        "highlight": true
+      },
+      {
+        "id": 257032437,
+        "name": "Live Action Trailer 1.0",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257032437/movie.293x165.jpg?t=1718836145",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/251570/716115/4e94542b083e44a734637bb5a2e9248ea4e54c8d/1750497154/hls_264_master.m3u8?t=1718836145",
+        "highlight": true
+      }
+    ]
+  },
+  "sonsoftheforest": {
+    "storeSource": "steam",
+    "storeAppId": 1326470,
+    "storeName": "Sons Of The Forest",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/header.jpg?t=1708624856",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "模拟"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Endnight Games Ltd"
+    ],
+    "publishers": [
+      "Newnight "
+    ],
+    "releaseDate": "2024 年 2 月 22 日",
+    "storeUrl": "https://store.steampowered.com/app/1326470/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_e6e3ab1badfb287a77fb6eef7b1589a35371496b.1920x1080.jpg?t=1708624856"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_4fa5d260318f0aa37754b00c5dc10d1b7b9b9b1d.1920x1080.jpg?t=1708624856"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_2b67491ca913adea6953429e1a567824aaa0ed54.1920x1080.jpg?t=1708624856"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_ba2c1f6e69c6c7d69f7965cbd4b78da59ec59d55.1920x1080.jpg?t=1708624856"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_2c537a8c689dd6b21643b8054a64646334ef7391.1920x1080.jpg?t=1708624856"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1326470/ss_b05310f659a67129e9089fbb22e445b0998d6d1d.1920x1080.jpg?t=1708624856"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256932123,
+        "name": "Sons Of The Forest Multiplayer Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256932123/movie.293x165.jpg?t=1677175226",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1326470/541725/76f298f949c4ae5b4257fa2056112f8d34285799/1750672622/hls_264_master.m3u8?t=1677175226",
+        "highlight": true
+      },
+      {
+        "id": 256880856,
+        "name": "Sons Of The Forest Trailer 3",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256880856/movie.293x165.jpg?t=1651692528",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1326470/452653/26cd55f7bd9aa55412f8b5fa91b9595b31855830/1750672607/hls_264_master.m3u8?t=1651692528",
+        "highlight": true
+      }
+    ]
+  },
+  "soulmask": {
+    "storeSource": "steam",
+    "storeAppId": 2646460,
+    "storeName": "灵魂面甲(Soulmask)",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/abe440dfb0429d9fbbd3e5fc6d301db44eeaf951/header_schinese.jpg?t=1784927000",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "冒险",
+      "独立",
+      "角色扮演",
+      "模拟"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 成就",
+      "Steam 创意工坊",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "CampFire Studio"
+    ],
+    "publishers": [
+      "Qooland Games"
+    ],
+    "releaseDate": "2026 年 4 月 9 日",
+    "storeUrl": "https://store.steampowered.com/app/2646460/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/253a0d981a4ff3cfb217e263b108a46036057b65/ss_253a0d981a4ff3cfb217e263b108a46036057b65.1920x1080.jpg?t=1784927000"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/5e3d6a48915334a7466a130dd629956c5219bf4d/ss_5e3d6a48915334a7466a130dd629956c5219bf4d.1920x1080.jpg?t=1784927000"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/ss_7ef7045926393971406f85db88bdb0cc2dd91b65.1920x1080.jpg?t=1784927000"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/70e0a4c2930dbbbf3f49ef059f8868379eab5323/ss_70e0a4c2930dbbbf3f49ef059f8868379eab5323.1920x1080.jpg?t=1784927000"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/ss_d5567b5624d5ddd0bca6b93c0dfd18e9d8e8c8f9.1920x1080.jpg?t=1784927000"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2646460/a7eb710e7fb83e5fddd193d14cf703a4d19e771c/ss_a7eb710e7fb83e5fddd193d14cf703a4d19e771c.1920x1080.jpg?t=1784927000"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257316812,
+        "name": "《灵魂面甲》正式版 发售宣传片",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257316812/3e9e43a1ab9b49af4a17d9baaeffb3ce603d5099/movie_600x337.jpg?t=1778518456",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/2646460/2134685621/e1b36f7d1b18569c0bdab679365df8ef11734001/1778469881/hls_264_master.m3u8?t=1778518456",
+        "highlight": true
+      },
+      {
+        "id": 257304268,
+        "name": "灵魂面甲 1.0 玩法宣传片",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257304268/88417f871635fa0d1774b72d64bb0d23900a8257/movie_600x337.jpg?t=1773669788",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/2646460/1278673691/f9253ada0de34dd84b6a5eaab342b99a1f64a89d/1773648961/hls_264_master.m3u8?t=1773669788",
+        "highlight": true
+      }
+    ]
+  },
+  "squad": {
+    "storeSource": "steam",
+    "storeAppId": 393380,
+    "storeName": "Squad",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/0b19b50aabea356bd8f534fbe7d6db9bd227810a/header.jpg?t=1784319638",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "独立",
+      "大型多人在线",
+      "策略"
+    ],
+    "categories": [
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "部分支持控制器",
+      "已启用 Valve 反作弊保护"
+    ],
+    "developers": [
+      "Offworld"
+    ],
+    "publishers": [
+      "Offworld"
+    ],
+    "releaseDate": "2020 年 9 月 23 日",
+    "storeUrl": "https://store.steampowered.com/app/393380/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_646857af730262e7f6f92e67bf2d8b47bf0c662c.1920x1080.jpg?t=1784319638"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_0ca9f1167852de187a7f929da20421ddb08fc752.1920x1080.jpg?t=1784319638"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_a50882d54e8fdf8478bbbe5cd8df4bd086fc1a0f.1920x1080.jpg?t=1784319638"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_b256c427c3dc178a04fb54c92d563aae12c0ea36.1920x1080.jpg?t=1784319638"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_6b6aa0741b6e65f34b153f0e6468412e104dbc64.1920x1080.jpg?t=1784319638"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/393380/ss_6fabf783d6897ad15486b2051c997d9f9a8f2ab0.1920x1080.jpg?t=1784319638"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257359661,
+        "name": "Squad Fireteam Edition",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257359661/6a682eeade6b0d4bc279f49bf0b3536515b74fd2/movie_600x337.jpg?t=1781542997",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/393380/1658031126/eb620b8f76978b8fff72fb3ab16ede5c14785571/1781541279/hls_264_master.m3u8?t=1781542997",
+        "highlight": true
+      },
+      {
+        "id": 257058446,
+        "name": "Welcome to Squad",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257058446/7ce024610266a2c2a0363bc76dab3f6ae46fc4e2/movie_600x337.jpg?t=1761665571",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/393380/761271/2e3c65f1c249a0beff07bd2a2171262e8b3ddc97/1750525143/hls_264_master.m3u8?t=1761665571",
+        "highlight": true
+      }
+    ]
+  },
+  "terraria": {
+    "storeSource": "steam",
+    "storeAppId": 105600,
+    "storeName": "Terraria",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/header.jpg?t=1769844435",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "合作",
+      "在线合作",
+      "Steam 成就",
+      "完全支持控制器",
+      "Steam 集换式卡牌",
+      "Steam 云",
+      "在手机上远程畅玩",
+      "在平板上远程畅玩",
+      "在电视上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Re-Logic"
+    ],
+    "publishers": [
+      "Re-Logic"
+    ],
+    "releaseDate": "2011 年 5 月 16 日",
+    "storeUrl": "https://store.steampowered.com/app/105600/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_8c03886f214d2108cafca13845533eaa3d87d83f.1920x1080.jpg?t=1769844435"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_ae168a00ab08104ba266dc30232654d4b3c919e5.1920x1080.jpg?t=1769844435"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_9edd98caaf9357c2f40758f354475a56e356e8b0.1920x1080.jpg?t=1769844435"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_75ea9a7e39eb34b40efa1e6dfd2536098dc4734b.1920x1080.jpg?t=1769844435"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_782374517c1792debd74d24856203b876eba3a5d.1920x1080.jpg?t=1769844435"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/105600/ss_04dd9f0a5773b686a452ba480b951f83b3ed5061.1920x1080.jpg?t=1769844435"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257274214,
+        "name": "Terraria: Bigger & Boulder Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257274214/3400c546ddc61c713c2a2da4df7032f0f264a2a4/movie_600x337.jpg?t=1769844434",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/105600/1114648825/03d62ed8c2a353ea17f36caf492d053746655032/1769541214/hls_264_master.m3u8?t=1769844434",
+        "highlight": true
+      },
+      {
+        "id": 256785003,
+        "name": "Terraria: Journey's End Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256785003/movie.293x165.jpg?t=1589654781",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/105600/284912/418f39cf00388fbdd8efcdc81e05c19c410dfb6d/1750498447/hls_264_master.m3u8?t=1589654781",
+        "highlight": true
+      }
+    ]
+  },
+  "theforest": {
+    "storeSource": "steam",
+    "storeAppId": 242760,
+    "storeName": "The Forest",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/header.jpg?t=1699381053",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "模拟"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "定位控制器支持",
+      "已支持 VR",
+      "部分支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Endnight Games Ltd"
+    ],
+    "publishers": [
+      "Endnight Games Ltd"
+    ],
+    "releaseDate": "2018 年 4 月 30 日",
+    "storeUrl": "https://store.steampowered.com/app/242760/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_8ccb821c4df3fafdf4161d77f38635441a8157f2.1920x1080.jpg?t=1699381053"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_53c615d49c4777144ed7359e4bf7c9eb6838cc8e.1920x1080.jpg?t=1699381053"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_772eebf0ce7bdb51546055a36185e8ee46e8acac.1920x1080.jpg?t=1699381053"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_d03a261fecab226a0ecac5746225c2a50d65c670.1920x1080.jpg?t=1699381053"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_d77d402c78451a04b5c370e81ff7767c4008343c.1920x1080.jpg?t=1699381053"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/242760/ss_a37e6873baf869be91010b20c30a7e61e4b82cc1.1920x1080.jpg?t=1699381053"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 256715589,
+        "name": "The Forest- Trailer 4",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256715589/movie.293x165.jpg?t=1525039057",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/242760/160666/bbafdb4d869f0c66696af5542e6bd7470a214051/1750486422/hls_264_master.m3u8?t=1525039057",
+        "highlight": true
+      }
+    ]
+  },
+  "unturned": {
+    "storeSource": "steam",
+    "storeAppId": 304930,
+    "storeName": "Unturned",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/161ec2d6ace8a03afdb7a423510ff8f7d8b301ba/header.jpg?t=1783436894",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "休闲",
+      "独立",
+      "免费开玩"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 成就",
+      "Steam 集换式卡牌",
+      "Steam 创意工坊",
+      "应用内购买",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "无需应对快速反应事件",
+      "立体声",
+      "Steam 云",
+      "已启用 Valve 反作弊保护",
+      "统计数据",
+      "包含关卡编辑器",
+      "在平板上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Smartly Dressed Games"
+    ],
+    "publishers": [
+      "Smartly Dressed Games"
+    ],
+    "releaseDate": "2017 年 7 月 7 日",
+    "storeUrl": "https://store.steampowered.com/app/304930/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/a2d8ffa4eaff717539c1fd9d3cd0440691c6fc81/ss_a2d8ffa4eaff717539c1fd9d3cd0440691c6fc81.1920x1080.jpg?t=1783436894"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/c0f8253a44a7e322ee287e309e3596d17d9aacba/ss_c0f8253a44a7e322ee287e309e3596d17d9aacba.1920x1080.jpg?t=1783436894"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/a4200b3c585bde5934230580162899c92a483610/ss_a4200b3c585bde5934230580162899c92a483610.1920x1080.jpg?t=1783436894"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/accee15f453a1f6b981114579f2a67440563d850/ss_accee15f453a1f6b981114579f2a67440563d850.1920x1080.jpg?t=1783436894"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/e502ef25688ec9415914ca018e8318698117248d/ss_e502ef25688ec9415914ca018e8318698117248d.1920x1080.jpg?t=1783436894"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/304930/7382b0dfbc4bc44986e888c263be3535cef11a31/ss_7382b0dfbc4bc44986e888c263be3535cef11a31.1920x1080.jpg?t=1783436894"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257323670,
+        "name": "California 2 Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257323670/26cef6d40f4b7b2da1315291b757000503d12901/movie_600x337.jpg?t=1777564984",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/304930/286521003/b2f5135efbc83587c512830b0c089c9b080e0113/1776791203/hls_264_master.m3u8?t=1777564984",
+        "highlight": true
+      },
+      {
+        "id": 256688960,
+        "name": "Release Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/256688960/movie.293x165.jpg?t=1688148646",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/304930/111250/83b0fcdd09c9654024ce72b23606290c7f5c81da/1750504233/hls_264_master.m3u8?t=1688148646",
+        "highlight": true
+      }
+    ]
+  },
+  "valheim": {
+    "storeSource": "steam",
+    "storeAppId": 892970,
+    "storeName": "Valheim: 英灵神殿",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/header_schinese.jpg?t=1786012504",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "独立",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "完全支持控制器",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "随时保存",
+      "立体声",
+      "Steam 云",
+      "在平板上远程畅玩",
+      "家庭共享"
+    ],
+    "developers": [
+      "Iron Gate AB"
+    ],
+    "publishers": [
+      "Coffee Stain Publishing"
+    ],
+    "releaseDate": "2021 年 2 月 2 日",
+    "storeUrl": "https://store.steampowered.com/app/892970/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_a600a7d4ca954543e22f571a9629521a13f82143.1920x1080.jpg?t=1786012504"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_cd0262c5abf8a90ee5e1059acafc5a92b6be0e73.1920x1080.jpg?t=1786012504"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_3db385fc1223914dadb199ac8682683a8c59454e.1920x1080.jpg?t=1786012504"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_6032c9336c6cf9c1ebc914cedf022b38e97fd271.1920x1080.jpg?t=1786012504"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_f6cbfeea728d557fa9f483685fea3205f08f5d9e.1920x1080.jpg?t=1786012504"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/ss_551f06a43b72609d7ca3cd63e93c58e949d58384.1920x1080.jpg?t=1786012504"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257363622,
+        "name": "1.0 Release Date Reveal Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257363622/e979dd1440c9a792e9439d71c4982874abf19a0e/movie_600x337.jpg?t=1782130908",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/892970/1497098081/82852b46712774fa05d84fbaf0fb0ab9679a07f0/1782129560/hls_264_master.m3u8?t=1782130908",
+        "highlight": true
+      },
+      {
+        "id": 257023147,
+        "name": "Ashlands Animated Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257023147/movie.293x165.jpg?t=1782130909",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/892970/700057/92243856917a479ef44b4ab22d3378a272c6fffc/1750594091/hls_264_master.m3u8?t=1782130909",
+        "highlight": true
+      }
+    ]
+  },
+  "vrising": {
+    "storeSource": "steam",
+    "storeAppId": 1604030,
+    "storeName": "夜族崛起",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/be49834ab147ad22ba17005fb847c93917d18b97/header.jpg?t=1785921000",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "大型多人在线"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "玩家对战",
+      "线上玩家对战",
+      "局域网玩家对战",
+      "合作",
+      "在线合作",
+      "局域网合作",
+      "Steam 成就",
+      "视角舒适度",
+      "自定义音量控制",
+      "可调整难度",
+      "无需应对快速反应事件",
+      "DUALSHOCK 控制器支持",
+      "DUALSHOCK 控制器支持",
+      "DualSense 控制器支持",
+      "DualSense 控制器支持",
+      "随时保存",
+      "立体声",
+      "字幕选项",
+      "环绕声",
+      "部分支持控制器",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Stunlock Studios"
+    ],
+    "publishers": [
+      "Stunlock Studios"
+    ],
+    "releaseDate": "2024 年 5 月 8 日",
+    "storeUrl": "https://store.steampowered.com/app/1604030/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/ss_19d6b903fd65c410af902a8c5f62c820cfe09292.1920x1080.jpg?t=1785921000"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/ss_4a88ba3b0353f3d43f045e5230c9d600e19daae8.1920x1080.jpg?t=1785921000"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/ss_262496a8c3ed1335d63398fe06f8dd4d43d311cf.1920x1080.jpg?t=1785921000"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/3101acbd497584ac6f8ecb91c05cbb66378d62a1/ss_3101acbd497584ac6f8ecb91c05cbb66378d62a1.1920x1080.jpg?t=1785921000"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/ss_712d9885b750317ab0be515158e51c03cf5944b6.1920x1080.jpg?t=1785921000"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1604030/ss_e3ea47bf147b505e628dda2d607cf81eb9d56b3b.1920x1080.jpg?t=1785921000"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257020634,
+        "name": "V Rising Launch Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257020634/movie.293x165.jpg?t=1714748047",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1604030/695563/ec1d7936ac8aac583439039a89a421f9ab70fb0b/1750710266/hls_264_master.m3u8?t=1714748047",
+        "highlight": true
+      },
+      {
+        "id": 257131970,
+        "name": "1.1 Update: Invaders of Oakveil",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257131970/0085f62bfef6fe95d790ce79cf7abf025a5efdb8/movie_600x337.jpg?t=1745841690",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/1604030/879671/084ff9a12c9ff8366d00195cc0857ebc6e69619f/1750710268/hls_264_master.m3u8?t=1745841690",
+        "highlight": true
+      }
+    ]
+  },
+  "windrose": {
+    "storeSource": "steam",
+    "storeAppId": 3041230,
+    "storeName": "Windrose: 风启之旅",
+    "coverUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/6c0d1a762a62736e6aa7eabad29bfece0846feae/header_schinese.jpg?t=1783932953",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "动作",
+      "冒险",
+      "角色扮演",
+      "抢先体验"
+    ],
+    "categories": [
+      "单人",
+      "多人",
+      "合作",
+      "在线合作",
+      "完全支持控制器",
+      "自定义音量控制",
+      "可调整难度",
+      "无需应对快速反应事件",
+      "立体声",
+      "Steam 云",
+      "家庭共享"
+    ],
+    "developers": [
+      "Kraken Express"
+    ],
+    "publishers": [
+      "Kraken Express",
+      "Pocketpair Publishing (Japan)"
+    ],
+    "releaseDate": "2026 年 4 月 14 日",
+    "storeUrl": "https://store.steampowered.com/app/3041230/",
+    "screenshots": [
+      {
+        "id": 0,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/464db0a63a2d03bb8e75ecf04e24f8949b03d500/ss_464db0a63a2d03bb8e75ecf04e24f8949b03d500.1920x1080.jpg?t=1783932953"
+      },
+      {
+        "id": 1,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/f83b7aa29874e6e57fd20ab0642269536723ac1a/ss_f83b7aa29874e6e57fd20ab0642269536723ac1a.1920x1080.jpg?t=1783932953"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/65dfc1db4ae81fd96d496c0e3bb9640281eafe0c/ss_65dfc1db4ae81fd96d496c0e3bb9640281eafe0c.1920x1080.jpg?t=1783932953"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/9d7ee982069054a1ba23dc881f26f1f83f356daa/ss_9d7ee982069054a1ba23dc881f26f1f83f356daa.1920x1080.jpg?t=1783932953"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 5",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/1ecaa7ff2d46c717a5afb4a7e11f678d16ae3064/ss_1ecaa7ff2d46c717a5afb4a7e11f678d16ae3064.1920x1080.jpg?t=1783932953"
+      },
+      {
+        "id": 5,
+        "label": "Screenshot 6",
+        "sourceUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3041230/c5f6647067df8c778831b463443b22b6e1df0ed6/ss_c5f6647067df8c778831b463443b22b6e1df0ed6.1920x1080.jpg?t=1783932953"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 257288135,
+        "name": "Windrose: Gameplay Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257288135/1fecbfe6a64070b65f9a8d709f69f7825d38102b/movie_600x337.jpg?t=1776152381",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/3041230/2012344070/6b0b773c076c6f25728af99a7af10b14639ec6bb/1776076852/hls_264_master.m3u8?t=1776152381",
+        "highlight": true
+      },
+      {
+        "id": 257288136,
+        "name": "Windrose: Early Access Release Date Reveal Trailer",
+        "posterUrl": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/257288136/4093984f64af1ed550d09ce0571836e99e5823ed/movie_600x337.jpg?t=1776152383",
+        "streamUrl": "https://video.akamai.steamstatic.com/store_trailers/3041230/1708336673/38110294840935b7135c2dd1bc9f1cdf8ed5149b/1776077130/hls_264_master.m3u8?t=1776152383",
+        "highlight": true
+      }
+    ]
+  },
+  "minecraft": {
+    "storeSource": "official",
+    "storeAppId": null,
+    "storeName": "Minecraft Java Edition",
+    "coverUrl": "https://store-images.s-microsoft.com/image/apps.53301.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.3157b812-e78d-42b5-8d1e-c705c8e99c20?q=90&w=1280&h=720",
+    "shortDescription": "",
+    "aboutParagraphs": [],
+    "genres": [
+      "Sandbox",
+      "Survival"
+    ],
+    "categories": [
+      "Multiplayer",
+      "Co-op",
+      "Dedicated Server"
+    ],
+    "developers": [
+      "Mojang Studios"
+    ],
+    "publishers": [
+      "Mojang Studios",
+      "Xbox Game Studios"
+    ],
+    "releaseDate": "",
+    "storeUrl": "https://www.minecraft.net/en-us/download/server",
+    "screenshots": [
+      {
+        "id": 1,
+        "label": "Screenshot 1",
+        "sourceUrl": "https://store-images.s-microsoft.com/image/apps.53301.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.3157b812-e78d-42b5-8d1e-c705c8e99c20?q=90&w=1280&h=720"
+      },
+      {
+        "id": 2,
+        "label": "Screenshot 2",
+        "sourceUrl": "https://store-images.s-microsoft.com/image/apps.8991.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.f1809072-ce05-4893-800d-47217b28d3ae?q=90&w=1280&h=720"
+      },
+      {
+        "id": 3,
+        "label": "Screenshot 3",
+        "sourceUrl": "https://store-images.s-microsoft.com/image/apps.21926.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.907ec983-11a4-4e05-a2ea-2a67ef17f604?q=90&w=1280&h=720"
+      },
+      {
+        "id": 4,
+        "label": "Screenshot 4",
+        "sourceUrl": "https://store-images.s-microsoft.com/image/apps.64739.14216416494490173.9772fa78-5a01-45ce-9b9e-6ec61a10f4e2.29ea7f08-7cc9-4462-809e-e82a3d88e6d1?q=90&w=1280&h=720"
+      }
+    ],
+    "trailers": [
+      {
+        "id": 1,
+        "name": "Minecraft Launcher trailer",
+        "posterUrl": "https://store-images.s-microsoft.com/image/apps.55291.14247769038588514.9bec5ad3-671a-4c3e-ab15-deaf758065b3.37302b52-5a12-47cf-86b8-1edb45ef42a1?q=90&w=1280&h=720",
+        "streamUrl": "https://cdn.trailers.xboxservices.com/trailers/00000000-0000-0000-0000-000000000000/is/content/microsoftassets/bc7acd3e-6d60-49cb-8b07-0916e6f7febc-AVS.m3u8?packagedStreaming=true",
+        "highlight": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "verified_at": "2026-10-01",
+  "build": "Steam app 443030 build 25488622",
+  "command": "help",
+  "help_response": "Commands:\n\tWhitelistPlayer\n\t\tUsage: whitelistplayer <userid|platformid>\n\tvalidateallbuildings\n\t\tUsage: validateallbuildings\n\tUnWhitelistPlayer\n\t\tUsage: unwhitelistplayer <userid|platformid>\n\tUnbanPlayer\n\t\tUsage: unbanplayer <userid|platformid>\n\tsql\n\t\tUsage: sql <query>.\n\tShutdown\n\t\tUsage: shutdown\n\tSetServerSetting\n\t\tUsage: SetServerSetting <Setting Name> <Setting Value>\n\trestart\n\t\tUsage: restart\n\tnetprofile\n\t\tUsage: netprofile (enable|disable)\n\tmemreportsilentevent\n\t\tUsage: memreportsilentevent (key)\n\tmemreport\n\t\tUsage: memreport\n\tlistplayers\n\t\tUsage: listplayers\n\tlistbans\n\t\tUsage: listbans\n\tKickPlayer\n\t\tUsage: kickplayer (index|name|userid|platformid|player) <identification> <message>\n\tHelp\n\t\tUsage: help \"Optional command name filter\". lists all available rcon commands.\n\tGetServerSetting\n\t\tUsage: GetServerSetting <Setting Name>\n\tGetLandOwner\n\t\tUsage: getlandowner <x> <y>\n\texec\n\t\tUsage: exec (args)\n\tdumpticks\n\t\tUsage: dumpticks\n\tcon\n\t\tUsage: con <id> <command> <args>. Where <id> is a valid online player ID or name#number, and <command> being a regular console command\n\tbuildingquery\n\t\tUsage: buildingquery (list|destroy) <owner id> <filters>\n\tBuildingDestroy\n\t\tUsage: buildingdestroy <building ids>\n\tBuildingContribution\n\t\tUsage: buildingcontribution <building id>\n\tbroadcast\n\t\tUsage: broadcast <message>\n\tBanPlayer\n\t\tUsage: banplayer (index|name|userid|platformid|player) <identification> <message>",
+  "shutdown_command": "shutdown",
+  "observed_native_shutdown_ms": 86463,
+  "evidence_scope": "Native help and shutdown log: RequestExit(0), world database updated, engine and object subsystems closed, log closed. This records native teardown, not a passing LanGame stop API result."
+}

@@ -1,0 +1,19 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "rust"
+scope = "Rust server installation/update, configuration, ports, RCON, maps, access control, browser metadata and server operation."
+gaps = ["Facepunch's wiki includes community edits and historical notes; retain per-page version and deprecation context."]
+
+[[sources]]
+id = "facepunch-hosting"
+title = "Rust server-hosting documentation"
+authority = "Facepunch Studios / Rust Wiki contributors"
+kind = "official_community"
+seeds = ["https://wiki.facepunch.com/rust/Creating-a-server","https://wiki.facepunch.com/rust/useful_commands","https://wiki.facepunch.com/rust/server-browser-tags","https://wiki.facepunch.com/rust/dns-records","https://wiki.facepunch.com/rust/custom-server-icon","https://wiki.facepunch.com/rust/Hosting_a_custom_map","https://wiki.facepunch.com/rust/procedural_generation_customization","https://wiki.facepunch.com/rust/Creating_a_hidden_whitelisted_server","https://wiki.facepunch.com/rust/server-gamemodes","https://wiki.facepunch.com/rust/server-wipe-timer","https://wiki.facepunch.com/rust/rust-companion-server","https://wiki.facepunch.com/rust/centralized-banning","https://wiki.facepunch.com/rust/receiving-reports","https://wiki.facepunch.com/rust/creative","https://wiki.facepunch.com/rust/tutorial_island","https://wiki.facepunch.com/rust/adding-custom-radios-to-boombox","https://wiki.facepunch.com/rust/Getting-Started_w-Server","https://wiki.facepunch.com/rust/server-custom-emojis","https://wiki.facepunch.com/rust/Creating_a_player_count_display_discord_bot"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+content_selector = "#pagecontent"
+authority_evidence = "https://wiki.facepunch.com/rust/Creating-a-server"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"

@@ -1,0 +1,136 @@
+/* One owner for Configuration and Maintenance field geometry and states. */
+.configuration-workspace,
+.server-save-policy-editor,
+.settings-guided-sections,
+.settings-schema-section {
+  --settings-control-height: 38px;
+  --settings-control-radius: 8px;
+  --settings-control-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --settings-control-bg: color-mix(in srgb, var(--panel-strong) 88%, var(--panel));
+  --settings-control-bg-hover: color-mix(in srgb, var(--theme-card-elevated) 86%, var(--panel));
+  --settings-control-focus: color-mix(in srgb, var(--accent) 54%, var(--border));
+}
+
+.settings-schema-input,
+.settings-schema-select,
+.settings-schema-textarea {
+  width: 100%;
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  border-radius: var(--settings-control-radius);
+  border: 1px solid var(--settings-control-border);
+  background: var(--settings-control-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--leading-compact);
+  outline: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.settings-schema-input:hover:not(:disabled),
+.settings-schema-select:hover:not(:disabled),
+.settings-schema-textarea:hover:not(:disabled) {
+  background: var(--settings-control-bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--settings-control-border));
+}
+
+.settings-schema-input:focus,
+.settings-schema-select:focus,
+.settings-schema-textarea:focus {
+  border-color: var(--settings-control-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.settings-schema-input.is-invalid,
+.settings-schema-select.is-invalid,
+.settings-schema-textarea.is-invalid,
+.configuration-field.is-invalid > .settings-toggle-card,
+.settings-schema-field.is-invalid .workshop-list-editor,
+.settings-schema-field.is-invalid .settings-enum-checklist-option {
+  border-color: var(--theme-danger-border);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-danger-border) 48%, transparent);
+}
+
+.settings-schema-textarea {
+  min-height: 92px;
+  resize: vertical;
+  line-height: var(--leading-body);
+}
+
+select:is(.settings-schema-input, .settings-schema-select) { padding-right: 32px; }
+
+.settings-toggle-card {
+  display: flex;
+  align-self: start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  border: 1px solid var(--settings-control-border);
+  border-radius: var(--settings-control-radius);
+  background: var(--settings-control-bg);
+  line-height: var(--leading-compact);
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.settings-toggle-card:hover {
+  background: var(--settings-control-bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--settings-control-border));
+}
+
+.settings-toggle-card input[type="checkbox"],
+.settings-enum-checklist-option input[type="checkbox"],
+.maintenance-workspace :is(.server-broadcast-rule-toggle, .ark-cluster-exclusive) input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--panel) 86%, var(--panel-strong));
+  cursor: pointer;
+  flex: 0 0 18px;
+  transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.settings-toggle-card input[type="checkbox"]:checked,
+.settings-enum-checklist-option input[type="checkbox"]:checked,
+.maintenance-workspace :is(.server-broadcast-rule-toggle, .ark-cluster-exclusive) input[type="checkbox"]:checked {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+  background: var(--accent);
+  box-shadow: inset 0 0 0 4px var(--panel);
+}
+
+.settings-toggle-card input[type="checkbox"]:focus-visible,
+.settings-enum-checklist-option input[type="checkbox"]:focus-visible,
+.maintenance-workspace :is(.server-broadcast-rule-toggle, .ark-cluster-exclusive) input[type="checkbox"]:focus-visible {
+  outline: none;
+  border-color: var(--settings-control-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.settings-toggle-card input[type="checkbox"]:disabled,
+.settings-enum-checklist-option input[type="checkbox"]:disabled,
+.maintenance-workspace :is(.server-broadcast-rule-toggle, .ark-cluster-exclusive) input[type="checkbox"]:disabled,
+.settings-schema-input:disabled,
+.settings-schema-select:disabled,
+.settings-schema-textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.settings-toggle-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.settings-field-title {
+  color: var(--text);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-body);
+  letter-spacing: 0;
+}

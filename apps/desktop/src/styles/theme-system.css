@@ -1,0 +1,631 @@
+/* Shared surfaces and interaction colors retain the same meaning in both themes. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f6f6;
+  --panel: #ffffff;
+  --panel-strong: #ffffff;
+  --border: #dedede;
+  --text: #1a1a1a;
+  --muted: #606060;
+  --accent: #1a1a1a;
+  --accent-strong: #333333;
+  --success: #167451;
+  --warning: #855700;
+  --danger: #bc3652;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shell-bg: #f6f6f6;
+  --shell-surface: #ffffff;
+  --shell-surface-strong: #ffffff;
+  --shell-line: #dedede;
+  --shell-line-strong: #a0a0a0;
+  --shell-text: #1a1a1a;
+  --shell-muted: #606060;
+  --shell-focus: #606060;
+  --shell-focus-soft: #eeeeee;
+  --shell-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  --theme-app-background: #f6f6f6;
+  --theme-sidebar-bg: #f6f6f6;
+  --theme-control-surface: #ffffff;
+  --theme-control-hover: #eeeeee;
+  --theme-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --theme-card-surface: #ffffff;
+  --theme-card-elevated: #ffffff;
+  --theme-card-muted: #f6f6f6;
+  --theme-card-hover: #eeeeee;
+  --theme-card-active-bg: #eeeeee;
+  --theme-card-active-border: #606060;
+  --theme-card-active-text: #1a1a1a;
+  --theme-accent-contrast: #ffffff;
+  --theme-icon: #606060;
+  --theme-icon-active: #1a1a1a;
+  --theme-badge-bg: #f6f6f6;
+  --theme-badge-text: #606060;
+  --theme-chip-bg: #f6f6f6;
+  --theme-chip-text: #1a1a1a;
+  --theme-code-surface: #f6f6f6;
+  --theme-code-text: #444444;
+  --theme-log-surface: #f6f6f6;
+  --theme-log-border: #dedede;
+  --theme-log-text: #444444;
+  --theme-log-muted: #606060;
+  --theme-system-card-bg: #ffffff;
+  --theme-system-card-border: #dedede;
+  --theme-system-card-eyebrow: #1a1a1a;
+  --theme-status-surface: #f6f6f6;
+  --theme-status-border: #dedede;
+  --theme-status-text: #1a1a1a;
+  --theme-warning-bg: #fff4de;
+  --theme-warning-border: #e6c78f;
+  --theme-warning-text: #855700;
+  --theme-danger-bg: #fff0f3;
+  --theme-danger-border: #eab9c5;
+  --theme-danger-text: #ad2945;
+  --theme-focus-ring: 0 0 0 3px color-mix(in srgb, var(--shell-focus) 28%, transparent);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #101010;
+  --panel: #191919;
+  --panel-strong: #191919;
+  --border: #343434;
+  --text: #f5f5f5;
+  --muted: #adadad;
+  --accent: #f5f5f5;
+  --accent-strong: #d8d8d8;
+  --success: #77d3ad;
+  --warning: #edc783;
+  --danger: #ff9bb1;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --shell-bg: #101010;
+  --shell-surface: #191919;
+  --shell-surface-strong: #191919;
+  --shell-line: #343434;
+  --shell-line-strong: #686868;
+  --shell-text: #f5f5f5;
+  --shell-muted: #adadad;
+  --shell-focus: #c7c7c7;
+  --shell-focus-soft: #232323;
+  --shell-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --theme-app-background: #101010;
+  --theme-sidebar-bg: #101010;
+  --theme-control-surface: #191919;
+  --theme-control-hover: #232323;
+  --theme-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --theme-card-surface: #191919;
+  --theme-card-elevated: #191919;
+  --theme-card-muted: #101010;
+  --theme-card-hover: #232323;
+  --theme-card-active-bg: #232323;
+  --theme-card-active-border: #c7c7c7;
+  --theme-card-active-text: #f5f5f5;
+  --theme-accent-contrast: #1a1a1a;
+  --theme-icon: #adadad;
+  --theme-icon-active: #f5f5f5;
+  --theme-badge-bg: #101010;
+  --theme-badge-text: #adadad;
+  --theme-chip-bg: #101010;
+  --theme-chip-text: #f5f5f5;
+  --theme-code-surface: #101010;
+  --theme-code-text: #d4d4d4;
+  --theme-log-surface: #101010;
+  --theme-log-border: #343434;
+  --theme-log-text: #d4d4d4;
+  --theme-log-muted: #adadad;
+  --theme-system-card-bg: #191919;
+  --theme-system-card-border: #343434;
+  --theme-system-card-eyebrow: #f5f5f5;
+  --theme-status-surface: #101010;
+  --theme-status-border: #343434;
+  --theme-status-text: #f5f5f5;
+  --theme-warning-bg: #3a3020;
+  --theme-warning-border: #715936;
+  --theme-warning-text: #edc783;
+  --theme-danger-bg: #3b2633;
+  --theme-danger-border: #794455;
+  --theme-danger-text: #ffb0c3;
+  --theme-focus-ring: 0 0 0 3px color-mix(in srgb, var(--shell-focus) 28%, transparent);
+}
+
+:root,
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --theme-card-bg: var(--theme-card-elevated);
+  --text-muted: var(--shell-muted);
+  --shell-accent: var(--accent);
+  --bg-hover: var(--theme-control-hover);
+  --bg-active: var(--theme-card-active-bg);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  background: var(--theme-app-background);
+  color: var(--text);
+}
+
+body,
+.shell-frame,
+.shell-content-body,
+.library-home-page,
+.library-store-shell,
+.library-detail-shell {
+  color: var(--text);
+}
+
+.shell-brand-mark,
+.shell-locale-select,
+.shell-icon-button,
+.shell-user-chip,
+.shell-theme-toggle,
+.page-chip,
+.library-home-selection-meta,
+.library-home-counter,
+.library-home-search-pill,
+.library-back-button,
+.library-home-action-icon,
+.library-rail-nav {
+  border-color: var(--shell-line);
+  background: var(--theme-control-surface);
+  box-shadow: var(--theme-control-shadow);
+}
+
+.panel-card,
+.hero-card,
+.kpi-card,
+.runtime-box,
+.workspace-metric,
+.overview-stat-card,
+.overview-panel-shell,
+.overview-summary-card,
+.overview-quick-card,
+.library-home-stage,
+.library-store-hero,
+.library-media-panel,
+.library-story-panel,
+.library-facts-panel,
+.library-deploy-card,
+.library-runtime-card,
+.library-detail-overview,
+.library-detail-summary-strip,
+.library-detail-cover-facts,
+.library-home-ops-item,
+.library-status-card,
+.library-job-row,
+.library-catalog-panel,
+.library-catalog-card,
+.row-card,
+.module-card,
+.library-detail-store-link,
+.library-media-thumb,
+.library-highlight-cell,
+.library-fact-block,
+.library-side-status,
+.library-detail-stage-player,
+.library-detail-stage-cover,
+.library-detail-stage-media,
+.library-story-panel,
+.library-facts-panel {
+  border-color: var(--shell-line);
+  background: var(--theme-card-surface);
+  box-shadow: var(--shell-shadow);
+}
+
+.library-home-ops-item,
+.library-status-card,
+.library-job-row,
+.library-highlight-cell,
+.library-fact-block,
+.library-side-status,
+.workspace-metric-icon,
+.overview-stat-icon {
+  background: var(--theme-card-muted);
+}
+
+.shell-topbar,
+.shell-activity-bar {
+  background: transparent;
+}
+
+.shell-nav-group-label,
+.shell-brand-subtitle,
+.shell-version,
+.shell-user-role,
+.shell-breadcrumb,
+.shell-activity-label,
+.shell-activity-status,
+.shell-nav-description,
+.library-home-focus-copy span,
+.library-home-rail-hint,
+.library-job-progress {
+  color: var(--shell-muted);
+}
+
+.shell-brand-name,
+.shell-nav-label,
+.shell-breadcrumb-current,
+.shell-system-time,
+.shell-user-name,
+.shell-locale-select,
+.shell-activity-text,
+.workspace-title,
+.workspace-metric-value,
+.kpi-value,
+.row-title,
+.module-title,
+.detail-value,
+.library-catalog-title,
+.library-game-title,
+.library-highlight-cell strong,
+.library-detail-summary-title,
+.library-detail-summary-text,
+.detail-value--code {
+  color: var(--shell-text);
+}
+
+.text-input,
+.form-stack input,
+.form-stack textarea,
+.library-home-search-input {
+  background: var(--theme-card-elevated);
+  color: var(--shell-text);
+  border-color: var(--shell-line);
+}
+
+.text-input::placeholder,
+.form-stack input::placeholder,
+.form-stack textarea::placeholder,
+.library-home-search-input::placeholder {
+  color: var(--shell-muted);
+}
+
+:root[data-theme="light"] .checkbox-row {
+  border-color: var(--shell-line);
+  background: var(--theme-card-muted);
+  color: var(--shell-text);
+}
+
+:root[data-theme="light"] .checkbox-row:hover {
+  background: var(--theme-card-hover);
+}
+
+:root[data-theme="light"] .form-note,
+:root[data-theme="light"] .muted-text {
+  color: var(--shell-muted);
+}
+
+.shell-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 46px;
+  padding: 4px;
+  border-radius: 999px;
+}
+
+.shell-theme-option {
+  min-width: 72px;
+  min-height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--shell-muted);
+  padding: 0 14px;
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.shell-theme-option:hover {
+  background: var(--theme-card-hover);
+  color: var(--shell-text);
+}
+
+.shell-theme-option.is-active {
+  background: var(--shell-focus-soft);
+  color: var(--theme-card-active-text);
+  box-shadow: inset 0 0 0 1px var(--theme-card-active-border);
+}
+
+.shell-nav-item,
+.shell-utility-item {
+  color: var(--shell-text);
+}
+
+.shell-nav-item:hover,
+.shell-utility-item:hover {
+  background: var(--theme-card-hover);
+  border-color: var(--shell-line);
+}
+
+.shell-nav-item.is-active,
+.shell-utility-item.is-active {
+  background: var(--theme-card-active-bg);
+  border-color: var(--theme-card-active-border);
+  box-shadow: var(--shell-shadow);
+  color: var(--shell-text);
+}
+
+.shell-nav-icon,
+.shell-small-icon,
+.workspace-metric-icon,
+.overview-stat-icon,
+.library-home-action-icon,
+.shell-search-icon {
+  color: var(--theme-icon);
+}
+
+.shell-nav-item.is-active .shell-nav-icon,
+.shell-utility-item.is-active .shell-nav-icon,
+.shell-theme-option.is-active,
+.overview-primary-action-icon,
+.overview-status-highlight,
+.overview-quick-eyebrow,
+.library-store-kicker,
+.library-detail-stage-kicker,
+.library-detail-summary-head .library-store-kicker,
+.workspace-eyebrow,
+.eyebrow {
+  color: var(--theme-icon-active);
+}
+
+.shell-nav-badge,
+.page-chip,
+.library-home-selection-meta,
+.library-home-counter,
+.library-home-search-pill,
+.library-back-button {
+  border-color: var(--shell-line);
+  background: var(--theme-badge-bg);
+  color: var(--theme-badge-text);
+}
+
+.shell-breadcrumb-context {
+  border-color: var(--theme-card-active-border);
+  background: var(--shell-focus-soft);
+  color: var(--theme-card-active-text);
+}
+
+.shell-user-avatar,
+.brand-mark,
+.primary-button {
+  background: var(--accent);
+  color: var(--theme-accent-contrast);
+}
+
+.primary-button {
+  border-color: transparent;
+  box-shadow: var(--theme-control-shadow);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.secondary-button,
+.ghost-button,
+.overview-primary-action,
+.library-home-open-button,
+.library-detail-store-link,
+.library-home-action {
+  background: var(--theme-card-elevated);
+  border-color: var(--shell-line);
+  color: var(--shell-text);
+  box-shadow: var(--theme-control-shadow);
+}
+
+.secondary-button:hover,
+.ghost-button:hover,
+.overview-primary-action:hover,
+.library-home-open-button:hover,
+.library-detail-store-link:hover,
+.library-home-action:hover,
+.library-rail-nav:not(:disabled):hover,
+.shell-icon-button:hover {
+  background: var(--theme-control-hover);
+  border-color: var(--theme-card-active-border);
+}
+
+.text-input:focus,
+.form-stack input:focus,
+.form-stack textarea:focus,
+.shell-locale-select:focus,
+.shell-theme-option:focus-visible,
+.shell-icon-button:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.ghost-button:focus-visible,
+.module-card-hitarea:focus-visible,
+.library-home-open-button:focus-visible,
+.library-detail-store-link:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+  box-shadow: var(--theme-focus-ring);
+}
+
+.row-card,
+.module-card,
+.library-catalog-card,
+.library-status-card,
+.library-job-row,
+.library-home-ops-item {
+  color: var(--shell-text);
+}
+
+.row-card.is-active,
+.module-card.is-active,
+.library-catalog-card:hover,
+.library-media-thumb.is-active,
+.library-media-steam-thumb.is-active,
+.library-media-steam-thumb:hover {
+  border-color: var(--theme-card-active-border);
+  background: var(--theme-card-hover);
+}
+
+.library-game-tile .module-cover,
+.library-catalog-card .module-cover,
+.library-detail-stage-cover .module-cover--hero,
+.library-detail-cover .module-cover--hero,
+.library-store-hero-cover .module-cover--hero {
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.18);
+}
+
+.library-game-tile.is-active .module-cover,
+.library-game-tile:hover .module-cover {
+  border-color: var(--theme-card-active-border);
+}
+
+:root[data-theme="light"] .library-game-tile .module-cover,
+:root[data-theme="light"] .library-catalog-card .module-cover,
+:root[data-theme="light"] .library-detail-stage-cover .module-cover--hero,
+:root[data-theme="light"] .library-detail-cover .module-cover--hero,
+:root[data-theme="light"] .library-store-hero-cover .module-cover--hero {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="light"] .library-game-tile .module-cover-image,
+:root[data-theme="light"] .library-catalog-card .module-cover-image,
+:root[data-theme="light"] .library-detail-stage-cover .module-cover-image,
+:root[data-theme="light"] .library-detail-cover .module-cover-image,
+:root[data-theme="light"] .library-store-hero-cover .module-cover-image {
+  filter: brightness(1.12) saturate(0.96) contrast(0.94);
+}
+
+:root[data-theme="light"] .library-game-tile .module-cover--bare .module-cover-haze,
+:root[data-theme="light"] .library-catalog-card .module-cover--bare .module-cover-haze,
+:root[data-theme="light"] .library-detail-stage-cover .module-cover--bare .module-cover-haze,
+:root[data-theme="light"] .library-detail-cover .module-cover--bare .module-cover-haze,
+:root[data-theme="light"] .library-store-hero-cover .module-cover--bare .module-cover-haze {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.08) 52%, rgba(0, 0, 0, 0.16) 100%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--cover-accent) 14%, transparent), transparent 48%);
+}
+
+.status-chip,
+.library-game-state {
+  border: 1px solid var(--theme-status-border);
+  background: var(--theme-status-surface);
+  color: var(--theme-status-text);
+}
+
+.status-chip.is-running,
+.status-chip.is-success,
+.library-game-state.is-success {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--success);
+}
+
+.status-chip.is-busy,
+.library-game-state.is-busy {
+  background: var(--theme-warning-bg);
+  border-color: var(--theme-warning-border);
+  color: var(--theme-warning-text);
+}
+
+.status-chip.is-danger,
+.library-game-state.is-danger {
+  background: var(--theme-danger-bg);
+  border-color: var(--theme-danger-border);
+  color: var(--theme-danger-text);
+}
+
+.library-job-progress-bar {
+  background: var(--theme-chip-bg);
+}
+
+.library-job-progress-bar span {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-strong) 100%);
+}
+
+.log-preview {
+  background: var(--theme-log-surface);
+  border-color: var(--theme-log-border);
+  color: var(--theme-log-text);
+}
+
+.detail-value--code {
+  background: var(--theme-code-surface);
+  color: var(--theme-code-text);
+}
+
+.runtime-box .detail-label,
+.log-preview,
+.module-description,
+.library-catalog-summary,
+.library-story-copy p,
+.library-detail-lead,
+.library-detail-sidebar,
+.library-detail-intro-note p {
+  color: var(--shell-muted);
+}
+
+.overview-quick-card.is-system {
+  border-color: var(--theme-system-card-border);
+  background: var(--theme-system-card-bg);
+}
+
+.overview-quick-card.is-system:hover {
+  border-color: var(--theme-card-active-border);
+}
+
+.overview-quick-card.is-system .overview-quick-eyebrow {
+  color: var(--theme-system-card-eyebrow);
+}
+
+.library-home-rail,
+.library-media-steam-rail {
+  scrollbar-color: color-mix(in srgb, var(--shell-muted) 42%, transparent) transparent;
+}
+
+.library-home-rail::-webkit-scrollbar-track,
+.library-media-steam-rail::-webkit-scrollbar-track {
+  background: var(--theme-control-surface);
+  border: 1px solid var(--shell-line);
+}
+
+.library-home-rail::-webkit-scrollbar-thumb,
+.library-media-steam-rail::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--shell-muted) 42%, transparent);
+}
+
+@media (max-width: 960px) {
+  .shell-theme-toggle {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .shell-theme-option {
+    flex: 1;
+  }
+}
+
+/* Focus is independent of hover, selection, and game artwork. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: var(--shell-focus-soft);
+  color: var(--shell-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

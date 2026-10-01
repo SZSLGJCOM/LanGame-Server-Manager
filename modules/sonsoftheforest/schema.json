@@ -1,0 +1,601 @@
+{
+  "type": "object",
+  "title": "Sons Of The Forest Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "default": "Sons Of The Forest Server",
+      "x-lsgm-default-source": "instance_name",
+      "title": "Server Name",
+      "description": "Written to dedicatedserver.cfg as ServerName.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "ServerName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 8,
+      "title": "Max Players",
+      "description": "Written to dedicatedserver.cfg as MaxPlayers.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "MaxPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "default": "",
+      "title": "Join Password",
+      "maxLength": 40,
+      "description": "Written to dedicatedserver.cfg as Password.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "Password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "owner_whitelist_steam_ids": {
+      "type": "string",
+      "default": "",
+      "format": "textarea",
+      "title": "Server Owner Steam64 IDs",
+      "description": "One Steam64 ID per line. LanGame materializes ownerswhitelist.txt into the instance user data root used by -userdatapath.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 302,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "steam64",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "owners_whitelist_file",
+      "x-lsgm-source-key": "ownerswhitelist.txt",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "lan_only": {
+      "type": "boolean",
+      "default": false,
+      "title": "LAN Browser Only",
+      "description": "Hides the server from public internet discovery.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "LanOnly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "game_mode": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Normal",
+        "Peaceful",
+        "Hard",
+        "HardSurvival",
+        "Creative",
+        "Custom"
+      ],
+      "title": "New World Difficulty",
+      "description": "Used only when creating a new save; ignored when loading an existing save.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "GameMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "save_slot": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "title": "Save Slot",
+      "description": "Written to dedicatedserver.cfg as SaveSlot.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "SaveSlot",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "save_mode": {
+      "type": "string",
+      "default": "Continue",
+      "enum": [
+        "Continue",
+        "New"
+      ],
+      "title": "World Startup Mode",
+      "description": "Continue loads the selected slot or creates it if missing. New overwrites that slot on every server start.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 201,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "SaveMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "save_interval": {
+      "type": "integer",
+      "default": 600,
+      "minimum": 60,
+      "title": "Save Interval Seconds",
+      "description": "Written to dedicatedserver.cfg as SaveInterval.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "SaveInterval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "idle_day_cycle_speed": {
+      "type": "number",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "title": "Empty Server Time Multiplier",
+      "description": "Time speed while no players are connected; 0 pauses time and 1 keeps normal speed.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 850,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "IdleDayCycleSpeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "idle_target_framerate": {
+      "type": "integer",
+      "default": 5,
+      "minimum": 1,
+      "title": "Empty Server Target FPS",
+      "description": "Target server frame rate with no connected players.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 851,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "IdleTargetFramerate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "active_target_framerate": {
+      "type": "integer",
+      "default": 60,
+      "minimum": 10,
+      "title": "Occupied Server Target FPS",
+      "description": "Target server frame rate with one or more connected players.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 852,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "ActiveTargetFramerate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "tree_regrowth": {
+      "type": "boolean",
+      "default": true,
+      "title": "Regrow Trees During Sleep",
+      "description": "Regrows trees when players sleep.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 230,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "GameSettings.Gameplay.TreeRegrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "structure_damage": {
+      "type": "boolean",
+      "default": true,
+      "title": "Structure Damage",
+      "description": "Allows buildings to take damage.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 231,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "GameSettings.Structure.Damage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_cheats": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Cheats",
+      "description": "Allows cheats when creating a Custom-mode world.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Multiplayer.Cheats",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_pvp_damage": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Off",
+        "Normal",
+        "Hard"
+      ],
+      "title": "Custom: PvP Damage",
+      "description": "Controls player-versus-player damage in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Multiplayer.PvpDamage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_spawns": {
+      "type": "boolean",
+      "default": true,
+      "title": "Custom: Enemy Spawns",
+      "description": "Enables enemy spawning in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 302,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemySpawn",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_health": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Enemy Health",
+      "description": "Enemy starting health in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 303,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemyHealth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_damage": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Enemy Damage",
+      "description": "Enemy damage in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 304,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemyDamage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_armour": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Enemy Armour",
+      "description": "Enemy armour strength in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 305,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemyArmour",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_aggression": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Enemy Aggression",
+      "description": "Enemy aggression in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 306,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemyAggression",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_animal_spawn_rate": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Animal Spawn Rate",
+      "description": "Animal spawn rate in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 307,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.AnimalSpawnRate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_enemy_search_parties": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Enemy Search Parties",
+      "description": "Enemy search-party frequency in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 308,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Vail.EnemySearchParties",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_starting_season": {
+      "type": "string",
+      "default": "Summer",
+      "enum": [
+        "Spring",
+        "Summer",
+        "Autumn",
+        "Winter"
+      ],
+      "title": "Custom: Starting Season",
+      "description": "Starting season for a new Custom-mode world.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 310,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Environment.StartingSeason",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_season_length": {
+      "type": "string",
+      "default": "Default",
+      "enum": [
+        "Short",
+        "Default",
+        "Long",
+        "Realistic"
+      ],
+      "title": "Custom: Season Length",
+      "description": "Season length in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 311,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Environment.SeasonLength",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_day_length": {
+      "type": "string",
+      "default": "Default",
+      "enum": [
+        "Short",
+        "Default",
+        "Long",
+        "Realistic"
+      ],
+      "title": "Custom: Day Length",
+      "description": "Day length in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 312,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Environment.DayLength",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_precipitation_frequency": {
+      "type": "string",
+      "default": "Default",
+      "enum": [
+        "Low",
+        "Default",
+        "High"
+      ],
+      "title": "Custom: Precipitation",
+      "description": "Rain and snow frequency in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 313,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Environment.PrecipitationFrequency",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_consumable_effects": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Normal",
+        "Hard"
+      ],
+      "title": "Custom: Consumable Effects",
+      "description": "Hydration and fullness penalties in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 320,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.ConsumableEffects",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_player_stats_damage": {
+      "type": "string",
+      "default": "Off",
+      "enum": [
+        "Off",
+        "Normal",
+        "Hard"
+      ],
+      "title": "Custom: Player Stats Damage",
+      "description": "Damage from bad or rotten food and drink in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 321,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.PlayerStatsDamage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_cold_penalties": {
+      "type": "string",
+      "default": "Off",
+      "enum": [
+        "Off",
+        "Normal",
+        "Hard"
+      ],
+      "title": "Custom: Cold Penalties",
+      "description": "Cold impact on health and stamina regeneration in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 322,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.ColdPenalties",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_stat_regeneration_penalty": {
+      "type": "string",
+      "default": "Off",
+      "enum": [
+        "Off",
+        "Normal",
+        "Hard"
+      ],
+      "title": "Custom: Regeneration Penalty",
+      "description": "Health and stamina regeneration penalty in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 323,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.StatRegenerationPenalty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_reduced_food_in_containers": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Reduced Container Food",
+      "description": "Reduces food found in containers in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 324,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.ReducedFoodInContainers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_single_use_containers": {
+      "type": "boolean",
+      "default": true,
+      "title": "Custom: Single-use Containers",
+      "description": "Allows containers to be opened only once in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 325,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.SingleUseContainers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_building_resistance": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Low",
+        "Normal",
+        "High"
+      ],
+      "title": "Custom: Building Resistance",
+      "description": "Building resistance to attacks in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 326,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.BuildingResistance",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_creative_mode": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Creative Mode",
+      "description": "Enables creative construction in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 327,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.CreativeMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_players_immortal": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Player Immortality",
+      "description": "Makes all players immortal in Custom mode.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 328,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.PlayersImmortalMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_force_place_full_load": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Group Placement",
+      "description": "Places the full carried construction load in one action.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 329,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.FreeForm.ForcePlaceFullLoad",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_no_cuttings_spawn": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: Disable Cuttings",
+      "description": "Prevents construction offcuts from spawning.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 330,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Construction.NoCuttingsSpawn",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "custom_one_hit_tree_cutting": {
+      "type": "boolean",
+      "default": false,
+      "title": "Custom: One-hit Tree Cutting",
+      "description": "Allows trees to be cut down with one hit.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 331,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "CustomGameModeSettings.GameSetting.Survival.OneHitToCutTrees",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "log_files_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Write Server Log Files",
+      "description": "Saves server logs in the instance user-data logs folder.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 860,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "LogFilesEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "timestamp_log_filenames": {
+      "type": "boolean",
+      "default": true,
+      "title": "New Log File for Each Start",
+      "description": "Adds a start timestamp to the file name. When disabled, the previous sotf_log.txt is overwritten.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 861,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "TimestampLogFilenames",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "timestamp_log_entries": {
+      "type": "boolean",
+      "default": true,
+      "title": "Timestamp Log Entries",
+      "description": "Includes a timestamp on each entry written to the log file.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 862,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "TimestampLogEntries",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "skip_network_accessibility_test": {
+      "type": "boolean",
+      "default": false,
+      "title": "Skip Network Accessibility Test",
+      "description": "Skips public IP and port accessibility checks during startup; it does not open blocked ports.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "dedicatedserver_cfg",
+      "x-lsgm-source-key": "SkipNetworkAccessibilityTest",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "default": "",
+      "format": "textarea",
+      "title": "Extra Launch Arguments",
+      "description": "Optional advanced arguments, one complete process argument per line.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  }
+}

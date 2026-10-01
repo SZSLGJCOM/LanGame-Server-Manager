@@ -1,0 +1,20 @@
+{
+  "fixture_kind": "synthetic_official_schema",
+  "documentation_version": "1.0.4",
+  "source_id": "palworld_rest_players",
+  "inspected_at": "2026-09-08",
+  "source_url": "https://docs.palworldgame.com/api/rest-api/players/",
+  "authentication_source": "https://docs.palworldgame.com/api/rest-api/palwold-rest-api/",
+  "live_server_capture": false,
+  "identities": "Synthetic names, platform IDs, and documentation-only IP addresses.",
+  "management_sources": [
+    "https://docs.palworldgame.com/api/rest-api/announce/",
+    "https://docs.palworldgame.com/api/rest-api/kick/",
+    "https://docs.palworldgame.com/api/rest-api/ban/",
+    "https://docs.palworldgame.com/api/rest-api/unban/",
+    "https://docs.palworldgame.com/api/rest-api/save/",
+    "https://docs.palworldgame.com/api/rest-api/shutdown/"
+  ],
+  "rcon_deprecation_source": "https://docs.palworldgame.com/api/rcon/",
+  "management_contract": "POST mutations require HTTP 200; kick/ban/unban use lowercase userid in JSON bodies, populated from the players response userId. Tests use synthetic HTTP fixtures, not live player operations."
+}

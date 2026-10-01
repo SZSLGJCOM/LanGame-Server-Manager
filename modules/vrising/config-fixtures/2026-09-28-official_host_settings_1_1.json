@@ -1,0 +1,67 @@
+{
+  "fixture_version": 1,
+  "module_id": "vrising",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Official Stunlock 1.1.x host-settings documentation; native defaults intentionally unspecified",
+    "source_ids": [
+      "official_host_settings_1_1"
+    ]
+  },
+  "coverage": {
+    "editable": 5,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 4
+  },
+  "classifications": {
+    "editable": [
+      "official_host_settings_1_1.LowerFPSWhenEmpty",
+      "official_host_settings_1_1.LowerFPSWhenEmptyValue",
+      "official_host_settings_1_1.LanMode",
+      "official_host_settings_1_1.SafeReconnectTime",
+      "official_host_settings_1_1.SafeReconnectSlots"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "official_host_settings_1_1.Address",
+      "official_host_settings_1_1.Rcon.BindAddress",
+      "official_host_settings_1_1.ResetDaysInterval",
+      "official_host_settings_1_1.DayOfReset"
+    ]
+  },
+  "settings": {
+    "lower_fps_when_empty": false,
+    "lower_fps_when_empty_value": 10,
+    "lan_mode": true,
+    "safe_reconnect_time": 0,
+    "safe_reconnect_slots": 5
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "Settings/ServerHostSettings.json",
+        "format": "json",
+        "keys": {
+          "LowerFPSWhenEmpty": false,
+          "LowerFPSWhenEmptyValue": 10,
+          "LanMode": true,
+          "SafeReconnectTime": 0,
+          "SafeReconnectSlots": 5
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "VRisingServer.exe",
+      "arguments": [
+        "-persistentDataPath",
+        "{{paths.instance_root}}"
+      ]
+    }
+  }
+}

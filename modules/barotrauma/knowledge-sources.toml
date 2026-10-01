@@ -1,0 +1,32 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "barotrauma"
+scope = "Dedicated-server hosting, server XML settings, client permissions, console administration and server mods."
+gaps = ["The official wiki returned HTTP 403 during live synchronization; its detailed settings reference remains unavailable from that source.","The separate developer-authored Steam setup guides are dated 2020-05-20. They cover installation, server XML and ports, but must not be presented as a current exhaustive configuration manual."]
+
+[[sources]]
+id = "official-wiki-server-guides"
+title = "Barotrauma server administration"
+authority = "Official Barotrauma Wiki contributors"
+kind = "official_community"
+seeds = ["https://barotraumagame.com/wiki/Hosting_a_Dedicated_Server","https://barotraumagame.com/wiki/Serversettings.xml","https://barotraumagame.com/wiki/Clientpermissions.xml","https://barotraumagame.com/wiki/Console_Commands","https://barotraumagame.com/wiki/Enabling_Mods_on_a_Dedicated_Server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://barotraumagame.com/wiki/Hosting_a_Dedicated_Server"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "developer-steam-hosting"
+title = "Barotrauma developer server-hosting guides (2020-05-20; English and Chinese)"
+authority = "FakeFish / Dynamoon (verified Steam developer)"
+kind = "official"
+seeds = ["https://steamcommunity.com/app/602960/discussions/1/2250056952644462246/","https://steamcommunity.com/app/602960/discussions/1/2250056952644464544/"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+content_selector = ".forum_op"
+authority_evidence = "https://steamcommunity.com/app/602960/discussions/1/2250056952644462246/"
+license_note = "Developer-authored pinned Steam guides. Publisher copyright and Steam terms apply; no open redistribution license was verified. Preserve the author, original publication date and attribution."
+reviewed_on = "2026-09-28"

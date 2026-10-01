@@ -1,0 +1,26 @@
+schema_version = 1
+module_id = "barotrauma"
+primary_process_key = "main"
+readiness_timeout_ms = 120000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# Private v1.13.4.0 servers pass QueryPort=0 to Steam. Validate their owned
+# gameplay socket and current-run startup log, not the public query endpoint.
+[fixture.settings]
+public_server = false
+enable_upnp = false
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "server-started"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["Server started"]

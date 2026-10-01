@@ -1,0 +1,54 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "returntomoria"
+scope = "Dedicated-server installation, configuration, world migration, saves, permissions, commands and server FAQs."
+gaps = ["Automatic discovery follows only the two reviewed server-guide and server-FAQ folders and their pagination. New articles in those folders are included; other folders and the separately scoped SteamCMD manual do not expand discovery. Directory listings are navigation evidence, not operator-manual body text."]
+
+[[sources]]
+id = "publisher-overview"
+title = "Return to Moria dedicated-server guide"
+authority = "North Beach Games / Free Range Games"
+kind = "official"
+seeds = ["https://www.returntomoria.com/news-updates/dedicated-server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.returntomoria.com/news-updates/dedicated-server"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-server-help"
+title = "Return to Moria server guides and FAQs"
+authority = "North Beach Games"
+kind = "official"
+seeds = [
+    "https://northbeachgames.freshdesk.com/support/solutions/folders/154000747073",
+    "https://northbeachgames.freshdesk.com/support/solutions/folders/154000747074",
+]
+allowed_prefixes = [
+    "https://northbeachgames.freshdesk.com/support/solutions/folders/154000747073/",
+    "https://northbeachgames.freshdesk.com/support/solutions/folders/154000747074/",
+    "https://northbeachgames.freshdesk.com/support/solutions/articles/",
+]
+discover_links = true
+max_pages = 128
+content_selector = ".fw-category-wrapper, .fw-content--single-article"
+discovery_selector = ".fw-category-wrapper .fw-articles > li > a[href], .fw-pagination-wrapper a[href]"
+authority_evidence = "https://www.returntomoria.com/news-updates/dedicated-server"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-steamcmd"
+title = "Return to Moria SteamCMD installation manual"
+authority = "North Beach Games"
+kind = "official"
+seeds = ["https://northbeachgames.freshdesk.com/support/solutions/articles/154000217670-how-to-use-steamcmd-to-install-the-dedicated-server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+content_selector = ".fw-content--single-article"
+authority_evidence = "https://www.returntomoria.com/news-updates/dedicated-server"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

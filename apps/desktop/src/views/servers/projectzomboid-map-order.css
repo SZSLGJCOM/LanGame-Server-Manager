@@ -1,0 +1,26 @@
+.pz-map-order-editor {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 50%;
+  border-top: 1px solid var(--shell-line);
+  padding-top: 12px;
+}
+
+.pz-map-order-editor[hidden] { display: none; }
+.pz-map-order-editor h3 { margin: 0; font-size: var(--text-section-title); }
+.pz-map-order-editor .form-note { margin: 4px 0; }
+.pz-map-order-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr); gap: 20px; min-height: 0; }
+.pz-map-order-list { margin: 0; padding-left: 26px; max-height: 170px; overflow-y: auto; }
+.pz-map-order-list li::marker { color: var(--shell-muted); font-variant-numeric: tabular-nums; }
+.pz-map-order-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+.pz-map-order-row > span { overflow-wrap: anywhere; }
+.pz-map-order-row-actions { display: flex; flex-shrink: 0; gap: 2px; }
+.pz-map-order-row-actions button { padding: 3px 8px; min-height: 28px; }
+.pz-map-order-add { display: grid; align-content: start; gap: 6px; overflow-y: auto; }
+.pz-map-order-add > label { font-size: var(--text-secondary); color: var(--shell-muted); }
+.pz-map-order-add textarea { min-height: 56px; resize: vertical; }
+.pz-map-order-editor .settings-editor-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mw-workbench--pz .mw-detail-layout { min-height: 0; }

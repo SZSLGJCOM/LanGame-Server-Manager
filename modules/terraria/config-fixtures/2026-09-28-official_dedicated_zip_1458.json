@@ -1,0 +1,51 @@
+{
+  "fixture_version": 1,
+  "module_id": "terraria",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Official Terraria 1.4.5.8 ZIP; static archive and configuration comparison only, no server launch",
+    "source_ids": [
+      "official_dedicated_zip_1458"
+    ]
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_runtime": "vanilla",
+    "world_name": "ConfigAudit1458"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "serverconfig.txt",
+        "format": "text",
+        "fragments": [
+          "worldname=ConfigAudit1458"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "1458/Windows/TerrariaServer.exe",
+      "arguments": [
+        "-config",
+        "{{paths.config_dir}}\\serverconfig.txt",
+        "-ip",
+        "0.0.0.0"
+      ]
+    }
+  }
+}

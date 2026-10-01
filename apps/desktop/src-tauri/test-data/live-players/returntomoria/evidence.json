@@ -1,0 +1,60 @@
+{
+  "verified_at": "2026-09-08",
+  "steam_app_id": 3349480,
+  "build_id": 21872765,
+  "server_version": "1.6.7.219072 [net.19.10.8.8ba6da]",
+  "environment": "Isolated Windows package copy, new scratch world, loopback host and advertised address, no connected clients. Existing game installations and user instances were not changed.",
+  "native_console": {
+    "enabled": true,
+    "launch_host": "ConPTY with redirected standard handles excluded",
+    "observed_window_class": "ConsoleWindowClass",
+    "window_owned_by": "scratch server process",
+    "conpty_response_bytes": 0,
+    "input": "Separate probe process: AttachConsole to the owned PID, open CONIN$, WriteConsoleInputW key events",
+    "output": "CONOUT$: GetConsoleScreenBufferInfo and bounded ReadConsoleOutputCharacterW",
+    "observed_player_response": ["> players", "Players: 0/8", ">"],
+    "observed_nonce_response": "Unknown command \"LGM_PLAYER_QUERY_END_<nonce>\"!",
+    "nonce_note": "The actual probe used a long unique command token; the placeholder here is documentation, not literal server output.",
+    "game_log_contains_player_response": false,
+    "native_exit_code": 0
+  },
+  "disabled_console_probe": {
+    "enabled": false,
+    "args": ["-UTF8Output", "-stdout", "-FullStdOutLogOutput", "-ExecCmds=players"],
+    "submitted_commands": ["players", "unknown nonce command", "exit"],
+    "duration_seconds": 45,
+    "conpty_response_bytes": 0,
+    "cli_commands_observed": false,
+    "cleanup": "Bounded runner reclaimed only its owned scratch process after the CLI exit command was not handled."
+  },
+  "status_json": {
+    "observed_keys": ["Status", "InviteCode", "AdvertisedAddressAndPort", "WorldName", "WorldSeed", "Players", "Version"],
+    "players_value": "0/8",
+    "has_online_identity_array": false
+  },
+  "production_bridge_probe": {
+    "verified_at": "2026-09-08",
+    "test": "native_console_owned_moria_empty_server_end_to_end",
+    "launch": "Production spawn_launch_plan with ManagedTerminal, Background and the isolated MoriaServer.exe entry point on its private hidden desktop.",
+    "registered_process": "MoriaServer.exe bootstrap PID and its original creation-time/image-path identity.",
+    "console_target": "Unique exact Moria/Binaries/Win64/MoriaServer-Win64-Shipping.exe descendant, verified through the existing creation-time-checked process-tree traversal while root and target handles remain held.",
+    "helper": "The built desktop executable in its early native-player-console helper mode; private stdout pipe duplicated before attachment; the desktop application's console remains unchanged.",
+    "observed_complete_queries": 2,
+    "observed_player_response": "Players: 0/8",
+    "correlation": "Two different fresh begin/end nonce pairs, with complete native unknown-command responses, captured through the production helper IPC.",
+    "startup": "Queries before the console's clean prompt was ready were rejected. Two consecutive complete responses succeeded after startup.",
+    "cleanup": "Production stop_spawned_process reclaimed only the owned scratch process tree. Subsequent process inventory found no Moria bootstrap, shipping process or native-console helper remaining. This probe used forced owned-process cleanup; it does not claim graceful native exit.",
+    "limits": "No clients connected. Populated labels and account semantics remain unverified against a real multiplayer session."
+  },
+  "installed_binary_format_strings": {
+    "count": "Players: {0}/{1}",
+    "row": " * {0} ({1})",
+    "partial_connection_warning": " * Not all players are fully connected",
+    "warning": "These are first-party installed binary strings. No nonempty player response was captured, and the row identity placeholder's semantics are not yet verified."
+  },
+  "remaining_requirements": [
+    "Capture a populated real-client response to verify the installed nonempty row format and the game's duplicate-name behavior; current populated fixtures are synthetic.",
+    "Determine native account placeholder semantics and authenticated target binding before exposing any moderation action. Current output preserves the complete native label without an account claim.",
+    "Validate connection-in-progress behavior with real clients. The collector currently rejects the native partially connected warning instead of returning a purported complete roster."
+  ]
+}

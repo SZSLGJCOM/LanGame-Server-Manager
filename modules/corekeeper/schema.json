@@ -1,0 +1,256 @@
+{
+  "type": "object",
+  "title": "Core Keeper Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "description": "Display name shown to players when they browse or join this Core Keeper world.",
+      "default": "Core Keeper Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "worldName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "game_id": {
+      "type": "string",
+      "title": "Steam Game ID",
+      "description": "Optional stable join code for SDR mode. Leave blank to let LanGame derive a consistent alphanumeric ID from this instance.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 1,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "gameId",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "Maximum simultaneous connections; additional players are rejected when the server is full. LanGame supports values from 1 to 100. Higher limits need more server resources.",
+      "default": 100,
+      "minimum": 1,
+      "maximum": 100,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 2,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "maxNumberPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_index": {
+      "type": "integer",
+      "title": "World Slot",
+      "description": "Which world slot inside this instance's managed data path should be loaded.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 29,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "world",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_seed": {
+      "type": "string",
+      "title": "World Seed",
+      "description": "Seed text for newly created worlds. Leave blank to let the server generate one.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 101,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "worldSeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "hashed_world_seed": {
+      "type": "integer",
+      "title": "Hashed World Seed",
+      "description": "Unsigned 32-bit seed hash for restoring a world when the original seed text is unavailable. Core Keeper ignores it whenever World Seed is not empty.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4294967295,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 102,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "hashedWorldSeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_mode": {
+      "type": "integer",
+      "title": "World Mode",
+      "description": "Core Keeper world difficulty and pacing mode.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "enum_labels": [
+        "Standard",
+        "Hard",
+        "Creative",
+        "Casual"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 103,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "worldMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "season_override": {
+      "type": "integer",
+      "title": "Season Override",
+      "description": "Force one seasonal event, or keep automatic date-based behavior.",
+      "default": -1,
+      "enum": [
+        -1,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "enum_labels": [
+        "Automatic",
+        "Disabled",
+        "Easter",
+        "Halloween",
+        "Christmas",
+        "Valentine's",
+        "Anniversary",
+        "Cherry Blossom Festival",
+        "Lunar New Year"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 104,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "seasonOverride",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_packets_per_frame": {
+      "type": "integer",
+      "title": "Snapshot Packet Budget",
+      "description": "Snapshot size budget per remote client, in 1,200-byte units, capped at 9,440 bytes. 1 keeps the default snapshot target; larger values allow more state data in each snapshot. This is not a server-wide packet limit.",
+      "default": 1,
+      "minimum": 1,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "maxNumberPacketsSentPerFrame",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "network_send_rate": {
+      "type": "integer",
+      "title": "Network Snapshot Rate (Hz)",
+      "description": "Target number of state snapshots sent to each client per second. The server caps this at its simulation tick rate; increasing it raises network and serialization work.",
+      "default": 20,
+      "minimum": 1,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 201,
+      "x-lsgm-source": "server_config",
+      "x-lsgm-source-key": "networkSendRate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "direct_connection_enabled": {
+      "type": "boolean",
+      "title": "Use Direct Connection Mode",
+      "description": "Use direct IP:port joins instead of Steam relay mode. LanGame enables this by default because anonymous dedicated-server startup can fail during Steam relay login without an interactive Steam account. Hosting over the internet still requires opening the UDP port on Windows Firewall and your router.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 202,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "direct_connection_gate",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "join_password": {
+      "type": "string",
+      "title": "Join Password",
+      "description": "Used for direct IP joins. New instances receive a unique password that can be shared with invited players.",
+      "x-lsgm-generated-secret-length": 28,
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 203,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-password",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "allowed_platform_code": {
+      "type": "integer",
+      "title": "Allowed Platform",
+      "description": "Optional direct-connect restriction for one PC storefront. Only applies when direct mode is enabled.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "enum_labels": [
+        "All PC platforms",
+        "Steam only",
+        "Epic only",
+        "Microsoft Store only",
+        "GOG only"
+      ],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 204,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-allowonlyplatform",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "admin_list": {
+      "type": "string",
+      "title": "Admin Steam64 IDs",
+      "description": "One Steam64 ID per line. LanGame materializes Admins.json for this instance's data path.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 300,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "steam64",
+      "x-lsgm-player-access-entry-separators": [
+        "newline",
+        "comma"
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "admins_file",
+      "x-lsgm-source-key": "Admins.json",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "ban_list": {
+      "type": "string",
+      "title": "Banned Steam64 IDs",
+      "description": "One Steam64 ID per line. LanGame materializes PlayerBans.json for this instance.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 301,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "steam64",
+      "x-lsgm-player-access-entry-separators": [
+        "newline",
+        "comma"
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "bans_file",
+      "x-lsgm-source-key": "PlayerBans.json",
+      "x-lsgm-source-surface": "generated_roster"
+    }
+  },
+  "required": [
+    "server_name",
+    "max_players",
+    "world_index",
+    "world_mode",
+    "season_override"
+  ]
+}

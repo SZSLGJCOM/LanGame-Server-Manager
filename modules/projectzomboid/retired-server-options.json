@@ -1,0 +1,250 @@
+{
+  "allow_trade_ui": {
+    "default": true,
+    "native_key": "AllowTradeUI"
+  },
+  "anti_cheat_protection_type_1": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType1"
+  },
+  "anti_cheat_protection_type_10": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType10"
+  },
+  "anti_cheat_protection_type_11": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType11"
+  },
+  "anti_cheat_protection_type_12": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType12"
+  },
+  "anti_cheat_protection_type_13": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType13"
+  },
+  "anti_cheat_protection_type_14": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType14"
+  },
+  "anti_cheat_protection_type_15": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType15"
+  },
+  "anti_cheat_protection_type_16": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType16"
+  },
+  "anti_cheat_protection_type_17": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType17"
+  },
+  "anti_cheat_protection_type_18": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType18"
+  },
+  "anti_cheat_protection_type_19": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType19"
+  },
+  "anti_cheat_protection_type_2": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType2"
+  },
+  "anti_cheat_protection_type_20": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType20"
+  },
+  "anti_cheat_protection_type_21": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType21"
+  },
+  "anti_cheat_protection_type_22": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType22"
+  },
+  "anti_cheat_protection_type_23": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType23"
+  },
+  "anti_cheat_protection_type_24": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType24"
+  },
+  "anti_cheat_protection_type_3": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType3"
+  },
+  "anti_cheat_protection_type_4": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType4"
+  },
+  "anti_cheat_protection_type_5": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType5"
+  },
+  "anti_cheat_protection_type_6": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType6"
+  },
+  "anti_cheat_protection_type_7": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType7"
+  },
+  "anti_cheat_protection_type_8": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType8"
+  },
+  "anti_cheat_protection_type_9": {
+    "default": true,
+    "native_key": "AntiCheatProtectionType9"
+  },
+  "anti_cheat_type_15_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType15ThresholdMultiplier"
+  },
+  "anti_cheat_type_20_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType20ThresholdMultiplier"
+  },
+  "anti_cheat_type_22_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType22ThresholdMultiplier"
+  },
+  "anti_cheat_type_24_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType24ThresholdMultiplier"
+  },
+  "anti_cheat_type_2_threshold_multiplier": {
+    "default": 3.0,
+    "native_key": "AntiCheatProtectionType2ThresholdMultiplier"
+  },
+  "anti_cheat_type_3_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType3ThresholdMultiplier"
+  },
+  "anti_cheat_type_4_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType4ThresholdMultiplier"
+  },
+  "anti_cheat_type_9_threshold_multiplier": {
+    "default": 1.0,
+    "native_key": "AntiCheatProtectionType9ThresholdMultiplier"
+  },
+  "auto_create_user_in_whitelist": {
+    "default": false,
+    "native_key": "AutoCreateUserInWhiteList"
+  },
+  "construction_prevents_loot_respawn": {
+    "default": true,
+    "native_key": "ConstructionPreventsLootRespawn"
+  },
+  "coop_master_ping_timeout": {
+    "default": 60,
+    "native_key": "CoopMasterPingTimeout"
+  },
+  "coop_server_launch_timeout": {
+    "default": 20,
+    "native_key": "CoopServerLaunchTimeout"
+  },
+  "disable_safehouse_when_player_connected": {
+    "default": false,
+    "native_key": "DisableSafehouseWhenPlayerConnected"
+  },
+  "discord_channel": {
+    "default": "",
+    "native_key": "DiscordChannel"
+  },
+  "discord_channel_id": {
+    "default": "",
+    "native_key": "DiscordChannelID"
+  },
+  "hours_for_loot_respawn": {
+    "default": 0,
+    "native_key": "HoursForLootRespawn"
+  },
+  "hours_for_world_item_removal": {
+    "default": 0.0,
+    "native_key": "HoursForWorldItemRemoval"
+  },
+  "kick_fast_players": {
+    "default": false,
+    "native_key": "KickFastPlayers"
+  },
+  "max_items_for_loot_respawn": {
+    "default": 4,
+    "native_key": "MaxItemsForLootRespawn"
+  },
+  "minutes_per_page": {
+    "default": 1.0,
+    "native_key": "MinutesPerPage"
+  },
+  "physics_delay": {
+    "default": 500,
+    "native_key": "PhysicsDelay"
+  },
+  "ping_frequency": {
+    "default": 10,
+    "native_key": "PingFrequency"
+  },
+  "player_save_on_damage": {
+    "default": true,
+    "native_key": "PlayerSaveOnDamage"
+  },
+  "save_transaction_id": {
+    "default": false,
+    "native_key": "SaveTransactionID"
+  },
+  "upnp_force": {
+    "default": true,
+    "native_key": "UPnPForce"
+  },
+  "upnp_lease_time": {
+    "default": 86400,
+    "native_key": "UPnPLeaseTime"
+  },
+  "upnp_zero_lease_time_fallback": {
+    "default": true,
+    "native_key": "UPnPZeroLeaseTimeFallback"
+  },
+  "use_tcp_for_map_downloads": {
+    "default": false,
+    "native_key": "UseTCPForMapDownloads"
+  },
+  "voice_buffering": {
+    "default": 8000,
+    "native_key": "VoiceBuffering"
+  },
+  "voice_complexity": {
+    "default": 5,
+    "native_key": "VoiceComplexity"
+  },
+  "voice_period": {
+    "default": 20,
+    "native_key": "VoicePeriod"
+  },
+  "voice_sample_rate": {
+    "default": 24000,
+    "native_key": "VoiceSampleRate"
+  },
+  "world_item_removal_items": {
+    "default": "Base.Vest,Base.Shirt,Base.Blouse,Base.Skirt,Base.Shoes",
+    "native_key": "WorldItemRemovalList"
+  },
+  "zombie_update_delta": {
+    "default": 0.5,
+    "native_key": "ZombieUpdateDelta"
+  },
+  "zombie_update_max_high_priority": {
+    "default": 50,
+    "native_key": "ZombieUpdateMaxHighPriority"
+  },
+  "zombie_update_radius_high_priority": {
+    "default": 10.0,
+    "native_key": "ZombieUpdateRadiusHighPriority"
+  },
+  "zombie_update_radius_low_priority": {
+    "default": 45.0,
+    "native_key": "ZombieUpdateRadiusLowPriority"
+  }
+}

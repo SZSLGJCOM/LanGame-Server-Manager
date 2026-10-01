@@ -1,0 +1,94 @@
+{
+  "fixture_version": 1,
+  "module_id": "satisfactory",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-30",
+    "build": "Steam build 24656085 (CL 502094): isolated GetServerOptions, ApplyServerOptions and restart readback; synthetic unknown-option and FRM entries exercise preservation.",
+    "source_ids": [
+      "native_runtime_options_build_24656085",
+      "official_1_2_world_creation_options"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "content": "; Preservation fixture around the three observed native defaults.\n[/Script/FactoryGame.FGGameUserSettings]\nmIntValues=((\"FG.DSAutoPause\", 1),(\"FG.NetworkQuality\", 1),(\"FG.SendGameplayData\", 1),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1))\nmFloatValues=((\"FG.AutosaveInterval\", 300.000000))\n\n[OtherSection]\nRetained=fixture-value\n"
+      }
+    ]
+  },
+  "lifecycle": {
+    "save_stage": "Explicit false/2/false settings target only the three native integer-map entries; native saves and scheduling remain outside Configuration.",
+    "pre_start": "Materialize the instance-owned GameUserSettings.ini before launch. Expected entries cover the complete INI map and preserve unrelated native options, FRM options, float settings and other sections. This fixture does not itself start the game; native restart readback is separate probe evidence."
+  },
+  "coverage": {
+    "editable": 3,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 9
+  },
+  "classifications": {
+    "editable": [
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.DSAutoPause",
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.NetworkQuality",
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.SendGameplayData"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "official_1_2_world_creation_options.FG.GameMode.SpacePartsCostMultiplier",
+      "official_1_2_world_creation_options.FG.GameMode.PartsCostMultiplier",
+      "official_1_2_world_creation_options.FG.GameMode.EnergyCostMultiplier",
+      "official_1_2_world_creation_options.FG.GameMode.NodeRandomization",
+      "official_1_2_world_creation_options.FG.GameMode.NodePuritySettings",
+      "official_1_2_world_creation_options.FG.GameMode.NodeRandomizationSeed",
+      "native_runtime_options_build_24656085.FG.DSAutoSaveOnDisconnect",
+      "native_runtime_options_build_24656085.FG.AutosaveInterval",
+      "native_runtime_options_build_24656085.FG.ServerRestartTimeSlot"
+    ]
+  },
+  "settings": {
+    "auto_pause_when_empty": false,
+    "network_quality": 2,
+    "send_gameplay_data": false
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "entries": [
+          {
+            "key": "/Script/FactoryGame.FGGameUserSettings.mIntValues",
+            "value": "((\"FG.DSAutoPause\", 0),(\"FG.NetworkQuality\", 2),(\"FG.SendGameplayData\", 0),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1))"
+          },
+          {
+            "key": "/Script/FactoryGame.FGGameUserSettings.mFloatValues",
+            "value": "((\"FG.AutosaveInterval\", 300.000000))"
+          },
+          {
+            "key": "OtherSection.Retained",
+            "value": "fixture-value"
+          }
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+      "arguments": [
+        "FactoryGame",
+        "-unattended",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-UserDir={{paths.data_dir}}",
+        "-Port=7777",
+        "-ReliablePort=8888"
+      ]
+    }
+  }
+}

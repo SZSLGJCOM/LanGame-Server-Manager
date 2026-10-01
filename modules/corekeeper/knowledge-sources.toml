@@ -1,0 +1,45 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "corekeeper"
+scope = "Dedicated-server setup from the community guide; historical publisher changes; and the publisher's 2025-08-14 Core Keeper 1.1.2.3 notes on direct connections, cross-store PC play and mod compatibility."
+gaps = ["No complete standalone publisher-authored server manual was located. The detailed online setup source is community-maintained.","The publisher PDF is historical release documentation, not a current complete server reference.","The two 2025-08-14 Steam posts document 1.1.2.3 server behavior, not complete installation steps or a current configuration reference. Their exact archived feed scope does not discover later announcements.","The installed dedicated-server package includes locally readable README.txt and ARGUMENTS.txt. These local files are not part of the public-document RAG corpus; the publisher posts direct operators to the bundled README for full setup instructions."]
+
+[[sources]]
+id = "publisher-release-notes"
+title = "Core Keeper historical publisher patch notes"
+authority = "Fireshine Games / Pugstorm"
+kind = "official"
+seeds = ["https://fireshinegames.co.uk/wp-content/uploads/Core-Keeper-Patch-notes-Post-1.0-1.0.0.16.pdf"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://fireshinegames.co.uk/wp-content/uploads/Core-Keeper-Patch-notes-Post-1.0-1.0.0.16.pdf"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-direct-connections-1-1-2-3"
+title = "Core Keeper 1.1.2.3 dedicated-server connection and compatibility notes (2025-08-14)"
+authority = "Pugstorm / Fireshine Games, Core Keeper Steam announcements"
+kind = "official"
+seeds = ["https://store.steampowered.com/news/posts/?appids=1621690&enddate=1755172829&feed=steam_community_announcements"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+content_selector = "#post_1808061939338658 .body, #post_1808061939338641 .body"
+authority_evidence = "https://store.steampowered.com/news/app/1621690/view/591771368562885598"
+license_note = "Publisher copyright and Steam terms apply. The exact feed and selectors cover only the two 2025-08-14 dedicated-server posts; no open redistribution license was verified. Preserve attribution and upstream terms. This manifest does not grant permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "community-server-guide"
+title = "Core Keeper dedicated-server setup"
+authority = "Core Keeper Wiki contributors (atma.gg)"
+kind = "community"
+seeds = ["https://corekeeper.atma.gg/en/How_to_setup_a_dedicated_server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://corekeeper.atma.gg/en/How_to_setup_a_dedicated_server"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"

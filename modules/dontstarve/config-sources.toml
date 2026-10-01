@@ -1,0 +1,2325 @@
+status = "best_effort_verified"
+last_verified = "2026-09-19"
+notes = "Klei official CLI/cluster documentation and game 747465 first-party scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354. The tracked world-options.json inventory contains all 236 built-in declarations: Master world generation/settings 64/126 and Caves 38/48 independently editable fields. Page membership and enum values are checked against schema.json; native-package comparison additionally checks groups, group and option order, visibility, version and hash. Caves additionally receives 34 inherited masteroption values. Mod configuration_options remain dynamically defined by each installed modinfo.lua and are represented by independent structured Master/Caves maps and raw expert escape hatches."
+
+[[sources]]
+id = "shard_layout"
+kind = "documentation"
+authority = "langame_managed_runtime"
+path = "crates/app-core/src/dst_shards.rs"
+description = "Managed process topology: standard Master with optional Caves, or Island Adventures Master/Caves/Islands/Volcano. Each shard owns its game, Steam query/auth ports and console log."
+
+[[sources]]
+id = "island_adventures_presets"
+kind = "documentation"
+authority = "island_adventures_author_release_source"
+path = "scripts/map/levels/shipwrecked.lua; scripts/map/levels/volcano.lua"
+url = "https://gitlab.com/IslandAdventures/IslandAdventures/-/tree/1.0.61/scripts/map/levels"
+description = "Author Shipwrecked release 1.0.61 defines SURVIVAL_SHIPWRECKED_CLASSIC (shipwrecked) and SURVIVAL_VOLCANO_CLASSIC (volcanoworld). Independent Volcano uses Islands volcanoisland=none. Shipwrecked Workshop 1467214795 requires Core 3435352667; both are server Mods required by clients. Raw overrides remain operator-owned."
+
+[[sources]]
+id = "islands_modoverrides"
+kind = "config_file"
+authority = "klei_native_modoverrides"
+path = "clusters/main/Islands/modoverrides.lua"
+description = "Island Adventures Islands shard enabled Workshop Mods and per-Mod configuration_options, or complete operator Lua."
+
+[[sources]]
+id = "volcano_modoverrides"
+kind = "config_file"
+authority = "klei_native_modoverrides"
+path = "clusters/main/Volcano/modoverrides.lua"
+description = "Island Adventures Volcano shard enabled Workshop Mods and per-Mod configuration_options, or complete operator Lua."
+
+[[sources]]
+id = "installed_package_masteroption_inheritance"
+kind = "config_file"
+path = "data/databundles/scripts.zip!/scripts/map/customize.lua:GetMasterOptions; scripts/screens/redux/servercreationscreen.lua:onCreate; scripts/map/levels/forest.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "2026-09-19 inspection of game 747465, Steam build 24700372, scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354: the official creation screen copies 34 masteroption values to every secondary world before starting it. Only 15 of those options have master_sync; the 13 extra activities and specialevent are not runtime-synchronized. Caves has 86 independent options plus 34 inherited values, not 120 independently editable controls. Known built-in settings presets supply inherited defaults; explicit Master Lua literals take precedence, while arbitrary scripts and unknown mod presets remain operator-owned."
+
+[[sources]]
+id = "installed_package_location_defaults"
+kind = "config_file"
+path = "data/databundles/scripts.zip!/scripts/map/locations.lua; scripts/map/customize.lua:GetLocationDefaultForOption"
+authority = "installed_dst_dedicated_server_package"
+description = "Read-only verification on 2026-09-08 of installed Steam build 24700372: scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354. The 236 built-in options still cover Master 190 and Caves 86. Location overrides must be applied after customize.lua base values: cave uses task_set=cave_default and start_location=caves. Writing the forest values default/default into the cave preset replaces its task graph and prevents successful cave generation. Custom Lua scripts remain operator-owned. This source records package configuration inspection; game-client admission is validated separately."
+
+[[sources]]
+id = "steamcmd_anonymous_validate_343050"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_343050.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 343050 validate completed successfully. Manifest name Don't Starve Together Dedicated Server, StateFlags 4, UpdateResult 0, buildid and TargetBuildID 24080846, SizeOnDisk 4509552230, installed depots 1004 and 343051."
+
+[[sources]]
+id = "installed_package_world_options"
+kind = "config_file"
+path = "data/databundles/scripts.zip!/scripts/map/customize.lua; scripts/map/tasksets.lua; scripts/map/tasksets/*.lua; scripts/map/startlocations.lua; scripts/widgets/redux/worldsettings/worldsettingsmenu.lua; modules/dontstarve/world-options.json"
+authority = "installed_dst_dedicated_server_package"
+description = "2026-09-19 read-only extraction from game 747465, scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354. All 236 declarations, 5 worldgen groups and 10 settings groups are recorded in world-options.json. PC description branches, ocean-prefixed values, group fallbacks, all loaded task-set/start-location registrations and location/master_controlled visibility yield 64/126/38/48 controls; all 276 page-specific enum sets match schema.json. scripts/verify_dst_world_options.py checks the tracked contract by default; --install-root compares an owned native package and --write refreshes only the inventory. Unknown data expressions and dynamic registrations fail explicitly without executing Lua. This is a maintained source inventory, not automatic runtime discovery of game updates or mod options. The read-only native inventory verifier was rerun on 2026-09-30 against installed Steam build 24700372 / game 747465. All 236 declarations, groups, ordering, locations and enum values match the tracked inventory and schema; scripts.zip remains SHA256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354."
+
+[[sources]]
+id = "installed_package_mod_docs"
+kind = "documentation"
+path = "mods/INSTALLING_MODS.txt / mods/dedicated_server_mods_setup.lua / version.txt"
+authority = "installed_dst_dedicated_server_package"
+description = "The validated package contains INSTALLING_MODS.txt and version.txt reports 740477. dedicated_server_mods_setup.lua in this install root is generated by LanGame when shared Workshop mods are materialized."
+
+[[sources]]
+id = "cluster_ini"
+kind = "config_file"
+path = "clusters/main/cluster.ini"
+authority = "klei_dedicated_server_cluster_ini"
+description = "DST cluster-level room, network, shard, Steam group, and gameplay settings rendered by LanGame."
+url = "https://forums.kleientertainment.com/forums/topic/64552-dedicated-server-settings-guide/"
+
+[[sources]]
+id = "cluster_token"
+kind = "config_file"
+path = "clusters/main/cluster_token.txt"
+authority = "klei_cluster_token"
+description = "Klei cluster token generated by the Klei account portal and read by the dedicated server cluster."
+url = "https://accounts.klei.com/account/game/servers?game=DontStarveTogether"
+
+[[sources]]
+id = "master_server_ini"
+kind = "config_file"
+path = "clusters/main/Master/server.ini"
+authority = "klei_dedicated_server_shard_ini"
+description = "Master shard server.ini containing server_port, shard identity, Steam query, and authentication ports."
+url = "https://forums.kleientertainment.com/forums/topic/64552-dedicated-server-settings-guide/"
+
+[[sources]]
+id = "caves_server_ini"
+kind = "config_file"
+path = "clusters/main/Caves/server.ini"
+authority = "klei_dedicated_server_shard_ini"
+description = "Caves shard server.ini containing the caves shard port and identity."
+url = "https://forums.kleientertainment.com/forums/topic/64552-dedicated-server-settings-guide/"
+
+[[sources]]
+id = "shared_worldgenoverride"
+kind = "config_file"
+path = "clusters/main/Master/worldgenoverride.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Shared DST controls are authored once. The 31 shared fields marked masteroption are written into both shard override files, together with Master day, beefaloheat, and krampus, matching the official creation screen's 34-option copy. The four season lengths remain Master-only. master_controlled hides secondary-world controls; it does not imply runtime synchronization."
+
+[[sources]]
+id = "master_worldgenoverride"
+kind = "config_file"
+path = "clusters/main/Master/worldgenoverride.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Master shard world-generation and world-setting overrides. Native options were enumerated from the validated first-party scripts.zip. Independently selectable settings_preset and worldgen_preset follow Klei update 528116: SURVIVAL_TOGETHER, RELAXED, ENDLESS, WILDERNESS, and LIGHTS_OUT. Custom preset IDs must exist in the installed game or mods. With a non-default preset, schema-default fields inherit the preset; changed fields and explicit extra Lua overrides take precedence."
+url = "https://kleiforums.com/game-updates/dst/528116-r1891/"
+
+[[sources]]
+id = "caves_worldgenoverride"
+kind = "config_file"
+path = "clusters/main/Caves/worldgenoverride.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Caves shard world-generation and world-setting overrides: 86 independently editable native options plus 34 inherited Master options. settings_preset and worldgen_preset default independently to DST_CAVE; custom IDs must exist in the installed game or mods. Independent schema-default fields inherit a non-default Caves preset; shared fields inherit the effective Master values and known Master settings preset. Explicit Caves extra Lua overrides and full-file scripts retain their authority."
+url = "https://forums.kleientertainment.com/forums/topic/53014-worldgenoverridelua-with-the-new-post-caves-settings/"
+
+[[sources]]
+id = "adminlist"
+kind = "generated_roster"
+path = "clusters/main/adminlist.txt"
+authority = "installed_dst_dedicated_server_package"
+description = "Klei user ID administrator roster read by DST at cluster startup."
+
+[[sources]]
+id = "whitelist"
+kind = "generated_roster"
+path = "clusters/main/whitelist.txt"
+authority = "installed_dst_dedicated_server_package"
+description = "Klei user ID allow-list roster read by DST at cluster startup."
+
+[[sources]]
+id = "blocklist"
+kind = "generated_roster"
+path = "clusters/main/blocklist.txt"
+authority = "installed_dst_dedicated_server_package"
+description = "Klei user ID block-list roster read by DST at cluster startup."
+
+[[sources]]
+id = "dedicated_server_mods_setup"
+kind = "config_file"
+path = "mods/dedicated_server_mods_setup.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Shared Workshop download setup file for ServerModSetup and ServerModCollectionSetup."
+
+[[sources]]
+id = "master_modoverrides"
+kind = "config_file"
+path = "clusters/main/Master/modoverrides.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Master shard mod enablement and configuration_options."
+
+[[sources]]
+id = "caves_modoverrides"
+kind = "config_file"
+path = "clusters/main/Caves/modoverrides.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Caves shard mod enablement and configuration_options."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "dontstarve_dedicated_server_nullrenderer_x64.exe"
+authority = "klei_dst_command_line_options"
+description = "Dedicated-server command-line options for persistent storage, config directory, cluster, shard, bind address, ports, and console."
+url = "https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.cluster_name"
+schema_key = "cluster_name"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.cluster_description"
+schema_key = "cluster_description"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "GAMEPLAY.max_players"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "GAMEPLAY.game_mode"
+schema_key = "game_mode"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.cluster_intention"
+schema_key = "cluster_intention"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "SHARD.bind_ip"
+schema_key = "shard_bind_ip"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.cluster_password"
+schema_key = "cluster_password"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "GAMEPLAY.pause_when_empty"
+schema_key = "pause_when_empty"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "GAMEPLAY.pvp"
+schema_key = "pvp"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "GAMEPLAY.vote_enabled"
+schema_key = "vote_enabled"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.offline_cluster"
+schema_key = "offline_cluster"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.lan_only_cluster"
+schema_key = "lan_only_cluster"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.tick_rate"
+schema_key = "tick_rate"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.autosaver_enabled"
+schema_key = "autosaver_enabled"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "SHARD.shard_enabled"
+schema_key = "enable_caves"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.cluster_language"
+schema_key = "cluster_language"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "MISC.max_snapshots"
+schema_key = "max_snapshots"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-disabledatacollection"
+schema_key = "disable_data_collection"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backup_log_count"
+schema_key = "backup_log_count"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backup_log_period"
+schema_key = "backup_log_period"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-fo"
+schema_key = "friends_only"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-allow_ioopenwrite_sandbox_escape"
+schema_key = "allow_ioopenwrite_sandbox_escape"
+surface = "launch_arg"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "settings_preset"
+schema_key = "master_settings_preset"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "worldgen_preset"
+schema_key = "master_worldgen_preset"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "settings_preset"
+schema_key = "caves_settings_preset"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "worldgen_preset"
+schema_key = "caves_worldgen_preset"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.specialevent"
+schema_key = "world_specialevent"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.autumn"
+schema_key = "world_autumn"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.winter"
+schema_key = "world_winter"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.spring"
+schema_key = "world_spring"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.summer"
+schema_key = "world_summer"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.extrastartingitems"
+schema_key = "world_extrastartingitems"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.seasonalstartingitems"
+schema_key = "world_seasonalstartingitems"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.spawnprotection"
+schema_key = "world_spawnprotection"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.dropeverythingondespawn"
+schema_key = "world_dropeverythingondespawn"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.darkness"
+schema_key = "world_darkness"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.temperaturedamage"
+schema_key = "world_temperaturedamage"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.hunger"
+schema_key = "world_hunger"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.healthpenalty"
+schema_key = "world_healthpenalty"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.shadowcreatures"
+schema_key = "world_shadowcreatures"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.brightmarecreatures"
+schema_key = "world_brightmarecreatures"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.world_size"
+schema_key = "master_world_size"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.season_start"
+schema_key = "master_season_start"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.task_set"
+schema_key = "master_task_set"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.start_location"
+schema_key = "master_start_location"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.day"
+schema_key = "master_day"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.branching"
+schema_key = "master_branching"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.loop"
+schema_key = "master_loop"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.weather"
+schema_key = "master_weather"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.frogs"
+schema_key = "master_frogs"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.hounds"
+schema_key = "master_hounds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.lightning"
+schema_key = "master_lightning"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.wildfires"
+schema_key = "master_wildfires"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.touchstone"
+schema_key = "master_touchstone"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.roads"
+schema_key = "master_roads"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.boons"
+schema_key = "master_boons"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.prefabswaps_start"
+schema_key = "master_prefabswaps_start"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.petrification"
+schema_key = "master_petrification"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.meteorshowers"
+schema_key = "master_meteorshowers"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.regrowth"
+schema_key = "master_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.berrybush"
+schema_key = "master_berrybush"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.carrot"
+schema_key = "master_carrot"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.flint"
+schema_key = "master_flint"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.grass"
+schema_key = "master_grass"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.marshbush"
+schema_key = "master_marshbush"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.reeds"
+schema_key = "master_reeds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rock"
+schema_key = "master_rock"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.sapling"
+schema_key = "master_sapling"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.trees"
+schema_key = "master_trees"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.flowers"
+schema_key = "master_flowers"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ponds"
+schema_key = "master_ponds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.tumbleweed"
+schema_key = "master_tumbleweed"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bees"
+schema_key = "master_bees"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.beefalo"
+schema_key = "master_beefalo"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.butterfly"
+schema_key = "master_butterfly"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.buzzard"
+schema_key = "master_buzzard"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.catcoon"
+schema_key = "master_catcoon"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moles"
+schema_key = "master_moles"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.pigs"
+schema_key = "master_pigs"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rabbits"
+schema_key = "master_rabbits"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.lightninggoat"
+schema_key = "master_lightninggoat"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.spiders"
+schema_key = "master_spiders"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.tallbirds"
+schema_key = "master_tallbirds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.tentacles"
+schema_key = "master_tentacles"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.penguins"
+schema_key = "master_penguins"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.perd"
+schema_key = "master_perd"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.angrybees"
+schema_key = "master_angrybees"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.chess"
+schema_key = "master_chess"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.krampus"
+schema_key = "master_krampus"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.walrus"
+schema_key = "master_walrus"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.merm"
+schema_key = "master_merm"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.houndmound"
+schema_key = "master_houndmound"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.lureplants"
+schema_key = "master_lureplants"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bearger"
+schema_key = "master_bearger"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.beequeen"
+schema_key = "master_beequeen"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.deerclops"
+schema_key = "master_deerclops"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.dragonfly"
+schema_key = "master_dragonfly"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.klaus"
+schema_key = "master_klaus"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.goosemoose"
+schema_key = "master_goosemoose"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.spiderqueen"
+schema_key = "master_spiderqueen"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.liefs"
+schema_key = "master_liefs"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.beefaloheat"
+schema_key = "master_beefaloheat"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.deciduoustree_regrowth"
+schema_key = "master_deciduoustree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.carrots_regrowth"
+schema_key = "master_carrots_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.evergreen_regrowth"
+schema_key = "master_evergreen_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.flowers_regrowth"
+schema_key = "master_flowers_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_tree_regrowth"
+schema_key = "master_moon_tree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.saltstack_regrowth"
+schema_key = "master_saltstack_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.twiggytrees_regrowth"
+schema_key = "master_twiggytrees_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bees_setting"
+schema_key = "master_bees_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.birds"
+schema_key = "master_birds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bunnymen_setting"
+schema_key = "master_bunnymen_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.catcoons"
+schema_key = "master_catcoons"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.gnarwail"
+schema_key = "master_gnarwail"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.grassgekkos"
+schema_key = "master_grassgekkos"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moles_setting"
+schema_key = "master_moles_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.fishschools"
+schema_key = "master_fishschools"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.wobsters"
+schema_key = "master_wobsters"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bats_setting"
+schema_key = "master_bats_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.cookiecutters"
+schema_key = "master_cookiecutters"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_hounds"
+schema_key = "master_mutated_hounds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.wasps"
+schema_key = "master_wasps"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.merms"
+schema_key = "master_merms"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.penguins_moon"
+schema_key = "master_penguins_moon"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mosquitos"
+schema_key = "master_mosquitos"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.sharks"
+schema_key = "master_sharks"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_spider"
+schema_key = "master_moon_spider"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.squid"
+schema_key = "master_squid"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.spider_warriors"
+schema_key = "master_spider_warriors"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.antliontribute"
+schema_key = "master_antliontribute"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.crabking"
+schema_key = "master_crabking"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.fruitfly"
+schema_key = "master_fruitfly"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.malbatross"
+schema_key = "master_malbatross"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.deciduousmonster"
+schema_key = "master_deciduousmonster"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mushroom"
+schema_key = "master_mushroom"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_fissure"
+schema_key = "master_moon_fissure"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_starfish"
+schema_key = "master_moon_starfish"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_bullkelp"
+schema_key = "master_moon_bullkelp"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_bullkelp"
+schema_key = "master_ocean_bullkelp"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.cactus"
+schema_key = "master_cactus"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_hotspring"
+schema_key = "master_moon_hotspring"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_rock"
+schema_key = "master_moon_rock"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_sapling"
+schema_key = "master_moon_sapling"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_tree"
+schema_key = "master_moon_tree"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.meteorspawner"
+schema_key = "master_meteorspawner"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rock_ice"
+schema_key = "master_rock_ice"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_seastack"
+schema_key = "master_ocean_seastack"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_berrybush"
+schema_key = "master_moon_berrybush"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_carrot"
+schema_key = "master_moon_carrot"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_fruitdragon"
+schema_key = "master_moon_fruitdragon"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_shoal"
+schema_key = "master_ocean_shoal"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_wobsterden"
+schema_key = "master_ocean_wobsterden"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_waterplant"
+schema_key = "master_ocean_waterplant"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.moon_spiders"
+schema_key = "master_moon_spiders"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.ocean_otterdens"
+schema_key = "master_ocean_otterdens"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.balatro"
+schema_key = "master_balatro"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.junkyard"
+schema_key = "master_junkyard"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.stageplays"
+schema_key = "master_stageplays"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.terrariumchest"
+schema_key = "master_terrariumchest"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.palmconetree"
+schema_key = "master_palmconetree"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.otters_setting"
+schema_key = "master_otters_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.pigs_setting"
+schema_key = "master_pigs_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rabbits_setting"
+schema_key = "master_rabbits_setting"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.crow_carnival"
+schema_key = "world_crow_carnival"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.hallowed_nights"
+schema_key = "world_hallowed_nights"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.winters_feast"
+schema_key = "world_winters_feast"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_beefalo"
+schema_key = "world_year_of_the_beefalo"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_bunnyman"
+schema_key = "world_year_of_the_bunnyman"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_carrat"
+schema_key = "world_year_of_the_carrat"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_catcoon"
+schema_key = "world_year_of_the_catcoon"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_dragonfly"
+schema_key = "world_year_of_the_dragonfly"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_gobbler"
+schema_key = "world_year_of_the_gobbler"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_knight"
+schema_key = "world_year_of_the_knight"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_pig"
+schema_key = "world_year_of_the_pig"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_snake"
+schema_key = "world_year_of_the_snake"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.year_of_the_varg"
+schema_key = "world_year_of_the_varg"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.daywalker2"
+schema_key = "master_daywalker2"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.eyeofterror"
+schema_key = "master_eyeofterror"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.sharkboi"
+schema_key = "master_sharkboi"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.ghostenabled"
+schema_key = "world_ghostenabled"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.ghostsanitydrain"
+schema_key = "world_ghostsanitydrain"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.portalresurection"
+schema_key = "world_portalresurection"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.resettime"
+schema_key = "world_resettime"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.spawnmode"
+schema_key = "world_spawnmode"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_bearger"
+schema_key = "master_mutated_bearger"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_bird_gestalt"
+schema_key = "master_mutated_bird_gestalt"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_birds"
+schema_key = "master_mutated_birds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_buzzard_gestalt"
+schema_key = "master_mutated_buzzard_gestalt"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_deerclops"
+schema_key = "master_mutated_deerclops"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_merm"
+schema_key = "master_mutated_merm"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_spiderqueen"
+schema_key = "master_mutated_spiderqueen"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.mutated_warg"
+schema_key = "master_mutated_warg"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.alternatehunt"
+schema_key = "master_alternatehunt"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.frograin"
+schema_key = "master_frograin"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.hunt"
+schema_key = "master_hunt"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.lunarhail_frequency"
+schema_key = "master_lunarhail_frequency"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rifts_enabled"
+schema_key = "master_rifts_enabled"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.rifts_frequency"
+schema_key = "master_rifts_frequency"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.summerhounds"
+schema_key = "master_summerhounds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.wanderingtrader_enabled"
+schema_key = "master_wanderingtrader_enabled"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.winterhounds"
+schema_key = "master_winterhounds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.hound_mounds"
+schema_key = "master_hound_mounds"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.pirateraids"
+schema_key = "master_pirateraids"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.spiders_setting"
+schema_key = "master_spiders_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.walrus_setting"
+schema_key = "master_walrus_setting"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.portal_spawnrate"
+schema_key = "master_portal_spawnrate"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.bananabush_portalrate"
+schema_key = "master_bananabush_portalrate"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.lightcrab_portalrate"
+schema_key = "master_lightcrab_portalrate"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.monkeytail_portalrate"
+schema_key = "master_monkeytail_portalrate"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.palmcone_seed_portalrate"
+schema_key = "master_palmcone_seed_portalrate"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.powder_monkey_portalrate"
+schema_key = "master_powder_monkey_portalrate"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.basicresource_regrowth"
+schema_key = "world_basicresource_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.cactus_regrowth"
+schema_key = "master_cactus_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.palmconetree_regrowth"
+schema_key = "master_palmconetree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.reeds_regrowth"
+schema_key = "master_reeds_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "shared_worldgenoverride"
+key = "overrides.lessdamagetaken"
+schema_key = "world_lessdamagetaken"
+surface = "config_file"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "overrides.extra_lines"
+schema_key = "master_world_overrides_extra"
+surface = "materializer"
+
+[[items]]
+source = "master_worldgenoverride"
+key = "worldgenoverride.lua:raw_lua"
+schema_key = "master_worldgenoverride_lua"
+surface = "materializer"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.world_size"
+schema_key = "caves_world_size"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.branching"
+schema_key = "caves_branching"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.loop"
+schema_key = "caves_loop"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.atriumgate"
+schema_key = "caves_atriumgate"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.wormattacks"
+schema_key = "caves_wormattacks"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.earthquakes"
+schema_key = "caves_earthquakes"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.regrowth"
+schema_key = "caves_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.banana"
+schema_key = "caves_banana"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.cave_ponds"
+schema_key = "caves_cave_ponds"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.fern"
+schema_key = "caves_fern"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.flint"
+schema_key = "caves_flint"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.lichen"
+schema_key = "caves_lichen"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.marshbush"
+schema_key = "caves_marshbush"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mushroom"
+schema_key = "caves_mushroom"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.wormlights"
+schema_key = "caves_wormlights"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.flower_cave"
+schema_key = "caves_flower_cave"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mushtree"
+schema_key = "caves_mushtree"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.rock"
+schema_key = "caves_rock"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.sapling"
+schema_key = "caves_sapling"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.bunnymen"
+schema_key = "caves_bunnymen"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.rocky"
+schema_key = "caves_rocky"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.slurper"
+schema_key = "caves_slurper"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.slurtles"
+schema_key = "caves_slurtles"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.snurtles"
+schema_key = "caves_snurtles"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.monkey"
+schema_key = "caves_monkey"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.bats"
+schema_key = "caves_bats"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.worms"
+schema_key = "caves_worms"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spiders"
+schema_key = "caves_spiders"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.cave_spiders"
+schema_key = "caves_cave_spiders"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.tentacles"
+schema_key = "caves_tentacles"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.molebats"
+schema_key = "caves_molebats"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.nightmarecreatures"
+schema_key = "caves_nightmarecreatures"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spider_dropper"
+schema_key = "caves_spider_dropper"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spider_spitter"
+schema_key = "caves_spider_spitter"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.fruitfly"
+schema_key = "caves_fruitfly"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.fissure"
+schema_key = "caves_fissure"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.weather"
+schema_key = "caves_weather"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.flower_cave_regrowth"
+schema_key = "caves_flower_cave_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.lightflier_flower_regrowth"
+schema_key = "caves_lightflier_flower_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mushtree_moon_regrowth"
+schema_key = "caves_mushtree_moon_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mushtree_regrowth"
+schema_key = "caves_mushtree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.lightfliers"
+schema_key = "caves_lightfliers"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.bunnymen_setting"
+schema_key = "caves_bunnymen_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.dustmoths"
+schema_key = "caves_dustmoths"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.grassgekkos"
+schema_key = "caves_grassgekkos"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.moles_setting"
+schema_key = "caves_moles_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mushgnome"
+schema_key = "caves_mushgnome"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.pigs_setting"
+schema_key = "caves_pigs_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.rocky_setting"
+schema_key = "caves_rocky_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.slurtles_setting"
+schema_key = "caves_slurtles_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.monkey_setting"
+schema_key = "caves_monkey_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.bats_setting"
+schema_key = "caves_bats_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spider_hider"
+schema_key = "caves_spider_hider"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.merms"
+schema_key = "caves_merms"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spider_warriors"
+schema_key = "caves_spider_warriors"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spiders_setting"
+schema_key = "caves_spiders_setting"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.spiderqueen"
+schema_key = "caves_spiderqueen"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.toadstool"
+schema_key = "caves_toadstool"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.liefs"
+schema_key = "caves_liefs"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.grass"
+schema_key = "caves_grass"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.reeds"
+schema_key = "caves_reeds"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.trees"
+schema_key = "caves_trees"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.chess"
+schema_key = "caves_chess"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.boons"
+schema_key = "caves_boons"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.cavelight"
+schema_key = "caves_cavelight"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.prefabswaps_start"
+schema_key = "caves_prefabswaps_start"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.start_location"
+schema_key = "caves_start_location"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.task_set"
+schema_key = "caves_task_set"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.touchstone"
+schema_key = "caves_touchstone"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.berrybush"
+schema_key = "caves_berrybush"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.tree_rock"
+schema_key = "caves_tree_rock"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.daywalker"
+schema_key = "caves_daywalker"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.moon_spider"
+schema_key = "caves_moon_spider"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mutated_birds"
+schema_key = "caves_mutated_birds"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mutated_merm"
+schema_key = "caves_mutated_merm"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.mutated_spiderqueen"
+schema_key = "caves_mutated_spiderqueen"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.acidrain_enabled"
+schema_key = "caves_acidrain_enabled"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.rifts_enabled_cave"
+schema_key = "caves_rifts_enabled"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.rifts_frequency_cave"
+schema_key = "caves_rifts_frequency"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.wormattacks_boss"
+schema_key = "caves_wormattacks_boss"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.chest_mimics"
+schema_key = "caves_chest_mimics"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.itemmimics"
+schema_key = "caves_itemmimics"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.evergreen_regrowth"
+schema_key = "caves_evergreen_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.reeds_regrowth"
+schema_key = "caves_reeds_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.tree_rock_regrowth"
+schema_key = "caves_tree_rock_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.twiggytrees_regrowth"
+schema_key = "caves_twiggytrees_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "overrides.extra_lines"
+schema_key = "caves_world_overrides_extra"
+surface = "materializer"
+
+[[items]]
+source = "caves_worldgenoverride"
+key = "worldgenoverride.lua:raw_lua"
+schema_key = "caves_worldgenoverride_lua"
+surface = "materializer"
+
+[[items]]
+source = "cluster_token"
+key = "cluster_token.txt"
+schema_key = "cluster_token"
+surface = "config_file"
+
+[[items]]
+source = "adminlist"
+key = "adminlist.txt:KU_lines"
+schema_key = "admin_list"
+surface = "generated_roster"
+
+[[items]]
+source = "whitelist"
+key = "whitelist.txt:KU_lines"
+schema_key = "whitelist"
+surface = "generated_roster"
+
+[[items]]
+source = "blocklist"
+key = "blocklist.txt:KU_lines"
+schema_key = "blocklist"
+surface = "generated_roster"
+
+[[items]]
+source = "cluster_ini"
+key = "NETWORK.whitelist_slots"
+schema_key = "whitelist_slots"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "STEAM.steam_group_only"
+schema_key = "steam_group_only"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "STEAM.steam_group_id"
+schema_key = "steam_group_id"
+surface = "config_file"
+
+[[items]]
+source = "cluster_ini"
+key = "STEAM.steam_group_admins"
+schema_key = "steam_group_admins"
+surface = "config_file"
+
+[[items]]
+source = "dedicated_server_mods_setup"
+key = "ServerModSetup"
+schema_key = "shared_workshop_mod_ids"
+surface = "config_file"
+
+[[items]]
+source = "dedicated_server_mods_setup"
+key = "ServerModCollectionSetup"
+schema_key = "shared_workshop_collection_ids"
+surface = "config_file"
+
+[[items]]
+source = "master_modoverrides"
+key = "modoverrides.lua:enabled_workshop_ids"
+schema_key = "master_enabled_workshop_mod_ids"
+surface = "config_file"
+
+[[items]]
+source = "caves_modoverrides"
+key = "modoverrides.lua:enabled_workshop_ids"
+schema_key = "caves_enabled_workshop_mod_ids"
+surface = "config_file"
+
+[[items]]
+source = "master_modoverrides"
+key = "modoverrides.lua:configuration_options"
+schema_key = "master_mod_configuration_options"
+surface = "config_file"
+
+[[items]]
+source = "caves_modoverrides"
+key = "modoverrides.lua:configuration_options"
+schema_key = "caves_mod_configuration_options"
+surface = "config_file"
+
+[[items]]
+source = "master_modoverrides"
+key = "modoverrides.lua:raw_lua"
+schema_key = "master_modoverrides_lua"
+surface = "materializer"
+
+[[items]]
+source = "caves_modoverrides"
+key = "modoverrides.lua:raw_lua"
+schema_key = "caves_modoverrides_lua"
+surface = "materializer"
+
+[[exclusions]]
+source = "launch_args"
+key = "-persistent_storage_root"
+reason = "Derived from this instance config directory so each managed cluster is isolated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-conf_dir"
+reason = "Fixed to the managed clusters directory."
+
+[[exclusions]]
+source = "launch_args"
+key = "-cluster"
+reason = "Fixed to the managed main cluster directory."
+
+[[exclusions]]
+source = "launch_args"
+key = "-shard"
+reason = "Derived independently for the Master and optional Caves process plans."
+
+[[exclusions]]
+source = "launch_args"
+key = "-offline"
+reason = "The typed NETWORK.offline_cluster setting controls native offline mode without a duplicate launch switch."
+
+[[exclusions]]
+source = "launch_args"
+key = "-bind_ip"
+reason = "Derived from instance network state for both shard process plans."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Derived from independent Master and Caves instance UDP port bindings."
+
+[[exclusions]]
+source = "launch_args"
+key = "-players"
+reason = "The typed GAMEPLAY.max_players setting is the canonical native control."
+
+[[exclusions]]
+source = "launch_args"
+key = "-steam_master_server_port"
+reason = "Derived from independent per-shard Steam query port bindings in server.ini."
+
+[[exclusions]]
+source = "launch_args"
+key = "-steam_authentication_port"
+reason = "Derived from independent per-shard Steam authentication port bindings in server.ini."
+
+[[exclusions]]
+source = "launch_args"
+key = "-tick"
+reason = "The typed NETWORK.tick_rate setting is the canonical native control."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ugc_directory"
+reason = "Always generated as the instance-owned data/ugc/<shard> path so native UGC downloads cannot collide across instances or shard processes."
+
+[[exclusions]]
+source = "launch_args"
+key = "-token"
+reason = "The cluster_token.txt setting is the canonical secret surface and avoids placing the token in process arguments."
+
+[[exclusions]]
+source = "launch_args"
+key = "-monitor_parent_process"
+reason = "LanGame supervises both shard processes directly and does not delegate their lifecycle to an arbitrary external PID."
+
+[[exclusions]]
+source = "launch_args"
+key = "-console"
+reason = "Always generated because the managed terminal, live-player query, kick, save, and shutdown actions require native console stdin."
+
+[[exclusions]]
+source = "master_server_ini"
+key = "NETWORK.server_port"
+reason = "Derived from the Master instance port binding."
+
+[[exclusions]]
+source = "master_server_ini"
+key = "SHARD.is_master"
+reason = "Generated true for the canonical Master shard."
+
+[[exclusions]]
+source = "master_server_ini"
+key = "SHARD.name"
+reason = "Generated as the canonical Master shard name."
+
+[[exclusions]]
+source = "master_server_ini"
+key = "STEAM.master_server_port"
+reason = "Derived from the Master Steam query port binding."
+
+[[exclusions]]
+source = "master_server_ini"
+key = "STEAM.authentication_port"
+reason = "Derived from the Master Steam authentication port binding."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "NETWORK.server_port"
+reason = "Derived from the Caves instance port binding."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "SHARD.is_master"
+reason = "Generated false for the canonical Caves shard."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "SHARD.name"
+reason = "Generated as the canonical Caves shard name."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "SHARD.id"
+reason = "Generated deterministically from immutable instance identity so display-name edits cannot change shard identity."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "STEAM.master_server_port"
+reason = "Derived from the Caves Steam query port binding."
+
+[[exclusions]]
+source = "caves_server_ini"
+key = "STEAM.authentication_port"
+reason = "Derived from the Caves Steam authentication port binding."
+
+[[exclusions]]
+source = "cluster_ini"
+key = "SHARD.master_ip"
+reason = "Generated as loopback because LanGame co-locates the managed Master and Caves shard processes."
+
+[[exclusions]]
+source = "cluster_ini"
+key = "SHARD.master_port"
+reason = "Derived from the instance shard coordination port binding."
+
+[[exclusions]]
+source = "cluster_ini"
+key = "SHARD.cluster_key"
+reason = "Generated from immutable instance identity to isolate shard coordination."
+
+[[exclusions]]
+source = "cluster_ini"
+key = "MISC.console_enabled"
+reason = "Always generated because managed stdin actions and graceful shutdown require the native console."
+
+[[exclusions]]
+source = "master_modoverrides"
+key = "arbitrary mod configuration schema"
+reason = "Each installed Workshop mod defines its own configuration_options in modinfo.lua; the Configuration renderer introspects that first-party mod payload and validates primitive leaves."
+
+[[exclusions]]
+source = "caves_modoverrides"
+key = "arbitrary mod configuration schema"
+reason = "Each installed Workshop mod defines its own configuration_options in modinfo.lua; the Configuration renderer introspects that first-party mod payload and validates primitive leaves."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "data/databundles/scripts.zip"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 311 active configuration fields in both languages. Pond frog population and replenishment are separate from Frog Rain. Gate cooldown values are 40/30/20/10/5 game days. Antlion fields control tribute and rage timing. Log retention is a count; the log backup interval uses seconds. Language, shard, friends and sandbox-write fields have bilingual labels. Configuration is the sole raw Lua editing surface; Mods detects raw Lua and disables structured writes. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[items]]
+source = "shard_layout"
+key = "shard_layout"
+schema_key = "shard_layout"
+surface = "materializer"
+
+[[items]]
+source = "islands_modoverrides"
+key = "modoverrides.lua:enabled_workshop_ids"
+schema_key = "islands_enabled_workshop_mod_ids"
+surface = "config_file"
+
+[[items]]
+source = "islands_modoverrides"
+key = "modoverrides.lua:configuration_options"
+schema_key = "islands_mod_configuration_options"
+surface = "config_file"
+
+[[items]]
+source = "islands_modoverrides"
+key = "modoverrides.lua:raw_lua"
+schema_key = "islands_modoverrides_lua"
+surface = "materializer"
+
+[[items]]
+source = "island_adventures_presets"
+key = "islands/worldgenoverride.lua"
+schema_key = "islands_worldgenoverride_lua"
+surface = "materializer"
+
+[[items]]
+source = "volcano_modoverrides"
+key = "modoverrides.lua:enabled_workshop_ids"
+schema_key = "volcano_enabled_workshop_mod_ids"
+surface = "config_file"
+
+[[items]]
+source = "volcano_modoverrides"
+key = "modoverrides.lua:configuration_options"
+schema_key = "volcano_mod_configuration_options"
+surface = "config_file"
+
+[[items]]
+source = "volcano_modoverrides"
+key = "modoverrides.lua:raw_lua"
+schema_key = "volcano_modoverrides_lua"
+surface = "materializer"
+
+[[items]]
+source = "island_adventures_presets"
+key = "volcano/worldgenoverride.lua"
+schema_key = "volcano_worldgenoverride_lua"
+surface = "materializer"

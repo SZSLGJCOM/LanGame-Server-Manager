@@ -1,0 +1,172 @@
+{
+  "fixture_version": 1,
+  "module_id": "corekeeper",
+  "evidence": {
+    "status": "verified_with_direct_connection",
+    "verified_at": "2026-07-13",
+    "build": "SteamCMD app 1963720 public build 23543502",
+    "source_ids": [
+      "steamcmd_anonymous_probe",
+      "clean_server_config_probe",
+      "direct_connection_runtime_probe",
+      "official_package_readme",
+      "official_package_window_shutdown",
+      "official_package_arguments_txt",
+      "server_config",
+      "launch_args",
+      "admins_file",
+      "bans_file",
+      "corekeeper_steam_settings",
+      "corekeeper_steam_settings_examples",
+      "corekeeper_runtime_bundle_json",
+      "corekeeper_runtime_bundle_ini",
+      "corekeeper_runtime_bundle_xml",
+      "corekeeper_runtime_initialize_on_loads_json",
+      "corekeeper_scripting_assemblies_json",
+      "corekeeper_mono_mconfig_xml",
+      "corekeeper_mono_browscap_ini",
+      "packaged_content_activation_arguments"
+    ]
+  },
+  "coverage": {
+    "editable": 22,
+    "specialized": 2,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 19
+  },
+  "classifications": {
+    "editable": [
+      "server_config.worldName",
+      "server_config.gameId",
+      "server_config.maxNumberPlayers",
+      "server_config.world",
+      "server_config.worldSeed",
+      "server_config.hashedWorldSeed",
+      "server_config.password",
+      "server_config.worldMode",
+      "server_config.seasonOverride",
+      "server_config.maxNumberPacketsSentPerFrame",
+      "server_config.networkSendRate",
+      "launch_args.-world",
+      "launch_args.-worldname",
+      "launch_args.-worldseed",
+      "launch_args.-hashedworldseed",
+      "launch_args.-worldmode",
+      "launch_args.-season",
+      "launch_args.-gameid",
+      "launch_args.-maxplayers",
+      "launch_args.direct_connection_gate",
+      "launch_args.-password",
+      "launch_args.-allowonlyplatform"
+    ],
+    "specialized": [
+      "admins_file.Admins.json",
+      "bans_file.PlayerBans.json"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-activatecontent",
+      "launch_args.-activateallcontent",
+      "launch_args.-batchmode",
+      "launch_args.-logfile",
+      "launch_args.-datapath",
+      "launch_args.-serverconfig",
+      "launch_args.-confdir",
+      "launch_args.-disableautosave",
+      "launch_args.-extralog",
+      "launch_args.-nonetwork",
+      "launch_args.-safemode",
+      "launch_args.-waitfor",
+      "launch_args.-windowscale",
+      "launch_args.-benchmark",
+      "launch_args.-benchmark-quit",
+      "launch_args.-ip",
+      "launch_args.-port",
+      "packaged_content_activation_arguments.-activatecontent",
+      "packaged_content_activation_arguments.-activateallcontent"
+    ]
+  },
+  "settings": {
+    "server_name": "地心工坊 Δ",
+    "world_index": 29,
+    "world_seed": "seed-α",
+    "hashed_world_seed": 4294967295,
+    "world_mode": 4,
+    "season_override": 7,
+    "max_players": 100,
+    "max_packets_per_frame": 8,
+    "network_send_rate": 64,
+    "direct_connection_enabled": true,
+    "join_password": "acceptance-corekeeper",
+    "allowed_platform_code": 2,
+    "admin_list": "76561198000000001\n76561198000000002",
+    "ban_list": "76561198000000003"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/ServerConfig.json",
+        "format": "json",
+        "keys": {
+          "worldName": "地心工坊 Δ",
+          "world": 29,
+          "worldSeed": "seed-α",
+          "hashedWorldSeed": 4294967295,
+          "maxNumberPlayers": 100,
+          "futurePackageOption.keep": true
+        }
+      },
+      {
+        "root": "instance",
+        "path": "data/Admins.json",
+        "format": "json",
+        "keys": {
+          "/adminList/0/steamId": 76561198000000001,
+          "/adminList/1/steamId": 76561198000000002
+        }
+      },
+      {
+        "root": "instance",
+        "path": "data/PlayerBans.json",
+        "format": "json",
+        "keys": {
+          "/banList/0/steamId": 76561198000000003
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "CoreKeeperServer.exe",
+      "arguments": [
+        "-batchmode",
+        "-logfile",
+        "{{paths.logs_dir}}/CoreKeeperServer.log",
+        "-datapath",
+        "{{paths.data_dir}}",
+        "-ip",
+        "0.0.0.0",
+        "-port",
+        "27015",
+        "-password",
+        "acceptance-corekeeper",
+        "-allowonlyplatform",
+        "Epic"
+      ]
+    }
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/ServerConfig.json",
+        "content": {
+          "futurePackageOption": {
+            "keep": true
+          }
+        }
+      }
+    ]
+  }
+}

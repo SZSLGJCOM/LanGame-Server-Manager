@@ -1,0 +1,36 @@
+0|No players connected.
+1|1 player connected.
+2|2 players connected.
+0|Keine Spieler verbunden.
+1|1 Spieler verbunden.
+2|2 Spieler verbunden.
+0|No hay jugadores conectados.
+1|1 jugador conectado.
+2|2 jugadores conectados.
+0|Aucun joueur connecté.
+1|1 joueur connecté.
+2|2 joueurs connectés.
+0|Nessun giocatore connesso.
+1|1 giocatore connesso.
+2|2 giocatori connessi.
+0|Nie przyłączyli się żadni gracze.
+1|Przyłączył się 1 gracz.
+2|Przyłączyła się następująca liczba graczy: 2.
+0|Nenhum jogador conectado.
+1|1 jogador conectado.
+2|2 jogadores conectados.
+0|Нет подключенных игроков.
+1|Подключён 1 игрок.
+2|Подключено игроков: 2.
+0|无玩家连接。
+1|1个玩家已连接。
+2|2个玩家已连接。
+0|接続中のプレイヤーはいません。
+1|1人のプレイヤーが接続中です。
+2|2人のプレイヤーが接続中です。
+0|접속 중인 플레이어가 없음.
+1|플레이어 1명 접속 중.
+2|플레이어 2명 접속 중.
+0|沒有玩家連線。
+1|已與 1 名玩家連線。
+2|已與 2 名玩家連線。

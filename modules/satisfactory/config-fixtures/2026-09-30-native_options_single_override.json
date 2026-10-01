@@ -1,0 +1,86 @@
+{
+  "fixture_version": 1,
+  "module_id": "satisfactory",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-30",
+    "build": "Deterministic storage preservation case using the native integer-map format observed in Steam build 24656085 (CL 502094); synthetic values are not a native capture.",
+    "source_ids": [
+      "native_options_single_override",
+      "native_runtime_options_build_24656085"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "content": "; Synthetic existing preferences for preservation coverage.\n[/Script/FactoryGame.FGGameUserSettings]\nmIntValues=((\"FG.DSAutoPause\", 0),(\"FG.NetworkQuality\", 3),(\"FG.SendGameplayData\", 0),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1))\nmFloatValues=((\"FG.AutosaveInterval\", 300.000000))\n\n[OtherSection]\nRetained=fixture-value\n"
+      }
+    ]
+  },
+  "lifecycle": {
+    "save_stage": "Only network_quality is explicitly set to 2. Normalization must not add pause or gameplay-data overrides; the existing false preferences remain unchanged.",
+    "pre_start": "The acceptance runner normalizes settings and materializes the instance-owned native file. Assert every INI assignment, including unrelated native and FRM entries, float settings and other sections. This independent case does not start the game or claim a repeated-save sequence."
+  },
+  "coverage": {
+    "editable": 3,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 3
+  },
+  "classifications": {
+    "editable": [
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.DSAutoPause",
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.NetworkQuality",
+      "native_runtime_options_build_24656085./Script/FactoryGame.FGGameUserSettings.mIntValues.FG.SendGameplayData"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "native_runtime_options_build_24656085.FG.DSAutoSaveOnDisconnect",
+      "native_runtime_options_build_24656085.FG.AutosaveInterval",
+      "native_runtime_options_build_24656085.FG.ServerRestartTimeSlot"
+    ]
+  },
+  "settings": {
+    "network_quality": 2
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "entries": [
+          {
+            "key": "/Script/FactoryGame.FGGameUserSettings.mIntValues",
+            "value": "((\"FG.DSAutoPause\", 0),(\"FG.NetworkQuality\", 2),(\"FG.SendGameplayData\", 0),(\"FG.FutureOption\", -17),(\"FicsitRemoteMonitoring.Server.uWS.Port\", 8081),(\"FicsitRemoteMonitoring.Server.uWS.Autostart\", 1))"
+          },
+          {
+            "key": "/Script/FactoryGame.FGGameUserSettings.mFloatValues",
+            "value": "((\"FG.AutosaveInterval\", 300.000000))"
+          },
+          {
+            "key": "OtherSection.Retained",
+            "value": "fixture-value"
+          }
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+      "arguments": [
+        "FactoryGame",
+        "-unattended",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-UserDir={{paths.data_dir}}",
+        "-Port=7777",
+        "-ReliablePort=8888"
+      ]
+    }
+  }
+}

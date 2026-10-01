@@ -1,0 +1,2320 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "The Engine.ini, Game.ini, and 229-key ServerSettings.ini inventory from Enhanced build 24080934 is crosswalked to typed settings or precise generated/derived exclusions. RCON startup and command responses were rechecked against installed build 24922388: Game.ini owns enablement, while the true command-line override disables the listener. The official Enhanced settings reference is explicitly non-exhaustive, so status remains best_effort_verified. Official Enhanced INI documentation was rechecked on 2026-09-28. Thirty-five documented settings absent from the generated-file inventory now cover Maelstrom, siege creatures, Siptah events, player needs and persistence load policy. Their types, defaults and native output are covered by fixtures; gameplay effects have not been exercised on a newly updated server. Semantic review on 2026-09-30 checked all 292 fields against the official Enhanced settings page and the emitted INI inventory. Corrected duplicate weekday labels, damage direction, access/follower/survival classification and twelve documented float types. Fractional fixture values cover every corrected type through schema validation and native INI readback. The follow-up current-executable analysis below resolves the previously ambiguous decay/PvP/prediction units, corrects the new-instance knockout default while preserving explicit values, and adds two verified decay controls. The official settings page remains non-exhaustive."
+
+[[sources]]
+id = "steamcmd_anonymous_validate_443030"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_443030.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "Validated Conan Exiles Dedicated Server public package: StateFlags 4, UpdateResult 0, buildid and TargetBuildID 24080934, SizeOnDisk 4904114716."
+
+[[sources]]
+id = "server_settings"
+kind = "config_file"
+path = "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini"
+authority = "official_conan_exiles_enhanced_server_settings"
+description = "Main Conan Exiles Enhanced settings file for identity, PvP, ownership, storage radii, replication, minion limits, voice/chat, rates, combat, purge, nudity, and other server rules."
+url = "https://exiles-enhanced.inflexion.io/servers/settings/"
+
+[[sources]]
+id = "game_ini"
+kind = "config_file"
+path = "ConanSandbox/Saved/Config/WindowsServer/Game.ini"
+authority = "official_conan_exiles_rcon_configuration"
+description = "Conan Exiles Game.ini settings used here for RconPlugin and Engine.GameSession MaxPlayers."
+url = "https://conanexiles.fandom.com/wiki/Rcon"
+
+[[sources]]
+id = "engine_ini"
+kind = "config_file"
+path = "ConanSandbox/Saved/Config/WindowsServer/Engine.ini"
+authority = "official_conan_exiles_dedicated_servers"
+description = "Engine.ini settings used by Conan Exiles Enhanced for URL, Steam query, online subsystem password, the fixed ConanSandbox world, and optional Isle of Siptah region exclusion."
+url = "https://exiles-enhanced.inflexion.io/servers/regions/"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+authority = "conan_exiles_dedicated_server_launch_profile"
+description = "Dedicated-server startup arguments for ports, max players, RCON enablement, server name, Unreal headless mode, logs, CPU, and advanced custom flags."
+url = "https://conanexiles.fandom.com/wiki/Dedicated_Server_Launcher"
+
+[[sources]]
+id = "enhanced_patch_notes"
+kind = "documentation"
+path = "Conan Exiles Enhanced patch notes"
+authority = "official_funcom_patch_notes"
+description = "Official Enhanced release notes defining added, removed, and renamed dedicated-server settings."
+url = "https://forums.funcom.com/t/conan-exiles-enhanced-patch-notes/296991"
+
+[[sources]]
+id = "enhanced_regions"
+kind = "documentation"
+path = "Engine.ini [Regions]"
+authority = "official_conan_exiles_enhanced_regions_guide"
+description = "Official merged-world region guide: Exiled Lands and Isle of Siptah share ConanSandbox, and ExcludedRegions=IsleOfSiptah disables the Siptah region."
+url = "https://exiles-enhanced.inflexion.io/servers/regions/"
+
+[[sources]]
+id = "enhanced_migration"
+kind = "documentation"
+path = "ConanSandbox/Saved/game_0.db"
+authority = "official_conan_exiles_enhanced_migration_guide"
+description = "Official UE4-to-UE5 migration guide documenting game_0.db and the first-start copy from game.db when game_0.db is absent."
+url = "https://exiles-enhanced.inflexion.io/servers/ue4-ue5-migration/"
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "RCON"
+authority = "installed_server_protocol_probe"
+description = "The installed Enhanced build 25488622 help response on 2026-10-01 lists listplayers, listbans, kickplayer, banplayer, unbanplayer, and shutdown. It does not list the ARK commands saveworld or DoExit. A real shutdown entered RequestExit(0), updated the world database, and closed its log after 86.5 seconds of native teardown; the module allows 120 seconds for complete process-tree exit. Loss of the RCON completion response is not itself proof of exit."
+
+[[sources]]
+id = "native_rcon_24922388"
+kind = "runtime_rcon"
+path = "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+authority = "installed_server_protocol_probe"
+description = "Build 24922388 accepted Game.ini [RconPlugin] RconEnabled=true after the redundant launch override was removed. Native responses use type 2 and the preceding request ID. Authentication returned Authenticated.; listplayers returned a complete empty table; a unique help filter supplied an ordered response boundary. Player joining and non-empty live lists were not exercised."
+url = "https://www.conanexiles.com/dedicated-servers/"
+
+[[sources]]
+id = "conan_steam_settings"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/*"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Steamworks settings shipped for BattlEye and runtime defaults."
+[[sources]]
+id = "conan_steam_settings_examples"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/_examples/*"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Steamworks example settings under steam_settings/_examples."
+[[sources]]
+id = "conan_battl_eye_server_cfg"
+kind = "config_file"
+path = "ConanSandbox/Binaries/Win64/BattlEye/BEServer_x64.cfg"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "ConanExiles dedicated BattlEye server config template."
+[[sources]]
+id = "conan_stagedbuild_ini"
+kind = "config_file"
+path = "Engine/Config/StagedBuild_ConanSandbox.ini"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "ConanExiles staged build config manifest."
+
+[[sources]]
+id = "conan_saved_json"
+kind = "config_file"
+path = "ConanSandbox/Saved/Config/WindowsServer/*.json"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles saved configuration JSON files under WindowsServer config directory."
+
+[[sources]]
+id = "conan_saved_ini"
+kind = "config_file"
+path = "ConanSandbox/Saved/Config/WindowsServer/*.ini"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles saved configuration INI files under WindowsServer config directory."
+
+[[sources]]
+id = "conan_serveruid_txt"
+kind = "generated_roster"
+path = "ConanSandbox/Saved/serveruid.txt"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles server unique identifier file."
+
+[[sources]]
+id = "conan_mod_controller_cache_json"
+kind = "config_file"
+path = "ConanSandbox/Saved/ModControllerCache.json"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles mod-controller cache metadata shipped under ConanSandbox/Saved."
+
+[[sources]]
+id = "conan_modlist_txt"
+kind = "generated_roster"
+path = "ConanSandbox/Mods/modlist.txt"
+authority = "official_conan_exiles_technical_manual"
+description = "Dedicated-server Mod load order file. Conan reads one .pak filename per line from ConanSandbox/Mods/modlist.txt after the .pak files have been placed in ConanSandbox/Mods."
+url = "https://cdn.cloudflare.steamstatic.com/steam/apps/440900/manuals/Conan_Exiles_Technical_manual_2020.09.15.pdf"
+
+[[sources]]
+id = "conan_steam_settings_bundle"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/**/*"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Conan Exiles installed Steamworks settings directory family, including examples and runtime JSON/INI payloads."
+
+[[sources]]
+id = "conan_battl_eye_bundle"
+kind = "config_file"
+path = "ConanSandbox/Binaries/Win64/BattlEye/*"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles BattlEye package files."
+
+[[sources]]
+id = "conan_engine_config_bundle"
+kind = "config_file"
+path = "Engine/Config/*.ini"
+authority = "installed_conan_exiles_dedicated_server_package"
+description = "Installed Conan Exiles core engine config manifests under Engine/Config."
+
+
+[[sources]]
+id = "conanexiles_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_conanexiles_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (16 discovered files)"
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerMessageOfTheDay"
+schema_key = "server_message_of_the_day"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "Regions.ExcludedRegions"
+schema_key = "excluded_regions"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/Script/Engine.GameSession.MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.serverRegion"
+schema_key = "server_region"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PublicServer"
+schema_key = "public_server"
+surface = "config_file"
+
+[[items]]
+source = "engine_ini"
+key = "OnlineSubsystem.ServerPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AdminPassword"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "RconPlugin.RconEnabled"
+schema_key = "rcon_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "RconPlugin.RconPassword"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.IsBattlEyeEnabled"
+schema_key = "battleye_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabled"
+schema_key = "pvp_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RestrictPVPTime"
+schema_key = "restrict_pvp_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RestrictPVPBuildingDamageTime"
+schema_key = "restrict_pvp_building_damage_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBlitzServer"
+schema_key = "pvp_blitz_server"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NoOwnership"
+schema_key = "no_ownership"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ContainersIgnoreOwnership"
+schema_key = "containers_ignore_ownership"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EverybodyCanLootCorpse"
+schema_key = "everybody_can_loot_corpse"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CanDamagePlayerOwnedStructures"
+schema_key = "can_damage_player_owned_structures"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CanBeDamaged"
+schema_key = "can_be_damaged"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCMindReadingMode"
+schema_key = "npc_mind_reading_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableSandStorm"
+schema_key = "enable_sand_storm"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DayCycleSpeedScale"
+schema_key = "day_cycle_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DayTimeSpeedScale"
+schema_key = "day_time_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NightTimeSpeedScale"
+schema_key = "night_time_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DawnDuskSpeedScale"
+schema_key = "dawn_dusk_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.UseClientCatchUpTime"
+schema_key = "use_client_catch_up_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ClientCatchUpTime"
+schema_key = "client_catch_up_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarsDisabled"
+schema_key = "avatars_disabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarLifetime"
+schema_key = "avatar_lifetime"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerXPRateMultiplier"
+schema_key = "player_xp_rate_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerXPTimeMultiplier"
+schema_key = "player_xp_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerXPKillMultiplier"
+schema_key = "player_xp_kill_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerXPHarvestMultiplier"
+schema_key = "player_xp_harvest_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerXPCraftMultiplier"
+schema_key = "player_xp_craft_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.HarvestAmountMultiplier"
+schema_key = "harvest_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ItemSpoilRateScale"
+schema_key = "item_spoil_rate_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CraftingCostMultiplier"
+schema_key = "crafting_cost_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallConversionMultiplier"
+schema_key = "thrall_conversion_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.FuelBurnTimeMultiplier"
+schema_key = "fuel_burn_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ResourceRespawnSpeedMultiplier"
+schema_key = "resource_respawn_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingDecayTimeMultiplier"
+schema_key = "building_decay_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerDamageMultiplier"
+schema_key = "player_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerDamageTakenMultiplier"
+schema_key = "player_damage_taken_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCDamageMultiplier"
+schema_key = "npc_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCDamageTakenMultiplier"
+schema_key = "npc_damage_taken_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerKnockbackMultiplier"
+schema_key = "player_knockback_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCKnockbackMultiplier"
+schema_key = "npc_knockback_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallDamageToPlayersMultiplier"
+schema_key = "thrall_damage_to_players_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.FriendlyFireDamageMultiplier"
+schema_key = "friendly_fire_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingDamageMultiplier"
+schema_key = "building_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StructureHealthMultiplier"
+schema_key = "structure_health_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StructureDamageTakenMultiplier"
+schema_key = "structure_damage_taken_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DurabilityMultiplier"
+schema_key = "durability_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ClanMaxSize"
+schema_key = "clan_max_size"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxNudity"
+schema_key = "max_nudity"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerVoiceChat"
+schema_key = "server_voice_chat"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ChatHasGlobal"
+schema_key = "chat_has_global"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ChatLocalRadius"
+schema_key = "chat_local_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ChatMaxMessageLength"
+schema_key = "chat_max_message_length"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AmbientLifeEnabled"
+schema_key = "ambient_life_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableFatalities"
+schema_key = "fatalities_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CraftFromStorageRadius"
+schema_key = "craft_from_storage_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildFromStorageRadius"
+schema_key = "build_from_storage_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PersonalCraftFromStorageRadius"
+schema_key = "personal_craft_from_storage_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingReplicationDistance"
+schema_key = "building_replication_distance"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.bUndermeshDetectionEnabled"
+schema_key = "undermesh_detection_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.UseMinionPopulationLimit"
+schema_key = "use_minion_population_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionPopulationBaseValue"
+schema_key = "minion_population_base"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionPopulationPerPlayer"
+schema_key = "minion_population_per_player"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionOverpopulationAllowed"
+schema_key = "minion_overpopulation_allowed"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionOverpopulationCleanup"
+schema_key = "minion_overpopulation_cleanup_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "RconPlugin.RconMaxKarma"
+schema_key = "rcon_max_karma"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionBlockList"
+schema_key = "region_block_list"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnablePurge"
+schema_key = "enable_purge"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RestrictPurgeTime"
+schema_key = "restrict_purge_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeLevel"
+schema_key = "purge_level"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgePeriodicity"
+schema_key = "purge_periodicity"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeRestrictionWeekdayStart"
+schema_key = "purge_restriction_weekday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeRestrictionWeekdayEnd"
+schema_key = "purge_restriction_weekday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeRestrictionWeekendStart"
+schema_key = "purge_restriction_weekend_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeRestrictionWeekendEnd"
+schema_key = "purge_restriction_weekend_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgePreparationTime"
+schema_key = "purge_preparation_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PurgeDuration"
+schema_key = "purge_duration"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinPurgeOnlinePlayers"
+schema_key = "min_purge_online_players"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AllowBuildingDuringPurge"
+schema_key = "allow_building_during_purge"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ClanPurgeTrigger"
+schema_key = "clan_purge_trigger"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "raw_extra_lines"
+schema_key = "server_settings_extra"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "raw_extra_lines"
+schema_key = "game_ini_extra"
+surface = "materializer"
+
+[[items]]
+source = "engine_ini"
+key = "raw_extra_lines"
+schema_key = "engine_ini_extra"
+surface = "materializer"
+
+[[items]]
+source = "conan_modlist_txt"
+key = "ConanSandbox/Mods/modlist.txt"
+schema_key = "mod_workshop_ids"
+surface = "materializer"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "ConanSandbox?listen"
+reason = "Conan Exiles Enhanced uses the fixed merged-world ConanSandbox launch URL."
+
+[[exclusions]]
+source = "engine_ini"
+key = "/Script/EngineSettings.GameMapsSettings.ServerDefaultMap"
+reason = "Conan Exiles Enhanced uses the fixed merged-world ConanSandbox map; optional Siptah removal is controlled by Regions.ExcludedRegions."
+
+[[exclusions]]
+source = "enhanced_patch_notes"
+key = "ServerSettings.ServerCommunity"
+reason = "Removed from Conan Exiles Enhanced; retained only by the legacy UE4 branch."
+
+[[exclusions]]
+source = "enhanced_patch_notes"
+key = "ServerSettings.IsVACEnabled"
+reason = "Removed from Conan Exiles Enhanced."
+
+[[exclusions]]
+source = "enhanced_patch_notes"
+key = "ServerSettings.AllowedDistanceUndermeshSquared"
+reason = "Removed in Enhanced and replaced by bUndermeshDetectionEnabled."
+
+[[exclusions]]
+source = "enhanced_patch_notes"
+key = "ServerSettings.BarkeeperAbandonmentTimer"
+reason = "Removed from Conan Exiles Enhanced."
+
+[[exclusions]]
+source = "enhanced_patch_notes"
+key = "ServerSettings.CachedBuildingReplicationDistance"
+reason = "Enhanced internal cached derivative of BuildingReplicationDistance; it is not a stable user-authored control."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-QueryPort"
+reason = "Steam query port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-RconPort"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MaxPlayers"
+reason = "Mirrors [/Script/Engine.GameSession].MaxPlayers."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ServerName"
+reason = "Mirrors ServerSettings.ini ServerName."
+
+[[exclusions]]
+source = "launch_args"
+key = "-RconEnabled"
+reason = "Not emitted: Enhanced build 24922388 interprets the true command-line value as disabled. Game.ini [RconPlugin] owns RCON enablement."
+
+[[exclusions]]
+source = "launch_args"
+key = "-server"
+reason = "Fixed dedicated-server startup mode."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NullRHI"
+reason = "Fixed headless Unreal rendering mode."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Unattended"
+reason = "Fixed non-interactive Unreal server flag."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NoSplash"
+reason = "Fixed startup UI suppression."
+
+[[exclusions]]
+source = "launch_args"
+key = "-abslog"
+reason = "LanGame owns the per-instance Conan log path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-useallavailablecores"
+reason = "Fixed host performance flag for this module."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MULTIHOME"
+reason = "Bind IP is instance network state, not a game rule."
+
+[[exclusions]]
+source = "engine_ini"
+key = "URL.Port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "engine_ini"
+key = "OnlineSubsystemSteam.GameServerQueryPort"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "game_ini"
+key = "RconPlugin.RconPort"
+reason = "RCON port is instance port-binding state."
+
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "listplayers/listbans/kickplayer/banplayer/unbanplayer"
+reason = "Runtime actions are declared in module.toml rather than schema fields."
+
+# EXACT_SERVER_SETTINGS_BEGIN
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingPVPWhitelist"
+schema_key = "building_pvp_allowed_structure_ids"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StructureDamageMultiplier"
+schema_key = "structure_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCRespawnMultiplier"
+schema_key = "npc_respawn_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCHealthMultiplier"
+schema_key = "npc_health_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionDamageMultiplier"
+schema_key = "minion_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MinionDamageTakenMultiplier"
+schema_key = "minion_damage_taken_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerEncumbranceMultiplier"
+schema_key = "player_encumbrance_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerEncumbrancePenaltyMultiplier"
+schema_key = "player_encumbrance_penalty_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerMovementSpeedScale"
+schema_key = "player_movement_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerStaminaCostSprintMultiplier"
+schema_key = "player_stamina_cost_sprint_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerSprintSpeedScale"
+schema_key = "player_sprint_speed_scale"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.PlayerStaminaCostMultiplier"
+reason = "The current BP_ServerSettings declares a loadable DoubleProperty, but a read-only scan of all 92243 package name tables plus native executable strings and complete target action consumers found no gameplay read. This is an unsupported current effect, not proof of dead code. Existing stored JSON and INI values are preserved; fresh configurations use the separately verified StaminaCostMultiplier action control."
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerHealthRegenSpeedScale"
+schema_key = "player_health_regen_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DogsOfTheDesertSpawnWithDogs"
+schema_key = "dogs_of_the_desert_spawn_with_dogs"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CrossDesertOnce"
+schema_key = "cross_desert_once"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallExclusionRadius"
+schema_key = "thrall_exclusion_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxAggroRange"
+schema_key = "max_aggro_range"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CampsIgnoreLandclaim"
+schema_key = "camps_ignore_landclaim"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarDomeDurationMultiplier"
+schema_key = "avatar_dome_duration_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarDomeDamageMultiplier"
+schema_key = "avatar_dome_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCMaxSpawnCapMultiplier"
+schema_key = "npc_max_spawn_cap_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PvPMountEnduranceDamageMultiplier"
+schema_key = "pvp_mount_endurance_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildFromStorageRadius"
+schema_key = "pvp_build_from_storage_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeMondayStart"
+schema_key = "pvp_time_monday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeTuesdayStart"
+schema_key = "pvp_time_tuesday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeWednesdayStart"
+schema_key = "pvp_time_wednesday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeThursdayStart"
+schema_key = "pvp_time_thursday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeFridayStart"
+schema_key = "pvp_time_friday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeSaturdayStart"
+schema_key = "pvp_time_saturday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeSundayStart"
+schema_key = "pvp_time_sunday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeMondayEnd"
+schema_key = "pvp_time_monday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeTuesdayEnd"
+schema_key = "pvp_time_tuesday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeWednesdayEnd"
+schema_key = "pvp_time_wednesday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeThursdayEnd"
+schema_key = "pvp_time_thursday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeFridayEnd"
+schema_key = "pvp_time_friday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeSaturdayEnd"
+schema_key = "pvp_time_saturday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPTimeSundayEnd"
+schema_key = "pvp_time_sunday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledMonday"
+schema_key = "pvp_enabled_monday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledTuesday"
+schema_key = "pvp_enabled_tuesday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledWednesday"
+schema_key = "pvp_enabled_wednesday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledThursday"
+schema_key = "pvp_enabled_thursday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledFriday"
+schema_key = "pvp_enabled_friday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledSaturday"
+schema_key = "pvp_enabled_saturday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPEnabledSunday"
+schema_key = "pvp_enabled_sunday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeMondayStart"
+schema_key = "pvp_building_damage_time_monday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeTuesdayStart"
+schema_key = "pvp_building_damage_time_tuesday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeWednesdayStart"
+schema_key = "pvp_building_damage_time_wednesday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeThursdayStart"
+schema_key = "pvp_building_damage_time_thursday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeFridayStart"
+schema_key = "pvp_building_damage_time_friday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeSaturdayStart"
+schema_key = "pvp_building_damage_time_saturday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeSundayStart"
+schema_key = "pvp_building_damage_time_sunday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeMondayEnd"
+schema_key = "pvp_building_damage_time_monday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeTuesdayEnd"
+schema_key = "pvp_building_damage_time_tuesday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeWednesdayEnd"
+schema_key = "pvp_building_damage_time_wednesday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeThursdayEnd"
+schema_key = "pvp_building_damage_time_thursday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeFridayEnd"
+schema_key = "pvp_building_damage_time_friday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeSaturdayEnd"
+schema_key = "pvp_building_damage_time_saturday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageTimeSundayEnd"
+schema_key = "pvp_building_damage_time_sunday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledMonday"
+schema_key = "pvp_building_damage_enabled_monday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledTuesday"
+schema_key = "pvp_building_damage_enabled_tuesday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledWednesday"
+schema_key = "pvp_building_damage_enabled_wednesday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledThursday"
+schema_key = "pvp_building_damage_enabled_thursday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledFriday"
+schema_key = "pvp_building_damage_enabled_friday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledSaturday"
+schema_key = "pvp_building_damage_enabled_saturday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PVPBuildingDamageEnabledSunday"
+schema_key = "pvp_building_damage_enabled_sunday"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisableBuildingDuringTimeRestrictedPVP"
+schema_key = "disable_building_during_time_restricted_pvp"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CombatModeModifier"
+schema_key = "combat_mode_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LandClaimRadiusMultiplier"
+schema_key = "land_claim_radius_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisableLandclaimNotifications"
+schema_key = "disable_landclaim_notifications"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingPreloadRadius"
+schema_key = "building_preload_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DynamicBuildingDamage"
+schema_key = "dynamic_building_damage"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DynamicBuildingDamagePeriod"
+schema_key = "dynamic_building_damage_period"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CreativeModeServer"
+schema_key = "creative_mode_server"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.KickAFKPercentage"
+schema_key = "kick_afk_percentage"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.KickAFKTime"
+schema_key = "kick_afk_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.OfflinePlayersUnconsciousBodiesHours"
+schema_key = "offline_players_unconscious_bodies_hours"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ShowOnlinePlayers"
+schema_key = "show_online_players"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CorpsesPerPlayer"
+schema_key = "corpses_per_player"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerCorpseLifeTime"
+schema_key = "player_corpse_life_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NPCCorpseLifeTime"
+schema_key = "npc_corpse_life_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ItemRepairMinimumDurability"
+schema_key = "item_repair_minimum_durability"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ItemRepairDurabilityLossByRepairkitTier"
+schema_key = "item_repair_durability_loss_by_repairkit_tier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ItemRepairDurabilityLossPenaltyChance"
+schema_key = "item_repair_durability_loss_penalty_chance"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ItemConvertionMultiplier"
+schema_key = "item_convertion_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaRegenerationTime"
+schema_key = "stamina_regeneration_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaExhaustionTime"
+schema_key = "stamina_exhaustion_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaStaticRegenRateMultiplier"
+schema_key = "stamina_static_regen_rate_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaMovingRegenRateMultiplier"
+schema_key = "stamina_moving_regen_rate_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerStaminaRegenSpeedScale"
+schema_key = "player_stamina_regen_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaOnConsumeRegenPause"
+schema_key = "stamina_on_consume_regen_pause"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StaminaOnExhaustionRegenPause"
+schema_key = "stamina_on_exhaustion_regen_pause"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallScoutingTimeMinutes"
+schema_key = "thrall_scouting_time_minutes"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallMinDistanceAwayFromHome"
+schema_key = "thrall_min_distance_away_from_home"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallTeleportingCooldown"
+schema_key = "thrall_teleporting_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableFollowerDbno"
+schema_key = "enable_follower_dbno"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableFollowerRescueOnLandClaimOnly"
+schema_key = "enable_follower_rescue_on_land_claim_only"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableFollowerRescueInBuildExclusionZone"
+schema_key = "enable_follower_rescue_in_build_exclusion_zone"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.FollowerRescueCooldown"
+schema_key = "follower_rescue_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DamageCooldownBeforeRescue"
+schema_key = "damage_cooldown_before_rescue"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallCorruptionRemovalMultiplier"
+schema_key = "thrall_corruption_removal_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerCorruptionGainMultiplier"
+schema_key = "player_corruption_gain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PlayerCorruptionGainFromSorceryMultiplier"
+schema_key = "player_corruption_gain_from_sorcery_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AnimalPenCraftingTimeMultiplier"
+schema_key = "animal_pen_crafting_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.FeedBoxRangeMultiplier"
+schema_key = "feed_box_range_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PathFollowingSendsAngularVelocity"
+schema_key = "path_following_sends_angular_velocity"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.UnconsciousTimeSeconds"
+schema_key = "unconscious_time_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ConciousnessDamageMultiplier"
+schema_key = "conciousness_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallDamageToNPCsMultiplier"
+schema_key = "thrall_damage_to_npcs_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisableBuildingAbandonment"
+schema_key = "disable_building_abandonment"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxBuildingDecayTime"
+schema_key = "max_building_decay_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxDecayTimeToAutoDemolish"
+schema_key = "max_decay_time_to_auto_demolish"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ThrallDecayTime"
+schema_key = "thrall_decay_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisableThrallDecay"
+schema_key = "disable_thrall_decay"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingDecayTimePerScore"
+schema_key = "building_decay_time_per_score"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DecayCleanupTimeMultiplier"
+schema_key = "decay_cleanup_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DecayBonusTimeRate"
+schema_key = "decay_bonus_time_rate"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DecayShowBuildingScore"
+schema_key = "decay_show_building_score"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableTargetLock"
+schema_key = "enable_target_lock"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.ValidatePhysNavWalkWithRaycast"
+reason = "Unsupported current semantics: the native marked Boolean and defaulttrue are confirmed, but the bounded native read scan could not establish an object-qualified consumer, and all92243 package name tables plus global script imports have no reference. This does not prove unused. The ordinary form and default template omit it; pre-existing JSON and native INI values remain preserved instead of being enabled, disabled or deleted."
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LocalNavMeshVisualizationFrequency"
+schema_key = "local_nav_mesh_visualization_frequency"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LocalLandClaimVisualizationFrequency"
+schema_key = "local_land_claim_visualization_frequency"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LocalLandClaimVisualizationRadius"
+schema_key = "local_land_claim_visualization_radius"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LocalLandClaimVisualizationChannel"
+schema_key = "local_land_claim_visualization_channel"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.UseLocalQuadraticAngularVelocityPrediction"
+schema_key = "use_local_quadratic_angular_velocity_prediction"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LQAVPUseTime"
+schema_key = "lqavp_use_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LQAVPFadeTime"
+schema_key = "lqavp_fade_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.LQAVPMethod"
+schema_key = "lqavp_method"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.NetworkSimulatedSmoothRotationTimeWithLQAVP"
+schema_key = "network_simulated_smooth_rotation_time_with_lqavp"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableClanMarkers"
+schema_key = "enable_clan_markers"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ValidatePlayerStats"
+schema_key = "validate_player_stats"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AllowedTimeUndermesh"
+schema_key = "allowed_time_undermesh"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.CapCharacterLayoutScalarParams"
+schema_key = "cap_character_layout_scalar_params"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EventLogPvPCauserPrivacy"
+schema_key = "event_log_pvp_causer_privacy"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EventLogPvECauserPrivacy"
+schema_key = "event_log_pve_causer_privacy"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RestrictAvatarSummoningTime"
+schema_key = "restrict_avatar_summoning_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarSummoningTimeWeekdayStart"
+schema_key = "avatar_summoning_time_weekday_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarSummoningTimeWeekdayEnd"
+schema_key = "avatar_summoning_time_weekday_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarSummoningTimeWeekendStart"
+schema_key = "avatar_summoning_time_weekend_start"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarSummoningTimeWeekendEnd"
+schema_key = "avatar_summoning_time_weekend_end"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AvatarSummonTime"
+schema_key = "avatar_summon_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxDeathMapMarkers"
+schema_key = "max_death_map_markers"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerTransferEnabled"
+schema_key = "server_transfer_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerTransferServersWhitelist"
+schema_key = "server_transfer_allowed_servers"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.MaxAllowedPing"
+schema_key = "max_allowed_ping"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AllowFamilySharedAccount"
+schema_key = "allow_family_shared_account"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowAfrica"
+schema_key = "region_allow_africa"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowAsia"
+schema_key = "region_allow_asia"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowCentralEurope"
+schema_key = "region_allow_central_europe"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowEasternEurope"
+schema_key = "region_allow_eastern_europe"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowWesternEurope"
+schema_key = "region_allow_western_europe"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowNorthAmerica"
+schema_key = "region_allow_north_america"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowOceania"
+schema_key = "region_allow_oceania"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.RegionAllowSouthAmerica"
+schema_key = "region_allow_south_america"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingPickupEnabled"
+schema_key = "building_pickup_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.PoiProtectionEnabled"
+schema_key = "poi_protection_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EventSystemEnabled"
+schema_key = "event_system_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.StabilityLossMultiplier"
+schema_key = "stability_loss_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.BuildingValidationEnabled"
+schema_key = "building_validation_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.AllowBuildingAnywhere"
+schema_key = "allow_building_anywhere"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.HealthbarVisibilityDistance"
+schema_key = "healthbar_visibility_distance"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerMergeOutgoingTime"
+schema_key = "server_merge_outgoing_time"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.ServerMergeDestination"
+schema_key = "server_merge_destination"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisableChatFormatting"
+schema_key = "disable_chat_formatting"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.EnableLoginQueue"
+schema_key = "enable_login_queue"
+surface = "config_file"
+
+[[items]]
+source = "server_settings"
+key = "ServerSettings.DisconnectionGraceTime"
+schema_key = "disconnection_grace_time"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.ConfigVersion"
+reason = "Generated compatibility version owned by the exact Conan build."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.BlueprintConfigVersion"
+reason = "Generated Blueprint compatibility version owned by the exact Conan build."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.CachedLandClaimRadiusMultiplier"
+reason = "Runtime cache derived from LandClaimRadiusMultiplier; editing the cache would create divergent state."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.CachedBuildingReplicationDistance"
+reason = "Runtime cache derived from BuildingReplicationDistance; editing the cache would create divergent state."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.ServerPassword"
+reason = "Server-generated mirror of Engine.ini [OnlineSubsystem] ServerPassword, which is the canonical managed field."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.ServerModList"
+reason = "Server-generated mirror of ConanSandbox/Mods/modlist.txt, owned by the Mods workflow."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.ServerRetirementTime"
+reason = "Server migration lifecycle state generated by the server, not an operator-authored game rule."
+
+[[exclusions]]
+source = "server_settings"
+key = "ServerSettings.bCanBeDamaged"
+reason = "Legacy Boolean mirror of canBeDamaged/CanBeDamaged; the canonical managed field is can_be_damaged."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MULTIHOMEHTTP"
+reason = "Official Enhanced troubleshooting requires this to mirror the instance bind IP whenever -MULTIHOME is used; it is instance network state, not a game rule."
+# EXACT_SERVER_SETTINGS_END
+
+[[sources]]
+id = "official_enhanced_settings_2026_09_28"
+kind = "documentation"
+path = "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini:[ServerSettings]"
+authority = "official_conan_exiles_enhanced_server_documentation"
+url = "https://exiles-enhanced.inflexion.io/servers/settings/"
+description = "Official Enhanced INI setting names, semantics and explicitly stated defaults, retrieved 2026-09-28. Covers settings not emitted by the prior clean-start reference. Documentation and deterministic materialization evidence only; not a live gameplay acceptance claim. On 2026-09-30 all 219 current official INI headings, including expanded weekday/time/region groups, map to modeled fields or explicit exclusions. The installed library manifest reports build 25488622. This is documentation coverage, not newly measured runtime effects."
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormEnabled"
+schema_key = "storm_enabled"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormCooldown"
+schema_key = "storm_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormAccumulationTime"
+schema_key = "storm_accumulation_time"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormDuration"
+schema_key = "storm_duration"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormDissipationTime"
+schema_key = "storm_dissipation_time"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormMinimumOnlinePlayers"
+schema_key = "storm_minimum_online_players"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormMapBlocker"
+schema_key = "storm_map_blocker"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormEnduranceDrainMultiplier"
+schema_key = "storm_endurance_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormBuildingAllowed"
+schema_key = "storm_building_allowed"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormBuildingDamageEnabled"
+schema_key = "storm_building_damage_enabled"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormBuildingDamageMultiplier"
+schema_key = "storm_building_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormBuildingDamageRateMultiplier"
+schema_key = "storm_building_damage_rate_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.MinimumStormDamageBuildingPieces"
+schema_key = "minimum_storm_damage_building_pieces"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ElderThingsEnabled"
+schema_key = "elder_things_enabled"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ElderThingsIdleLifespan"
+schema_key = "elder_things_idle_lifespan"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ElderThingSpawnRate"
+schema_key = "elder_thing_spawn_rate"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.MaxAmbushElderThings"
+schema_key = "max_ambush_elder_things"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.SiegeElderThingsEnabled"
+schema_key = "siege_elder_things_enabled"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.MaxSiegeElderThings"
+schema_key = "max_siege_elder_things"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.SiegeElderThingRespawnRate"
+schema_key = "siege_elder_thing_respawn_rate"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.SiegeElderThingMapMarkers"
+schema_key = "siege_elder_thing_map_markers"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.MinimumBuildingSizeToBeSieged"
+schema_key = "minimum_building_size_to_be_sieged"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ElderThingSiegeBuildingSizeMultiplier"
+schema_key = "elder_thing_siege_building_size_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ElderThingSiegeDamageMultiplier"
+schema_key = "elder_thing_siege_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.SurgeDespawnTimer"
+schema_key = "surge_despawn_timer"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.SurgeSacrificeRequirementMultiplier"
+schema_key = "surge_sacrifice_requirement_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.AltarModuleActiveTimeMultiplier"
+schema_key = "altar_module_active_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.VaultRefreshTime"
+schema_key = "vault_refresh_time"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.VaultRefreshDeviation"
+schema_key = "vault_refresh_deviation"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerActiveHungerMultiplier"
+schema_key = "player_active_hunger_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerActiveThirstMultiplier"
+schema_key = "player_active_thirst_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerIdleHungerMultiplier"
+schema_key = "player_idle_hunger_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerIdleThirstMultiplier"
+schema_key = "player_idle_thirst_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.LogoutCharactersRemainInTheWorld"
+schema_key = "logout_characters_remain_in_the_world"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.IsLoadErrorsFatal"
+schema_key = "is_load_errors_fatal"
+surface = "config_file"
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.CoopTetheringLimit"
+reason = "Publisher scopes this to non-dedicated co-op hosts; not a dedicated-server control."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.TetheringMaxLimit"
+reason = "Co-op tethering implementation detail without a documented dedicated-server contract."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.TetheringMinLimit"
+reason = "Co-op tethering implementation detail without a documented dedicated-server contract."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.TetheringRangeDelta"
+reason = "Co-op tethering implementation detail without a documented dedicated-server contract."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.IPBlackList"
+reason = "This is an individual network-address blocklist, owned by Player Access rather than duplicated in ordinary Configuration. The native array at member0x640 is parsed by LoadSettings into address/mask pairs at0x650: either four-octet IPv4 or IPv4/dotted-decimal-mask (each octet0..255); a bare address receives mask255.255.255.255. No IPv6 or prefix-length syntax is inferred. Host-callable roster synchronization remains outside this configuration editor; existing native data is preserved."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.EnableWhitelist"
+reason = "The native whitelist roster and its host-callable synchronization are not verified for this module. Exposing enforcement alone would not provide a complete player-access workflow."
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.DropEquipmentOnDeath"
+schema_key = "drop_equipment_on_death"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StaminaCostMultiplier"
+schema_key = "action_stamina_cost_multiplier"
+surface = "config_file"
+
+
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.CanImportDirectlyFromSameServer"
+reason = "Build 25488622 reflects a config Boolean at AServerSettings offset 0x5f6. The reference names it but does not establish how it interacts with the existing transfer allowlist; no duplicate or misleading transfer control is exposed."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ChatFloodControlAheadCounter"
+reason = "Build 25488622 confirms Int32 at AServerSettings offset 0x5cc with constructor default 10. Its counting/window behavior is not documented or traced, so no guessed anti-spam explanation is exposed."
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.EnableBanCheck"
+schema_key = "enable_ban_check"
+surface = "config_file"
+
+
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.OverrideDecayMaxBuildingPieces"
+schema_key = "override_decay_max_building_pieces"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.OverrideDecayTime"
+schema_key = "override_decay_time"
+surface = "config_file"
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerBuildingDamageMultiplier"
+reason = "Incomplete scope: build 25488622 confirms a configurable FloatProperty at AServerSettings member 0x4f8, with packaged DefaultServerSettings.ini overriding constructor 1 to 0.01. Consumer 0x144cd82a0 first applies BuildingDamageMultiplier at 0x4f4, then applies this independent multiplier only when virtual predicate 0x7c8 succeeds. Predicates 0x144d09b60 and 0x144d45e60 accept discriminator 0 or 2 and the exact DmgTypeHealth_BP_C class loaded from /Game/Systems/Progression/DmgTypeHealth_BP. The gameplay categories represented by 0 and 2 remain unverified, so no general player-attack control is exposed. This is neither a duplicate setting nor evidence of unused code."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerMovementAccelerationMultiplier"
+reason = "The packaged Blueprint consumes this DoubleProperty to scale CharacterMovement.MaxAcceleration and defaults it to 1, but its flags are 0x10005 without the bit24 required by AServerSettings.LoadSetting. It is an internal Blueprint parameter, not an INI setting; no ineffective control is exposed."
+
+
+
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ServerBlacklistedFeatIDs"
+reason = "Derived integer cache at member0x590, populated by parsing FeatsBlacklist string entries with _wtoi and removing duplicates. Its property flags lack the bit24 accepted by LoadSetting, so it is not an independent INI input."
+
+[[exclusions]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ServerBuildingPVPWhitelistIDs"
+reason = "Derived integer cache at member0x5b0, populated from the existing BuildingPVPWhitelist string entries with _wtoi and removing duplicates. Its flags lack the bit24 accepted by LoadSetting; the existing building whitelist remains the only editor."
+
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://exiles-enhanced.inflexion.io/servers/settings/"
+authority = "source_and_native_contract_semantic_review"
+description = "Semantic review on 2026-09-30 checked all 292 fields against the official Enhanced settings page and the emitted INI inventory. Metadata covers distinct weekday labels, damage direction, access/follower/survival classification and twelve documented float types. Fractional fixture values cover these types through schema validation and native INI readback. Native defaults are retained; ambiguous time units are not inferred from documentation-only evidence. The official settings page remains non-exhaustive."
+
+[[sources]]
+id = "native_semantics_build_25488622"
+kind = "documentation"
+path = "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+authority = "first_party_installed_executable_static_analysis"
+description = "2026-09-30 read-only analysis of Steam app 443030 build 25488622; executable SHA256 2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1. AServerSettings reflection identifies 23 additional FloatProperty controls. Its native constructor initializes UnconsciousTimeSeconds to 600, but the current packaged BP_ServerSettings class default object overrides it to 1800 (FloatProperty at asset offset 0x35a5; SHA256 8d207d799acc4ef815c9b4650a36ed42af612edf5845eef2f4cd9ea88a48c272); the module uses the Blueprint default 1800. ThrallDecayTime is subtracted from replicated world seconds; LQAVPUseTime and LQAVPFadeTime operate on UWorld time seconds. CheckPVPTimeRestrictions constructs hour*100+minute, includes the start, excludes the end, and wraps when start>=end. Synthetic acceptance inputs exercise fractions without changing historical observed INI files. The rotation-smoothing control maps to UCharacterMovementComponent.NetworkSimulatedSmoothRotationTime (seconds). OverrideDecayMaxBuildingPieces and OverrideDecayTime are Int32 properties with constructor defaults 6 and 3600; the official reference defines their small-building threshold and seconds semantics. This is static native-contract evidence, not a gameplay execution claim."
+
+[[sources]]
+id = "native_semantics_existing_unconscious"
+kind = "documentation"
+path = "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini"
+authority = "configuration_preservation_regression"
+description = "The historical captured INI used UnconsciousTimeSeconds=1800. The current packaged BP_ServerSettings default is also 1800, overriding the native constructor value 600. This separate synthetic regression supplies explicit 600 and requires it to survive saving without replacement by the default. The 2026-09-30 fixture is synthetic acceptance input, not a newly observed server output."
+
+[[sources]]
+id = "epic_character_rotation_smoothing"
+kind = "documentation"
+path = "UCharacterMovementComponent.NetworkSimulatedSmoothRotationTime"
+authority = "official_epic_unreal_engine_api"
+url = "https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UCharacterMovementComponent"
+description = "The engine API documents rotation interpolation duration with ForceUnits=s. In Conan build 25488622, the enabled LQAVP path copies the server float at offset 0x568 directly to the movement component reflected property at 0x454. No new clamp is imposed from editor-only metadata."
+
+[[sources]]
+id = "native_advanced_consumers_build_25488622"
+kind = "documentation"
+path = "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+authority = "first_party_installed_executable_static_consumer_trace"
+description = "2026-09-30 bounded follow-up on nine already exposed advanced controls. LocalNavMeshVisualizationFrequency and LocalLandClaimVisualizationFrequency compare against UWorld.GetRealTimeSeconds; negative values skip updates, while radius/channel feed collection before ClientDrawNavMeshDebug/ClientDrawLandClaimDebug RPCs. These are diagnostic data paths present in the shipping server, not discarded repository-development leftovers. LQAVP selects native correction branches 0/1/2/3; unknown numeric values retain the native fallthrough, so no closed enum is added. ValidatePlayerStats checks attribute-point spending against the character-level allowance and resets excessive allocation with a native player notification. CapCharacterLayoutScalarParams clamps three CharacterScalarParameters members. ValidatePhysNavWalkWithRaycast is a reflected Boolean at offset 0x549, but the bounded native-consumer scan could not tie an observed read to that AServerSettings member; no claim that the setting is unused or server-only is made."
+
+[[sources]]
+id = "death_drop_numeric_contract_25488622"
+kind = "documentation"
+path = "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini [ServerSettings] DropEquipmentOnDeath"
+authority = "official_funcom_patch_notes_and_installed_executable"
+url = "https://forums.funcom.com/t/pc-update-age-of-war-chapter-1-2023-06-22-latest-hotfix-2-2023-07-20/231320"
+description = "2026-09-30 verification against installed Steam build 25488622: reflected EDropOnDeath has modes 0 (keep items), 1 (drop all; constructor default), and 2 (drop backpack). Drop_MAX=3 is a sentinel. AServerSettings reads enum configuration through its integer getter using _wtoi and writes the underlying value through its integer setter with %i formatting. This bypasses the general enum-name text exporter. The official Age of War release notes document the same three numeric modes. Death-drop selection is distinct from corpse lifetime and corpse-looting permission; the obsolete backpack/shortcut-bar Boolean controls are not duplicated. The three acceptance fixtures cover numeric modes 0, 1 and 2 without running a game server."
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerOfflineHungerMultiplier"
+schema_key = "player_offline_hunger_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerOfflineThirstMultiplier"
+schema_key = "player_offline_thirst_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.PlayerWaterMultiplier"
+schema_key = "player_water_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.ShieldDurabilityMultiplier"
+schema_key = "shield_durability_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.FeatsBlacklist"
+schema_key = "disabled_knowledge_ids"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.EnableBuildingDestructionCapsules"
+schema_key = "enable_building_destruction_capsules"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormTimeWeekdayStart"
+schema_key = "storm_time_weekday_start"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormTimeWeekdayEnd"
+schema_key = "storm_time_weekday_end"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormTimeWeekendStart"
+schema_key = "storm_time_weekend_start"
+surface = "config_file"
+
+[[items]]
+source = "official_enhanced_settings_2026_09_28"
+key = "ServerSettings.StormTimeWeekendEnd"
+schema_key = "storm_time_weekend_end"
+surface = "config_file"
+
+[[sources]]
+id = "packaged_blueprint_contracts_25488622"
+kind = "documentation"
+path = "ConanSandbox/Content/Paks; BP_ServerSettings, BP_HungerSystem, BP_Durability, BuildingDestructionCapsule and BP_SiptahStormController"
+authority = "installed_official_package_and_native_consumers"
+description = "2026-09-30 read-only Steam build 25488622 package inspection. DefaultServerSettings.ini SHA256 98f4800cfe7a7e65253d38aae8226cdfb32ffa045e7defb033cfe3cc9cbad929 supplies EverybodyCanLootCorpse=False, ClientCatchUpTime=10, MaxNudity=None (the ByteProperty loader reads this through GetInt/_wtoi as 0), offline hunger/thirst=0, drinking recovery=1, shield durability loss=1, capsule cleanup=False, and storm HHMM starts0/ends2359. BP_ServerSettings CDO SHA256 8d207d799acc4ef815c9b4650a36ed42af612edf5845eef2f4cd9ea88a48c272 sets UnconsciousTimeSeconds=1800 and ClientCatchUpTime=10. Native CDO initialization loads the ServerSettings INI hierarchy at0x144f6a0df; instance initialization reads its marked properties at0x144f71347. BP_HungerSystem consumes the three hunger/thirst/drink multipliers; BP_Durability multiplies shield-hit and weapon-block durability loss. All four are DoubleProperty values admitted by the game loader. Capsule cleanup is server-gated and traces its map region before damaging buildings or destroying eligible placeables. Storm SetStormState compares HHMM >=start and <end with no midnight wrapping; its FuncomGenericLibrary.GetDayOfYear helper actually computes weekday modulo7, independently verified from native code. FeatsBlacklist parses quoted numeric strings into the nonconfig ServerBlacklistedFeatIDs cache; BuildingPVPWhitelist similarly owns its derived IDs. Neither cache gets a duplicate editor. Constructor-only and name-only assumptions were replaced with these package and consumer contracts."
+
+[[sources]]
+id = "action_stamina_consumer_25488622"
+kind = "documentation"
+path = "AServerSettings.StaminaCostMultiplier and BaseBPCombat"
+authority = "native_property_and_complete_blueprint_consumers"
+description = "Native StaminaCostMultiplier is a distinct marked property at AServerSettings member0x48c, read under its own name by LoadSetting. Its getter exec0x144c20870 is called in complete BaseBPCombat functions AdjustStaminaForAttack, GetStaminaJumpCost and OnSubstateChanged_Dodge; each multiplies the action cost by this value. Packaged DefaultServerSettings.ini sets1. The separate Blueprint PlayerStaminaCostMultiplier is DoubleProperty at class assetoffset0x23aa flags0x1014005 and CDOoffset0x2fdb default1; its current gameplay effect is unsupported after all92243 package name tables and the native executable were checked. It is removed from the ordinary form and default template while existing stored values are preserved. Neither is treated as a name alias. Synthetic native fixtures verify the action key at1.25."
+
+[[sources]]
+id = "authentication_ban_check_25488622"
+kind = "documentation"
+path = "AServerSettings.EnableBanCheck and CheckIdentityToken"
+authority = "packaged_default_and_native_authentication_consumer"
+description = "Packaged DefaultServerSettings.ini sets EnableBanCheck=True, overriding the native constructor zero at member0x611. JSON response parsing at0x144645894 reads IsBanned and0x1446458f9 stores responseoffset0x90. The login check at0x144df5352 reads ServerSettingsoffset0x611 and rejects an IsBanned response when enabled, with the explicit banned-user error. It separately continues local allow/ban eligibility checks via0x144dfe540. This is a global authentication policy, not another individual-player blacklist. No claim about VAC, Steam or EOS ownership is made. Synthetic fixtures cover defaulttrue and explicitfalse."

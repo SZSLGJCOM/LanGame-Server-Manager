@@ -1,0 +1,198 @@
+.player-access-selected-actions {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.player-center-member-pane + .player-access-selected-actions {
+  padding-top: 6px;
+}
+
+.player-access-selected-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.player-access-selected-editor {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 12px;
+}
+
+.player-access-total-action {
+  min-width: 0;
+  display: grid;
+}
+
+.player-access-selected-editor .player-access-roster-editor {
+  padding: 10px 0 0;
+  border-bottom: 0;
+}
+
+.player-access-roster-selected {
+  display: grid;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--shell-line);
+  font-size: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.player-access-roster-selected-fill {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: var(--text-secondary);
+  white-space: normal;
+}
+
+.player-access-roster-editor {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 54%, transparent);
+}
+
+.player-access-roster-input {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+}
+
+.player-access-object-roster-field {
+  min-width: 0;
+}
+
+.player-access-object-roster-editor {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.player-access-object-roster-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px;
+}
+
+.player-access-object-roster-property {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.player-access-object-roster-property.is-boolean {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.player-access-object-roster-property .text-input {
+  width: 100%;
+  min-width: 0;
+}
+
+.player-access-roster-add-button {
+  width: 100%;
+  min-width: 128px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding-inline: 13px;
+}
+
+.player-access-roster-add-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.player-access-roster-list {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: start;
+}
+
+.player-access-roster-entries {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+}
+
+.player-access-roster-entry {
+  min-width: 0;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 7px 10px 7px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 42%, transparent);
+  transition: background 120ms ease;
+}
+
+.player-access-roster-entry:last-child {
+  border-bottom: 0;
+}
+
+.player-access-roster-entry:hover {
+  background: color-mix(in srgb, var(--theme-card-elevated) 58%, transparent);
+}
+
+.player-access-roster-entry-value {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--shell-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-access-roster-empty {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-secondary);
+}
+
+.player-access-roster-empty-icon {
+  width: 17px;
+  height: 17px;
+  opacity: 0.7;
+}
+
+.player-access-roster-action-pair {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  justify-self: end;
+  width: min(100%, 300px);
+}
+
+.server-workbench-warning {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--theme-warning-border);
+  background: var(--theme-warning-bg);
+  color: var(--theme-warning-text);
+}
+
+.server-workbench-warning .form-note {
+  color: inherit;
+}

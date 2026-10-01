@@ -1,0 +1,72 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-08",
+    "source_ids": [
+      "asa_server_patch_notes_v93_19"
+    ],
+    "build": "Studio Wildcard official patch page v93.19 (2026-09-04); deterministic native output contract only, no new game-server run"
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "asa_server_patch_notes_v93_19.ServerSettings.PreventTemplateOnSaddle"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "prevent_template_on_saddle": true,
+    "server_name": "LanGame ASA platform template configuration",
+    "admin_password": "fixture-admin-password",
+    "server_password": "fixture-server-password"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "[ServerSettings]",
+          "PreventTemplateOnSaddle=true"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "arguments": [
+        "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA platform template configuration?RCONEnabled=true?RCONPort=27020",
+        "-port=7777",
+        "-WinLiveMaxPlayers=30",
+        "-NullRHI",
+        "-Unattended",
+        "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+        "-servergamelog",
+        "-servergamelogincludetribelogs",
+        "-ServerRCONOutputTribeLogs",
+        "-NoTransferFromFiltering"
+      ]
+    }
+  }
+}

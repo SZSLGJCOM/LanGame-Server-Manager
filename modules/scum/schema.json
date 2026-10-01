@@ -1,0 +1,3240 @@
+{
+  "type": "object",
+  "title": "SCUM Dedicated Server",
+  "properties": {
+    "server_general": {
+      "type": "object",
+      "default": {},
+      "title": "General",
+      "description": "All editable [General] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "general",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.ServerName",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "server_name": {
+          "type": "string",
+          "default": "SCUM Dedicated Server dedicated server",
+          "title": "Server Name",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerName.",
+          "x-lsgm-native-key": "scum.ServerName",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "server_description": {
+          "type": "string",
+          "default": "Managed by LanGame Server Manager.",
+          "title": "Server Description",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerDescription.",
+          "x-lsgm-native-key": "scum.ServerDescription",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "server_password": {
+          "type": "string",
+          "default": "",
+          "title": "Server Password",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerPassword.",
+          "x-lsgm-native-key": "scum.ServerPassword",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "max_players": {
+          "type": "integer",
+          "default": 64,
+          "title": "Max Players",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxPlayers.",
+          "x-lsgm-native-key": "scum.MaxPlayers",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "welcome_message": {
+          "type": "string",
+          "default": "Welcome to this SCUM server.",
+          "title": "Welcome Message",
+          "description": "Exact server-generated SCUM v7 parameter scum.WelcomeMessage.",
+          "x-lsgm-native-key": "scum.WelcomeMessage",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "allow_third_person": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Third Person",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowThirdPerson.",
+          "x-lsgm-native-key": "scum.AllowThirdPerson"
+        },
+        "play_safe_id_protection": {
+          "type": "boolean",
+          "default": false,
+          "title": "Play Safe Id Protection",
+          "description": "Exact server-generated SCUM v7 parameter scum.PlaySafeIdProtection.",
+          "x-lsgm-native-key": "scum.PlaySafeIdProtection"
+        },
+        "server_banner_url": {
+          "type": "string",
+          "default": "",
+          "title": "Server Banner Url",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerBannerUrl.",
+          "x-lsgm-native-key": "scum.ServerBannerUrl",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "server_playstyle": {
+          "type": "string",
+          "default": "PVE",
+          "title": "Server Playstyle",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerPlaystyle.",
+          "x-lsgm-native-key": "scum.ServerPlaystyle",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "message_of_the_day": {
+          "type": "string",
+          "default": "This is the Message of the Day.",
+          "title": "Message Of The Day",
+          "description": "Exact server-generated SCUM v7 parameter scum.MessageOfTheDay.",
+          "x-lsgm-native-key": "scum.MessageOfTheDay",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "message_of_the_day_cooldown": {
+          "type": "number",
+          "default": 10.0,
+          "title": "Message Of The Day Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.MessageOfTheDayCooldown.",
+          "x-lsgm-native-key": "scum.MessageOfTheDayCooldown"
+        },
+        "min_server_tick_rate": {
+          "type": "integer",
+          "default": 5,
+          "title": "Min Server Tick Rate",
+          "description": "Exact server-generated SCUM v7 parameter scum.MinServerTickRate.",
+          "x-lsgm-native-key": "scum.MinServerTickRate"
+        },
+        "max_server_tick_rate": {
+          "type": "integer",
+          "default": 30,
+          "title": "Max Server Tick Rate",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxServerTickRate.",
+          "x-lsgm-native-key": "scum.MaxServerTickRate"
+        },
+        "max_ping_check_enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "Max Ping Check Enabled",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxPingCheckEnabled.",
+          "x-lsgm-native-key": "scum.MaxPingCheckEnabled"
+        },
+        "max_ping": {
+          "type": "number",
+          "default": 200.0,
+          "title": "Max Ping",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxPing.",
+          "x-lsgm-native-key": "scum.MaxPing"
+        },
+        "max_number_of_consecutive_high_ping_readings": {
+          "type": "integer",
+          "default": 5,
+          "title": "Max Number Of Consecutive High Ping Readings",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxNumberOfConsecutiveHighPingReadings.",
+          "x-lsgm-native-key": "scum.MaxNumberOfConsecutiveHighPingReadings"
+        },
+        "logout_timer": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Logout Timer",
+          "description": "Exact server-generated SCUM v7 parameter scum.LogoutTimer.",
+          "x-lsgm-native-key": "scum.LogoutTimer"
+        },
+        "logout_timer_while_captured": {
+          "type": "number",
+          "default": 120.0,
+          "title": "Logout Timer While Captured",
+          "description": "Exact server-generated SCUM v7 parameter scum.LogoutTimerWhileCaptured.",
+          "x-lsgm-native-key": "scum.LogoutTimerWhileCaptured"
+        },
+        "logout_timer_in_bunker": {
+          "type": "number",
+          "default": 30000.0,
+          "title": "Bunker logout delay (seconds)",
+          "description": "Seconds before removing the character from the game after the player logs out inside a bunker.",
+          "x-lsgm-native-key": "scum.LogoutTimerInBunker"
+        },
+        "allow_first_person": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow First Person",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowFirstPerson.",
+          "x-lsgm-native-key": "scum.AllowFirstPerson"
+        },
+        "allow_crosshair": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Crosshair",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowCrosshair.",
+          "x-lsgm-native-key": "scum.AllowCrosshair"
+        },
+        "allow_voting": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Voting",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowVoting.",
+          "x-lsgm-native-key": "scum.AllowVoting"
+        },
+        "allow_map_screen": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Map Screen",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowMapScreen.",
+          "x-lsgm-native-key": "scum.AllowMapScreen"
+        },
+        "allow_kill_claiming": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Kill Claiming",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowKillClaiming.",
+          "x-lsgm-native-key": "scum.AllowKillClaiming"
+        },
+        "allow_coma": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Coma",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowComa.",
+          "x-lsgm-native-key": "scum.AllowComa"
+        },
+        "allow_mines_and_traps": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Mines And Traps",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowMinesAndTraps.",
+          "x-lsgm-native-key": "scum.AllowMinesAndTraps"
+        },
+        "allow_skill_gain_in_safe_zones": {
+          "type": "boolean",
+          "default": false,
+          "title": "Allow Skill Gain In Safe Zones",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowSkillGainInSafeZones.",
+          "x-lsgm-native-key": "scum.AllowSkillGainInSafeZones"
+        },
+        "allow_events": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Events",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowEvents.",
+          "x-lsgm-native-key": "scum.AllowEvents"
+        },
+        "limit_global_chat": {
+          "type": "boolean",
+          "default": false,
+          "title": "Limit Global Chat",
+          "description": "Exact server-generated SCUM v7 parameter scum.LimitGlobalChat.",
+          "x-lsgm-native-key": "scum.LimitGlobalChat"
+        },
+        "allow_global_chat": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Global Chat",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowGlobalChat.",
+          "x-lsgm-native-key": "scum.AllowGlobalChat"
+        },
+        "allow_local_chat": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Local Chat",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowLocalChat.",
+          "x-lsgm-native-key": "scum.AllowLocalChat"
+        },
+        "allow_squad_chat": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Squad Chat",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowSquadChat.",
+          "x-lsgm-native-key": "scum.AllowSquadChat"
+        },
+        "allow_admin_chat": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Admin Chat",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowAdminChat.",
+          "x-lsgm-native-key": "scum.AllowAdminChat"
+        },
+        "rusty_locks_logging": {
+          "type": "boolean",
+          "default": false,
+          "title": "Rusty Locks Logging",
+          "description": "Exact server-generated SCUM v7 parameter scum.RustyLocksLogging.",
+          "x-lsgm-native-key": "scum.RustyLocksLogging"
+        },
+        "hide_kill_notification": {
+          "type": "boolean",
+          "default": true,
+          "title": "Hide Kill Notification",
+          "description": "Exact server-generated SCUM v7 parameter scum.HideKillNotification.",
+          "x-lsgm-native-key": "scum.HideKillNotification"
+        },
+        "disable_examine_ghost": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable seasonal ghosts",
+          "description": "Prevents seasonal holiday ghosts from spawning.",
+          "x-lsgm-native-key": "scum.DisableExamineGhost"
+        },
+        "disable_timed_gifts": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Timed Gifts",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableTimedGifts.",
+          "x-lsgm-native-key": "scum.DisableTimedGifts"
+        },
+        "use_map_base_building_restriction": {
+          "type": "boolean",
+          "default": true,
+          "title": "Use Map Base Building Restriction",
+          "description": "Exact server-generated SCUM v7 parameter scum.UseMapBaseBuildingRestriction.",
+          "x-lsgm-native-key": "scum.UseMapBaseBuildingRestriction"
+        },
+        "use_building_proximity_restrictions": {
+          "type": "boolean",
+          "default": true,
+          "title": "Use Building Proximity Restrictions",
+          "description": "Exact server-generated SCUM v7 parameter scum.UseBuildingProximityRestrictions.",
+          "x-lsgm-native-key": "scum.UseBuildingProximityRestrictions"
+        },
+        "disable_base_building": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Base Building",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableBaseBuilding.",
+          "x-lsgm-native-key": "scum.DisableBaseBuilding"
+        },
+        "voting_duration": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Voting Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.VotingDuration.",
+          "x-lsgm-native-key": "scum.VotingDuration"
+        },
+        "player_minimal_voting_interest": {
+          "type": "number",
+          "default": 0.5,
+          "title": "Player Minimal Voting Interest",
+          "description": "Exact server-generated SCUM v7 parameter scum.PlayerMinimalVotingInterest.",
+          "x-lsgm-native-key": "scum.PlayerMinimalVotingInterest"
+        },
+        "player_positive_vote_percentage": {
+          "type": "number",
+          "default": 0.5,
+          "title": "Player Positive Vote Percentage",
+          "description": "Exact server-generated SCUM v7 parameter scum.PlayerPositiveVotePercentage.",
+          "x-lsgm-native-key": "scum.PlayerPositiveVotePercentage"
+        },
+        "master_server_update_send_interval": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Master Server Update Send Interval",
+          "description": "Exact server-generated SCUM v7 parameter scum.MasterServerUpdateSendInterval.",
+          "x-lsgm-native-key": "scum.MasterServerUpdateSendInterval"
+        },
+        "master_server_is_local_test": {
+          "type": "boolean",
+          "default": false,
+          "title": "Master Server Is Local Test",
+          "description": "Exact server-generated SCUM v7 parameter scum.MasterServerIsLocalTest.",
+          "x-lsgm-native-key": "scum.MasterServerIsLocalTest",
+          "x-lsgm-risk": "confirmation"
+        },
+        "partial_wipe": {
+          "type": "boolean",
+          "default": false,
+          "title": "Partial Wipe",
+          "description": "Exact server-generated SCUM v7 parameter scum.PartialWipe.",
+          "x-lsgm-native-key": "scum.PartialWipe",
+          "x-lsgm-risk": "confirmation"
+        },
+        "gold_wipe": {
+          "type": "boolean",
+          "default": false,
+          "title": "Gold Wipe",
+          "description": "Exact server-generated SCUM v7 parameter scum.GoldWipe.",
+          "x-lsgm-native-key": "scum.GoldWipe",
+          "x-lsgm-risk": "confirmation"
+        },
+        "full_wipe": {
+          "type": "boolean",
+          "default": false,
+          "title": "Full Wipe",
+          "description": "Exact server-generated SCUM v7 parameter scum.FullWipe.",
+          "x-lsgm-native-key": "scum.FullWipe",
+          "x-lsgm-risk": "confirmation"
+        },
+        "item_virtualization_relevancy_update_period": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Virtualization update interval (seconds)",
+          "description": "Time between virtualization system updates.",
+          "x-lsgm-native-key": "scum.ItemVirtualizationRelevancyUpdatePeriod"
+        },
+        "item_virtualization_event_processing_time_budget": {
+          "type": "number",
+          "default": 5.0,
+          "title": "Virtualization update time budget (ms)",
+          "description": "Maximum processing time allocated to a virtualization system update.",
+          "x-lsgm-native-key": "scum.ItemVirtualizationEventProcessingTimeBudget"
+        },
+        "item_virtualization_visitor_distance_travelled_for_update": {
+          "type": "number",
+          "default": 100.0,
+          "title": "Movement before virtualization update (cm)",
+          "description": "Distance a player must move before triggering a virtualization update.",
+          "x-lsgm-native-key": "scum.ItemVirtualizationVisitorDistanceTravelledForUpdate"
+        },
+        "item_virtualization_visitor_bounds": {
+          "type": "number",
+          "default": 10000.0,
+          "title": "Player devirtualization area (cm)",
+          "description": "Space around a player considered when restoring virtualized items to the world.",
+          "x-lsgm-native-key": "scum.ItemVirtualizationVisitorBounds"
+        },
+        "virtualized_item_bounds": {
+          "type": "number",
+          "default": 100.0,
+          "title": "Assumed virtualized item size (cm)",
+          "description": "Assumed size of an item when checking whether to restore it to the world.",
+          "x-lsgm-native-key": "scum.VirtualizedItemBounds"
+        },
+        "fame_gain_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Fame Gain Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.FameGainMultiplier.",
+          "x-lsgm-native-key": "scum.FameGainMultiplier"
+        },
+        "fame_point_penalty_on_death": {
+          "type": "number",
+          "default": 0.1,
+          "title": "Fame Point Penalty On Death",
+          "description": "Exact server-generated SCUM v7 parameter scum.FamePointPenaltyOnDeath.",
+          "x-lsgm-native-key": "scum.FamePointPenaltyOnDeath"
+        },
+        "fame_point_penalty_on_killed": {
+          "type": "number",
+          "default": 0.5,
+          "title": "Fame Point Penalty On Killed",
+          "description": "Exact server-generated SCUM v7 parameter scum.FamePointPenaltyOnKilled.",
+          "x-lsgm-native-key": "scum.FamePointPenaltyOnKilled"
+        },
+        "fame_point_reward_on_kill": {
+          "type": "number",
+          "default": 0.25,
+          "title": "Fame Point Reward On Kill",
+          "description": "Exact server-generated SCUM v7 parameter scum.FamePointRewardOnKill.",
+          "x-lsgm-native-key": "scum.FamePointRewardOnKill"
+        },
+        "log_suicides": {
+          "type": "boolean",
+          "default": false,
+          "title": "Log Suicides",
+          "description": "Exact server-generated SCUM v7 parameter scum.LogSuicides.",
+          "x-lsgm-native-key": "scum.LogSuicides"
+        },
+        "enable_spawn_on_ground": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Spawn On Ground",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableSpawnOnGround.",
+          "x-lsgm-native-key": "scum.EnableSpawnOnGround"
+        },
+        "delete_inactive_users": {
+          "type": "boolean",
+          "default": true,
+          "title": "Delete Inactive Users",
+          "description": "Exact server-generated SCUM v7 parameter scum.DeleteInactiveUsers.",
+          "x-lsgm-native-key": "scum.DeleteInactiveUsers"
+        },
+        "days_since_last_login_to_become_inactive": {
+          "type": "integer",
+          "default": 180,
+          "title": "Days Since Last Login To Become Inactive",
+          "description": "Exact server-generated SCUM v7 parameter scum.DaysSinceLastLoginToBecomeInactive.",
+          "x-lsgm-native-key": "scum.DaysSinceLastLoginToBecomeInactive"
+        },
+        "delete_banned_users": {
+          "type": "boolean",
+          "default": false,
+          "title": "Delete Banned Users",
+          "description": "Exact server-generated SCUM v7 parameter scum.DeleteBannedUsers.",
+          "x-lsgm-native-key": "scum.DeleteBannedUsers"
+        },
+        "maximum_time_for_chests_in_forbidden_zones": {
+          "type": "string",
+          "default": "02:00:00",
+          "title": "Maximum Time For Chests In Forbidden Zones",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumTimeForChestsInForbiddenZones.",
+          "x-lsgm-native-key": "scum.MaximumTimeForChestsInForbiddenZones",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "log_chest_ownership": {
+          "type": "boolean",
+          "default": true,
+          "title": "Log Chest Ownership",
+          "description": "Exact server-generated SCUM v7 parameter scum.LogChestOwnership.",
+          "x-lsgm-native-key": "scum.LogChestOwnership"
+        },
+        "delete_duplicate_chests_on_server_startup": {
+          "type": "boolean",
+          "default": false,
+          "title": "Delete Duplicate Chests On Server Startup",
+          "description": "Exact server-generated SCUM v7 parameter scum.DeleteDuplicateChestsOnServerStartup.",
+          "x-lsgm-native-key": "scum.DeleteDuplicateChestsOnServerStartup"
+        },
+        "server_settings_version": {
+          "type": "integer",
+          "default": 7,
+          "title": "Server Settings Version",
+          "description": "Exact server-generated SCUM v7 parameter scum.ServerSettingsVersion.",
+          "x-lsgm-native-key": "scum.ServerSettingsVersion",
+          "readOnly": true
+        }
+      }
+    },
+    "server_world": {
+      "type": "object",
+      "default": {},
+      "title": "World",
+      "description": "All editable [World] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.AreAnimalsAllowedInWorld",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "are_animals_allowed_in_world": {
+          "type": "boolean",
+          "default": true,
+          "title": "Are Animals Allowed In World",
+          "description": "Exact server-generated SCUM v7 parameter scum.AreAnimalsAllowedInWorld.",
+          "x-lsgm-native-key": "scum.AreAnimalsAllowedInWorld"
+        },
+        "animal_global_density_multiplier": {
+          "type": "number",
+          "default": 0.5,
+          "title": "Animal Global Density Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.AnimalGlobalDensityMultiplier.",
+          "x-lsgm-native-key": "scum.AnimalGlobalDensityMultiplier"
+        },
+        "max_non_virtual_animals_in_world": {
+          "type": "integer",
+          "default": 500,
+          "title": "Max Non Virtual Animals In World",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxNonVirtualAnimalsInWorld.",
+          "x-lsgm-native-key": "scum.MaxNonVirtualAnimalsInWorld"
+        },
+        "bear_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Bear Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BearPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.BearPrevalenceMultiplier"
+        },
+        "boar_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Boar Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BoarPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.BoarPrevalenceMultiplier"
+        },
+        "chicken_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Chicken Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ChickenPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.ChickenPrevalenceMultiplier"
+        },
+        "deer_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Deer Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DeerPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.DeerPrevalenceMultiplier"
+        },
+        "donkey_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Donkey Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DonkeyPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.DonkeyPrevalenceMultiplier"
+        },
+        "goat_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Goat Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GoatPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.GoatPrevalenceMultiplier"
+        },
+        "horse_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Horse Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HorsePrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.HorsePrevalenceMultiplier"
+        },
+        "rabbit_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Rabbit Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RabbitPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.RabbitPrevalenceMultiplier"
+        },
+        "wolf_prevalence_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Wolf Prevalence Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WolfPrevalenceMultiplier.",
+          "x-lsgm-native-key": "scum.WolfPrevalenceMultiplier"
+        },
+        "fishing_high_activity_zone_rotation_time": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Fishing High Activity Zone Rotation Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.FishingHighActivityZoneRotationTime.",
+          "x-lsgm-native-key": "scum.FishingHighActivityZoneRotationTime"
+        },
+        "fishing_high_activity_zone_amount": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Fishing High Activity Zone Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.FishingHighActivityZoneAmount.",
+          "x-lsgm-native-key": "scum.FishingHighActivityZoneAmount"
+        },
+        "radiation_enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "Radiation Enabled",
+          "description": "Exact server-generated SCUM v7 parameter scum.RadiationEnabled.",
+          "x-lsgm-native-key": "scum.RadiationEnabled"
+        },
+        "max_allowed_birds": {
+          "type": "integer",
+          "default": 15,
+          "title": "Max Allowed Birds",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedBirds.",
+          "x-lsgm-native-key": "scum.MaxAllowedBirds"
+        },
+        "max_allowed_characters": {
+          "type": "integer",
+          "default": -1,
+          "title": "Max Allowed Characters",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedCharacters.",
+          "x-lsgm-native-key": "scum.MaxAllowedCharacters"
+        },
+        "max_allowed_puppets": {
+          "type": "integer",
+          "default": -1,
+          "title": "Max Allowed Puppets",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedPuppets.",
+          "x-lsgm-native-key": "scum.MaxAllowedPuppets"
+        },
+        "max_allowed_np_cs": {
+          "type": "integer",
+          "default": -1,
+          "title": "Max Allowed NPCs",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedNPCs.",
+          "x-lsgm-native-key": "scum.MaxAllowedNPCs"
+        },
+        "max_allowed_drones": {
+          "type": "integer",
+          "default": 0,
+          "title": "Max Allowed Drones",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedDrones.",
+          "x-lsgm-native-key": "scum.MaxAllowedDrones"
+        },
+        "disable_sentry_spawning": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Sentry Spawning",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableSentrySpawning.",
+          "x-lsgm-native-key": "scum.DisableSentrySpawning"
+        },
+        "enable_sentry_respawning": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Sentry Respawning",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableSentryRespawning.",
+          "x-lsgm-native-key": "scum.EnableSentryRespawning"
+        },
+        "disable_suicide_puppet_spawning": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Suicide Puppet Spawning",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableSuicidePuppetSpawning.",
+          "x-lsgm-native-key": "scum.DisableSuicidePuppetSpawning"
+        },
+        "disable_loot_puppet_spawning": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Loot Puppet Spawning",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableLootPuppetSpawning.",
+          "x-lsgm-native-key": "scum.DisableLootPuppetSpawning"
+        },
+        "enable_loot_puppet_horde": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Loot Puppet Horde",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableLootPuppetHorde.",
+          "x-lsgm-native-key": "scum.EnableLootPuppetHorde"
+        },
+        "abandoned_bunker_commotion_threshold": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Abandoned Bunker Commotion Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerCommotionThreshold.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerCommotionThreshold"
+        },
+        "abandoned_bunker_commotion_threshold_per_player_extra": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Abandoned Bunker Commotion Threshold Per Player Extra",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerCommotionThresholdPerPlayerExtra.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerCommotionThresholdPerPlayerExtra"
+        },
+        "abandoned_bunker_enemy_activation_threshold": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Abandoned Bunker Enemy Activation Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerEnemyActivationThreshold.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerEnemyActivationThreshold"
+        },
+        "abandoned_bunker_enemy_activation_threshold_per_player_extra": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Abandoned Bunker Enemy Activation Threshold Per Player Extra",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerEnemyActivationThresholdPerPlayerExtra.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerEnemyActivationThresholdPerPlayerExtra"
+        },
+        "abandoned_bunker_reset_armory_lockers_on_activation_only": {
+          "type": "boolean",
+          "default": true,
+          "title": "Abandoned Bunker Reset Armory Lockers On Activation Only",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerResetArmoryLockersOnActivationOnly.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerResetArmoryLockersOnActivationOnly"
+        },
+        "puppets_can_open_doors": {
+          "type": "boolean",
+          "default": true,
+          "title": "Puppets Can Open Doors",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetsCanOpenDoors.",
+          "x-lsgm-native-key": "scum.PuppetsCanOpenDoors"
+        },
+        "puppets_can_vault_windows": {
+          "type": "boolean",
+          "default": true,
+          "title": "Puppets Can Vault Windows",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetsCanVaultWindows.",
+          "x-lsgm-native-key": "scum.PuppetsCanVaultWindows"
+        },
+        "puppet_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Puppet Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetHealthMultiplier.",
+          "x-lsgm-native-key": "scum.PuppetHealthMultiplier"
+        },
+        "puppet_running_speed_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Puppet Running Speed Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetRunningSpeedMultiplier.",
+          "x-lsgm-native-key": "scum.PuppetRunningSpeedMultiplier"
+        },
+        "puppet_cull_distance_override": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Puppet Cull Distance Override",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetCullDistanceOverride.",
+          "x-lsgm-native-key": "scum.PuppetCullDistanceOverride"
+        },
+        "puppet_limping_health_threshold": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Puppet Limping Health Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetLimpingHealthThreshold.",
+          "x-lsgm-native-key": "scum.PuppetLimpingHealthThreshold"
+        },
+        "dropship_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Dropship Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipHealthMultiplier.",
+          "x-lsgm-native-key": "scum.DropshipHealthMultiplier"
+        },
+        "sentry_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sentry Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SentryHealthMultiplier.",
+          "x-lsgm-native-key": "scum.SentryHealthMultiplier"
+        },
+        "base_building_attacker_sentry_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Building Attacker Sentry Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingAttackerSentryHealthMultiplier.",
+          "x-lsgm-native-key": "scum.BaseBuildingAttackerSentryHealthMultiplier"
+        },
+        "armed_npc_difficulty_level": {
+          "type": "integer",
+          "default": 2,
+          "title": "Armed NPC Difficulty Level",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCDifficultyLevel.",
+          "x-lsgm-native-key": "scum.ArmedNPCDifficultyLevel"
+        },
+        "armed_npc_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Armed NPC Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCHealthMultiplier.",
+          "x-lsgm-native-key": "scum.ArmedNPCHealthMultiplier"
+        },
+        "armed_npc_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Armed NPC Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCDamageMultiplier.",
+          "x-lsgm-native-key": "scum.ArmedNPCDamageMultiplier"
+        },
+        "armed_npc_spread_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Armed NPC Spread Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCSpreadMultiplier.",
+          "x-lsgm-native-key": "scum.ArmedNPCSpreadMultiplier"
+        },
+        "armed_npc_running_speed_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Armed NPC Running Speed Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCRunningSpeedMultiplier.",
+          "x-lsgm-native-key": "scum.ArmedNPCRunningSpeedMultiplier"
+        },
+        "armed_npc_net_cull_distance_override": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Armed NPC Net Cull Distance Override",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCNetCullDistanceOverride.",
+          "x-lsgm-native-key": "scum.ArmedNPCNetCullDistanceOverride"
+        },
+        "probability_for_armed_npc_to_drop_item_from_hands_when_searched": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Probability For Armed NPC To Drop Item From Hands When Searched",
+          "description": "Exact server-generated SCUM v7 parameter scum.ProbabilityForArmedNPCToDropItemFromHandsWhenSearched.",
+          "x-lsgm-native-key": "scum.ProbabilityForArmedNPCToDropItemFromHandsWhenSearched"
+        },
+        "minimum_durability_of_armed_np_cs_dropped_item_from_hands": {
+          "type": "number",
+          "default": 0.2,
+          "title": "Minimum Durability Of Armed NPCs Dropped Item From Hands",
+          "description": "Exact server-generated SCUM v7 parameter scum.MinimumDurabilityOfArmedNPCsDroppedItemFromHands.",
+          "x-lsgm-native-key": "scum.MinimumDurabilityOfArmedNPCsDroppedItemFromHands"
+        },
+        "maximum_durability_of_armed_np_cs_dropped_item_from_hands": {
+          "type": "number",
+          "default": 0.3,
+          "title": "Maximum Durability Of Armed NPCs Dropped Item From Hands",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumDurabilityOfArmedNPCsDroppedItemFromHands.",
+          "x-lsgm-native-key": "scum.MaximumDurabilityOfArmedNPCsDroppedItemFromHands"
+        },
+        "armed_npc_limping_health_threshold": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Armed NPC Limping Health Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArmedNPCLimpingHealthThreshold.",
+          "x-lsgm-native-key": "scum.ArmedNPCLimpingHealthThreshold"
+        },
+        "animal_net_cull_distance_override": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Animal Net Cull Distance Override",
+          "description": "Exact server-generated SCUM v7 parameter scum.AnimalNetCullDistanceOverride.",
+          "x-lsgm-native-key": "scum.AnimalNetCullDistanceOverride"
+        },
+        "encounter_base_character_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Base Character Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterBaseCharacterAmountMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterBaseCharacterAmountMultiplier"
+        },
+        "encounter_extra_character_per_player_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Extra Character Per Player Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterExtraCharacterPerPlayerMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterExtraCharacterPerPlayerMultiplier"
+        },
+        "encounter_extra_character_player_cap_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Extra Character Player Cap Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterExtraCharacterPlayerCapMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterExtraCharacterPlayerCapMultiplier"
+        },
+        "encounter_character_respawn_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Character Respawn Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnTimeMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnTimeMultiplier"
+        },
+        "encounter_character_respawn_batch_size_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Character Respawn Batch Size Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnBatchSizeMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnBatchSizeMultiplier"
+        },
+        "encounter_character_aggressive_spawn_chance_override": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Aggressive Spawn Chance Override",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterAggressiveSpawnChanceOverride.",
+          "x-lsgm-native-key": "scum.EncounterCharacterAggressiveSpawnChanceOverride"
+        },
+        "encounter_character_ai_noise_response_radius_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Character AI Noise Response Radius Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterAINoiseResponseRadiusMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterCharacterAINoiseResponseRadiusMultiplier"
+        },
+        "encounter_horde_group_base_character_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Group Base Character Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeGroupBaseCharacterAmountMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeGroupBaseCharacterAmountMultiplier"
+        },
+        "encounter_horde_group_extra_character_per_player_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Group Extra Character Per Player Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeGroupExtraCharacterPerPlayerMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeGroupExtraCharacterPerPlayerMultiplier"
+        },
+        "encounter_horde_group_extra_character_player_cap_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Group Extra Character Player Cap Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeGroupExtraCharacterPlayerCapMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeGroupExtraCharacterPlayerCapMultiplier"
+        },
+        "encounter_horde_base_character_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Base Character Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeBaseCharacterAmountMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeBaseCharacterAmountMultiplier"
+        },
+        "encounter_horde_extra_character_per_player_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Extra Character Per Player Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeExtraCharacterPerPlayerMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeExtraCharacterPerPlayerMultiplier"
+        },
+        "encounter_horde_extra_character_player_cap_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Extra Character Player Cap Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeExtraCharacterPlayerCapMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeExtraCharacterPlayerCapMultiplier"
+        },
+        "encounter_horde_activation_chance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Activation Chance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeActivationChanceMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeActivationChanceMultiplier"
+        },
+        "encounter_horde_noise_check_cooldown_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Noise Check Cooldown Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeNoiseCheckCooldownMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeNoiseCheckCooldownMultiplier"
+        },
+        "encounter_horde_spawn_distance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Spawn Distance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeSpawnDistanceMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeSpawnDistanceMultiplier"
+        },
+        "encounter_horde_group_refill_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Horde Group Refill Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeGroupRefillTimeMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHordeGroupRefillTimeMultiplier"
+        },
+        "encounter_horde_should_play_activation_sound": {
+          "type": "boolean",
+          "default": false,
+          "title": "Encounter Horde Should Play Activation Sound",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordeShouldPlayActivationSound.",
+          "x-lsgm-native-key": "scum.EncounterHordeShouldPlayActivationSound"
+        },
+        "encounter_horde_puppet_horde_activation_scream_override_chance": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Horde Puppet Horde Activation Scream Override Chance",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHordePuppetHordeActivationScreamOverrideChance.",
+          "x-lsgm-native-key": "scum.EncounterHordePuppetHordeActivationScreamOverrideChance"
+        },
+        "encounter_can_remove_low_priority_characters": {
+          "type": "boolean",
+          "default": true,
+          "title": "Encounter Can Remove Low Priority Characters",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCanRemoveLowPriorityCharacters.",
+          "x-lsgm-native-key": "scum.EncounterCanRemoveLowPriorityCharacters"
+        },
+        "encounter_can_clamp_character_num_when_out_of_resources": {
+          "type": "boolean",
+          "default": true,
+          "title": "Encounter Can Clamp Character Num When Out Of Resources",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCanClampCharacterNumWhenOutOfResources.",
+          "x-lsgm-native-key": "scum.EncounterCanClampCharacterNumWhenOutOfResources"
+        },
+        "encounter_character_spawn_distance_min_override_ltz": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Spawn Distance Min Override LTZ",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterSpawnDistanceMinOverrideLTZ.",
+          "x-lsgm-native-key": "scum.EncounterCharacterSpawnDistanceMinOverrideLTZ"
+        },
+        "encounter_character_spawn_distance_max_override_ltz": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Spawn Distance Max Override LTZ",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterSpawnDistanceMaxOverrideLTZ.",
+          "x-lsgm-native-key": "scum.EncounterCharacterSpawnDistanceMaxOverrideLTZ"
+        },
+        "encounter_character_spawn_distance_min_override_large_poi": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Spawn Distance Min Override Large POI",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterSpawnDistanceMinOverrideLargePOI.",
+          "x-lsgm-native-key": "scum.EncounterCharacterSpawnDistanceMinOverrideLargePOI"
+        },
+        "encounter_character_spawn_distance_max_override_large_poi": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Spawn Distance Max Override Large POI",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterSpawnDistanceMaxOverrideLargePOI.",
+          "x-lsgm-native-key": "scum.EncounterCharacterSpawnDistanceMaxOverrideLargePOI"
+        },
+        "encounter_character_respawn_distance_min_override_ltz": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Respawn Distance Min Override LTZ",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnDistanceMinOverrideLTZ.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnDistanceMinOverrideLTZ"
+        },
+        "encounter_character_respawn_distance_max_override_ltz": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Respawn Distance Max Override LTZ",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnDistanceMaxOverrideLTZ.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnDistanceMaxOverrideLTZ"
+        },
+        "encounter_character_respawn_distance_min_override_large_poi": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Respawn Distance Min Override Large POI",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnDistanceMinOverrideLargePOI.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnDistanceMinOverrideLargePOI"
+        },
+        "encounter_character_respawn_distance_max_override_large_poi": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Character Respawn Distance Max Override Large POI",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterCharacterRespawnDistanceMaxOverrideLargePOI.",
+          "x-lsgm-native-key": "scum.EncounterCharacterRespawnDistanceMaxOverrideLargePOI"
+        },
+        "encounter_ltz_radius_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter LTZ Radius Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterLTZRadiusMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterLTZRadiusMultiplier"
+        },
+        "encounter_mtz_radius_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter MTZ Radius Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterMTZRadiusMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterMTZRadiusMultiplier"
+        },
+        "encounter_htz_radius_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter HTZ Radius Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterHTZRadiusMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterHTZRadiusMultiplier"
+        },
+        "encounter_virtualized_time_override": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Encounter Virtualized Time Override",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterVirtualizedTimeOverride.",
+          "x-lsgm-native-key": "scum.EncounterVirtualizedTimeOverride"
+        },
+        "encounter_zone_activation_distance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Zone Activation Distance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterZoneActivationDistanceMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterZoneActivationDistanceMultiplier"
+        },
+        "encounter_global_zone_cooldown_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Encounter Global Zone Cooldown Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterGlobalZoneCooldownMultiplier.",
+          "x-lsgm-native-key": "scum.EncounterGlobalZoneCooldownMultiplier"
+        },
+        "encounter_enable_spawn_prevention_area_spawn_on_character_death": {
+          "type": "boolean",
+          "default": false,
+          "title": "Encounter Enable Spawn Prevention Area Spawn On Character Death",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterEnableSpawnPreventionAreaSpawnOnCharacterDeath.",
+          "x-lsgm-native-key": "scum.EncounterEnableSpawnPreventionAreaSpawnOnCharacterDeath"
+        },
+        "encounter_never_respawn_characters": {
+          "type": "boolean",
+          "default": false,
+          "title": "Encounter Never Respawn Characters",
+          "description": "Exact server-generated SCUM v7 parameter scum.EncounterNeverRespawnCharacters.",
+          "x-lsgm-native-key": "scum.EncounterNeverRespawnCharacters"
+        },
+        "puppet_world_encounter_spawn_weight_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Puppet World Encounter Spawn Weight Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PuppetWorldEncounterSpawnWeightMultiplier.",
+          "x-lsgm-native-key": "scum.PuppetWorldEncounterSpawnWeightMultiplier"
+        },
+        "dropship_world_encounter_spawn_weight_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Dropship World Encounter Spawn Weight Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipWorldEncounterSpawnWeightMultiplier.",
+          "x-lsgm-native-key": "scum.DropshipWorldEncounterSpawnWeightMultiplier"
+        },
+        "enable_dropship_abandoned_bunker_encounter": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Dropship Abandoned Bunker Encounter",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableDropshipAbandonedBunkerEncounter.",
+          "x-lsgm-native-key": "scum.EnableDropshipAbandonedBunkerEncounter"
+        },
+        "dropship_abandoned_bunker_encounter_trigger_chance": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Dropship Abandoned Bunker Encounter Trigger Chance",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipAbandonedBunkerEncounterTriggerChance.",
+          "x-lsgm-native-key": "scum.DropshipAbandonedBunkerEncounterTriggerChance"
+        },
+        "base_building_encounter_trigger_chance": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Base Building Encounter Trigger Chance",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterTriggerChance.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterTriggerChance"
+        },
+        "base_building_encounter_trigger_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Building Encounter Trigger Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterTriggerTimeMultiplier.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterTriggerTimeMultiplier"
+        },
+        "enable_dropship_base_building_encounter": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Dropship Base Building Encounter",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableDropshipBaseBuildingEncounter.",
+          "x-lsgm-native-key": "scum.EnableDropshipBaseBuildingEncounter"
+        },
+        "spawn_encounters_in_threat_zones_ignoring_base_building": {
+          "type": "boolean",
+          "default": false,
+          "title": "Spawn Encounters In Threat Zones Ignoring Base Building",
+          "description": "Exact server-generated SCUM v7 parameter scum.SpawnEncountersInThreatZonesIgnoringBaseBuilding.",
+          "x-lsgm-native-key": "scum.SpawnEncountersInThreatZonesIgnoringBaseBuilding"
+        },
+        "enable_encounter_manager_low_player_count_mode": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Encounter Manager Low Player Count Mode",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableEncounterManagerLowPlayerCountMode.",
+          "x-lsgm-native-key": "scum.EnableEncounterManagerLowPlayerCountMode"
+        },
+        "base_building_encounter_min_num_elements_to_start": {
+          "type": "integer",
+          "default": -1,
+          "title": "Base Building Encounter Min Num Elements To Start",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterMinNumElementsToStart.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterMinNumElementsToStart"
+        },
+        "base_building_encounter_min_num_elements_to_end": {
+          "type": "integer",
+          "default": -1,
+          "title": "Base Building Encounter Min Num Elements To End",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterMinNumElementsToEnd.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterMinNumElementsToEnd"
+        },
+        "base_building_encounter_damage_percentage_increase_per_squad_member": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Base Building Encounter Damage Percentage Increase Per Squad Member",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterDamagePercentageIncreasePerSquadMember.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterDamagePercentageIncreasePerSquadMember"
+        },
+        "base_building_encounter_time_to_full_min_num_to_end": {
+          "type": "number",
+          "default": -1.0,
+          "title": "Base Building Encounter Time To Full Min Num To End",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterTimeToFullMinNumToEnd.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterTimeToFullMinNumToEnd"
+        },
+        "base_building_encounter_maximum_min_to_end_reduction": {
+          "type": "integer",
+          "default": -1,
+          "title": "Base Building Encounter Maximum Min To End Reduction",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingEncounterMaximumMinToEndReduction.",
+          "x-lsgm-native-key": "scum.BaseBuildingEncounterMaximumMinToEndReduction"
+        },
+        "start_time_of_day": {
+          "type": "string",
+          "default": "08:00:00",
+          "title": "Start Time Of Day",
+          "description": "Exact server-generated SCUM v7 parameter scum.StartTimeOfDay.",
+          "x-lsgm-native-key": "scum.StartTimeOfDay",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "time_of_day_speed": {
+          "type": "number",
+          "default": 3.84,
+          "title": "Time Of Day Speed",
+          "description": "Exact server-generated SCUM v7 parameter scum.TimeOfDaySpeed.",
+          "x-lsgm-native-key": "scum.TimeOfDaySpeed"
+        },
+        "nighttime_darkness": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Nighttime Darkness",
+          "description": "Exact server-generated SCUM v7 parameter scum.NighttimeDarkness.",
+          "x-lsgm-native-key": "scum.NighttimeDarkness"
+        },
+        "sunrise_time": {
+          "type": "string",
+          "default": "06:00:00",
+          "title": "Sunrise Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.SunriseTime.",
+          "x-lsgm-native-key": "scum.SunriseTime",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "sunset_time": {
+          "type": "string",
+          "default": "21:00:00",
+          "title": "Sunset Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.SunsetTime.",
+          "x-lsgm-native-key": "scum.SunsetTime",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "enable_fog": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Fog",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableFog.",
+          "x-lsgm-native-key": "scum.EnableFog"
+        },
+        "should_destroy_entities_outside_map_limits_on_restart": {
+          "type": "boolean",
+          "default": true,
+          "title": "Should Destroy Entities Outside Map Limits On Restart",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShouldDestroyEntitiesOutsideMapLimitsOnRestart.",
+          "x-lsgm-native-key": "scum.ShouldDestroyEntitiesOutsideMapLimitsOnRestart"
+        },
+        "enable_locked_loot_containers": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Locked Loot Containers",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableLockedLootContainers.",
+          "x-lsgm-native-key": "scum.EnableLockedLootContainers"
+        },
+        "custom_map_enabled": {
+          "type": "boolean",
+          "default": false,
+          "title": "Custom Map Enabled",
+          "description": "Exact server-generated SCUM v7 parameter scum.CustomMapEnabled.",
+          "x-lsgm-native-key": "scum.CustomMapEnabled"
+        },
+        "custom_map_center_x_coordinate": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Custom Map Center X Coordinate",
+          "description": "Exact server-generated SCUM v7 parameter scum.CustomMapCenterXCoordinate.",
+          "x-lsgm-native-key": "scum.CustomMapCenterXCoordinate"
+        },
+        "custom_map_center_y_coordinate": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Custom Map Center Y Coordinate",
+          "description": "Exact server-generated SCUM v7 parameter scum.CustomMapCenterYCoordinate.",
+          "x-lsgm-native-key": "scum.CustomMapCenterYCoordinate"
+        },
+        "custom_map_width": {
+          "type": "number",
+          "default": 15.24,
+          "title": "Custom Map Width",
+          "description": "Exact server-generated SCUM v7 parameter scum.CustomMapWidth.",
+          "x-lsgm-native-key": "scum.CustomMapWidth"
+        },
+        "custom_map_height": {
+          "type": "number",
+          "default": 15.24,
+          "title": "Custom Map Height",
+          "description": "Exact server-generated SCUM v7 parameter scum.CustomMapHeight.",
+          "x-lsgm-native-key": "scum.CustomMapHeight"
+        },
+        "door_lockability_garage": {
+          "type": "boolean",
+          "default": false,
+          "title": "Door Lockability Garage",
+          "description": "Exact server-generated SCUM v7 parameter scum.DoorLockability.Garage.",
+          "x-lsgm-native-key": "scum.DoorLockability.Garage"
+        },
+        "cargo_drop_cooldown_minimum": {
+          "type": "number",
+          "default": 90.0,
+          "title": "Cargo Drop Cooldown Minimum",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropCooldownMinimum.",
+          "x-lsgm-native-key": "scum.CargoDropCooldownMinimum"
+        },
+        "cargo_drop_cooldown_maximum": {
+          "type": "number",
+          "default": 120.0,
+          "title": "Cargo Drop Cooldown Maximum",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropCooldownMaximum.",
+          "x-lsgm-native-key": "scum.CargoDropCooldownMaximum"
+        },
+        "cargo_drop_fall_delay": {
+          "type": "number",
+          "default": 540.0,
+          "title": "Cargo Drop Fall Delay",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropFallDelay.",
+          "x-lsgm-native-key": "scum.CargoDropFallDelay"
+        },
+        "cargo_drop_fall_duration": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Cargo Drop Fall Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropFallDuration.",
+          "x-lsgm-native-key": "scum.CargoDropFallDuration"
+        },
+        "cargo_drop_selfdestruct_time": {
+          "type": "number",
+          "default": 1200.0,
+          "title": "Cargo Drop Selfdestruct Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropSelfdestructTime.",
+          "x-lsgm-native-key": "scum.CargoDropSelfdestructTime"
+        },
+        "cargo_drop_zombie_encounter_weight_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Cargo Drop Zombie Encounter Weight Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropZombieEncounterWeightMultiplier.",
+          "x-lsgm-native-key": "scum.CargoDropZombieEncounterWeightMultiplier"
+        },
+        "cargo_drop_dropship_encounter_weight_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Cargo Drop Dropship Encounter Weight Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.CargoDropDropshipEncounterWeightMultiplier.",
+          "x-lsgm-native-key": "scum.CargoDropDropshipEncounterWeightMultiplier"
+        },
+        "bear_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Bear Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BearMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.BearMaxHealthMultiplier"
+        },
+        "boar_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Boar Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BoarMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.BoarMaxHealthMultiplier"
+        },
+        "chicken_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Chicken Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ChickenMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.ChickenMaxHealthMultiplier"
+        },
+        "deer_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Deer Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DeerMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.DeerMaxHealthMultiplier"
+        },
+        "donkey_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Donkey Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DonkeyMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.DonkeyMaxHealthMultiplier"
+        },
+        "goat_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Goat Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GoatMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.GoatMaxHealthMultiplier"
+        },
+        "horse_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Horse Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HorseMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.HorseMaxHealthMultiplier"
+        },
+        "rabbit_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Rabbit Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RabbitMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.RabbitMaxHealthMultiplier"
+        },
+        "wolf_max_health_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Wolf Max Health Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WolfMaxHealthMultiplier.",
+          "x-lsgm-native-key": "scum.WolfMaxHealthMultiplier"
+        },
+        "max_allowed_killbox_keycards": {
+          "type": "integer",
+          "default": 4,
+          "title": "Max Allowed Killbox Keycards",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedKillboxKeycards.",
+          "x-lsgm-native-key": "scum.MaxAllowedKillboxKeycards"
+        },
+        "max_allowed_killbox_keycards_police_station": {
+          "type": "integer",
+          "default": 3,
+          "title": "Max Allowed Killbox Keycards_Police Station",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedKillboxKeycards_PoliceStation.",
+          "x-lsgm-native-key": "scum.MaxAllowedKillboxKeycards_PoliceStation"
+        },
+        "max_allowed_killbox_keycards_radiation_zone": {
+          "type": "integer",
+          "default": 1,
+          "title": "Max Allowed Killbox Keycards_Radiation Zone",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxAllowedKillboxKeycards_RadiationZone.",
+          "x-lsgm-native-key": "scum.MaxAllowedKillboxKeycards_RadiationZone"
+        },
+        "abandoned_bunker_max_simultaneously_active": {
+          "type": "integer",
+          "default": 2,
+          "title": "Abandoned Bunker Max Simultaneously Active",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerMaxSimultaneouslyActive.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerMaxSimultaneouslyActive"
+        },
+        "abandoned_bunker_active_duration_hours": {
+          "type": "number",
+          "default": 24.0,
+          "title": "Abandoned Bunker Active Duration Hours",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerActiveDurationHours.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerActiveDurationHours"
+        },
+        "abandoned_bunker_key_card_active_duration_hours": {
+          "type": "number",
+          "default": 3.0,
+          "title": "Abandoned Bunker Key Card Active Duration Hours",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerKeyCardActiveDurationHours.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerKeyCardActiveDurationHours"
+        },
+        "abandoned_bunker_bcu_terminal_cooldown": {
+          "type": "string",
+          "default": "24:00:00",
+          "title": "Abandoned Bunker BCU Terminal Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.AbandonedBunkerBCUTerminalCooldown.",
+          "x-lsgm-native-key": "scum.AbandonedBunkerBCUTerminalCooldown",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "secret_bunker_key_card_active_duration_hours": {
+          "type": "number",
+          "default": 0.5,
+          "title": "Secret Bunker Key Card Active Duration Hours",
+          "description": "Exact server-generated SCUM v7 parameter scum.SecretBunkerKeyCardActiveDurationHours.",
+          "x-lsgm-native-key": "scum.SecretBunkerKeyCardActiveDurationHours"
+        },
+        "max_allowed_apex_facility_keycards": {
+          "type": "integer",
+          "default": 4,
+          "title": "Max Allowed Apex Facility Keycards",
+          "description": "Official August 2026 SCUM parameter scum.MaxAllowedApexFacilityKeycards.",
+          "x-lsgm-native-key": "scum.MaxAllowedApexFacilityKeycards"
+        },
+        "max_allowed_apex_facility_keycards_police_station": {
+          "type": "integer",
+          "default": 3,
+          "title": "Max Allowed Apex Facility Keycards_Police Station",
+          "description": "Official August 2026 SCUM parameter scum.MaxAllowedApexFacilityKeycards_PoliceStation.",
+          "x-lsgm-native-key": "scum.MaxAllowedApexFacilityKeycards_PoliceStation"
+        },
+        "max_allowed_apex_facility_keycards_radiation_zone": {
+          "type": "integer",
+          "default": 1,
+          "title": "Max Allowed Apex Facility Keycards_Radiation Zone",
+          "description": "Official August 2026 SCUM parameter scum.MaxAllowedApexFacilityKeycards_RadiationZone.",
+          "x-lsgm-native-key": "scum.MaxAllowedApexFacilityKeycards_RadiationZone"
+        }
+      }
+    },
+    "server_features": {
+      "type": "object",
+      "default": {},
+      "title": "Features",
+      "description": "All editable [Features] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "features",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.EnableSelectedSkillsPromotion",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "enable_selected_skills_promotion": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Selected Skills Promotion",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableSelectedSkillsPromotion.",
+          "x-lsgm-native-key": "scum.EnableSelectedSkillsPromotion"
+        },
+        "smoker_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Smoker Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.SmokerMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.SmokerMaxAmountPerFlagArea"
+        },
+        "smoker_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Smoker Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.SmokerStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.SmokerStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "allow_multiple_flags_per_player": {
+          "type": "boolean",
+          "default": false,
+          "title": "Allow Multiple Flags Per Player",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowMultipleFlagsPerPlayer.",
+          "x-lsgm-native-key": "scum.AllowMultipleFlagsPerPlayer"
+        },
+        "number_of_allowed_flags_per_player": {
+          "type": "integer",
+          "default": 10,
+          "title": "Number Of Allowed Flags Per Player",
+          "description": "Exact server-generated SCUM v7 parameter scum.NumberOfAllowedFlagsPerPlayer.",
+          "x-lsgm-native-key": "scum.NumberOfAllowedFlagsPerPlayer"
+        },
+        "tombstone_max_amount_per_squad": {
+          "type": "integer",
+          "default": -1,
+          "title": "Tombstone Max Amount Per Squad",
+          "description": "Exact server-generated SCUM v7 parameter scum.TombstoneMaxAmountPerSquad.",
+          "x-lsgm-native-key": "scum.TombstoneMaxAmountPerSquad"
+        },
+        "flag_overtake_duration": {
+          "type": "string",
+          "default": "24:00:00",
+          "title": "Flag Overtake Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.FlagOvertakeDuration.",
+          "x-lsgm-native-key": "scum.FlagOvertakeDuration",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "maximum_amount_of_elements_per_flag": {
+          "type": "integer",
+          "default": 100,
+          "title": "Maximum Amount Of Elements Per Flag",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumAmountOfElementsPerFlag.",
+          "x-lsgm-native-key": "scum.MaximumAmountOfElementsPerFlag"
+        },
+        "extra_elements_per_flag_for_additional_squad_member": {
+          "type": "integer",
+          "default": 25,
+          "title": "Extra Elements Per Flag For Additional Squad Member",
+          "description": "Exact server-generated SCUM v7 parameter scum.ExtraElementsPerFlagForAdditionalSquadMember.",
+          "x-lsgm-native-key": "scum.ExtraElementsPerFlagForAdditionalSquadMember"
+        },
+        "maximum_number_of_expanded_elements_per_flag": {
+          "type": "integer",
+          "default": 75,
+          "title": "Maximum Number Of Expanded Elements Per Flag",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumNumberOfExpandedElementsPerFlag.",
+          "x-lsgm-native-key": "scum.MaximumNumberOfExpandedElementsPerFlag"
+        },
+        "allow_flag_placement_on_bb_elements": {
+          "type": "boolean",
+          "default": false,
+          "title": "Allow Flag Placement On BB Elements",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowFlagPlacementOnBBElements.",
+          "x-lsgm-native-key": "scum.AllowFlagPlacementOnBBElements"
+        },
+        "chest_acquisition_duration": {
+          "type": "number",
+          "default": 24.0,
+          "title": "Chest Acquisition Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.ChestAcquisitionDuration.",
+          "x-lsgm-native-key": "scum.ChestAcquisitionDuration"
+        },
+        "weapon_rack_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Weapon Rack Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.WeaponRackMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.WeaponRackMaxAmountPerFlagArea"
+        },
+        "weapon_rack_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Weapon Rack Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.WeaponRackStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.WeaponRackStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "wall_weapon_rack_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Wall Weapon Rack Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.WallWeaponRackMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.WallWeaponRackMaxAmountPerFlagArea"
+        },
+        "wall_weapon_rack_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Wall Weapon Rack Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.WallWeaponRackStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.WallWeaponRackStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "well_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Well Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.WellMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.WellMaxAmountPerFlagArea"
+        },
+        "well_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Well Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.WellStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.WellStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "turret_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Turret Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.TurretMaxAmountPerFlagArea"
+        },
+        "turret_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Turret Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.TurretStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "oven_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Oven Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.OvenMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.OvenMaxAmountPerFlagArea"
+        },
+        "oven_start_decaying_if_flag_area_has_more_than": {
+          "type": "integer",
+          "default": -1,
+          "title": "Oven Start Decaying If Flag Area Has More Than",
+          "description": "Exact server-generated SCUM v7 parameter scum.OvenStartDecayingIfFlagAreaHasMoreThan.",
+          "x-lsgm-native-key": "scum.OvenStartDecayingIfFlagAreaHasMoreThan"
+        },
+        "garden_max_amount_per_flag_area": {
+          "type": "integer",
+          "default": -1,
+          "title": "Garden Max Amount Per Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.GardenMaxAmountPerFlagArea.",
+          "x-lsgm-native-key": "scum.GardenMaxAmountPerFlagArea"
+        },
+        "allow_floor_placement_on_half_and_low_walls": {
+          "type": "boolean",
+          "default": false,
+          "title": "Allow Floor Placement On Half And Low Walls",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowFloorPlacementOnHalfAndLowWalls.",
+          "x-lsgm-native-key": "scum.AllowFloorPlacementOnHalfAndLowWalls"
+        },
+        "allow_wall_placement_on_half_and_low_walls": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Wall Placement On Half And Low Walls",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowWallPlacementOnHalfAndLowWalls.",
+          "x-lsgm-native-key": "scum.AllowWallPlacementOnHalfAndLowWalls"
+        },
+        "base_elements_decay_rate_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Elements Decay Rate Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseElementsDecayRateMultiplier.",
+          "x-lsgm-native-key": "scum.BaseElementsDecayRateMultiplier"
+        },
+        "base_building_destruction_log_damage_threshold": {
+          "type": "number",
+          "default": 20.0,
+          "title": "Base Building Destruction Log Damage Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingDestructionLogDamageThreshold.",
+          "x-lsgm-native-key": "scum.BaseBuildingDestructionLogDamageThreshold"
+        },
+        "raid_protection_type": {
+          "type": "integer",
+          "default": 0,
+          "title": "Raid Protection Type",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionType.",
+          "x-lsgm-native-key": "scum.RaidProtectionType"
+        },
+        "raid_protection_enable_log": {
+          "type": "boolean",
+          "default": false,
+          "title": "Raid Protection Enable Log",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionEnableLog.",
+          "x-lsgm-native-key": "scum.RaidProtectionEnableLog"
+        },
+        "raid_protection_flag_specific_change_setting_cooldown": {
+          "type": "string",
+          "default": "120:00:00",
+          "title": "Raid Protection Flag Specific Change Setting Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionFlagSpecificChangeSettingCooldown.",
+          "x-lsgm-native-key": "scum.RaidProtectionFlagSpecificChangeSettingCooldown",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "raid_protection_flag_specific_change_setting_price": {
+          "type": "string",
+          "default": "10g",
+          "title": "Raid Protection Flag Specific Change Setting Price",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionFlagSpecificChangeSettingPrice.",
+          "x-lsgm-native-key": "scum.RaidProtectionFlagSpecificChangeSettingPrice",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "raid_protection_flag_specific_max_protection_time": {
+          "type": "string",
+          "default": "08:00:00",
+          "title": "Raid Protection Flag Specific Max Protection Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionFlagSpecificMaxProtectionTime.",
+          "x-lsgm-native-key": "scum.RaidProtectionFlagSpecificMaxProtectionTime",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "raid_protection_offline_protection_start_delay": {
+          "type": "string",
+          "default": "00:30:00",
+          "title": "Raid Protection Offline Protection Start Delay",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionOfflineProtectionStartDelay.",
+          "x-lsgm-native-key": "scum.RaidProtectionOfflineProtectionStartDelay",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "raid_protection_offline_max_protection_time": {
+          "type": "string",
+          "default": "-",
+          "title": "Raid Protection Offline Max Protection Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionOfflineMaxProtectionTime.",
+          "x-lsgm-native-key": "scum.RaidProtectionOfflineMaxProtectionTime",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "raid_protection_global_should_show_raid_times_message": {
+          "type": "boolean",
+          "default": true,
+          "title": "Raid Protection Global Should Show Raid Times Message",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionGlobalShouldShowRaidTimesMessage.",
+          "x-lsgm-native-key": "scum.RaidProtectionGlobalShouldShowRaidTimesMessage"
+        },
+        "raid_protection_global_should_show_raid_announcement_message": {
+          "type": "boolean",
+          "default": true,
+          "title": "Raid Protection Global Should Show Raid Announcement Message",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionGlobalShouldShowRaidAnnouncementMessage.",
+          "x-lsgm-native-key": "scum.RaidProtectionGlobalShouldShowRaidAnnouncementMessage"
+        },
+        "raid_protection_global_should_show_raid_start_end_messages": {
+          "type": "boolean",
+          "default": true,
+          "title": "Raid Protection Global Should Show Raid Start End Messages",
+          "description": "Exact server-generated SCUM v7 parameter scum.RaidProtectionGlobalShouldShowRaidStartEndMessages.",
+          "x-lsgm-native-key": "scum.RaidProtectionGlobalShouldShowRaidStartEndMessages"
+        },
+        "water_price_per_unit_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Price Per Unit Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterPricePerUnitMultiplier.",
+          "x-lsgm-native-key": "scum.WaterPricePerUnitMultiplier"
+        },
+        "water_periodic_initial_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Periodic Initial Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterPeriodicInitialAmountMultiplier.",
+          "x-lsgm-native-key": "scum.WaterPeriodicInitialAmountMultiplier"
+        },
+        "water_periodic_max_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Periodic Max Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterPeriodicMaxAmountMultiplier.",
+          "x-lsgm-native-key": "scum.WaterPeriodicMaxAmountMultiplier"
+        },
+        "water_periodic_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Periodic Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterPeriodicReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.WaterPeriodicReplenishAmountMultiplier"
+        },
+        "water_periodic_replenish_interval_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Periodic Replenish Interval Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterPeriodicReplenishIntervalMultiplier.",
+          "x-lsgm-native-key": "scum.WaterPeriodicReplenishIntervalMultiplier"
+        },
+        "water_proximity_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Proximity Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterProximityReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.WaterProximityReplenishAmountMultiplier"
+        },
+        "water_proximity_replenish_chance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Proximity Replenish Chance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterProximityReplenishChanceMultiplier.",
+          "x-lsgm-native-key": "scum.WaterProximityReplenishChanceMultiplier"
+        },
+        "water_proximity_replenish_timeout_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Water Proximity Replenish Timeout Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.WaterProximityReplenishTimeoutMultiplier.",
+          "x-lsgm-native-key": "scum.WaterProximityReplenishTimeoutMultiplier"
+        },
+        "gasoline_price_per_unit_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Price Per Unit Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolinePricePerUnitMultiplier.",
+          "x-lsgm-native-key": "scum.GasolinePricePerUnitMultiplier"
+        },
+        "gasoline_periodic_initial_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Periodic Initial Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolinePeriodicInitialAmountMultiplier.",
+          "x-lsgm-native-key": "scum.GasolinePeriodicInitialAmountMultiplier"
+        },
+        "gasoline_periodic_max_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Periodic Max Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolinePeriodicMaxAmountMultiplier.",
+          "x-lsgm-native-key": "scum.GasolinePeriodicMaxAmountMultiplier"
+        },
+        "gasoline_periodic_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Periodic Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolinePeriodicReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.GasolinePeriodicReplenishAmountMultiplier"
+        },
+        "gasoline_periodic_replenish_interval_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Periodic Replenish Interval Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolinePeriodicReplenishIntervalMultiplier.",
+          "x-lsgm-native-key": "scum.GasolinePeriodicReplenishIntervalMultiplier"
+        },
+        "gasoline_proximity_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Proximity Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolineProximityReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.GasolineProximityReplenishAmountMultiplier"
+        },
+        "gasoline_proximity_replenish_chance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Proximity Replenish Chance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolineProximityReplenishChanceMultiplier.",
+          "x-lsgm-native-key": "scum.GasolineProximityReplenishChanceMultiplier"
+        },
+        "gasoline_proximity_replenish_timeout_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Gasoline Proximity Replenish Timeout Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.GasolineProximityReplenishTimeoutMultiplier.",
+          "x-lsgm-native-key": "scum.GasolineProximityReplenishTimeoutMultiplier"
+        },
+        "propane_price_per_unit_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Price Per Unit Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropanePricePerUnitMultiplier.",
+          "x-lsgm-native-key": "scum.PropanePricePerUnitMultiplier"
+        },
+        "propane_periodic_initial_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Periodic Initial Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropanePeriodicInitialAmountMultiplier.",
+          "x-lsgm-native-key": "scum.PropanePeriodicInitialAmountMultiplier"
+        },
+        "propane_periodic_max_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Periodic Max Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropanePeriodicMaxAmountMultiplier.",
+          "x-lsgm-native-key": "scum.PropanePeriodicMaxAmountMultiplier"
+        },
+        "propane_periodic_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Periodic Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropanePeriodicReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.PropanePeriodicReplenishAmountMultiplier"
+        },
+        "propane_periodic_replenish_interval_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Periodic Replenish Interval Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropanePeriodicReplenishIntervalMultiplier.",
+          "x-lsgm-native-key": "scum.PropanePeriodicReplenishIntervalMultiplier"
+        },
+        "propane_proximity_replenish_amount_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Proximity Replenish Amount Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropaneProximityReplenishAmountMultiplier.",
+          "x-lsgm-native-key": "scum.PropaneProximityReplenishAmountMultiplier"
+        },
+        "propane_proximity_replenish_chance_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Proximity Replenish Chance Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropaneProximityReplenishChanceMultiplier.",
+          "x-lsgm-native-key": "scum.PropaneProximityReplenishChanceMultiplier"
+        },
+        "propane_proximity_replenish_timeout_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Propane Proximity Replenish Timeout Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PropaneProximityReplenishTimeoutMultiplier.",
+          "x-lsgm-native-key": "scum.PropaneProximityReplenishTimeoutMultiplier"
+        },
+        "spawner_probability_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Spawner Probability Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SpawnerProbabilityMultiplier.",
+          "x-lsgm-native-key": "scum.SpawnerProbabilityMultiplier"
+        },
+        "examine_spawner_probability_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Examine Spawner Probability Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ExamineSpawnerProbabilityMultiplier.",
+          "x-lsgm-native-key": "scum.ExamineSpawnerProbabilityMultiplier"
+        },
+        "examine_spawner_expiration_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Examine Spawner Expiration Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ExamineSpawnerExpirationTimeMultiplier.",
+          "x-lsgm-native-key": "scum.ExamineSpawnerExpirationTimeMultiplier"
+        },
+        "spawner_expiration_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Spawner Expiration Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SpawnerExpirationTimeMultiplier.",
+          "x-lsgm-native-key": "scum.SpawnerExpirationTimeMultiplier"
+        },
+        "enable_item_cooldown_groups": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Item Cooldown Groups",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableItemCooldownGroups.",
+          "x-lsgm-native-key": "scum.EnableItemCooldownGroups"
+        },
+        "item_cooldown_groups_duration_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Item Cooldown Groups Duration Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ItemCooldownGroupsDurationMultiplier.",
+          "x-lsgm-native-key": "scum.ItemCooldownGroupsDurationMultiplier"
+        },
+        "squad_member_count_at_int_level1": {
+          "type": "integer",
+          "default": 2,
+          "title": "Squad Member Count At Int Level1",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountAtIntLevel1.",
+          "x-lsgm-native-key": "scum.SquadMemberCountAtIntLevel1"
+        },
+        "squad_member_count_at_int_level2": {
+          "type": "integer",
+          "default": 4,
+          "title": "Squad Member Count At Int Level2",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountAtIntLevel2.",
+          "x-lsgm-native-key": "scum.SquadMemberCountAtIntLevel2"
+        },
+        "squad_member_count_at_int_level3": {
+          "type": "integer",
+          "default": 6,
+          "title": "Squad Member Count At Int Level3",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountAtIntLevel3.",
+          "x-lsgm-native-key": "scum.SquadMemberCountAtIntLevel3"
+        },
+        "squad_member_count_at_int_level4": {
+          "type": "integer",
+          "default": 8,
+          "title": "Squad Member Count At Int Level4",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountAtIntLevel4.",
+          "x-lsgm-native-key": "scum.SquadMemberCountAtIntLevel4"
+        },
+        "squad_member_count_at_int_level5": {
+          "type": "integer",
+          "default": 10,
+          "title": "Squad Member Count At Int Level5",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountAtIntLevel5.",
+          "x-lsgm-native-key": "scum.SquadMemberCountAtIntLevel5"
+        },
+        "squad_member_count_limit_for_punishment": {
+          "type": "integer",
+          "default": 2,
+          "title": "Squad Member Count Limit For Punishment",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMemberCountLimitForPunishment.",
+          "x-lsgm-native-key": "scum.SquadMemberCountLimitForPunishment"
+        },
+        "rt_squad_probation_duration": {
+          "type": "number",
+          "default": 1.0,
+          "title": "RT Squad Probation Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.RTSquadProbationDuration.",
+          "x-lsgm-native-key": "scum.RTSquadProbationDuration"
+        },
+        "squad_money_penalty_per_prev_squad_member": {
+          "type": "integer",
+          "default": 0,
+          "title": "Squad Money Penalty Per Prev Squad Member",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadMoneyPenaltyPerPrevSquadMember.",
+          "x-lsgm-native-key": "scum.SquadMoneyPenaltyPerPrevSquadMember"
+        },
+        "squad_fame_points_penalty_per_prev_squad_member": {
+          "type": "integer",
+          "default": 0,
+          "title": "Squad Fame Points Penalty Per Prev Squad Member",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadFamePointsPenaltyPerPrevSquadMember.",
+          "x-lsgm-native-key": "scum.SquadFamePointsPenaltyPerPrevSquadMember"
+        },
+        "enable_squad_member_name_widget": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Squad Member Name Widget",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableSquadMemberNameWidget.",
+          "x-lsgm-native-key": "scum.EnableSquadMemberNameWidget"
+        },
+        "plant_harvest_examine_time_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Plant Harvest Examine Time Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.PlantHarvestExamineTimeMultiplier.",
+          "x-lsgm-native-key": "scum.PlantHarvestExamineTimeMultiplier"
+        },
+        "first_plant_harvest_additional_chance": {
+          "type": "number",
+          "default": 1.0,
+          "title": "First Plant Harvest Additional Chance",
+          "description": "Exact server-generated SCUM v7 parameter scum.FirstPlantHarvestAdditionalChance.",
+          "x-lsgm-native-key": "scum.FirstPlantHarvestAdditionalChance"
+        },
+        "archery_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Archery Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ArcherySkillMultiplier.",
+          "x-lsgm-native-key": "scum.ArcherySkillMultiplier"
+        },
+        "aviation_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Aviation Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.AviationSkillMultiplier.",
+          "x-lsgm-native-key": "scum.AviationSkillMultiplier"
+        },
+        "awareness_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Awareness Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.AwarenessSkillMultiplier.",
+          "x-lsgm-native-key": "scum.AwarenessSkillMultiplier"
+        },
+        "brawling_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Brawling Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BrawlingSkillMultiplier.",
+          "x-lsgm-native-key": "scum.BrawlingSkillMultiplier"
+        },
+        "camouflage_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Camouflage Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.CamouflageSkillMultiplier.",
+          "x-lsgm-native-key": "scum.CamouflageSkillMultiplier"
+        },
+        "cooking_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Cooking Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.CookingSkillMultiplier.",
+          "x-lsgm-native-key": "scum.CookingSkillMultiplier"
+        },
+        "demolition_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Demolition Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DemolitionSkillMultiplier.",
+          "x-lsgm-native-key": "scum.DemolitionSkillMultiplier"
+        },
+        "driving_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Driving Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DrivingSkillMultiplier.",
+          "x-lsgm-native-key": "scum.DrivingSkillMultiplier"
+        },
+        "endurance_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Endurance Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnduranceSkillMultiplier.",
+          "x-lsgm-native-key": "scum.EnduranceSkillMultiplier"
+        },
+        "engineering_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Engineering Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.EngineeringSkillMultiplier.",
+          "x-lsgm-native-key": "scum.EngineeringSkillMultiplier"
+        },
+        "farming_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Farming Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.FarmingSkillMultiplier.",
+          "x-lsgm-native-key": "scum.FarmingSkillMultiplier"
+        },
+        "handgun_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Handgun Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HandgunSkillMultiplier.",
+          "x-lsgm-native-key": "scum.HandgunSkillMultiplier"
+        },
+        "medical_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Medical Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.MedicalSkillMultiplier.",
+          "x-lsgm-native-key": "scum.MedicalSkillMultiplier"
+        },
+        "melee_weapons_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Melee Weapons Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.MeleeWeaponsSkillMultiplier.",
+          "x-lsgm-native-key": "scum.MeleeWeaponsSkillMultiplier"
+        },
+        "motorcycle_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Motorcycle Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.MotorcycleSkillMultiplier.",
+          "x-lsgm-native-key": "scum.MotorcycleSkillMultiplier"
+        },
+        "rifles_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Rifles Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RiflesSkillMultiplier.",
+          "x-lsgm-native-key": "scum.RiflesSkillMultiplier"
+        },
+        "running_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Running Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RunningSkillMultiplier.",
+          "x-lsgm-native-key": "scum.RunningSkillMultiplier"
+        },
+        "sniping_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sniping Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SnipingSkillMultiplier.",
+          "x-lsgm-native-key": "scum.SnipingSkillMultiplier"
+        },
+        "stealth_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Stealth Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.StealthSkillMultiplier.",
+          "x-lsgm-native-key": "scum.StealthSkillMultiplier"
+        },
+        "survival_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Survival Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SurvivalSkillMultiplier.",
+          "x-lsgm-native-key": "scum.SurvivalSkillMultiplier"
+        },
+        "thievery_skill_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Thievery Skill Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ThieverySkillMultiplier.",
+          "x-lsgm-native-key": "scum.ThieverySkillMultiplier"
+        },
+        "quests_enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "Quests Enabled",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestsEnabled.",
+          "x-lsgm-native-key": "scum.QuestsEnabled"
+        },
+        "quests_global_cycle_duration": {
+          "type": "string",
+          "default": "23:59:59",
+          "title": "Quests Global Cycle Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestsGlobalCycleDuration.",
+          "x-lsgm-native-key": "scum.QuestsGlobalCycleDuration",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "max_quests_per_cycle_per_trader": {
+          "type": "integer",
+          "default": 3,
+          "title": "Max Quests Per Cycle Per Trader",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxQuestsPerCyclePerTrader.",
+          "x-lsgm-native-key": "scum.MaxQuestsPerCyclePerTrader"
+        },
+        "max_simultaneous_quests_per_trader": {
+          "type": "integer",
+          "default": 1,
+          "title": "Max Simultaneous Quests Per Trader",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaxSimultaneousQuestsPerTrader.",
+          "x-lsgm-native-key": "scum.MaxSimultaneousQuestsPerTrader"
+        },
+        "quests_trader_refill_cooldown": {
+          "type": "string",
+          "default": "03:00:00",
+          "title": "Quests Trader Refill Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestsTraderRefillCooldown.",
+          "x-lsgm-native-key": "scum.QuestsTraderRefillCooldown",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "quests_phone_refill_cooldown": {
+          "type": "string",
+          "default": "01:00:00",
+          "title": "Quests Phone Refill Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestsPhoneRefillCooldown.",
+          "x-lsgm-native-key": "scum.QuestsPhoneRefillCooldown",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "quests_notice_board_refill_cooldown": {
+          "type": "string",
+          "default": "02:00:00",
+          "title": "Quests Notice Board Refill Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestsNoticeBoardRefillCooldown.",
+          "x-lsgm-native-key": "scum.QuestsNoticeBoardRefillCooldown",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "quest_requirements_block_tradeable_items": {
+          "type": "boolean",
+          "default": false,
+          "title": "Quest Requirements Block Tradeable Items",
+          "description": "Exact server-generated SCUM v7 parameter scum.QuestRequirementsBlockTradeableItems.",
+          "x-lsgm-native-key": "scum.QuestRequirementsBlockTradeableItems"
+        },
+        "turrets_attack_prisoners": {
+          "type": "boolean",
+          "default": true,
+          "title": "Turrets Attack Prisoners",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackPrisoners.",
+          "x-lsgm-native-key": "scum.TurretsAttackPrisoners"
+        },
+        "turrets_attack_puppets": {
+          "type": "boolean",
+          "default": true,
+          "title": "Turrets Attack Puppets",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackPuppets.",
+          "x-lsgm-native-key": "scum.TurretsAttackPuppets"
+        },
+        "turrets_attack_vehicles": {
+          "type": "boolean",
+          "default": true,
+          "title": "Turrets Attack Vehicles",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackVehicles.",
+          "x-lsgm-native-key": "scum.TurretsAttackVehicles"
+        },
+        "turrets_attack_sentries": {
+          "type": "boolean",
+          "default": true,
+          "title": "Turrets Attack Sentries",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackSentries.",
+          "x-lsgm-native-key": "scum.TurretsAttackSentries"
+        },
+        "turrets_attack_animals": {
+          "type": "boolean",
+          "default": false,
+          "title": "Turrets Attack Animals",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackAnimals.",
+          "x-lsgm-native-key": "scum.TurretsAttackAnimals"
+        },
+        "turrets_attack_armed_np_cs": {
+          "type": "boolean",
+          "default": true,
+          "title": "Turrets Attack Armed NPCs",
+          "description": "Exact server-generated SCUM v7 parameter scum.TurretsAttackArmedNPCs.",
+          "x-lsgm-native-key": "scum.TurretsAttackArmedNPCs"
+        },
+        "movement_inertia_amount": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Movement Inertia Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.MovementInertiaAmount.",
+          "x-lsgm-native-key": "scum.MovementInertiaAmount"
+        },
+        "stamina_drain_on_jump_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Stamina Drain On Jump Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.StaminaDrainOnJumpMultiplier.",
+          "x-lsgm-native-key": "scum.StaminaDrainOnJumpMultiplier"
+        },
+        "stamina_drain_on_climb_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Stamina Drain On Climb Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.StaminaDrainOnClimbMultiplier.",
+          "x-lsgm-native-key": "scum.StaminaDrainOnClimbMultiplier"
+        },
+        "disable_exhaustion": {
+          "type": "boolean",
+          "default": false,
+          "title": "Disable Exhaustion",
+          "description": "Exact server-generated SCUM v7 parameter scum.DisableExhaustion.",
+          "x-lsgm-native-key": "scum.DisableExhaustion"
+        },
+        "body_simulation_speed_multiplier": {
+          "type": "number",
+          "default": 3.84,
+          "title": "Body Simulation Speed Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BodySimulationSpeedMultiplier.",
+          "x-lsgm-native-key": "scum.BodySimulationSpeedMultiplier"
+        },
+        "maintain_items_expiration_time": {
+          "type": "string",
+          "default": "360:00:00",
+          "title": "Maintain Items Expiration Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaintainItemsExpirationTime.",
+          "x-lsgm-native-key": "scum.MaintainItemsExpirationTime",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "killbox_defuse_failure_bonus": {
+          "type": "number",
+          "default": 0.2,
+          "title": "Killbox Defuse Failure Bonus",
+          "description": "Exact server-generated SCUM v7 parameter scum.KillboxDefuseFailureBonus.",
+          "x-lsgm-native-key": "scum.KillboxDefuseFailureBonus"
+        },
+        "bedroll_visibility_timer": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Bedroll Visibility Timer",
+          "description": "Exact server-generated SCUM v7 parameter scum.BedrollVisibilityTimer.",
+          "x-lsgm-native-key": "scum.BedrollVisibilityTimer"
+        },
+        "enable_bcu_locking": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable BCU Locking",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableBCULocking.",
+          "x-lsgm-native-key": "scum.EnableBCULocking"
+        },
+        "name_change_cooldown": {
+          "type": "number",
+          "default": 168.0,
+          "title": "Name Change Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.NameChangeCooldown.",
+          "x-lsgm-native-key": "scum.NameChangeCooldown"
+        },
+        "name_change_cost": {
+          "type": "integer",
+          "default": 1000,
+          "title": "Name Change Cost",
+          "description": "Exact server-generated SCUM v7 parameter scum.NameChangeCost.",
+          "x-lsgm-native-key": "scum.NameChangeCost"
+        },
+        "enable_new_player_protection": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable New Player Protection",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableNewPlayerProtection.",
+          "x-lsgm-native-key": "scum.EnableNewPlayerProtection"
+        },
+        "new_player_protection_duration": {
+          "type": "number",
+          "default": 120.0,
+          "title": "New Player Protection Duration",
+          "description": "Exact server-generated SCUM v7 parameter scum.NewPlayerProtectionDuration.",
+          "x-lsgm-native-key": "scum.NewPlayerProtectionDuration"
+        },
+        "allow_automatic_parachute_opening": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Automatic Parachute Opening",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowAutomaticParachuteOpening.",
+          "x-lsgm-native-key": "scum.AllowAutomaticParachuteOpening"
+        },
+        "hide_quick_access_bar": {
+          "type": "boolean",
+          "default": false,
+          "title": "Hide Quick Access Bar",
+          "description": "Exact server-generated SCUM v7 parameter scum.HideQuickAccessBar.",
+          "x-lsgm-native-key": "scum.HideQuickAccessBar"
+        },
+        "hide_life_indicators": {
+          "type": "boolean",
+          "default": false,
+          "title": "Hide Life Indicators",
+          "description": "Exact server-generated SCUM v7 parameter scum.HideLifeIndicators.",
+          "x-lsgm-native-key": "scum.HideLifeIndicators"
+        },
+        "enable_deena_on_server": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Deena On Server",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableDeenaOnServer.",
+          "x-lsgm-native-key": "scum.EnableDeenaOnServer"
+        },
+        "enable_digital_deluxe_starter_pack": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Digital Deluxe Starter Pack",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableDigitalDeluxeStarterPack.",
+          "x-lsgm-native-key": "scum.EnableDigitalDeluxeStarterPack"
+        },
+        "enable_digital_deluxe_free_gold_card": {
+          "type": "boolean",
+          "default": true,
+          "title": "Enable Digital Deluxe Free Gold Card",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableDigitalDeluxeFreeGoldCard.",
+          "x-lsgm-native-key": "scum.EnableDigitalDeluxeFreeGoldCard"
+        },
+        "enable_net_watchdog": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Net Watchdog",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableNetWatchdog.",
+          "x-lsgm-native-key": "scum.EnableNetWatchdog"
+        },
+        "enable_network_object_logging": {
+          "type": "boolean",
+          "default": false,
+          "title": "Enable Network Object Logging",
+          "description": "Exact server-generated SCUM v7 parameter scum.EnableNetworkObjectLogging.",
+          "x-lsgm-native-key": "scum.EnableNetworkObjectLogging"
+        }
+      }
+    },
+    "server_respawn": {
+      "type": "object",
+      "default": {},
+      "title": "Respawn",
+      "description": "All editable [Respawn] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "respawn",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.AllowSectorRespawn",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "allow_sector_respawn": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Sector Respawn",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowSectorRespawn.",
+          "x-lsgm-native-key": "scum.AllowSectorRespawn"
+        },
+        "allow_shelter_respawn": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Shelter Respawn",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowShelterRespawn.",
+          "x-lsgm-native-key": "scum.AllowShelterRespawn"
+        },
+        "allow_squadmate_respawn": {
+          "type": "boolean",
+          "default": true,
+          "title": "Allow Squadmate Respawn",
+          "description": "Exact server-generated SCUM v7 parameter scum.AllowSquadmateRespawn.",
+          "x-lsgm-native-key": "scum.AllowSquadmateRespawn"
+        },
+        "random_respawn_price": {
+          "type": "integer",
+          "default": 250,
+          "title": "Random Respawn Price",
+          "description": "Exact server-generated SCUM v7 parameter scum.RandomRespawnPrice.",
+          "x-lsgm-native-key": "scum.RandomRespawnPrice"
+        },
+        "sector_respawn_price": {
+          "type": "integer",
+          "default": 1000,
+          "title": "Sector Respawn Price",
+          "description": "Exact server-generated SCUM v7 parameter scum.SectorRespawnPrice.",
+          "x-lsgm-native-key": "scum.SectorRespawnPrice"
+        },
+        "shelter_respawn_price": {
+          "type": "string",
+          "default": "1g",
+          "title": "Shelter Respawn Price",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterRespawnPrice.",
+          "x-lsgm-native-key": "scum.ShelterRespawnPrice",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "shelter_respawn_price_outside_flag_area": {
+          "type": "string",
+          "default": "2g",
+          "title": "Shelter Respawn Price Outside Flag Area",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterRespawnPriceOutsideFlagArea.",
+          "x-lsgm-native-key": "scum.ShelterRespawnPriceOutsideFlagArea",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "squad_respawn_price": {
+          "type": "string",
+          "default": "3g",
+          "title": "Squad Respawn Price",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadRespawnPrice.",
+          "x-lsgm-native-key": "scum.SquadRespawnPrice",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "random_respawn_initial_time": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Random Respawn Initial Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.RandomRespawnInitialTime.",
+          "x-lsgm-native-key": "scum.RandomRespawnInitialTime"
+        },
+        "sector_respawn_initial_time": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Sector Respawn Initial Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.SectorRespawnInitialTime.",
+          "x-lsgm-native-key": "scum.SectorRespawnInitialTime"
+        },
+        "shelter_respawn_initial_time": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Shelter Respawn Initial Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterRespawnInitialTime.",
+          "x-lsgm-native-key": "scum.ShelterRespawnInitialTime"
+        },
+        "squad_respawn_initial_time": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Squad Respawn Initial Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadRespawnInitialTime.",
+          "x-lsgm-native-key": "scum.SquadRespawnInitialTime"
+        },
+        "random_respawn_cooldown": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Random Respawn Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.RandomRespawnCooldown.",
+          "x-lsgm-native-key": "scum.RandomRespawnCooldown"
+        },
+        "sector_respawn_cooldown": {
+          "type": "number",
+          "default": 240.0,
+          "title": "Sector Respawn Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.SectorRespawnCooldown.",
+          "x-lsgm-native-key": "scum.SectorRespawnCooldown"
+        },
+        "shelter_respawn_cooldown": {
+          "type": "number",
+          "default": 240.0,
+          "title": "Shelter Respawn Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterRespawnCooldown.",
+          "x-lsgm-native-key": "scum.ShelterRespawnCooldown"
+        },
+        "squad_respawn_cooldown": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Squad Respawn Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadRespawnCooldown.",
+          "x-lsgm-native-key": "scum.SquadRespawnCooldown"
+        },
+        "random_cooldown_reset_multiplier": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Random Cooldown Reset Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RandomCooldownResetMultiplier.",
+          "x-lsgm-native-key": "scum.RandomCooldownResetMultiplier"
+        },
+        "sector_cooldown_reset_multiplier": {
+          "type": "number",
+          "default": 3.0,
+          "title": "Sector Cooldown Reset Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SectorCooldownResetMultiplier.",
+          "x-lsgm-native-key": "scum.SectorCooldownResetMultiplier"
+        },
+        "shelter_cooldown_reset_multiplier": {
+          "type": "number",
+          "default": 3.0,
+          "title": "Shelter Cooldown Reset Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterCooldownResetMultiplier.",
+          "x-lsgm-native-key": "scum.ShelterCooldownResetMultiplier"
+        },
+        "squad_cooldown_reset_multiplier": {
+          "type": "number",
+          "default": 2.0,
+          "title": "Squad Cooldown Reset Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SquadCooldownResetMultiplier.",
+          "x-lsgm-native-key": "scum.SquadCooldownResetMultiplier"
+        },
+        "random_price_per_squadmate_modifier": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Random Price Per Squadmate Modifier",
+          "description": "Exact server-generated SCUM v7 parameter scum.RandomPricePerSquadmateModifier.",
+          "x-lsgm-native-key": "scum.RandomPricePerSquadmateModifier"
+        },
+        "sector_price_per_squadmate_modifier": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Sector Price Per Squadmate Modifier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SectorPricePerSquadmateModifier.",
+          "x-lsgm-native-key": "scum.SectorPricePerSquadmateModifier"
+        },
+        "shelter_price_per_squadmate_modifier": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Shelter Price Per Squadmate Modifier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ShelterPricePerSquadmateModifier.",
+          "x-lsgm-native-key": "scum.ShelterPricePerSquadmateModifier"
+        },
+        "commit_suicide_initial_time": {
+          "type": "number",
+          "default": 0.0,
+          "title": "Commit Suicide Initial Time",
+          "description": "Exact server-generated SCUM v7 parameter scum.CommitSuicideInitialTime.",
+          "x-lsgm-native-key": "scum.CommitSuicideInitialTime"
+        },
+        "commit_suicide_cooldown": {
+          "type": "number",
+          "default": 60.0,
+          "title": "Commit Suicide Cooldown",
+          "description": "Exact server-generated SCUM v7 parameter scum.CommitSuicideCooldown.",
+          "x-lsgm-native-key": "scum.CommitSuicideCooldown"
+        },
+        "commit_suicide_cooldown_reset_multiplier": {
+          "type": "number",
+          "default": 1.25,
+          "title": "Commit Suicide Cooldown Reset Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.CommitSuicideCooldownResetMultiplier.",
+          "x-lsgm-native-key": "scum.CommitSuicideCooldownResetMultiplier"
+        },
+        "maximum_base_proximity_when_spawning": {
+          "type": "number",
+          "default": 10000.0,
+          "title": "Maximum Base Proximity When Spawning",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumBaseProximityWhenSpawning.",
+          "x-lsgm-native-key": "scum.MaximumBaseProximityWhenSpawning"
+        },
+        "permadeath_threshold": {
+          "type": "integer",
+          "default": -2500,
+          "title": "Permadeath Threshold",
+          "description": "Exact server-generated SCUM v7 parameter scum.PermadeathThreshold.",
+          "x-lsgm-native-key": "scum.PermadeathThreshold"
+        },
+        "cloning_sickness_enabled": {
+          "type": "boolean",
+          "default": true,
+          "title": "Cloning Sickness Enabled",
+          "description": "Official August 2026 SCUM parameter scum.CloningSicknessEnabled.",
+          "x-lsgm-native-key": "scum.CloningSicknessEnabled"
+        }
+      }
+    },
+    "server_vehicles": {
+      "type": "object",
+      "default": {},
+      "title": "Vehicles",
+      "description": "All editable [Vehicles] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "vehicles",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.FuelDrainFromEngineMultiplier",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "fuel_drain_from_engine_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Fuel Drain From Engine Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.FuelDrainFromEngineMultiplier.",
+          "x-lsgm-native-key": "scum.FuelDrainFromEngineMultiplier"
+        },
+        "battery_drain_from_engine_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Battery Drain From Engine Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BatteryDrainFromEngineMultiplier.",
+          "x-lsgm-native-key": "scum.BatteryDrainFromEngineMultiplier"
+        },
+        "battery_drain_from_devices_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Battery Drain From Devices Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BatteryDrainFromDevicesMultiplier.",
+          "x-lsgm-native-key": "scum.BatteryDrainFromDevicesMultiplier"
+        },
+        "battery_drain_from_inactivity_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Battery Drain From Inactivity Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BatteryDrainFromInactivityMultiplier.",
+          "x-lsgm-native-key": "scum.BatteryDrainFromInactivityMultiplier"
+        },
+        "battery_charge_with_alternator_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Battery Charge With Alternator Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BatteryChargeWithAlternatorMultiplier.",
+          "x-lsgm-native-key": "scum.BatteryChargeWithAlternatorMultiplier"
+        },
+        "battery_charge_with_dynamo_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Battery Charge With Dynamo Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BatteryChargeWithDynamoMultiplier.",
+          "x-lsgm-native-key": "scum.BatteryChargeWithDynamoMultiplier"
+        },
+        "kinglet_duster_max_amount": {
+          "type": "integer",
+          "default": 2,
+          "title": "Kinglet Duster Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.KingletDusterMaxAmount.",
+          "x-lsgm-native-key": "scum.KingletDusterMaxAmount"
+        },
+        "kinglet_duster_min_purchased_amount": {
+          "type": "integer",
+          "default": 0,
+          "title": "Kinglet Duster minimum available to buy",
+          "description": "Minimum number of Kinglet Duster vehicles available to buy.",
+          "x-lsgm-native-key": "scum.KingletDusterMinPurchasedAmount"
+        },
+        "dirtbike_max_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Dirtbike Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.DirtbikeMaxAmount.",
+          "x-lsgm-native-key": "scum.DirtbikeMaxAmount"
+        },
+        "dirtbike_max_functional_amount": {
+          "type": "integer",
+          "default": 15,
+          "title": "Dirtbike Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.DirtbikeMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.DirtbikeMaxFunctionalAmount"
+        },
+        "dirtbike_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Dirtbike minimum available to buy",
+          "description": "Minimum number of Dirtbike vehicles available to buy.",
+          "x-lsgm-native-key": "scum.DirtbikeMinPurchasedAmount"
+        },
+        "laika_max_amount": {
+          "type": "integer",
+          "default": 50,
+          "title": "Laika Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.LaikaMaxAmount.",
+          "x-lsgm-native-key": "scum.LaikaMaxAmount"
+        },
+        "laika_max_functional_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Laika Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.LaikaMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.LaikaMaxFunctionalAmount"
+        },
+        "laika_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Laika minimum available to buy",
+          "description": "Minimum number of Laika vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.LaikaMinPurchasedAmount"
+        },
+        "motorboat_max_amount": {
+          "type": "integer",
+          "default": 11,
+          "title": "Motorboat Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.MotorboatMaxAmount.",
+          "x-lsgm-native-key": "scum.MotorboatMaxAmount"
+        },
+        "motorboat_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Motorboat minimum available to buy",
+          "description": "Minimum number of Motorboat vehicles available to buy.",
+          "x-lsgm-native-key": "scum.MotorboatMinPurchasedAmount"
+        },
+        "wheelbarrow_max_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Wheelbarrow Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.WheelbarrowMaxAmount.",
+          "x-lsgm-native-key": "scum.WheelbarrowMaxAmount"
+        },
+        "wheelbarrow_min_purchased_amount": {
+          "type": "integer",
+          "default": 10,
+          "title": "Wheelbarrow minimum available to buy",
+          "description": "Minimum number of Wheelbarrow vehicles available to buy.",
+          "x-lsgm-native-key": "scum.WheelbarrowMinPurchasedAmount"
+        },
+        "wolfswagen_max_amount": {
+          "type": "integer",
+          "default": 50,
+          "title": "Wolfswagen Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.WolfswagenMaxAmount.",
+          "x-lsgm-native-key": "scum.WolfswagenMaxAmount"
+        },
+        "wolfswagen_max_functional_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Wolfswagen Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.WolfswagenMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.WolfswagenMaxFunctionalAmount"
+        },
+        "wolfswagen_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Wolfswagen minimum available to buy",
+          "description": "Minimum number of Wolfswagen vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.WolfswagenMinPurchasedAmount"
+        },
+        "bicycle_max_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Bicycle Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.BicycleMaxAmount.",
+          "x-lsgm-native-key": "scum.BicycleMaxAmount"
+        },
+        "bicycle_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Bicycle minimum available to buy",
+          "description": "Minimum number of Bicycle vehicles available to buy.",
+          "x-lsgm-native-key": "scum.BicycleMinPurchasedAmount"
+        },
+        "rager_max_amount": {
+          "type": "integer",
+          "default": 50,
+          "title": "Rager Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.RagerMaxAmount.",
+          "x-lsgm-native-key": "scum.RagerMaxAmount"
+        },
+        "rager_max_functional_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Rager Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.RagerMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.RagerMaxFunctionalAmount"
+        },
+        "rager_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Rager minimum available to buy",
+          "description": "Minimum number of Rager vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.RagerMinPurchasedAmount"
+        },
+        "cruiser_max_amount": {
+          "type": "integer",
+          "default": 30,
+          "title": "Cruiser Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.CruiserMaxAmount.",
+          "x-lsgm-native-key": "scum.CruiserMaxAmount"
+        },
+        "cruiser_max_functional_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Cruiser Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.CruiserMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.CruiserMaxFunctionalAmount"
+        },
+        "cruiser_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Cruiser minimum available to buy",
+          "description": "Minimum number of Cruiser vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.CruiserMinPurchasedAmount"
+        },
+        "ris_max_amount": {
+          "type": "integer",
+          "default": 50,
+          "title": "Ris Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.RisMaxAmount.",
+          "x-lsgm-native-key": "scum.RisMaxAmount"
+        },
+        "ris_max_functional_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "Ris Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.RisMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.RisMaxFunctionalAmount"
+        },
+        "ris_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Ris minimum available to buy",
+          "description": "Minimum number of Ris vehicles available to buy.",
+          "x-lsgm-native-key": "scum.RisMinPurchasedAmount"
+        },
+        "dinghy_max_amount": {
+          "type": "integer",
+          "default": 14,
+          "title": "Dinghy Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.DinghyMaxAmount.",
+          "x-lsgm-native-key": "scum.DinghyMaxAmount"
+        },
+        "dinghy_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Dinghy minimum available to buy",
+          "description": "Minimum number of Dinghy vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.DinghyMinPurchasedAmount"
+        },
+        "sup_max_amount": {
+          "type": "integer",
+          "default": 20,
+          "title": "SUP Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.SUPMaxAmount.",
+          "x-lsgm-native-key": "scum.SUPMaxAmount"
+        },
+        "sup_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "SUP minimum available to buy",
+          "description": "Minimum number of SUP vehicles available to buy.",
+          "x-lsgm-native-key": "scum.SUPMinPurchasedAmount"
+        },
+        "kinglet_mariner_max_amount": {
+          "type": "integer",
+          "default": 1,
+          "title": "Kinglet Mariner Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.KingletMarinerMaxAmount.",
+          "x-lsgm-native-key": "scum.KingletMarinerMaxAmount"
+        },
+        "kinglet_mariner_min_purchased_amount": {
+          "type": "integer",
+          "default": 0,
+          "title": "Kinglet Mariner minimum available to buy",
+          "description": "Minimum number of Kinglet Mariner vehicles available to buy.",
+          "x-lsgm-native-key": "scum.KingletMarinerMinPurchasedAmount"
+        },
+        "tractor_max_amount": {
+          "type": "integer",
+          "default": 50,
+          "title": "Tractor Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.TractorMaxAmount.",
+          "x-lsgm-native-key": "scum.TractorMaxAmount"
+        },
+        "tractor_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Tractor minimum available to buy",
+          "description": "Minimum number of Tractor vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.TractorMinPurchasedAmount"
+        },
+        "sidecar_bike_max_amount": {
+          "type": "integer",
+          "default": 25,
+          "title": "Sidecar Bike Max Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.SidecarBikeMaxAmount.",
+          "x-lsgm-native-key": "scum.SidecarBikeMaxAmount"
+        },
+        "sidecar_bike_max_functional_amount": {
+          "type": "integer",
+          "default": 15,
+          "title": "Sidecar Bike Max Functional Amount",
+          "description": "Exact server-generated SCUM v7 parameter scum.SidecarBikeMaxFunctionalAmount.",
+          "x-lsgm-native-key": "scum.SidecarBikeMaxFunctionalAmount"
+        },
+        "sidecar_bike_min_purchased_amount": {
+          "type": "integer",
+          "default": 5,
+          "title": "Sidecar Bike minimum available to buy",
+          "description": "Minimum number of Sidecar Bike vehicles or their engines available to buy.",
+          "x-lsgm-native-key": "scum.SidecarBikeMinPurchasedAmount"
+        },
+        "maximum_time_of_vehicle_inactivity": {
+          "type": "string",
+          "default": "240:00:00",
+          "title": "Maximum Time Of Vehicle Inactivity",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumTimeOfVehicleInactivity.",
+          "x-lsgm-native-key": "scum.MaximumTimeOfVehicleInactivity",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "maximum_time_for_vehicles_in_forbidden_zones": {
+          "type": "string",
+          "default": "02:00:00",
+          "title": "Maximum Time For Vehicles In Forbidden Zones",
+          "description": "Exact server-generated SCUM v7 parameter scum.MaximumTimeForVehiclesInForbiddenZones.",
+          "x-lsgm-native-key": "scum.MaximumTimeForVehiclesInForbiddenZones",
+          "pattern": "^[^\\r\\n]*$"
+        },
+        "log_vehicle_destroyed": {
+          "type": "boolean",
+          "default": true,
+          "title": "Log Vehicle Destroyed",
+          "description": "Exact server-generated SCUM v7 parameter scum.LogVehicleDestroyed.",
+          "x-lsgm-native-key": "scum.LogVehicleDestroyed"
+        }
+      }
+    },
+    "server_damage": {
+      "type": "object",
+      "default": {},
+      "title": "Damage",
+      "description": "All editable [Damage] ServerSettings.ini values from the exact generated v7 inventory.",
+      "x-lsgm-section": "damage",
+      "x-lsgm-order": 50,
+      "x-lsgm-source": "generated_current_server_settings",
+      "x-lsgm-source-key": "scum.HumanToHumanDamageMultiplier",
+      "x-lsgm-source-surface": "config_file",
+      "properties": {
+        "human_to_human_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Human To Human Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HumanToHumanDamageMultiplier.",
+          "x-lsgm-native-key": "scum.HumanToHumanDamageMultiplier"
+        },
+        "human_to_human_armed_melee_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Human To Human Armed Melee Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HumanToHumanArmedMeleeDamageMultiplier.",
+          "x-lsgm-native-key": "scum.HumanToHumanArmedMeleeDamageMultiplier"
+        },
+        "human_to_human_unarmed_melee_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Human To Human Unarmed Melee Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HumanToHumanUnarmedMeleeDamageMultiplier.",
+          "x-lsgm-native-key": "scum.HumanToHumanUnarmedMeleeDamageMultiplier"
+        },
+        "human_to_human_throwing_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Human To Human Throwing Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.HumanToHumanThrowingDamageMultiplier.",
+          "x-lsgm-native-key": "scum.HumanToHumanThrowingDamageMultiplier"
+        },
+        "sentry_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sentry Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SentryDamageMultiplier.",
+          "x-lsgm-native-key": "scum.SentryDamageMultiplier"
+        },
+        "sentry_railgun_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sentry Railgun Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SentryRailgunDamageMultiplier.",
+          "x-lsgm-native-key": "scum.SentryRailgunDamageMultiplier"
+        },
+        "sentry_grenade_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sentry Grenade Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SentryGrenadeDamageMultiplier.",
+          "x-lsgm-native-key": "scum.SentryGrenadeDamageMultiplier"
+        },
+        "base_building_attacker_sentry_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Building Attacker Sentry Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingAttackerSentryDamageMultiplier.",
+          "x-lsgm-native-key": "scum.BaseBuildingAttackerSentryDamageMultiplier"
+        },
+        "base_building_attacker_sentry_railgun_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Building Attacker Sentry Railgun Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingAttackerSentryRailgunDamageMultiplier.",
+          "x-lsgm-native-key": "scum.BaseBuildingAttackerSentryRailgunDamageMultiplier"
+        },
+        "base_building_attacker_sentry_grenade_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Base Building Attacker Sentry Grenade Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.BaseBuildingAttackerSentryGrenadeDamageMultiplier.",
+          "x-lsgm-native-key": "scum.BaseBuildingAttackerSentryGrenadeDamageMultiplier"
+        },
+        "sentry_base_building_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Sentry Base Building Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.SentryBaseBuildingDamageMultiplier.",
+          "x-lsgm-native-key": "scum.SentryBaseBuildingDamageMultiplier"
+        },
+        "dropship_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Dropship Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipDamageMultiplier.",
+          "x-lsgm-native-key": "scum.DropshipDamageMultiplier"
+        },
+        "dropship_railgun_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Dropship Railgun Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipRailgunDamageMultiplier.",
+          "x-lsgm-native-key": "scum.DropshipRailgunDamageMultiplier"
+        },
+        "dropship_base_building_elements_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Dropship Base Building Elements Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.DropshipBaseBuildingElementsDamageMultiplier.",
+          "x-lsgm-native-key": "scum.DropshipBaseBuildingElementsDamageMultiplier"
+        },
+        "zombie_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Zombie Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ZombieDamageMultiplier.",
+          "x-lsgm-native-key": "scum.ZombieDamageMultiplier"
+        },
+        "item_decay_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Item Decay Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.ItemDecayDamageMultiplier.",
+          "x-lsgm-native-key": "scum.ItemDecayDamageMultiplier"
+        },
+        "food_decay_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Food Decay Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.FoodDecayDamageMultiplier.",
+          "x-lsgm-native-key": "scum.FoodDecayDamageMultiplier"
+        },
+        "weapon_decay_damage_on_firing": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Weapon Decay Damage On Firing",
+          "description": "Exact server-generated SCUM v7 parameter scum.WeaponDecayDamageOnFiring.",
+          "x-lsgm-native-key": "scum.WeaponDecayDamageOnFiring"
+        },
+        "lock_protection_damage_multiplier": {
+          "type": "number",
+          "default": 1.0,
+          "title": "Lock Protection Damage Multiplier",
+          "description": "Exact server-generated SCUM v7 parameter scum.LockProtectionDamageMultiplier.",
+          "x-lsgm-native-key": "scum.LockProtectionDamageMultiplier"
+        }
+      }
+    },
+    "economy_override": {
+      "type": "object",
+      "default": {},
+      "title": "Economy Override",
+      "description": "Structured economy globals and trader item rows written to EconomyOverride.json.",
+      "x-lsgm-section": "economy",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "generated_economy_override",
+      "x-lsgm-source-key": "economy-override",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "raid_times": {
+      "type": "array",
+      "default": [],
+      "title": "Global Raid Times",
+      "description": "Structured global raid windows written to RaidTimes.json.",
+      "x-lsgm-section": "raid",
+      "x-lsgm-order": 70,
+      "x-lsgm-source": "generated_raid_times",
+      "x-lsgm-source-key": "raiding-times",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "notifications": {
+      "type": "array",
+      "default": [],
+      "title": "Scheduled Notifications",
+      "description": "Structured scheduled messages written to Notifications.json.",
+      "x-lsgm-section": "notifications",
+      "x-lsgm-order": 80,
+      "x-lsgm-source": "generated_notifications",
+      "x-lsgm-source-key": "Notifications",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_steam_ids": {
+      "type": "string",
+      "default": "",
+      "format": "textarea",
+      "title": "Admin Steam IDs",
+      "description": "Written directly to ServerSettingsAdminUsers.ini, one Steam64 ID per line.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 90,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "steam64",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "admin_users_file",
+      "x-lsgm-source-key": "ServerSettingsAdminUsers.ini",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "default": "",
+      "format": "textarea",
+      "title": "Extra Launch Arguments",
+      "description": "Optional advanced arguments, one complete process argument per line.",
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  }
+}

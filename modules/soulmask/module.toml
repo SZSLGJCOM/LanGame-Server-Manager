@@ -1,0 +1,208 @@
+id = "soulmask"
+name = "Soulmask Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Soulmask Windows server via SteamCMD."
+steam_app_id = 3017310
+supported_platforms = ["windows"]
+
+[workshop]
+provider = "steam"
+consumer_app_id = 2646460
+
+[install]
+shared_game_dir = "soulmask"
+verification_path = "WS/Binaries/Win64/WSServer-Win64-Shipping.exe"
+
+[process]
+executable = "WS/Binaries/Win64/WSServer-Win64-Shipping.exe"
+args_template = [
+  "Level01_Main",
+  "-server",
+  "-log",
+  "-UTF8Output",
+  "-forcepassthrough",
+  "-MULTIHOME={{instance.bind_ip}}",
+  "-Port={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
+  "-EchoPort={{ports.echo.port}}",
+  "-rconpsw={{settings.rcon_password}}",
+  "-rconaddr={{instance.bind_ip}}",
+  "-rconport={{ports.rcon.port}}",
+  "-SteamServerName={{settings.server_name}}",
+  "-MaxPlayers={{settings.max_players}}",
+  "-PSW={{settings.server_password}}",
+  "-adminpsw={{settings.admin_password}}",
+  "{{settings.pvp_mode_arg}}",
+  "-saving={{settings.save_interval_seconds}}",
+  "-backup={{settings.backup_interval_seconds}}",
+  "-online=Steam",
+  "{{soulmask.workshop_mods_arg}}",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}/WS/Binaries/Win64"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Soulmask's Windows server is launched with Unreal-style arguments, then reads gameplay coefficients from WS/Saved/GameplaySettings/GameXishu.json. LanGame renders the installed GameXishu template into that live saved path before launch and keeps identity, RCON, ports, save cadence, and passwords in launch settings."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 8777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "echo"
+protocol = "tcp"
+port = 18888
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 19000
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game", "rcon"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[runtime.player_list]
+scope = "online"
+source = "tcp_console"
+response_codec = "soulmask_players"
+identity_kind = "steam_id"
+refresh_interval_ms = 30000
+player_action_ids = []
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "broadcast {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Online players"
+label_zh_cn = "在线玩家"
+transport = "source_rcon"
+command_template = "List_OnlinePlayers"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "list_all_players"
+label = "All players"
+label_zh_cn = "全部玩家"
+transport = "source_rcon"
+command_template = "List_AllPlayers"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "list_permissions"
+label = "Permission lists"
+label_zh_cn = "权限列表"
+transport = "source_rcon"
+command_template = "List_ServerPermissionList"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "kick {{target}}"
+target_label = "Player name"
+target_label_zh_cn = "玩家名"
+target_placeholder = "Single-token player name from List_OnlinePlayers"
+target_placeholder_zh_cn = "List_OnlinePlayers 输出中不含空格的玩家名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "source_rcon"
+command_template = "ban {{target}}"
+target_label = "Player name or ID"
+target_label_zh_cn = "玩家名或 ID"
+target_placeholder = "Single-token player name or Steam64 ID"
+target_placeholder_zh_cn = "不含空格的玩家名或 Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "source_rcon"
+command_template = "unban {{target}}"
+target_label = "Player ID"
+target_label_zh_cn = "玩家 ID"
+target_placeholder = "Steam64 ID or permission-list ID"
+target_placeholder_zh_cn = "Steam64 ID 或权限列表 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon"
+reason = "Soulmask documents RCON launch parameters and remote commands for online/all player lists, permission-list inspection, kick, ban, and unban. LanGame passes the RCON password/address/port at launch and dispatches those commands through the instance rcon TCP port."
+verification = "Run WSServer-Win64-Shipping.exe on Windows, confirm -rconpsw/-rconaddr/-rconport bind the configured RCON endpoint, then verify List_OnlinePlayers output plus kick/ban/unban side effects. Recheck whether ban/unban map to direct ban commands or ServerPermissionList commands before claiming persistent roster import."
+
+[storage]
+runtime_copy_exclusions = ["WS/Saved"]
+saves_path_template = "{{paths.install_root}}/WS/Saved"
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/app/2646460/workshop/"
+install_note = "Soulmask dedicated servers download Workshop mods at startup from the -mod argument. Players must use matching Workshop mods on the client when the server requires them."
+
+[mods.enablement]
+setting_key = "mod_workshop_ids"
+setting_label = "Workshop Mod IDs"
+id_strategy = "steam_workshop_id"
+reference_strategy = "steam_workshop_id"
+reference_game_id = 2646460
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["echo", "rcon"]

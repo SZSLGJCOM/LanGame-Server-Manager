@@ -1,0 +1,26 @@
+.servers-page--no-metrics { grid-template-rows: minmax(0, 1fr); }
+.server-list-search-row { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.server-list-search-row .server-list-search-field { flex: 1; }
+.server-list-mode-toggle { display: flex; flex-shrink: 0; padding: 2px; border: 1px solid var(--shell-line); border-radius: 7px; }
+.server-list-mode-toggle button { min-height: 28px; padding: 3px 6px; border: 0; border-radius: 4px; background: transparent; color: var(--shell-muted); font: inherit; font-size: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+.server-list-mode-toggle button[aria-pressed="true"] { background: var(--theme-card-muted); color: var(--shell-text); }
+.server-list-mode-toggle button:disabled { cursor: not-allowed; opacity: .5; }
+.server-list-mode-toggle button:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 2px; }
+.server-archives-refresh { display: grid; place-items: center; width: 28px; height: 28px; padding: 4px; }
+.server-archives-refresh svg { width: 15px; height: 15px; }
+.server-list-notice { margin: 8px 0; color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
+.server-list-panel > .table-list:has(> .server-list-notice:only-child) { align-content: center; text-align: center; }
+.server-list-card-retry { grid-column: 2; grid-row: 2; pointer-events: auto; }
+.server-list-card-retry.is-confirming { grid-area: auto; height: var(--server-list-card-cover-height); }
+.server-list-card-actions:has(.is-confirming) > .server-list-card-open-folder { visibility: hidden; }
+.server-archive-errors { color: var(--theme-danger-text); }
+.server-archive-warning { color: var(--theme-warning-text); }
+.server-archive-details { min-width: 0; padding: 10px; border-bottom: 1px solid var(--shell-line); }
+.server-archive-details header { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.server-archive-details h2 { margin: 0 0 4px; font-size: var(--text-body); overflow-wrap: anywhere; }
+.server-archive-details header span { color: var(--shell-muted); font-size: var(--text-secondary); }
+.server-archive-details p, .server-archive-details li, .server-archive-details dd { font-size: var(--text-secondary); line-height: var(--leading-body); overflow-wrap: anywhere; }
+.server-archive-details p { margin: 4px 0; }
+.server-archive-details dl { display: grid; gap: 10px; margin: 10px 0; }
+.server-archive-details dt { margin-bottom: 4px; color: var(--shell-muted); font-size: var(--text-secondary); }
+.server-archive-details dd { margin: 0; }

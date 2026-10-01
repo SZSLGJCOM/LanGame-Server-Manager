@@ -1,0 +1,73 @@
+id = "scum"
+name = "SCUM Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for SCUM via SteamCMD."
+steam_app_id = 3792580
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "scum"
+verification_path = "SCUM/Binaries/Win64/SCUMServer.exe"
+
+[process]
+executable = "SCUM/Binaries/Win64/SCUMServer.exe"
+args_template = [
+  "-MULTIHOME={{instance.bind_ip}}",
+  "-Port={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
+  "-log",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}/SCUM/Binaries/Win64"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "SCUM reads ServerSettings.ini, EconomyOverride.json, RaidTimes.json, Notifications.json, and identity rosters from SCUM/Saved/Config/WindowsServer. LanGame renders the exact generated v7 ServerSettings inventory and structured JSON surfaces, then prevalidates and atomically materializes them before launch. The Windows server executable requires elevation in a non-admin desktop session, so this module is not suitable for no-UAC hosting."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime]
+requires_admin = true
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "ServerSettingsAdminUsers.ini"
+reason = "SCUM admin Steam IDs are rendered into the native AdminUsers INI. The independent LgsmPlayerQuery extension reads current connected player names and session IDs; live kick, ban, and unban remain without a verified command adapter."
+verification = "Create an instance, confirm ServerSettingsAdminUsers.ini contains the expected Steam IDs, start the server, and verify admin privileges in-game. Runtime actions are unavailable because no verified live admin or RCON surface is declared."
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[storage]
+runtime_copy_exclusions = ["SCUM/Saved", "langame_player_query"]
+saves_path_template = "{{paths.install_root}}/SCUM/Saved"
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[runtime.player_list]
+source = "file_ipc"
+response_codec = "scum_players"
+identity_kind = "session_id"
+refresh_interval_ms = 30000

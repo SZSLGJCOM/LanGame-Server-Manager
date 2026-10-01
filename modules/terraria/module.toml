@@ -1,0 +1,152 @@
+id = "terraria"
+name = "Terraria Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Terraria using the official dedicated server package on Windows instead of SteamCMD."
+supported_platforms = ["windows"]
+
+[workshop]
+provider = "steam"
+consumer_app_id = 1281930
+supports_collections = true
+
+[install]
+shared_game_dir = "terraria"
+download_url_windows = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1458.zip"
+verification_path = "1458/Windows/TerrariaServer.exe"
+
+[install.download_integrity_windows]
+sha256 = "f513a4ac9789d34af766291ae217c9cd7d9472e13782a0e2b17512f70d7a8334"
+size = 46415317
+
+[process]
+executable = "{{terraria.server_executable}}"
+args_template = [
+  "{{terraria.launch_args}}",
+]
+working_directory_template = "{{terraria.working_directory}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Terraria and tModLoader servers are console-driven; LanGame captures that console interaction without leaving a separate terminal window on the Windows desktop."
+
+[[default_ports]]
+name = "game"
+protocol = "tcp"
+port = 7777
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 60000
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "console_log"
+action_id = "list_players"
+player_action_ids = []
+response_codec = "terraria_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "save"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "stdin"
+command_template = "say {{target}}"
+target_label = "Message"
+target_label_zh_cn = "消息"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播消息"
+target_required = true
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Playing"
+label_zh_cn = "在线角色"
+transport = "stdin"
+command_template = "playing"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "stdin"
+command_template = "kick {{target}}"
+target_label = "Player name"
+target_label_zh_cn = "玩家名"
+target_placeholder = "Single-token Terraria character name from playing"
+target_placeholder_zh_cn = "playing 输出中不含空格的 Terraria 角色名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban online character"
+label_zh_cn = "立即封禁在线角色"
+transport = "stdin"
+command_template = "ban {{target}}"
+target_label = "Player name"
+target_label_zh_cn = "玩家名"
+target_placeholder = "Single-token Terraria character name from playing"
+target_placeholder_zh_cn = "playing 输出中不含空格的 Terraria 角色名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[runtime.shutdown]
+grace_period_ms = 8000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "save"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "exit"
+wait_after_ms = 5000
+
+[storage]
+saves_path_template = "{{paths.instance_root}}/saves"
+
+[mods.source]
+provider = "steam"
+label = "tModLoader Steam Workshop"
+url = "https://steamcommunity.com/app/1281930/workshop/"
+install_note = "Choose tModLoader in Host settings before using Workshop mods. LanGame downloads tModLoader Workshop items into this instance's tmodloader/steamapps cache and writes Mods/install.txt from the selected IDs. Vanilla TerrariaServer.exe does not load tModLoader mods."
+
+[mods.manual_staging]
+target_template = "{{paths.instance_root}}/tmodloader/steamapps/workshop/content/1281930"
+target_label = "tModLoader/steamapps/workshop/content/1281930"
+accepts = ["folder", "zip"]
+
+[mods.enablement]
+setting_key = "tmodloader_workshop_item_ids"
+setting_label = "tModLoader Workshop Items"
+id_strategy = "folder_name"
+reference_strategy = "steam_workshop_id"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "managed_terminal_console_and_banlist"
+reason = "Terraria materializes banlist.txt and exposes playing, kick, and ban commands through the managed dedicated server console."
+verification = "Start TerrariaServer.exe on Windows, run playing through stdin, then verify kick and ban side effects against a test player name and confirm banlist.txt is updated."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]

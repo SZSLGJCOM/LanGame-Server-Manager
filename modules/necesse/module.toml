@@ -1,0 +1,214 @@
+id = "necesse"
+name = "Necesse Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Necesse via SteamCMD."
+steam_app_id = 1169370
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "necesse"
+
+[process]
+executable = "jre/bin/java.exe"
+args_template = [
+  "-Dfile.encoding=UTF-8",
+  "-XX:+UnlockExperimentalVMOptions",
+  "-XX:+UseG1GC",
+  "-XX:+ExplicitGCInvokesConcurrent",
+  "-XX:G1NewSizePercent=20",
+  "-XX:G1ReservePercent=20",
+  "-XX:MaxGCPauseMillis=50",
+  "-XX:G1HeapRegionSize=32M",
+  "-jar",
+  "Server.jar",
+  "-nogui",
+  "-settings",
+  "{{paths.data_dir}}/cfg/server.cfg",
+  "-world",
+  "{{settings.world_name}}",
+  "-port",
+  "{{ports.game.port}}",
+  "-slots",
+  "{{settings.max_slots}}",
+  "{{necesse.owner_args}}",
+  "-motd",
+  "{{settings.motd}}",
+  "-password",
+  "{{settings.password}}",
+  "-pausewhenempty",
+  "{{necesse.pause_when_empty_value}}",
+  "-strictserverauthority",
+  "{{necesse.strict_server_authority_value}}",
+  "-logging",
+  "{{necesse.logging_enabled_value}}",
+  "-logs",
+  "..\\logs",
+  "-zipsaves",
+  "{{necesse.zip_saves_value}}",
+  "-language",
+  "{{settings.language}}",
+  "-ip",
+  "{{instance.bind_ip}}",
+  "-datadir",
+  "{{paths.data_dir}}",
+  "{{necesse.ignore_seasons_flag}}",
+  "{{necesse.custom_launch_flags}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Necesse should stay background-hosted through its bundled Java dedicated server entrypoint. LanGame should direct-launch jre/bin/java.exe with Server.jar and -nogui, provision the instance-owned data, saves, and log roots first, and keep host-facing console control inside the desktop app instead of leaving the upstream GUI launcher on the desktop."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 14159
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 60000
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "console_log"
+action_id = "list_online_players"
+player_action_ids = []
+response_codec = "necesse_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 10000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "save"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+fallback_transport = "console_ctrl_c"
+command = "stop"
+wait_after_ms = 6000
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+command_template = "say {{target}}"
+process_key = "main"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+
+[[runtime.player_actions]]
+id = "list_online_players"
+label = "Players"
+label_zh_cn = "在线玩家"
+command_template = "players"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_known_players"
+label = "Known players"
+label_zh_cn = "已知玩家"
+command_template = "playernames"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_permissions"
+label = "Permissions"
+label_zh_cn = "权限列表"
+command_template = "permissions list"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "Bans"
+label_zh_cn = "封禁列表"
+command_template = "bans"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "check_permission"
+label = "Check"
+label_zh_cn = "查权限"
+command_template = "permissions get {{target}}"
+process_key = "main"
+target_label = "Online player or auth"
+target_label_zh_cn = "在线玩家名或 auth"
+target_placeholder = "Online player's single-token name or auth ID"
+target_placeholder_zh_cn = "在线玩家的单段名称或 auth ID"
+target_required = true
+
+[[runtime.player_actions]]
+id = "set_permission"
+label = "Set"
+label_zh_cn = "设权限"
+command_template = "permissions set {{target}} {{role}}"
+process_key = "main"
+target_label = "Online player or auth"
+target_label_zh_cn = "在线玩家名或 auth"
+target_placeholder = "Online player's single-token name or auth ID"
+target_placeholder_zh_cn = "在线玩家的单段名称或 auth ID"
+target_required = true
+role_values = ["USER", "MODERATOR", "ADMIN", "OWNER"]
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+command_template = "ban {{target}}"
+process_key = "main"
+target_label = "Player or auth"
+target_label_zh_cn = "玩家名或 auth"
+target_placeholder = "Single-token player name or auth ID"
+target_placeholder_zh_cn = "单 token 玩家名或 auth ID"
+target_required = true
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+command_template = "unban {{target}}"
+process_key = "main"
+target_label = "Player or auth"
+target_label_zh_cn = "玩家名或 auth"
+target_placeholder = "Single-token player name or auth ID"
+target_placeholder_zh_cn = "单 token 玩家名或 auth ID"
+target_required = true
+destructive = true
+
+[storage]
+runtime_copy_exclusions = ["mods"]
+saves_path_template = "{{paths.data_dir}}/saves"
+
+[mods.source]
+provider = "manual"
+label = "Necesse local mods"
+url = "https://necessewiki.com/Modding"
+install_note = "Necesse dedicated servers load local .jar mods from a mods folder in the server install directory. Download the server-compatible mod jar from the Workshop page or author link, then stage it here."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/mods"
+target_label = "mods"
+accepts = ["jar", "zip", "folder"]
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "managed_terminal_console_and_launch_owner"
+reason = "Necesse materializes the owner_name schema field into the native launch plan as -owner only when an owner is configured, and exposes players, permissions, ban, and unban commands through the managed dedicated server console."
+verification = "Start the Necesse dedicated server on Windows, confirm the launch plan includes -owner with the configured owner name and omits -owner when owner_name is blank, run players and permissions through stdin, then verify owner, ban/unban, and permission side effects against a test player or auth ID."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]

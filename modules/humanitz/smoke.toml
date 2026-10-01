@@ -1,0 +1,30 @@
+schema_version = 1
+module_id = "humanitz"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# RCON-enabled native mode is verified independently of the unresolved A2S reply.
+# Both current-run session creation and a complete read-only world reply are required.
+[fixture.settings]
+rcon_enabled = true
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "eos-session-created"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["LogHZSuccess: Display: Success => Session created!"]
+
+[[probes]]
+id = "rcon-world-info"
+kind = "humanitz_info"
+port_name = "rcon"
