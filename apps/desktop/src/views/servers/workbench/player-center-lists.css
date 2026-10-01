@@ -1,0 +1,94 @@
+.player-center-list-tabs {
+  min-width: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.player-center-list-tab {
+  min-width: 0;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.player-center-list-tab[aria-selected="true"] {
+  border-color: color-mix(in srgb, var(--shell-accent, #38bdf8) 34%, var(--shell-line));
+  background: color-mix(in srgb, var(--shell-accent, #38bdf8) 9%, var(--theme-card-elevated));
+  color: var(--shell-text);
+}
+
+.player-center-list-tab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--shell-accent, #38bdf8) 7%, var(--theme-card-elevated));
+  color: var(--shell-text);
+}
+
+.player-center-list-tab:focus-visible {
+  outline: 2px solid var(--shell-accent, #38bdf8);
+  outline-offset: 1px;
+}
+
+.player-center-list-tab:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.player-center-list-count {
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.player-center-list-content {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.player-center-list-content > .player-access-roster-list {
+  display: block;
+  flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.player-access-roster-create {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  font-size: var(--text-body);
+}
+
+.player-access-roster-create svg {
+  width: 14px;
+  height: 14px;
+}
+
+.player-access-roster-entry.is-selected {
+  background: color-mix(in srgb, var(--shell-accent, #38bdf8) 9%, var(--theme-card-elevated));
+  box-shadow: inset 3px 0 0 var(--shell-accent, #38bdf8);
+}
+
+.player-access-roster-select {
+  min-height: 32px;
+}
+
+.player-access-roster-select:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}

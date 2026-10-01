@@ -1,0 +1,105 @@
+{
+  "fixture_version": 1,
+  "module_id": "rust",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Installed build 25129933 read-only IL; deterministic native defaults and navmesh flag absence",
+    "source_ids": [
+      "facepunch_september_2026",
+      "native_september_configuration_build_25129933"
+    ]
+  },
+  "coverage": {
+    "editable": 12,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 3
+  },
+  "classifications": {
+    "editable": [
+      "native_september_configuration_build_25129933.decay.upkeep_group_scaling",
+      "native_september_configuration_build_25129933.decay.upkeep_group_window_hours",
+      "native_september_configuration_build_25129933.decay.upkeep_group_tier_0_playercount",
+      "native_september_configuration_build_25129933.decay.upkeep_group_tier_0_increase",
+      "native_september_configuration_build_25129933.decay.upkeep_group_tier_1_playercount",
+      "native_september_configuration_build_25129933.decay.upkeep_group_tier_1_increase",
+      "native_september_configuration_build_25129933.decay.upkeep_group_tier_2_increase",
+      "native_september_configuration_build_25129933.decay.upkeep_group_max_multiplier",
+      "native_september_configuration_build_25129933.decay.upkeep_group_count_locks",
+      "native_september_configuration_build_25129933.decay.upkeep_group_history_max",
+      "native_september_configuration_build_25129933.decay.upkeep_lock_min_users",
+      "facepunch_september_2026.-useNewNavmesh"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "native_september_configuration_build_25129933.decay.addfakeauthhistory",
+      "native_september_configuration_build_25129933.decay.clearauthhistory",
+      "native_september_configuration_build_25129933.-checkTileValid"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Rust 验收",
+    "server_description": "原生配置覆盖验收",
+    "max_players": 250,
+    "rcon_password": "acceptance-rust-rcon",
+    "rcon_web": true,
+    "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}",
+    "owner_entries": "76561198077777777|Host|Created by LanGame",
+    "moderator_entries": "76561198011111111|Moderator|Weekend",
+    "skip_queue_entries": "76561198000000000|Priority Friend",
+    "banned_entries": "76561198022222222|Griefing|Repeated",
+    "custom_launch_flags": ""
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/server.cfg",
+        "format": "text",
+        "fragments": [
+          "deepsea.terrain_everywhere false",
+          "decay.upkeep_group_scaling true",
+          "decay.upkeep_group_window_hours 24",
+          "decay.upkeep_group_tier_0_playercount 4",
+          "decay.upkeep_group_tier_0_increase 0",
+          "decay.upkeep_group_tier_1_playercount 6",
+          "decay.upkeep_group_tier_1_increase 0.02",
+          "decay.upkeep_group_tier_2_increase 0.04",
+          "decay.upkeep_group_max_multiplier 3",
+          "decay.upkeep_group_count_locks true",
+          "decay.upkeep_group_history_max 256",
+          "decay.upkeep_lock_min_users 2"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RustDedicated.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-logfile",
+        "-",
+        "+server.ip",
+        "0.0.0.0",
+        "+server.identity",
+        "acceptance-rust",
+        "+world.configfile",
+        "world-config.json",
+        "+server.port",
+        "28015",
+        "+server.queryport",
+        "28017",
+        "+rcon.port",
+        "28016",
+        "+rcon.password",
+        "acceptance-rust-rcon",
+        "+rcon.web",
+        "true"
+      ]
+    }
+  }
+}

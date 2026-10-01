@@ -1,0 +1,34 @@
+/* Header overlays should render above the main content stack. */
+.shell-header {
+  position: relative;
+  z-index: 5;
+  isolation: isolate;
+}
+
+.shell-header-tools {
+  position: relative;
+  z-index: 1;
+}
+
+.assistant-shell {
+  z-index: 2;
+}
+
+.assistant-panel {
+  z-index: 80;
+}
+
+select option,
+select optgroup {
+  background-color: var(--theme-control-surface);
+  color: var(--shell-text);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: var(--text-body);
+}
+
+select option:checked {
+  background-color: var(--theme-card-active-bg);
+  color: var(--theme-card-active-text);
+  font-weight: var(--font-weight-medium);
+}

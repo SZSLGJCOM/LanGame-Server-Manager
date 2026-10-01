@@ -1,0 +1,91 @@
+id = "barotrauma"
+name = "Barotrauma Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Barotrauma via SteamCMD."
+steam_app_id = 1026340
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "barotrauma"
+verification_path = "DedicatedServer.exe"
+
+[process]
+executable = "{{paths.config_dir}}/DedicatedServer.exe"
+args_template = [
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.config_dir}}"
+window_policy = "background"
+host_surface = "managed_pseudo_console"
+host_notes = "Barotrauma resets its working directory to the executable directory. LanGame materializes an instance-owned runtime and uses a Windows pseudo console because the server rejects redirected stdin/stdout. Terminal output is converted into a bounded plain-text transcript."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27016
+
+[workshop]
+provider = "steam"
+consumer_app_id = 602960
+supports_collections = false
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/app/602960/workshop/"
+
+[mods.manual_staging]
+target_template = "{{paths.config_dir}}/LocalMods"
+target_label = "LocalMods"
+accepts = ["folder", "xml", "zip"]
+
+[mods.enablement]
+setting_key = "mod_workshop_ids"
+setting_label = "Workshop mod IDs"
+id_strategy = "numeric_prefix"
+
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "list_clients"
+label = "Clients"
+label_zh_cn = "客户端列表"
+transport = "stdin"
+command_template = "clientlist LGM_PLAYER_QUERY_{{request_id}}"
+process_key = "main"
+
+[runtime.player_list]
+scope = "online"
+source = "console_log"
+action_id = "list_clients"
+player_action_ids = []
+response_codec = "barotrauma_players"
+identity_kind = "session_id"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 10000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "exit"
+wait_after_ms = 6000
+
+[storage]
+saves_path_template = "{{paths.config_dir}}/Multiplayer"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "managed_pseudo_console_and_clientpermissions_xml"
+reason = "The managed pseudo console reads the current connected-client list through clientlist. Player rows are read-only; interactive moderation prompts are not exposed as single-command actions. Persistent admins remain available through Data/clientpermissions.xml."
+verification = "Barotrauma Dedicated Server 1.13.4.0 was run in an isolated instance through the production spawn_launch_plan ConPTY path. Two zero-player clientlist requests with distinct nonce arguments returned their exact command echo and both delimiter lines; exit completed with code 0. The server rejected save as an unknown command. Non-empty row parsing follows official DebugConsole source and synthetic fixtures, not a real connected-client test."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]

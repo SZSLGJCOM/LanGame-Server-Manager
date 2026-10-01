@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "abioticfactor"
+scope = "Dedicated-server installation, launch parameters, sandbox configuration, ports and save migration."
+gaps = ["The five reviewed wiki pages are explicit raw-Markdown seeds. Their current links point to GitHub HTML; newly added wiki pages require a directory review before their raw URLs enter this scope."]
+
+[[sources]]
+id = "developer-wiki"
+title = "Abiotic Factor dedicated server wiki"
+authority = "Deep Field Games / DFJacob"
+kind = "official"
+seeds = ["https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Home.md","https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Guide-%E2%80%90-Quickstart.md","https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Guide-%E2%80%90-Migrating-Saves.md","https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Technical-%E2%80%90-Launch-Parameters.md","https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Technical-%E2%80%90-Sandbox-Options.md"]
+allowed_prefixes = ["https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/"]
+discover_links = true
+max_pages = 256
+authority_evidence = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

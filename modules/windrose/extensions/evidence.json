@@ -1,0 +1,71 @@
+{
+  "observed_at": "2026-09-08",
+  "scope": "isolated_empty_server_and_lua_mock_tests",
+  "steam_app_id": 4129620,
+  "steam_build_id": 24913903,
+  "deployment_id": "0.10.0.9.32-22d39a16",
+  "shipping_executable": "R5/Binaries/Win64/WindroseServer-Win64-Shipping.exe",
+  "shipping_sha256": "441acd04428aa5bd6535bc6565ed659a343001615d5322e8c65141b08b356854",
+  "loader": {
+    "repository": "https://github.com/UE4SS-RE/RE-UE4SS",
+    "version": "3.0.1-1125-g527a483b",
+    "asset": "UE4SS_v3.0.1-1125-g527a483b.zip",
+    "asset_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+    "asset_digest_verified": true,
+    "ue4ss_dll_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "license": "MIT",
+    "elevated": false,
+    "standalone_enabled_txt_verified": true,
+    "dispatcher": "EngineTick",
+    "uobject_reads_on_game_thread": true
+  },
+  "real_empty_roster": {
+    "source": "net_driver_client_connections",
+    "game_net_driver_count": 1,
+    "world_backreference_matches": true,
+    "server_connection_valid": false,
+    "game_state_begun_play": true,
+    "client_connections": 0,
+    "player_array": 0,
+    "original_profile_matched_requests": 19,
+    "minimal_profile_matched_requests": 13,
+    "initial_request_before_loader_ready": "no_current_response",
+    "after_restart": "new_boot_id_and_current_request_id",
+    "after_stop": "last_response_file_remains_without_updates"
+  },
+  "mock_tests": {
+    "runtime": "isolated_UE4SS_Lua_VM",
+    "file": "LgsmPlayerQuery/tests.lua",
+    "passed": 14,
+    "failed": 0,
+    "real_players": false
+  },
+  "native_host_probe": {
+    "test": "isolated_windrose_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process",
+    "launch": "production spawn_launch_plan, ManagedTerminal, Background, WindroseServer.exe bootstrap",
+    "managed_process_identity_verified": true,
+    "current_empty_snapshots": 2,
+    "nonce_matched": true,
+    "native_response_parser_passed": true,
+    "stopped_process_rejected": true,
+    "owned_process_tree_stopped": true,
+    "result": "passed"
+  },
+  "not_verified": [
+    "real_player_multiplayer_session",
+    "real_player_join",
+    "real_player_leave",
+    "real_player_reconnect",
+    "other_game_builds",
+    "other_loader_builds"
+  ],
+  "excluded": [
+    "WindrosePlus_status_json",
+    "WindrosePlus_install_script",
+    "WindrosePlus_dashboard",
+    "multiplier_or_rule_PAKs",
+    "asynchronous_UObject_reads",
+    "ProcessEvent_dispatch_for_empty_servers",
+    "GameSession_MaxPlayers_engine_default"
+  ]
+}

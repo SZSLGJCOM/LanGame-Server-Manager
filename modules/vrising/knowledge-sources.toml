@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "vrising"
+scope = "Current PC V Rising dedicated-server installation/update, settings, saves, networking and RCON; preserve version-specific scope."
+gaps = ["The selected instructions apply to PC 1.1.x. PS5 and older version directories are intentionally excluded from this PC module."]
+
+[[sources]]
+id = "stunlock-pc-server-docs"
+title = "V Rising current PC dedicated-server instructions"
+authority = "Stunlock Studios"
+kind = "official"
+seeds = ["https://raw.githubusercontent.com/StunlockStudios/vrising-dedicated-server-instructions/master/README.md","https://raw.githubusercontent.com/StunlockStudios/vrising-dedicated-server-instructions/master/1.1.x-pc/INSTRUCTIONS.md"]
+allowed_prefixes = ["https://raw.githubusercontent.com/StunlockStudios/vrising-dedicated-server-instructions/master/1.1.x-pc/"]
+discover_links = true
+max_pages = 256
+authority_evidence = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

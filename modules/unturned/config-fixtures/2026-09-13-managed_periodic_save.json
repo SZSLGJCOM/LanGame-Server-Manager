@@ -1,0 +1,20 @@
+{
+  "fixture_version": 1,
+  "module_id": "unturned",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-13",
+    "build": "LGSM managed periodic-save policy; official Unturned Save console contract",
+    "source_ids": ["official_save_and_shutdown_docs", "managed_periodic_save"]
+  },
+  "coverage": { "editable": 1, "specialized": 0, "derived": 0, "generated": 0, "excluded": 0 },
+  "classifications": {
+    "editable": ["managed_periodic_save.managed_save_interval_seconds"],
+    "specialized": [], "derived": [], "generated": [], "excluded": []
+  },
+  "settings": { "managed_save_interval_seconds": 1 },
+  "expected": {
+    "files": [{ "root": "config", "path": "Config.txt", "format": "text", "fragments": ["Version 1"] }],
+    "launch": { "executable_suffix": "Unturned.exe", "arguments": ["-batchmode", "-nographics", "-Port/27015", "+InternetServer/acceptance-unturned"] }
+  }
+}

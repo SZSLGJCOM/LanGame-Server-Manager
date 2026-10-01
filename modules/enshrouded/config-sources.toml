@@ -1,0 +1,605 @@
+status = "best_effort_verified"
+last_verified = "2026-09-08"
+notes = "Enshrouded Dedicated Server app 2278520 public build 23178631 and the installed enshrouded_server_readme.txt Version 0.9.0.0 were verified on 2026-07-13. The generated clean configuration still matches LanGame's 74 modeled root, gameSettings, preset userGroup, custom-userGroup, and bans fields, so no schema or launch change was required. On 2026-09-29 the same installed build's Version 0.9.0.0 README was rechecked: all 19 documented tags match the schema checklist and native-output allowlist. Player bans remain owned by Player Access, not Configuration. On 2026-09-30 static inspection of the same current executable established bans.accountId as uint64 and bans.banDate.value as sint64. AccountAction carries a HashKey64 into the native ban table; the player editor therefore accepts native decimal account hashes without converting platform IDs. This evidence does not establish a Steam64-to-hash algorithm or native ban/rejoin enforcement and does not renew historical native-launch evidence."
+
+[[sources]]
+id = "steamcmd_anonymous_probe_2278520"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_2278520.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD package verification reports Enshrouded Dedicated Server StateFlags 4, UpdateResult 0, buildid and TargetBuildID 23178631, SizeOnDisk 8808364250, with depot 2278521 installed."
+
+[[sources]]
+id = "installed_server_readme"
+kind = "documentation"
+path = "<validated-install-root>/enshrouded_server_readme.txt"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Installed build 23178631 README Version: 0.9.0.0 rechecked 2026-09-29; SHA256 3027462ef20c0839f13e3f8dd3b4981672bb6f6abc6ccd596c9e0d26c15d9495. Server tags allow describing availability, language and gameplay focus. Its 19 tag values exactly match the schema checklist and materializer allowlist: LookingForPlayers, English, German, French, Italian, Japanese, Korean, Polish, Portuguese, Russian, Spanish, Thai, Turkish, Ukrainian, Chinese, Taiwanese, BaseBuilding, Exploration, Roleplay. It also documents preset/custom userGroups and bans fields accountIDHash, displayName, characterName and Unix banDate. Bans are player-access data and must not gain a duplicate Configuration editor. Rechecked 2026-09-30: installed build 23178631 README SHA256 3027462ef20c0839f13e3f8dd3b4981672bb6f6abc6ccd596c9e0d26c15d9495 has 58 distinct documented JSON keys, all represented by typed, grouped or excluded contracts. The official gameplay reference still identifies version 0.9.0.0. No new native run is claimed."
+
+[[sources]]
+id = "installed_config_mutability_boundary"
+kind = "documentation"
+path = "<validated-install-root>/enshrouded_server.json"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "enshrouded_server.json lives beside enshrouded_server.exe and is operator mutable; the current local copy was smoke-test materialized by LanGame, so it is evidence of the active file path but not a pristine upstream default."
+
+[[sources]]
+id = "server_config"
+kind = "config_file"
+path = "enshrouded_server.json"
+authority = "official_enshrouded_server_configuration"
+description = "Official root server configuration for name, save/log path, bind IP, query port, slot count, chat flags, and difficulty preset."
+url = "https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration"
+
+[[sources]]
+id = "gameplay_settings"
+kind = "config_file"
+path = "enshrouded_server.json"
+authority = "official_enshrouded_gameplay_settings"
+description = "Official gameplay and difficulty settings under gameSettings, plus the current default JSON example that includes tags and userGroups."
+url = "https://enshrouded.zendesk.com/hc/en-us/articles/20453241249821-Server-Gameplay-Settings"
+
+[[sources]]
+id = "role_groups"
+kind = "config_file"
+path = "enshrouded_server.json"
+authority = "official_enshrouded_roles_configuration"
+description = "Official role password, permissions, reserved slot, and custom userGroups configuration surface, reverified 2026-09-08. Fresh instances use independently generated role passwords as Keen recommends. Custom groups require unique names and explicitly declared string passwords; documented permission and slot fields are checked before saving or rendering, while unknown native fields are retained."
+url = "https://enshrouded.zendesk.com/hc/en-us/articles/19191581489309-Server-Roles-Configuration"
+
+[[sources]]
+id = "native_role_permission_order"
+kind = "runtime_probe"
+path = "reference-fixtures/2026-09-08-native_role_permissions.json"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Seven isolated native launches on 2026-09-08 with public build 23178631 verify role ordering by enabled permission count, including equal-count disjoint roles. Omitted custom permissions become canEditWorld=true and the other four permissions=false. The fixture records sanitized inputs and native outcomes; it describes this tested build rather than guaranteeing future native behavior."
+
+[[sources]]
+id = "ban_records"
+kind = "generated_roster"
+path = "enshrouded_server.json"
+authority = "official_enshrouded_bans_array"
+description = "The official default JSON includes bans, owned by Player Access. The packaged Version 0.9.0.0 README describes accountIDHash and a Unix banDate semantically. Static inspection of build 23178631 confirms numeric uint64 accountId and object-shaped banDate with sint64 value; native account hashes are entered as exact decimal strings, with no Steam64 conversion. Existing numeric text is not reinterpreted as a platform ID. Enforcement after a real player ban/rejoin remains untested."
+url = "https://enshrouded.zendesk.com/hc/en-us/articles/20453241249821-Server-Gameplay-Settings"
+
+[[sources]]
+id = "native_ban_contract_build_23178631"
+kind = "documentation"
+path = "<validated-install-root>/enshrouded_server.exe"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Read-only static inspection on 2026-09-30; build 23178631 exe SHA256 001c1b40ed091d8c1aee583adde3800d7c858ae2c7f4dff54fca2938b2be1637. Native keen::ds::g38_config::AccountBan fields are accountId:uint64, displayName:string, characterName:string, banDate:CalendarTimeStamp with value:sint64. JSON deserialization at VA 0x1404b53e7 and serialization at VA 0x1404ba148 read/write numeric accountId; date read/write uses nested value. AccountAction.accountIdHash has type keen::HashKey64 (descriptor VA 0x141064ef0), offset 8; VA 0x14069db63-0x14069db6f passes its value to Ban/UnBan, and config loading at VA 0x140686b60-0x140686b63 copies accountId unchanged into the ban table. No native process or player session was started for this inspection. Synthetic fixtures validate exact serialization and storage only, not ban enforcement or a Steam64 conversion algorithm."
+
+[[sources]]
+id = "enshrouded_steam_settings"
+kind = "config_file"
+path = "steam_settings/*"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Steamworks runtime settings shipped under enshrouded steam_settings directory."
+[[sources]]
+id = "enshrouded_steam_settings_examples"
+kind = "config_file"
+path = "steam_settings/_examples/*"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Steamworks example settings templates shipped under steam_settings/_examples."
+[[sources]]
+id = "enshrouded_steam_settings_txt_recursive"
+kind = "config_file"
+path = "steam_settings/**/*.txt"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Recursive Steam settings text payloads (including controller/EULA bundles)."
+
+[[sources]]
+id = "enshrouded_steam_settings_json_recursive"
+kind = "config_file"
+path = "steam_settings/**/*.json"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Recursive Steam settings JSON payloads under steam_settings."
+
+[[sources]]
+id = "enshrouded_steam_settings_ini_recursive"
+kind = "config_file"
+path = "steam_settings/**/*.ini"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Recursive Steam settings INI payloads under steam_settings."
+[[sources]]
+id = "enshrouded_server_readme"
+kind = "documentation"
+path = "enshrouded_server_readme.txt"
+authority = "installed_enshrouded_dedicated_server_package"
+description = "Dedicated server readme bundled with the installed profile."
+
+[[items]]
+source = "server_config"
+key = "name"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "slotCount"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "tags"
+schema_key = "server_tags"
+surface = "materializer"
+
+[[items]]
+source = "server_config"
+key = "voiceChatMode"
+schema_key = "voice_chat_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "enableVoiceChat"
+schema_key = "enable_voice_chat"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "enableTextChat"
+schema_key = "enable_text_chat"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "gameSettingsPreset"
+schema_key = "game_settings_preset"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.playerHealthFactor"
+schema_key = "player_health_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.playerManaFactor"
+schema_key = "player_mana_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.playerStaminaFactor"
+schema_key = "player_stamina_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.playerBodyHeatFactor"
+schema_key = "player_body_heat_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.playerDivingTimeFactor"
+schema_key = "player_diving_time_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.shroudTimeFactor"
+schema_key = "shroud_time_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enableDurability"
+schema_key = "enable_durability"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enableStarvingDebuff"
+schema_key = "enable_starving_debuff"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.foodBuffDurationFactor"
+schema_key = "food_buff_duration_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.fromHungerToStarving"
+schema_key = "hunger_to_starving_minutes"
+surface = "materializer"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.tombstoneMode"
+schema_key = "tombstone_mode"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enableGliderTurbulences"
+schema_key = "enable_glider_turbulences"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.curseModifier"
+schema_key = "curse_modifier"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.weatherFrequency"
+schema_key = "weather_frequency"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.fishingDifficulty"
+schema_key = "fishing_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.dayTimeDuration"
+schema_key = "day_time_minutes"
+surface = "materializer"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.nightTimeDuration"
+schema_key = "night_time_minutes"
+surface = "materializer"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.miningDamageFactor"
+schema_key = "mining_damage_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.plantGrowthSpeedFactor"
+schema_key = "plant_growth_speed_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.resourceDropStackAmountFactor"
+schema_key = "resource_drop_stack_amount_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.factoryProductionSpeedFactor"
+schema_key = "factory_production_speed_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.perkUpgradeRecyclingFactor"
+schema_key = "perk_upgrade_recycling_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.perkCostFactor"
+schema_key = "perk_cost_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.experienceCombatFactor"
+schema_key = "experience_combat_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.experienceMiningFactor"
+schema_key = "experience_mining_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.experienceExplorationQuestsFactor"
+schema_key = "experience_exploration_quests_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.tamingStartleRepercussion"
+schema_key = "taming_startle_repercussion"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.randomSpawnerAmount"
+schema_key = "random_spawner_amount"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.aggroPoolAmount"
+schema_key = "aggro_pool_amount"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enemyDamageFactor"
+schema_key = "enemy_damage_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enemyHealthFactor"
+schema_key = "enemy_health_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enemyStaminaFactor"
+schema_key = "enemy_stamina_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.enemyPerceptionRangeFactor"
+schema_key = "enemy_perception_range_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.bossDamageFactor"
+schema_key = "boss_damage_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.bossHealthFactor"
+schema_key = "boss_health_factor"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.threatBonus"
+schema_key = "threat_bonus"
+surface = "config_file"
+
+[[items]]
+source = "gameplay_settings"
+key = "gameSettings.pacifyAllEnemies"
+schema_key = "pacify_all_enemies"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.password"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.canKickBan"
+schema_key = "admin_can_kick_ban"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.canAccessInventories"
+schema_key = "admin_can_access_inventories"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.canEditWorld"
+schema_key = "admin_can_edit_world"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.canEditBase"
+schema_key = "admin_can_edit_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.canExtendBase"
+schema_key = "admin_can_extend_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Admin.reservedSlots"
+schema_key = "admin_reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.password"
+schema_key = "friend_password"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.canKickBan"
+schema_key = "friend_can_kick_ban"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.canAccessInventories"
+schema_key = "friend_can_access_inventories"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.canEditWorld"
+schema_key = "friend_can_edit_world"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.canEditBase"
+schema_key = "friend_can_edit_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.canExtendBase"
+schema_key = "friend_can_extend_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Friend.reservedSlots"
+schema_key = "friend_reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.password"
+schema_key = "guest_password"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.canKickBan"
+schema_key = "guest_can_kick_ban"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.canAccessInventories"
+schema_key = "guest_can_access_inventories"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.canEditWorld"
+schema_key = "guest_can_edit_world"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.canEditBase"
+schema_key = "guest_can_edit_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.canExtendBase"
+schema_key = "guest_can_extend_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Guest.reservedSlots"
+schema_key = "guest_reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.password"
+schema_key = "visitor_password"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.canKickBan"
+schema_key = "visitor_can_kick_ban"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.canAccessInventories"
+schema_key = "visitor_can_access_inventories"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.canEditWorld"
+schema_key = "visitor_can_edit_world"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.canEditBase"
+schema_key = "visitor_can_edit_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.canExtendBase"
+schema_key = "visitor_can_extend_base"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups.Visitor.reservedSlots"
+schema_key = "visitor_reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "role_groups"
+key = "userGroups:custom_entries"
+schema_key = "custom_user_groups_json"
+surface = "materializer"
+
+[[items]]
+source = "ban_records"
+key = "bans"
+schema_key = "banned_player_ids"
+surface = "generated_roster"
+
+[[exclusions]]
+source = "server_config"
+key = "saveDirectory"
+reason = "Save path is instance storage state; LanGame writes the per-instance savegame directory so worlds cannot bleed between instances."
+
+[[exclusions]]
+source = "server_config"
+key = "logDirectory"
+reason = "Log path is instance runtime state; LanGame writes the per-instance logs directory."
+
+[[exclusions]]
+source = "server_config"
+key = "ip"
+reason = "Bind address is instance network state, not a game-rule setting."
+
+[[exclusions]]
+source = "server_config"
+key = "queryPort"
+reason = "Query port is instance port-binding state written from ports.query.port."
+
+[[exclusions]]
+source = "role_groups"
+key = "password"
+reason = "Legacy root password is explicitly documented as no longer used for dedicated-server access; role passwords replace it."
+
+[[exclusions]]
+source = "role_groups"
+key = "userGroups.Admin.name"
+reason = "LanGame keeps the official preset role name stable; arbitrary extra role names are covered by custom_user_groups_json."
+
+[[exclusions]]
+source = "role_groups"
+key = "userGroups.Friend.name"
+reason = "LanGame keeps the official preset role name stable; arbitrary extra role names are covered by custom_user_groups_json."
+
+[[exclusions]]
+source = "role_groups"
+key = "userGroups.Guest.name"
+reason = "LanGame keeps the official preset role name stable; arbitrary extra role names are covered by custom_user_groups_json."
+
+[[exclusions]]
+source = "role_groups"
+key = "userGroups.Visitor.name"
+reason = "LanGame keeps the official preset role name stable; arbitrary extra role names are covered by custom_user_groups_json."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://enshrouded.zendesk.com/hc/en-us/articles/20453241249821-Server-Gameplay-Settings"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 73 active configuration fields in both languages. factory_production_speed_factor scales production duration. hunger_to_starving_minutes uses elapsed minutes. No fresh server/client run was performed; existing evidence dates and status remain unchanged."

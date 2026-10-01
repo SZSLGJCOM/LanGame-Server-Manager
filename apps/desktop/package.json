@@ -1,0 +1,89 @@
+{
+  "name": "langame-desktop-ui",
+  "private": true,
+  "version": "0.0.1",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "engines": {
+    "node": "^22.22.2 || >=24.15.0",
+    "npm": ">=11.16.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^22.22.2 || >=24.15.0",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.16.0",
+      "onFail": "error"
+    }
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 43170 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --test-concurrency=4",
+    "desktop": "cargo run --manifest-path src-tauri/Cargo.toml --bin langame-desktop",
+    "test:assistant": "node --test tests/assistant-conversations.test.cjs",
+    "smoke:ai-secret": "cargo test --manifest-path src-tauri/Cargo.toml assistant::tests::secret_roundtrip_file_backend_smoke -- --exact --nocapture",
+    "audit:i18n": "node scripts/audit_i18n_surface.cjs",
+    "verify:i18n": "node scripts/verify_i18n_catalogs.cjs",
+    "verify:storage-initialization": "node --test tests/desktop-storage-initialization.test.cjs",
+    "verify:i18n-readable": "node --test tests/i18n-zh-cn-readable.test.cjs",
+    "verify:library-i18n": "node --test tests/library-i18n-coverage.test.cjs tests/library-detail-story-source.test.cjs",
+    "verify:library-catalog": "node --test tests/library-catalog-model.test.cjs tests/library-catalog-focus-plaque.test.cjs",
+    "verify:library-detail-intelligence": "node --test tests/library-detail-intelligence.test.cjs",
+    "verify:mod-workbench": "node --test tests/mod-workbench-reference-parser.test.cjs tests/steam-workshop-store-model.test.cjs",
+    "verify:settings-i18n": "node --test tests/settings-i18n-coverage.test.cjs tests/server-settings-entry.test.cjs tests/instance-network-settings.test.cjs tests/instance-settings-save-queue.test.cjs tests/instance-panel-refresh.test.cjs",
+    "verify:configuration-workspace": "node --test tests/ark-settings-benchmark.test.cjs tests/configuration-field.test.cjs tests/configuration-module-acceptance.test.cjs tests/configuration-native-mod-parameters.test.cjs tests/configuration-presentation.test.cjs tests/configuration-section-navigation.test.cjs tests/configuration-specialized-renderers.test.cjs tests/configuration-workspace.test.cjs tests/configuration-workspace-model.test.cjs tests/configuration-workspace-specialized-style.test.cjs tests/instance-network-settings.test.cjs tests/instance-settings-save-queue.test.cjs tests/maintenance-save-policy.test.cjs tests/maintenance-backup-policy.test.cjs tests/maintenance-autostart.test.cjs tests/save-settings-refresh.test.cjs",
+    "verify:configuration-regressions": "node --test tests/app-settings-panel-style.test.cjs tests/minecraft-instance-detail-tabs.test.cjs tests/minecraft-returntomoria-formal-config.test.cjs tests/mod-settings-patch.test.cjs tests/settings-page-routing.test.cjs tests/survival-module-intake.test.cjs tests/unsupported-games-removal.test.cjs",
+    "verify:mock-module-coverage": "node --test tests/mock-module-coverage.test.cjs tests/player-center-module-coverage.test.cjs",
+    "verify:real-config-gaps": "node --test tests/real-config-gaps.test.cjs",
+    "verify:room-ports": "node --test tests/room-settings-port-audit.test.cjs",
+    "verify:dedicated-settings": "python ../../scripts/audit_dedicated_settings_pages.py --strict && node --test tests/settings-page-routing.test.cjs",
+    "verify:config-provenance": "python -B ../../scripts/verify_game_config_provenance.py --check",
+    "verify:game-knowledge": "python -B ../../scripts/verify_game_knowledge.py --check",
+    "verify:module-settings": "python -B ../../scripts/verify_module_setting_coverage.py",
+    "verify:config-acceptance": "python -B ../../scripts/verify_game_config_acceptance.py --require-all --check",
+    "verify:library-media": "python ../../scripts/verify_library_media.py && node --test tests/library-media-source.test.cjs tests/dst-settings-open-source.test.cjs",
+    "verify:desktop-launcher": "node --test tests/desktop-launcher.test.cjs tests/frontend-dev-server-health.test.cjs",
+    "verify:lan-runtime-token": "node --test tests/lan-runtime-token.test.cjs",
+    "verify:desktop-runtime-layout": "node --test tests/installer-runtime-layout.test.cjs",
+    "verify:desktop-updater": "node --test tests/desktop-updater-config.test.cjs tests/app-update-model.test.cjs",
+    "verify:view-navigation": "node --test tests/app-view-transition.test.cjs tests/instance-create-flow.test.cjs",
+    "verify:system-core": "node --test tests/system-core-dial.test.cjs",
+    "verify:steamcmd-ownership": "node --test tests/steamcmd-ownership-ui.test.cjs",
+    "verify:runtime-actions": "node --test tests/runtime-action-state.test.cjs tests/runtime-action-delivery.test.cjs tests/player-access-unified-actions.test.cjs tests/player-access-mock.test.cjs tests/player-management-ia.test.cjs tests/player-center-state.test.cjs tests/live-player-contract.test.cjs tests/live-player-api-mock.test.cjs tests/server-workspace-delivery-style.test.cjs",
+    "verify:no-tracked-secrets": "python -B ../../scripts/verify_no_tracked_secrets.py",
+    "verify:open-source-boundary": "python -B ../../scripts/verify_open_source_boundary.py",
+    "verify:open-source-history": "python -B ../../scripts/verify_open_source_history.py",
+    "verify": "npm run verify:no-tracked-secrets && npm run verify:open-source-boundary && npm run audit:i18n && npm run verify:i18n && npm run verify:dedicated-settings && npm run verify:config-provenance && npm run verify:game-knowledge && npm run verify:module-settings && npm run verify:config-acceptance && npm run verify:library-media && npm test && npm run build",
+    "verify:release": "npm run verify && npm run verify:open-source-history",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.7.0",
+    "@tauri-apps/api": "^2.11.1",
+    "hls.js": "^1.7.2",
+    "motion": "^13.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.16.2",
+    "@tauri-apps/cli": "2.11.4",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@types/three": "0.185.4",
+    "@vitejs/plugin-react-swc": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "allowScripts": {
+    "@swc/core@1.16.2": true,
+    "fsevents@2.3.3": false
+  }
+}

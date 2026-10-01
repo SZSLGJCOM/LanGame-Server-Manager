@@ -1,0 +1,34 @@
+LanGame Server Manager presentation assets
+Copyright (c) 2025-2026 LanGame Team
+
+LanGame product logos
+---------------------
+
+* assets/logo.svg
+* assets/logo-dark.svg
+
+These two logos follow the Brand use rules in the repository-root NOTICE.
+The code license does not grant separate trademark rights.
+
+Other presentation materials
+----------------------------
+
+* assets/entrogenesis.svg
+* assets/entrogenesis-dark.svg
+* assets/lgsm-system-49eec728.webp
+* assets/wechat-official-account.jpg
+
+These files identify and present the official project. Other images,
+screenshots, QR codes and the ENTROGENESIS marks are not placed under the
+source-code license or the LanGame logo permission. Third-party names,
+artwork and other material remain with their respective rightsholders.
+Existing lawful grants and uses permitted independently by law or
+hosting-platform terms are preserved.
+
+中文说明
+--------
+
+assets/logo.svg 与 assets/logo-dark.svg 沿用根目录 NOTICE 中的 LanGame 品牌使用规则。
+其他图片、截图、二维码及熵灵硅界 / ENTROGENESIS 标志不因展示于本仓库而被纳入代码许可
+或这项 Logo 许可。第三方名称、图像及其他材料的权利仍归相应权利人。既有有效授权、法律
+或托管平台条款独立允许的使用继续保留。

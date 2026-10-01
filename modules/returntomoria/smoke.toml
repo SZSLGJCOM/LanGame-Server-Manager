@@ -1,0 +1,18 @@
+schema_version = 1
+module_id = "returntomoria"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "native-running-status"
+kind = "returntomoria_status"

@@ -1,0 +1,46 @@
+.assistant-operation-dialog {
+  width: min(860px, calc(100vw - 40px));
+  max-height: calc(100vh - 48px);
+  margin: auto;
+  padding: 0;
+  color: var(--shell-text);
+  background: var(--panel);
+  border: 1px solid var(--shell-line);
+  border-radius: 12px;
+  box-shadow: 0 20px 80px rgb(0 0 0 / 24%);
+}
+.assistant-operation-dialog::backdrop { background: rgb(0 0 0 / 42%); }
+.assistant-operation-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+.assistant-operation-dialog > header,
+.assistant-operation-dialog > footer { display: flex; align-items: center; gap: 12px; padding: 18px 24px; }
+.assistant-operation-dialog > header { border-bottom: 1px solid var(--shell-line); }
+.assistant-operation-dialog > footer { justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--shell-line); }
+.assistant-operation-dialog > header, .assistant-operation-dialog > footer { flex-shrink: 0; }
+.assistant-operation-dialog > footer > :is(.ghost-button, .secondary-button) {
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: var(--text-body);
+  line-height: var(--leading-compact);
+  box-shadow: none;
+}
+.assistant-operation-dialog h2 { margin: 0; font-size: var(--text-section-title); font-weight: var(--font-weight-semibold); }
+.assistant-operation-body { min-height: 0; max-height: calc(100vh - 210px); overflow: auto; padding: 20px 24px; }
+.assistant-operation-summary { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--leading-body); }
+.assistant-operation-change { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--shell-line); }
+.assistant-operation-file-label { margin: 0 0 6px; font-size: var(--text-meta); color: var(--muted); }
+.assistant-operation-file { display: block; overflow-wrap: anywhere; font-size: var(--text-secondary); }
+.assistant-operation-fragments { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin: 18px 0; }
+.assistant-operation-fragments h3 { margin: 0 0 8px; font-size: var(--text-section-title); font-weight: var(--font-weight-semibold); }
+.assistant-operation-fragments pre { min-height: 72px; max-height: 260px; margin: 0; overflow: auto; padding: 12px; background: var(--theme-control-surface); border: 1px solid var(--shell-line); border-radius: 6px; font-size: var(--text-code); line-height: var(--leading-body); tab-size: 4; }
+.assistant-operation-dialog .form-note { margin: 10px 0 0; padding: 0; border: 0; background: none; color: var(--muted); line-height: var(--leading-body); }
+.assistant-operation-dialog .form-note.error { color: var(--theme-danger-text); }
+.assistant-task-authorization { flex-basis: 100%; }
+.assistant-task-authorization label { display: flex; align-items: center; gap: 10px; font-size: var(--text-body); cursor: pointer; }
+.assistant-task-authorization input { width: 16px; height: 16px; accent-color: var(--theme-accent); }
+@media (max-width: 640px) {
+  .assistant-operation-fragments { grid-template-columns: minmax(0, 1fr); }
+  .assistant-operation-dialog > header,
+  .assistant-operation-dialog > footer,
+  .assistant-operation-body { padding: 16px; }
+}

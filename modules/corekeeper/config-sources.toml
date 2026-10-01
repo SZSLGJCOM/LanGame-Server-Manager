@@ -1,0 +1,415 @@
+status = "verified_with_direct_connection"
+last_verified = "2026-08-30"
+notes = "Core Keeper Dedicated Server app 1963720 public build 23543502 was installed and verified on 2026-07-13. A clean-data-path probe generated ServerConfig.json with maxNumberPlayers 100, networkSendRate 20, and seasonOverride -1; ARGUMENTS.txt defines world slots 0 through 29 and season value 0 as disabled. Community roster docs still cover Admins.json and PlayerBans.json. The direct-connection runtime probe remains applicable: anonymous Steam relay login can fail, while -port, -ip, and -password kept the server listening, so LanGame defaults new instances to direct mode. A sanitized 2026-08-30 A2S_INFO probe verified that LGSM allocated game port 27018 after UDP 27017 was occupied, the server answered on UDP query port 27019, and EDF advertised game port 27018."
+
+[[sources]]
+id = "empty_world_readiness_2026_09_20"
+kind = "runtime_probe"
+path = "CoreKeeperServer_Data/Managed/Pug.Other.dll"
+authority = "core_keeper_build_23543502_il_and_isolated_native_probe"
+description = "Read-only inspection of build 23543502 Pug.Other.dll (SHA-256 3720e5530e22d594cd3ce68d6688b67fdbf68e39ce297504d2ff77ab45084c4b) establishes the fresh empty-server readiness marker. ECSManager.Update requires WorldsAreLoaded, a nonempty serverLoadingDoneQ (InitialLoadingDoneCD), an empty serverConnectionQ (NetworkStreamConnection), and no pending save before calling Pause. Pause emits timescale = 0 only when the loading manager is no longer loading, then disables simulation updates. SaveSystem normally counts 60 seconds of simulation DeltaTime before an automatic save. An isolated fresh-world native run on 2026-09-20 reached that marker and remained without a worlds file during a further 75-second wall-clock observation; this is an initialized, paused empty world, not evidence of a wrong save path. FilesystemManager maps world data to worlds and .world beneath -datapath. Smoke requires the fresh marker plus owned game/query UDP sockets; query ownership alone does not prove world initialization or a player join. The no-save result retains explicit empty-data uninstall/archive coverage and does not claim save generation."
+
+[[sources]]
+id = "official_package_window_shutdown"
+kind = "runtime_probe"
+path = "Launch.ps1"
+authority = "installed_core_keeper_dedicated_server_package_and_native_window_probe"
+description = "2026-10-01: packaged Quit-CoreKeeperServer uses a non-forced taskkill request for its launched PID and waits for the server. The managed GUI process has no attachable console; its hidden desktop contains Unity.BatchModeWindow. An identity-verified WM_CLOSE to that window exited with code 0 in 1931 ms. The native tail recorded Got quit request, Quit blocked, Running quit handlers and Shutdown, and generated worlds/0.world.gzip. LanGame therefore declares window_close/WM_CLOSE, verifies the target process identity and waits for the complete owned tree to exit without force fallback. This evidence covers the tested installed build and does not promise every future build processes WM_CLOSE."
+
+[[sources]]
+id = "steamcmd_anonymous_probe"
+kind = "install_probe"
+path = "<validated-install-root>"
+authority = "steamcmd_anonymous_validate"
+description = "Anonymous SteamCMD app_update 1963720 validate completed on 2026-07-13. appmanifest_1963720.acf reports StateFlags 4, UpdateResult 0, buildid and TargetBuildID 23543502, SizeOnDisk 577900888, and an installed CoreKeeperServer.exe."
+
+[[sources]]
+id = "clean_server_config_probe"
+kind = "runtime_probe"
+path = "ServerConfig.json"
+authority = "core_keeper_build_23543502_clean_datapath"
+description = "A build 23543502 clean-data-path launch generated the canonical JSON defaults, including maxNumberPlayers 100, networkSendRate 20, world 0, and seasonOverride -1."
+
+[[sources]]
+id = "direct_connection_runtime_probe"
+kind = "runtime_probe"
+path = "<validated-instance-root>/logs/CoreKeeperServer-direct-test.log"
+authority = "local_runtime_smoke"
+description = "2026-05-22 local launch with -batchmode -datapath, -port 27017, -ip 0.0.0.0, and -password change-me-corekeeper remained running after 25 seconds and logged Listening on ip:0.0.0.0:27017. The same instance without direct connection exited after Steam server anonymous login failed."
+
+[[sources]]
+id = "direct_connection_a2s_info_probe"
+kind = "runtime_probe"
+path = "<sanitized-a2s-info-capture>"
+authority = "local_runtime_a2s_info_probe"
+description = "2026-08-30 sanitized UDP A2S_INFO response from a direct-connection server for which LGSM allocated game port 27018 after UDP 27017 was occupied reported the full Steam game ID 1621690, answered on query port 27019, and carried EDF-advertised game port 27018. This proves query = game + 1 for status probing; it does not establish a steam://connect join contract."
+
+[[sources]]
+id = "official_package_readme"
+kind = "documentation"
+path = "README.txt"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed package README.txt states SteamCMD anonymous download is supported, CoreKeeperServer.exe may be started directly, -batchmode is required, ServerConfig.json is stored in the data path, and ARGUMENTS.txt lists command-line options and limitations."
+
+[[sources]]
+id = "official_package_arguments_txt"
+kind = "launch_arg"
+path = "ARGUMENTS.txt"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed build 25537714 ARGUMENTS.txt reviewed 2026-09-29; SHA256 9f28d36127f7e19aad5e076fa15c8b7ab7dbab76f011e001fc54ee9244a920f0. All 15 documented USAGE arguments are modeled or deliberately excluded: -world, -worldname, -worldseed, -hashedworldseed, -worldmode, -season, -activatecontent, -activateallcontent, -datapath, -gameid, -password, -port, -ip, -maxplayers and -allowonlyplatform. This is a read-only documentation comparison, not a new clean-config launch or runtime probe. Rechecked 2026-09-30 in installed build 25537714: ARGUMENTS.txt SHA256 9f28d36127f7e19aad5e076fa15c8b7ab7dbab76f011e001fc54ee9244a920f0 contains 15 documented launch options, all modeled or explicitly excluded. Permanent content-bundle activation remains a world-maintenance operation."
+
+[[sources]]
+id = "server_config"
+kind = "config_file"
+path = "ServerConfig.json"
+authority = "installed_package_readme_and_core_keeper_wiki_server_config"
+description = "Core Keeper JSON server configuration containing game ID, world slot, world name, world seed, max players, packet limits, send rate, world mode, and season override."
+url = "https://core-keeper.fandom.com/wiki/Server_Config"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "CoreKeeperServer.exe"
+authority = "installed_package_arguments_txt_and_direct_connect_docs"
+description = "Core Keeper dedicated-server command-line arguments for background hosting, log path, data path, server-config path, and direct connection mode."
+url = "https://core-keeper.fandom.com/wiki/Command-line_arguments"
+
+[[sources]]
+id = "admins_file"
+kind = "generated_roster"
+path = "Admins.json"
+authority = "core_keeper_build_23543502_native_admin_list"
+description = "The 2026-09-08 native server rejected a top-level array with 'JSON must represent an object type' and regenerated an object containing adminList. Managed Steam64 entries must remain inside that array under the instance data path."
+url = "https://nodecraft.com/support/games/core-keeper/how-to-add-admins"
+
+[[sources]]
+id = "bans_file"
+kind = "generated_roster"
+path = "PlayerBans.json"
+authority = "core_keeper_dedicated_server_ban_roster_docs"
+description = "Core Keeper ban roster JSON materialized under the instance data path from Steam64 IDs."
+url = "https://nodecraft.com/support/games/core-keeper/how-to-ban-unban-players-from-your-server"
+
+[[sources]]
+id = "corekeeper_steam_settings"
+kind = "config_file"
+path = "CoreKeeperServer_Data/Plugins/x86_64/steam_settings/*"
+authority = "installed_corekeeper_dedicated_server_package"
+description = "Installed CoreKeeper Steam settings bundle files."
+
+[[sources]]
+id = "corekeeper_steam_settings_examples"
+kind = "config_file"
+path = "CoreKeeperServer_Data/Plugins/x86_64/steam_settings/_examples/*"
+authority = "installed_corekeeper_dedicated_server_package"
+description = "Installed CoreKeeper Steam setting example files."
+
+[[sources]]
+id = "corekeeper_runtime_bundle_json"
+kind = "config_file"
+path = "CoreKeeperServer_Data/**/*.json"
+authority = "installed_corekeeper_dedicated_server_package"
+description = "CoreKeeper runtime JSON assets under CoreKeeperServer_Data."
+
+[[sources]]
+id = "corekeeper_runtime_bundle_ini"
+kind = "config_file"
+path = "CoreKeeperServer_Data/**/*.ini"
+authority = "installed_corekeeper_dedicated_server_package"
+description = "CoreKeeper runtime INI assets under CoreKeeperServer_Data."
+
+[[sources]]
+id = "corekeeper_runtime_bundle_xml"
+kind = "config_file"
+path = "CoreKeeperServer_Data/**/*.xml"
+authority = "installed_corekeeper_dedicated_server_package"
+description = "CoreKeeper runtime XML assets under CoreKeeperServer_Data."
+
+[[sources]]
+id = "corekeeper_runtime_initialize_on_loads_json"
+kind = "config_file"
+path = "CoreKeeperServer_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed Core Keeper runtime manifest for Unity initialization metadata."
+
+[[sources]]
+id = "corekeeper_scripting_assemblies_json"
+kind = "config_file"
+path = "CoreKeeperServer_Data/ScriptingAssemblies.json"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed Core Keeper runtime scripting assembly manifest."
+
+[[sources]]
+id = "corekeeper_mono_mconfig_xml"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/mconfig/config.xml"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed Core Keeper Mono runtime mconfig XML."
+
+[[sources]]
+id = "corekeeper_mono_browscap_ini"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/browscap.ini"
+authority = "installed_core_keeper_dedicated_server_package"
+description = "Installed Mono browscap metadata in the Core Keeper runtime."
+
+
+[[items]]
+source = "server_config"
+key = "worldName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "gameId"
+schema_key = "game_id"
+surface = "materializer"
+
+[[items]]
+source = "server_config"
+key = "maxNumberPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "world"
+schema_key = "world_index"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "worldSeed"
+schema_key = "world_seed"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "hashedWorldSeed"
+schema_key = "hashed_world_seed"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "password"
+schema_key = "join_password"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "worldMode"
+schema_key = "world_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "seasonOverride"
+schema_key = "season_override"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "maxNumberPacketsSentPerFrame"
+schema_key = "max_packets_per_frame"
+surface = "config_file"
+
+[[items]]
+source = "server_config"
+key = "networkSendRate"
+schema_key = "network_send_rate"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-world"
+schema_key = "world_index"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-worldname"
+schema_key = "server_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-worldseed"
+schema_key = "world_seed"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-hashedworldseed"
+schema_key = "hashed_world_seed"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-worldmode"
+schema_key = "world_mode"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-season"
+schema_key = "season_override"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-gameid"
+schema_key = "game_id"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-maxplayers"
+schema_key = "max_players"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "direct_connection_gate"
+schema_key = "direct_connection_enabled"
+surface = "materializer"
+
+[[items]]
+source = "launch_args"
+key = "-password"
+schema_key = "join_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-allowonlyplatform"
+schema_key = "allowed_platform_code"
+surface = "launch_arg"
+
+[[items]]
+source = "admins_file"
+key = "Admins.json"
+schema_key = "admin_list"
+surface = "generated_roster"
+
+[[items]]
+source = "bans_file"
+key = "PlayerBans.json"
+schema_key = "ban_list"
+surface = "generated_roster"
+
+[[exclusions]]
+source = "launch_args"
+key = "-activatecontent"
+reason = "One-way world content-bundle mutation, not a stable recurring server setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-activateallcontent"
+reason = "One-way activation of all available content bundles, not a stable recurring server setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-batchmode"
+reason = "LanGame fixes this flag so the dedicated server stays background-hosted without an interactive game window."
+
+[[exclusions]]
+source = "launch_args"
+key = "-logfile"
+reason = "LanGame owns the per-instance CoreKeeperServer.log path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-datapath"
+reason = "LanGame owns the per-instance data path so worlds, ServerConfig.json, Admins.json, and PlayerBans.json stay isolated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-serverconfig"
+reason = "LanGame renders ServerConfig.json into the data path and relies on the server's data-path lookup instead of exposing an arbitrary config path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-confdir"
+reason = "Conf-style mod loading belongs to the module mod workflow rather than the base server settings page."
+
+[[exclusions]]
+source = "launch_args"
+key = "-disableautosave"
+reason = "Disabling autosave is intentionally not exposed because LanGame's managed hosting assumes crash-safe persistent worlds."
+
+[[exclusions]]
+source = "launch_args"
+key = "-extralog"
+reason = "Debug logging is operational diagnostics and can be supplied through custom launch support if needed."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nonetwork"
+reason = "Disables multiplayer and conflicts with the dedicated-server hosting purpose."
+
+[[exclusions]]
+source = "launch_args"
+key = "-safemode"
+reason = "Safe mode is a troubleshooting startup mode, not a persistent gameplay/server setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-waitfor"
+reason = "Process synchronization is launcher plumbing, not game configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-windowscale"
+reason = "Graphics window scaling is irrelevant to the managed batch-mode dedicated server."
+
+[[exclusions]]
+source = "launch_args"
+key = "-benchmark"
+reason = "Benchmark mode is not a dedicated server hosting configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-benchmark-quit"
+reason = "Benchmark shutdown behavior is not a dedicated server hosting configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ip"
+reason = "Bind address is instance-level state; LanGame materializes it only when direct connection mode is enabled."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Port is instance port-binding state; LanGame materializes it only when direct connection mode is enabled."
+
+[[sources]]
+id = "packaged_content_activation_arguments"
+kind = "documentation"
+path = "ARGUMENTS.txt"
+authority = "official_core_keeper_dedicated_server_package"
+description = "Build 25537714 ARGUMENTS.txt rechecked 2026-09-29 documents -activatecontent and -activateallcontent, including LegendaryScepterDungeon and MossBiomeDungeons content bundles. Activation is permanent for the world and cannot be undone; this is not an ordinary automatically saved configuration toggle."
+
+[[exclusions]]
+source = "packaged_content_activation_arguments"
+key = "-activatecontent"
+reason = "Permanently activates named content bundles in an existing world. Requires a deliberate world-maintenance operation and backup boundary, not automatic configuration saving."
+
+[[exclusions]]
+source = "packaged_content_activation_arguments"
+key = "-activateallcontent"
+reason = "Permanently activates every available content bundle. Requires an explicit world-maintenance action; must not run implicitly whenever configuration is saved or a server starts."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "ARGUMENTS.txt"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 13 active configuration fields in both languages. A text seed takes precedence over the hashed seed. Creative versus non-creative mode cannot be switched after world generation. Remaining unconfirmed effects or precise units: max_players, max_packets_per_frame, network_send_rate. Native key presence is not gameplay acceptance. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "CoreKeeperServer_Data/Managed/Pug.Other.dll"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Build 25537714 Pug.Other.dll confirms maxNumberPlayers limits simultaneous connections (SteamNetworking.OnConnecting, 06009323). The CLI accepts positive Int32 values; 1 through 100 is the LGSM supported UI range, not an asserted native hard cap. PrefsManager.SetDefault initializes 100 before platform and saved-setting overrides, while ARGUMENTS.txt reports 8 for an omitted CLI argument. The 100 default is therefore not claimed as universal. StartGameRPCSystem.OnUpdate (06003049) converts maxNumberPacketsSentPerFrame into a remote-client snapshot target of min(value * 1200, 9440) bytes. Value 1 retains the default target; the local player instead receives the 9440-byte target. NetworkingManager.SetNetworkTickRates (06006593) assigns networkSendRate to ClientServerTickRate.NetworkTickRate and clamps it to the simulation rate. This is the target state-snapshot frequency per client in Hz. EN/ZH names and help now reflect these consumers. The previous three semantic unknowns are resolved without claiming gameplay or load testing. Primary binary SHA256 042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938."

@@ -1,0 +1,37 @@
+schema_version = 1
+module_id = "theforest"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# Native Running, A2S and UDP sockets precede FinishGameLoad. The owned bridge
+# observes the dedicated host, completed world and unsuspended save state.
+[[probes]]
+id = "world-running"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["[LanGame native control] world_ready=True"]
+
+# Build 3488796 answers A2S on its owned query socket without a persistent
+# listener at the configured Steam coordination port. Check the client-facing
+# game socket and an actual query reply instead of that auxiliary socket.
+[[probes]]
+id = "a2s-query"
+kind = "player_query"
+port_name = "query"
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "query-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "query"
+protocol = "udp"

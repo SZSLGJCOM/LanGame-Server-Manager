@@ -1,0 +1,107 @@
+{
+  "type": "object",
+  "title": "Nightingale Dedicated Server",
+  "properties": {
+    "starting_difficulty": {
+      "type": "string",
+      "default": "easy",
+      "enum": [
+        "easy",
+        "medium",
+        "hard",
+        "extreme"
+      ],
+      "title": "Starting Difficulty",
+      "description": "Difficulty for the very first map, only when an imported character has not supplied a map.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "server_settings_ini",
+      "x-lsgm-source-key": "StartingDifficulty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "default": "",
+      "title": "Join Password",
+      "description": "Written to NWX/Config/ServerSettings.ini as Password. Leave empty for an open server.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "server_settings_ini",
+      "x-lsgm-source-key": "Password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_password": {
+      "type": "string",
+      "default": "",
+      "title": "Admin Password",
+      "description": "Written to NWX/Config/ServerSettings.ini as AdminPassword for Nightingale's in-game admin authentication.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "server_settings_ini",
+      "x-lsgm-source-key": "AdminPassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 6,
+      "minimum": 1,
+      "maximum": 6,
+      "title": "Max Players",
+      "description": "Passed as -ini:Game:[/Script/Engine.GameSession]:MaxPlayers. Nightingale documents six players as the supported maximum.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "MaxPlayers",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "enable_cheats": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Cheats",
+      "description": "Cheat commands require EnableCheats on both server and client, plus in-game administrator authentication.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-EnableCheats",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "status_endpoint_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Status Endpoint",
+      "description": "Enables the official HTTP /status endpoint on the managed status port and binds it to the selected instance address.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-statusPort/HTTPServer.Listeners",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "json_logging": {
+      "type": "boolean",
+      "default": false,
+      "title": "Structured JSON Logging",
+      "description": "Enables Nightingale's documented JsonLogger output on managed stdout.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "JsonLogger",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "format": "textarea",
+      "default": "",
+      "title": "Extra Launch Arguments",
+      "description": "Optional raw launch arguments appended to NWXServer.exe for version-specific flags not already represented by typed controls.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  },
+  "required": [
+    "starting_difficulty",
+    "max_players"
+  ]
+}

@@ -1,0 +1,31 @@
+schema_version = 1
+module_id = "windrose"
+primary_process_key = "main"
+readiness_timeout_ms = 120000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# Listening sockets alone do not establish that the native bootstrap made a world.
+[[probes]]
+id = "native-world-generated"
+kind = "windrose_world"
+
+[[probes]]
+id = "direct-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "direct"
+protocol = "udp"
+
+[[probes]]
+id = "direct-tcp-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "direct_tcp"
+protocol = "tcp"
+
+[[probes]]
+id = "direct-tcp-connect"
+kind = "tcp_connect"
+port_name = "direct_tcp"

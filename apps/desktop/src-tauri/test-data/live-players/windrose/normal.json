@@ -1,0 +1,1 @@
+{"protocol":1,"request_id":"1234567890abcdef1234567890abcdef","boot_id":"abcdef1234567890abcdef1234567890","timestamp":100,"complete":true,"source":"net_driver_client_connections","current_players":2,"players":[{"name":"玩家一","session_id":"1"},{"name":"玩家一","session_id":"2"}]}

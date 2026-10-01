@@ -1,0 +1,924 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "SteamCMD anonymous app_update 2728330 installed public build 23914958 on 2026-07-13 (StateFlags 4, UpdateResult 0). The HumanitZ 1.09A package ships REF_GameServerSettings.ini Version=39 and documents WelcomeMessage.txt, the F_ReservedSlots.txt reserved-slot roster. LanGame renders the current typed defaults and roster files. Current native evidence excludes obsolete optional and third-party vehicle controls; historical verification status remains best-effort. settings_extra and extra_launch_args remain available for version-specific keys."
+
+[[sources]]
+id = "steamcmd_anonymous_app_2728330"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_2728330.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 2728330 completed successfully. Manifest name HZ_SERVER, StateFlags 4, UpdateResult 0, buildid and TargetBuildID 23914958, SizeOnDisk 1382047077."
+
+[[sources]]
+id = "rcon_native_readiness"
+kind = "install_probe"
+path = "HumanitZServer/REF_GameServerSettings.ini / RCONCommands.txt / HumanitZServer/Binaries/Win64/HumanitZServer-Win64-Shipping.exe"
+authority = "installed_humanitz_1_09a_native_protocol_observation"
+description = "On 2026-09-20, installed Steam build 23914958 (reference Version=39, runtime Server BuildID=42) created an EOS session and owned the configured game/query UDP endpoints. A2S_INFO returned no accepted reply with RCON disabled or enabled; the RCON-enabled comparison additionally passed the existing authenticated read-only info transport and complete world/player-response validation. The shipped RCONEnabled comment associates RCON with browser ping, but does not establish that ping is A2S. The explicit RCON smoke mode therefore requires an owned game UDP endpoint, a current-run EOS session-created log marker and a complete native info reply over the owned RCON TCP endpoint. This real mode completed creation, readiness, stop, generated-save backup, uninstall preserving four save files, instance archival and cleanup. The actual player-center collector uses this same declared list_online_players transport. This lifecycle mode does not certify native A2S. The current module uses its authenticated complete player_list for overview and global counts; disabled, failed or incomplete RCON remains unknown. Later isolated session-provider evidence is recorded separately below."
+
+[[sources]]
+id = "a2s_owned_datagram_comparison"
+kind = "install_probe"
+path = "HumanitZServer/Binaries/Win64/HumanitZServer-Win64-Shipping.exe / ReadMe.txt"
+authority = "installed_humanitz_1_09a_native_protocol_observation"
+description = "On 2026-09-21, an isolated copy of build 23914958 completed the declared RCON lifecycle under source snapshot 7bae5a363236. Its actual command line used the documented -port=7777 and -queryport=27015, and its same-generation managed native process owned both UDP endpoints. During the 120-second ready observation window, eight bounded A2S_INFO cases compared loopback and the local Ethernet address, connected and unconnected UDP, and requests with and without an initial all-ones challenge. Sixteen requests received zero datagrams, including unconnected receives; therefore response parsing, split assembly and connected peer filtering do not explain this observation. The log confirms Steam Game Server API initialization and EOS session creation, but does not establish that Steam server advertisement was enabled. This datagram-only comparison did not establish an upstream root cause. A later same-day standalone comparison on the same build used AFD endpoint ownership and a successful UDP control: the default EOS provider received eight query-port datagram indications but sent no reply. Changing only OnlineSubsystem.DefaultPlatformService to Steam in a disposable copy was confirmed by the native provider-loaded log and returned two valid 207-byte A2S_INFO replies (35.5 and 47.5 ms). The native session-provider choice therefore changes A2S behavior in this build. The Steam override is diagnostic only: it changes multiplayer discovery and has no real-client compatibility acceptance. Production keeps the shipped provider, query port and arguments; manager counts use the authenticated complete roster without treating RCON as an A2S response."
+
+[[sources]]
+id = "installed_reference_files"
+kind = "documentation"
+path = "HumanitZServer/REF_GameServerSettings.ini / HumanitZServer/REF_WelcomeMessage.txt / RCONCommands.txt"
+authority = "installed_humanitz_dedicated_server_package"
+description = "The validated package includes HumanitZServer/REF_GameServerSettings.ini with Version=39, HumanitZServer/REF_WelcomeMessage.txt, ReadMe.txt, RCONCommands.txt, and RCON/Save.ini as the current first-party dedicated-server reference files."
+
+[[sources]]
+id = "humanitz_reference_game_server_settings_ini"
+kind = "config_file"
+path = "HumanitZServer/REF_GameServerSettings.ini"
+authority = "installed_humanitz_dedicated_server_package"
+description = "Installed HumanitZ reference GameServerSettings template shipped with the package. Read-only recheck on 2026-09-30: build 23914958 reference SHA256 5e6cb7befbef8308fbddf523b44d781acc5ef8e2e7bb24178003ddf693f9d833 has 91 native keys, all represented in the current provenance. This does not renew the separate runtime evidence."
+url = "https://humanitz.wiki.gg/wiki/Server_Configuration_Files"
+
+[[sources]]
+id = "game_server_settings"
+kind = "config_file"
+path = "HumanitZServer/GameServerSettings.ini"
+authority = "shipped_humanitz_ref_game_server_settings_ini_and_readme"
+description = "HumanitZ GameServerSettings.ini keys for identity, passwords, RCON, world rules, difficulty, loot, spawns, building, saving, and raw extra settings."
+url = "local:<validated-install-root>/HumanitZServer/GameServerSettings.ini"
+
+[[sources]]
+id = "humanitz_game_server_settings_file"
+kind = "config_file"
+path = "HumanitZServer/GameServerSettings.ini"
+authority = "shipped_humanitz_ref_game_server_settings_ini_and_readme"
+description = "Canonical HumanitZ dedicated server settings file for runtime instance materialization."
+
+[[sources]]
+id = "vehicle_settings"
+kind = "config_file"
+path = "HumanitZServer/GameServerSettings.ini [VehicleSettings]"
+authority = "third_party_reference_not_current_first_party_confirmation"
+description = "Historical third-party reference only. All ten VehicleSettings keys are absent from the current dedicated import key set, REF Version=39, executable and all 80,253 decoded script, map and INI resources in build 23914958. They are excluded from controls and generated configuration; unmanaged existing native values and stored JSON are retained. Current vehicle ownership and recycling use MaxOwnedCars and RecycleCar. See native_configuration_read_path_build_23914958."
+url = "https://supercraft.host/wiki/humanitz/humanitz_vehicle_decay_settings/"
+
+[[sources]]
+id = "roster_files"
+kind = "generated_roster"
+path = "HumanitZServer/AdminList.txt / HumanitZServer/F_ReservedSlots.txt / HumanitZServer/F_BannedPlayers.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "Current native admin, reserved-slot and ban files contain one complete NetID per line. ReadMe and current EOS consumers supersede historical Steam64 terminology; see native_netid_format_build_23914958."
+url = "https://humanitz.wiki.gg/wiki/Miscs"
+
+[[sources]]
+id = "humanitz_admin_list_txt"
+kind = "generated_roster"
+path = "HumanitZServer/AdminList.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "Canonical HumanitZ generated admin list file."
+
+[[sources]]
+id = "humanitz_banned_players_txt"
+kind = "generated_roster"
+path = "HumanitZServer/F_BannedPlayers.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "Canonical HumanitZ generated ban list file."
+
+[[sources]]
+id = "humanitz_connected_players_txt"
+kind = "generated_roster"
+path = "HumanitZServer/F_ConnectedPlayers.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "Canonical HumanitZ connected players cache file."
+
+[[sources]]
+id = "humanitz_mvp_access_txt"
+kind = "generated_roster"
+path = "HumanitZServer/F_MVPAccess.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "Historical source entry superseded by current build 23914958 native evidence. Load MVPPlayers reads F_ReservedSlots.txt; F_MVPAccess.txt is no longer rendered or exposed as a separate roster. Existing files remain retained and excluded from shared-runtime copying. See native_roster_read_path_build_23914958."
+
+[[sources]]
+id = "reserved_slots_file"
+kind = "generated_roster"
+path = "HumanitZServer/F_ReservedSlots.txt"
+authority = "shipped_humanitz_reference_settings_and_official_wiki"
+description = "Canonical HumanitZ reserved-slot player roster referenced by ReserveSlots."
+url = "https://humanitz.wiki.gg/wiki/Server_Configuration_Files"
+
+[[sources]]
+id = "humanitz_rcon_commands_txt"
+kind = "documentation"
+path = "RCONCommands.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "HumanitZ RCON command documentation shipped with the dedicated-server package."
+
+[[sources]]
+id = "humanitz_ref_welcome_message_txt"
+kind = "config_file"
+path = "HumanitZServer/REF_WelcomeMessage.txt"
+authority = "shipped_humanitz_readme_roster_files"
+description = "HumanitZ reference welcome message template and examples."
+
+[[sources]]
+id = "welcome_message_file"
+kind = "config_file"
+path = "HumanitZServer/WelcomeMessage.txt"
+authority = "installed_humanitz_ref_welcome_message_and_official_wiki"
+description = "Optional player-facing join message stored in the standalone WelcomeMessage.txt file."
+url = "https://humanitz.wiki.gg/wiki/Server_Configuration_Files"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "HumanitZServer.exe"
+authority = "shipped_humanitz_dedicated_server_package"
+description = "Dedicated-server launch arguments for bind IP, game/query ports, and raw advanced startup arguments. Read-only recheck on 2026-10-01 bound Steam build 23914958 to shipped ReadMe.txt SHA256 4dc1e560a90528a3d6409e6f0fbcb570c2329c78b0eb7a5f5ae92987977e55d4. Both Windows launch examples include -log; LanGame now supplies this flag while retaining managed_terminal on the private desktop. This documents the launch profile, not a completed runtime console or Ctrl+C acceptance."
+url = "local:<validated-install-root>/ReadMe.txt"
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "HumanitZ TCP RCON"
+authority = "official_humanitz_server_commands_compendium"
+description = "HumanitZ RCON/runtime commands used by LanGame for Players, fetchbanned, kick, ban, and unban."
+url = "https://humanitz.wiki.gg/wiki/Server_Commands_Compendium"
+
+[[sources]]
+id = "humanitz_rcon_save"
+kind = "config_file"
+path = "RCON/Save.ini"
+authority = "installed_humanitz_dedicated_server_package"
+description = "Canonical HumanitZ RCON save-state file persisted by the dedicated server runtime."
+
+
+
+[[sources]]
+id = "humanitz_windowsserver_ini"
+kind = "config_file"
+path = "*/Saved/Config/WindowsServer/*.ini"
+authority = "installed_humanitz_server_package"
+description = "Installed dedicated server Unreal WindowsServer ini artifacts. (2 discovered files)"
+
+
+[[sources]]
+id = "humanitz_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_humanitz_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (14 discovered files)"
+[[items]]
+source = "game_server_settings"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "SearchID"
+schema_key = "search_id"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "PVP"
+schema_key = "pvp_enabled"
+surface = "config_file"
+
+[[items]]
+source = "welcome_message_file"
+key = "WelcomeMessage.txt"
+schema_key = "welcome_message"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Password"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AdminPass"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RCONEnabled"
+schema_key = "rcon_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RCONPass"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "OnlyAllowedPlayers"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[items]]
+source = "roster_files"
+key = "AdminList.txt"
+schema_key = "admin_steam_ids"
+surface = "generated_roster"
+
+[[exclusions]]
+source = "roster_files"
+key = "F_MVPAccess.txt"
+reason = "The current build reads F_ReservedSlots.txt in Load MVPPlayers, not the former F_MVPAccess.txt path. The obsolete independent allow-list control and template are retired; existing files and JSON are retained. See native_roster_read_path_build_23914958."
+
+[[items]]
+source = "reserved_slots_file"
+key = "F_ReservedSlots.txt"
+schema_key = "reserved_player_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "roster_files"
+key = "F_BannedPlayers.txt"
+schema_key = "banned_player_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "game_server_settings"
+key = "PermaDeath"
+schema_key = "perma_death"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "OnDeath"
+schema_key = "on_death_penalty"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "ClearInfection"
+reason = "Historical gameplay code still reads this name from DedServerSettings, but the current dedicated import loop does not load it from GameServerSettings.ini. ClearInfection therefore uses the absent-key false result; LootRarity uses the fixed fallback 2. Neither is an effective current dedicated-file control. Existing stored JSON and unmanaged native lines are retained. See native_configuration_read_path_build_23914958."
+
+[[items]]
+source = "game_server_settings"
+key = "Territory"
+schema_key = "territory_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "WeaponBreak"
+schema_key = "weapon_break"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "VitalDrain"
+schema_key = "vital_drain"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "DayDur"
+schema_key = "day_duration_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "NightDur"
+schema_key = "night_duration_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "StartingSeason"
+schema_key = "starting_season"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "DaysPerSeason"
+schema_key = "days_per_season"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MultiplayerSleep"
+schema_key = "multiplayer_sleep"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieDiffHealth"
+schema_key = "zombie_difficulty_health"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieDiffSpeed"
+schema_key = "zombie_difficulty_speed"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieDiffDamage"
+schema_key = "zombie_difficulty_damage"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "HumanDifficulty"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieAmountMulti"
+schema_key = "zombie_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "HumanAmountMulti"
+schema_key = "human_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieDogMulti"
+schema_key = "zombie_dog_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "DogEnabled"
+schema_key = "dog_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "DogNum"
+schema_key = "dog_count"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RecruitDog"
+schema_key = "recruit_dog"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AirDrop"
+schema_key = "air_drop_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AirDropInterval"
+schema_key = "air_drop_interval_days"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "EagleEye"
+reason = "The developer removed the eagle eye skill in update 0.908 on 2024-02-08. This obsolete skill-purchase switch is no longer offered or emitted. Existing stored JSON values remain untouched. See humanitz_update_0_908."
+
+[[items]]
+source = "game_server_settings"
+key = "AIEvent"
+schema_key = "ai_event_frequency"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "Void"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "game_server_settings"
+key = "LootRarity"
+reason = "Historical gameplay code still reads this name from DedServerSettings, but the current dedicated import loop does not load it from GameServerSettings.ini. ClearInfection therefore uses the absent-key false result; LootRarity uses the fixed fallback 2. Neither is an effective current dedicated-file control. Existing stored JSON and unmanaged native lines are retained. See native_configuration_read_path_build_23914958."
+
+[[items]]
+source = "game_server_settings"
+key = "LootRespawn"
+schema_key = "loot_respawn"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "LootRespawnTimer"
+schema_key = "loot_respawn_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "PickupRespawnTimer"
+schema_key = "pickup_respawn_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "PickupCleanup"
+schema_key = "pickup_cleanup_days"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ZombieRespawnTimer"
+schema_key = "zombie_respawn_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "HumanRespawnTimer"
+schema_key = "human_respawn_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AnimalRespawnTimer"
+schema_key = "animal_respawn_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "BuildingHealth"
+schema_key = "building_health_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AllowDismantle"
+schema_key = "allow_dismantle"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AllowHouseDismantle"
+schema_key = "allow_house_dismantle"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Decay"
+schema_key = "spawn_point_decay_days"
+surface = "config_file"
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "VehicleDecayHours"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "OwnedVehicleDecayHours"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "VehicleDecayDuration"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "MaxWorldVehicles"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "MaxVehiclesPerPlayer"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "VehicleRespawnEnabled"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "VehicleRespawnInterval"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "AmbientVehicleDamage"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "AmbientDamageRate"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[exclusions]]
+source = "vehicle_settings"
+key = "ZombiesTargetVehicles"
+reason = "Not supported by the current build 23914958 dedicated configuration path. No exact key occurs in the executable or any of the 80,253 decoded script, map and INI resources, and it is absent from the explicit 77-key dedicated import set. Existing stored JSON and unmanaged native INI lines are retained. See native_configuration_read_path_build_23914958."
+
+[[items]]
+source = "game_server_settings"
+key = "SaveIntervalSec"
+schema_key = "save_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "SaveName"
+schema_key = "save_name"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "ReserveSlots"
+schema_key = "reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "NoDeathFeedback"
+schema_key = "no_death_feedback"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "NoJoinFeedback"
+schema_key = "no_join_feedback"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "LimitedSpawns"
+schema_key = "limited_spawns"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "UseGlobalBanList"
+schema_key = "use_global_ban_list"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AllowFamilySharing"
+schema_key = "allow_family_sharing"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "XpMultiplier"
+schema_key = "xp_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RespawnTimer"
+schema_key = "respawn_timer_seconds"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "LogoutTimer"
+schema_key = "logout_timer_seconds"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MaxOwnedCars"
+schema_key = "max_owned_cars"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityFood"
+schema_key = "rarity_food"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityDrink"
+schema_key = "rarity_drink"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityMelee"
+schema_key = "rarity_melee"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityRanged"
+schema_key = "rarity_ranged"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityAmmo"
+schema_key = "rarity_ammo"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityArmor"
+schema_key = "rarity_armor"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityResources"
+schema_key = "rarity_resources"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RarityOther"
+schema_key = "rarity_other"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "HumanHealth"
+schema_key = "human_health"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "HumanSpeed"
+schema_key = "human_speed"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "HumanDamage"
+schema_key = "human_damage"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "AnimalMulti"
+schema_key = "animal_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "CompanionHealth"
+schema_key = "companion_health"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "CompanionDmg"
+schema_key = "companion_damage"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "FreeBuild"
+schema_key = "free_build"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "NoBuildZone"
+schema_key = "no_build_zone"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "BuildingDecay"
+schema_key = "building_decay_days"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "FakeBuildingCleanup"
+schema_key = "fake_building_cleanup_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "FoodDecay"
+schema_key = "food_decay_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "GenFuel"
+schema_key = "generator_fuel_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "RecycleCar"
+schema_key = "recycle_car_days"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Sleep"
+schema_key = "sleep_deprivation"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "FreezeTime"
+schema_key = "freeze_time_when_empty"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MapSeg0"
+schema_key = "map_segment_0"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MapSeg1"
+schema_key = "map_segment_1"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "MapSeg2"
+schema_key = "map_segment_2"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Voip"
+schema_key = "voip_enabled"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_ClearSky"
+schema_key = "weather_clear_sky"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Cloudy"
+schema_key = "weather_cloudy"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Foggy"
+schema_key = "weather_foggy"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_LightRain"
+schema_key = "weather_light_rain"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Rain"
+schema_key = "weather_rain"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Thunderstorm"
+schema_key = "weather_thunderstorm"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_LightSnow"
+schema_key = "weather_light_snow"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Snow"
+schema_key = "weather_snow"
+surface = "config_file"
+
+[[items]]
+source = "game_server_settings"
+key = "Weather_Blizzard"
+schema_key = "weather_blizzard"
+surface = "config_file"
+
+[[exclusions]]
+source = "game_server_settings"
+key = "Version"
+reason = "Version is a shipped HumanitZ build marker from REF_GameServerSettings.ini, not an operator-controlled server setting."
+
+
+[[items]]
+source = "game_server_settings"
+key = "raw_extra_lines"
+schema_key = "settings_extra"
+surface = "materializer"
+
+[[items]]
+source = "launch_args"
+key = "raw_extra_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-MULTIHOME"
+reason = "Bind IP is instance network state rendered from instance.bind_ip."
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "Fixed native log-console flag taken from the installed first-party Windows launch examples; it is part of the managed launch profile rather than an editable game setting. Runtime console and graceful-stop behavior still require acceptance."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-QueryPort"
+reason = "Steam query port is instance port-binding state."
+
+[[exclusions]]
+source = "game_server_settings"
+key = "Port"
+reason = "Game port is instance port-binding state, not a game-rule setting."
+
+[[exclusions]]
+source = "game_server_settings"
+key = "QueryPort"
+reason = "Steam query port is instance port-binding state."
+
+[[exclusions]]
+source = "game_server_settings"
+key = "RConPort"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "game_server_settings"
+key = "future_or_version_specific_ini_keys"
+reason = "HumanitZ is Early Access and config keys evolve; settings_extra preserves operator access to keys not yet promoted."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "Players/fetchbanned/kick/ban/unban"
+reason = "Runtime actions are declared in module.toml rather than schema fields."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "HumanitZServer/REF_GameServerSettings.ini"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 covers both languages and the current build 23914958 configuration import path. MapSeg2 is a per-side grid division count; 60 defines a 60-by-60 grid, with no invented object-type assignment. Sixteen old keys are excluded: fourteen have no exact key in current scripts, maps, configuration resources or executable; ClearInfection and LootRarity have residual gameplay reads but are absent from the dedicated file-import key set and receive missing-key defaults. Current threat and rarity controls use HumanHealth/HumanSpeed/HumanDamage and per-category Rarity fields. Historical values remain in stored JSON and unmanaged native INI values, whose formatting may be normalized on merge. No server/client gameplay run was performed; historical verification status is unchanged."
+
+[[sources]]
+id = "humanitz_developer_settings_2024_01_23"
+kind = "documentation"
+path = "Steam developer reply #6, gumbydust, 2024-01-23"
+authority = "official_developer_historical_statement"
+description = "Historical developer-authored settings explanation: ClearInfection=0 retains infection on respawn and 1 clears it; HumanDifficulty has six levels 0 through 5, from very easy through nightmare. EagleEye controlled skill purchase at that date. The LootRarity entry repeats numeric codes for different labels, so it cannot establish an unambiguous enum. These historical meanings do not establish continued support in build 23914958."
+url = "https://steamcommunity.com/app/1766060/discussions/0/4031349199261079259/"
+
+[[sources]]
+id = "humanitz_update_0_908"
+kind = "documentation"
+path = "Dev Update 0.908, 2024-02-08, HumanitZ - Ashe"
+authority = "official_developer_release_notes"
+description = "The official update removes the eagle eye skill and replaces friend-location visibility with group invitations. The EagleEye skill-purchase switch is therefore removed from the current configuration UI and template. Existing stored JSON values remain untouched."
+url = "https://store.steampowered.com/news/posts/?enddate=1707411741&feed=steam_community_announcements"
+
+[[sources]]
+id = "native_semantics_build_23914958"
+kind = "install_probe"
+path = "HumanitZServer/REF_GameServerSettings.ini; ReadMe.txt; HumanitZServer-Win64-Shipping.exe"
+authority = "read_only_official_package_static_analysis"
+description = "2026-09-30 read-only package inspection: REF Version=39 SHA256 5e6cb7befbef8308fbddf523b44d781acc5ef8e2e7bb24178003ddf693f9d833. MapSeg0/1/2 are grid divisions per side with defaults 12/20/60. The comments identify houses for segment 0 and broken vehicles for segment 1 but no object class for segment 2. GameState bytecode at .uexp offset 0xe6f0 reads MapSeg2 with fallback 60, converts it to an integer and at 0xe7e5 writes SegDivs[2] before InitWorldSeg. GameState .uexp SHA256 a565bd00c3ea4c39e1db67ac6650beb3bc8566346eff13d3381eccce3976ffde. ReadMe documents F_ReservedSlots.txt with NetIDs and ReserveSlots equal to MaxPlayers for whitelist behavior. See native_configuration_read_path_build_23914958 for complete import-path analysis."
+
+[[sources]]
+id = "native_configuration_read_path_build_23914958"
+kind = "install_probe"
+path = "HumanitZServer-Win64-Shipping.exe; Content/TSS_Game/Blueprints/GameInstanceSettings/BP_GameInstanceWithSettings; Content/TSS_Game/Blueprints/BP_GameStateBase"
+authority = "read_only_official_package_static_analysis"
+description = "Build 23914958 executable SHA256 c3f46f78220605e7a73151261b9bdb072786170dc0edc8c75da4ed872d67671a; GameInstance .uexp SHA256 67aa99b1e8faf6fc7eb964f9568ef4f2b323961de34853461e626ab99482343a. The package index and directory hashes were verified after read-only in-memory decoding; no credentials or assets are shipped with this module. All 80,253 .uasset/.uexp/.umap/.ini resources were read with bounded size checks, totaling 1,979,555,234 uncompressed bytes and no errors. DedicatedLoadGameDiff fully decodes from .uexp 0x37f58 to 0x3b0d3: SetArray at 0x38b58 supplies 79 entries, 77 unique keys. The loop calls native GetSettingValue at 0x3917f and Map_Add(DedServerSettings,key,value) at 0x39257 only for those keys. Native wrapper VA 0x140fca9e0 calls 0x140f79400, which initializes GameServerSettings.ini through 0x140f86360 and retrieves one key through 0x1410bf770. The complete DedServerSettings owner scan found GameInstance and UltraDynamicSky only; the latter only reads the map, and the import loop is its only map write. None of the sixteen retired keys belongs to this import list. Fourteen, including the ten VehicleSettings keys, have no exact name in the scanned resources or executable. ClearInfection is still compared with true/yes/1 before assignment to GameDiff.ClearInfectionOnDeath, but missing import yields false. LootRarity still flows through ParseServerVal, whose Map_Find/SelectString uses fallback 2, then into GameDiff.LootAmontMultiplier. Residual infection/loot consumers therefore do not establish that these ini keys remain configurable. The model and template no longer actively emit them; historical JSON and unmanaged native values remain preserved, without promising byte-identical file formatting."
+
+[[sources]]
+id = "native_roster_read_path_build_23914958"
+kind = "install_probe"
+path = "ReadMe.txt; BP_GameInstanceWithSettings.uexp"
+authority = "first_party_readme_and_read_only_native_consumer_analysis"
+description = "Current official ReadMe documents F_ReservedSlots.txt as the MVP roster and explains ReserveSlots=MaxPlayers for whitelist behavior. GameInstance .uexp SHA256 67aa99b1e8faf6fc7eb964f9568ef4f2b323961de34853461e626ab99482343a: the complete Load MVPPlayers script is 0x3e91a..0x3ec21; ReadFileData at 0x3e96a receives the literal F_ReservedSlots.txt at 0x3e96f, then ReadAllLines feeds Set_Add(MVPlayers). Current FetchAdminUsers reads AdminList.txt at 0x41fdd, and LoadBannedPlayers reads F_BannedPlayers.txt at 0x3c481. No F_MVPAccess name occurs in the executable or any of 80,253 script, map and INI resources. The old independent allow-list template and control are retired; existing F_MVPAccess.txt and stored settings remain preserved, and the old path stays in retention and runtime-copy exclusions."
+
+[[sources]]
+id = "native_netid_format_build_23914958"
+kind = "install_probe"
+path = "DedicatedServerEngine.ini; DefaultEngine.ini; HumanitZServer-Win64-Shipping.exe; BP_PlayerState; BP_HMZRCon"
+authority = "read_only_official_package_static_analysis"
+description = "Current DedicatedServerEngine.ini selects OnlineSubsystem EOS; DefaultEngine.ini has bUseEAS=False, bUseEOSConnect=True and bUseEOSSessions=True. Native GetEOSUserIDFromPS VA 0x140f74480 reads PlayerState UniqueNetID at +0x250, then 0x140866ea0 dispatches ToString at virtual slot +0x30. The EOS constructor 0x140c90e10 assigns type EOS and vtable 0x143869730; that ToString slot is 0x140866e80 and copies the stored string unchanged. Native login path 0x140caa87f stringifies EpicAccountId, 0x140caa88c stringifies ProductUserId, then 0x140caa89f appends | and the nonempty product ID before constructing the EOS identity through 0x140c8b590. Full IDs therefore retain the separator, including an empty EpicAccountId prefix when EAS is disabled; neither stripping the prefix nor assuming a standalone Steam64 ID is valid. Native 0x140cd1540 splits the two parts internally without replacing the stored display string. PlayerState .uexp SHA256 67c0c8c21cca0cc01460e97ec5a1f21dda214af9a7ee2f8cfcb1eab5e21d3444: GetNetID calls GetEOSUserIDFromPS at 0x3952; offline-host fallback is Host_Offline, not Steam64. RCON .uexp SHA256 d8d11e331920e236a3054efabc092a03dc0a4003e8cd06a7704257d35ded221e: FetchPlayers calls GetNetID at 0x1f7b1 and formats Name (NetID); FindPlayerByNetID at 0x22033 performs substring matching, so operator actions require the complete ID to avoid ambiguous targets. Admin/reserved/ban controls use a dedicated codec with unchanged stored setting keys; new entries use complete EOS IDs, while pre-existing Steam64 values are retained for explicit removal rather than silently discarded. No real player IDs were read and no gameplay connection was made. FetchBanned returns the complete file text or Empty! at the game-function boundary, but the current generic Source RCON transport does not establish a command-specific complete-list boundary. Direct NetID ban changes therefore report sent_unverified; list_bans remains available for manual readback rather than being used as automatic proof. Existing Steam64 removal is persisted for restart without sending an inferred current NetID action."

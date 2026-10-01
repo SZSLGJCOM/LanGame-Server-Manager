@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "humanitz"
+scope = "Private dedicated-server setup on Windows/Linux, configuration files, port forwarding, commands and server updates."
+gaps = ["The publisher's Steam manual link identifies the official community wiki; detailed pages returned HTTP 403 during review.","Official endorsement does not establish publisher authorship or override wiki content signals."]
+
+[[sources]]
+id = "official-wiki-server-manual"
+title = "HumanitZ private server documentation"
+authority = "HumanitZ Wiki contributors; linked by Yodubzz Studios / indie.io"
+kind = "official_community"
+seeds = ["https://humanitz.wiki.gg/wiki/Private_Server_Hosting_Setup","https://humanitz.wiki.gg/wiki/Server_Configuration_Files","https://humanitz.wiki.gg/wiki/Server_Commands_Compendium","https://humanitz.wiki.gg/wiki/Port_Forwarding","https://humanitz.wiki.gg/wiki/Dedicated_Windows_Server%3A_Manual_Install","https://humanitz.wiki.gg/wiki/Dedicated_Linux_Server%3A_Manual_Install","https://humanitz.wiki.gg/wiki/Windows_Server_Update_Scripts","https://humanitz.wiki.gg/wiki/Linux_Server_Update_Scripts"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://store.steampowered.com/app/1766060/HumanitZ/"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution. Reviewed robots declare search=yes, ai-train=no, use=reference; full-text AI-use permission is not inferred."
+reviewed_on = "2026-09-28"

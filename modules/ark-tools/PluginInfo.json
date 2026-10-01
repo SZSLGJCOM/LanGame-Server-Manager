@@ -1,0 +1,7 @@
+{
+  "FullName": "LanGame ARK Tools",
+  "Description": "Authenticated world-coordinate creature spawning and entity readback for LanGame.",
+  "Version": 1.0,
+  "MinApiVersion": 2.03,
+  "Dependencies": []
+}

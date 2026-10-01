@@ -1,0 +1,161 @@
+id = "rimworld"
+name = "RimWorld Together Server"
+version = "0.1.0"
+description = "Dedicated server module for RimWorld Together using the official server release package."
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "rimworld"
+download_url_windows = "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.8.31.1/Server-win-x64.zip"
+verification_path = "RTServer.exe"
+
+[install.download_integrity_windows]
+sha256 = "f16c703f1e3e4e6de0f4877d8ae502a817c85482681956aa01e8a4b619bab68c"
+size = 29443247
+
+[process]
+executable = "RTServer.exe"
+args_template = [
+  "{{launch.extra_args}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "RimWorld Together 26.8.31.1 ships RTServer.exe. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched. Players use the RimWorld Together client mod 3005289691."
+
+[[default_ports]]
+name = "game"
+protocol = "tcp"
+port = 25555
+
+[workshop]
+provider = "steam"
+consumer_app_id = 294100
+supports_collections = false
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=3005289691"
+install_note = "Players need the RimWorld Together client mod, Steam Workshop item 3005289691, plus its current Workshop dependencies. The dedicated server itself is installed from the official RimWorld Together GitHub release archive."
+
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Players"
+label_zh_cn = "玩家列表"
+transport = "stdin"
+command_template = "list"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "Bans"
+label_zh_cn = "封禁列表"
+transport = "stdin"
+command_template = "banlist"
+process_key = "main"
+
+
+[[runtime.player_actions]]
+id = "kick_user"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "stdin"
+command_template = "kick {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "RimWorld Together username"
+target_placeholder_zh_cn = "RimWorld Together 用户名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_user"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "stdin"
+command_template = "ban {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "RimWorld Together username"
+target_placeholder_zh_cn = "RimWorld Together 用户名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_user"
+label = "Unban"
+label_zh_cn = "解除封禁"
+transport = "stdin"
+command_template = "pardon {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Username from banlist"
+target_placeholder_zh_cn = "banlist 输出中的用户名"
+target_required = true
+process_key = "main"
+destructive = true
+
+
+
+[[runtime.player_actions]]
+id = "op_player"
+label = "OP"
+label_zh_cn = "设为 OP"
+transport = "stdin"
+command_template = "op {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "RimWorld Together username"
+target_placeholder_zh_cn = "RimWorld Together 用户名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "deop_player"
+label = "De-op"
+label_zh_cn = "取消 OP"
+transport = "stdin"
+command_template = "deop {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "RimWorld Together username"
+target_placeholder_zh_cn = "RimWorld Together 用户名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "backup"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 8000
+
+# Release 26.8.31.1 Server-win-x64.zip contains RTServer.exe; these roots are generated at runtime.
+[storage]
+runtime_copy_exclusions = ["Assets", "Configs", "Logs", "Backups"]
+saves_path_template = "{{paths.install_root}}/Assets"
+retained_paths = ["Configs"]
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "managed_terminal_console_and_json_rosters"
+reason = "RimWorld Together RTServer.exe accepts list, banlist, kick, ban, pardon, op, and deop through managed stdin. The latest release replaced whitelist controls with a server password; historical roster files are retained without exposing obsolete commands."
+verification = "Command names and native configuration were checked against official release 26.8.31.1 source. No latest-package game process or player-join test is claimed. Validate managed stdin and password admission with matching client/server builds before claiming runtime verification."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]

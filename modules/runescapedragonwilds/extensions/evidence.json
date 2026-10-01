@@ -1,0 +1,120 @@
+{
+  "observed_at": "2026-09-08",
+  "scope": "isolated_native_bootstrap_current_empty_roster_restart_stop_and_lua_mock_tests",
+  "steam_app_id": 4019830,
+  "steam_build_id": 24574222,
+  "unreal_engine_version": "5.6.1",
+  "loader": {
+    "repository": "https://github.com/UE4SS-RE/RE-UE4SS",
+    "version": "3.0.1-1125-g527a483b",
+    "commit": "527a483b63b4dd0104fe1ca1a3934a06b87fcfb2",
+    "asset": "UE4SS_v3.0.1-1125-g527a483b.zip",
+    "asset_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+    "asset_digest_verified": true,
+    "ue4ss_dll_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958",
+    "license": "MIT"
+  },
+  "proxy_build": {
+    "generator_source_modified": false,
+    "source_manifest": "proxy-sources.json",
+    "source_manifest_sha256": "7d2a03749c570614b0fb88705c0d89b4134ff608e6affb6be7d639fa307b2f35",
+    "source_files_verified": 32,
+    "hash_checks": ["sha256", "git_blob_sha1"],
+    "fmt_version": "11.2.0",
+    "cmake_version": "4.2.1",
+    "compiler": "MSVC 19.51.36252.0",
+    "windows_sdk": "10.0.28000.0",
+    "configuration": "Release",
+    "architecture": "x64",
+    "crt": "static",
+    "configure_exit_code": 0,
+    "build_exit_code": 0,
+    "initial_probe_proxy_sha256": "4e1c63113f9ad4ce935d3f4426c68f938565b5c55ff0216ef20d07d35bcff075",
+    "repository_script_proxy_sha256": "78b9e88f53e15ed8b4d685e4f2097346573c55fed8072d23898a53ce120ca38e",
+    "repository_script_proxy_loaded_in_dedicated_server": true,
+    "proxy_bytes": 450560,
+    "exports_match_system_names_and_ordinals": true,
+    "export_count": 17,
+    "imported_dlls": ["KERNEL32.dll", "USER32.dll", "SHELL32.dll"]
+  },
+  "real_empty_world": {
+    "loader_started": true,
+    "uobject_reads_on_game_thread": true,
+    "world": "/Game/Maps/World/L_World.L_World",
+    "driver_class": "/Script/RedpointEOSNetworking.RedpointEOSNetDriver",
+    "driver_name": "GameNetDriver",
+    "world_backreference_matches": true,
+    "server_connection_valid": false,
+    "game_state_begun_play": true,
+    "client_connections": 0,
+    "player_array": 0
+  },
+  "production_empty_roster": {
+    "script_sha256": "0bda4f9149c9ff8a6c2f3c8854165bea1f77c0c0bfab8fb65f7987f71485d3e4",
+    "source": "net_driver_client_connections",
+    "request_id": "5bd362c35e2a418080ba3d539efd603d",
+    "boot_id": "6a9f732a0f511c4309e31e9532a33032",
+    "timestamp": 1788834635,
+    "complete": true,
+    "current_players": 0,
+    "players": [],
+    "readiness_getter": "DominionPlayerController:IsPlayerReady",
+    "readiness_function_flags": "0x54020401",
+    "readiness_semantics": "game_ready_not_independent_EOS_authentication",
+    "identity": "PlayerState.PlayerId_session_only",
+    "display_name": "PlayerState.PlayerNamePrivate",
+    "actions": []
+  },
+  "mock_tests": {
+    "runtime": "isolated_UE4SS_Lua_VM",
+    "file": "LgsmPlayerQuery/tests.lua",
+    "passed": 28,
+    "failed": 0,
+    "real_players": false
+  },
+  "native_host_probe": {
+    "test": "isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process",
+    "launch": "production spawn_launch_plan, RSDragonwildsServer.exe bootstrap",
+    "managed_process_identity_verified": true,
+    "current_empty_snapshots": 2,
+    "distinct_nonces": true,
+    "nonce_matched": true,
+    "native_response_parser_passed": true,
+    "stopped_process_rejected": true,
+    "owned_process_tree_stopped": true,
+    "result": "passed"
+  },
+  "restart_observation": {
+    "recorded_fixture_boot_id": "6a9f732a0f511c4309e31e9532a33032",
+    "new_boot_id": "6a9f748441a5e3891f77531530caa2f3",
+    "new_request_id": "000000000000000018d337e866116998",
+    "new_timestamp": 1788834955,
+    "complete": true,
+    "current_players": 0,
+    "boot_changed": true,
+    "request_changed": true
+  },
+  "build_script_checks": {
+    "fresh_download_and_build": "passed",
+    "offline_rebuild": "passed",
+    "mismatched_source_preserved_and_rejected": "passed",
+    "missing_offline_source_rejected_without_writes": "passed"
+  },
+  "not_verified": [
+    "real_player_multiplayer_session",
+    "real_player_authentication_completion",
+    "real_player_join",
+    "real_player_leave",
+    "real_player_reconnect",
+    "other_game_builds",
+    "other_loader_builds"
+  ],
+  "excluded": [
+    "Nexus_loader_binary",
+    "RSDWTools_module_source",
+    "join_minus_leave_log_reconstruction",
+    "saved_player_records",
+    "asynchronous_UObject_reads",
+    "administrative_commands"
+  ]
+}

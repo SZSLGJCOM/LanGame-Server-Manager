@@ -1,0 +1,21 @@
+schema_version = 1
+module_id = "dontstarve"
+primary_process_key = "master"
+readiness_timeout_ms = 90000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[preconditions]]
+id = "dst-cluster-token"
+kind = "secret"
+environment = "LANGAME_SMOKE_DST_CLUSTER_TOKEN"
+setting_key = "cluster_token"
+reason_code = "dst_cluster_token_missing"
+
+[[probes]]
+id = "master-endpoint"
+kind = "process_endpoint"
+process_key = "master"
+port_name = "master"
+protocol = "udp"

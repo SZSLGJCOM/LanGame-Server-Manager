@@ -1,0 +1,72 @@
+name: Bug report / 缺陷报告
+description: Report a reproducible product defect / 报告可复现的产品缺陷
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security vulnerabilities must follow SECURITY.md and must not be disclosed here.
+        安全漏洞必须按 SECURITY.md 私下报告，不得在此公开披露。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched existing issues for the same problem. / 我已检索现有 Issue，未发现相同问题。
+          required: true
+        - label: This report is not a security vulnerability and contains no credentials, private addresses, player data, or proprietary game files. / 本报告不是安全漏洞，且不含凭据、私有地址、玩家数据或专有游戏文件。
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem summary / 问题摘要
+      description: Describe the observable failure and its impact. / 说明可观察到的故障及影响。
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment / 环境
+      description: Include the app version or commit, Windows version, game module, and relevant installation mode. / 提供应用版本或提交、Windows 版本、游戏模块和相关安装方式。
+      placeholder: |
+        App version or commit:
+        Windows version:
+        Game module:
+        Installation mode:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps / 复现步骤
+      description: Provide the smallest deterministic sequence that reproduces the problem. / 提供能够稳定复现问题的最短操作序列。
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior / 预期行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior / 实际行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence / 脱敏证据
+      description: Add relevant logs, screenshots, or error text after removing sensitive and proprietary content. / 删除敏感信息和专有内容后，附上相关日志、截图或错误文本。

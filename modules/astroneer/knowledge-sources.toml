@@ -1,0 +1,32 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "astroneer"
+scope = "Self-hosted dedicated-server installation, Engine.ini and AstroServerSettings.ini, networking, ownership and world saves."
+gaps = ["The publisher distinguishes self-hosted and preferred-provider cross-play; do not merge their platform support guarantees."]
+
+[[sources]]
+id = "system-era-server-guide"
+content_selector = "#faq"
+title = "Astroneer dedicated servers and host-your-own guide"
+authority = "System Era Softworks"
+kind = "official"
+seeds = ["https://astroneer.space/dedicatedserver/"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://astroneer.space/dedicatedserver/"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "system-era-server-blog"
+title = "Astroneer host-your-own dedicated-server setup details"
+authority = "System Era Softworks"
+kind = "official"
+seeds = ["https://blog.astroneer.space/p/astroneer-dedicated-server-details/"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://astroneer.space/dedicatedserver/"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

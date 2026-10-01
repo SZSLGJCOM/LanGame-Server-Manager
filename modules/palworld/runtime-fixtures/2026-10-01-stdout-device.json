@@ -1,0 +1,81 @@
+{
+  "module_id": "palworld",
+  "verified_at": "2026-10-01",
+  "status": "native_lifecycle_observed",
+  "steam_app_id": 2394010,
+  "build_id": "25247047",
+  "binary": {
+    "relative_path": "Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe",
+    "sha256": "6f929673e7ac637d591d6f3454dbd396be7911093311cb8b24af3a152b217f49",
+    "size_bytes": 152583168
+  },
+  "stdout_device": {
+    "argument": "-stdout",
+    "utf16_literal_file_offset": 101209720,
+    "argument_parse_rva": "0x00b26e4e",
+    "create_and_register_rva": "0x00b24290",
+    "constructor_rva": "0x00b1f110"
+  },
+  "stdout_verbosity": {
+    "argument": "-FullStdOutLogOutput",
+    "utf16_literal_file_offset": 101208616,
+    "argument_parse_rva": "0x00b1f193",
+    "allowed_verbosity_field_offset": 16,
+    "enabled_max_verbosity": 7
+  },
+  "scope": "Static inspection establishes the installed executable's stdout device and verbosity switches. Run 103 subsequently passed the bounded native lifecycle; all 24 comparable UI samples matched, while one stopped-state sample was not comparable because the selection changed. These switches expose already-enabled log categories, do not change native health markers or the game log-format setting, and do not establish raw-byte completeness, indefinite recording, or all native dialog behavior. No game was executed during the static inspection phase.",
+  "references": [
+    "https://docs.palworldgame.com/settings-and-operation/arguments/",
+    "https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-command-line-arguments-reference?lang=en-US",
+    "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Core/ELogVerbosity__Type"
+  ],
+  "observed_lifecycle": {
+    "run_id": 103,
+    "batch_id": "b017429c-0dbb-4d81-bebe-641d288e3d12",
+    "desktop_build_id": "a580014ff72bffc2fc24ddeb36fc606a66570eedf2b365f89b1f516ce75ac4da",
+    "evidence_files": {
+      "receipt": "parallel-existing-acceptance/b017429c-0dbb-4d81-bebe-641d288e3d12/palworld.json",
+      "ui_observations": "campaign-complete-ui-observations.jsonl"
+    },
+    "backend_acceptance_passed": true,
+    "native_ready": true,
+    "health_status": "ready",
+    "steady_observation": {
+      "required_ms": 30000,
+      "samples": 32,
+      "passed": true
+    },
+    "normal_stop": {
+      "api_succeeded": true,
+      "verified": true,
+      "elapsed_ms": 13690,
+      "exit_codes": [
+        0
+      ],
+      "verification_scope": "api_receipt_tracked_identities_and_storage_readback",
+      "owned_tree_observation": "not_exposed_by_ipc",
+      "required_backend_contract": "normal_stop_returns_only_after_full_owned_tree_exits_without_force"
+    },
+    "managed_game_output": true,
+    "managed_capture_sound": true,
+    "retained_transcripts_match": true,
+    "log_readback_ok": true,
+    "settings_unchanged": true,
+    "ports_unchanged": true,
+    "ui_samples": {
+      "source": "managed_console",
+      "total": 25,
+      "same_source_comparable": 24,
+      "exact_text_matches": 24,
+      "text_mismatches": 0,
+      "not_comparable": 1,
+      "read_errors": 0,
+      "ready_samples": 22,
+      "ready_exact_text_matches": 22,
+      "final_stopped_exact_sample": {
+        "at_utc": "2026-10-01T08:53:55.123Z",
+        "nonempty_lines": 16
+      }
+    }
+  }
+}

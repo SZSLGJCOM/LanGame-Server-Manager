@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "sonsoftheforest"
+scope = "Dedicated-server installation/update, three network ports, self-tests, JSON configuration, ownership, saves and logging."
+gaps = ["The Steam guide is by Dishmink and Survivalist and is recommended by a game community moderator; that does not establish publisher authorship.","The guide's displayed last update was 2025-01-15, not a guarantee of current game-version coverage."]
+
+[[sources]]
+id = "moderator-server-guide"
+title = "Sons of the Forest dedicated-server configuration guide"
+authority = "Dishmink / Survivalist; game Steam community moderator"
+kind = "official_community"
+seeds = ["https://steamcommunity.com/sharedfiles/filedetails/?id=2992700419"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://steamcommunity.com/app/1326470/eventcomments/3808404524161275595/?ctp=31&l=english"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"

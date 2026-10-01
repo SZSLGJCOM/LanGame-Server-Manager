@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "chinaOrigins": ["https://shared.cdn.steamchina.queniuam.com", "https://video.cdn.steamchina.queniuam.com", "https://api.steamchina.com"],
+  "groups": [
+    {
+      "id": "steam-store-images",
+      "origins": ["https://shared.akamai.steamstatic.com", "https://shared.fastly.steamstatic.com", "https://shared.cdn.steamchina.queniuam.com"],
+      "pathPrefixes": ["/store_item_assets/", "/steam/apps/"],
+      "allowedQueryKeys": ["t"],
+      "purposes": ["image", "video"],
+      "purposePathPrefixes": {"video": ["/store_item_assets/steam/apps/"]},
+      "purposePathSuffixes": {"video": [".webm", ".mp4"]},
+      "evidence": ["https://store.steampowered.com/app/322330/", "https://store.steamchina.com/"]
+    },
+    {
+      "id": "steam-store-video",
+      "origins": ["https://video.akamai.steamstatic.com", "https://video.fastly.steamstatic.com", "https://video.cdn.steamchina.queniuam.com"],
+      "pathPrefixes": ["/store_trailers/"],
+      "allowedQueryKeys": ["t"],
+      "purposes": ["video"],
+      "evidence": ["https://store.steampowered.com/app/322330/", "https://store.steamchina.com/"]
+    },
+    {
+      "id": "steam-workshop-images",
+      "origins": ["https://images.steamusercontent.com", "https://steamuserimages-a.akamaihd.net"],
+      "pathPrefixes": ["/ugc/"],
+      "allowedQueryKeys": ["imw", "imh", "ima", "impolicy", "imcolor", "letterbox"],
+      "purposes": ["image"],
+      "evidence": ["https://steamcommunity.com/workshop/browse/?appid=322330"]
+    },
+    {
+      "id": "steam-store-description",
+      "origins": ["https://api.steampowered.com", "https://api.steamchina.com"],
+      "pathPrefixes": [],
+      "exactPaths": ["/IStoreBrowseService/GetItems/v1/"],
+      "allowedQueryKeys": ["input_json"],
+      "purposes": ["metadata"],
+      "evidence": ["https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?input_json=%7B%22ids%22%3A%5B%7B%22appid%22%3A322330%7D%5D%2C%22context%22%3A%7B%22language%22%3A%22schinese%22%2C%22country_code%22%3A%22CN%22%7D%2C%22data_request%22%3A%7B%22include_full_description%22%3Atrue%7D%7D", "https://api.steamchina.com/IStoreBrowseService/GetItems/v1/?input_json=%7B%22ids%22%3A%5B%7B%22appid%22%3A322330%7D%5D%2C%22context%22%3A%7B%22language%22%3A%22schinese%22%2C%22country_code%22%3A%22CN%22%7D%2C%22data_request%22%3A%7B%22include_full_description%22%3Atrue%7D%7D"]
+    },
+    {
+      "id": "steam-public-metadata",
+      "origins": ["https://api.steampowered.com", "https://api.steamchina.com"],
+      "pathPrefixes": [],
+      "exactPaths": ["/ISteamRemoteStorage/GetPublishedFileDetails/v1/", "/ISteamRemoteStorage/GetCollectionDetails/v1/", "/ISteamNews/GetNewsForApp/v2/"],
+      "allowedQueryKeys": ["appid", "count", "maxlength", "feeds", "format", "enddate"],
+      "purposes": ["metadata"],
+      "evidence": ["https://store.steamchina.com/", "https://partner.steamgames.com/doc/webapi/ISteamRemoteStorage#GetPublishedFileDetails"]
+    },
+    {
+      "id": "steamcmd-native-update",
+      "origins": ["https://client-update.steamstatic.com", "https://cdn.fastly.steamstatic.com", "https://steamcdn-a.akamaihd.net", "https://media.steampowered.com"],
+      "pathPrefixes": [],
+      "exactPaths": ["/steam_cmd_win64"],
+      "basePaths": {
+        "https://client-update.steamstatic.com": "/",
+        "https://cdn.fastly.steamstatic.com": "/client/",
+        "https://steamcdn-a.akamaihd.net": "/client/",
+        "https://media.steampowered.com": "/client/"
+      },
+      "filenamePatterns": [{"prefix": "steamcmd_", "extension": ".zip"}],
+      "purposes": ["download", "metadata"],
+      "evidence": ["https://client-update.steamstatic.com/steam_cmd_win64", "https://cdn.fastly.steamstatic.com/client/steam_cmd_win64", "https://steamcdn-a.akamaihd.net/client/steam_cmd_win64", "https://media.steampowered.com/client/steam_cmd_win64"]
+    },
+    {
+      "id": "minecraft-metadata",
+      "origins": ["https://piston-meta.mojang.com", "https://launchermeta.mojang.com"],
+      "pathPrefixes": ["/mc/game/", "/v1/packages/"],
+      "purposes": ["metadata"],
+      "evidence": ["https://www.minecraft.net/en-us/download/server", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"]
+    },
+    {
+      "id": "minecraft-objects",
+      "origins": ["https://piston-data.mojang.com", "https://launcher.mojang.com"],
+      "pathPrefixes": ["/v1/objects/"],
+      "purposes": ["download"],
+      "evidence": ["https://www.minecraft.net/en-us/download/server", "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"]
+    }
+  ],
+  "exactResources": [
+    {
+      "id": "steamcmd-windows",
+      "urls": ["https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip", "https://cdn.fastly.steamstatic.com/client/installer/steamcmd.zip", "https://media.steampowered.com/installer/steamcmd.zip"],
+      "purposes": ["download"],
+      "evidence": ["https://developer.valvesoftware.com/wiki/SteamCMD"]
+    }
+  ]
+}

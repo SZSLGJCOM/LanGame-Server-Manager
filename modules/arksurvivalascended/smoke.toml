@@ -1,0 +1,13 @@
+schema_version = 1
+module_id = "arksurvivalascended"
+primary_process_key = "main"
+readiness_timeout_ms = 300000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "server-advertised"
+kind = "log_marker"
+sources = [{ kind = "instance", path = "logs/ark-ascended-server.log" }]
+any_of = ["advertising for join"]

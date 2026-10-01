@@ -1,0 +1,183 @@
+id = "humanitz"
+name = "HumanitZ Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for HumanitZ via SteamCMD."
+steam_app_id = 2728330
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "humanitz"
+verification_path = "HumanitZServer.exe"
+
+[process]
+executable = "HumanitZServer.exe"
+args_template = [
+  "-log",
+  "-MULTIHOME={{instance.bind_ip}}",
+  "-port={{ports.game.port}}",
+  "-queryport={{ports.query.port}}",
+  "-steamservername={{settings.server_name}}",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The current HumanitZ dedicated package installs HumanitZServer.exe and ships HumanitZServer/REF_GameServerSettings.ini. LanGame renders GameServerSettings.ini and WelcomeMessage.txt, then materializes AdminList.txt, F_ReservedSlots.txt, and F_BannedPlayers.txt into the server-owned HumanitZServer root before launch."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 8888
+
+[runtime]
+player_count_source = "player_list"
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_online_players"
+player_action_ids = []
+response_codec = "humanitz_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_online_players"
+label = "Online players"
+label_zh_cn = "在线玩家"
+transport = "humanitz_rcon"
+command_template = "info"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Players"
+label_zh_cn = "玩家列表"
+transport = "source_rcon"
+command_template = "Players"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "Bans"
+label_zh_cn = "封禁列表"
+transport = "source_rcon"
+command_template = "fetchbanned"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "kick {{target}}"
+target_label = "Complete NetID"
+target_label_zh_cn = "完整 NetID"
+target_placeholder = "Complete NetID from Players"
+target_placeholder_zh_cn = "Players 输出中的完整 NetID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "source_rcon"
+command_template = "ban {{target}}"
+target_label = "Complete NetID"
+target_label_zh_cn = "完整 NetID"
+target_placeholder = "Complete NetID from Players"
+target_placeholder_zh_cn = "Players 输出中的完整 NetID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "source_rcon"
+command_template = "unban {{target}}"
+target_label = "Complete NetID"
+target_label_zh_cn = "完整 NetID"
+target_placeholder = "Complete NetID from fetchbanned"
+target_placeholder_zh_cn = "fetchbanned 输出中的完整 NetID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+destructive = true
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 10000
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon_and_humanitz_rcon_and_server_rosters"
+reason = "HumanitZ documents a TCP RCON port, remote RCON commands, and native admin, reserved-slot, and ban roster files. LanGame renders RCONEnabled, RConPort, RCONPass and all three rosters, then dispatches runtime commands through the instance RCON port."
+verification = "Run HumanitZServer.exe on Windows, confirm GameServerSettings.ini, WelcomeMessage.txt, and the three native roster files are materialized under HumanitZServer, connect with the configured RCON password, then verify Players output and kick/ban/unban side effects against a test NetID."
+
+[storage]
+runtime_copy_exclusions = ["HumanitZServer/Saved", "HumanitZServer/GameServerSettings.ini", "HumanitZServer/WelcomeMessage.txt", "HumanitZServer/AdminList.txt", "HumanitZServer/F_MVPAccess.txt", "HumanitZServer/F_ReservedSlots.txt", "HumanitZServer/F_BannedPlayers.txt", "HumanitZServer/Content/Paks/~mods"]
+saves_path_template = "{{paths.install_root}}/HumanitZServer/Saved"
+retained_paths = [
+  "HumanitZServer/GameServerSettings.ini",
+  "HumanitZServer/WelcomeMessage.txt",
+  "HumanitZServer/AdminList.txt",
+  "HumanitZServer/F_MVPAccess.txt",
+  "HumanitZServer/F_ReservedSlots.txt",
+  "HumanitZServer/F_BannedPlayers.txt",
+]
+
+[mods.source]
+provider = "nexus"
+label = "Nexus Mods"
+url = "https://www.nexusmods.com/humanitz"
+install_note = "HumanitZ 1.0 community mod routing is type-specific; LanGame stages raw UE pak packages into HumanitZServer/Content/Paks/~mods. Use Vortex or manual placement for UE4SS, LogicMods, config, and root-structured archives."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/HumanitZServer/Content/Paks/~mods"
+target_label = "HumanitZServer/Content/Paks/~mods"
+accepts = ["pak", "zip", "folder"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

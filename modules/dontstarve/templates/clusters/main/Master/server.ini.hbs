@@ -1,0 +1,10 @@
+[NETWORK]
+server_port = {{ports.master.port}}
+
+[SHARD]
+is_master = true
+name = Master
+
+[STEAM]
+master_server_port = {{ports.steam_query.port}}
+authentication_port = {{ports.steam_auth.port}}

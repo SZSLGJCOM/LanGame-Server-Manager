@@ -1,0 +1,54 @@
+name: Rust security audit
+
+on:
+  push:
+    paths:
+      - "**/Cargo.toml"
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .github/workflows/rust-security.yml
+  pull_request:
+    paths:
+      - "**/Cargo.toml"
+      - Cargo.lock
+      - rust-toolchain.toml
+      - .github/workflows/rust-security.yml
+  schedule:
+    - cron: "45 20 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: RustSec advisory scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned Rust toolchain
+        shell: bash
+        run: |
+          toolchain="$(sed -nE 's/^channel[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' rust-toolchain.toml)"
+          if [[ -z "${toolchain}" ]]; then
+            echo "rust-toolchain.toml does not declare a channel" >&2
+            exit 1
+          fi
+          rustup toolchain install "${toolchain}" --profile minimal
+
+      - name: Install the pinned RustSec scanner
+        run: cargo install cargo-audit --version 0.22.2 --locked
+
+      - name: Audit locked Rust dependencies
+        # GTK3 remains a target-specific Tauri dependency without a patched 0.18 release.
+        # Keep that single upstream exception explicit while rejecting new unsound or yanked crates.
+        run: cargo audit --deny unsound --deny yanked --ignore RUSTSEC-2024-0429

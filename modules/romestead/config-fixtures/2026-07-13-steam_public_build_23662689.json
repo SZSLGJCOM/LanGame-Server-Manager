@@ -1,0 +1,105 @@
+{
+  "fixture_version": 1,
+  "module_id": "romestead",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 23662689",
+    "source_ids": [
+      "steam_public_build_23662689",
+      "steamcmd_appinfo_4763510_2026_07_01",
+      "steamcmd_app_update_4763510_2026_07_01",
+      "romestead_smoke_launch_2026_07_01",
+      "romestead_server_setup_guide_2026_05_28",
+      "config_json",
+      "romestead_hotfix_0_25_1_4",
+      "launch_args",
+      "start_romestead_bat",
+      "player_management"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "config.json",
+        "content": {
+          "Port": 1,
+          "UnknownFuture": {
+            "keep": true
+          }
+        }
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 9,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 2
+  },
+  "classifications": {
+    "editable": [
+      "config_json.AutoStartWorldName",
+      "config_json.AutoCreateAndLoadWorld",
+      "config_json.AutoCreateWorldSize",
+      "config_json.AutoCreateWorldSeed",
+      "config_json.Password",
+      "config_json.MaxPlayers",
+      "config_json.EnableCheats",
+      "config_json.SleepThresholdMs",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "config_json.Port",
+      "player_management.list/kick/ban runtime controls"
+    ]
+  },
+  "settings": {
+    "auto_start_world_name": "LanGame World",
+    "auto_create_and_load_world": true,
+    "auto_create_world_size": 2,
+    "auto_create_world_seed": "seed-2026",
+    "password": "join-pass",
+    "max_players": 8,
+    "enable_cheats": false,
+    "sleep_threshold_ms": -1,
+    "extra_launch_args": "--trace --verbose"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "config.json",
+        "format": "json",
+        "keys": {
+          "/AutoStartWorldName": "LanGame World",
+          "/AutoCreateWorldSeed": "seed-2026",
+          "/Port": 8050,
+          "/SleepThresholdMs": -1,
+          "/UnknownFuture/keep": true
+        }
+      },
+      {
+        "root": "install",
+        "path": "start-romestead.bat",
+        "format": "text",
+        "fragments": [
+          "Server.exe",
+          "DOTNET_ROOT"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "start-romestead.bat",
+      "arguments": [
+        "--trace",
+        "--verbose"
+      ]
+    }
+  }
+}

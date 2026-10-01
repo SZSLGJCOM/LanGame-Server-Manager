@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "unturned"
+scope = "Publisher server documentation for installation, SteamCMD, configuration, networking, GSLT/Fake IP, saves, shutdown and hosting rules."
+gaps = []
+
+[[sources]]
+id = "sdg-server-docs"
+title = "Unturned dedicated-server documentation"
+authority = "Smartly Dressed Games"
+kind = "official"
+seeds = ["https://docs.smartlydressedgames.com/en/stable/servers/server-hosting.html"]
+allowed_prefixes = ["https://docs.smartlydressedgames.com/en/stable/servers/"]
+discover_links = true
+max_pages = 256
+authority_evidence = "https://docs.smartlydressedgames.com/en/stable/servers/server-hosting.html"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

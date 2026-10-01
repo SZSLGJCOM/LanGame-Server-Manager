@@ -1,0 +1,76 @@
+name: Game server request / 游戏服务器接入
+description: Request support for a native Windows dedicated server / 申请接入可在 Windows 原生运行的专用服务器
+title: "[Server Request] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        LanGame Server Manager accepts a game only when its Windows dedicated-server package and operating contract can be verified from lawful, reproducible evidence.
+        LanGame Server Manager 仅接入能够通过合法、可复现证据验证 Windows 专用服务器程序包和运行契约的游戏。
+
+        Do not upload game binaries, proprietary configuration bundles, credentials, private addresses, player data, or unlicensed media.
+        请勿上传游戏二进制文件、专有配置包、凭据、私有地址、玩家数据或未经许可的媒体。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Before submitting / 提交前确认
+      options:
+        - label: I searched existing issues, modules, and documentation for this game. / 我已检索现有 Issue、模块和文档。
+          required: true
+        - label: The game has a dedicated-server package that can run natively on Windows; this is not a client-hosted session request. / 该游戏提供可在 Windows 原生运行的专用服务器程序包，本请求不是客户端开服需求。
+          required: true
+        - label: The report contains links or descriptions only, with no proprietary files, secrets, private addresses, or player data. / 本报告仅包含链接或说明，不含专有文件、密钥、私有地址或玩家数据。
+          required: true
+
+  - type: input
+    id: game
+    attributes:
+      label: Game and dedicated-server name / 游戏与专用服务器名称
+      placeholder: Game title — Dedicated Server
+    validations:
+      required: true
+
+  - type: textarea
+    id: acquisition
+    attributes:
+      label: Official acquisition source / 官方获取来源
+      description: Link the publisher documentation or official distribution entry. Include the dedicated-server app ID or package identifier when one exists. / 提供发行方文档或官方分发入口；如有专用服务器 App ID 或程序包标识，请一并说明。
+    validations:
+      required: true
+
+  - type: textarea
+    id: windows_evidence
+    attributes:
+      label: Native Windows evidence / Windows 原生运行证据
+      description: Identify the documented Windows executable, supported architecture, and prerequisite runtime. / 说明文档记录的 Windows 可执行文件、支持的体系结构和前置运行环境。
+    validations:
+      required: true
+
+  - type: textarea
+    id: operating_contract
+    attributes:
+      label: Install and operating contract / 安装与运行契约
+      description: Link or summarize authoritative evidence for installation, startup arguments, configuration files, save paths, graceful shutdown, and update behavior. Mark unknown items as unknown. / 提供安装、启动参数、配置文件、存档路径、正常停止与更新行为的权威证据；无法确认的内容请明确标为未知。
+    validations:
+      required: true
+
+  - type: textarea
+    id: network
+    attributes:
+      label: Network and query evidence / 网络与查询证据
+      description: List documented port roles and protocols, server-query support, and join behavior. Do not guess missing values. / 列出文档已确认的端口角色与协议、服务器查询能力和加入方式，不得猜测缺失值。
+
+  - type: textarea
+    id: provenance
+    attributes:
+      label: Provenance and redistribution limits / 来源与再分发限制
+      description: State who publishes the package and any terms relevant to downloading, testing, fixtures, screenshots, or media. / 说明程序包发布者，以及下载、测试、夹具、截图或媒体涉及的条款。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_scope
+    attributes:
+      label: Requested operator workflow / 期望的运维流程
+      description: Describe the observable install, configure, run, backup, query, or administration workflow you need. / 说明期望的安装、配置、运行、备份、查询或管理流程。

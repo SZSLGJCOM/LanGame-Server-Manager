@@ -1,0 +1,111 @@
+{
+  "type": "object",
+  "title": "Romestead Dedicated Server",
+  "properties": {
+    "auto_start_world_name": {
+      "type": "string",
+      "default": "RomesteadWorld",
+      "x-lsgm-default-source": "instance_name",
+      "title": "World Name",
+      "description": "World to load automatically when the server starts.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "AutoStartWorldName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "auto_create_and_load_world": {
+      "type": "boolean",
+      "default": true,
+      "title": "Auto-create and Load World",
+      "description": "Creates the selected world if it does not exist, then loads it.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "AutoCreateAndLoadWorld",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "auto_create_world_size": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 0,
+      "maximum": 2,
+      "title": "New World Size",
+      "description": "Used when creating a world: 0 small, 1 standard, 2 large.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "AutoCreateWorldSize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "auto_create_world_seed": {
+      "type": "string",
+      "default": "",
+      "title": "New World Seed",
+      "description": "Seed used when creating a world. Leave empty for a random seed.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 130,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "AutoCreateWorldSeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "password": {
+      "type": "string",
+      "default": "",
+      "title": "Join Password",
+      "description": "Leave empty to allow joining without a password.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "Password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 8,
+      "title": "Max Players",
+      "description": "Maximum simultaneous players; Romestead supports up to 8.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "MaxPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_cheats": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Cheats",
+      "description": "Allows cheat requests such as spawning items, entities and bosses, changing time and weather, and completing quests. Applies when creating or loading a world; disabled servers reject these requests.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "EnableCheats",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "sleep_threshold_ms": {
+      "type": "number",
+      "default": 10,
+      "title": "Server Thread Sleep Threshold (ms)",
+      "description": "Controls low-load CPU sleeping. Values from 1.0 to 16.5 ms enable sleeping; -1 disables it to reduce timing jitter at higher CPU cost.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "config_json",
+      "x-lsgm-source-key": "SleepThresholdMs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "format": "textarea",
+      "default": "",
+      "title": "Extra Launch Arguments",
+      "description": "Optional raw arguments appended to Server.exe for version-specific flags.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  }
+}

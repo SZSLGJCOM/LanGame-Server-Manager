@@ -1,0 +1,131 @@
+:root {
+  --theme-shell-main-bg: var(--bg);
+  --theme-shell-main-border: var(--shell-line);
+  --theme-shell-main-shadow: none;
+  --theme-shell-main-glow: none;
+}
+
+.shell-main {
+  background: var(--theme-shell-main-bg);
+  border-color: var(--theme-shell-main-border);
+  box-shadow: var(--theme-shell-main-shadow);
+}
+
+.shell-main::before {
+  display: block;
+  background: var(--theme-shell-main-glow);
+}
+
+:root[data-theme="light"] .shell-main::before {
+  display: none;
+}
+
+.shell-frame {
+  display: block;
+  min-height: 100vh;
+  padding: 12px;
+}
+
+.shell-topnav {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  min-width: 0;
+  justify-self: center;
+  padding: 4px 6px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shell-topnav::-webkit-scrollbar {
+  display: none;
+}
+
+.shell-topnav-item {
+  position: relative;
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--shell-muted);
+  min-width: 78px;
+  padding: 0;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+.shell-topnav-item:hover {
+  transform: translateY(-2px);
+  color: var(--shell-text);
+}
+
+.shell-topnav-item:focus-visible {
+  outline: none;
+}
+
+.shell-topnav-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.shell-topnav-label {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  color: inherit;
+}
+
+.shell-topnav-badge {
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  font-size: var(--text-meta);
+}
+
+.shell-header-tools {
+  justify-self: end;
+  gap: 8px;
+}
+
+.workspace-page .workspace-header {
+  min-height: 40px;
+}
+
+.workspace-page .panel-head .body-copy {
+  display: none;
+}
+
+@media (max-width: 1260px) {
+  .shell-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .shell-header-tools {
+    order: 3;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 960px) {
+  .shell-header {
+    padding: 10px 12px;
+  }
+
+  .shell-topnav-item {
+    min-height: 38px;
+    padding-inline: 8px 10px;
+  }
+
+  .shell-topnav-label {
+    font-size: var(--text-body);
+  }
+
+  .shell-header-tools {
+    gap: 6px;
+  }
+}

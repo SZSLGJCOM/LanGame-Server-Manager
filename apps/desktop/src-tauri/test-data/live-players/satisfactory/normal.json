@@ -1,0 +1,5 @@
+[
+  {"ID":"Char_Player_C_1","Name":"Builder","Online":true},
+  {"ID":"Char_Player_C_2","Name":"探索者","Online":true},
+  {"ID":"Char_Player_C_3","Name":"Offline Player","Online":false}
+]

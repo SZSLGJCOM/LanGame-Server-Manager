@@ -1,0 +1,1 @@
+Idx | Char name | Player name | User ID | Platform ID | Platform Name

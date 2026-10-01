@@ -1,0 +1,74 @@
+.inline-confirm-action {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.inline-confirm-action.is-confirming {
+  flex: 1 1 260px;
+}
+
+.inline-confirm-review {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+
+.inline-confirm-message,
+.inline-confirm-error {
+  color: var(--text);
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inline-confirm-error {
+  color: var(--theme-danger-text);
+}
+
+.inline-confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inline-confirm-action .inline-confirm-review .inline-confirm-submit {
+  color: var(--theme-danger-text);
+  border-color: var(--theme-danger-border);
+  background: var(--theme-danger-bg);
+}
+
+.library-sidebar-maintenance-row .inline-confirm-buttons > button {
+  flex: 1;
+  width: auto;
+}
+
+:root .library-detail-page .library-sidebar-maintenance-row .inline-confirm-review .inline-confirm-submit {
+  color: var(--theme-danger-text);
+  border-color: var(--theme-danger-border);
+  background: var(--theme-danger-bg);
+}
+
+.server-file-backup-row:has(.inline-confirm-action.is-confirming) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.server-file-backup-actions:has(.inline-confirm-action.is-confirming) {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.player-access-roster-action-pair > .inline-confirm-action.is-confirming,
+.player-access-roster-editor > .inline-confirm-action.is-confirming {
+  grid-column: 1 / -1;
+}
+
+.player-access-roster-entry:has(.inline-confirm-action.is-confirming) {
+  grid-template-columns: minmax(0, 1fr);
+}

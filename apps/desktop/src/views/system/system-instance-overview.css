@@ -1,0 +1,189 @@
+.system-instance-panel {
+  grid-area: instance;
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.system-instance-panel .system-panel-head {
+  gap: 24px;
+  margin-inline: 20px;
+  padding: 16px 0 12px;
+  border-bottom: 1px solid var(--system-panel-border-soft);
+}
+
+.system-instance-panel .system-panel-head > div:first-child {
+  flex: 0 0 auto;
+}
+
+.system-instance-panel .system-panel-aside {
+  flex: 1;
+}
+
+.system-instance-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  align-items: start;
+  gap: 16px;
+}
+
+.system-instance-summary-item {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.system-instance-summary-item span {
+  color: var(--system-panel-muted);
+  font-size: var(--text-meta);
+}
+
+.system-instance-summary-item strong {
+  color: var(--system-panel-text);
+  font-size: var(--text-section-title);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.system-instance-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 3px 10px;
+  min-height: 0;
+  padding: 9px 12px 12px;
+  overflow-y: auto;
+  scrollbar-color: var(--shell-line-strong) transparent;
+}
+
+.system-instance-list:has(> .system-instance-empty) {
+  align-content: center;
+}
+
+.system-instance-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+  min-height: 74px;
+  padding: 8px;
+  color: var(--system-panel-text);
+  font-size: var(--text-secondary);
+  text-align: center;
+}
+
+.system-instance-empty span {
+  color: var(--system-panel-muted);
+  font-size: var(--text-secondary);
+}
+
+.system-instance-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.system-instance-item:hover {
+  background: var(--theme-card-muted);
+}
+
+.system-instance-item-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--system-panel-border-soft);
+  border-radius: 7px;
+  background: var(--theme-card-muted);
+  color: var(--system-panel-muted);
+  font-size: var(--text-meta);
+  font-weight: var(--font-weight-semibold);
+}
+
+.system-instance-item-info {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.system-instance-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.system-instance-item-name-row .instance-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--system-panel-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+}
+
+.system-instance-item-name-row .instance-autostart-badge {
+  flex-shrink: 0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--system-panel-muted);
+  background: var(--theme-chip-bg);
+  font-size: var(--text-meta);
+}
+
+.system-instance-item-address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--system-panel-muted);
+  font-size: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.system-instance-item-status {
+  flex-shrink: 0;
+}
+
+.system-instance-panel .status-pill {
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: var(--text-meta);
+  font-weight: var(--font-weight-medium);
+}
+
+.system-instance-panel .pill-running {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.system-instance-panel .pill-stopped {
+  color: var(--system-panel-muted);
+  background: var(--theme-chip-bg);
+}
+
+.system-instance-panel .pill-starting,
+.system-instance-panel .pill-stopping {
+  color: var(--theme-warning-text);
+  background: var(--theme-warning-bg);
+}
+
+.system-instance-panel .pill-error {
+  color: var(--theme-danger-text);
+  background: var(--theme-danger-bg);
+}

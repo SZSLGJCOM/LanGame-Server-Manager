@@ -1,0 +1,156 @@
+{
+  "fixture_version": 1,
+  "module_id": "returntomoria",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 21872765",
+    "source_ids": [
+      "steam_public_build_21872765",
+      "first_launch_defaults_21872765",
+      "official_dedicated_server_guide",
+      "moria_config",
+      "moria_rules",
+      "moria_permissions",
+      "launch_args",
+      "returntomoria_windowsserver_ini",
+      "returntomoria_status_json"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "MoriaServerConfig.ini",
+        "content": "[Server]\nServerName=obsolete legacy value\nServerPassword=fixture-server-password\n\n[FutureBuild]\nUnknownSetting=preserve-me\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 26,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 4
+  },
+  "classifications": {
+    "editable": [
+      "moria_config.Main.OptionalPassword",
+      "moria_config.World.Name",
+      "moria_config.World.OptionalWorldFilename",
+      "moria_config.World.Create.Type",
+      "moria_config.World.Create.Seed",
+      "moria_config.World.Create.Difficulty.Preset",
+      "moria_config.World.Create.Difficulty.Custom.CombatDifficulty",
+      "moria_config.World.Create.Difficulty.Custom.EnemyAggression",
+      "moria_config.World.Create.Difficulty.Custom.SurvivalDifficulty",
+      "moria_config.World.Create.Difficulty.Custom.MiningDrops",
+      "moria_config.World.Create.Difficulty.Custom.WorldDrops",
+      "moria_config.World.Create.Difficulty.Custom.HordeFrequency",
+      "moria_config.World.Create.Difficulty.Custom.SiegeFrequency",
+      "moria_config.World.Create.Difficulty.Custom.PatrolFrequency",
+      "moria_config.World.Create.OptionalDLC.Array",
+      "moria_config.World.Create.UpgradeOptionalDLC.Array",
+      "moria_config.Host.AdvertiseAddress",
+      "moria_config.Host.AdvertisePort",
+      "moria_config.Host.InitialConnectionRetryTime",
+      "moria_config.Host.AfterDisconnectionRetryTime",
+      "moria_config.Console.Enabled",
+      "moria_config.Performance.ServerFPS",
+      "moria_config.Performance.LoadedAreaLimit",
+      "moria_rules.rules_message",
+      "moria_permissions.permissions_lines",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "moria_config.Host.ListenAddress",
+      "moria_config.Host.ListenPort",
+      "official_dedicated_server_guide.MaxPlayers",
+      "returntomoria_status_json.runtime status"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Moria",
+    "server_password": "moria-pass",
+    "world_file_name": "MW_LanGame.sav",
+    "world_seed": "424242",
+    "game_mode": "sandbox",
+    "difficulty_preset": "custom",
+    "combat_difficulty": "high",
+    "enemy_aggression": "veryhigh",
+    "survival_difficulty": "low",
+    "mining_drops": "veryhigh",
+    "world_drops": "high",
+    "horde_frequency": "low",
+    "siege_frequency": "verylow",
+    "patrol_frequency": "high",
+    "optional_dlc_array": "DurinsFolk",
+    "upgrade_optional_dlc_array": "DurinsFolk",
+    "advertise_address": "203.0.113.20",
+    "advertise_port": "17777",
+    "initial_connection_retry_seconds": 180,
+    "after_disconnection_retry_seconds": 900,
+    "console_enabled": true,
+    "server_fps": 60,
+    "loaded_area_limit": 16,
+    "rules_message": "Respect the company. No griefing.",
+    "permissions_lines": "Default = AllConstruction,AllStorage\nBlockedDwarf = Blocked",
+    "extra_launch_args": "-NoSplash -log"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "MoriaServerConfig.ini",
+        "format": "ini",
+        "keys": {
+          "Main.OptionalPassword": "moria-pass",
+          "World.Name": "\"LanGame Moria\"",
+          "World.OptionalWorldFilename": "\"MW_LanGame.sav\"",
+          "World.Create.Type": "sandbox",
+          "World.Create.Seed": "424242",
+          "World.Create.Difficulty.Preset": "custom",
+          "World.Create.Difficulty.Custom.CombatDifficulty": "high",
+          "World.Create.Difficulty.Custom.EnemyAggression": "veryhigh",
+          "World.Create.Difficulty.Custom.SurvivalDifficulty": "low",
+          "World.Create.Difficulty.Custom.MiningDrops": "veryhigh",
+          "World.Create.Difficulty.Custom.WorldDrops": "high",
+          "World.Create.Difficulty.Custom.HordeFrequency": "low",
+          "World.Create.Difficulty.Custom.SiegeFrequency": "verylow",
+          "World.Create.Difficulty.Custom.PatrolFrequency": "high",
+          "World.Create.OptionalDLC.Array": "\"DurinsFolk\"",
+          "World.Create.UpgradeOptionalDLC.Array": "\"DurinsFolk\"",
+          "Host.ListenAddress": "0.0.0.0",
+          "Host.ListenPort": "7777",
+          "Host.AdvertiseAddress": "203.0.113.20",
+          "Host.AdvertisePort": "17777",
+          "Host.InitialConnectionRetryTime": "180",
+          "Host.AfterDisconnectionRetryTime": "900",
+          "Console.Enabled": "true",
+          "Performance.ServerFPS": "60",
+          "Performance.LoadedAreaLimit": "16",
+          "FutureBuild.UnknownSetting": "preserve-me"
+        }
+      },
+      {
+        "root": "install",
+        "path": "MoriaServerRules.txt",
+        "format": "text",
+        "fragments": ["Respect the company. No griefing."]
+      },
+      {
+        "root": "install",
+        "path": "MoriaServerPermissions.txt",
+        "format": "text",
+        "fragments": ["Default = AllConstruction,AllStorage", "BlockedDwarf = Blocked"]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "MoriaServer.exe",
+      "arguments": ["-NoSplash", "-log"]
+    }
+  }
+}

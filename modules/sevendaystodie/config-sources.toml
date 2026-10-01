@@ -1,0 +1,622 @@
+status = "best_effort_verified"
+last_verified = "2026-08-10"
+notes = "SteamCMD app 294420 build 24392395 and the locally launched V2.6 (b14) server were re-audited on 2026-08-10. The runtime-generated serveradmin.xml uses adminTools/users, commands, a platform namespace plus userid for Steam/EOS/XBL/PSN user identities, and a parseable date string for blacklist unbandate. A 2026-09-27 static IL check of build 24994542 confirms native saves preserve local expiry time to seconds. Duration zero expires immediately; the online command therefore explicitly bans for 10 years and records its confirmed native result. Blacklist removal sends the offline account unban command while running; arbitrary blacklist additions and edits remain restart-scoped."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=251570&count=8&maxlength=0&feeds=steam_community_announcements"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The publisher feed distinguishes V3.2.0 Stable (2026-08-26) from opt-in V3.3.0 EXP (2026-09-24); experimental is not treated as the default stable target. The installed app 294420 manifest reports build 24994542. All 68 properties in its packaged serverconfig.xml are covered by the template; UserDataFolder is an additional instance-isolation property. SandboxCode already replaces the retired gameplay properties. Player rosters and maintenance actions retain their separate workspaces."
+
+[[sources]]
+id = "steamcmd_anonymous_app_294420"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_294420.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-08-10 SteamCMD app_update 294420 validate completed successfully. Manifest name 7 Days to Die Dedicated Server, public buildid 24392395, TargetBuildID 24392395, SizeOnDisk 17683442531, installed depot 294421."
+
+[[sources]]
+id = "installed_serverconfig_xml"
+kind = "config_file"
+path = "<validated-install-root>/serverconfig.xml"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "The recorded serverconfig.xml inventory contains 69 property names across browser identity, networking, services, world identity, explicit game rules, SandboxCode, land claims, dynamic mesh, and Twitch settings."
+
+[[sources]]
+id = "installed_startdedicated_bat"
+kind = "launch_arg"
+path = "<validated-install-root>/startdedicated.bat"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "The installed startdedicated.bat writes steam_appid.txt 251570, builds a timestamped log file, and starts the server with -logfile, -quit, -batchmode, -nographics, -configfile=serverconfig.xml -dedicated."
+
+[[sources]]
+id = "installed_admin_file_boundary"
+kind = "documentation"
+path = "serveradmin.xml"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "The validated package has no packaged serveradmin.xml; LanGame materializes the native admin, whitelist, blacklist, and command-permission XML per instance."
+
+[[sources]]
+id = "runtime_generated_serveradmin_v26"
+kind = "generated_roster"
+path = "<validated-instance-root>/Saves/serveradmin.xml"
+authority = "runtime_generated_7_days_to_die_v2_6_b14"
+description = "The V2.6 server-generated admin file uses adminTools/users and adminTools/commands, platform plus userid user identities, and YYYY-MM-DD blacklist unban dates."
+
+[[sources]]
+id = "installed_console_ban_v26"
+kind = "runtime_console"
+path = "<validated-install-root>/7DaysToDieServer_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_7_days_to_die_v2_6_b14_managed_assembly"
+description = "ConsoleCmdBan help and IL define duration units and compute ban expiry from DateTime.Now; a zero-minute duration expires immediately rather than representing a permanent ban."
+
+[[sources]]
+id = "installed_player_moderation_24994542"
+kind = "runtime_console"
+path = "<validated-install-root>/7DaysToDieServer_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_7_days_to_die_build_24994542_managed_assembly"
+description = "Static IL inspected on 2026-09-27: listplayers provides canonical platform accounts; ban add saves native blacklist data and removes the target administrator; ban remove accepts offline namespaced accounts. AdminBlacklist.Write uses yyyy-MM-dd HH:mm:ss via Utils.StandardCulture, and AdminTools.Save can catch write failures. The manager confirms the target in native XML before persisting its result. Detailed evidence and synthetic protocol fixtures are recorded in apps/desktop/src-tauri/test-data/live-players/seven-days/SOURCE.md; this is not a live multiplayer moderation test."
+
+[[sources]]
+id = "serverconfig_xml"
+kind = "config_file"
+path = "serverconfig.xml"
+authority = "installed_default_and_lsgm_template"
+description = "The XML inventory supplies server identity and service settings. The official V3.0 release notes, checked on 2026-09-07, introduce SandboxCode for difficulty, pacing, loot, zombie behavior, and blood moon rules and remove 30 former XML properties. These removed properties are absent from the schema and template. This documentation check does not establish the currently installed game version."
+url = "https://7-days-to-die.zendesk.com/hc/en-us/articles/50318172509972-V3-0-Dead-Hot-Summer-Release-Note"
+
+[[sources]]
+id = "serveradmin_xml"
+kind = "generated_roster"
+path = "serveradmin.xml"
+authority = "installed_default_and_lsgm_template"
+description = "7 Days to Die native admin, whitelist, blacklist, and command-permission XML document."
+
+[[sources]]
+id = "runtime_telnet"
+kind = "runtime_console"
+path = "7 Days to Die Telnet console"
+authority = "module_runtime_surface"
+description = "Telnet command surface declared in module.toml for runtime player/admin actions."
+
+[[sources]]
+id = "seven_dtd_steam_settings"
+kind = "config_file"
+path = "7DaysToDieServer_Data/Plugins/x86_64/steam_settings/*"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die Steamworks settings under 7DaysToDieServer_Data/Plugins/x86_64/steam_settings."
+
+[[sources]]
+id = "seven_dtd_steam_settings_examples"
+kind = "config_file"
+path = "7DaysToDieServer_Data/Plugins/x86_64/steam_settings/_examples/*"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die steam_settings example files."
+
+[[sources]]
+id = "seven_dtd_data_xml"
+kind = "config_file"
+path = "Data/**/*.xml"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die data XML assets."
+
+[[sources]]
+id = "seven_dtd_data_json"
+kind = "config_file"
+path = "Data/**/*.json"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die data JSON assets."
+
+[[sources]]
+id = "seven_dtd_streamingassets_json"
+kind = "config_file"
+path = "7DaysToDieServer_Data/StreamingAssets/aa/settings.json"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die streaming assets settings.json."
+
+[[sources]]
+id = "seven_dtd_serverdata_json_bundle"
+kind = "config_file"
+path = "7DaysToDieServer_Data/**/*.json"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die server-side JSON payloads and runtime assets."
+
+[[sources]]
+id = "seven_dtd_serverdata_root_json_bundle"
+kind = "config_file"
+path = "7DaysToDieServer_Data/*.json"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die root-level server-side JSON payloads (e.g., runtime asset bundles)."
+
+[[sources]]
+id = "seven_dtd_platform_cfg"
+kind = "config_file"
+path = "platform.cfg"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die platform selector and cross-platform bootstrap config."
+
+[[sources]]
+id = "seven_dtd_mono_config_xml"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/mconfig/config.xml"
+authority = "installed_seven_days_to_die_dedicated_server_package"
+description = "Installed 7 Days to Die Mono runtime XML config."
+
+[[sources]]
+id = "seven_dtd_mono_browscap_ini"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/browscap.ini"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "Installed Mono browscap metadata in the 7 Days to Die runtime."
+
+[[sources]]
+id = "seven_dtd_runtime_initialize_on_loads_json"
+kind = "config_file"
+path = "7DaysToDieServer_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "Installed Unity managed runtime initialize manifest for 7 Days to Die."
+
+[[sources]]
+id = "seven_dtd_scripting_assemblies_json"
+kind = "config_file"
+path = "7DaysToDieServer_Data/ScriptingAssemblies.json"
+authority = "installed_7_days_to_die_dedicated_server_package"
+description = "Installed Unity managed script assembly manifest for 7 Days to Die."
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerDescription"
+schema_key = "server_description"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerWebsiteURL"
+schema_key = "server_website_url"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerLoginConfirmationText"
+schema_key = "server_login_confirmation_text"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerMaxPlayerCount"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerVisibility"
+schema_key = "visibility"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "Region"
+schema_key = "region"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "Language"
+schema_key = "language"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerDisabledNetworkProtocols"
+schema_key = "server_disabled_network_protocols"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerAllowCrossplay"
+schema_key = "server_allow_crossplay"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "IgnoreEOSSanctions"
+schema_key = "ignore_eos_sanctions"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerMaxWorldTransferSpeedKiBs"
+schema_key = "server_max_world_transfer_speed_kibs"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerReservedSlots"
+schema_key = "reserved_slots"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerReservedSlotsPermission"
+schema_key = "reserved_slots_permission"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerAdminSlots"
+schema_key = "admin_slots"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerAdminSlotsPermission"
+schema_key = "admin_slots_permission"
+surface = "config_file"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/users/user"
+schema_key = "admin_users"
+surface = "generated_roster"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/users/group"
+schema_key = "admin_groups"
+surface = "generated_roster"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/whitelist/user"
+schema_key = "whitelist_users"
+surface = "generated_roster"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/whitelist/group"
+schema_key = "whitelist_groups"
+surface = "generated_roster"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/blacklist/blacklisted"
+schema_key = "blacklist_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "serveradmin_xml"
+key = "adminTools/commands/permission"
+schema_key = "command_permissions"
+surface = "generated_roster"
+
+[[items]]
+source = "serverconfig_xml"
+key = "PersistentPlayerProfiles"
+schema_key = "persistent_player_profiles"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "GameWorld"
+schema_key = "game_world"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "GameMode"
+schema_key = "game_mode"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "GameName"
+schema_key = "world_name"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "WorldGenSeed"
+schema_key = "world_seed"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "WorldGenSize"
+schema_key = "world_size"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "SandboxCode"
+schema_key = "sandbox_code"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "BuildCreate"
+schema_key = "build_create"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "CameraRestrictionMode"
+schema_key = "camera_restriction_mode"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "PlayerKillingMode"
+schema_key = "player_killing_mode"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "PlayerSafeZoneLevel"
+schema_key = "player_safe_zone_level"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "PlayerSafeZoneHours"
+schema_key = "player_safe_zone_hours"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "BedrollDeadZoneSize"
+schema_key = "bedroll_dead_zone_size"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "BedrollExpiryTime"
+schema_key = "bedroll_expiry_time"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "AllowSpawnNearFriend"
+schema_key = "allow_spawn_near_friend"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "PartySharedKillRange"
+schema_key = "party_shared_kill_range"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "MaxUncoveredMapChunksPerPlayer"
+schema_key = "max_uncovered_map_chunks_per_player"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "MaxChunkAge"
+schema_key = "max_chunk_age"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "SaveDataLimit"
+schema_key = "save_data_limit"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "MaxSpawnedZombies"
+schema_key = "max_spawned_zombies"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "MaxSpawnedAnimals"
+schema_key = "max_spawned_animals"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "ServerMaxAllowedViewDistance"
+schema_key = "server_max_allowed_view_distance"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "MaxQueuedMeshLayers"
+schema_key = "max_queued_mesh_layers"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimCount"
+schema_key = "land_claim_count"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimSize"
+schema_key = "land_claim_size"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimDeadZone"
+schema_key = "land_claim_dead_zone"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimExpiryTime"
+schema_key = "land_claim_expiry_time"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimDecayMode"
+schema_key = "land_claim_decay_mode"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimOnlineDurabilityModifier"
+schema_key = "land_claim_online_durability_modifier"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimOfflineDurabilityModifier"
+schema_key = "land_claim_offline_durability_modifier"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "LandClaimOfflineDelay"
+schema_key = "land_claim_offline_delay"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "DynamicMeshEnabled"
+schema_key = "dynamic_mesh_enabled"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "DynamicMeshLandClaimOnly"
+schema_key = "dynamic_mesh_land_claim_only"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "DynamicMeshLandClaimBuffer"
+schema_key = "dynamic_mesh_land_claim_buffer"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "DynamicMeshMaxItemCache"
+schema_key = "dynamic_mesh_max_item_cache"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "WebDashboardEnabled"
+schema_key = "web_dashboard_enabled"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "WebDashboardUrl"
+schema_key = "web_dashboard_url"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "EnableMapRendering"
+schema_key = "enable_map_rendering"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TelnetEnabled"
+schema_key = "telnet_enabled"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TelnetPassword"
+schema_key = "telnet_password"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TelnetFailedLoginLimit"
+schema_key = "telnet_failed_login_limit"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TelnetFailedLoginsBlocktime"
+schema_key = "telnet_failed_logins_blocktime"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TerminalWindowEnabled"
+schema_key = "terminal_window_enabled"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "EACEnabled"
+schema_key = "eac_enabled"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "HideCommandExecutionLog"
+schema_key = "hide_command_execution_log"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TwitchServerPermission"
+schema_key = "twitch_server_permission"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig_xml"
+key = "TwitchBloodMoonAllowed"
+schema_key = "twitch_blood_moon_allowed"
+surface = "config_file"
+
+[[exclusions]]
+source = "serverconfig_xml"
+key = "ServerPort"
+reason = "Game UDP port is instance port-binding state."
+
+[[exclusions]]
+source = "serverconfig_xml"
+key = "WebDashboardPort"
+reason = "Web dashboard port is instance port-binding state."
+
+[[exclusions]]
+source = "serverconfig_xml"
+key = "TelnetPort"
+reason = "Telnet port is instance port-binding state."
+
+[[exclusions]]
+source = "serverconfig_xml"
+key = "AdminFileName"
+reason = "Fixed to serveradmin.xml because LanGame owns the generated admin file name."
+
+[[exclusions]]
+source = "serverconfig_xml"
+key = "UserDataFolder"
+reason = "LanGame owns the per-instance data root for save isolation."
+
+[[exclusions]]
+source = "runtime_telnet"
+key = "listplayers/kick/ban/save/shutdown"
+reason = "Runtime command actions are declared in module.toml instead of schema fields."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "<validated-install-root>/serverconfig.xml"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 70 presentation entries reviewed in EN/ZH against the referenced package/docs. Official recommended RWG sizes 6144, 8192, 10240 clarified without forbidding custom values. Clarifies real days, not in-game days. Concurrent dynamic-mesh work items instead of workers. Boundaries: No new native runtime/gameplay acceptance is claimed; historical verification dates remain unchanged."

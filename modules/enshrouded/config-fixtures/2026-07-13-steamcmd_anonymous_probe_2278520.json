@@ -1,0 +1,180 @@
+{
+  "fixture_version": 1,
+  "module_id": "enshrouded",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "SteamCMD anonymous probe for app 2278520",
+    "source_ids": [
+      "steamcmd_anonymous_probe_2278520",
+      "installed_server_readme",
+      "installed_config_mutability_boundary",
+      "server_config",
+      "gameplay_settings",
+      "role_groups",
+      "ban_records",
+      "enshrouded_steam_settings",
+      "enshrouded_steam_settings_examples",
+      "enshrouded_steam_settings_txt_recursive",
+      "enshrouded_steam_settings_json_recursive",
+      "enshrouded_steam_settings_ini_recursive",
+      "enshrouded_server_readme"
+    ]
+  },
+  "coverage": {
+    "editable": 73,
+    "specialized": 1,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 9
+  },
+  "classifications": {
+    "editable": [
+      "server_config.name",
+      "server_config.slotCount",
+      "gameplay_settings.tags",
+      "server_config.voiceChatMode",
+      "server_config.enableVoiceChat",
+      "server_config.enableTextChat",
+      "server_config.gameSettingsPreset",
+      "gameplay_settings.gameSettings.playerHealthFactor",
+      "gameplay_settings.gameSettings.playerManaFactor",
+      "gameplay_settings.gameSettings.playerStaminaFactor",
+      "gameplay_settings.gameSettings.playerBodyHeatFactor",
+      "gameplay_settings.gameSettings.playerDivingTimeFactor",
+      "gameplay_settings.gameSettings.shroudTimeFactor",
+      "gameplay_settings.gameSettings.enableDurability",
+      "gameplay_settings.gameSettings.enableStarvingDebuff",
+      "gameplay_settings.gameSettings.foodBuffDurationFactor",
+      "gameplay_settings.gameSettings.fromHungerToStarving",
+      "gameplay_settings.gameSettings.tombstoneMode",
+      "gameplay_settings.gameSettings.enableGliderTurbulences",
+      "gameplay_settings.gameSettings.curseModifier",
+      "gameplay_settings.gameSettings.weatherFrequency",
+      "gameplay_settings.gameSettings.fishingDifficulty",
+      "gameplay_settings.gameSettings.dayTimeDuration",
+      "gameplay_settings.gameSettings.nightTimeDuration",
+      "gameplay_settings.gameSettings.miningDamageFactor",
+      "gameplay_settings.gameSettings.plantGrowthSpeedFactor",
+      "gameplay_settings.gameSettings.resourceDropStackAmountFactor",
+      "gameplay_settings.gameSettings.factoryProductionSpeedFactor",
+      "gameplay_settings.gameSettings.perkUpgradeRecyclingFactor",
+      "gameplay_settings.gameSettings.perkCostFactor",
+      "gameplay_settings.gameSettings.experienceCombatFactor",
+      "gameplay_settings.gameSettings.experienceMiningFactor",
+      "gameplay_settings.gameSettings.experienceExplorationQuestsFactor",
+      "gameplay_settings.gameSettings.tamingStartleRepercussion",
+      "gameplay_settings.gameSettings.randomSpawnerAmount",
+      "gameplay_settings.gameSettings.aggroPoolAmount",
+      "gameplay_settings.gameSettings.enemyDamageFactor",
+      "gameplay_settings.gameSettings.enemyHealthFactor",
+      "gameplay_settings.gameSettings.enemyStaminaFactor",
+      "gameplay_settings.gameSettings.enemyPerceptionRangeFactor",
+      "gameplay_settings.gameSettings.bossDamageFactor",
+      "gameplay_settings.gameSettings.bossHealthFactor",
+      "gameplay_settings.gameSettings.threatBonus",
+      "gameplay_settings.gameSettings.pacifyAllEnemies",
+      "role_groups.userGroups.Admin.password",
+      "role_groups.userGroups.Admin.canKickBan",
+      "role_groups.userGroups.Admin.canAccessInventories",
+      "role_groups.userGroups.Admin.canEditWorld",
+      "role_groups.userGroups.Admin.canEditBase",
+      "role_groups.userGroups.Admin.canExtendBase",
+      "role_groups.userGroups.Admin.reservedSlots",
+      "role_groups.userGroups.Friend.password",
+      "role_groups.userGroups.Friend.canKickBan",
+      "role_groups.userGroups.Friend.canAccessInventories",
+      "role_groups.userGroups.Friend.canEditWorld",
+      "role_groups.userGroups.Friend.canEditBase",
+      "role_groups.userGroups.Friend.canExtendBase",
+      "role_groups.userGroups.Friend.reservedSlots",
+      "role_groups.userGroups.Guest.password",
+      "role_groups.userGroups.Guest.canKickBan",
+      "role_groups.userGroups.Guest.canAccessInventories",
+      "role_groups.userGroups.Guest.canEditWorld",
+      "role_groups.userGroups.Guest.canEditBase",
+      "role_groups.userGroups.Guest.canExtendBase",
+      "role_groups.userGroups.Guest.reservedSlots",
+      "role_groups.userGroups.Visitor.password",
+      "role_groups.userGroups.Visitor.canKickBan",
+      "role_groups.userGroups.Visitor.canAccessInventories",
+      "role_groups.userGroups.Visitor.canEditWorld",
+      "role_groups.userGroups.Visitor.canEditBase",
+      "role_groups.userGroups.Visitor.canExtendBase",
+      "role_groups.userGroups.Visitor.reservedSlots",
+      "role_groups.userGroups:custom_entries"
+    ],
+    "specialized": [
+      "ban_records.bans"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "server_config.saveDirectory",
+      "server_config.logDirectory",
+      "server_config.ip",
+      "server_config.queryPort",
+      "role_groups.password",
+      "role_groups.userGroups.Admin.name",
+      "role_groups.userGroups.Friend.name",
+      "role_groups.userGroups.Guest.name",
+      "role_groups.userGroups.Visitor.name"
+    ]
+  },
+  "settings": {
+    "server_name": "余烬国度 Δ",
+    "max_players": 16,
+    "server_tags": "English,Chinese",
+    "game_settings_preset": "Custom",
+    "player_health_factor": 4,
+    "hunger_to_starving_minutes": 20,
+    "day_time_minutes": 60,
+    "night_time_minutes": 2,
+    "mining_damage_factor": 0.5,
+    "enemy_damage_factor": 5,
+    "pacify_all_enemies": true,
+    "admin_password": "acceptance-enshrouded-admin",
+    "banned_player_ids": "76561198000000004\n76561198000000005"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "enshrouded_server.json",
+        "format": "json",
+        "keys": {
+          "name": "余烬国度 Δ",
+          "slotCount": 16,
+          "/tags/0": "English",
+          "/tags/1": "Chinese",
+          "gameSettings.playerHealthFactor": 4,
+          "gameSettings.fromHungerToStarving": 1200000000000,
+          "gameSettings.dayTimeDuration": 3600000000000,
+          "gameSettings.nightTimeDuration": 120000000000,
+          "gameSettings.futureSetting": "keep",
+          "futureRoot.keep": true
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "enshrouded_server.exe",
+      "arguments": []
+    }
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "enshrouded_server.json",
+        "content": {
+          "futureRoot": {
+            "keep": true
+          },
+          "gameSettings": {
+            "futureSetting": "keep"
+          }
+        }
+      }
+    ]
+  }
+}

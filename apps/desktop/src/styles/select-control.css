@@ -1,0 +1,22 @@
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 32px;
+  --select-control-arrow: var(--select-control-arrow-idle);
+  --select-control-arrow-position: right 10px center;
+  --select-control-arrow-size: 14px 14px;
+  background-image: var(--select-control-arrow) !important;
+  background-position: var(--select-control-arrow-position) !important;
+  background-size: var(--select-control-arrow-size) !important;
+  background-repeat: no-repeat !important;
+  cursor: pointer;
+}
+
+select:hover:not(:disabled) {
+  --select-control-arrow: var(--select-control-arrow-hover);
+}
+
+:root {
+  --select-control-arrow-idle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  --select-control-arrow-hover: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}

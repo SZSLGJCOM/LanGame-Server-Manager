@@ -1,0 +1,236 @@
+id = "unturned"
+name = "Unturned Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Unturned via SteamCMD."
+steam_app_id = 1110390
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "unturned"
+
+[process]
+executable = "Unturned.exe"
+args_template = [
+  "-batchmode",
+  "-nographics",
+  "-Port/{{ports.query.port}}",
+  "{{unturned.server_launch_mode}}",
+  "{{unturned.no_level_config_overrides_flag}}",
+  "{{unturned.log_gameplay_config_flag}}",
+  "{{unturned.gameplay_config_no_generated_comments_flag}}",
+  "{{unturned.gameplay_config_no_empty_values_flag}}",
+  "{{unturned.custom_launch_flags}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_pseudo_console"
+host_notes = "Unturned's Windows console checks Console.KeyAvailable before reading commands. LanGame uses an owned ConPTY on its private desktop so command input reaches the native console input buffer and console output remains recorded. Unturned launches one ServerID per LanGame instance. LanGame writes Commands.dat, Config.txt, and WorkshopDownloadConfig.json into Servers/<instance-id> so save data, gameplay configuration, workshop state, and access rules remain instance-scoped."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 27016
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[[runtime.port_groups]]
+id = "query_game"
+members = ["query", "game"]
+member_offsets = { query = 0, game = 1 }
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "stdin"
+command_template = "Say {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Players"
+label_zh_cn = "玩家列表"
+transport = "stdin"
+command_template = "Players"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_admins"
+label = "Admins"
+label_zh_cn = "管理员列表"
+transport = "stdin"
+command_template = "Admins"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "add_admin"
+label = "Add admin immediately by ID or name"
+label_zh_cn = "按 ID 或姓名立即添加管理员"
+transport = "stdin"
+command_template = "Admin {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的玩家名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "remove_admin"
+label = "Remove admin immediately by ID or name"
+label_zh_cn = "按 ID 或姓名立即移除管理员"
+transport = "stdin"
+command_template = "Unadmin {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的玩家名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "stdin"
+command_template = "Kick {{target}}/LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的玩家名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "stdin"
+command_template = "Ban {{target}}/LanGame/31536000"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的玩家名"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "stdin"
+command_template = "Unban {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "list_bans"
+label = "Bans"
+label_zh_cn = "封禁列表"
+transport = "stdin"
+command_template = "Bans"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "list_permits"
+label = "Permits"
+label_zh_cn = "准入列表"
+transport = "stdin"
+command_template = "Permits"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "permit_player"
+label = "Permit"
+label_zh_cn = "允许加入"
+transport = "stdin"
+command_template = "Permit {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unpermit_player"
+label = "Unpermit"
+label_zh_cn = "取消准入"
+transport = "stdin"
+command_template = "Unpermit {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+process_key = "main"
+destructive = true
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "Save"
+process_key = "main"
+
+[runtime.shutdown]
+grace_period_ms = 8000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "Save"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "Shutdown"
+wait_after_ms = 5000
+
+[workshop]
+provider = "steam"
+consumer_app_id = 304930
+supports_collections = false
+
+[storage]
+runtime_copy_exclusions = ["Servers"]
+saves_path_template = "{{paths.install_root}}/Servers/{{instance.id}}"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "managed_terminal_console_and_commands_dat"
+reason = "Unturned materializes owner/admin startup settings in Commands.dat and exposes Players, Admins, Admin/Unadmin, Kick, Ban/Unban, Bans, Permit, and Unpermit through the managed console."
+verification = "Start Unturned on Windows, run Players/Admins through stdin, then verify admin, kick, ban/unban, permit, and unpermit side effects against a test Steam64 ID."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000

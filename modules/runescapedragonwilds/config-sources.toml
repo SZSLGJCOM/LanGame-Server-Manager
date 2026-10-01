@@ -1,0 +1,203 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "Installed Steam build 24574222 was launched in an isolated copy on 2026-09-08 with fresh DedicatedServer.ini and no original saves. UE 5.6.1 loaded L_World, reached ReadyToJoin=1 and honored the explicit loopback game port. The independent LgsmPlayerQuery extension returned current complete empty rosters through the production bootstrap and native file-IPC reader. Existing configuration keys remain based on the official guide and earlier configuration-specific probes below; this player-query test does not claim a new acceptance run for every setting. Native A2S and moderation remain unavailable."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: After the managed update, the installed app 4019830 manifest reports build 25501739 and Windows depot 4019831 manifest 8698681730846329652. The Shipping executable SHA256 is fc7754fe633f55f51abdae828626819d2c0ab243f233a4c33221935e56bfcb1c. The packaged DedicatedServer.ini SHA256 is 4c4ae402747c05f4fe89dcbf4d29b94aae0f08fa79f090e675a1c28179973577; its five keys remain OwnerId, ServerName, DefaultWorldName, AdminPassword and WorldPassword, matching the current Jagex guide. PlatformPolicy is still omitted from that file. Fresh string cross-references, PE exception-table lookup and disassembly of this executable independently confirm the PlatformPolicy key reference at preferred VA 0x14595817c, missing/empty-value assignment of zero at 0x1459581b5, and nonempty-name enum parsing. The current reflected enum remains Crossplay=0, PC=1, PlayStation=2, Xbox=3 and Nintendo=4, matching the existing schema. The separate build-25465077 source and acceptance fixture remain historical evidence; their binary offsets are not carried forward. No newly documented configuration keys or launch options were found in the guide or September 29 hotfix notes. The unresolved crash-dump field and player/world-management boundaries remain unchanged. This is read-only package and documentation evidence; no server or client was launched."
+
+[[sources]]
+id = "dragonwilds_patch_1_0_0_6"
+kind = "documentation"
+path = "https://dragonwilds.runescape.com/news/1.0.0.6-patch"
+authority = "first_party_release_notes"
+description = "Jagex's September 29, 2026 release notes, reviewed September 30, cover restored Epic Games Store crossplay, character/world-save handling and an offline-play crash. They announce no new dedicated-server configuration keys or launch arguments; multiplayer compatibility was not exercised by this review."
+
+[[sources]]
+id = "steamdb_app_4019830"
+kind = "documentation"
+path = "SteamDB app/4019830/config"
+authority = "steamdb_dedicated_server_config"
+description = "SteamDB configuration for RuneScape: Dragonwilds Dedicated Server, including App ID 4019830 package metadata."
+url = "https://steamdb.info/app/4019830/config/"
+
+[[sources]]
+id = "steamcmd_appinfo_4019830_2026_07_13"
+kind = "install_probe"
+path = "steamcmd +@sSteamCmdForcePlatformType windows +@sSteamCmdForcePlatformBitness 64 +app_info_print 4019830"
+authority = "steamcmd_appinfo"
+description = "Steam public appinfo reported build 23986150, updated 2026-07-01T09:18:49Z, with Windows executable RSDragonwildsServer.exe, Windows depot 4019831, and Linux depot 4019832."
+
+[[sources]]
+id = "dragonwilds_smoke_launch_2026_06_29"
+kind = "runtime_probe"
+path = "RSDragonwildsServer.exe -Port=17777 -QueryPort=27057 -log -stdout -FullStdOutLogOutput"
+authority = "local_smoke_launch"
+description = "Local smoke launch verified the non-empty OwnerId gate, managed -Port and -QueryPort launch arguments, then reached LoadMap(/Game/Maps/World/L_World), GameSession create/start success, ReadyToJoin=1, wrote RSDragonwilds/Saved/SaveGames, and logged zero discovered Redpoint console commands."
+
+[[sources]]
+id = "dragonwilds_dedicated_server_ini"
+kind = "config_file"
+path = "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini"
+authority = "official_runescape_dragonwilds_dedicated_server_guide_and_smoke_launch"
+description = "Official RuneScape: Dragonwilds DedicatedServer.ini keys for owner identity, server name, default world name, admin password, and optional world password; smoke launch verified the [/Script/Dominion.DedicatedServerSettings] section, the required non-empty OwnerId gate, and generated ServerGuid."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[sources]]
+id = "dragonwilds_savegames"
+kind = "runtime_probe"
+path = "RSDragonwilds/Saved/SaveGames/*.sav"
+authority = "official_runescape_dragonwilds_dedicated_server_guide_and_smoke_launch"
+description = "Official save location and world-management boundary. The server loads the latest .sav under RSDragonwilds/Saved/SaveGames; local smoke launch confirmed the directory is created, and LanGame runtime diagnostics now report the latest observed .sav without moving files while the server is running."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[sources]]
+id = "dragonwilds_saved_logs"
+kind = "runtime_probe"
+path = "RSDragonwilds/Saved/Logs/RSDragonwilds.log"
+authority = "official_runescape_dragonwilds_dedicated_server_guide_and_smoke_launch"
+description = "Official/local saved log path. Local smoke launch confirmed RSDragonwilds.log contains the same ReadyToJoin, GameSession, MapName, and validation markers used by LanGame runtime health when the managed process log is empty."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[sources]]
+id = "dragonwilds_query_port_a2s_probe_2026_06_29"
+kind = "runtime_probe"
+path = "RSDragonwildsServer.exe -Port=17783 -QueryPort=27063 -log -stdout -FullStdOutLogOutput"
+authority = "local_udp_probe"
+description = "After ReadyToJoin=1 and GameSession startup, a standard Steam A2S_INFO request to 127.0.0.1:27063 returned A2S_INFO_ERROR ConnectionResetError; no A2S player query adapter is enabled for this module."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "RSDragonwildsServer.exe command line"
+authority = "official_runescape_dragonwilds_dedicated_server_guide_and_steamcmd_appinfo"
+description = "The current Jagex guide, reread on 2026-10-01, recommends -log -NewConsole for console feedback. LanGame now supplies -log while retaining its private desktop, managed game/query ports, and operator-provided extra arguments. It does not force a separate -NewConsole. This aligns the launch profile with first-party logging guidance; runtime console ownership and graceful stopping still require acceptance."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[sources]]
+id = "player_management"
+kind = "documentation"
+path = "in-game Server Management"
+authority = "official_runescape_dragonwilds_dedicated_server_guide_and_smoke_launch"
+description = "Official docs describe owner/admin in-game moderation, while smoke launch did not verify any host-callable player-management transport."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[items]]
+source = "dragonwilds_dedicated_server_ini"
+key = "OwnerId"
+schema_key = "owner_id"
+surface = "config_file"
+
+[[items]]
+source = "dragonwilds_dedicated_server_ini"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "dragonwilds_dedicated_server_ini"
+key = "DefaultWorldName"
+schema_key = "default_world_name"
+surface = "config_file"
+
+[[items]]
+source = "dragonwilds_dedicated_server_ini"
+key = "AdminPassword"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "dragonwilds_dedicated_server_ini"
+key = "WorldPassword"
+schema_key = "world_password"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "dragonwilds_dedicated_server_ini"
+key = "AdminUsers"
+reason = "Official docs say the server records users who have entered the admin password in DedicatedServer.ini. LanGame preserves this server-maintained runtime state when materializing DedicatedServer.ini, but does not expose it as an operator-authored setting."
+
+[[exclusions]]
+source = "dragonwilds_dedicated_server_ini"
+key = "MaxPlayers"
+reason = "The 0.11 guide states the server supports up to 6 players and smoke launch logged 'Maximum allowed player number by this build is 6', but no persisted configurable MaxPlayers key has been verified."
+
+[[exclusions]]
+source = "dragonwilds_smoke_launch_2026_06_29"
+key = "ServerGuid"
+reason = "The server generates ServerGuid in DedicatedServer.ini at runtime. LanGame preserves this generated value during support-file materialization instead of exposing it as a user setting."
+
+[[exclusions]]
+source = "dragonwilds_smoke_launch_2026_06_29"
+key = "MapId/L_World"
+reason = "Smoke launch verified the current dedicated-server map as /Game/Maps/World/L_World with MapId=2, but no supported host-side map selection setting has been verified."
+
+[[exclusions]]
+source = "dragonwilds_smoke_launch_2026_06_29"
+key = "mods/workshop"
+reason = "Smoke package logs include mod-detection warnings for unexpected files, but no supported Workshop or server-side mod installation path was verified."
+
+[[exclusions]]
+source = "player_management"
+key = "ban/unban runtime controls"
+reason = "Owner/admin capabilities are documented inside the game UI, but no host-callable command, RCON, or file-backed moderation protocol has been verified for LanGame automation."
+
+[[exclusions]]
+source = "dragonwilds_query_port_a2s_probe_2026_06_29"
+key = "runtime.player_query/a2s_info"
+reason = "The managed -QueryPort is accepted during launch/session startup, but it did not answer standard Steam A2S_INFO after ReadyToJoin; LanGame must not expose live player counts through A2S until a working protocol is proven."
+
+[[sources]]
+id = "dragonwilds_player_extension_2026_09_08"
+kind = "runtime_probe"
+path = "extensions/SOURCE.md"
+authority = "isolated_dedicated_server_and_production_file_ipc_collector"
+description = "Steam app 4019830 build 24574222, Unreal 5.6.1, official UE4SS 3.0.1-1125-g527a483b and an official fixed-source version.dll proxy. The independent read-only script verified current L_World connection and player-state collections. Production bootstrap tests accepted two fresh complete zero-player responses and rejected the stopped process; 28 Lua constructed cases passed. Real multiplayer join/leave/reconnect remains unverified."
+
+[[sources]]
+id = "dragonwilds_unassigned_owner_2026_09_08"
+kind = "runtime_probe"
+path = "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini"
+authority = "isolated_native_launch_build_24574222"
+description = "The installed build still rejects an empty native OwnerId. OwnerId=LGSM_UNASSIGNED_OWNER passed world loading, session startup and ReadyToJoin=1 in an isolated server, including with an empty AdminPassword. LanGame keeps an empty owner_id in user settings and writes this explicit non-account marker only to native configuration. No real owner permissions, password administration or client join were tested. The official guide identifies the owner by the in-game Player ID, not Steam64."
+url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+
+[[sources]]
+id = "dragonwilds_platform_policy_build_25465077"
+kind = "install_probe"
+path = "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe: UDedicatedServerSettings and EDomPlatformFamily"
+authority = "official_steam_package_static_analysis"
+description = "Steam app 4019830 public build 25465077, Windows depot 4019831 manifest 1952040889757266716, officially validated on 2026-09-28. Shipping executable SHA256 479c7a9e59aed86ad999febfa91e3975b4183e26f66a82c242992e50d72fdc18. PlatformPolicy is a uint8-backed EDomPlatformFamily property at object offset 0xA8. Its reflected enum table names Crossplay=0, PC=1, PlayStation=2, Xbox=3, Nintendo=4. The native reader at preferred VA 0x145958100 reads PlatformPolicy from the dedicated-server configuration, explicitly assigns Crossplay for missing/empty values, parses nonempty names through that enum and reports invalid names. The shipped WindowsServer INI omits this key. LanGame leaves it unwritten unless explicitly selected, preserving existing native restrictions. This is static configuration evidence, not a multiplayer or extension-compatibility test."
+url = "https://dragonwilds.runescape.com/news/launch"
+
+[[items]]
+source = "dragonwilds_platform_policy_build_25465077"
+key = "PlatformPolicy"
+schema_key = "platform_policy"
+surface = "config_file"
+
+[[exclusions]]
+source = "dragonwilds_platform_policy_build_25465077"
+key = "bAllowSendingCrashDumps"
+reason = "The new native reflection group contains this field, but its default and full consumer are not yet verified. No crash-report upload control or automatic opt-in is exposed from incomplete evidence."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 7 presentation entries reviewed in EN/ZH against the referenced package/docs. Names describe public server identity versus new-world identity and the 15-character guide limits. Distinguishes world join password from administrator management password. Boundaries: No new native runtime/gameplay acceptance is claimed; historical verification dates remain unchanged."
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "Fixed first-party native console logging flag for the managed private-desktop launch profile; runtime control remains subject to real-server acceptance."

@@ -1,0 +1,10 @@
+Name: Synthetic HumanitZ Server (Uptime: 42 minutes)
+2 connected.
+Season: Summer
+Weather: Overcast
+Time: 5:31
+AI: Zombies=135  Human=5 Animal=16
+FPS: 60
+Players:
+Builder, 北境
+Another Survivor

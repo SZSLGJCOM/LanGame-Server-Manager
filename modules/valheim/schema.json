@@ -1,0 +1,278 @@
+{
+  "type": "object",
+  "title": "Valheim Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "description": "Shown in the Valheim browser and in the invite text you share with friends.",
+      "default": "Valheim Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-name",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "world_name": {
+      "type": "string",
+      "title": "World Save Name",
+      "description": "Loads an existing world with this name, or creates it if no matching world exists.",
+      "default": "Dedicated",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-world",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "server_password": {
+      "type": "string",
+      "title": "Join Password",
+      "description": "Passed to the dedicated server launch command. New instances receive a unique password that can be shared with invited players.",
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-password",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "public_server": {
+      "type": "integer",
+      "title": "Browser Visibility",
+      "description": "Controls whether the dedicated server announces itself publicly or stays private or direct-share only.",
+      "default": 1,
+      "enum": [
+        0,
+        1
+      ],
+      "enum_labels": [
+        "Private / direct only",
+        "Public browser"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 1,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-public",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "crossplay_enabled": {
+      "type": "boolean",
+      "title": "Enable Crossplay",
+      "description": "Uses Valheim's crossplay backend so Steam and non-Steam players can join through the same room.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 2,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-crossplay",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "instance_id": {
+      "type": "string",
+      "title": "PlayFab Instance ID",
+      "description": "Use a unique value for each server sharing the same port and MAC address so PlayFab assigns distinct server IDs.",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 3,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-instanceid",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "save_interval_seconds": {
+      "type": "integer",
+      "title": "Auto Save Interval (Seconds)",
+      "description": "How often the dedicated server writes the live world state to disk.",
+      "default": 1800,
+      "minimum": 60,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-saveinterval",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "backup_count": {
+      "type": "integer",
+      "title": "Backup Count",
+      "description": "How many rolling Valheim-native backup generations the server keeps.",
+      "default": 4,
+      "minimum": 1,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 111,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-backups",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "backup_short_seconds": {
+      "type": "integer",
+      "title": "First Backup Interval (Seconds)",
+      "description": "Interval for the first automatic backup. Subsequent backups use the long interval.",
+      "default": 7200,
+      "minimum": 60,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 112,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-backupshort",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "backup_long_seconds": {
+      "type": "integer",
+      "title": "Subsequent Backup Interval (Seconds)",
+      "description": "Interval between automatic backups after the first backup.",
+      "default": 43200,
+      "minimum": 60,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 113,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-backuplong",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "world_preset": {
+      "type": "string",
+      "title": "World Preset",
+      "description": "Apply a preset at startup, replacing saved world modifiers. Leave empty to preserve the current world rules.",
+      "default": "",
+      "enum": [
+        "",
+        "normal",
+        "casual",
+        "easy",
+        "hard",
+        "hardcore",
+        "immersive",
+        "hammer"
+      ],
+      "enum_labels": [
+        "Keep current rules",
+        "Normal",
+        "Casual",
+        "Easy",
+        "Hard",
+        "Hardcore",
+        "Immersive",
+        "Hammer"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 101,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-preset",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "world_modifiers": {
+      "type": "string",
+      "title": "World Modifiers",
+      "description": "One modifier and value per line, for example combat hard or resources most. Applied after the selected preset.",
+      "format": "textarea",
+      "default": "",
+      "pattern": "^(?:(?:combat[\\t ]+(?:veryeasy|easy|hard|veryhard)|deathpenalty[\\t ]+(?:casual|veryeasy|easy|hard|hardcore)|resources[\\t ]+(?:muchless|less|more|muchmore|most)|raids[\\t ]+(?:none|muchless|less|more|muchmore)|portals[\\t ]+(?:casual|hard|veryhard))(?:[\\r\\n,;]+|$))*$",
+      "maxLength": 2048,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 102,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-modifier",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "world_set_keys": {
+      "type": "string",
+      "title": "World Keys",
+      "description": "One world key per line: nobuildcost, playerevents, passivemobs, or nomap.",
+      "format": "textarea",
+      "default": "",
+      "pattern": "^(?:(?:nobuildcost|playerevents|passivemobs|nomap)(?:[\\r\\n,;]+|$))*$",
+      "maxLength": 256,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 103,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-setkey",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "admin_list": {
+      "type": "string",
+      "title": "Admin Platform IDs",
+      "description": "One platform ID per line. LanGame renders adminlist.txt and copies it into the active Valheim save root on launch.",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 202,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "valheim_platform_id",
+      "x-lsgm-player-access-conflicts-with": [
+        "banned_list"
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "adminlist_file",
+      "x-lsgm-source-key": "adminlist.txt",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "banned_list": {
+      "type": "string",
+      "title": "Banned Platform IDs",
+      "description": "One platform ID per line. LanGame renders bannedlist.txt and syncs it into the live Valheim save directory.",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 203,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "valheim_platform_id",
+      "x-lsgm-player-access-conflicts-with": [
+        "admin_list",
+        "permitted_list"
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "bannedlist_file",
+      "x-lsgm-source-key": "bannedlist.txt",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "permitted_list": {
+      "type": "string",
+      "title": "Permitted Platform IDs",
+      "description": "One platform ID per line. LanGame renders permittedlist.txt and syncs it into the live Valheim save directory for the dedicated server to read.",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 201,
+      "x-lsgm-player-access-kind": "allow",
+      "x-lsgm-player-access-codec": "valheim_platform_id",
+      "x-lsgm-player-access-conflicts-with": [
+        "banned_list"
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "permittedlist_file",
+      "x-lsgm-source-key": "permittedlist.txt",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "custom_launch_flags": {
+      "type": "string",
+      "title": "Advanced: Custom Launch Flags",
+      "description": "Additional Valheim launch flags appended to the launch plan.",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "custom_launch_flags",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "log_file": {
+      "type": "string",
+      "title": "Log File Path",
+      "description": "Optional server log destination. Leave empty to use LanGame managed logs only.",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 121,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-logFile",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  },
+  "required": [
+    "server_name",
+    "world_name",
+    "server_password"
+  ]
+}

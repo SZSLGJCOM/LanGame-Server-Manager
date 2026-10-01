@@ -1,0 +1,5 @@
+clientlist LGM_PLAYER_QUERY_11111111111111111111111111111111
+***************
+- 1: Alice, 127.0.0.1:30001, None, ping 12 ms
+- 2: Bob playing Engineer, 127.0.0.1:30002, None, ping 35 ms
+***************

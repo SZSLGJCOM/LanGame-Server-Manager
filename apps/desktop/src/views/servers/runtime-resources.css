@@ -1,0 +1,13 @@
+.server-resource-policy { container: resource-policy / inline-size; }
+.server-resource-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; }
+.server-resource-policy .server-workbench-section-label { margin: 0; padding: 0; border: 0; font-size: var(--text-body); }
+.server-resource-policy .server-save-policy-editor { display: grid; gap: 8px; }
+.server-resource-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 8px; }
+.server-resource-fields .server-backup-policy-field { min-width: 0; align-content: start; }
+.server-resource-fields .detail-label { line-height: 16px; }
+.server-resource-fields input { width: 100%; min-width: 0; box-sizing: border-box; }
+.server-resource-effective { color: var(--shell-text); font-weight: var(--font-weight-semibold); }
+@container resource-policy (max-width: 310px) {
+  .server-resource-fields { grid-template-columns: 1fr; }
+  .server-resource-fields .detail-label { min-height: 0; }
+}

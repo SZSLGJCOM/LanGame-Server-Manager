@@ -1,0 +1,33 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "arksurvivalascended"
+scope = "ARK: Survival Ascended server setup, configuration, ports, save and cluster administration; retain ASA versus ASE applicability."
+gaps = ["The detailed server manual is community-maintained on the officially endorsed ARK Wiki, not a publisher-authored manual.","Wiki document reads returned HTTP 403 during source review; runtime must report unsuccessful retrieval and respect content signals.","The patch-note source covers version changes, not a complete installation or backup manual."]
+
+[[sources]]
+id = "ark-wiki"
+title = "ARK server administration wiki"
+authority = "ARK Wiki contributors, endorsed by Studio Wildcard"
+kind = "official_community"
+seeds = ["https://ark.wiki.gg/wiki/Dedicated_server_setup","https://ark.wiki.gg/wiki/Server_configuration","https://ark.wiki.gg/wiki/Console_commands"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://survivetheark.com/index.php?/forums/topic/657902-official-ark-wiki-feedback/"
+license_note = "ARK Wiki material is identified in THIRD_PARTY_NOTICES.md as CC BY-NC-SA 4.0. The 2026-09-28 robots response also declares search=yes, ai-train=no, use=reference. Preserve these restrictions; do not treat official status as blanket full-text AI-use permission."
+reviewed_on = "2026-09-28"
+license_url = "https://ark.wiki.gg/wiki/ARK_Wiki:Copyrights"
+
+[[sources]]
+id = "studio-server-notes"
+title = "ASA server patch notes"
+authority = "Studio Wildcard"
+kind = "official"
+seeds = ["https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v9336-updated-09242026/"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://survivetheark.com/"
+content_selector = "#elPostFeed > form[data-role='moderationTools'] > article:first-of-type [data-role='commentContent']"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

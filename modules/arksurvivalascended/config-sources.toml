@@ -1,0 +1,3504 @@
+status = "best_effort_verified"
+last_verified = "2026-09-08"
+notes = "SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
+
+[[sources]]
+id = "map_processes"
+kind = "documentation"
+authority = "langame_managed_runtime"
+path = "crates/app-core/src/ark_maps.rs"
+description = "Managed map process group: one native process and CMD per enabled map, shared installation and INI, stable map save directories and port bindings."
+
+[[items]]
+source = "map_processes"
+key = "additional_maps"
+schema_key = "additional_maps"
+surface = "materializer"
+
+[[sources]]
+id = "asa_server_patch_notes_v93_19"
+kind = "documentation"
+path = "GameUserSettings.ini:[ServerSettings]"
+authority = "studio_wildcard_official_server_patch_notes"
+description = "Verified 2026-09-08 against the official server patch page at v93.19 (2026-09-04). Its platform-saddle building change documents PreventTemplateOnSaddle=True for unofficial servers. The publisher does not state an engine default; LanGame omits this setting until explicitly configured. This source establishes the native configuration contract, not a new game-server run."
+url = "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v9319-updated-09042026/"
+
+[[items]]
+source = "asa_server_patch_notes_v93_19"
+key = "ServerSettings.PreventTemplateOnSaddle"
+schema_key = "prevent_template_on_saddle"
+surface = "config_file"
+
+[[sources]]
+id = "asa_advanced_game_ini"
+kind = "config_file"
+path = "ShooterGame/Saved/Config/WindowsServer/Game.ini:[/script/shootergame.shootergamemode]"
+authority = "studio_wildcard_patch_and_beacon_asa_exporters"
+description = "Reverified 2026-09-07. SupplyCrateLootQualityMultiplier support is confirmed by Studio Wildcard Community Crunch 468 (2025-07-25), which fixes a Drakeling buff overriding the configured multiplier: https://survivetheark.com/index.php?/forums/topic/772661-community-crunch-468-liveops-update-arkpocalypse-and-more/ . The other 14 settings use Beacon commit 94cf4d4258aae0f5190781cddfe24a327c149503 (2026-08-27), ArkSA/Configs CraftingCosts, StackSizes, LootDrops, SpawnPoints, DinoAdjustments, StatMultipliers, EngramControl, and ExperienceCurves, for ASA-native keys, repeated/indexed forms, and Game.ini section placement. This is best-effort maintainer-source and native-output verification, not a live v93.19 game-server test. Optional numeric overrides are omitted when unset. Auto-unlock defaults to false as in the maintainer parser, not as a newly measured engine default. Historical wiki Unknown classifications remain unchanged as source evidence."
+url = "https://github.com/thommcgrath/Beacon/tree/94cf4d4258aae0f5190781cddfe24a327c149503/Project/Modules/Game%20Support/ArkSA/Configs"
+
+[[sources]]
+id = "ark_official_server_configuration_2026_07_13"
+kind = "documentation"
+path = "docs/game-config-acceptance/sources/ark-server-configuration-2026-07-13.wikitext"
+authority = "ark_official_community_wiki_server_configuration"
+description = "Pinned raw Server configuration source, retrieved and reverified 2026-08-12; SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63; licensed CC BY-NC-SA 4.0."
+url = "https://ark.wiki.gg/wiki/Server_configuration?action=raw"
+
+[[sources]]
+id = "steamcmd_anonymous_app_2430930"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_2430930.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 2430930 validate completed successfully. Manifest name ARK: Survival Ascended Dedicated Server, StateFlags 4, UpdateResult 0, buildid/TargetBuildID 24159508, SizeOnDisk 12835784254, depot 1004 manifest 5612541580377302256, and depot 2430931 manifest 2381721962790820553."
+
+[[sources]]
+id = "installed_config_boundary"
+kind = "documentation"
+path = "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini / ShooterGame/Saved/Config/WindowsServer/Game.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "The inspected package has no packaged DefaultGameUserSettings.ini or DefaultGame.ini. ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini is LanGame materialized output and ShooterGame/Saved/Config/WindowsServer/Game.ini carries a LanGame managed header, so they are active file-path evidence rather than pristine upstream defaults."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "ArkAscendedServer.exe"
+authority = "ark_official_community_wiki_server_configuration"
+description = "Dedicated-server startup URL and flags for map, player cap, cluster routing, BattlEye, mods, dynamic config, idle-kick, logs, events, and host operational switches."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "game_user_settings"
+kind = "config_file"
+path = "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini"
+authority = "ark_official_community_wiki_server_configuration"
+description = "General ARK server configuration under [ServerSettings], [SessionSettings], and [/Script/Engine.GameSession]."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "game_ini"
+kind = "config_file"
+path = "ShooterGame/Saved/Config/WindowsServer/Game.ini"
+authority = "ark_official_community_wiki_server_configuration"
+description = "Advanced ARK gameplay overrides under [/script/shootergame.shootergamemode], including stats, breeding, engrams, spawns, loot, crafting, and breeding class filters."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "asa_server_patch_notes_v92_36"
+kind = "documentation"
+path = "GameUserSettings.ini:[ServerSettings]"
+authority = "studio_wildcard_official_server_patch_notes"
+description = "Current ASA server patch page as reverified 2026-08-12. The v89.24 section introduces Genesis_WP-era ship and aquatic-compartment server defaults; v88.3 documents DisableBurrowDecayTimers."
+url = "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v9236-updated-08102026/"
+
+[[sources]]
+id = "admin_accounts"
+kind = "generated_roster"
+path = "ShooterGame/Saved/AllowedCheaterAccountIDs.txt"
+authority = "ark_official_community_wiki_server_configuration"
+description = "ARK Survival Ascended admin account ID file materialized from the dedicated settings page."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "exclusive_join_file"
+kind = "generated_roster"
+path = "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt"
+authority = "ark_official_community_wiki_server_configuration"
+description = "Exclusive join account ID list used with UseExclusiveList."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "priority_join_file"
+kind = "generated_roster"
+path = "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt"
+authority = "ark_official_community_wiki_server_configuration"
+description = "No-check/priority join account ID list materialized for runtime join management."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "arksa_steam_settings"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/*"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Steamworks runtime settings shipped for ARK: Survival Ascended."
+[[sources]]
+id = "arksa_steam_settings_examples"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/_examples/*"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Steamworks example settings under steam_settings/_examples."
+[[sources]]
+id = "arksa_be_client_cfg"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/BattlEye/BEClient_x64.cfg"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended BattlEye client-side cfg template."
+[[sources]]
+id = "arksa_be_launcher_ini"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/BattlEye/BELauncher.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended BattlEye launcher INI template."
+[[sources]]
+id = "arksa_be_server_cfg"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/BattlEye/BEServer_x64.cfg"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended BattlEye server cfg template."
+[[sources]]
+id = "arksa_be_text_locales"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/BattlEye/Text/*.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended localized BattlEye text bundles."
+[[sources]]
+id = "arksa_mods_user_data_json"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/ShooterGame/ModsUserData/*/library.json"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended mod metadata cache entries."
+[[sources]]
+id = "arksa_mods_user_data_local"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/ShooterGame/ModsUserData/*/local/user_info.json"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended mod local metadata cache entries."
+[[sources]]
+id = "arksa_mods_user_data_shared"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/ShooterGame/ModsUserData/*/shared_info.json"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended mod shared metadata cache entries."
+[[sources]]
+id = "arksa_sentry_session"
+kind = "config_file"
+path = "ShooterGame/.sentry-native/*.run/session.json"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "ARK: Survival Ascended Sentry runtime session metadata."
+
+[[sources]]
+id = "arsa_stagedbuild_shootergame"
+kind = "config_file"
+path = "Engine/Config/StagedBuild_ShooterGame.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Shipped Unreal staged ShooterGame baseline config used by dedicated startup."
+
+[[sources]]
+id = "arsa_binaries_win64_ini"
+kind = "config_file"
+path = "ShooterGame/Binaries/Win64/*.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Shipped ShooterGame dedicated-server INI payloads."
+
+[[sources]]
+id = "arsa_crashreport_editor_ini"
+kind = "config_file"
+path = "Engine/Programs/CrashReportClient/Saved/Config/WindowsEditor/Engine.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Editor-bound crash-report client Engine.ini shipped in the Unreal toolchain."
+
+[[sources]]
+id = "arsa_crashreport_client_crash_ini"
+kind = "config_file"
+path = "ShooterGame/Saved/Crashes/*/CrashReportClient.ini"
+authority = "installed_ark_survival_ascended_dedicated_server_package"
+description = "Legacy CrashReportClient.ini files under ShooterGame Saved/Crashes."
+
+
+[[sources]]
+id = "arksurvivalascended_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_arksurvivalascended_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (70 discovered files)"
+[[items]]
+source = "game_user_settings"
+key = "SessionSettings.SessionName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "server_url.map_name"
+schema_key = "map_name"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "SessionSettings.MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-ActiveEvent"
+schema_key = "active_event"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AutoSavePeriodMinutes"
+schema_key = "auto_save_period_minutes"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BanListURL"
+schema_key = "ban_list_url"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ShowFloatingDamageText"
+schema_key = "show_floating_damage_text"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ServerHardcore"
+schema_key = "server_hardcore"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ServerForceNoHUD"
+schema_key = "server_force_no_hud"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.KickIdlePlayersPeriod"
+schema_key = "kick_idle_players_period"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-EnableIdlePlayerKick"
+schema_key = "enable_idle_player_kick"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoTransferFromFiltering"
+schema_key = "no_transfer_from_filtering"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-clusterid"
+schema_key = "cluster_id"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.noTributeDownloads"
+schema_key = "no_tribute_downloads"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventDownloadSurvivors"
+schema_key = "prevent_download_survivors"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventDownloadItems"
+schema_key = "prevent_download_items"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventDownloadDinos"
+schema_key = "prevent_download_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventUploadSurvivors"
+schema_key = "prevent_upload_survivors"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventUploadItems"
+schema_key = "prevent_upload_items"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventUploadDinos"
+schema_key = "prevent_upload_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTributeDinos"
+schema_key = "max_tribute_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTributeItems"
+schema_key = "max_tribute_items"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-NoBattlEye"
+schema_key = "battleye_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ServerPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "exclusive_join_file"
+key = "PlayersExclusiveJoinList.txt:account_id"
+schema_key = "exclusive_join_list"
+surface = "generated_roster"
+
+[[items]]
+source = "priority_join_file"
+key = "PlayersJoinNoCheckList.txt:account_id"
+schema_key = "priority_join_list"
+surface = "generated_roster"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ServerAdminPassword"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "admin_accounts"
+key = "AllowedCheaterAccountIDs.txt:account_id"
+schema_key = "admin_account_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BadWordListURL"
+schema_key = "bad_word_list_url"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BadWordWhiteListURL"
+schema_key = "bad_word_whitelist_url"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.serverPVE"
+schema_key = "server_pve"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowThirdPersonPlayer"
+schema_key = "allow_third_person_player"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ServerCrosshair"
+schema_key = "server_crosshair"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ShowMapPlayerLocation"
+schema_key = "show_map_player_location"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowFlyerCarryPvE"
+schema_key = "allow_flyer_carry_pve"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowMultipleAttachedC4"
+schema_key = "allow_multiple_attached_c4"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowRaidDinoFeeding"
+schema_key = "allow_raid_dino_feeding"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.globalVoiceChat"
+schema_key = "global_voice_chat"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ProximityChat"
+schema_key = "proximity_chat"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowHitMarkers"
+schema_key = "allow_hit_markers"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableWeatherFog"
+schema_key = "disable_weather_fog"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.EnablePvPGamma"
+schema_key = "enable_pvp_gamma"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisablePvEGamma"
+schema_key = "disable_pve_gamma"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventSpawnAnimations"
+schema_key = "prevent_spawn_animations"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.UseAstraeosTraversalBuff"
+schema_key = "use_astraeos_traversal_buff"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowCaveBuildingPvE"
+schema_key = "allow_cave_building_pve"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableStructureDecayPvE"
+schema_key = "disable_structure_decay_pve"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventOfflinePvP"
+schema_key = "prevent_offline_pvp"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventOfflinePvPInterval"
+schema_key = "prevent_offline_pvp_interval"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.OverrideStructurePlatformPrevention"
+schema_key = "override_structure_platform_prevention"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.EnableExtraStructurePreventionVolumes"
+schema_key = "enable_extra_structure_prevention_volumes"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PvEAllowStructuresAtSupplyDrops"
+schema_key = "pve_allow_structures_at_supply_drops"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ForceAllStructureLocking"
+schema_key = "force_all_structure_locking"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableDinoDecayPvE"
+schema_key = "disable_dino_decay_pve"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PvEDinoDecayPeriodMultiplier"
+schema_key = "pve_dino_decay_period_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableStructurePlacementCollision"
+schema_key = "disable_structure_placement_collision"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.StructurePickupTimeAfterPlacement"
+schema_key = "structure_pickup_time_after_placement"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.StructurePickupHoldDuration"
+schema_key = "structure_pickup_hold_duration"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.TheMaxStructuresInRange"
+schema_key = "the_max_structures_in_range"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-AutoDestroyStructures"
+schema_key = "enable_auto_destroy_structures"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DestroyTamesOverTheSoftTameLimit"
+schema_key = "destroy_tames_over_soft_tame_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTamedDinos_SoftTameLimit"
+schema_key = "max_tamed_dinos_soft_tame_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTamedDinos_SoftTameLimit_CountdownForDeletionDuration"
+schema_key = "max_tamed_dinos_soft_tame_limit_countdown_for_deletion_duration"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableBurrowDecayTimers"
+schema_key = "disable_burrow_decay_timers"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxAnchoredVesselsInRange"
+schema_key = "max_anchored_vessels_in_range"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AnchoredVesselCheckRadius"
+schema_key = "anchored_vessel_check_radius"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.NeedsPowerToActivateAquaticCompartments"
+schema_key = "needs_power_to_activate_aquatic_compartments"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DifficultyOffset"
+schema_key = "difficulty_offset"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.OverrideOfficialDifficulty"
+schema_key = "override_official_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DayCycleSpeedScale"
+schema_key = "day_cycle_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DayTimeSpeedScale"
+schema_key = "day_time_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.NightTimeSpeedScale"
+schema_key = "night_time_speed_scale"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.XPMultiplier"
+schema_key = "xp_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.TamingSpeedMultiplier"
+schema_key = "taming_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.HarvestAmountMultiplier"
+schema_key = "harvest_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerCharacterWaterDrainMultiplier"
+schema_key = "player_character_water_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerCharacterFoodDrainMultiplier"
+schema_key = "player_character_food_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DinoCharacterFoodDrainMultiplier"
+schema_key = "dino_character_food_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PlayerCharacterHealthRecoveryMultiplier"
+schema_key = "player_character_health_recovery_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PlayerCharacterStaminaDrainMultiplier"
+schema_key = "player_character_stamina_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ResourcesRespawnPeriodMultiplier"
+schema_key = "resources_respawn_period_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ItemStackSizeMultiplier"
+schema_key = "item_stack_size_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventDiseases"
+schema_key = "prevent_diseases"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bUseSingleplayerSettings"
+schema_key = "use_singleplayer_settings"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bShowCreativeMode"
+schema_key = "show_creative_mode"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bUseDinoLevelUpAnimations"
+schema_key = "use_dino_level_up_animations"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PreventMateBoost"
+schema_key = "prevent_mate_boost"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerDamageMultiplier"
+schema_key = "player_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerResistanceMultiplier"
+schema_key = "player_resistance_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DinoDamageMultiplier"
+schema_key = "dino_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DinoResistanceMultiplier"
+schema_key = "dino_resistance_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.StructureResistanceMultiplier"
+schema_key = "structure_resistance_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-UseDynamicConfig"
+schema_key = "use_dynamic_config"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CustomLiveTuningUrl"
+schema_key = "custom_live_tuning_url"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableCryopodEnemyCheck"
+schema_key = "disable_cryopod_enemy_check"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableCryopodFridgeRequirement"
+schema_key = "disable_cryopod_fridge_requirement"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowCryoFridgeOnSaddle"
+schema_key = "allow_cryo_fridge_on_saddle"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ResourceNoReplenishRadiusPlayers"
+schema_key = "resource_no_replenish_radius_players"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ResourceNoReplenishRadiusStructures"
+schema_key = "resource_no_replenish_radius_structures"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CropGrowthSpeedMultiplier"
+schema_key = "crop_growth_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CropDecaySpeedMultiplier"
+schema_key = "crop_decay_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PoopIntervalMultiplier"
+schema_key = "poop_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MatingIntervalMultiplier"
+schema_key = "mating_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.EggHatchSpeedMultiplier"
+schema_key = "egg_hatch_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BabyMatureSpeedMultiplier"
+schema_key = "baby_mature_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BabyCuddleIntervalMultiplier"
+schema_key = "baby_cuddle_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LayEggIntervalMultiplier"
+schema_key = "lay_egg_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MatingSpeedMultiplier"
+schema_key = "mating_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyFoodConsumptionSpeedMultiplier"
+schema_key = "baby_food_consumption_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyCuddleGracePeriodMultiplier"
+schema_key = "baby_cuddle_grace_period_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyCuddleLoseImprintQualitySpeedMultiplier"
+schema_key = "baby_cuddle_lose_imprint_quality_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyImprintingStatScaleMultiplier"
+schema_key = "baby_imprinting_stat_scale_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyImprintAmountMultiplier"
+schema_key = "baby_imprint_amount_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.AllowAnyoneBabyImprintCuddle"
+schema_key = "allow_anyone_baby_imprint_cuddle"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DisableImprintDinoBuff"
+schema_key = "disable_imprint_dino_buff"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.OverrideNamedEngramEntries"
+schema_key = "override_named_engram_entries"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LevelExperienceRampOverrides"
+schema_key = "level_experience_ramp_overrides"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigAddNPCSpawnEntriesContainer"
+schema_key = "config_add_npc_spawn_entries_container"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.RandomSupplyCratePoints"
+schema_key = "random_supply_crate_points"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CustomRecipeEffectivenessMultiplier"
+schema_key = "custom_recipe_effectiveness_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CustomRecipeSkillMultiplier"
+schema_key = "custom_recipe_skill_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-mods"
+schema_key = "mod_ids_csv"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-passivemods"
+schema_key = "passive_mod_ids_csv"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-servergamelog"
+schema_key = "server_game_log"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-servergamelogincludetribelogs"
+schema_key = "server_game_log_include_tribe_logs"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowHideDamageSourceFromLogs"
+schema_key = "allow_hide_damage_source_from_logs"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "raw_extra_lines"
+schema_key = "game_user_settings_extra"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "raw_extra_lines"
+schema_key = "game_ini_extra"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PreventBreedingForClassNames"
+schema_key = "prevent_breeding_for_class_names"
+surface = "materializer"
+
+[[exclusions]]
+source = "launch_args"
+key = "-server"
+reason = "Fixed dedicated-server mode flag required for the managed host."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NullRHI"
+reason = "Fixed headless rendering flag for a background-hosted server."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Unattended"
+reason = "Fixed non-interactive Unreal server flag for the managed host."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NoSplash"
+reason = "Fixed startup UI suppression for the managed host."
+
+[[exclusions]]
+source = "launch_args"
+key = "-abslog"
+reason = "LanGame owns the per-instance ARK log path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Game port is instance port-binding state, not a gameplay setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.AltSaveDirectoryName"
+reason = "LanGame fixes the save directory to the instance id so multiple servers cannot collide."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.QueryPort"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.MaxPlayers"
+reason = "Mirrors the structured max_players setting, which is recorded against [SessionSettings].MaxPlayers."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.MultiHome"
+reason = "Bind address is instance network state, not a game setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.ServerPassword"
+reason = "Stored only in [ServerSettings].ServerPassword in GameUserSettings.ini to keep the password out of OS command lines and native startup logs."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.SessionName"
+reason = "Mirrors [SessionSettings].SessionName to the startup URL for ARK's launch parser."
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.ServerAdminPassword"
+reason = "Stored only in [ServerSettings].ServerAdminPassword in GameUserSettings.ini to keep the password out of OS command lines and native startup logs."
+
+[[items]]
+source = "launch_args"
+key = "server_url.RCONEnabled"
+schema_key = "rcon_enabled"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "server_url.RCONPort"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-WinLiveMaxPlayers"
+reason = "Mirrors the structured max_players setting for ASA's Windows Live player cap."
+
+[[items]]
+source = "launch_args"
+key = "-ClusterDirOverride"
+schema_key = "cluster_directory"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.RCONPort"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "SessionSettings.Port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "SessionSettings.QueryPort"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "[ServerSettings]"
+reason = "Required INI section header materialized by the template."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "[SessionSettings]"
+reason = "Required INI section header materialized by the template."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "[/Script/Engine.GameSession]"
+reason = "Required INI section header materialized by the template."
+
+[[exclusions]]
+source = "game_ini"
+key = "[/script/shootergame.shootergamemode]"
+reason = "Required INI section header materialized by the template."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PreventTransferForClassNames"
+reason = "The current official ARK configuration table marks PreventTransferForClassNames unsupported in Survival Ascended; the stale structured ASA control and template output were removed."
+
+
+[[items]]
+source = "launch_args"
+key = "-AlwaysTickDedicatedSkeletalMeshes"
+schema_key = "always_tick_dedicated_skeletal_meshes"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-culture"
+schema_key = "culture"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-DoCustomCosmeticValidation"
+schema_key = "do_custom_cosmetic_validation"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-DisableCustomCosmetics"
+schema_key = "disable_custom_cosmetics"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-disabledinonetrangescaling"
+schema_key = "disabledinonetrangescaling"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-EasterColors"
+schema_key = "easter_colors"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-exclusivejoin"
+schema_key = "exclusive_join_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ForceAllowCaveFlyers"
+schema_key = "force_allow_cave_flyers"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ForceRespawnDinos"
+schema_key = "force_respawn_dinos"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-GBUsageToForceRestart"
+schema_key = "gbusage_to_force_restart"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoDinos"
+schema_key = "no_dinos"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoWildBabies"
+schema_key = "no_wild_babies"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ServerRCONOutputTribeLogs"
+schema_key = "server_game_log_include_tribe_logs"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ServerUseEventColors"
+schema_key = "server_use_event_colors"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-StasisKeepControllers"
+schema_key = "stasis_keep_controllers"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-usestore"
+schema_key = "usestore"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-CustomNotificationURL"
+schema_key = "custom_notification_url"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-disableCharacterTracker"
+schema_key = "disable_character_tracker"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-EnableSteelShield"
+schema_key = "enable_steel_shield"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-forceuseperfthreads"
+schema_key = "forceuseperfthreads"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoAI"
+schema_key = "no_ai"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoDinosExceptForcedSpawn"
+schema_key = "no_dinos_except_forced_spawn"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoDinosExceptStreamingSpawn"
+schema_key = "no_dinos_except_streaming_spawn"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoDinosExceptManualSpawn"
+schema_key = "no_dinos_except_manual_spawn"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-NoDinosExceptWaterSpawn"
+schema_key = "no_dinos_except_water_spawn"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-noperfthreads"
+schema_key = "noperfthreads"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-nosound"
+schema_key = "nosound"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-onethread"
+schema_key = "onethread"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ServerPlatform"
+schema_key = "server_platform"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-UnstasisDinoObstructionCheck"
+schema_key = "unstasis_dino_obstruction_check"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-UseServerNetSpeedCheck"
+schema_key = "use_server_net_speed_check"
+surface = "launch_arg"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ActiveMapMod"
+schema_key = "active_map_mod"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AdminLogging"
+schema_key = "admin_logging"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowAnyoneBabyImprintCuddle"
+schema_key = "allow_anyone_baby_imprint_cuddle"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowCaveBuildingPvP"
+schema_key = "allow_cave_building_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AlwaysAllowStructurePickup"
+schema_key = "always_allow_structure_pickup"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ArmadoggoDeathCooldown"
+schema_key = "armadoggo_death_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ClampItemSpoilingTimes"
+schema_key = "clamp_item_spoiling_times"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ClampResourceHarvestDamage"
+schema_key = "clamp_resource_harvest_damage"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CosmeticWhitelistOverride"
+schema_key = "cosmetic_whitelist_override"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CosmoWeaponAmmoReloadAmount"
+schema_key = "cosmo_weapon_ammo_reload_amount"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DinoCharacterHealthRecoveryMultiplier"
+schema_key = "dino_character_health_recovery_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DinoCharacterStaminaDrainMultiplier"
+schema_key = "dino_character_stamina_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DisableImprintDinoBuff"
+schema_key = "disable_imprint_dino_buff"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.DontAlwaysNotifyPlayerJoined"
+schema_key = "dont_always_notify_player_joined"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ForceGachaUnhappyInCaves"
+schema_key = "force_gacha_unhappy_in_caves"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.HarvestHealthMultiplier"
+schema_key = "harvest_health_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.IgnoreLimitMaxStructuresInRangeTypeFlag"
+schema_key = "ignore_limit_max_structures_in_range_type_flag"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.IgnorePVPMountedWeaponryRestrictions"
+schema_key = "ignore_pvpmounted_weaponry_restrictions"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ImplantSuicideCD"
+schema_key = "implant_suicide_cd"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxCosmoWeaponAmmo"
+schema_key = "max_cosmo_weapon_ammo"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxPersonalTamedDinos"
+schema_key = "max_personal_tamed_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTamedDinos"
+schema_key = "max_tamed_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTrainCars"
+schema_key = "max_train_cars"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.NonPermanentDiseases"
+schema_key = "non_permanent_diseases"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.OxygenSwimSpeedStatMultiplier"
+schema_key = "oxygen_swim_speed_stat_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PerPlatformMaxStructuresMultiplier"
+schema_key = "per_platform_max_structures_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlatformSaddleBuildAreaBoundsMultiplier"
+schema_key = "platform_saddle_build_area_bounds_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerCharacterHealthRecoveryMultiplier"
+schema_key = "player_character_health_recovery_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PlayerCharacterStaminaDrainMultiplier"
+schema_key = "player_character_stamina_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventMateBoost"
+schema_key = "prevent_mate_boost"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PreventTribeAlliances"
+schema_key = "prevent_tribe_alliances"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.PvPDinoDecay"
+schema_key = "pv_pdino_decay"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.RaidDinoCharacterFoodDrainMultiplier"
+schema_key = "raid_dino_character_food_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.RandomSupplyCratePoints"
+schema_key = "random_supply_crate_points"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.RCONServerGameLogBuffer"
+schema_key = "rconserver_game_log_buffer"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.StructurePreventResourceRadiusMultiplier"
+schema_key = "structure_prevent_resource_radius_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.TribeNameChangeCooldown"
+schema_key = "tribe_name_change_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.YoungIceFoxDeathCooldown"
+schema_key = "young_ice_fox_death_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CrossARKAllowForeignDinoDownloads"
+schema_key = "cross_arkallow_foreign_dino_downloads"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.LimitBunkersPerTribe"
+schema_key = "limit_bunkers_per_tribe"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.LimitBunkersPerTribeNum"
+schema_key = "limit_bunkers_per_tribe_num"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowBunkersInPreventionZones"
+schema_key = "allow_bunkers_in_prevention_zones"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowRidingDinosInsideBunkers"
+schema_key = "allow_riding_dinos_inside_bunkers"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowBunkerModulesAboveGround"
+schema_key = "allow_bunker_modules_above_ground"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowDinoAIInsideBunkers"
+schema_key = "allow_dino_aiinside_bunkers"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AllowBunkerModulesInPreventionZones"
+schema_key = "allow_bunker_modules_in_prevention_zones"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MinDistanceBetweenBunkers"
+schema_key = "min_distance_between_bunkers"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.EnemyAccessBunkerHPThreshold"
+schema_key = "enemy_access_bunker_hpthreshold"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BunkerUnderHPThresholdDmgMultiplier"
+schema_key = "bunker_under_hpthreshold_dmg_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CryoHospitalHoursToRegenHP"
+schema_key = "cryo_hospital_hours_to_regen_hp"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CryoHospitalHoursToRegenFood"
+schema_key = "cryo_hospital_hours_to_regen_food"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CryoHospitalHoursToDrainTorpor"
+schema_key = "cryo_hospital_hours_to_drain_torpor"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.CryoHospitalMatingCooldownReduction"
+schema_key = "cryo_hospital_mating_cooldown_reduction"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BloodforgeReinforceExtraDurability"
+schema_key = "bloodforge_reinforce_extra_durability"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BloodforgeReinforceResourceCostMultiplier"
+schema_key = "bloodforge_reinforce_resource_cost_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.BloodforgeReinforceSpeedMultiplier"
+schema_key = "bloodforge_reinforce_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxActiveOutposts"
+schema_key = "max_active_outposts"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxActiveResourceCaches"
+schema_key = "max_active_resource_caches"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.MaxActiveCityOutposts"
+schema_key = "max_active_city_outposts"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.OutpostSigilRewardMultiplier"
+schema_key = "outpost_sigil_reward_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AdminListURL"
+schema_key = "admin_list_url"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.AutoRestartIntervalSeconds"
+schema_key = "auto_restart_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.UpdateAllowedCheatersInterval"
+schema_key = "update_allowed_cheaters_interval"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.UseCharacterTracker"
+schema_key = "use_character_tracker"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "MessageOfTheDay.Duration"
+schema_key = "duration"
+surface = "config_file"
+
+[[items]]
+source = "game_user_settings"
+key = "MessageOfTheDay.Message"
+schema_key = "message"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyCuddleIntervalMultiplier"
+schema_key = "baby_cuddle_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BabyMatureSpeedMultiplier"
+schema_key = "baby_mature_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowFlyerSpeedLeveling"
+schema_key = "b_allow_flyer_speed_leveling"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowSpeedLeveling"
+schema_key = "b_allow_speed_leveling"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowUnlimitedRespecs"
+schema_key = "b_allow_unlimited_respecs"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableFriendlyFire"
+schema_key = "b_disable_friendly_fire"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisablePhotoMode"
+schema_key = "b_disable_photo_mode"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableWirelessCrafting"
+schema_key = "b_disable_wireless_crafting"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableWirelessCraftingForDinos"
+schema_key = "b_disable_wireless_crafting_for_dinos"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableWirelessCraftingForPlayers"
+schema_key = "b_disable_wireless_crafting_for_players"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableWirelessCraftingForStructures"
+schema_key = "b_disable_wireless_crafting_for_structures"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bIgnoreStructuresPreventionVolumes"
+schema_key = "b_ignore_structures_prevention_volumes"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bPvEDisableFriendlyFire"
+schema_key = "b_pv_edisable_friendly_fire"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CraftingSkillBonusMultiplier"
+schema_key = "crafting_skill_bonus_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CraftXPMultiplier"
+schema_key = "craft_xpmultiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DestroyTamesOverLevelClamp"
+schema_key = "destroy_tames_over_level_clamp"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.EggHatchSpeedMultiplier"
+schema_key = "egg_hatch_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ExcludeItemIndices"
+schema_key = "exclude_item_indices"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitGeneratorsNum"
+schema_key = "limit_generators_num"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitGeneratorsRange"
+schema_key = "limit_generators_range"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.GenericXPMultiplier"
+schema_key = "generic_xpmultiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.GlobalItemDecompositionTimeMultiplier"
+schema_key = "global_item_decomposition_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.GlobalSpoilingTimeMultiplier"
+schema_key = "global_spoiling_time_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.HairGrowthSpeedMultiplier"
+schema_key = "hair_growth_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.HarvestResourceItemAmountClassMultipliers"
+schema_key = "harvest_resource_item_amount_class_multipliers"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.HarvestXPMultiplier"
+schema_key = "harvest_xpmultiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.KillXPMultiplier"
+schema_key = "kill_xpmultiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MatingIntervalMultiplier"
+schema_key = "mating_interval_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MaxFallSpeedMultiplier"
+schema_key = "max_fall_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PerLevelStatsMultiplier_Player[<integer>]"
+schema_key = "per_level_stats_multiplier_player_integer"
+surface = "materializer"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PhotoModeRangeLimit"
+schema_key = "photo_mode_range_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.SpecialXPMultiplier"
+schema_key = "special_xpmultiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TribeTowerBonusMultiplier"
+schema_key = "tribe_tower_bonus_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.WildDinoCharacterFoodDrainMultiplier"
+schema_key = "wild_dino_character_food_drain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.WirelessCraftingRangeOverride"
+schema_key = "wireless_crafting_range_override"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ValgueroMemorialEntries"
+schema_key = "valguero_memorial_entries"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BaseHexagonRewardMultiplier"
+schema_key = "base_hexagon_reward_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.HexagonCostMultiplier"
+schema_key = "hexagon_cost_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.CheatTeleportLocations"
+schema_key = "cheat_teleport_locations"
+surface = "materializer"
+
+[[sources]]
+id = "dynamic_config"
+kind = "documentation"
+path = "HTTP DynamicConfig document"
+authority = "ark_official_community_wiki_server_configuration"
+description = "Externally hosted optional DynamicConfig mirror; audited but not a stable local materialization target."
+url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[exclusions]]
+source = "launch_args"
+key = "-converttostore"
+reason = "LanGame excludes one-time maintenance operations because persistent launch arguments would repeat them on every start."
+
+[[exclusions]]
+source = "launch_args"
+key = "-DisableDupeLogDeletes"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ForceDupeLog"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ignoredupeditems"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ip"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NitradoQueryPort"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ServerIP"
+reason = "LanGame excludes vendor-internal and security-disabling switches from automatically persisted configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-d3d11 -dx11 -sm5"
+reason = "LanGame excludes client, single-player, and non-dedicated options from persistent dedicated-server configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-game"
+reason = "The official table marks this option deprecated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-LANPLAY"
+reason = "The official table marks this option deprecated."
+
+[[exclusions]]
+source = "launch_args"
+key = "?listen"
+reason = "The official table marks this option deprecated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "The official table marks this option deprecated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ForceIgnoreSingleplayerSpawnRangeCheck"
+reason = "LanGame excludes client, single-player, and non-dedicated options from persistent dedicated-server configuration."
+
+[[exclusions]]
+source = "launch_args"
+key = "-vulkan"
+reason = "The official table marks this option deprecated."
+
+[[items]]
+source = "game_user_settings"
+key = "ServerSettings.ActiveMods"
+schema_key = "mod_ids_csv"
+surface = "config_file"
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DynamicColorset"
+reason = "DynamicConfig is fetched from an externally hosted HTTP document; LanGame has no stable local native file path to write."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DynamicColorsetChanceOverride"
+reason = "DynamicConfig is fetched from an externally hosted HTTP document; LanGame has no stable local native file path to write."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "HexagonRewardMultiplier"
+reason = "DynamicConfig is fetched from an externally hosted HTTP document; LanGame has no stable local native file path to write."
+[[exclusions]]
+source = "launch_args"
+key = "-MULTIHOME"
+reason = "Bind-address presence flag is derived from the instance bind IP."
+
+[[exclusions]]
+source = "launch_args"
+key = "-AllowFlyerSpeedLeveling"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-automanagedmods"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-crossplay"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-DisableCustomFoldersInTributeInventories"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-DisableRailgunPVP"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-epiconly"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?EventColorsChanceOverride"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?GameModIds"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-imprintlimit"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-insecure"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MapModID"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MaxNumOfSaveBackups"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?MapPlayerLocation"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MinimumTimeBetweenInventoryRetrieval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-newsaveformat"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?NewYear1UTC"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?NewYear2UTC"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NewYearEvent"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-noantispeedhack"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nocombineclientmoves"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NoHangDetection"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NotifyAdminCommandsInChat"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-noundermeshchecking"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-noundermeshkilling"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-PublicIPForEpic"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-pvedisallowtribewar"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-SecureSendArKPayload"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ServerAllowAnsel"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-speedhackbias"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-structurememopts"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-TotalConversionMod"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UseItemDupeCheck"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UseSecureSpawnRules"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UseStructureStasisGrid"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UseVivox"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-webalarm"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "?bRawSockets"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ClearOldItems"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-forcenetthreading"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-inlinesaveload"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NoBiomeWalls"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nofishloot"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nonetthreading"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-noninlinesaveload"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-oldsaveformat"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-PVPDisablePenetratingHits"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-StructureDestructionTag"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-usecache"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-vday"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-AllowChatSpam"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-BackupTransferPlayerDatas"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-BattlEyeServerRecheck"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-CustomAdminCommandTrackingURL"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-CustomMerticsURL"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-dedihibernation"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-DormancyNetMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-EnableOfficialOnlyVersioningCode"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-EnableVictoryCoreDupeCheck"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-forcedisablemeshchecking"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MaxConnectionsPerIP"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nitradotest2"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nodormancythrottling"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-parseservertojson"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-pauseonddos"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-PreventTotalConversionSaveDir"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-pveallowtribewar"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ReloadedForBackup"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UseTameEffectivenessClamp"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-allowansel"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-d3d10 -dx10 -sm4"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-d3d12 -dx12"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-lowmemory"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-noaafonts"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nomansky"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nomemorybias"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-norhithread"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nosteamclient"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-opengl -opengl3 -opengl4"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-PreventHibernation"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "launch_args"
+key = "-USEALLAVAILABLECORES"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ActiveTotalConversion"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowCrateSpawnsOnTopOfStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowFlyingStaminaRecovery"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowIntegratedSPlusStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowSharedConnections"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowTekSuitPowersInGenesis"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AlwaysNotifyPlayerLeft"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AutoDestroyDecayedDinos"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AutoDestroyOldStructuresMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bForceCanRideFliers"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ClampItemStats"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.CustomDynamicConfigUrl"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.DestroyUnconnectedWaterPipes"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.DinoCountMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ExtinctionEventTimeInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.FastDecayUnsnappedCoreStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxGateFrameOnSaddles"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxHexagonsPerCharacter"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxPlatformSaddleStructureLimit"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxTributeCharacters"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.NPCNetworkStasisRangeScalePlayerCountStart"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.NPCNetworkStasisRangeScalePlayerCountEnd"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.NPCNetworkStasisRangeScalePercentEnd"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.OnlyAutoDestroyCoreStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.OnlyDecayUnsnappedCoreStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.PersonalTamedDinosSaddleStructureCost"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.PvEStructureDecayPeriodMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.PvPStructureDecay"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.RCONEnabled"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ServerAutoForceRespawnWildDinosInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.SpectatorPassword"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.StructureDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TamedDinoDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TamedDinoResistanceMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TribeLogDestroyedEnemyStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.UseFjordurTraversalBuff"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.UseOptimizedHarvestingHealth"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MinimumDinoReuploadInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TributeCharacterExpirationSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TributeDinoExpirationSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TributeItemExpirationSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.CryopodNerfDamageMult"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.CryopodNerfDuration"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.CryopodNerfIncomingDamageMultPercent"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.EnableCryopodNerf"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.EnableCryoSicknessPVE"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bFilterCharacterNames"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bFilterChat"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bFilterTribeNames"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowDeprecatedStructures"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bAllowFlyerCarryPVE"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.bDisableStructureDecayPvE"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ForceFlyerExplosives"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxStructuresInRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.NewMaxStructuresInRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.PvEStructureDecayDestructionPeriod"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.AllowedCheatersURL"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ChatLogFlushIntervalSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ChatLogMaxAgeInDays"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.DontRestoreBackup"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.EnableAFKKickPlayerCountPercent"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.EnableMeshBitingProtection"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.FreezeReaperPregnancy"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.LogChatMessages"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxStructuresInSmallRadius"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.MaxStructuresToProcess"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.PreventOutOfTribePinCodeUse"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.RadiusStructuresInSmallRadius"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ServerEnableMeshChecking"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TribeMergeAllowed"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.TribeMergeCooldown"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.UseExclusiveList"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "ServerSettings.ListenServerTetherDistanceMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "SessionSettings.MultiHome"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "/Script/Engine.GameSession.MaxPlayers"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "Ragnarok.AllowMultipleTamedUnicorns"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "Ragnarok.EnableVolcano"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "Ragnarok.UnicornSpawnInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "Ragnarok.VolcanoIntensity"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_user_settings"
+key = "Ragnarok.VolcanoInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.AutoPvEStartTimeSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.AutoPvEStopTimeSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowUnclaimDinos"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowCustomRecipes"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAllowPlatformSaddleMultiFloors"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.BaseTemperatureMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAutoPvETimer"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAutoPvEUseSystemTime"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bAutoUnlockAllEngrams"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableDinoBreeding"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableDinoRiding"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableDinoTaming"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableLootCrates"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bFlyerPlatformAllowUnalignedDinoBasing"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bIncreasePvPRespawnInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bOnlyAllowSpecifiedEngrams"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bPassiveDefensesDamageRiderlessDinos"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bPvEAllowTribeWar"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bPvEAllowTribeWarCancel"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bUseCorpseLocator"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bUseTameLimitForStructuresOnly"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideItemCraftingCosts"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideItemMaxQuantity"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideNPCSpawnEntriesContainer"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideSupplyCrateItems"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ConfigSubtractNPCSpawnEntriesContainer"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DinoClassDamageMultipliers"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DinoClassResistanceMultipliers"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DinoHarvestingDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DinoSpawnWeightMultipliers"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.DinoTurretDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.EngramEntryAutoUnlocks"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.FastDecayInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.FishingLootQualityMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.FuelConsumptionIntervalMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.GlobalCorpseDecompositionTimeMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.GlobalPoweredBatteryDurabilityDecreasePerSecond"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.IncreasePvPRespawnIntervalBaseAmount"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.IncreasePvPRespawnIntervalCheckPeriod"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.IncreasePvPRespawnIntervalMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.ItemStatClamps[<attribute>]"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitNonPlayerDroppedItemsCount"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitNonPlayerDroppedItemsRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MaxAlliancesPerTribe"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MaxNumberOfPlayersInTribe"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MaxTribeLogs"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MaxTribesPerAlliance"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.NPCReplacements"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.OverrideMaxExperiencePointsDino"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.OverrideMaxExperiencePointsPlayer"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.OverrideEngramEntries"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.OverridePlayerLevelEngramPoints"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PassiveTameIntervalMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoTamed<_type>[<integer>]"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoWild[<integer>]"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PlayerBaseStatMultipliers[<attribute>]"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PlayerHarvestingDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PreventDinoTameClassNames"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PreventOfflinePvPConnectionInvincibleInterval"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.PvPZoneStructureDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.StructureDamageRepairCooldown"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.SupplyCrateLootQualityMultiplier"
+reason = "The pinned wiki snapshot marks this setting Unknown for ASA. Current support is independently documented under asa_advanced_game_ini; this record preserves the earlier source classification."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TamedDinoCharacterFoodDrainMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TamedDinoClassDamageMultipliers"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TamedDinoClassResistanceMultipliers"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TamedDinoTorporDrainMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.TribeSlotReuseCooldown"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.UseCorpseLifeSpanMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.WildDinoTorporDrainMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bHardLimitTurretsInRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bLimitTurretsInRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitTurretsNum"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.LimitTurretsRange"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.AdjustableMutagenSpawnDelayMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableHexagonStore"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableDefaultMapItemSets"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableGenesisMissions"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bDisableWorldBuffs"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bEnableWorldBuffScaling"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bGenesisUseStructuresPreventionVolumes"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.bHexStoreAllowOnlyEngramTradeOption"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MutagenLevelBoost[<Stat_ID>]"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.MutagenLevelBoost_Bred[<Stat_ID>]"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "/script/shootergame.shootergamemode.WorldBuffScalingEfficacy"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "game_ini"
+key = "ModInstaller.ModIDS"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "ActiveEventColors"
+reason = "The pinned official table marks this setting No for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "BabyFoodConsumptionSpeedMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "bDisableDinoDecayPvE"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "bDisableStructureDecayPvE"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "bPvPDinoDecay"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "bPvPStructureDecay"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "bUseAlarmNotifications"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "CropGrowthSpeedMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "CustomRecipeEffectivenessMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DinoCharacterFoodDrainMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DisableTimestampVerification"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DisableWorldBuffs"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "DynamicUndermeshRegions"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "EnableFullDump"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "EnableWorldBuffScaling"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "GMaxFlameThrowerServerTicksPerFrame"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "GlobalSpoilingTimeMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "GUseServerNetSpeedCheck"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "MatingSpeedMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "NPCReplacements"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "PvEDinoDecayPeriodMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "PvEStructureDecayPeriodMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "StructureDamageMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "TamingSpeedMultiplier"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "TributeDinoExpirationSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "TributeItemExpirationSeconds"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[exclusions]]
+source = "dynamic_config"
+key = "WorldBuffScalingEfficacy"
+reason = "The pinned official table marks this setting Unknown for ASA; it is not exposed by this edition model."
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.SupplyCrateLootQualityMultiplier"
+schema_key = "supply_crate_loot_quality_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.OverrideMaxExperiencePointsPlayer"
+schema_key = "override_max_experience_points_player"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.OverrideMaxExperiencePointsDino"
+schema_key = "override_max_experience_points_dino"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.bAutoUnlockAllEngrams"
+schema_key = "auto_unlock_all_engrams"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideSupplyCrateItems"
+schema_key = "config_override_supply_crate_items"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideItemCraftingCosts"
+schema_key = "config_override_item_crafting_costs"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideItemMaxQuantity"
+schema_key = "config_override_item_max_quantity"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.ConfigOverrideNPCSpawnEntriesContainer"
+schema_key = "config_override_npc_spawn_entries_container"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.ConfigSubtractNPCSpawnEntriesContainer"
+schema_key = "config_subtract_npc_spawn_entries_container"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.DinoSpawnWeightMultipliers"
+schema_key = "dino_spawn_weight_multipliers"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.NPCReplacements"
+schema_key = "npc_replacements"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.OverridePlayerLevelEngramPoints"
+schema_key = "override_player_level_engram_points"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.EngramEntryAutoUnlocks"
+schema_key = "engram_entry_auto_unlocks"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoTamed<_type>[<integer>]"
+schema_key = "per_level_stats_multiplier_dino_tamed_type_integer"
+surface = "config_file"
+
+[[items]]
+source = "asa_advanced_game_ini"
+key = "/script/shootergame.shootergamemode.PerLevelStatsMultiplier_DinoWild[<integer>]"
+schema_key = "per_level_stats_multiplier_dino_wild_integer"
+surface = "config_file"
+
+[[sources]]
+id = "asa_server_patch_notes_v93_36"
+kind = "documentation"
+path = "ASA official server changelog"
+authority = "studio_wildcard_official_server_patch_notes"
+url = "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v9336-updated-09242026/"
+description = "Reviewed 2026-09-30 from the official changelog index. The current server page reports v93.36 dated 2026-09-24; the v93.22, v93.25, v93.33 and v93.36 changes after the previous review add no documented native configuration keys. The installed library manifest reports build 25535041. This does not establish a new exhaustive binary inventory or native runtime acceptance."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://ark.wiki.gg/wiki/Server_configuration"
+authority = "source_and_native_contract_semantic_review"
+description = "Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Bilingual help covers nearby text chat, resource-regrowth delay direction and structure pickup using canonical field descriptions. Native defaults and keys are unchanged; gameplay effects were not newly exercised."

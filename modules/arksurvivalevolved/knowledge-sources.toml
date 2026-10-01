@@ -1,0 +1,19 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "arksurvivalevolved"
+scope = "ARK: Survival Evolved dedicated-server installation, configuration, ports, saves and console administration."
+gaps = ["The detailed server manual is community-maintained on the officially endorsed ARK Wiki; shared pages also contain ASA-specific settings.","Wiki document reads returned HTTP 403 during source review; full-text synchronization is not established."]
+
+[[sources]]
+id = "ark-wiki"
+title = "ARK server administration wiki"
+authority = "ARK Wiki contributors, endorsed by Studio Wildcard"
+kind = "official_community"
+seeds = ["https://ark.wiki.gg/wiki/Dedicated_server_setup","https://ark.wiki.gg/wiki/Server_configuration","https://ark.wiki.gg/wiki/Console_commands"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://survivetheark.com/index.php?/forums/topic/657902-official-ark-wiki-feedback/"
+license_note = "ARK Wiki material is identified in THIRD_PARTY_NOTICES.md as CC BY-NC-SA 4.0. The 2026-09-28 robots response also declares search=yes, ai-train=no, use=reference. Preserve these restrictions; do not treat official status as blanket full-text AI-use permission."
+reviewed_on = "2026-09-28"
+license_url = "https://ark.wiki.gg/wiki/ARK_Wiki:Copyrights"

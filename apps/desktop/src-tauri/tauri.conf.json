@@ -1,0 +1,101 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "LanGame Server Manager",
+  "version": "0.0.1",
+  "identifier": "cn.langame.servermanager",
+  "build": {
+    "beforeDevCommand": "cmd /c npm run dev",
+    "devUrl": "http://127.0.0.1:43170",
+    "beforeBuildCommand": "cmd /c npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "security": {
+      "csp": {
+        "default-src": "'self' customprotocol: asset:",
+        "base-uri": "'none'",
+        "connect-src": "ipc: http://ipc.localhost http://lgsm-media.localhost http://127.0.0.1:* http://localhost:* https:",
+        "font-src": "'self' data:",
+        "form-action": "'none'",
+        "frame-src": "'none'",
+        "img-src": "'self' asset: http://asset.localhost blob: data: http: https:",
+        "media-src": "'self' blob: data: http: https:",
+        "object-src": "'none'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "worker-src": "'self' blob:"
+      }
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "LanGame Server Manager",
+        "width": 1560,
+        "height": 900,
+        "minWidth": 960,
+        "minHeight": 600,
+        "resizable": true,
+        "maximizable": true,
+        "fullscreen": false,
+        "visible": false,
+        "decorations": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "nsis",
+    "createUpdaterArtifacts": false,
+    "publisher": "LanGame Team",
+    "homepage": "https://langame.cn/",
+    "shortDescription": "Install, configure and manage dedicated game servers.",
+    "licenseFile": "../../../LICENSE",
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "offlineInstaller",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English", "SimpChinese"],
+        "displayLanguageSelector": true,
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "headerImage": "installer/branding/header.bmp",
+        "sidebarImage": "installer/branding/sidebar.bmp",
+        "uninstallerHeaderImage": "installer/branding/header.bmp",
+        "installerHooks": "installer/hooks.nsh",
+        "customLanguageFiles": {
+          "English": "installer/languages/English.nsh",
+          "SimpChinese": "installer/languages/SimpChinese.nsh"
+        }
+      }
+    },
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "resources": {
+      "../../../modules/": "modules/",
+      "THIRD_PARTY_LICENSES-RUST.txt": "THIRD_PARTY_LICENSES-RUST.txt",
+      "../public/THIRD_PARTY_LICENSES.txt": "THIRD_PARTY_LICENSES-NPM.txt",
+      "../public/fonts/inter/OFL.txt": "fonts/inter/OFL.txt",
+      "../../../LICENSE": "LICENSE",
+      "../../../NOTICE": "NOTICE",
+      "../../../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
+      "../../../THIRD_PARTY_ASSETS/NOTICE": "THIRD_PARTY_ASSETS/NOTICE",
+      "../../../CONTRIBUTOR_AGREEMENT.md": "CONTRIBUTOR_AGREEMENT.md",
+      "../../../PRIVACY.md": "PRIVACY.md"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0QjgyMkQ3NTY0RTA3NTIKUldSU0IwNVcxeUs0Wk5pamlNa1ZDb0crNy9xKzNwU2JBbVkvenNvS1g5NlJZaUlqWWFTTVlnRloK",
+      "endpoints": [],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

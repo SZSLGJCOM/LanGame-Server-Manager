@@ -1,0 +1,217 @@
+/* One workspace surface, anchored to the LAN entry. */
+.assistant-panel {
+  --assistant-header-height: 50px;
+  position: fixed;
+  top: var(--assistant-panel-top, 96px);
+  left: 50%;
+  z-index: 1401;
+  display: flex;
+  flex-direction: column;
+  width: min(var(--assistant-panel-width, 480px), calc(100vw - 40px));
+  height: min(560px, calc(100dvh - var(--assistant-panel-top, 96px) - 20px));
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 12px;
+  background: var(--theme-card-surface);
+  box-shadow: 0 20px 60px -20px color-mix(in srgb, var(--shell-text) 24%, transparent);
+  color: var(--shell-text);
+  font-family: inherit;
+  transform: translateX(-50%);
+  -webkit-app-region: no-drag;
+}
+
+.assistant-panel.is-anchored {
+  left: var(--assistant-panel-left, 50%);
+  transform: none;
+}
+
+/* The shell owns presence across loading, failure and chat. Its fixed-size
+   content is clipped during the morph instead of stretching type and icons. */
+.assistant-island-surface {
+  position: fixed;
+  z-index: 1401;
+  box-sizing: border-box;
+  overflow: clip;
+  isolation: isolate;
+  border: 1px solid var(--shell-line-strong);
+  background: var(--theme-card-surface);
+  color: var(--shell-text);
+  box-shadow: var(--shell-shadow), 0 24px 64px -18px rgb(0 0 0 / 18%);
+  transition: box-shadow 240ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.assistant-island-surface[data-state="opening"] { pointer-events: none; }
+
+.assistant-island-surface[data-state="closing"] {
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.assistant-island-content { position: absolute; top: 0; left: 0; }
+
+.assistant-island-toggle {
+  position: absolute;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  height: 37px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+.assistant-island-toggle:hover { background: var(--theme-control-hover); }
+.assistant-island-toggle:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: -2px; }
+.assistant-island-content .assistant-panel-avatar { visibility: hidden; }
+.assistant-island-content .assistant-panel-identity { max-width: calc(50% - 38px); }
+.assistant-island-content .assistant-panel-title { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.assistant-island-content > .assistant-panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.assistant-load-state {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.assistant-load-state strong { font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
+.assistant-load-state > span { color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
+.assistant-load-retry {
+  min-height: 34px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 7px;
+  background: var(--theme-control-hover);
+  color: var(--shell-text);
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-secondary);
+  cursor: pointer;
+}
+.assistant-load-retry:hover { border-color: var(--shell-focus); }
+
+.assistant-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 var(--assistant-header-height);
+  min-width: 0;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+.assistant-panel-identity {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.assistant-panel-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.assistant-panel-avatar .assistant-avatar-mark { width: 24px; height: 18px; }
+.assistant-avatar-mark { display: block; color: var(--shell-text); }
+
+.assistant-panel-heading { display: flex; align-items: baseline; min-width: 0; gap: 9px; }
+.assistant-panel-title { flex: 0 0 auto; font-size: var(--text-body); font-weight: var(--font-weight-semibold); line-height: var(--leading-compact); }
+.assistant-panel-context {
+  overflow: hidden;
+  color: var(--shell-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-compact);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-panel-controls { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; }
+
+.assistant-panel-controls button,
+.assistant-back-button,
+.assistant-history-close {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--shell-muted);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.assistant-panel-controls button:hover:not(:disabled),
+.assistant-back-button:hover,
+.assistant-history-close:hover,
+.assistant-panel-controls .is-open {
+  background: var(--theme-control-hover);
+  color: var(--shell-text);
+}
+
+.assistant-panel-controls button:disabled { opacity: 0.45; cursor: not-allowed; }
+.assistant-panel-controls svg,
+.assistant-back-button svg,
+.assistant-history-close svg { width: 18px; height: 18px; }
+
+.assistant-panel-controls .assistant-close-button { margin-left: 5px; }
+
+.assistant-panel :where(button):focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}
+
+.assistant-ai-settings-surface {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 22px 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 680px) {
+  .assistant-panel-head { padding-inline: 14px; gap: 8px; }
+  .assistant-ai-settings-surface { padding: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-island-surface,
+  .assistant-panel { animation: none; transition: none; }
+}

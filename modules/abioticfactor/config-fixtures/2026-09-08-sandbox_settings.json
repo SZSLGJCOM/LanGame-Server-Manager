@@ -1,0 +1,194 @@
+{
+  "fixture_version": 1,
+  "module_id": "abioticfactor",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-09-08",
+    "build": "Official Sandbox Options; installed dedicated-server build 24343458",
+    "source_ids": [
+      "steamcmd_anonymous_app_2857200",
+      "launch_args",
+      "sandbox_settings",
+      "upstream_sandbox_template",
+      "admin_ini"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "AbioticFactor/Saved/Config/WindowsServer/LanGame/acceptance-abioticfactor-SandboxSettings.ini",
+        "content": "[SandboxSettings]\nGameDifficulty=3\nFuturePackageKey=keep\n"
+      },
+      {
+        "root": "install",
+        "path": "AbioticFactor/Saved/SaveGames/Server/LanGame/acceptance-abioticfactor-Admin.ini",
+        "content": "[Moderators]\nModerator=76561198000000001\nFutureRosterOption=keep\nModerator=76561198000000002\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 58,
+    "specialized": 1,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 12
+  },
+  "classifications": {
+    "editable": [
+      "launch_args.-SteamServerName",
+      "launch_args.-WorldSaveName",
+      "launch_args.-MaxServerPlayers",
+      "launch_args.-ServerPassword",
+      "launch_args.-AdminPassword",
+      "launch_args.-LANOnly",
+      "launch_args.-PlatformLimited",
+      "launch_args.-UseLocalIPs",
+      "launch_args.-useperfthreads",
+      "launch_args.-DisableAsyncLoadingThread",
+      "sandbox_settings.GameDifficulty",
+      "sandbox_settings.HardcoreMode",
+      "sandbox_settings.AllowIronMode",
+      "sandbox_settings.DayNightCycleState",
+      "sandbox_settings.DayNightCycleSpeedMultiplier",
+      "sandbox_settings.WeatherFrequency",
+      "sandbox_settings.FirstTimeStartingWeapon",
+      "sandbox_settings.HomeWorlds",
+      "sandbox_settings.AllowCharacterReset",
+      "sandbox_settings.BaseInventorySize",
+      "sandbox_settings.LootRespawnEnabled",
+      "sandbox_settings.SinkRefillRate",
+      "sandbox_settings.FoodSpoilSpeedMultiplier",
+      "sandbox_settings.RefrigerationEffectivenessMultiplier",
+      "sandbox_settings.ItemStackSizeMultiplier",
+      "sandbox_settings.ItemWeightMultiplier",
+      "sandbox_settings.ItemDurabilityMultiplier",
+      "sandbox_settings.StorageByTag",
+      "sandbox_settings.TaintedSinkWater",
+      "sandbox_settings.DamageToAlliesMultiplier",
+      "sandbox_settings.HungerSpeedMultiplier",
+      "sandbox_settings.ThirstSpeedMultiplier",
+      "sandbox_settings.FatigueSpeedMultiplier",
+      "sandbox_settings.ContinenceSpeedMultiplier",
+      "sandbox_settings.BonusPerkPoints",
+      "sandbox_settings.PlayerXPGainMultiplier",
+      "sandbox_settings.DurabilityLossOnDeathMultiplier",
+      "sandbox_settings.ShowDeathMessages",
+      "sandbox_settings.AllowRecipeSharing",
+      "sandbox_settings.AllowPagers",
+      "sandbox_settings.AllowTransmog",
+      "sandbox_settings.DisableResearchMinigame",
+      "sandbox_settings.DeathPenalties",
+      "sandbox_settings.HostAccessPlayerCorpses",
+      "sandbox_settings.EnemySpawnRate",
+      "sandbox_settings.EnemyHealthMultiplier",
+      "sandbox_settings.EnemyPlayerDamageMultiplier",
+      "sandbox_settings.EnemyDeployableDamageMultiplier",
+      "sandbox_settings.DetectionSpeedMultiplier",
+      "sandbox_settings.EnemyAccuracy",
+      "sandbox_settings.InvisibleRadiation",
+      "sandbox_settings.RadiationDealsDamage",
+      "sandbox_settings.PowerSocketsOffAtNight",
+      "sandbox_settings.StructuralSupportLimit",
+      "sandbox_settings.BridgeSupports",
+      "sandbox_settings.PlayerFurnitureDestruction",
+      "sandbox_settings.ApocalypticAbilities",
+      "sandbox_settings.MaximizeEnemySpawns"
+    ],
+    "specialized": [
+      "admin_ini.Admin.ini:[Moderators].Moderator"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-log",
+      "launch_args.-stdout",
+      "launch_args.-FullStdOutLogOutput",
+      "launch_args.-newconsole",
+      "launch_args.-PORT",
+      "launch_args.-QueryPort",
+      "launch_args.-MultiHome",
+      "launch_args.-SandboxIniPath",
+      "launch_args.-AdminIniPath",
+      "launch_args.-NOSTEAM",
+      "launch_args.-NoAsyncLoadingThread",
+      "sandbox_settings.[SandboxSettings]"
+    ]
+  },
+  "settings": {
+    "server_name": "瀑布实验室 α",
+    "world_save_name": "Cascade",
+    "max_server_players": 24,
+    "server_password": "",
+    "admin_password": "acceptance-admin",
+    "moderator_steam_ids": "76561198011111111\n76561198022222222\n76561198011111111",
+    "lan_only": false,
+    "platform_limited": "PC",
+    "use_local_ips": true,
+    "game_difficulty": 1,
+    "hardcore_mode": true,
+    "day_night_cycle_speed_multiplier": 3,
+    "disable_async_loading_thread": true,
+    "use_perf_threads": true,
+    "apocalyptic_abilities": true,
+    "maximize_enemy_spawns": true,
+    "enemy_deployable_damage_multiplier": 0
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "AbioticFactor/Saved/Config/WindowsServer/LanGame/acceptance-abioticfactor-SandboxSettings.ini",
+        "format": "ini",
+        "keys": {
+          "SandboxSettings.GameDifficulty": "1",
+          "SandboxSettings.HardcoreMode": "True",
+          "SandboxSettings.DayNightCycleSpeedMultiplier": "3",
+          "SandboxSettings.FuturePackageKey": "keep",
+          "SandboxSettings.ApocalypticAbilities": "True",
+          "SandboxSettings.MaximizeEnemySpawns": "True",
+          "SandboxSettings.EnemyDeployableDamageMultiplier": "0"
+        }
+      },
+      {
+        "root": "install",
+        "path": "AbioticFactor/Saved/SaveGames/Server/LanGame/acceptance-abioticfactor-Admin.ini",
+        "format": "ini",
+        "entries": [
+          {
+            "key": "Moderators.Moderator",
+            "value": "76561198011111111"
+          },
+          {
+            "key": "Moderators.Moderator",
+            "value": "76561198022222222"
+          },
+          {
+            "key": "Moderators.FutureRosterOption",
+            "value": "keep"
+          }
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe",
+      "arguments": [
+        "-log",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-PORT=7777",
+        "-QueryPort=27015",
+        "-MaxServerPlayers=24",
+        "-WorldSaveName=Cascade",
+        "-SandboxIniPath=Config/WindowsServer/LanGame/acceptance-abioticfactor-SandboxSettings.ini",
+        "-AdminIniPath=SaveGames/Server/LanGame/acceptance-abioticfactor-Admin.ini",
+        "-SteamServerName=瀑布实验室 α",
+        "-AdminPassword=acceptance-admin",
+        "-PlatformLimited=PC",
+        "-UseLocalIPs",
+        "-useperfthreads",
+        "-DisableAsyncLoadingThread"
+      ]
+    }
+  }
+}

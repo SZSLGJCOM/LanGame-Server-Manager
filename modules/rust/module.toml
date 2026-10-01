@@ -1,0 +1,311 @@
+id = "rust"
+name = "Rust Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Rust via SteamCMD."
+steam_app_id = 258550
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "rust"
+
+[process]
+executable = "RustDedicated.exe"
+args_template = [
+  "-batchmode",
+  "-nographics",
+  "-logfile",
+  "-",
+  "+server.ip",
+  "{{instance.bind_ip}}",
+  "+server.identity",
+  "{{instance.id}}",
+  "{{rust.world_configfile_args}}",
+  "{{rust.use_new_navmesh_flag}}",
+  "{{rust.insecure_flag}}",
+  "+server.port",
+  "{{ports.game.port}}",
+  "+server.queryport",
+  "{{ports.query.port}}",
+  "+rcon.port",
+  "{{ports.rcon.port}}",
+  "+rcon.password",
+  "{{settings.rcon_password}}",
+  "+rcon.web",
+  "{{settings.rcon_web}}",
+  "{{rust.custom_launch_flags}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Rust direct-launches RustDedicated.exe and sends Unity output to the owned standard-output pipe, which LanGame continuously persists in the run's managed console log. Per-instance cfg remains under server/<instance-id>/cfg; LanGame materializes server.cfg and users.cfg there so worlds do not share identity, admins, or runtime config."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 28015
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 28016
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 28017
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query", "game"]
+
+[runtime.join]
+kind = "steam_connect"
+client_app_id = 252490
+join_port_name = "game"
+query_port_name = "query"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "websocket_rcon"
+command_template = "say {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_player"]
+response_codec = "rust_player_list"
+identity_kind = "steam_id"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Online players"
+label_zh_cn = "在线玩家"
+transport = "websocket_rcon"
+command_template = "playerlist"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
+id = "status"
+label = "Status / players"
+label_zh_cn = "状态 / 玩家"
+transport = "websocket_rcon"
+command_template = "status"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
+id = "players"
+label = "Players"
+label_zh_cn = "玩家列表"
+transport = "websocket_rcon"
+command_template = "players"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
+id = "users"
+label = "Users"
+label_zh_cn = "用户列表"
+transport = "websocket_rcon"
+command_template = "users"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "websocket_rcon"
+command_template = "kick {{target}} \"LanGame\""
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or exact player name"
+target_placeholder_zh_cn = "Steam64 ID 或精确玩家名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_steamid"
+label = "Ban SteamID"
+label_zh_cn = "封禁 SteamID"
+transport = "websocket_rcon"
+command_template = "banid {{target}} \"LanGame\" \"Banned by LanGame\""
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_steamid"
+label = "Unban SteamID"
+label_zh_cn = "解封 SteamID"
+transport = "websocket_rcon"
+command_template = "unban {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ownerid"
+label = "Add owner"
+label_zh_cn = "添加服主"
+transport = "websocket_rcon"
+command_template = "ownerid {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "removeowner"
+label = "Remove owner"
+label_zh_cn = "移除服主"
+transport = "websocket_rcon"
+command_template = "removeowner {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "moderatorid"
+label = "Add moderator"
+label_zh_cn = "添加协管员"
+transport = "websocket_rcon"
+command_template = "moderatorid {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "removemoderator"
+label = "Remove moderator"
+label_zh_cn = "移除协管员"
+transport = "websocket_rcon"
+command_template = "removemoderator {{target}}"
+target_label = "Steam64 ID"
+target_label_zh_cn = "Steam64 ID"
+target_placeholder = "Steam64 ID"
+target_placeholder_zh_cn = "Steam64 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+destructive = true
+
+[[runtime.player_actions]]
+id = "banlistex"
+label = "Ban list"
+label_zh_cn = "封禁列表"
+transport = "websocket_rcon"
+command_template = "banlistex"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
+id = "writecfg"
+label = "Persist user config"
+label_zh_cn = "保存用户权限配置"
+transport = "websocket_rcon"
+command_template = "server.writecfg"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[runtime.shutdown]
+grace_period_ms = 10000
+
+[[runtime.shutdown.commands]]
+transport = "websocket_rcon"
+command = "server.save"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+wait_after_ms = 3000
+
+[[runtime.shutdown.commands]]
+transport = "websocket_rcon"
+command = "quit"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+wait_after_ms = 6000
+
+[storage]
+runtime_copy_exclusions = ["server", "oxide/plugins", "oxide/config", "oxide/data", "oxide/lang", "oxide/logs", "oxide/oxide.config.json"]
+saves_path_template = "{{paths.install_root}}/server/{{instance.id}}"
+
+[mods.source]
+provider = "manual"
+label = "uMod/Oxide plugins"
+url = "https://umod.org/documentation/plugins/installation"
+install_note = "Rust plugins require Oxide/uMod to be installed on the server first. LanGame only stages plugin source files into oxide/plugins; use the server console command oxide.version to confirm the loader before expecting plugins to load."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/oxide/plugins"
+target_label = "oxide/plugins"
+accepts = ["cs", "zip", "folder"]
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "websocket_rcon_and_cfg_rosters"
+reason = "Rust renders WebRCON settings and persistent users/bans cfg files. LanGame dispatches status, players, kick, ban/unban, owner/moderator add/remove, banlistex, and server.writecfg through WebSocket RCON."
+verification = "Start RustDedicated.exe on Windows, confirm WebRCON binds to the configured port, run status/players, and verify kick, ban/unban, owner/moderator, and server.writecfg side effects."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

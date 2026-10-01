@@ -1,0 +1,31 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "sevendaystodie"
+scope = "Dedicated-server setup, serverconfig.xml, sandbox configuration, saved-world compatibility and update guidance."
+gaps = ["The publisher V3.0 notes document a settings migration, not a complete operator manual. The reviewed public article uses Zendesk's documented anonymous locale API; metadata updates do not establish a newer game version.","The officially endorsed Server wiki page is community-maintained and contains older-version examples; these are not verified V3.0 instructions.","The wiki robots policy reviewed on 2026-09-28 declares search=yes, ai-train=no and use=reference; synchronization and LAN must preserve reference-use limits."]
+
+[[sources]]
+id = "fun-pimps-server-migration"
+title = "V3.0 server sandbox and save migration notes"
+authority = "The Fun Pimps / 7 Days to Die Help Center"
+kind = "official"
+seeds = ["https://7-days-to-die.zendesk.com/api/v2/help_center/en-us/articles/50318172509972.json"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+authority_evidence = "https://7-days-to-die.zendesk.com/hc/en-us/articles/50318172509972-V3-0-Dead-Hot-Summer-Release-Note"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-30"
+
+[[sources]]
+id = "official-wiki-dedicated-server"
+title = "7 Days to Die server setup wiki"
+authority = "7 Days to Die Wiki contributors"
+kind = "official_community"
+seeds = ["https://7daystodie.wiki.gg/wiki/Server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://7-days-to-die.zendesk.com/hc/en-us/articles/50318172509972-V3-0-Dead-Hot-Summer-Release-Note"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution. The publisher links wiki.gg as its official wiki. The 2026-09-28 robots response declares search=yes, ai-train=no and use=reference; retain those limits and evaluate current policy before synchronization."
+reviewed_on = "2026-09-28"

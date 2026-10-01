@@ -1,0 +1,19 @@
+schema_version = 1
+module_id = "rimworld"
+primary_process_key = "main"
+readiness_timeout_ms = 120000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "tcp"
+
+[[probes]]
+id = "game-connect"
+kind = "tcp_connect"
+port_name = "game"

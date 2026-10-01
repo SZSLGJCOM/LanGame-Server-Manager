@@ -1,0 +1,129 @@
+.server-detail-scroll--maintenance {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+  gap: 0;
+  padding-right: 0;
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+
+.maintenance-workspace.configuration-workspace { grid-template-rows: minmax(0, 1fr); }
+.maintenance-workspace[hidden],
+.maintenance-workspace__section[hidden] { display: none; }
+.maintenance-workspace .configuration-workspace__main { display: block; }
+.maintenance-workspace__section { gap: 20px; }
+
+.maintenance-workspace :is(.server-maintenance-card, .dst-world-import) {
+  height: auto;
+  min-height: 0;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.maintenance-workspace__section > :is(.server-maintenance-card, .dst-world-import) + :is(.server-maintenance-card, .dst-world-import) {
+  padding-top: 20px;
+  border-top: 1px solid var(--shell-line);
+}
+
+.maintenance-workspace :is(.server-maintenance-card-label, .server-resource-heading .server-workbench-section-label,
+  .instance-isolation-title, .dst-world-import-header, .server-broadcast-heading h3) {
+  font-size: var(--text-section-title);
+  line-height: var(--leading-heading);
+}
+
+.maintenance-workspace .form-note { line-height: var(--leading-body); }
+.maintenance-workspace :is(.primary-button, .secondary-button, .ghost-button) {
+  min-height: var(--control-height);
+  padding: 4px var(--control-padding-inline);
+  border-radius: 8px;
+  font-size: var(--text-body);
+  line-height: var(--leading-control);
+}
+
+.maintenance-workspace :is(.server-save-policy-editor, .server-resource-policy .server-save-policy-editor,
+  .server-save-policy-fields, .server-recovery-options, .dst-world-import-form) { gap: 12px; }
+.maintenance-workspace :is(.server-native-save-policies, .server-backup-policy-editor, .server-resource-fields) {
+  gap: 12px;
+}
+.maintenance-workspace .server-native-save-policies { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.maintenance-workspace .server-backup-policy-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.maintenance-workspace .server-save-policy-group legend { padding-bottom: 12px; }
+.maintenance-workspace :is(.server-backup-policy-field, .server-save-policy-fields .configuration-field) { gap: 6px; }
+.maintenance-workspace .server-autostart-policy-editor > .settings-toggle-card { width: 100%; }
+.maintenance-workspace .server-backup-policy-field .detail-label { color: var(--shell-text); font-weight: var(--font-weight-medium); }
+.maintenance-workspace .server-backup-policy-footer { padding-top: 4px; }
+.maintenance-workspace .server-autostart-policy-editor {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+.maintenance-workspace .server-file-backup-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+}
+.maintenance-workspace .server-file-backup-main { gap: 6px; }
+.maintenance-workspace .server-file-backup-row:has(.backup-rename-action) { grid-template-columns: minmax(0, 1fr); }
+.maintenance-workspace .backup-rename-action { gap: 8px; }
+.maintenance-workspace .backup-rename-action > input {
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  border-radius: var(--settings-control-radius);
+  border-color: var(--settings-control-border);
+  background: var(--settings-control-bg);
+  line-height: var(--leading-compact);
+}
+.maintenance-workspace .backup-rename-action > button { min-height: var(--settings-control-height); }
+.maintenance-workspace .server-file-backup-name { font-size: var(--text-body); }
+.maintenance-workspace .server-file-backup-summary { gap: 8px 20px; }
+.maintenance-workspace .server-file-backup-stat span { color: var(--shell-text); font-size: var(--text-body); }
+.maintenance-workspace .server-file-backup-empty { padding: 24px 0; }
+.maintenance-workspace :is(.instance-isolation-content, .instance-isolation-paths) { gap: 12px; }
+.maintenance-workspace .instance-isolation-path {
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  border-radius: var(--settings-control-radius);
+  border-color: var(--settings-control-border);
+  background: var(--settings-control-bg);
+}
+.maintenance-workspace .instance-isolation-path > span { font-size: var(--text-body); }
+
+.maintenance-workspace :is(.server-broadcast-compose, .server-broadcast-fields, .server-broadcast-rules) { gap: 12px; }
+.maintenance-workspace .server-broadcast-actions { gap: 8px; }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-actions > button { min-height: var(--settings-control-height); }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-history-heading > button {
+  width: var(--control-height-compact);
+  min-height: var(--control-height-compact);
+  padding: 0;
+}
+.maintenance-workspace .server-broadcast-panel :is(textarea, select, input[type="text"], input[type="number"]) {
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  border-radius: var(--settings-control-radius);
+  border-color: var(--settings-control-border);
+  background: var(--settings-control-bg);
+}
+.maintenance-workspace .server-broadcast-panel .server-broadcast-field textarea { height: 110px; }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-tone select { padding-right: 32px; }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-rule textarea { height: 60px; }
+.maintenance-workspace .server-broadcast-rule { grid-template-columns: 100px minmax(0, 1fr); }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-cooldown input { width: 80px; }
+.maintenance-workspace :is(.server-broadcast-rules, .server-broadcast-history) { padding-top: 20px; }
+.maintenance-workspace .server-broadcast-history { flex: initial; min-height: 0; overflow: visible; }
+.maintenance-workspace .server-broadcast-events { overflow: visible; }
+/* Isolated editors render notices locally instead of in the shell's activity bar. */
+.maintenance-workspace .server-maintenance-card > .shell-activity-notice { flex: 0 0 auto; }
+
+@container configuration-fields (max-width: 560px) {
+  .maintenance-workspace :is(.server-native-save-policies, .instance-isolation-paths, .server-broadcast-fields,
+    .server-file-backup-row) { grid-template-columns: minmax(0, 1fr); }
+  .maintenance-workspace .server-file-backup-actions { justify-content: flex-start; }
+  .maintenance-workspace .server-broadcast-actions { display: flex; flex-wrap: wrap; }
+  .maintenance-workspace .server-broadcast-tone { flex: 1 1 100%; }
+}

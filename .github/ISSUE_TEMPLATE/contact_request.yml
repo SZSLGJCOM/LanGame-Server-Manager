@@ -1,0 +1,33 @@
+name: Private contact request / 请求私下联系
+description: Request a private reporting channel without disclosing the report / 仅请求私下报告渠道，不披露事件内容
+title: "[Contact] Private reporting channel"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue is public. Use it only when a private reporting channel is unavailable.
+        A maintainer will provide a private contact method. Do not post vulnerability details, names, credentials, personal contact details, or private messages here.
+
+        此 Issue 为公开内容，仅在无法使用私下报告渠道时提交。
+        维护者将提供私下联系方法。请勿在此填写漏洞细节、姓名、凭据、个人联系方式或私密消息。
+
+  - type: dropdown
+    id: purpose
+    attributes:
+      label: Reporting channel needed / 所需报告渠道
+      options:
+        - Security report / 安全问题
+        - Code of Conduct report / 行为规范问题
+        - License authorization request / 许可授权申请
+        - Brand authorization request / 品牌授权申请
+        - Privacy or data request / 隐私或数据请求
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: public_content
+    attributes:
+      label: Public content / 公开内容
+      options:
+        - label: This issue only requests a private channel and contains no report details. / 此 Issue 仅请求私下渠道，不包含事件细节。
+          required: true

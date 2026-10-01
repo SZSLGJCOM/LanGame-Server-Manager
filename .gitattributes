@@ -1,0 +1,27 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.zip binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.bin binary
+*.woff2 binary
+
+# SQLx migration checksums cover the exact file bytes. These files are immutable
+# deployment history and must never be rewritten by Git line-ending conversion.
+migrations/*.sql -text -whitespace
+
+# Upstream legal texts retain their original whitespace; project-authored files remain checked.
+apps/desktop/public/THIRD_PARTY_LICENSES.txt -whitespace
+apps/desktop/public/fonts/inter/OFL.txt -text -whitespace
+apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt -whitespace
+apps/desktop/third-party-license-sources/** -whitespace
+scripts/third_party_license_sources/** -whitespace

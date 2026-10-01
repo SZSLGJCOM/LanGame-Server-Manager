@@ -1,0 +1,24 @@
+schema_version = 1
+module_id = "minecraft"
+primary_process_key = "main"
+readiness_timeout_ms = 120000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[fixture.settings]
+enable_query = true
+enable_rcon = true
+
+[[preconditions]]
+id = "minecraft-eula"
+kind = "operator_acknowledgement"
+environment = "LANGAME_SMOKE_MINECRAFT_EULA_ACCEPTED"
+expected = "true"
+setting_key = "eula_accepted"
+reason_code = "minecraft_eula_not_accepted"
+
+[[probes]]
+id = "minecraft-query"
+kind = "player_query"
+port_name = "query"

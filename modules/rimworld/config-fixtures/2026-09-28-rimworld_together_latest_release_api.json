@@ -1,0 +1,528 @@
+{
+  "fixture_version": 1,
+  "module_id": "rimworld",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "RimWorld Together 26.8.31.1 official release/source; native password hashing inspected without game execution",
+    "source_ids": [
+      "rimworld_together_latest_release_api",
+      "server_config_json",
+      "password_config_json",
+      "whitelist_config_json",
+      "launch_args",
+      "player_management",
+      "shared_config_26_8_31_1"
+    ]
+  },
+  "coverage": {
+    "editable": 116,
+    "specialized": 0,
+    "derived": 1,
+    "generated": 0,
+    "excluded": 5
+  },
+  "classifications": {
+    "editable": [
+      "server_config_json.Name",
+      "server_config_json.Description",
+      "server_config_json.MaxPlayers",
+      "server_config_json.DiscordURL",
+      "server_config_json.SteamWorkshopURL",
+      "server_config_json.Verbosity",
+      "server_config_json.DisplayChatInConsole",
+      "server_config_json.UseUPnP",
+      "server_config_json.UseClientSave",
+      "server_config_json.EnableServerBrowser",
+      "server_config_json.EnableServerTelemetry",
+      "launch_args.extra_launch_args",
+      "password_config_json.Password",
+      "shared_config_26_8_31_1.Configs/ChatConfig.json#EnableMoTD",
+      "shared_config_26_8_31_1.Configs/ChatConfig.json#MessageOfTheDay",
+      "shared_config_26_8_31_1.Configs/ChatConfig.json#LoginNotifications",
+      "shared_config_26_8_31_1.Configs/ChatConfig.json#DisconnectNotifications",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#IsDifficultyEnforced",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ThreatScale",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowBigThreats",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowViolentQuests",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowIntroThreats",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#PredatorsHuntHumanlikes",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowExtremeWeatherIncidents",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#CropYieldFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#MineYieldFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ButcherYieldFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ResearchSpeedFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#QuestRewardValueFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#RaidLootPointsFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#TradePriceFactorLoss",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#MaintenanceCostFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ScariaRotChance",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#EnemyDeathOnDownedChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ColonistMoodOffset",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#FoodPoisonChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ManhunterChanceOnDamageFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#PlayerPawnInfectionChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#DiseaseIntervalFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#EnemyReproductionRateFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#DeepDrillInfestationChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#FriendlyFireChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowInstantKillChance",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#PeacefulTemples",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowCaveHives",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#UnwaveringPrisoners",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowTraps",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowTurrets",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AllowMortars",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ClassicMortars",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AdaptationEffectFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AdaptationGrowthRateFactorOverZero",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#FixedWealthMode",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#LowPopConversionBoost",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#NoBabiesOrChildren",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#BabiesAreHealthy",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ChildRaidersAllowed",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#ChildAgingRate",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#AdultAgingRate",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#WastepackInfestationChanceFactor",
+      "shared_config_26_8_31_1.Configs/DifficultyConfig.json#NomadicMineableResourcesFactor",
+      "shared_config_26_8_31_1.Configs/ScenarioConfig.json#IsEnforced",
+      "shared_config_26_8_31_1.Configs/ScenarioConfig.json#Name",
+      "shared_config_26_8_31_1.Configs/StorytellerConfig.json#IsEnforced",
+      "shared_config_26_8_31_1.Configs/StorytellerConfig.json#DefName",
+      "shared_config_26_8_31_1.Configs/Actions/Aid.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Aid.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Caravan.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Caravan.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Event.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Event.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Guild.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Guild.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Leaderboard.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Leaderboard.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Market.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Market.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Market.json#MinimumPrice",
+      "shared_config_26_8_31_1.Configs/Actions/Market.json#PriceMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Market.json#MaxEntriesPerPlayer",
+      "shared_config_26_8_31_1.Configs/Actions/Pollution.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Pollution.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Raid.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Raid.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/River.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/River.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AllowDirtPath",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AllowDirtRoad",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AllowStoneRoad",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AllowAsphaltPath",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AllowAsphaltHighway",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.DirtPathCost",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.DirtRoadCost",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.StoneRoadCost",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AsphaltPathCost",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AsphaltHighwayCost",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.DirtPathMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.DirtRoadMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.StoneRoadMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AsphaltPathMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Road.json#RoadValues.AsphaltHighwayMultiplier",
+      "shared_config_26_8_31_1.Configs/Actions/Scenario.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Scenario.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Site.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Site.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Site.json#TimeInterval",
+      "shared_config_26_8_31_1.Configs/Actions/Site.json#BuildingCost",
+      "shared_config_26_8_31_1.Configs/Actions/Site.json#RewardsCount",
+      "shared_config_26_8_31_1.Configs/Actions/Trade.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Trade.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/WorldObject.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/WorldObject.json#Cooldown",
+      "shared_config_26_8_31_1.Configs/Actions/Zoom.json#IsEnabled",
+      "shared_config_26_8_31_1.Configs/Actions/Zoom.json#Cooldown"
+    ],
+    "specialized": [],
+    "derived": [
+      "server_config_json.IP"
+    ],
+    "generated": [],
+    "excluded": [
+      "server_config_json.Port",
+      "whitelist_config_json.UseWhitelist",
+      "whitelist_config_json.WhitelistedUsers",
+      "shared_config_26_8_31_1.Assets/WorldValuesFile.json",
+      "shared_config_26_8_31_1.BackupsConfig/ModConfig"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame 联机",
+    "steam_workshop_url": "https://steamcommunity.com/sharedfiles/filedetails/?id=3005289691&searchtext=LanGame",
+    "server_password": "fixture-server-password",
+    "sync_local_save": false,
+    "chat_enable_mo_td": true,
+    "chat_message_of_the_day": "Fixture-MessageOfTheDay",
+    "chat_login_notifications": true,
+    "chat_disconnect_notifications": true,
+    "difficulty_is_difficulty_enforced": true,
+    "difficulty_threat_scale": 2.0,
+    "difficulty_allow_big_threats": false,
+    "difficulty_allow_violent_quests": false,
+    "difficulty_allow_intro_threats": false,
+    "difficulty_predators_hunt_humanlikes": false,
+    "difficulty_allow_extreme_weather_incidents": false,
+    "difficulty_crop_yield_factor": 2.0,
+    "difficulty_mine_yield_factor": 2.0,
+    "difficulty_butcher_yield_factor": 2.0,
+    "difficulty_research_speed_factor": 2.0,
+    "difficulty_quest_reward_value_factor": 2.0,
+    "difficulty_raid_loot_points_factor": 2.0,
+    "difficulty_trade_price_factor_loss": 1.0,
+    "difficulty_maintenance_cost_factor": 2.0,
+    "difficulty_scaria_rot_chance": 1.6,
+    "difficulty_enemy_death_on_downed_chance_factor": 2.0,
+    "difficulty_colonist_mood_offset": 1.0,
+    "difficulty_food_poison_chance_factor": 2.0,
+    "difficulty_manhunter_chance_on_damage_factor": 2.0,
+    "difficulty_player_pawn_infection_chance_factor": 2.0,
+    "difficulty_disease_interval_factor": 2.0,
+    "difficulty_enemy_reproduction_rate_factor": 2.0,
+    "difficulty_deep_drill_infestation_chance_factor": 2.0,
+    "difficulty_friendly_fire_chance_factor": 1.4,
+    "difficulty_allow_instant_kill_chance": 2.0,
+    "difficulty_peaceful_temples": true,
+    "difficulty_allow_cave_hives": false,
+    "difficulty_unwavering_prisoners": false,
+    "difficulty_allow_traps": false,
+    "difficulty_allow_turrets": false,
+    "difficulty_allow_mortars": false,
+    "difficulty_classic_mortars": true,
+    "difficulty_adaptation_effect_factor": 1.9,
+    "difficulty_adaptation_growth_rate_factor_over_zero": 2.0,
+    "difficulty_fixed_wealth_mode": true,
+    "difficulty_low_pop_conversion_boost": 4.0,
+    "difficulty_no_babies_or_children": true,
+    "difficulty_babies_are_healthy": true,
+    "difficulty_child_raiders_allowed": true,
+    "difficulty_child_aging_rate": 5.0,
+    "difficulty_adult_aging_rate": 2.0,
+    "difficulty_wastepack_infestation_chance_factor": 2.0,
+    "difficulty_nomadic_mineable_resources_factor": 2.0,
+    "scenario_is_enforced": true,
+    "scenario_name": "Fixture-Name",
+    "storyteller_is_enforced": true,
+    "storyteller_def_name": "Fixture-DefName",
+    "action_aid_is_enabled": false,
+    "action_aid_cooldown": 251.0,
+    "action_caravan_is_enabled": false,
+    "action_caravan_cooldown": 1.0,
+    "action_event_is_enabled": false,
+    "action_event_cooldown": 300001.0,
+    "action_guild_is_enabled": false,
+    "action_guild_cooldown": 251.0,
+    "action_leaderboard_is_enabled": false,
+    "action_leaderboard_cooldown": 251.0,
+    "action_market_is_enabled": false,
+    "action_market_cooldown": 251.0,
+    "action_market_minimum_price": 26,
+    "action_market_price_multiplier": 1.2,
+    "action_market_max_entries_per_player": 6,
+    "action_pollution_is_enabled": true,
+    "action_pollution_cooldown": 300001.0,
+    "action_raid_is_enabled": false,
+    "action_raid_cooldown": 251.0,
+    "action_river_is_enabled": false,
+    "action_river_cooldown": 251.0,
+    "action_road_is_enabled": false,
+    "action_road_cooldown": 251.0,
+    "action_road_allow_dirt_path": false,
+    "action_road_allow_dirt_road": false,
+    "action_road_allow_stone_road": false,
+    "action_road_allow_asphalt_path": false,
+    "action_road_allow_asphalt_highway": false,
+    "action_road_dirt_path_cost": 11,
+    "action_road_dirt_road_cost": 21,
+    "action_road_stone_road_cost": 26,
+    "action_road_asphalt_path_cost": 31,
+    "action_road_asphalt_highway_cost": 51,
+    "action_road_dirt_path_multiplier": 1.45,
+    "action_road_dirt_road_multiplier": 1.4,
+    "action_road_stone_road_multiplier": 1.3,
+    "action_road_asphalt_path_multiplier": 1.2,
+    "action_road_asphalt_highway_multiplier": 1.1,
+    "action_scenario_is_enabled": false,
+    "action_scenario_cooldown": 251.0,
+    "action_site_is_enabled": false,
+    "action_site_cooldown": 251.0,
+    "action_site_time_interval": 1800001.0,
+    "action_site_building_cost": 3001,
+    "action_site_rewards_count": 101,
+    "action_trade_is_enabled": false,
+    "action_trade_cooldown": 251.0,
+    "action_world_object_is_enabled": false,
+    "action_world_object_cooldown": 251.0,
+    "action_zoom_is_enabled": false,
+    "action_zoom_cooldown": 251.0
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "ServerConfig.json",
+        "format": "json",
+        "keys": {
+          "Name": "LanGame 联机",
+          "SteamWorkshopURL": "https://steamcommunity.com/sharedfiles/filedetails/?id=3005289691&searchtext=LanGame",
+          "UseClientSave": false
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/PasswordConfig.json",
+        "format": "json",
+        "keys": {
+          "Password": "DDA32AA803C8835E4D48AA4D3B79989271F69D939A26337AD6556B05ADE0F862"
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/ChatConfig.json",
+        "format": "json",
+        "keys": {
+          "EnableMoTD": true,
+          "MessageOfTheDay": "Fixture-MessageOfTheDay",
+          "LoginNotifications": true,
+          "DisconnectNotifications": true
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/DifficultyConfig.json",
+        "format": "json",
+        "keys": {
+          "IsDifficultyEnforced": true,
+          "ThreatScale": 2.0,
+          "AllowBigThreats": false,
+          "AllowViolentQuests": false,
+          "AllowIntroThreats": false,
+          "PredatorsHuntHumanlikes": false,
+          "AllowExtremeWeatherIncidents": false,
+          "CropYieldFactor": 2.0,
+          "MineYieldFactor": 2.0,
+          "ButcherYieldFactor": 2.0,
+          "ResearchSpeedFactor": 2.0,
+          "QuestRewardValueFactor": 2.0,
+          "RaidLootPointsFactor": 2.0,
+          "TradePriceFactorLoss": 1.0,
+          "MaintenanceCostFactor": 2.0,
+          "ScariaRotChance": 1.6,
+          "EnemyDeathOnDownedChanceFactor": 2.0,
+          "ColonistMoodOffset": 1.0,
+          "FoodPoisonChanceFactor": 2.0,
+          "ManhunterChanceOnDamageFactor": 2.0,
+          "PlayerPawnInfectionChanceFactor": 2.0,
+          "DiseaseIntervalFactor": 2.0,
+          "EnemyReproductionRateFactor": 2.0,
+          "DeepDrillInfestationChanceFactor": 2.0,
+          "FriendlyFireChanceFactor": 1.4,
+          "AllowInstantKillChance": 2.0,
+          "PeacefulTemples": true,
+          "AllowCaveHives": false,
+          "UnwaveringPrisoners": false,
+          "AllowTraps": false,
+          "AllowTurrets": false,
+          "AllowMortars": false,
+          "ClassicMortars": true,
+          "AdaptationEffectFactor": 1.9,
+          "AdaptationGrowthRateFactorOverZero": 2.0,
+          "FixedWealthMode": true,
+          "LowPopConversionBoost": 4.0,
+          "NoBabiesOrChildren": true,
+          "BabiesAreHealthy": true,
+          "ChildRaidersAllowed": true,
+          "ChildAgingRate": 5.0,
+          "AdultAgingRate": 2.0,
+          "WastepackInfestationChanceFactor": 2.0,
+          "NomadicMineableResourcesFactor": 2.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/ScenarioConfig.json",
+        "format": "json",
+        "keys": {
+          "IsEnforced": true,
+          "Name": "Fixture-Name"
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/StorytellerConfig.json",
+        "format": "json",
+        "keys": {
+          "IsEnforced": true,
+          "DefName": "Fixture-DefName"
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Aid.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Caravan.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 1.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Event.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 300001.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Guild.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Leaderboard.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Market.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0,
+          "MinimumPrice": 26,
+          "PriceMultiplier": 1.2,
+          "MaxEntriesPerPlayer": 6
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Pollution.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": true,
+          "Cooldown": 300001.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Raid.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/River.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Road.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0,
+          "RoadValues.AllowDirtPath": false,
+          "RoadValues.AllowDirtRoad": false,
+          "RoadValues.AllowStoneRoad": false,
+          "RoadValues.AllowAsphaltPath": false,
+          "RoadValues.AllowAsphaltHighway": false,
+          "RoadValues.DirtPathCost": 11,
+          "RoadValues.DirtRoadCost": 21,
+          "RoadValues.StoneRoadCost": 26,
+          "RoadValues.AsphaltPathCost": 31,
+          "RoadValues.AsphaltHighwayCost": 51,
+          "RoadValues.DirtPathMultiplier": 1.45,
+          "RoadValues.DirtRoadMultiplier": 1.4,
+          "RoadValues.StoneRoadMultiplier": 1.3,
+          "RoadValues.AsphaltPathMultiplier": 1.2,
+          "RoadValues.AsphaltHighwayMultiplier": 1.1
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Scenario.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Site.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0,
+          "TimeInterval": 1800001.0,
+          "BuildingCost": 3001,
+          "RewardsCount": 101
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Trade.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/WorldObject.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      },
+      {
+        "root": "install",
+        "path": "Configs/Actions/Zoom.json",
+        "format": "json",
+        "keys": {
+          "IsEnabled": false,
+          "Cooldown": 251.0
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RTServer.exe",
+      "arguments": []
+    }
+  }
+}

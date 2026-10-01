@@ -1,0 +1,35 @@
+[package]
+name = "app-knowledge"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+app-network = { path = "../app-network" }
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "alternative-backend", "api-28"] }
+dom_query = "=0.27.0"
+http = "1.4.0"
+hyper-util = { version = "0.1.20", features = ["client-proxy", "client-proxy-system"] }
+pdf-extract = "=0.12.0"
+quick-xml = "0.42.0"
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.11.0"
+tokenizers = { version = "=0.23.2", default-features = false, features = ["fancy-regex"] }
+sqlx.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["fs"] }
+toml.workspace = true
+uuid.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_System_SystemInformation", "Win32_Storage_FileSystem"] }
+
+[build-dependencies]
+reqwest = { workspace = true, features = ["blocking"] }
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "=0.11.0"
+zip = { version = "=8.6.0", default-features = false, features = ["deflate"] }

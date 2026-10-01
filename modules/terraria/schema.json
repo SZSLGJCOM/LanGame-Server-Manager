@@ -1,0 +1,724 @@
+{
+  "type": "object",
+  "title": "Terraria Dedicated Server",
+  "properties": {
+    "world_name": {
+      "type": "string",
+      "title": "New World Name",
+      "description": "Name assigned when automatically creating a world. Loading an existing world keeps its saved name.",
+      "default": "LanGame World",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "worldname",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_file": {
+      "type": "string",
+      "title": "World Save File",
+      "description": "File name inside this instance's managed saves folder. Use a .wld file name only, not a full path.",
+      "default": "world.wld",
+      "pattern": "^[^\\\\\\/]+\\.wld$",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "world",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "motd": {
+      "type": "string",
+      "title": "Message of the Day",
+      "description": "Shown to players when they join the server.",
+      "default": "Welcome to the server!",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "motd",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "Maximum number of connected players. Terraria accepts values from 1 to 255.",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 255,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "maxplayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_size": {
+      "type": "integer",
+      "title": "World Size",
+      "description": "Only used when the managed world file does not exist yet and Terraria has to generate one.",
+      "default": 2,
+      "enum": [
+        1,
+        2,
+        3
+      ],
+      "enum_labels": [
+        "Small",
+        "Medium",
+        "Large"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "autocreate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "difficulty": {
+      "type": "integer",
+      "title": "World Difficulty",
+      "description": "Difficulty applied when generating a fresh world: Classic, Expert, Master, or Journey.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "enum_labels": [
+        "Classic",
+        "Expert",
+        "Master",
+        "Journey"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "difficulty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "seed": {
+      "type": "string",
+      "title": "World Seed",
+      "description": "Optional seed text for freshly generated worlds. Leave blank to let Terraria pick one.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "seed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "special_seed": {
+      "type": "string",
+      "title": "Special Seed Preset",
+      "description": "Applies one official special-seed toggle. When enabled, Terraria's special-seed rules take priority over plain seed text.",
+      "default": "none",
+      "enum": [
+        "none",
+        "celebration",
+        "theconstant",
+        "notthebees",
+        "notraps",
+        "fortheworthy",
+        "remix",
+        "drunk",
+        "zenith"
+      ],
+      "enum_labels": [
+        "None",
+        "Celebrationmk10",
+        "The Constant",
+        "Not the Bees",
+        "No Traps",
+        "For the Worthy",
+        "Remix",
+        "Drunk",
+        "Zenith"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "seed_*",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "worldrollbackstokeep": {
+      "type": "integer",
+      "title": "Rolling World Backups",
+      "description": "Terraria's own rotating world backups stored next to the save file. This is separate from LanGame's managed backups.",
+      "default": 2,
+      "minimum": 0,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "worldrollbackstokeep",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "password": {
+      "type": "string",
+      "title": "Join Password",
+      "description": "Leave blank to keep the room open.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "secure": {
+      "type": "boolean",
+      "title": "Secure Mode",
+      "description": "Turns on Terraria's additional cheat-protection checks for connected clients.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "secure",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "steam": {
+      "type": "boolean",
+      "title": "Enable Steam Support",
+      "description": "Lets Terraria use Steam networking for friend joins and Steam lobby exposure.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "steam",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "lobby": {
+      "type": "string",
+      "title": "Steam Lobby Exposure",
+      "description": "Only applies when Steam support is enabled.",
+      "default": "none",
+      "enum": [
+        "none",
+        "friends",
+        "private"
+      ],
+      "enum_labels": [
+        "Disabled",
+        "Friends Only",
+        "Private"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "lobby",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "banlist_entries": {
+      "type": "string",
+      "title": "Ban List Entries",
+      "description": "One banned player or IP entry per line. LanGame writes an instance-local banlist.txt from this list.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 40,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "terraria_banlist",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "banlist_file",
+      "x-lsgm-source-key": "banlist.txt",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "server_runtime": {
+      "type": "string",
+      "title": "Server Runtime",
+      "description": "Select the vanilla dedicated server or an instance-local tModLoader server runtime.",
+      "default": "vanilla",
+      "enum": [
+        "vanilla",
+        "tmodloader"
+      ],
+      "enum_labels": [
+        "Vanilla Terraria",
+        "tModLoader"
+      ],
+      "x-lsgm-section": "host",
+      "x-lsgm-order": -20,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "terraria.runtime",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "tmodloader_runtime_dir": {
+      "type": "string",
+      "title": "tModLoader Runtime Directory",
+      "description": "Optional runtime folder override. Leave empty to use this instance's tmodloader/runtime directory.",
+      "default": "",
+      "x-lsgm-section": "host",
+      "x-lsgm-order": -10,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "tmodloader.runtime_dir",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "tmodloader_workshop_item_ids": {
+      "type": "string",
+      "title": "tModLoader Workshop Items",
+      "description": "One tModLoader Steam Workshop item ID or URL per line. LanGame writes these IDs into tmodloader/Mods/install.txt and downloads item content into the instance Workshop cache.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "tmodloader_dedicated_server_utils",
+      "x-lsgm-source-key": "Mods/install.txt",
+      "x-lsgm-source-surface": "generated_modpack"
+    },
+    "tmodloader_enabled_mod_names": {
+      "type": "string",
+      "title": "Enabled tModLoader Mods",
+      "description": "One internal tModLoader mod name per line. LanGame writes these names into tmodloader/Mods/enabled.json; use internal names from a saved tModLoader modpack, not Steam titles.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "tmodloader_dedicated_server_utils",
+      "x-lsgm-source-key": "Mods/enabled.json",
+      "x-lsgm-source-surface": "generated_modpack"
+    },
+    "language": {
+      "type": "string",
+      "title": "Server Language",
+      "description": "Language used by Terraria's server-side system messages.",
+      "default": "en-US",
+      "enum": [
+        "en-US",
+        "de-DE",
+        "it-IT",
+        "fr-FR",
+        "es-ES",
+        "ru-RU",
+        "zh-Hans",
+        "pt-BR",
+        "pl-PL",
+        "ja-JP",
+        "ko-KR",
+        "zh-Hant"
+      ],
+      "enum_labels": [
+        "English",
+        "German",
+        "Italian",
+        "French",
+        "Spanish",
+        "Russian",
+        "Chinese (Simplified)",
+        "Portuguese (Brazil)",
+        "Polish",
+        "Japanese",
+        "Korean",
+        "Chinese (Traditional)"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 50,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "language",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upnp": {
+      "type": "boolean",
+      "title": "Auto Port Forwarding",
+      "description": "Ask Terraria to create a UPnP port-forwarding rule automatically on the current router.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "upnp",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "npcstream": {
+      "type": "integer",
+      "title": "NPC Sync Interval (updates)",
+      "description": "Number of eligible NPC updates between extra proximity-sync checks. Lower values send moving NPC updates more often; distant players receive them less often. Town NPCs are excluded. 0 disables this extra synchronization, not normal NPC updates.",
+      "default": 60,
+      "minimum": 0,
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "npcstream",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "slowliquids": {
+      "type": "boolean",
+      "title": "Limit Simultaneous Liquid Updates",
+      "description": "Reduces lag spikes by updating fewer liquids at once; liquids may take longer to settle.",
+      "default": false,
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "slowliquids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "disableannouncementbox": {
+      "type": "boolean",
+      "title": "Mute Announcement Boxes",
+      "description": "Stops wired Announcement Boxes from broadcasting their text to nearby players.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 50,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "disableannouncementbox",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "announcementboxrange": {
+      "type": "integer",
+      "title": "Announcement Box Range",
+      "description": "Broadcast radius in pixels for Announcement Box messages. Use -1 for server-wide announcements.",
+      "default": -1,
+      "minimum": -1,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "announcementboxrange",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "priority": {
+      "type": "integer",
+      "title": "Process Priority",
+      "description": "Terraria's host-process priority on this Windows machine.",
+      "default": 1,
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "enum_labels": [
+        "Realtime",
+        "High",
+        "Above Normal",
+        "Normal",
+        "Below Normal",
+        "Idle"
+      ],
+      "x-lsgm-section": "host",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "priority",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setfrozen": {
+      "type": "integer",
+      "title": "Freeze Time",
+      "description": "Who can freeze or unfreeze time in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setfrozen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setdawn": {
+      "type": "integer",
+      "title": "Set Time to Dawn",
+      "description": "Who can jump the world clock to dawn in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setdawn",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setnoon": {
+      "type": "integer",
+      "title": "Set Time to Noon",
+      "description": "Who can jump the world clock to noon in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setnoon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setdusk": {
+      "type": "integer",
+      "title": "Set Time to Dusk",
+      "description": "Who can jump the world clock to dusk in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setdusk",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setmidnight": {
+      "type": "integer",
+      "title": "Set Time to Midnight",
+      "description": "Who can jump the world clock to midnight in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setmidnight",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_time_setspeed": {
+      "type": "integer",
+      "title": "Change Time Speed",
+      "description": "Who can speed up or slow down time in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 50,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_time_setspeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_godmode": {
+      "type": "integer",
+      "title": "Use Godmode",
+      "description": "Who can toggle Journey mode Godmode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_godmode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_setdifficulty": {
+      "type": "integer",
+      "title": "Change Enemy Difficulty",
+      "description": "Who can adjust Journey mode enemy difficulty sliders.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 70,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_setdifficulty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_setspawnrate": {
+      "type": "integer",
+      "title": "Change Spawn Rate",
+      "description": "Who can change Journey mode spawn-rate controls.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 80,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_setspawnrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_increaseplacementrange": {
+      "type": "integer",
+      "title": "Increase Placement Range",
+      "description": "Who can use Journey mode placement-range boosts.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 90,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_increaseplacementrange",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_biomespread_setfrozen": {
+      "type": "integer",
+      "title": "Freeze Biome Spread",
+      "description": "Who can pause or resume biome spread in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_biomespread_setfrozen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_wind_setstrength": {
+      "type": "integer",
+      "title": "Change Wind Strength",
+      "description": "Who can change wind strength in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_wind_setstrength",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_wind_setfrozen": {
+      "type": "integer",
+      "title": "Freeze Wind",
+      "description": "Who can freeze or unfreeze wind in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_wind_setfrozen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_rain_setstrength": {
+      "type": "integer",
+      "title": "Change Rain Strength",
+      "description": "Who can change rain intensity in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 130,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_rain_setstrength",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "journeypermission_rain_setfrozen": {
+      "type": "integer",
+      "title": "Freeze Rain",
+      "description": "Who can freeze or unfreeze rain in Journey mode.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Locked",
+        "Host Only",
+        "Everyone"
+      ],
+      "x-lsgm-section": "journey",
+      "x-lsgm-order": 140,
+      "x-lsgm-source": "serverconfig",
+      "x-lsgm-source-key": "journeypermission_rain_setfrozen",
+      "x-lsgm-source-surface": "config_file"
+    }
+  },
+  "required": [
+    "world_name",
+    "world_file",
+    "world_size",
+    "difficulty",
+    "max_players"
+  ]
+}

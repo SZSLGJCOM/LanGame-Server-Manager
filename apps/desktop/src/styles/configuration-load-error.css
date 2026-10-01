@@ -1,0 +1,115 @@
+.configuration-load-error {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  color: var(--shell-text);
+}
+
+.configuration-load-error__content {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.configuration-load-error__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.configuration-load-error__heading > svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  color: var(--theme-warning-text);
+}
+
+.configuration-load-error__heading > h2 {
+  margin: 0;
+  font-size: var(--text-section-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+}
+
+.configuration-load-error__description {
+  margin: 0;
+  color: var(--shell-muted);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.configuration-load-error__retry {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.configuration-load-error__retry > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.configuration-load-error__details {
+  min-width: 0;
+  border-top: 1px solid var(--shell-line);
+  padding-top: 12px;
+  color: var(--shell-muted);
+}
+
+.configuration-load-error__details > summary {
+  width: fit-content;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.configuration-load-error__details > pre {
+  max-height: 180px;
+  margin: 12px 0 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--shell-line);
+  border-radius: 8px;
+  background: var(--theme-card-muted);
+  color: var(--shell-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--leading-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.configuration-load-error__repair {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: var(--text-body);
+}
+
+.configuration-load-error__repair > textarea {
+  min-height: 180px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 8px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--leading-body);
+}
+
+.configuration-load-error :is(button, summary, pre, textarea):focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 3px;
+}
+
+@media (max-height: 600px) {
+  .configuration-load-error__content { padding: 20px; }
+}

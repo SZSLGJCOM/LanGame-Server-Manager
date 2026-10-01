@@ -1,0 +1,21 @@
+schema_version = 1
+module_id = "sevendaystodie"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[fixture.settings]
+telnet_enabled = true
+
+[[probes]]
+id = "server-network-ready"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["StartAsServer", "LiteNetLib"]
+
+[[probes]]
+id = "telnet-connect"
+kind = "tcp_connect"
+port_name = "telnet"

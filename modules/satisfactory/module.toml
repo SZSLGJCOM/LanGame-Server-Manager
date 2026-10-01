@@ -1,0 +1,96 @@
+id = "satisfactory"
+name = "Satisfactory Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Satisfactory via SteamCMD."
+steam_app_id = 1690800
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "satisfactory"
+
+[process]
+executable = "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe"
+args_template = [
+  "FactoryGame",
+  "-unattended",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "-UserDir={{paths.data_dir}}",
+  "-Port={{ports.game.port}}",
+  "-ReliablePort={{ports.reliable.port}}",
+  "{{satisfactory.external_reliable_port_flag}}",
+  "{{satisfactory.disable_packet_routing_flag}}",
+  "{{satisfactory.disable_seasonal_events_flag}}",
+  "{{satisfactory.insecure_local_api_flag}}",
+  "{{satisfactory.custom_launch_flags}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Satisfactory 1.1+ uses the in-game Server Manager for first claim, server name, administrator password, and save selection. LanGame launches the packaged console executable directly with the bootstrap's FactoryGame project argument so its standard handles belong to the managed console. The working directory, isolated user profile, 7777/8888 port pair, INI settings and backups retain their existing boundaries. Claim settings remain under the game's management and are not represented as editable INI values."
+
+[process.environment_template]
+USERPROFILE = "{{paths.data_dir}}/profile"
+LOCALAPPDATA = "{{paths.data_dir}}/profile/AppData/Local"
+APPDATA = "{{paths.data_dir}}/profile/AppData/Roaming"
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "game_tcp"
+protocol = "tcp"
+port = 7777
+
+[[default_ports]]
+name = "reliable"
+protocol = "tcp"
+port = 8888
+
+[[runtime.port_groups]]
+id = "game_transport"
+members = ["game", "game_tcp"]
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+source = "http_api"
+response_codec = "satisfactory_frm_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 30000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 25000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "frm_read_only_player_api"
+reason = "Online names require the compatible Ficsit Remote Monitoring server mod. When its HTTP autostart option is enabled, LanGame reads the port from this instance's native GameUserSettings.ini and requests GET /api/getPlayer on loopback. Otherwise it uses FRM's extension on the game's HTTPS API. Only Online=true characters are included; Actor IDs are not account IDs and no row moderation actions are exposed."
+verification = "Install compatible SML and FRM versions, enable the FRM HTTP autostart option, load the server world, and verify complete player responses. FRM 1.5.3 on WindowsServer build 24656085 returned a complete empty list through its independent HTTP service while the game HTTPS extension returned bad_function. Both transports are read-only and use neither a claim/admin token nor AllowInsecureLocalAccess. Player moderation stays unavailable until its transport and target identity are verified."
+
+[storage]
+runtime_copy_exclusions = ["FactoryGame/Saved", "FactoryGame/Mods", "FactoryGame/Configs"]
+saves_path_template = "{{paths.data_dir}}/profile/AppData/Local/FactoryGame/Saved/SaveGames"
+
+[mods.source]
+provider = "manual"
+label = "Satisfactory Mod Manager / FICSIT.app"
+url = "https://ficsit.app/"
+install_note = "Satisfactory dedicated-server mods are managed by SMM/ficsit-cli or manually staged under FactoryGame/Mods. LanGame only stages server-compatible mod payloads here; keep client and server mod versions aligned."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/FactoryGame/Mods"
+target_label = "FactoryGame/Mods"
+accepts = ["smod", "zip", "folder"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "game_tcp", "reliable"]

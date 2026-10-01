@@ -1,0 +1,55 @@
+.ark-editor { padding: 12px 0; border-top: 1px solid var(--shell-line); }
+/* Keep dense configuration actions on the workbench scale, including dialogs. */
+:is(.ark-editor, .ark-configuration-toolbar) :is(.secondary-button, .ghost-button) {
+  min-height: var(--control-height);
+  width: auto;
+  padding: 4px var(--control-padding-inline);
+  border-radius: 8px;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-control);
+  letter-spacing: 0;
+  box-shadow: none;
+  transform: none;
+}
+:is(.ark-editor, .ark-configuration-toolbar) .ghost-button {
+  background: transparent;
+  border-color: transparent;
+}
+:is(.ark-editor, .ark-configuration-toolbar) .ghost-button:hover:not(:disabled) {
+  background: var(--theme-control-hover);
+  color: var(--shell-text);
+}
+.ark-editor__heading, .ark-editor__toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.ark-editor__heading { justify-content: space-between; }
+.ark-editor__heading h3, .ark-editor__heading h4 { margin: 0; font-size: var(--text-section-title); font-weight: var(--font-weight-semibold); }
+.ark-editor__heading > .ark-editor__toolbar { margin-bottom: 0; gap: 4px; }
+.ark-editor__table-scroll { overflow: auto; max-height: 560px; }
+.ark-editor__table { width: 100%; border-collapse: collapse; text-align: left; }
+.ark-editor__table th, .ark-editor__table td { padding: 7px 10px; border-bottom: 1px solid var(--shell-line); }
+.ark-editor__table th { font-size: var(--text-body); font-weight: var(--font-weight-medium); }
+.ark-editor__table thead th { position: sticky; top: 0; background: var(--theme-card-muted); z-index: 1; }
+.ark-editor__table .settings-schema-input { min-width: 80px; width: 100%; }
+.ark-editor__table small { opacity: .6; }
+.ark-editor__toolbar label { display: grid; gap: 4px; font-size: var(--text-body); }
+.ark-editor__toolbar input { width: 130px; }
+.ark-editor__error { color: var(--theme-danger-text); font-size: var(--text-secondary); }
+.ark-editor__hint { color: var(--shell-muted); font-size: var(--text-secondary); }
+.ark-editor details { margin: 4px 0; }
+.ark-editor summary { cursor: pointer; padding: 4px 0; }
+.ark-editor__rule { border-top: 1px solid var(--shell-line); padding: 8px 0; }
+.ark-editor__properties { display: grid; gap: 8px; padding-left: 14px; border-left: 1px solid var(--shell-line); }
+.ark-editor__properties > button { justify-self: start; }
+.ark-editor__property { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(180px, 2fr) auto; gap: 8px; align-items: center; font-size: var(--text-body); }
+.ark-editor__property label { overflow-wrap: anywhere; }
+.ark-editor__property-name { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.ark-editor__property-name code { color: var(--shell-muted); font-size: var(--text-code); font-weight: var(--font-weight-regular); }
+.ark-editor__nested { grid-column: 1 / -1; min-width: 0; }
+.ark-editor__group-heading { display: flex; align-items: center; gap: 8px; }
+.ark-editor__group-heading::before { content: "▸"; flex: 0 0 auto; }
+.ark-editor__nested[open] > .ark-editor__group-heading::before { transform: rotate(90deg); }
+.ark-editor__group-heading > span { flex: 1; min-width: 0; }
+.ark-editor .ark-editor__icon-button { flex: 0 0 auto; justify-self: end; width: var(--control-height-compact); min-height: var(--control-height-compact); height: var(--control-height-compact); padding: 0; }
+.ark-editor__toolbar:has(> .settings-schema-input) > :is(.secondary-button, .ghost-button) { min-height: var(--settings-control-height); }
+.ark-editor__csv { width: 100%; min-height: 110px; font-family: var(--font-mono); font-size: var(--text-code); }
+.ark-editor__catalog { width: 100%; }

@@ -1,0 +1,256 @@
+status = "best_effort_verified"
+last_verified = "2026-09-08"
+notes = "The configuration inventory was originally verified against build 23473323. Native TCP player collection was additionally verified against the installed app 728470 build 24411584 on 2026-09-08 in an isolated package copy with a fresh Saved tree: DSListPlayers returned complete empty JSON and DSServerShutdown exited normally. ConsolePort is now managed instance network state and is disabled when console_password is empty. Online identity fields and inGame filtering are cross-checked against the AstroLauncher protocol implementation and synthetic fixtures; non-empty real-player collection was not exercised."
+
+[[sources]]
+id = "native_public_ip_registration_2026_10_01"
+kind = "runtime_probe"
+path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe, Steam app 728470 build 25119807"
+authority = "existing_instance_single_setting_comparison"
+description = "With PublicIP empty, the native RegisterDedicatedServer CloudScript error path reported JavascriptException with address-validation frames, then requested quit. Changing only PublicIP to the host's detected public IPv4 allowed authenticated DSListGames and DSServerStatistics to report the same nonempty current world through a 30-second observation; the existing managed Ctrl+C stop then completed with exit code 0. This establishes the address requirement for the observed installed build and current-world readiness, not an external client join or arbitrary native popup coverage. No address, credential or world name is included in this evidence. Startup preflight now rejects a missing or malformed IPv4 PublicIP without changing saved drafts or performing automatic network discovery."
+
+[[sources]]
+id = "native_active_world_probe_2026_09_20"
+kind = "runtime_probe"
+path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe, Steam app 728470 build 24411584"
+authority = "isolated_exact_package_native_console_observation"
+description = "2026-09-20 isolated build 24411584 (1.43.2.0-DS-SHP), fresh Saved state and no client: the owned gameplay UDP endpoint and authenticated DSListPlayers JSON became available while DSListGames.activeSaveName and DSServerStatistics.saveGameName were both empty. After a further 75-second diagnostic observation, both native replies reported the same nonempty selected world, zero players, and an idle rate of approximately 3 FPS. No DSNewGame, save command or player connection was used. The declared SaveGames directory remained empty through stop, so this evidence establishes active-world selection and empty-data uninstall/archive behavior, not save persistence or client join. Smoke now requires owned gameplay UDP, a complete authenticated player reply, and matching nonempty active-world names from both bounded read-only console commands; it uses state polling rather than a fixed observation delay. The world-state probe does not print names, credentials or runtime identity."
+
+[[sources]]
+id = "official_save_location_2026_09_20"
+kind = "documentation"
+path = "ASTRONEER dedicated server guide: Can I add my own saves to the server?"
+authority = "official_developer_documentation"
+url = "https://astroneer.space/dedicatedserver/"
+description = "The official guide identifies Astro/Saved/SaveGames and the descriptive-name plus date .savegame filename form, matching this module's save boundary. This location reference does not establish when a fresh empty server writes its first save."
+
+[[sources]]
+id = "steamcmd_anonymous_validate_728470"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_728470.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "Validated public package build 23473323 with AstroServer.exe present."
+
+[[sources]]
+id = "official_astroneer_dedicated_server_guide"
+kind = "documentation"
+path = "ASTRONEER dedicated server setup"
+authority = "official_developer_documentation"
+description = "Documents the WindowsServer configuration directory, mandatory PublicIP, owner identity, and managed game port. Rechecked 2026-10-01 against the publisher setup guide. The installed build 25119807 address-registration comparison is recorded separately as native_public_ip_registration_2026_10_01; historical configuration and player-list evidence retain their original scope."
+url = "https://blog.astroneer.space/p/astroneer-dedicated-server-details/"
+
+[[sources]]
+id = "astro_server_settings"
+kind = "config_file"
+path = "Astro/Saved/Config/WindowsServer/AstroServerSettings.ini"
+authority = "exact_server_generated_config"
+description = "Exact-build generated [/Script/Astro.AstroServerSettings] inventory and defaults."
+
+[[sources]]
+id = "engine_ini"
+kind = "config_file"
+path = "Astro/Saved/Config/WindowsServer/Engine.ini"
+authority = "official_developer_documentation"
+description = "Official Unreal URL section used for the manager-owned UDP port."
+
+[[sources]]
+id = "game_ini"
+kind = "config_file"
+path = "Astro/Saved/Config/WindowsServer/Game.ini"
+authority = "exact_installed_server_config"
+description = "Unreal GameSession MaxPlayers setting used by the dedicated server."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "AstroServer.exe command line"
+authority = "langame_launch_configuration"
+description = "Optional operator-provided arguments appended after typed file settings."
+
+[[sources]]
+id = "player_management"
+kind = "documentation"
+path = "AstroServerSettings.ini access state"
+authority = "official_developer_documentation"
+description = "Owner and allowlist behavior is file-backed. Live moderation is not enabled by the read-only native player-list integration."
+
+[[sources]]
+id = "native_console_probe_24411584"
+kind = "runtime_probe"
+path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe, Steam app 728470 build 24411584"
+authority = "exact_installed_server_protocol_probe"
+description = "An isolated copy with fresh Saved state, random TCP/game ports and synthetic credentials accepted password-newline plus DSListPlayers-newline and returned {\"playerInfo\":[]} followed by CRLF. An incorrect password closed the connection without a response; a subsequent authenticated DSServerShutdown exited with code 0. Existing instances and player data were not used."
+
+[[sources]]
+id = "astrolauncher_native_console"
+kind = "documentation"
+path = "cogs/AstroRCON.py and cogs/AstroDedicatedServer.py"
+authority = "maintained_protocol_client_source"
+url = "https://github.com/JoeJoeTV/AstroLauncher/blob/master/cogs/AstroRCON.py"
+description = "Native local TCP ConsolePort authentication and DSListPlayers request. AstroDedicatedServer.py filters playerInfo by inGame and uses playerGuid and playerName. This is a client reference; no server-side mod or AstroLauncher installation is needed."
+
+[[sources]]
+id = "astrolauncher_console_configuration"
+kind = "documentation"
+path = "cogs/ValidateSettings.py"
+authority = "maintained_protocol_client_source"
+url = "https://github.com/JoeJoeTV/AstroLauncher/blob/master/cogs/ValidateSettings.py#L100"
+description = "The maintained launcher's configuration baseline chooses ConsolePort 1234 and generates a unique console password. LanGame uses the same default port as an operator default, not a claim about the publisher's default."
+
+[[items]]
+source = "astro_server_settings"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "game_ini"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "ServerPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "DenyUnlistedPlayers"
+schema_key = "deny_unlisted_players"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "OwnerName"
+schema_key = "server_owner_display_name"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "OwnerGuid"
+schema_key = "owner_guid"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "ConsolePassword"
+schema_key = "console_password"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "PublicIP"
+schema_key = "public_ip"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "bLoadAutoSave"
+schema_key = "load_auto_save"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "ActiveSaveFileDescriptiveName"
+schema_key = "active_save_file_name"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "AutoSaveGameInterval"
+schema_key = "auto_save_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "BackupSaveGamesInterval"
+schema_key = "backup_save_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "bDisableServerTravel"
+schema_key = "disable_server_travel"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "MaxServerFramerate"
+schema_key = "max_server_framerate"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "MaxServerIdleFramerate"
+schema_key = "max_server_idle_framerate"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "bWaitForPlayersBeforeShutdown"
+schema_key = "wait_for_players_before_shutdown"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "PlayerActivityTimeout"
+schema_key = "player_activity_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "astro_server_settings"
+key = "VerbosePlayerProperties"
+schema_key = "verbose_player_properties"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "native_console_probe_24411584"
+key = "ConsolePort"
+reason = "The TCP console port is owned by the instance network editor and rendered from ports.console.port only when a console password is configured; an empty password writes port 0."
+
+[[exclusions]]
+source = "engine_ini"
+key = "URL.Port"
+reason = "The UDP game port is owned by the instance network editor and rendered from the assigned port binding."
+
+[[exclusions]]
+source = "astro_server_settings"
+key = "ServerGuid"
+reason = "ASTRONEER creates and maintains this server identity; LanGame preserves it during managed INI updates."
+
+[[exclusions]]
+source = "astro_server_settings"
+key = "ShareCode"
+reason = "ASTRONEER creates the public share code from live server registration; it is preserved and not operator-authored."
+
+[[exclusions]]
+source = "astro_server_settings"
+key = "ServerAdvertisedName"
+reason = "ASTRONEER maintains this advertisement value from its current registration state; LanGame preserves it."
+
+[[exclusions]]
+source = "player_management"
+key = "live kick/ban/unban transport"
+reason = "The file exposes owner and allowlist posture, but no verified host-callable live moderation protocol is available."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://blog.astroneer.space/p/astroneer-dedicated-server-details/"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 17 active configuration fields in both languages. All 17 fields have Chinese labels and frame-rate labels include FPS. Follow-up static inspection of build 25119807 resolves ServerTravel blocking, ExitSemaphore-specific shutdown waiting, and inactivity timing in game-world seconds, with zero disabling the timeout. See native_semantics_build_25119807 for consumer locations. This is static package evidence; no new server/client run or change to historical runtime verification is claimed."
+
+[[sources]]
+id = "native_semantics_build_25119807"
+kind = "install_probe"
+path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe"
+authority = "read_only_official_package_static_analysis"
+description = "2026-09-30 read-only build 25119807 analysis; executable SHA256 0bd9df0459c305dee9f05a9b93a0ed2620b4889c6d9cc1463e23437ecbc1cc3c. RVAs use PE image base 0x140000000. AstroServerSettings config offset 0xc8 is tested at RVAs 0x180dc6a and 0x18895c0 before Unreal ServerTravel; true skips the map change. Offset 0x48 is copied at RVA 0x1904648 into the ExitSemaphore watcher, whose RVA 0x18f0130 path waits for no valid player controller before save/quit when enabled. Packaged DefaultAstroServerSettings.ini names EXITREQUEST. PlayerActivityTimeout at offset 0xb0 is read at RVA 0x18deaad; values <=0 skip the inactivity check, positive values are added to the activity timestamp and compared with world time. ResetInactivePlayerTimeout at RVA 0x18d7350 records that same world-time value; timeout handling at RVA 0x18d2600 disconnects with the inactivity-timeout reason. The administrative set-timeout command has a separate minimum that is not imposed on INI input. Static consumer evidence does not certify client gameplay or generalize the semaphore flag to every shutdown path."

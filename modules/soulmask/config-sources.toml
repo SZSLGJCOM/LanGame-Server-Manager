@@ -1,0 +1,1868 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "SteamCMD anonymous app_update 3017310 validate completed against the validated package on 2026-07-13. The public manifest reports buildid 24123420 and SizeOnDisk 5692879739. LanGame crosswalks Soulmask launch arguments, the RCON runtime command surface, and all 276 keys in the installed GameXishu gameplay templates. The current package adds NewYingHuoTimeLenMul, JianDuiRuQinKaiGuan, and ReleaseControlStatusCDRatio and changes the four tenacity-damage defaults to 0.5 plus ZuRenDirectCunQu to 1. The GameXishu materializer writes one managed GameXishu.json profile under WS/Saved/GameplaySettings before launch. A 2026-09-28 static comparison of installed build 25117179 found six additional gameplay coefficients, bringing each profile to 282 keys; their defaults and ranges come from the matching native metadata. This comparison does not establish the latest public Steam build or a native launch result."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/app/2646460/announcements/?l=english"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The publisher feed lists 1.0 Patch 20 on 2026-09-17 UTC; Patch 18 introduced configurable collection-yard, logging-yard and excavation-pit limits. The installed app 3017310 manifest reports build 25361728. Each of its three GameXishu_Template.json profiles contains 282 keys, all covered by the current ledger, including the previously added six settings. This static package comparison does not reuse old-build runtime results as current-build proof."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "WSServer-Win64-Shipping.exe"
+authority = "module_launch_surface"
+description = "Soulmask Windows dedicated server settings exposed through Unreal-style process arguments. On 2026-10-01, installed build 25361728 StartServer.bat (SHA256 5a1bf7b9ecb90800e3624656fcde069c03422628415d31ac3f1c8132b9764906) launches with -server -log -UTF8Output. LanGame includes the documented -log on its private desktop; this launch-profile alignment does not claim a new successful console or graceful-stop run."
+
+[[sources]]
+id = "game_xishu_json"
+kind = "config_file"
+path = "WS/Config/GameplaySettings/GameXishuConfig_Template.json -> WS/Saved/GameplaySettings/GameXishu.json"
+url = "local:<validated-install-root>/WS/Config/GameplaySettings/GameXishuConfig_Template.json"
+authority = "installed_server_package"
+description = "Soulmask gameplay coefficient metadata and defaults from public build 24123420. GameXishuConfig_Template.json and GameXishu_Template.json each expose the same 276-key profile surface; LanGame renders the live GameXishu.json consumed from WS/Saved/GameplaySettings."
+
+[[sources]]
+id = "game_xishu_build_25117179"
+url = "https://steamcommunity.com/app/2646460/announcements/?l=english"
+kind = "config_file"
+path = "WS/Config/GameplaySettings/GameXishuConfig_Template.json; WS/Config/GameplaySettings/GameXishu_Template.json"
+authority = "downloaded_steamcmd_server_package"
+description = "2026-09-28 read-only comparison of installed Steam app 3017310 build 25117179: all three profiles contain the same 282 coefficient keys. The six additional coefficients expose native defaults, limits, visibility and gameplay categories. GameXishuConfig_Template.json SHA256 c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c; GameXishu_Template.json SHA256 687d3351fd0706583348decc95cdb9f07b4ad0e8d5e07ac89a62918cf5fe9768. No game process was started."
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "Soulmask RCON"
+authority = "module_runtime_surface"
+description = "Soulmask RCON endpoint and player-management commands declared in module.toml."
+
+[[sources]]
+id = "echo_online_players_25117179"
+kind = "runtime_rcon"
+path = "WSServer-Win64-Shipping.exe -EchoPort: lp / n / dc"
+authority = "isolated_installed_server_protocol_probe"
+description = "Build 25117179, verified 2026-09-08 in an isolated Windows server: lp returns the Account/PlayerName/PawnID/Position table, including its header at zero players. Native unknown-command nonce lines delimit responses without idle heuristics. help/n verified three ordered interactive pages while nonce commands preserved the cursor; dc returned normal EOF without stopping the server. Nonempty player rows and paginated player tables remain constructed fixtures based on the upstream Echo table parser; no player clients were connected."
+url = "https://github.com/sibercat/SoulMask-Server-Manager/blob/main/Services/RconClient.cs"
+
+[[sources]]
+id = "soulmask_ws_json"
+kind = "config_file"
+path = "WS/**/*.json"
+authority = "installed_soulmask_dedicated_server_package"
+description = "Installed Soulmask WS configuration and gameplay JSON template/instance artifacts."
+
+[[sources]]
+id = "soulmask_ws_xml"
+kind = "config_file"
+path = "WS/**/*.xml"
+authority = "installed_soulmask_dedicated_server_package"
+description = "Installed Soulmask WS XML configuration and metadata assets."
+
+
+[[sources]]
+id = "soulmask_windowsserver_ini"
+kind = "config_file"
+path = "*/Saved/Config/WindowsServer/*.ini"
+authority = "installed_soulmask_server_package"
+description = "Installed dedicated server Unreal WindowsServer ini artifacts. (2 discovered files)"
+
+
+[[sources]]
+id = "soulmask_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_soulmask_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (13 discovered files)"
+[[items]]
+source = "launch_args"
+key = "-SteamServerName"
+schema_key = "server_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-PSW"
+schema_key = "server_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-adminpsw"
+schema_key = "admin_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-rconpsw"
+schema_key = "rcon_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-MaxPlayers"
+schema_key = "max_players"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "PvE/PvP mode argument"
+schema_key = "pvp_mode_arg"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-saving"
+schema_key = "save_interval_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-backup"
+schema_key = "backup_interval_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-mod"
+schema_key = "mod_workshop_ids"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[items]]
+source = "game_xishu_json"
+key = "ExpRatio"
+schema_key = "xishu_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuoWuDropRatio"
+schema_key = "xishu_zuo_wu_drop_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AddRenKeDuRatio"
+schema_key = "xishu_add_ren_ke_du_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuoWuShengZhangRatio"
+schema_key = "xishu_zuo_wu_sheng_zhang_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BinSiKaiGuan"
+schema_key = "xishu_bin_si_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuFuLanMul"
+schema_key = "xishu_jian_zhu_fu_lan_mul"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuXiuLiMul"
+schema_key = "xishu_jian_zhu_xiu_li_mul"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuFuLanKaiGuan"
+schema_key = "xishu_jian_zhu_fu_lan_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZhiZuoTimeRatio"
+schema_key = "xishu_zhi_zuo_time_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DamageYeShengRatio"
+schema_key = "xishu_damage_ye_sheng_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BeDamageByYeShengRatio"
+schema_key = "xishu_be_damage_by_ye_sheng_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GameWorldDayTimePortion"
+schema_key = "xishu_game_world_day_time_portion"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GameWorldTimePower"
+schema_key = "xishu_game_world_time_power"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BaoXiangDropRatio"
+schema_key = "xishu_bao_xiang_drop_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "HuXIangShangHaiKaiGuan"
+schema_key = "xishu_hu_x_iang_shang_hai_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZhiBeiChongShengRatio"
+schema_key = "xishu_zhi_bei_chong_sheng_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ChengZhangExpRatio"
+schema_key = "xishu_cheng_zhang_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MJExpRatio"
+schema_key = "xishu_mj_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CaiJiDiaoLuoRatio"
+schema_key = "xishu_cai_ji_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FaMuDiaoLuoRatio"
+schema_key = "xishu_fa_mu_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CaiKuangDiaoLuoRatio"
+schema_key = "xishu_cai_kuang_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuShiTiDiaoLuoRatio"
+schema_key = "xishu_dong_wu_shi_ti_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuShiTiZhongYaoDiaoLuoRatio"
+schema_key = "xishu_dong_wu_shi_ti_zhong_yao_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CaiJiShengChanJianZhuDiaoLuoRatio"
+schema_key = "xishu_cai_ji_sheng_chan_jian_zhu_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PuTongRenDiaoLuoRatio"
+schema_key = "xishu_pu_tong_ren_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JingYingRenDiaoLuoRatio"
+schema_key = "xishu_jing_ying_ren_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BossRenDiaoLuoRatio"
+schema_key = "xishu_boss_ren_diao_luo_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShuLianDuExpRatio"
+schema_key = "xishu_shu_lian_du_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "NaiJiuXiShu"
+schema_key = "xishu_nai_jiu_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ReDuXiShu"
+schema_key = "xishu_re_du_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CaiJiExpRatio"
+schema_key = "xishu_cai_ji_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZhiZuoExpRatio"
+schema_key = "xishu_zhi_zuo_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShaGuaiExpRatio"
+schema_key = "xishu_sha_guai_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "QiTaExpRatio"
+schema_key = "xishu_qi_ta_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BeiDongYiJiShuXingRatio"
+schema_key = "xishu_bei_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZhuDongYiJiShuXingRatio"
+schema_key = "xishu_zhu_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ErJiShuXingRatio"
+schema_key = "xishu_er_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaRenBeiDongYiJiShuXingRatio"
+schema_key = "xishu_ma_ren_bei_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaRenZhuDongYiJiShuXingRatio"
+schema_key = "xishu_ma_ren_zhu_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaRenErJiShuXingRatio"
+schema_key = "xishu_ma_ren_er_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuBeiDongYiJiShuXingRatio"
+schema_key = "xishu_dong_wu_bei_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuZhuDongYiJiShuXingRatio"
+schema_key = "xishu_dong_wu_zhu_dong_yi_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuErJiShuXingRatio"
+schema_key = "xishu_dong_wu_er_ji_shu_xing_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShiWuXiaoHaoRatio"
+schema_key = "xishu_shi_wu_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShuiXiaoHaoRatio"
+schema_key = "xishu_shui_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "QiXiXiaoHaoRatio"
+schema_key = "xishu_qi_xi_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShengMingHuiFuRatio"
+schema_key = "xishu_sheng_ming_hui_fu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TiLiHuiFuRatio"
+schema_key = "xishu_ti_li_hui_fu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "QiXiHuiFuRatio"
+schema_key = "xishu_qi_xi_hui_fu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuDamageRatio"
+schema_key = "xishu_dong_wu_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuJianShangRatio"
+schema_key = "xishu_dong_wu_jian_shang_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaRenDamageRatio"
+schema_key = "xishu_ma_ren_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenJianShangRatio"
+schema_key = "xishu_man_ren_jian_shang_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JiaSiHuiFuRatio"
+schema_key = "xishu_jia_si_hui_fu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CaiJiDamageRatio"
+schema_key = "xishu_cai_ji_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZiYuanShengMingRatio"
+schema_key = "xishu_zi_yuan_sheng_ming_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RanLiaoXiaoHaoRatio"
+schema_key = "xishu_ran_liao_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuShengZhangRatio"
+schema_key = "xishu_dong_wu_sheng_zhang_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FanZhiJianGeRatio"
+schema_key = "xishu_fan_zhi_jian_ge_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuShengChanJianGeRatio"
+schema_key = "xishu_dong_wu_sheng_chan_jian_ge_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuChanChuRatio"
+schema_key = "xishu_dong_wu_chan_chu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuXiaoHaoShiWuRatio"
+schema_key = "xishu_dong_wu_xiao_hao_shi_wu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuXiaoHaoShuiRatio"
+schema_key = "xishu_dong_wu_xiao_hao_shui_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuoWuFeiLiaoXiaoHaoRatio"
+schema_key = "xishu_zuo_wu_fei_liao_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuoWuShuiXiaoHaoRatio"
+schema_key = "xishu_zuo_wu_shui_xiao_hao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuoWuXiaoHuiRatio"
+schema_key = "xishu_zuo_wu_xiao_hui_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongJiJianZhuDamageRatio"
+schema_key = "xishu_gong_ji_jian_zhu_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuPinZhiRatio"
+schema_key = "xishu_dong_wu_pin_zhi_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenPinZhiRatio"
+schema_key = "xishu_man_ren_pin_zhi_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WanJiaZiYuanJinShuaBanJing"
+schema_key = "xishu_wan_jia_zi_yuan_jin_shua_ban_jing"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuZiYuanJinShuaBanJing"
+schema_key = "xishu_jian_zhu_zi_yuan_jin_shua_ban_jing"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WuPinFuHuaiRatio"
+schema_key = "xishu_wu_pin_fu_huai_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WuPinXiaoHuiTime"
+schema_key = "xishu_wu_pin_xiao_hui_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XiuLiXuYaoCaiLiaoRatio"
+schema_key = "xishu_xiu_li_xu_yao_cai_liao_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XiuLiJiangNaiJiuShangXianRatio"
+schema_key = "xishu_xiu_li_jiang_nai_jiu_shang_xian_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "HuiFuChuShiBodyData"
+schema_key = "xishu_hui_fu_chu_shi_body_data"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WanMeiChongSu"
+schema_key = "xishu_wan_mei_chong_su"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FuHuoMoveSiWangBaoKaiGuan"
+schema_key = "xishu_fu_huo_move_si_wang_bao_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuChuanSongMenPlusKaiGuan"
+schema_key = "xishu_jian_zhu_chuan_song_men_plus_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SuiJiRuQinKaiGuan"
+schema_key = "xishu_sui_ji_ru_qin_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinKaiGuan"
+schema_key = "xishu_ru_qin_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShuaXinNPCKaiGuan"
+schema_key = "xishu_shua_xin_npc_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinGuiMoXiShu"
+schema_key = "xishu_ru_qin_gui_mo_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinQiangDuXiShu"
+schema_key = "xishu_ru_qin_qiang_du_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinGuaiCountMin"
+schema_key = "xishu_ru_qin_guai_count_min"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinGuaiCountMax"
+schema_key = "xishu_ru_qin_guai_count_max"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinPerBoGuaiMin"
+schema_key = "xishu_ru_qin_per_bo_guai_min"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinPerBoGuaiMax"
+schema_key = "xishu_ru_qin_per_bo_guai_max"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinGuaiLevelXiShu"
+schema_key = "xishu_ru_qin_guai_level_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TanChaMinuteLimit"
+schema_key = "xishu_tan_cha_minute_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JinGongMinuteLimit"
+schema_key = "xishu_jin_gong_minute_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "LengQueMinuteLimit"
+schema_key = "xishu_leng_que_minute_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ChongsuRatio"
+schema_key = "xishu_chongsu_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinMaxChangCiCount"
+schema_key = "xishu_ru_qin_max_chang_ci_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinBeginHour"
+schema_key = "xishu_ru_qin_begin_hour"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinEndHour"
+schema_key = "xishu_ru_qin_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinShaoChengXiShu"
+schema_key = "xishu_ru_qin_shao_cheng_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinTuShaXiShu"
+schema_key = "xishu_ru_qin_tu_sha_xi_shu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XiuMianDistance"
+schema_key = "xishu_xiu_mian_distance"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "HuanXingDistance"
+schema_key = "xishu_huan_xing_distance"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxZhaoMuCount"
+schema_key = "xishu_gong_hui_max_zhao_mu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxZhaoMuCount"
+schema_key = "xishu_ge_ren_max_zhao_mu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxZhaoMuCount_Two"
+schema_key = "xishu_ge_ren_max_zhao_mu_count_two"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxZhaoMuCount_Three"
+schema_key = "xishu_ge_ren_max_zhao_mu_count_three"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XinQingZengZhang"
+schema_key = "xishu_xin_qing_zeng_zhang"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XinQingJianShao"
+schema_key = "xishu_xin_qing_jian_shao"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XiShuWeiLing"
+schema_key = "xishu_xi_shu_wei_ling"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "YeShengHitJianZhuShangHaiRatio"
+schema_key = "xishu_ye_sheng_hit_jian_zhu_shang_hai_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_ShangHaiRatio_WithoutP2P_YouFang"
+schema_key = "xishu_pvp_shang_hai_ratio_without_p2_p_you_fang"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WanJiaHitJianZhuShangHaiRatio"
+schema_key = "xishu_wan_jia_hit_jian_zhu_shang_hai_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShaGuaiExpShareRatio"
+schema_key = "xishu_sha_guai_exp_share_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "YunXuOtherDaKaiGongZuoTai"
+schema_key = "xishu_yun_xu_other_da_kai_gong_zuo_tai"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "YunXuOtherDaKaiXiangZi"
+schema_key = "xishu_yun_xu_other_da_kai_xiang_zi"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVEOnlyTongGuiShuCanOpenKaiGuan"
+schema_key = "xishu_pve_only_tong_gui_shu_can_open_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_ShangHaiRatio_JinZhan"
+schema_key = "xishu_pvp_shang_hai_ratio_jin_zhan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_ShangHaiRatio_YuanCheng"
+schema_key = "xishu_pvp_shang_hai_ratio_yuan_cheng"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxDongWuCount"
+schema_key = "xishu_gong_hui_max_dong_wu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxDongWuCount"
+schema_key = "xishu_ge_ren_max_dong_wu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PanpaKaiGuan"
+schema_key = "xishu_panpa_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WanJiaBeiXiaoRenRatio"
+schema_key = "xishu_wan_jia_bei_xiao_ren_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WanJiaBeiXiaoTiRatio"
+schema_key = "xishu_wan_jia_bei_xiao_ti_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "KaiQiJianZhuHuiXueBuilding"
+schema_key = "xishu_kai_qi_jian_zhu_hui_xue_building"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_ShangHaiRatio_PlayerToPlayer_DiFang"
+schema_key = "xishu_pvp_shang_hai_ratio_player_to_player_di_fang"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_GAPVPDamageRatio"
+schema_key = "xishu_pvp_ga_pvp_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PlayerYouFangShangHaiKaiGuan"
+schema_key = "xishu_player_you_fang_shang_hai_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "YouFangShangHaiKaiGuan"
+schema_key = "xishu_you_fang_shang_hai_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVP_ShangHaiRatio_PlayerToPlayer_YouFang"
+schema_key = "xishu_pvp_shang_hai_ratio_player_to_player_you_fang"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BaoXiangDiaoLuoDengJi"
+schema_key = "xishu_bao_xiang_diao_luo_deng_ji"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "KaiQiKuaFu"
+schema_key = "xishu_kai_qi_kua_fu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FuHuaSpeed"
+schema_key = "xishu_fu_hua_speed"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "YingHuoRanShaoSuDuRatio"
+schema_key = "xishu_ying_huo_ran_shao_su_du_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "HuDongExcludeBetweenCameraCharacter"
+schema_key = "xishu_hu_dong_exclude_between_camera_character"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAsiaWorkStartTime"
+schema_key = "xishu_pvp_time_asia_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAsiaWorkEndTime"
+schema_key = "xishu_pvp_time_asia_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAsiaNoWorkStartTime"
+schema_key = "xishu_pvp_time_asia_no_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAsiaNoWorkEndTime"
+schema_key = "xishu_pvp_time_asia_no_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAmericaWorkStartTime"
+schema_key = "xishu_pvp_time_america_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAmericaWorkEndTime"
+schema_key = "xishu_pvp_time_america_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAmericaNoWorkStartTime"
+schema_key = "xishu_pvp_time_america_no_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeAmericaNoWorkEndTime"
+schema_key = "xishu_pvp_time_america_no_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeEuropeWorkStartTime"
+schema_key = "xishu_pvp_time_europe_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeEuropeWorkEndTime"
+schema_key = "xishu_pvp_time_europe_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeEuropeNoWorkStartTime"
+schema_key = "xishu_pvp_time_europe_no_work_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PVPTimeEuropeNoWorkEndTime"
+schema_key = "xishu_pvp_time_europe_no_work_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WuLiYouHuaDist"
+schema_key = "xishu_wu_li_you_hua_dist"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MovementYouHua"
+schema_key = "xishu_movement_you_hua"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XiuMianOfflineDays"
+schema_key = "xishu_xiu_mian_offline_days"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WuLiYouHuaKaiGuan"
+schema_key = "xishu_wu_li_you_hua_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TiaoWuLengQueTime"
+schema_key = "xishu_tiao_wu_leng_que_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxLevel"
+schema_key = "xishu_max_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "XinXiLuRu"
+schema_key = "xishu_xin_xi_lu_ru"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TeShuDaoJuDropXiShuJiaChengKaiGuan"
+schema_key = "xishu_te_shu_dao_ju_drop_xi_shu_jia_cheng_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxGenRenYingHuoNumber"
+schema_key = "xishu_max_gen_ren_ying_huo_number"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxGongHuiYingHuoNumber"
+schema_key = "xishu_max_gong_hui_ying_huo_number"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxChuanSongMenNumber"
+schema_key = "xishu_max_chuan_song_men_number"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JingShenNoXiaoHao"
+schema_key = "xishu_jing_shen_no_xiao_hao"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxFuZhongRatio"
+schema_key = "xishu_max_fu_zhong_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RoleBagCapacity"
+schema_key = "xishu_role_bag_capacity"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuGaoDuLimit"
+schema_key = "xishu_jian_zhu_gao_du_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AIDengJi"
+schema_key = "xishu_ai_deng_ji"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenBiaoJiMaxCount"
+schema_key = "xishu_ge_ren_biao_ji_max_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiBiaoJiMaxCount"
+schema_key = "xishu_gong_hui_biao_ji_max_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenChuZhanCount"
+schema_key = "xishu_man_ren_chu_zhan_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MakeUseAroundRongQiKaiGuan"
+schema_key = "xishu_make_use_around_rong_qi_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuBeDamageLimit"
+schema_key = "xishu_jian_zhu_be_damage_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuAroundNumLimit"
+schema_key = "xishu_jian_zhu_around_num_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxMember"
+schema_key = "xishu_gong_hui_max_member"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DynamicBossStats"
+schema_key = "xishu_dynamic_boss_stats"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZhaoHuanDisRatio"
+schema_key = "xishu_zhao_huan_dis_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuChuZhanCount"
+schema_key = "xishu_dong_wu_chu_zhan_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SuoDingKaiGuan"
+schema_key = "xishu_suo_ding_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuRenFuZhi"
+schema_key = "xishu_zu_ren_fu_zhi"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TransDoorInterworkKaiGuan"
+schema_key = "xishu_trans_door_interwork_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ConverPropsSpeedRatio"
+schema_key = "xishu_conver_props_speed_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxXiuMianCangCount"
+schema_key = "xishu_max_xiu_mian_cang_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RollingInvincibleTimeRatio"
+schema_key = "xishu_rolling_invincible_time_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxConvertCount"
+schema_key = "xishu_max_convert_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AsiaWarTimeStart"
+schema_key = "xishu_asia_war_time_start"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AsiaWarTimeEnd"
+schema_key = "xishu_asia_war_time_end"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "EuropeWarTimeStart"
+schema_key = "xishu_europe_war_time_start"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "EuropeWarTimeEnd"
+schema_key = "xishu_europe_war_time_end"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AmericaWarTimeStart"
+schema_key = "xishu_america_war_time_start"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AmericaWarTimeEnd"
+schema_key = "xishu_america_war_time_end"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "WarKaiGuan"
+schema_key = "xishu_war_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TribalExplorationKaiGuan"
+schema_key = "xishu_tribal_exploration_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuinsExplorationKaiGuan"
+schema_key = "xishu_ruins_exploration_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TribalTransportSwitch"
+schema_key = "xishu_tribal_transport_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialBossSwitch"
+schema_key = "xishu_special_boss_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RelicChestEventSwitch"
+schema_key = "xishu_relic_chest_event_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BossDeathEventSwitch"
+schema_key = "xishu_boss_death_event_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "KurmaFuZhongRatio"
+schema_key = "xishu_kurma_fu_zhong_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxSpecDongWuCount"
+schema_key = "xishu_gong_hui_max_spec_dong_wu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxSpecDongWuCount"
+schema_key = "xishu_ge_ren_max_spec_dong_wu_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ProtectJianZhuInYingHuoSwitch"
+schema_key = "xishu_protect_jian_zhu_in_ying_huo_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventConfigSwitch"
+schema_key = "xishu_special_event_config_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventGameDist"
+schema_key = "xishu_special_event_game_dist"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventAsiaStartTime"
+schema_key = "xishu_special_event_asia_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventAsiaEndTime"
+schema_key = "xishu_special_event_asia_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventEuropeStartTime"
+schema_key = "xishu_special_event_europe_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventEuropeEndTime"
+schema_key = "xishu_special_event_europe_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventAmericaStartTime"
+schema_key = "xishu_special_event_america_start_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventAmericaEndTime"
+schema_key = "xishu_special_event_america_end_time"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventTriggerInterval"
+schema_key = "xishu_special_event_trigger_interval"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventTriggerPercent"
+schema_key = "xishu_special_event_trigger_percent"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventTriggetLimitNum"
+schema_key = "xishu_special_event_trigget_limit_num"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SpecialEventServerOpenDay"
+schema_key = "xishu_special_event_server_open_day"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaskRepairUpgradeSwitch"
+schema_key = "xishu_mask_repair_upgrade_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "IsOpenGuideTask"
+schema_key = "xishu_is_open_guide_task"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "NormalEquipDropRatioCorrection"
+schema_key = "xishu_normal_equip_drop_ratio_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "EliteEquipDropRatioCorrection"
+schema_key = "xishu_elite_equip_drop_ratio_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BossEquipDropRatioCorrection"
+schema_key = "xishu_boss_equip_drop_ratio_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "NormalEquipDurabilityCorrection"
+schema_key = "xishu_normal_equip_durability_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "EliteEquipDurabilityCorrection"
+schema_key = "xishu_elite_equip_durability_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BossEquipDurabilityCorrection"
+schema_key = "xishu_boss_equip_durability_correction"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "InitialDefaultAwarenessLevel"
+schema_key = "xishu_initial_default_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FirstDayMaxAwarenessLevel"
+schema_key = "xishu_first_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SecondDayMaxAwarenessLevel"
+schema_key = "xishu_second_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ThirdDayMaxAwarenessLevel"
+schema_key = "xishu_third_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FourthDayMaxAwarenessLevel"
+schema_key = "xishu_fourth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "FifthDayMaxAwarenessLevel"
+schema_key = "xishu_fifth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SixthDayMaxAwarenessLevel"
+schema_key = "xishu_sixth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "SeventhDayMaxAwarenessLevel"
+schema_key = "xishu_seventh_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "EighthDayMaxAwarenessLevel"
+schema_key = "xishu_eighth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "NinthDayMaxAwarenessLevel"
+schema_key = "xishu_ninth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TenthDayMaxAwarenessLevel"
+schema_key = "xishu_tenth_day_max_awareness_level"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MentalRecoveryRate"
+schema_key = "xishu_mental_recovery_rate"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PhysicalRecoveryIntervalRate"
+schema_key = "xishu_physical_recovery_interval_rate"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DungeonReborn"
+schema_key = "xishu_dungeon_reborn"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManageModeRuQin"
+schema_key = "xishu_manage_mode_ru_qin"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManageModeRuQinCountDownTimeRatio"
+schema_key = "xishu_manage_mode_ru_qin_count_down_time_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "IsPlayBossAppearanceSequence"
+schema_key = "xishu_is_play_boss_appearance_sequence"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PlayerDeathCantDropItemKaiGuan"
+schema_key = "xishu_player_death_cant_drop_item_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "AnimalFollowerMaxCount"
+schema_key = "xishu_animal_follower_max_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DrawDebugDungeon"
+schema_key = "xishu_draw_debug_dungeon"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "TrainingExpRatio"
+schema_key = "xishu_training_exp_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RuQinSucceedPrizeTimes"
+schema_key = "xishu_ru_qin_succeed_prize_times"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BanGlider"
+schema_key = "xishu_ban_glider"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianZhuMirageKaiGuan"
+schema_key = "xishu_jian_zhu_mirage_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxConveyorCount"
+schema_key = "xishu_max_conveyor_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxDongLiKuangChangCount"
+schema_key = "xishu_max_dong_li_kuang_chang_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenTiLiDamageRatio"
+schema_key = "xishu_man_ren_ti_li_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenTenacityDamageRatio"
+schema_key = "xishu_man_ren_tenacity_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenBossTiLiDamageRatio"
+schema_key = "xishu_man_ren_boss_ti_li_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ManRenBossTenacityDamageRatio"
+schema_key = "xishu_man_ren_boss_tenacity_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuTiLiDamageRatio"
+schema_key = "xishu_dong_wu_ti_li_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuTenacityDamageRatio"
+schema_key = "xishu_dong_wu_tenacity_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuBossTiLiDamageRatio"
+schema_key = "xishu_dong_wu_boss_ti_li_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "DongWuBossTenacityDamageRatio"
+schema_key = "xishu_dong_wu_boss_tenacity_damage_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PingTaiBuildRangeLimit"
+schema_key = "xishu_ping_tai_build_range_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PingTaiJianZhuNumLimit"
+schema_key = "xishu_ping_tai_jian_zhu_num_limit"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxPingTaiJianZhuNumMul"
+schema_key = "xishu_max_ping_tai_jian_zhu_num_mul"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxRaftSpaceCount"
+schema_key = "xishu_ge_ren_max_raft_space_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxRaftSpaceCount"
+schema_key = "xishu_gong_hui_max_raft_space_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GeRenMaxSpecRaftSpaceCount"
+schema_key = "xishu_ge_ren_max_spec_raft_space_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "GongHuiMaxSpecRaftSpaceCount"
+schema_key = "xishu_gong_hui_max_spec_raft_space_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MaxDiCiCount"
+schema_key = "xishu_max_di_ci_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PingTaiAffectNavigation"
+schema_key = "xishu_ping_tai_affect_navigation"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "PlayerSweepRangeScale"
+schema_key = "xishu_player_sweep_range_scale"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JiQiChuZhanKaiGuan"
+schema_key = "xishu_ji_qi_chu_zhan_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ReboundDifficulty"
+schema_key = "xishu_rebound_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ZuRenDirectCunQu"
+schema_key = "xishu_zu_ren_direct_cun_qu"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "BagRepOptimizeSwitch"
+schema_key = "xishu_bag_rep_optimize_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JinJianQuKaiGuan"
+schema_key = "xishu_jin_jian_qu_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ChuZhanZuRenShaGuaiExpShareRatio"
+schema_key = "xishu_chu_zhan_zu_ren_sha_guai_exp_share_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "OtherShaGuaiExpShareRatio"
+schema_key = "xishu_other_sha_guai_exp_share_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CrewCountRatio"
+schema_key = "xishu_crew_count_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "IgnoreEnemyJianZhuInSelfYingHuo"
+schema_key = "xishu_ignore_enemy_jian_zhu_in_self_ying_huo"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ShipBlueprintBuildConsumeSwitch"
+schema_key = "xishu_ship_blueprint_build_consume_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ChestDropEquipmentMaxQualitySwitch"
+schema_key = "xishu_chest_drop_equipment_max_quality_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "CurProfInitRatio"
+schema_key = "xishu_cur_prof_init_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "MainGunUseTimeCD"
+schema_key = "xishu_main_gun_use_time_cd"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "RestartGameForceSpawnMonsterSwitch"
+schema_key = "xishu_restart_game_force_spawn_monster_switch"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "OpenEscMenuInfJianZao"
+schema_key = "xishu_open_esc_menu_inf_jian_zao"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "NewYingHuoTimeLenMul"
+schema_key = "xishu_new_ying_huo_time_len_mul"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "JianDuiRuQinKaiGuan"
+schema_key = "xishu_jian_dui_ru_qin_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_json"
+key = "ReleaseControlStatusCDRatio"
+schema_key = "xishu_release_control_status_cd_ratio"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "KuaiSuDaoDaOnZuDangKaiGuan"
+schema_key = "xishu_kuai_su_dao_da_on_zu_dang_kai_guan"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "EnableFloatFoundation"
+schema_key = "xishu_enable_float_foundation"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "MaxFloatFoundationNum"
+schema_key = "xishu_max_float_foundation_num"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "MaxCaiJiChangLimitCount"
+schema_key = "xishu_max_cai_ji_chang_limit_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "MaxFaMuChangLimitCount"
+schema_key = "xishu_max_fa_mu_chang_limit_count"
+surface = "config_file"
+
+[[items]]
+source = "game_xishu_build_25117179"
+key = "MaxWaJueChangLimitCount"
+schema_key = "xishu_max_wa_jue_chang_limit_count"
+surface = "config_file"
+
+[[exclusions]]
+source = "launch_args"
+key = "-MULTIHOME"
+reason = "Bind address is instance-level network state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-Port/-QueryPort/-EchoPort/-rconport"
+reason = "Ports are instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-UTF8Output/-forcepassthrough/-online=Steam"
+reason = "Fixed by LanGame for managed Windows hosting."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "broadcast/List_OnlinePlayers/kick/ban/unban"
+reason = "Runtime player actions are declared in module.toml instead of schema fields."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "<validated-install-root>/WS/Config/GameplaySettings/GameXishuConfig_Template.json"
+authority = "native_package_and_documentation_semantic_review"
+description = "Semantic review on 2026-09-30 of 292 presentation entries in English and Chinese against the referenced native package and documentation. The titles of 282 native tuning fields follow their Chinese Desc text. Bonfire timing controls recognition and protection, rather than burn duration. The main-character setting controls the skill cooldown after releasing a controlled body. The fleet invasion toggle has IsShow=true. Variable hidden fields remain in their current categories. The fixed XiShuWeiLing constant is excluded from editing; official survival versus creative presets establish JingShenNoXiaoHao switch polarity as documented below. No gameplay experiment was performed."
+
+[[sources]]
+id = "native_semantics_build_25361728"
+kind = "install_probe"
+path = "WS/Config/GameplaySettings/GameXishuConfig_Template*.json"
+authority = "current_official_package_read_only_consumer_evidence"
+description = "2026-09-30: All five official preset files and their three profiles constrain XiShuWeiLing to default/min/max 0 and IsShow=false. It remains a preserved native constant but is excluded from editable controls. JingShenNoXiaoHao has native switch bounds 0..1 and description meaning mental-consumption switch, consuming by default; standard/action/management/PvP presets use 0, while creative uses 1, including all six difficulty defaults. Labels express normal consumption versus no consumption. Other hidden but variable coefficients remain independently configurable. SHA256: GameXishuConfig_Template.json c9f9128fe1df1608c18a7873f9bf9c5a50877fc3393fc7a439f91b0ae02cd00c; GameXishuConfig_Template_Action.json 2773f3e2b34641b1edd75d6cf7a50502b9c08825e319f0da1b8034b9ca505a7a; GameXishuConfig_Template_Creative.json 86b1ce415ce4fc80aa986420270ee1dadc8f85b4c213d52072d84f0436851696; GameXishuConfig_Template_Management.json e6dfac864872de7470cdac44ded5db2b8dde973f81da8bb7c42cc02fa4839dec; GameXishuConfig_Template_PVP.json da99d64378486cff3ba07c79697934b339e7408d69731eca4565a71fac185e96."
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "Fixed first-party native console logging flag for the managed private-desktop launch profile; runtime control remains subject to real-server acceptance."

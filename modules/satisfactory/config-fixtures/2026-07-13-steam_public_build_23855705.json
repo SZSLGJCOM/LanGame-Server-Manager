@@ -1,0 +1,142 @@
+{
+  "fixture_version": 1,
+  "module_id": "satisfactory",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 23855705",
+    "source_ids": [
+      "steam_public_build_23855705",
+      "official_dedicated_server_documentation",
+      "steamcmd_server_package",
+      "game_ini",
+      "engine_ini",
+      "launch_args",
+      "runtime_api",
+      "satisfactory_windowsserver_ini",
+      "satisfactory_crashreport_ini"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/Engine.ini",
+        "content": "[Core.System]\nPaths=../../../Engine/Content\n\n[/Script/OnlineSubsystemUtils.IpNetDriver]\nNetServerMaxTickRate=20\nUnknownDriverKey=keep\n"
+      },
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/Game.ini",
+        "content": "[/Script/Engine.GameSession]\nMaxPlayers=4\nUnknownSessionKey=keep\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 20,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 5
+  },
+  "classifications": {
+    "editable": [
+      "game_ini.MaxPlayers",
+      "engine_ini.OnlineSubsystemUtils.IpNetDriver.NetServerMaxTickRate",
+      "engine_ini.OnlineSubsystemUtils.IpNetDriver.LanServerMaxTickRate",
+      "engine_ini.SocketSubsystemEpic.EpicNetDriver.NetServerMaxTickRate",
+      "engine_ini.SocketSubsystemEpic.EpicNetDriver.LanServerMaxTickRate",
+      "engine_ini.Engine.Engine.NetClientTicksPerSecond",
+      "engine_ini.ConnectionTimeout",
+      "engine_ini.InitialConnectTimeout",
+      "engine_ini.MaxClientRate",
+      "engine_ini.MaxInternetClientRate",
+      "launch_args.FG.DedicatedServer.AllowInsecureLocalAccess",
+      "launch_args.-ExternalReliablePort",
+      "launch_args.-DisablePacketRouting",
+      "engine_ini.FGSaveSession.mNumRotatingAutosaves",
+      "engine_ini.CrashReportClient.bImplicitSend",
+      "launch_args.-DisableSeasonalEvents",
+      "engine_ini.LogOnline",
+      "engine_ini.extra Engine.ini lines",
+      "game_ini.extra Game.ini lines",
+      "launch_args.custom_launch_flags"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-unattended",
+      "launch_args.-Port",
+      "launch_args.-ReliablePort",
+      "engine_ini.ReliableMessagingTCPFactory.PortRangeBegin/PortRangeLength/ExternalPortRangeBegin",
+      "runtime_api.claim/admin-auth/save-selection"
+    ]
+  },
+  "settings": {
+    "max_players": 32,
+    "net_server_max_tick_rate": 60,
+    "net_connection_timeout_seconds": 45,
+    "net_initial_connect_timeout_seconds": 50,
+    "net_max_client_rate": 150000,
+    "net_max_internet_client_rate": 140000,
+    "allow_insecure_local_api": true,
+    "external_reliable_port": 8890,
+    "disable_packet_routing": true,
+    "rotating_autosaves": 7,
+    "disable_crash_reporting": true,
+    "disable_seasonal_events": true,
+    "server_query_log_level": "Verbose",
+    "engine_ini_extra": "[Future.Engine]\nEnabled=True",
+    "game_ini_extra": "[Future.Game]\nEnabled=True",
+    "custom_launch_flags": "-log -stdout"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/Engine.ini",
+        "format": "ini",
+        "keys": {
+          "Core.System.Paths": "../../../Engine/Content",
+          "/Script/OnlineSubsystemUtils.IpNetDriver.NetServerMaxTickRate": "60",
+          "/Script/OnlineSubsystemUtils.IpNetDriver.LanServerMaxTickRate": "60",
+          "/Script/OnlineSubsystemUtils.IpNetDriver.UnknownDriverKey": "keep",
+          "/Script/SocketSubsystemEpic.EpicNetDriver.NetServerMaxTickRate": "60",
+          "/Script/Engine.Engine.NetClientTicksPerSecond": "60",
+          "/Script/FactoryGame.FGSaveSession.mNumRotatingAutosaves": "7",
+          "CrashReportClient.bImplicitSend": "False",
+          "Core.Log.LogOnline": "Verbose",
+          "Future.Engine.Enabled": "True"
+        }
+      },
+      {
+        "root": "instance",
+        "path": "data/Saved/Config/WindowsServer/Game.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/Engine.GameSession.MaxPlayers": "32",
+          "/Script/Engine.GameSession.UnknownSessionKey": "keep",
+          "Future.Game.Enabled": "True"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "Engine/Binaries/Win64/FactoryServer-Win64-Shipping-Cmd.exe",
+      "arguments": [
+        "FactoryGame",
+        "-unattended",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-UserDir={{paths.data_dir}}",
+        "-Port=7777",
+        "-ReliablePort=8888",
+        "-ExternalReliablePort=8890",
+        "-DisablePacketRouting",
+        "-DisableSeasonalEvents",
+        "-ini:Engine:[SystemSettings]:FG.DedicatedServer.AllowInsecureLocalAccess=1",
+        "-log",
+        "-stdout"
+      ]
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "fixture_version": 1,
+  "module_id": "runescapedragonwilds",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-08",
+    "build": "Steam public build 24574222; native unassigned-owner launch and configuration round trip",
+    "source_ids": [
+      "dragonwilds_unassigned_owner_2026_09_08",
+      "steamdb_app_4019830",
+      "steamcmd_appinfo_4019830_2026_07_13",
+      "dragonwilds_smoke_launch_2026_06_29",
+      "dragonwilds_dedicated_server_ini",
+      "dragonwilds_savegames",
+      "dragonwilds_saved_logs",
+      "dragonwilds_query_port_a2s_probe_2026_06_29",
+      "launch_args",
+      "player_management"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini",
+        "content": "[/Script/Dominion.DedicatedServerSettings]\nOwnerId=before\nServerGuid=stable-guid\nAdminUsers=owner-a,owner-b\nUnknownFuture=keep\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 6,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 8
+  },
+  "classifications": {
+    "editable": [
+      "dragonwilds_dedicated_server_ini.OwnerId",
+      "dragonwilds_dedicated_server_ini.ServerName",
+      "dragonwilds_dedicated_server_ini.DefaultWorldName",
+      "dragonwilds_dedicated_server_ini.AdminPassword",
+      "dragonwilds_dedicated_server_ini.WorldPassword",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-log",
+      "dragonwilds_dedicated_server_ini.AdminUsers",
+      "dragonwilds_dedicated_server_ini.MaxPlayers",
+      "dragonwilds_smoke_launch_2026_06_29.ServerGuid",
+      "dragonwilds_smoke_launch_2026_06_29.MapId/L_World",
+      "dragonwilds_smoke_launch_2026_06_29.mods/workshop",
+      "player_management.ban/unban runtime controls",
+      "dragonwilds_query_port_a2s_probe_2026_06_29.runtime.player_query/a2s_info"
+    ]
+  },
+  "settings": {
+    "owner_id": "",
+    "server_name": "LanGame 龙焰服",
+    "default_world_name": "Ashenfall 2026",
+    "admin_password": "admin-pass",
+    "world_password": "world-pass",
+    "extra_launch_args": "-log -stdout"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/Dominion.DedicatedServerSettings.OwnerId": "LGSM_UNASSIGNED_OWNER",
+          "/Script/Dominion.DedicatedServerSettings.ServerName": "LanGame 龙焰服",
+          "/Script/Dominion.DedicatedServerSettings.ServerGuid": "stable-guid",
+          "/Script/Dominion.DedicatedServerSettings.AdminUsers": "owner-a,owner-b",
+          "/Script/Dominion.DedicatedServerSettings.UnknownFuture": "keep"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RSDragonwildsServer.exe",
+      "arguments": [
+        "-log",
+        "-Port=7777",
+        "-QueryPort=27057",
+        "-log",
+        "-stdout"
+      ]
+    }
+  }
+}

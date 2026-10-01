@@ -1,0 +1,31 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "squad"
+scope = "Dedicated-server installation, configuration, administration and official server-licensing policy."
+gaps = ["Offworld links the community Fandom wiki; detailed wiki installation/configuration bodies were unavailable during review.","Server licensing policy is a first-party policy document, not an installation or backup manual."]
+
+[[sources]]
+id = "offworld-server-policy"
+title = "Squad server licensing and administration policies"
+authority = "Offworld Industries"
+kind = "official"
+seeds = ["https://www.joinsquad.com/server-licensing-and-administration-policies"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.joinsquad.com/server-licensing-and-administration-policies"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "endorsed-server-wiki"
+title = "Squad server installation and configuration"
+authority = "Squad Wiki contributors, linked by Offworld Industries"
+kind = "official_community"
+seeds = ["https://squad.fandom.com/wiki/Server_Installation","https://squad.fandom.com/wiki/Server_Configuration"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.joinsquad.com/community"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"

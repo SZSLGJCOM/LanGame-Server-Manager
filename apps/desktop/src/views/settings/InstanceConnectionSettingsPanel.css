@@ -1,0 +1,163 @@
+.instance-connection-settings {
+  display: grid;
+  gap: 12px;
+}
+
+.instance-connection-settings .instance-connection-settings__grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.instance-connection-settings__runtime-lock {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 68%, transparent);
+  color: var(--text-muted, var(--shell-muted));
+  font-size: var(--text-meta);
+  line-height: var(--leading-body);
+}
+
+.instance-connection-settings__listener-row {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(276px, 420px);
+  gap: 8px;
+  align-items: start;
+  min-width: 0;
+}
+
+.instance-connection-settings__listener-row.is-bind-fixed {
+  grid-template-columns: minmax(276px, 420px);
+}
+
+.instance-connection-settings__ports {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-height: var(--settings-control-height);
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--settings-control-border, color-mix(in srgb, var(--shell-line) 58%, transparent));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--settings-control-bg, var(--theme-card-muted)) 84%, transparent);
+}
+
+.instance-connection-settings__ports.is-pending {
+  border-style: dashed;
+  align-content: center;
+  padding: 7px 9px;
+}
+
+.instance-port-fields {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.instance-port-fields__item {
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  width: 96px;
+  min-width: 0;
+}
+
+.instance-port-fields__label,
+.instance-port-fields__name,
+.instance-port-fields__empty {
+  min-width: 0;
+  color: var(--text-muted, var(--shell-muted));
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instance-port-fields__input {
+  width: 100%;
+  min-height: var(--settings-control-height);
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  font-weight: var(--font-weight-regular);
+}
+
+.instance-port-fields__input[aria-invalid="true"] {
+  border-color: var(--theme-danger-text);
+}
+
+.instance-port-fields__error {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  color: var(--theme-danger-text);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-compact);
+}
+
+.player-join-address {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.player-join-address__select {
+  min-width: 0;
+}
+
+.player-join-address__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: var(--settings-control-height);
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--settings-control-border, var(--shell-line)));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-control);
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.player-join-address__copy:hover:not(:disabled),
+.player-join-address__copy:focus-visible:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--settings-control-border, var(--shell-line)));
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  outline: none;
+}
+
+.player-join-address__copy:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.player-join-address__copy-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.instance-connection-settings__port-group {
+  display: grid;
+  gap: 7px;
+}
+
+@container configuration-fields (max-width: 640px) {
+  .instance-connection-settings__listener-row,
+  .instance-connection-settings__listener-row.is-bind-fixed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .instance-connection-settings__listener-row,
+  .instance-connection-settings__listener-row.is-bind-fixed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

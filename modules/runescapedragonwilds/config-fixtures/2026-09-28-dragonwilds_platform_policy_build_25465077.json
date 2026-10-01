@@ -1,0 +1,65 @@
+{
+  "fixture_version": 1,
+  "module_id": "runescapedragonwilds",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Steam public build 25465077; static PlatformPolicy enum, parser and missing-value default; deterministic configuration materialization, no multiplayer launch",
+    "source_ids": [
+      "dragonwilds_platform_policy_build_25465077"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini",
+        "content": "[/Script/Dominion.DedicatedServerSettings]\nPlatformPolicy=PC\nServerGuid=stable-guid\nKnownPlayerList=()\nUnknownFuture=keep\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 1
+  },
+  "classifications": {
+    "editable": [
+      "dragonwilds_platform_policy_build_25465077.PlatformPolicy"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "dragonwilds_platform_policy_build_25465077.bAllowSendingCrashDumps"
+    ]
+  },
+  "settings": {
+    "platform_policy": "Nintendo"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/Dominion.DedicatedServerSettings.PlatformPolicy": "Nintendo",
+          "/Script/Dominion.DedicatedServerSettings.ServerGuid": "stable-guid",
+          "/Script/Dominion.DedicatedServerSettings.KnownPlayerList": "()",
+          "/Script/Dominion.DedicatedServerSettings.UnknownFuture": "keep"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RSDragonwildsServer.exe",
+      "arguments": [
+        "-log",
+        "-Port=7777",
+        "-QueryPort=27057"
+      ]
+    }
+  }
+}

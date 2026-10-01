@@ -1,0 +1,122 @@
+{
+  "fixture_version": 1,
+  "module_id": "minecraft",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-09-28",
+    "build": "Mojang Java 26.3 release notes and static DedicatedServerProperties bytecode; deterministic native rendering",
+    "source_ids": [
+      "mojang_release_26_3_configuration",
+      "server_properties"
+    ]
+  },
+  "coverage": {
+    "editable": 66,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 4
+  },
+  "classifications": {
+    "editable": [
+      "server_properties.motd",
+      "server_properties.max-players",
+      "server_properties.enable-status",
+      "server_properties.hide-online-players",
+      "server_properties.online-mode",
+      "server_properties.enforce-secure-profile",
+      "server_properties.prevent-proxy-connections",
+      "server_properties.white-list",
+      "server_properties.enforce-whitelist",
+      "server_properties.op-permission-level",
+      "server_properties.function-permission-level",
+      "server_properties.broadcast-console-to-ops",
+      "server_properties.broadcast-rcon-to-ops",
+      "server_properties.log-ips",
+      "server_properties.enable-code-of-conduct",
+      "server_properties.level-name",
+      "server_properties.level-seed",
+      "server_properties.level-type",
+      "server_properties.generator-settings",
+      "server_properties.generate-structures",
+      "server_properties.gamemode",
+      "server_properties.force-gamemode",
+      "server_properties.difficulty",
+      "server_properties.hardcore",
+      "server_properties.spawn-protection",
+      "server_properties.max-world-size",
+      "server_properties.player-idle-timeout",
+      "server_properties.pause-when-empty-seconds",
+      "server_properties.status-heartbeat-interval",
+      "server_properties.enable-query",
+      "server_properties.enable-rcon",
+      "server_properties.rcon.password",
+      "server_properties.network-compression-threshold",
+      "server_properties.rate-limit",
+      "server_properties.use-native-transport",
+      "server_properties.accepts-transfers",
+      "server_properties.management-server-enabled",
+      "server_properties.management-server-host",
+      "server_properties.management-server-port",
+      "server_properties.management-server-secret",
+      "server_properties.management-server-allowed-origins",
+      "server_properties.management-server-tls-enabled",
+      "server_properties.management-server-tls-keystore",
+      "server_properties.management-server-tls-keystore-password",
+      "server_properties.allow-flight",
+      "server_properties.view-distance",
+      "server_properties.simulation-distance",
+      "server_properties.entity-broadcast-range-percentage",
+      "server_properties.max-tick-time",
+      "server_properties.sync-chunk-writes",
+      "server_properties.max-chained-neighbor-updates",
+      "server_properties.enable-jmx-monitoring",
+      "server_properties.chat-spam-threshold-seconds",
+      "server_properties.command-spam-threshold-seconds",
+      "server_properties.bug-report-link",
+      "server_properties.initial-enabled-packs",
+      "server_properties.initial-disabled-packs",
+      "server_properties.resource-pack",
+      "server_properties.resource-pack-id",
+      "server_properties.resource-pack-sha1",
+      "server_properties.resource-pack-prompt",
+      "server_properties.require-resource-pack",
+      "server_properties.text-filtering-config",
+      "server_properties.text-filtering-version",
+      "server_properties.region-file-compression",
+      "server_properties.raw_extra_lines"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "server_properties.server-port",
+      "server_properties.server-ip",
+      "server_properties.query.port",
+      "server_properties.rcon.port"
+    ]
+  },
+  "settings": {},
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "server.properties",
+        "format": "properties",
+        "keys": {
+          "white-list": "true"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "jre/bin/java.exe",
+      "arguments": [
+        "-Xms1024M",
+        "-Xmx4096M",
+        "-jar",
+        "{{paths.install_root}}/server.jar",
+        "nogui"
+      ]
+    }
+  }
+}

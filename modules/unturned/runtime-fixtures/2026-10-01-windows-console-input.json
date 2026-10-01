@@ -1,0 +1,16 @@
+{
+  "module_id": "unturned",
+  "evidence_kind": "first_party_source_and_read_only_installed_assembly",
+  "verified_at": "2026-10-01",
+  "installed_steam_build_id": "25444106",
+  "assembly_sha256": "269794d065f9f115eec269c80a62c09f3fe2beee34da818063bd1d5b3491692a",
+  "source_commit": "aba323a81558487ad8d2167ac20da9c0fd72b6d9",
+  "source_url": "https://github.com/SmartlyDressedGames/U3-SDK/blob/aba323a81558487ad8d2167ac20da9c0fd72b6d9/Assets/Runtime/Assembly-CSharp/Unturned/Command/ThreadedConsoleInputOutput.cs",
+  "windows_handler": "ThreadedWindowsConsoleInputOutput",
+  "input_method": "ThreadedConsoleInputOutput.consoleMain",
+  "input_calls_in_order": ["get_KeyAvailable", "ReadLine", "Enqueue"],
+  "normal_shutdown_commands": ["Save", "Shutdown"],
+  "required_console_behavior": "Input must supply console keyboard events, not only bytes to a redirected pipe.",
+  "candidate_host_surface": "managed_pseudo_console",
+  "real_server_acceptance": "pending"
+}

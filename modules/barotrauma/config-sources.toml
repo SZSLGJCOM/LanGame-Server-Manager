@@ -1,0 +1,903 @@
+status = "best_effort_verified"
+last_verified = "2026-09-30"
+notes = "Barotrauma Dedicated Server app 1026340 public build 23799137 is v1.13.4.0. The 106 root and 18 campaign XML attributes are cross-checked against the installed package and official v1.13.4.0 release source ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e. All 125 managed fields have reviewed types, English/Chinese semantics and section ownership. Closed enums follow the release source; new numeric limits follow property setters, while UI-only slider ranges do not restrict native configuration. XML spelling alone is not used to infer types. Per-admin command lists remain an explicit permission-surface exclusion. The 2026-09-30 semantic recheck retains the full 125-field explicit metadata review against v1.13.4.0 source/build 23799137: native float types, clamping, enum values, units and bilingual labels are explicit; mod/admin owners remain outside configuration. Fractional XML regressions and five frontend contracts cover the corrected types, bounds, labels and grouping. No new live server probe was performed in this recheck."
+
+[[sources]]
+id = "server_settings"
+kind = "config_file"
+path = "serversettings.xml"
+authority = "official_barotrauma_serversettings_xml"
+description = "Barotrauma server settings XML used by the dedicated server for identity, password, ports, player cap, visibility, karma, voice, transfers, round flow, votes, and automatic bans."
+url = "https://barotraumagame.com/wiki/Serversettings.xml"
+
+[[sources]]
+id = "official_server_source"
+kind = "documentation"
+path = "Barotrauma/BarotraumaServer/ServerSource/Networking/ServerSettings.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Official public server source defining serialized setting load/save behavior. The pinned v1.13.4.0 package configuration is authoritative for exact serialized attribute casing, including AutoRestart."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaServer/ServerSource/Networking/ServerSettings.cs"
+
+[[sources]]
+id = "official_shared_settings_source"
+kind = "documentation"
+path = "Barotrauma/BarotraumaShared/SharedSource/Networking/ServerSettings.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Official public shared source defining current serializable defaults and limits, including randomized seeds, respawn shuttle usage, the 30-second respawn interval, voting, karma, voice, and transfer behavior."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Networking/ServerSettings.cs"
+
+[[sources]]
+id = "official_campaign_settings_source"
+kind = "documentation"
+path = "Barotrauma/BarotraumaShared/SharedSource/GameSession/GameModes/CampaignSettings.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Campaign property types, mission-count clamp and per-multiplier ranges. Oxygen changes tank capacity; fuel changes duration and repair failure changes damage."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/GameSession/GameModes/CampaignSettings.cs"
+
+[[sources]]
+id = "official_settings_enums_source"
+kind = "documentation"
+path = "Barotrauma/BarotraumaShared/SharedSource/Enums.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Closed team-assignment, hostility, starting-balance and search-frequency enum members."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Enums.cs"
+
+[[sources]]
+id = "official_visibility_enums_source"
+kind = "documentation"
+path = "Barotrauma/BarotraumaShared/SharedSource/Settings/GameSettings.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Closed line-of-sight and enemy-health-bar enum members."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Settings/GameSettings.cs"
+
+[[sources]]
+id = "official_server_settings_controls"
+kind = "documentation"
+path = "Barotrauma/BarotraumaClient/ClientSource/Networking/ServerSettingsUI.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Native server controls explain salary percentages, perk points and vote ratios; their UI ranges are not native file limits. Packet rate is measured per minute and 1200 or below means unlimited."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaClient/ClientSource/Networking/ServerSettingsUI.cs"
+
+[[sources]]
+id = "official_lobby_settings_controls"
+kind = "documentation"
+path = "Barotrauma/BarotraumaClient/ClientSource/Screens/NetLobbyScreen.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Native controls for respawn, fractional stun resistance, skill-loss percentages and shuttle transport duration; zero shuttle duration means unlimited."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaClient/ClientSource/Screens/NetLobbyScreen.cs"
+
+[[sources]]
+id = "official_server_setting_consumers"
+kind = "documentation"
+path = "Barotrauma/BarotraumaServer/ServerSource/Networking/GameServer.cs"
+authority = "official_barotrauma_1_13_4_0_release_source"
+description = "Runtime use of away status and inactivity timers, eligible kick voters, and synchronization settings."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaServer/ServerSource/Networking/GameServer.cs"
+
+[[sources]]
+id = "installed_v1_13_4_0_package"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_1026340.acf / DedicatedServer.deps.json / changelog.txt / DedicatedServer.pdb"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Validated package reports StateFlags 4, UpdateResult 0, buildid and TargetBuildID 23799137, SizeOnDisk 220381562, and DedicatedServer 1.13.4.0. Its changelog includes the 30-second respawn default introduced in v1.12.6.0, and its PDB SourceLink identifies exact development commit 6029cd01d7c46dd084c28a43d7c21c0894a6139a."
+
+[[sources]]
+id = "private_server_readiness"
+kind = "install_probe"
+path = "DedicatedServer.dll: Barotrauma.Steam.SteamManager.CreateServer / Barotrauma.Networking.GameServer.StartServer"
+authority = "installed_barotrauma_1_13_4_0_and_official_release_source"
+description = "Read-only IL inspection on 2026-09-20 of installed build 23799137 v1.13.4.0 confirms CreateServer writes Steam QueryPort=0 when isPublic=false and uses the configured QueryPort only when true. Official v1.13.4.0 release source at ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e has the same branch; StartServer passes ServerSettings.IsPublic, starts Lidgren on the game port, then logs Server started. The smoke fixture explicitly selects private mode and disables UPnP; readiness requires the owned game UDP endpoint plus a new startup log marker. The real private fixture completed creation, startup readiness, stop, uninstall, instance archival and cleanup on 2026-09-20. No players joined and no native world save was produced, so that run does not certify native save backup, public listing or the public query endpoint."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaServer/ServerSource/Steam/SteamManager.cs#L15-L25"
+
+[[sources]]
+id = "client_permissions"
+kind = "generated_roster"
+path = "Data/clientpermissions.xml"
+authority = "official_barotrauma_clientpermissions_xml"
+description = "Barotrauma client permissions XML; LanGame materializes full-permission admin entries from Steam2, Steam3, or SteamID64 input."
+url = "https://www.barotraumagame.com/wiki/Clientpermissions.xml"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "DedicatedServer.exe"
+authority = "barotrauma_dedicated_server_hosting_docs"
+description = "Optional advanced command-line arguments passed through to the Barotrauma dedicated server process."
+url = "https://barotraumagame.com/wiki/Hosting_a_Dedicated_Server"
+
+[[sources]]
+id = "console_commands"
+kind = "runtime_console"
+path = "DedicatedServer.exe stdin console"
+authority = "official_barotrauma_console_commands"
+description = "Official console command surface including clientlist, kick, ban, unban, showperm, giveperm, and revokeperm commands."
+url = "https://barotraumagame.com/wiki/Console_Commands"
+
+[[sources]]
+id = "redirected_console_input_limit"
+kind = "install_probe"
+path = "DedicatedServer.dll: Barotrauma.Program.Main / Barotrauma.DebugConsole input loop"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Read-only IL inspection of build 23799137 v1.13.4.0 confirms Program.Main warns that redirected stdin is unsupported and will be ignored. The console input loop only reads Console.KeyAvailable/ReadKey when both input and output are not redirected. LanGame uses an instance-owned executable and ConPTY for this module."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/master/Barotrauma/BarotraumaServer/ServerSource/DebugConsole.cs"
+
+[[sources]]
+id = "conpty_clientlist_response"
+kind = "install_probe"
+path = "DedicatedServer.exe clientlist via Windows ConPTY"
+authority = "isolated_barotrauma_1_13_4_0_console_probe"
+description = "An isolated v1.13.4.0 runtime through production spawn_launch_plan accepted two clientlist commands with distinct nonce arguments through ConPTY, emitted each exact command echo and both *************** delimiters for zero connected clients, and exited with code 0 after exit. The native save command was rejected as unknown. Non-empty fixtures are source-derived. The native client display text can include an unescaped playing Character.LogName suffix; LanGame preserves that text and a non-stable session ID without creating moderation targets."
+url = "https://github.com/FakeFishGames/Barotrauma/blob/master/Barotrauma/BarotraumaServer/ServerSource/DebugConsole.cs"
+
+[[sources]]
+id = "barotrauma_banned_players_xml"
+kind = "config_file"
+path = "Data/bannedplayers.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/bannedplayers.xml for ban and punishment defaults."
+
+[[sources]]
+id = "barotrauma_campaign_settings_xml"
+kind = "config_file"
+path = "serversettings.xml/campaignsettings"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Pinned Barotrauma v1.13.4.0 serversettings.xml contains the dedicated server campaignsettings child and its 18 serialized attributes."
+
+[[sources]]
+id = "barotrauma_forbidden_word_list"
+kind = "config_file"
+path = "Data/forbiddenwordlist.txt"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/forbiddenwordlist.txt for server word filtering and moderation defaults."
+
+[[sources]]
+id = "barotrauma_karma_settings_xml"
+kind = "config_file"
+path = "Data/karmasettings.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/karmasettings.xml."
+
+[[sources]]
+id = "barotrauma_language_options_xml"
+kind = "config_file"
+path = "Data/languageoptions.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/languageoptions.xml for localization settings."
+
+[[sources]]
+id = "barotrauma_permission_presets_xml"
+kind = "config_file"
+path = "Data/permissionpresets.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/permissionpresets.xml."
+
+[[sources]]
+id = "barotrauma_permission_presets_player_xml"
+kind = "config_file"
+path = "Data/permissionpresets_player.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Data/permissionpresets_player.xml."
+
+[[sources]]
+id = "barotrauma_dedicatedserver_deps_json"
+kind = "config_file"
+path = "DedicatedServer.deps.json"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes DedicatedServer.deps.json for runtime module dependencies."
+
+[[sources]]
+id = "barotrauma_dedicatedserver_runtimeconfig_json"
+kind = "config_file"
+path = "DedicatedServer.runtimeconfig.json"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes DedicatedServer.runtimeconfig.json for managed runtime settings."
+
+[[sources]]
+id = "barotrauma_content_xml"
+kind = "config_file"
+path = "Content/**/*.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma game content XML assets."
+
+[[sources]]
+id = "barotrauma_content_root_xml"
+kind = "config_file"
+path = "Content/*.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma root content XML assets (for files stored directly under Content/)."
+
+[[sources]]
+id = "barotrauma_content_txt"
+kind = "config_file"
+path = "Content/**/*.txt"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma game content text assets."
+
+[[sources]]
+id = "barotrauma_eosimplementation_deps_json"
+kind = "config_file"
+path = "EosInterface.Implementation.Win64.deps.json"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes EosInterface.Implementation.Win64.deps.json."
+
+[[sources]]
+id = "barotrauma_facepunch_xml"
+kind = "config_file"
+path = "Facepunch.Steamworks.Win64.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes Facepunch.Steamworks.Win64.xml API documentation snapshot."
+
+[[sources]]
+id = "barotrauma_config_player_xml"
+kind = "config_file"
+path = "config_player.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes config_player.xml for player-specific defaults."
+
+[[sources]]
+id = "barotrauma_mod_content_packages"
+kind = "generated_roster"
+path = "config_player.xml"
+authority = "official_barotrauma_dedicated_server_mod_docs"
+description = "Barotrauma dedicated servers enable Steam Workshop content packages by staging mod files under the server working directory and listing their filelist.xml paths in config_player.xml regularpackages."
+url = "https://barotraumagame.com/wiki/Enabling_Mods_on_a_Dedicated_Server"
+
+[[sources]]
+id = "barotrauma_hintmanager_xml"
+kind = "config_file"
+path = "hintmanager.xml"
+authority = "installed_barotrauma_dedicated_server_package"
+description = "Installed Barotrauma dedicated server package includes hintmanager.xml runtime hints and message definitions."
+
+[[items]]
+source = "server_settings"
+key = "serversettings.password"
+schema_key = "server_password"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.enableupnp"
+schema_key = "enable_upnp"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.HiddenSubs"
+schema_key = "hidden_subs"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowedRandomMissionTypes"
+schema_key = "allowed_random_mission_types"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowedClientNameChars"
+schema_key = "allowed_client_name_chars"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.ServerName"
+schema_key = "server_name"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.ServerMessageText"
+schema_key = "server_message"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.IsPublic"
+schema_key = "public_server"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TickRate"
+schema_key = "tick_rate"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxLagCompensation"
+schema_key = "max_lag_compensation"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.RequireAuthentication"
+schema_key = "require_authentication"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.RandomizeSeed"
+schema_key = "randomize_seed"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.UseRespawnShuttle"
+schema_key = "use_respawn_shuttle"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.RespawnInterval"
+schema_key = "respawn_interval"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxTransportTime"
+schema_key = "max_transport_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MinRespawnRatio"
+schema_key = "min_respawn_ratio"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SkillLossPercentageOnDeath"
+schema_key = "skill_loss_percentage_on_death"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SkillLossPercentageOnImmediateRespawn"
+schema_key = "skill_loss_percentage_on_immediate_respawn"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.ReplaceCostPercentage"
+schema_key = "replace_cost_percentage"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowBotTakeoverOnPermadeath"
+schema_key = "allow_bot_takeover_on_permadeath"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.IronmanMode"
+schema_key = "ironman_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AutoRestartInterval"
+schema_key = "auto_restart_interval"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.StartWhenClientsReady"
+schema_key = "start_when_clients_ready"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PvpTeamSelectionMode"
+schema_key = "pvp_team_selection_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PvpAutoBalanceThreshold"
+schema_key = "pvp_auto_balance_threshold"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.StartWhenClientsReadyRatio"
+schema_key = "start_when_clients_ready_ratio"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PvPStunResist"
+schema_key = "pvp_stun_resist"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PvPSpawnMonsters"
+schema_key = "pvp_spawn_monsters"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PvPSpawnWrecks"
+schema_key = "pvp_spawn_wrecks"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.Biome"
+schema_key = "biome"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedOutpostName"
+schema_key = "selected_outpost_name"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowSpectating"
+schema_key = "allow_spectating"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowAFK"
+schema_key = "allow_afk"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SaveServerLogs"
+schema_key = "save_server_logs"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowModDownloads"
+schema_key = "allow_mod_downloads"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowFileTransfers"
+schema_key = "allow_file_transfers"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowRemoteCampaignInteractions"
+schema_key = "allow_remote_campaign_interactions"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.VoiceChatEnabled"
+schema_key = "voice_chat_enabled"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.PlayStyle"
+schema_key = "play_style"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.LosMode"
+schema_key = "los_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.ShowEnemyHealthBars"
+schema_key = "show_enemy_health_bars"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.LinesPerLogFile"
+schema_key = "lines_per_log_file"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AutoRestart"
+schema_key = "auto_restart"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowVoteKick"
+schema_key = "allow_vote_kick"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowEndVoting"
+schema_key = "allow_end_voting"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.RespawnMode"
+schema_key = "respawn_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.BotCount"
+schema_key = "bot_count"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxBotCount"
+schema_key = "max_bot_count"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.BotSpawnMode"
+schema_key = "bot_spawn_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DisableBotConversations"
+schema_key = "disable_bot_conversations"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedLevelDifficulty"
+schema_key = "selected_level_difficulty"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowDisguises"
+schema_key = "allow_disguises"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowRewiring"
+schema_key = "allow_rewiring"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowImmediateItemDelivery"
+schema_key = "allow_immediate_item_delivery"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.LockAllDefaultWires"
+schema_key = "lock_all_default_wires"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowLinkingWifiToChat"
+schema_key = "allow_linking_wifi_to_chat"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowFriendlyFire"
+schema_key = "allow_friendly_fire"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AllowDragAndDropGive"
+schema_key = "allow_drag_and_drop_give"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DestructibleOutposts"
+schema_key = "destructible_outposts"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KillableNPCs"
+schema_key = "killable_npcs"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.BanAfterWrongPassword"
+schema_key = "ban_after_wrong_password"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxPasswordRetriesBeforeBan"
+schema_key = "max_password_retries_before_ban"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.EnableDoSProtection"
+schema_key = "enable_dos_protection"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxPacketAmount"
+schema_key = "max_packet_amount"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedSubmarine"
+schema_key = "selected_submarine"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedShuttle"
+schema_key = "selected_shuttle"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TraitorProbability"
+schema_key = "traitor_probability"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TraitorDangerLevel"
+schema_key = "traitor_danger_level"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TraitorsMinPlayerCount"
+schema_key = "traitors_min_player_count"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MinPercentageOfPlayersForTraitorAccusation"
+schema_key = "min_percentage_of_players_for_traitor_accusation"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.Language"
+schema_key = "language"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SubSelectionMode"
+schema_key = "sub_selection_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.ModeSelectionMode"
+schema_key = "mode_selection_mode"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.EndVoteRequiredRatio"
+schema_key = "end_vote_required_ratio"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.VoteRequiredRatio"
+schema_key = "vote_required_ratio"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.VoteTimeout"
+schema_key = "vote_timeout"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KickVoteRequiredRatio"
+schema_key = "kick_vote_required_ratio"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DisallowKickVoteTime"
+schema_key = "disallow_kick_vote_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KillDisconnectedTime"
+schema_key = "kill_disconnected_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DespawnDisconnectedPermadeathTime"
+schema_key = "despawn_disconnected_permadeath_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KickAFKTime"
+schema_key = "kick_afk_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MinimumMidRoundSyncTimeout"
+schema_key = "minimum_mid_round_sync_timeout"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.RoundStartSyncDuration"
+schema_key = "round_start_sync_duration"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.EventRemovalTime"
+schema_key = "event_removal_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.OldReceivedEventKickTime"
+schema_key = "old_received_event_kick_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.OldEventKickTime"
+schema_key = "old_event_kick_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TimeoutThresholdNotInGame"
+schema_key = "timeout_threshold_not_in_game"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TimeoutThresholdInGame"
+schema_key = "timeout_threshold_in_game"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KarmaEnabled"
+schema_key = "karma_enabled"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.KarmaPreset"
+schema_key = "karma_preset"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.GameModeIdentifier"
+schema_key = "game_mode_identifier"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MissionTypes"
+schema_key = "mission_types"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.AutoBanTime"
+schema_key = "auto_ban_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaxAutoBanTime"
+schema_key = "max_auto_ban_time"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.LootedMoneyDestination"
+schema_key = "looted_money_destination"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.MaximumMoneyTransferRequest"
+schema_key = "maximum_money_transfer_request"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.NewCampaignDefaultSalary"
+schema_key = "new_campaign_default_salary"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.TrackOpponentInPvP"
+schema_key = "track_opponent_in_pvp"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DisembarkPointAllowance"
+schema_key = "disembark_point_allowance"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedCoalitionPerks"
+schema_key = "selected_coalition_perks"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.WinScorePvP"
+schema_key = "win_score_pvp"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.SelectedSeparatistsPerks"
+schema_key = "selected_separatists_perks"
+surface = "config_file"
+[[items]]
+source = "server_settings"
+key = "serversettings.DisabledMonsters"
+schema_key = "disabled_monsters"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.PresetName"
+schema_key = "campaign_preset_name"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.TutorialEnabled"
+schema_key = "campaign_tutorial_enabled"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.RadiationEnabled"
+schema_key = "campaign_radiation_enabled"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.MaxMissionCount"
+schema_key = "campaign_max_mission_count"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.WorldHostility"
+schema_key = "campaign_world_hostility"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.StartItemSet"
+schema_key = "campaign_start_item_set"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.StartingBalanceAmount"
+schema_key = "campaign_starting_balance_amount"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.CrewVitalityMultiplier"
+schema_key = "campaign_crew_vitality_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.NonCrewVitalityMultiplier"
+schema_key = "campaign_non_crew_vitality_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.OxygenMultiplier"
+schema_key = "campaign_oxygen_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.FuelMultiplier"
+schema_key = "campaign_fuel_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.MissionRewardMultiplier"
+schema_key = "campaign_mission_reward_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.ExperienceRewardMultiplier"
+schema_key = "campaign_experience_reward_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.ShopPriceMultiplier"
+schema_key = "campaign_shop_price_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.ShipyardPriceMultiplier"
+schema_key = "campaign_shipyard_price_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.RepairFailMultiplier"
+schema_key = "campaign_repair_fail_multiplier"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.ShowHuskWarning"
+schema_key = "campaign_show_husk_warning"
+surface = "config_file"
+[[items]]
+source = "barotrauma_campaign_settings_xml"
+key = "campaignsettings.PatdownProbability"
+schema_key = "campaign_patdown_probability"
+surface = "config_file"
+[[items]]
+source = "client_permissions"
+key = "ClientPermissions.Client[accountid].permissions=All"
+schema_key = "admin_entries"
+surface = "generated_roster"
+[[items]]
+source = "barotrauma_mod_content_packages"
+key = "config.contentpackages.regularpackages"
+schema_key = "mod_workshop_ids"
+surface = "materializer"
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "server_settings"
+key = "serversettings.port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "server_settings"
+key = "serversettings.queryport"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "client_permissions"
+key = "ClientPermissions.Client.command"
+reason = "Per-admin allowed command restrictions are intentionally excluded from the dedicated page; LanGame grants All permissions for the current admin roster field."
+
+[[exclusions]]
+source = "console_commands"
+key = "runtime moderation commands"
+reason = "Runtime actions are declared in module.toml rather than schema fields."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Networking/ServerSettings.cs"
+authority = "source_and_native_contract_semantic_review"
+description = "Semantic review on 2026-09-30 of 125 fields against v1.13.4.0 source/build 23799137. Native float types, clamping, enum values, units and bilingual labels are explicit; mod/admin owners remain outside configuration. Fractional XML regressions and five frontend contracts cover native types, bounds, labels and grouping. No new live server probe was performed in this recheck."

@@ -1,0 +1,1514 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "2026-09-28: installed build 24909836 ServerOptions declares 144 native keys. Native constructor evidence supersedes old wiki-only INI controls; unsupported stored values remain preserved. New anti-cheat policies require review before startup when older security values were customized. Existing valid operational defaults remain unchanged. This is a read-only package audit, not fresh-install or native-start evidence. Lua, Mods and maintenance retain their dedicated surfaces."
+
+[[sources]]
+id = "steamcmd_anonymous_app_380870"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_380870.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 Steam public branch and the validated local manifest both report Project Zomboid Dedicated Server buildid 22695654, TargetBuildID 22695654, SizeOnDisk 5385767121, with depots 1004, 380871, and 380874."
+
+[[sources]]
+id = "installed_start_server64_bat"
+kind = "launch_arg"
+path = "StartServer64.bat"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "StartServer64.bat launches the bundled jre64/bin/java.exe with -Djava.awt.headless=true, -Dzomboid.steam=1, -Dzomboid.znetlog=1, -XX:+UseZGC, -Xms16g -Xmx16g, classpath PZ_CLASSPATH, main class zombie.network.GameServer, and -statistic 0. LanGame adds -Duser.home so server.ini, SandboxVars.lua, spawnregions.lua, and saves are isolated under the instance runtime home."
+
+[[sources]]
+id = "installed_projectzomboid64_json"
+kind = "launch_arg"
+path = "ProjectZomboid64.json"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "ProjectZomboid64.json mirrors the Windows 64-bit Java wrapper metadata, including mainClass zombie/network/GameServer, classpath entries under java/, native paths, and vmArgs such as -XX:+UseZGC and the memory defaults represented by StartServer64.bat."
+
+[[sources]]
+id = "installed_server_options_class"
+kind = "config_file"
+path = "java/zombie/network/ServerOptions.class"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Build 22695654 ServerOptions.class (SHA-256 153C8DB78A070DBC0D2971ED2B4869904E614EC29B779DE78381EE8A8F6DF315) and its bundled English UI translation define AllowCoop as the boolean co-op/split-screen admission option; a clean generated server INI defaults it to true."
+
+[[sources]]
+id = "projectzomboid_root_json"
+kind = "config_file"
+path = "ProjectZomboid32.json"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed legacy Project Zomboid server-side runtime metadata file for root launch/runtime settings."
+
+[[sources]]
+id = "projectzomboid_root_json64"
+kind = "config_file"
+path = "ProjectZomboid64.json"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed 64-bit Project Zomboid server-side runtime metadata file for root launch/runtime settings."
+
+[[sources]]
+id = "projectzomboid_server_lua_media_text"
+kind = "config_file"
+path = "media/**/*.txt"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid media text assets."
+
+[[sources]]
+id = "installed_lua_spawn_defaults"
+kind = "config_file"
+path = "media/lua/shared/Sandbox/SandboxVars.lua / media/lua/shared/SpawnRegions.lua / media/maps/*/spawnpoints.lua"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "The validated package includes media/lua/shared/Sandbox/SandboxVars.lua for sandbox defaults, media/lua/shared/SpawnRegions.lua for spawn-region definitions, and media/maps/*/spawnpoints.lua for per-map spawn coordinates; LanGame exposes these as raw Lua because modded servers can extend the keys."
+
+[[sources]]
+id = "server_ini_wiki"
+kind = "config_file"
+path = "https://pzwiki.net/wiki/Server_settings#servertest.ini"
+authority = "PZwiki official server settings reference"
+description = "Documents servertest.ini file location, defaults, and server option keys."
+
+[[sources]]
+id = "server_options_api"
+kind = "documentation"
+path = "https://projectzomboid.com/modding/zombie/network/ServerOptions.html"
+authority = "Project Zomboid official JavaDocs"
+description = "Current ServerOptions API cross-check for active option names and value types."
+
+[[sources]]
+id = "startup_parameters"
+kind = "launch_arg"
+path = "https://pzwiki.net/wiki/Startup_Parameters"
+authority = "PZwiki official startup-parameter reference"
+description = "Documents dedicated-server launch arguments and JVM memory flags."
+
+[[sources]]
+id = "server_files_wiki"
+kind = "config_file"
+path = "https://pzwiki.net/wiki/Server_settings"
+authority = "PZwiki official server files reference"
+description = "Documents ini, SandboxVars.lua, spawnpoints.lua, and spawnregions.lua."
+
+[[sources]]
+id = "projectzomboid_media_xml"
+kind = "config_file"
+path = "media/**/*.xml"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid media XML definitions."
+
+[[sources]]
+id = "projectzomboid_media_lua"
+kind = "config_file"
+path = "media/**/*.lua"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid media Lua definitions."
+
+[[sources]]
+id = "projectzomboid_jre_properties"
+kind = "config_file"
+path = "jre/conf/**/*.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid JRE properties files under jre/conf."
+
+[[sources]]
+id = "projectzomboid_jre_root_properties"
+kind = "config_file"
+path = "jre/conf/*.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid JRE root properties files under jre/conf."
+
+[[sources]]
+id = "projectzomboid_jre64_properties"
+kind = "config_file"
+path = "jre64/conf/**/*.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid bundled Java 64-bit properties files under jre64/conf."
+
+[[sources]]
+id = "projectzomboid_jre64_root_properties"
+kind = "config_file"
+path = "jre64/conf/*.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid bundled 64-bit root properties files under jre64/conf."
+
+[[sources]]
+id = "projectzomboid_jvm64_cfg"
+kind = "config_file"
+path = "jre64/lib/**/*.cfg"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid 64-bit JVM cfg files under jre64/lib."
+
+[[sources]]
+id = "projectzomboid_jvm_cfg"
+kind = "config_file"
+path = "jre/lib/**/*.cfg"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid JRE runtime CFG files under jre/lib."
+
+[[sources]]
+id = "projectzomboid_jvm64_cfg_file"
+kind = "config_file"
+path = "jre64/lib/jvm.cfg"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid 64-bit JVM configuration file."
+
+[[sources]]
+id = "projectzomboid_jvm_cfg_file"
+kind = "config_file"
+path = "jre/lib/jvm.cfg"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid 32-bit JVM configuration file."
+
+[[sources]]
+id = "projectzomboid_jre_psfontj2d_properties"
+kind = "config_file"
+path = "jre/lib/psfontj2d.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid PostScript font mapping under jre/lib."
+
+[[sources]]
+id = "projectzomboid_jre64_psfontj2d_properties"
+kind = "config_file"
+path = "jre64/lib/psfontj2d.properties"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid 64-bit PostScript font mapping under jre64/lib."
+
+[[sources]]
+id = "projectzomboid_file_guid_table_xml"
+kind = "config_file"
+path = "media/fileGuidTable.xml"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid asset file-guid mapping table."
+
+[[sources]]
+id = "projectzomboid_sprite_padding_settings_xml"
+kind = "config_file"
+path = "media/SpritePaddingSettings.xml"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid sprite padding settings."
+
+[[sources]]
+id = "projectzomboid_steam_settings"
+kind = "config_file"
+path = "steam_settings/*"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid Steam distribution setting payload files."
+
+[[sources]]
+id = "projectzomboid_steam_settings_examples_json"
+kind = "config_file"
+path = "steam_settings/_examples/*.EXAMPLE.json"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Project Zomboid installed steam_settings example JSON payloads."
+
+[[sources]]
+id = "projectzomboid_steam_settings_examples_ini"
+kind = "config_file"
+path = "steam_settings/_examples/*.EXAMPLE.ini"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Project Zomboid installed steam_settings example INI payloads."
+
+[[sources]]
+id = "projectzomboid_steam_settings_examples_txt"
+kind = "config_file"
+path = "steam_settings/_examples/*.EXAMPLE.txt"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Project Zomboid installed steam_settings example text payloads."
+
+[[sources]]
+id = "projectzomboid_java_assets"
+kind = "config_file"
+path = "java/**/*.lua"
+authority = "installed_project_zomboid_dedicated_server_package"
+description = "Installed Project Zomboid Java bootstrap Lua modules."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PublicName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PublicDescription"
+schema_key = "server_description"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ServerWelcomeMessage"
+schema_key = "welcome_message"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Public"
+schema_key = "public_server"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PauseEmpty"
+schema_key = "pause_empty"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "GlobalChat"
+schema_key = "global_chat"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ChatStreams"
+schema_key = "chat_streams"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "server_browser_announced_ip"
+schema_key = "announced_ip"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Open"
+schema_key = "open_server"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Password"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MaxAccountsPerUser"
+schema_key = "max_accounts_per_user"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AutoCreateUserInWhiteList"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DropOffWhiteListAfterDeath"
+schema_key = "drop_off_whitelist_after_death"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AllowNonAsciiUsername"
+schema_key = "allow_non_ascii_username"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisplayUserName"
+schema_key = "display_user_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ShowFirstAndLastName"
+schema_key = "show_first_and_last_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SteamScoreboard"
+schema_key = "steam_scoreboard"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MouseOverToSeeDisplayName"
+schema_key = "mouse_over_to_see_display_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "HidePlayersBehindYou"
+schema_key = "hide_players_behind_you"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DoLuaChecksum"
+schema_key = "do_lua_checksum"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DenyLoginOnOverloadedServer"
+schema_key = "deny_login_on_overloaded_server"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SteamVAC"
+schema_key = "steam_vac"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "KickFastPlayers"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SpawnPoint"
+schema_key = "spawn_point"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SpawnItems"
+schema_key = "spawn_items"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVP"
+schema_key = "pvp"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafetySystem"
+schema_key = "safety_system"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ShowSafety"
+schema_key = "show_safety"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafetyToggleTimer"
+schema_key = "safety_toggle_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafetyCooldownTimer"
+schema_key = "safety_cooldown_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVPMeleeDamageModifier"
+schema_key = "pvp_melee_damage_modifier"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVPFirearmDamageModifier"
+schema_key = "pvp_firearm_damage_modifier"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVPMeleeWhileHitReaction"
+schema_key = "pvp_melee_while_hit_reaction"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PlayerBumpPlayer"
+schema_key = "player_bump_player"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SleepAllowed"
+schema_key = "sleep_allowed"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SleepNeeded"
+schema_key = "sleep_needed"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PlayerRespawnWithSelf"
+schema_key = "player_respawn_with_self"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PlayerRespawnWithOther"
+schema_key = "player_respawn_with_other"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "FastForwardMultiplier"
+schema_key = "fast_forward_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "NoFire"
+schema_key = "no_fire"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AnnounceDeath"
+schema_key = "announce_death"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "MinutesPerPage"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SaveWorldEveryMinutes"
+schema_key = "save_world_every_minutes"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "CarEngineAttractionModifier"
+schema_key = "car_engine_attraction_modifier"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MapRemotePlayerVisibility"
+schema_key = "map_remote_player_visibility"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SpeedLimit"
+schema_key = "speed_limit"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PlayerSafehouse"
+schema_key = "player_safehouse"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AdminSafehouse"
+schema_key = "admin_safehouse"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseAllowTrepass"
+schema_key = "safehouse_allow_trepass"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseAllowNonResidential"
+schema_key = "safehouse_allow_non_residential"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "DisableSafehouseWhenPlayerConnected"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseAllowFire"
+schema_key = "safehouse_allow_fire"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseAllowLoot"
+schema_key = "safehouse_allow_loot"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseAllowRespawn"
+schema_key = "safehouse_allow_respawn"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseDaySurvivedToClaim"
+schema_key = "safehouse_day_survived_to_claim"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafeHouseRemovalTime"
+schema_key = "safehouse_removal_time"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AllowDestructionBySledgehammer"
+schema_key = "allow_destruction_by_sledgehammer"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SledgehammerOnlyInSafehouse"
+schema_key = "sledgehammer_only_in_safehouse"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "HoursForLootRespawn"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "MaxItemsForLootRespawn"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ConstructionPreventsLootRespawn"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ItemNumbersLimitPerContainer"
+schema_key = "item_numbers_limit_per_container"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BloodSplatLifespanDays"
+schema_key = "blood_splat_lifespan_days"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "RemovePlayerCorpsesOnCorpseRemoval"
+schema_key = "remove_player_corpses_on_corpse_removal"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "TrashDeleteAll"
+schema_key = "trash_delete_all"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "HoursForWorldItemRemoval"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "WorldItemRemovalList"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "startup_parameters"
+key = "-adminusername"
+schema_key = "admin_username"
+surface = "launch_arg"
+
+[[items]]
+source = "startup_parameters"
+key = "-adminpassword"
+schema_key = "admin_password"
+surface = "launch_arg"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "RCONPassword"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[items]]
+source = "startup_parameters"
+key = "-Xms/-Xmx"
+schema_key = "memory_gb"
+surface = "launch_arg"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PingLimit"
+schema_key = "ping_limit"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "PingFrequency"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "UseTCPForMapDownloads"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "UPnP"
+schema_key = "upnp"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "UPnPLeaseTime"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "UPnPZeroLeaseTimeFallback"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "UPnPForce"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "VoiceEnable"
+schema_key = "voice_enable"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "VoiceComplexity"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "VoicePeriod"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "VoiceSampleRate"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "VoiceBuffering"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "VoiceMinDistance"
+schema_key = "voice_min_distance"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "VoiceMaxDistance"
+schema_key = "voice_max_distance"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Voice3D"
+schema_key = "voice_3d"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "PhysicsDelay"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "LoginQueueEnabled"
+schema_key = "login_queue_enabled"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "LoginQueueConnectTimeout"
+schema_key = "login_queue_connect_timeout"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BackupsCount"
+schema_key = "backups_count"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BackupsOnStart"
+schema_key = "backups_on_start"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BackupsOnVersionChange"
+schema_key = "backups_on_version_change"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BackupsPeriod"
+schema_key = "backups_period"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "CoopServerLaunchTimeout"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AllowCoop"
+schema_key = "allow_coop"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "CoopMasterPingTimeout"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ZombieUpdateMaxHighPriority"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ZombieUpdateDelta"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ZombieUpdateRadiusLowPriority"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ZombieUpdateRadiusHighPriority"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Map"
+schema_key = "map_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "WorkshopItems"
+schema_key = "workshop_items"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Mods"
+schema_key = "mods"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Faction"
+schema_key = "faction"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "FactionDaySurvivedToCreate"
+schema_key = "faction_day_survived_to_create"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "FactionPlayersRequiredForTag"
+schema_key = "faction_players_required_for_tag"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AllowTradeUI"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DiscordEnable"
+schema_key = "discord_enable"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DiscordToken"
+schema_key = "discord_token"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "DiscordChannel"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "DiscordChannelID"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioStaff"
+schema_key = "disable_radio_staff"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioAdmin"
+schema_key = "disable_radio_admin"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioGM"
+schema_key = "disable_radio_gm"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioOverseer"
+schema_key = "disable_radio_overseer"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioModerator"
+schema_key = "disable_radio_moderator"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableRadioInvisible"
+schema_key = "disable_radio_invisible"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ClientCommandFilter"
+schema_key = "client_command_filter"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ClientActionLogs"
+schema_key = "client_action_logs"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PerkLogs"
+schema_key = "perk_logs"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BanKickGlobalSound"
+schema_key = "ban_kick_global_sound"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "PlayerSaveOnDamage"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "SaveTransactionID"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType1"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType2"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType3"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType4"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType5"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType6"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType7"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType8"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType9"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType10"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType11"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType12"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType13"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType14"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType15"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType16"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType17"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType18"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType19"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType20"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType21"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType22"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType23"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType24"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType2ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType3ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType4ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType9ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType15ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType20ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType22ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "AntiCheatProtectionType24ThresholdMultiplier"
+reason = "Not declared by ServerOptions in build 24909836; retain old persisted values, but do not generate unsupported native keys."
+
+[[items]]
+source = "server_files_wiki"
+key = "servertest_SandboxVars.lua"
+schema_key = "sandbox_vars_lua"
+surface = "config_file"
+
+[[items]]
+source = "server_files_wiki"
+key = "servertest_spawnpoints.lua"
+schema_key = "spawnpoints_lua"
+surface = "config_file"
+
+[[items]]
+source = "server_files_wiki"
+key = "servertest_spawnregions.lua"
+schema_key = "spawnregions_lua"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "DefaultPort"
+reason = "Managed by ports.game.port."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "UDPPort"
+reason = "Managed by ports.direct.port."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "RCONPort"
+reason = "Managed by ports.rcon.port."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ResetID"
+reason = "Game-generated world/reset identity; static UI writes can invalidate saves."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "ServerPlayerID"
+reason = "Game-generated player/world identity paired with ResetID; excluded to avoid breaking saves."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "SteamPort1"
+reason = "Legacy Steam networking port; current module targets the 16261/16262 port model."
+
+[[exclusions]]
+source = "server_ini_wiki"
+key = "SteamPort2"
+reason = "Legacy Steam networking port; current module targets the 16261/16262 port model."
+
+[[exclusions]]
+source = "startup_parameters"
+key = "-servername"
+reason = "Derived from the immutable LanGame instance id."
+
+[[exclusions]]
+source = "startup_parameters"
+key = "-port"
+reason = "Rendered from the managed game UDP port binding."
+
+[[exclusions]]
+source = "startup_parameters"
+key = "-udpport"
+reason = "Rendered from the managed direct UDP port binding."
+
+[[exclusions]]
+source = "startup_parameters"
+key = "-statistic"
+reason = "Fixed to 0 until statistics capture is exposed."
+
+[[exclusions]]
+source = "startup_parameters"
+key = "-nosteam"
+reason = "Not exposed because this module is the Steam dedicated-server path with Workshop support."
+
+[[sources]]
+id = "native_server_options_build_24909836"
+kind = "config_file"
+path = "java/projectzomboid.jar!/zombie/network/ServerOptions.class"
+authority = "installed_project_zomboid_dedicated_server_build_24909836_read_only_bytecode"
+description = "2026-09-28: 144 option constructors, class SHA256 19bdc3e91cd248fce7c4df5874a63b3c577431b6106d15b8c9b70c2b31e91c20. Native types/ranges/defaults are recorded in server-options-build-42.json. Packaged UI.json defines anti-cheat 1=ban, 2=kick, 3=log, 4=disabled. BadWordPolicy accepts only 1..3 despite older tooltip mentioning mute. Dynamic classpath already includes projectzomboid.jar."
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVPLogToolChat"
+schema_key = "pvp_log_tool_chat"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "PVPLogToolFile"
+schema_key = "pvp_log_tool_file"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "UsernameDisguises"
+schema_key = "username_disguises"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "HideDisguisedUserName"
+schema_key = "hide_disguised_user_name"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SwitchZombiesOwnershipEachUpdate"
+schema_key = "switch_zombies_ownership_each_update"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafetyDisconnectDelay"
+schema_key = "safety_disconnect_delay"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehousePreventsLootRespawn"
+schema_key = "safehouse_prevents_loot_respawn"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AnnounceAnimalDeath"
+schema_key = "announce_animal_death"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SafehouseDisableDisguises"
+schema_key = "safehouse_disable_disguises"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MaxSafezoneSize"
+schema_key = "max_safezone_size"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "War"
+schema_key = "war"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "WarStartDelay"
+schema_key = "war_start_delay"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "WarDuration"
+schema_key = "war_duration"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "WarSafehouseHitPoints"
+schema_key = "war_safehouse_hit_points"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DiscordChatChannel"
+schema_key = "discord_chat_channel"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DiscordLogChannel"
+schema_key = "discord_log_channel"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DiscordCommandChannel"
+schema_key = "discord_command_channel"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "WebhookAddress"
+schema_key = "webhook_address"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "KnockedDownAllowed"
+schema_key = "knocked_down_allowed"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "SneakModeHideFromOtherPlayers"
+schema_key = "sneak_mode_hide_from_other_players"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "UltraSpeedDoesnotAffectToAnimals"
+schema_key = "ultra_speed_doesnot_affect_to_animals"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableSafehouseWhenOwnerConnected"
+schema_key = "disable_safehouse_when_owner_connected"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableVehicleTowing"
+schema_key = "disable_vehicle_towing"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableTrailerTowing"
+schema_key = "disable_trailer_towing"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableBurntTowing"
+schema_key = "disable_burnt_towing"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BadWordListFile"
+schema_key = "bad_word_list_file"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "GoodWordListFile"
+schema_key = "good_word_list_file"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BadWordPolicy"
+schema_key = "bad_word_policy"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "BadWordReplacement"
+schema_key = "bad_word_replacement"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatSafety"
+schema_key = "anti_cheat_safety"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatSpeed"
+schema_key = "anti_cheat_speed"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatNoClip"
+schema_key = "anti_cheat_no_clip"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatHit"
+schema_key = "anti_cheat_hit"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatPacketException"
+schema_key = "anti_cheat_packet_exception"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatPermission"
+schema_key = "anti_cheat_permission"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatXP"
+schema_key = "anti_cheat_xp"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatSafeHouse"
+schema_key = "anti_cheat_safe_house"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatPlayer"
+schema_key = "anti_cheat_player"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "AntiCheatChecksum"
+schema_key = "anti_cheat_checksum"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MultiplayerStatisticsPeriod"
+schema_key = "multiplayer_statistics_period"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "DisableScoreboard"
+schema_key = "disable_scoreboard"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "HideAdminsInPlayerList"
+schema_key = "hide_admins_in_player_list"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "MaxPacketsPerSecond"
+schema_key = "max_packets_per_second"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ShowCoordinates"
+schema_key = "show_coordinates"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "Seed"
+schema_key = "world_seed"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "UsePhysicsHitReaction"
+schema_key = "use_physics_hit_reaction"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ChatMessageCharacterLimit"
+schema_key = "chat_message_character_limit"
+surface = "config_file"
+
+[[items]]
+source = "native_server_options_build_24909836"
+key = "ChatMessageSlowModeTime"
+schema_key = "chat_message_slow_mode_time"
+surface = "config_file"
+
+[[exclusions]]
+source = "native_server_options_build_24909836"
+key = "DefaultPort"
+reason = "Managed port binding or native generated persistent identity."
+
+[[exclusions]]
+source = "native_server_options_build_24909836"
+key = "UDPPort"
+reason = "Managed port binding or native generated persistent identity."
+
+[[exclusions]]
+source = "native_server_options_build_24909836"
+key = "RCONPort"
+reason = "Managed port binding or native generated persistent identity."
+
+[[exclusions]]
+source = "native_server_options_build_24909836"
+key = "ResetID"
+reason = "Managed port binding or native generated persistent identity."
+
+[[exclusions]]
+source = "native_server_options_build_24909836"
+key = "ServerPlayerID"
+reason = "Managed port binding or native generated persistent identity."
+
+[[sources]]
+id = "stable_42_21_configuration_review"
+kind = "documentation"
+path = "java/projectzomboid.jar:zombie/network/ServerOptions.class"
+authority = "the_indie_stone_release_and_installed_server_bytecode"
+url = "https://projectzomboid.com/blog/news/2026/09/42-21-stable-released/"
+description = "Read-only review on 2026-09-30 of installed build 25485538 after the official 42.21 stable release on 2026-09-28. ServerOptions.class SHA256 50a54b1cbba203fa20bd3b94f33299bba70d93eedbe6eaea9d22ba5129ea3fb5 differs from the earlier class, but all 144 constructor declarations exactly match server-options-build-42.json for keys, types, numeric bounds, defaults and dynamic default expressions. No new INI controls are required; the earlier fixture and native-run dates are retained."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "media/lua/shared/Translate/EN/UI.json"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 137 active configuration fields in both languages. NoFire disables all fires except campfires. Respawn locations use the prior character's death coordinates or a split-screen/Remote Play partner's location, according to the selected field. Safehouse membership expires after the configured real-world hours without visiting. The logging filter does not authorize execution. Safezone area and voice distances use map tiles. The damage multipliers and vehicle limit are resolved by current-build consumer evidence below. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[sources]]
+id = "native_semantics_build_25485538"
+kind = "install_probe"
+path = "java/projectzomboid.jar:ServerOptions, BodyDamage, CarController, AntiCheatSpeed"
+authority = "current_official_package_read_only_consumer_evidence"
+description = "2026-09-30: Read-only bytecode inspection: ServerOptions retains melee default 30, ranged default 50 and SpeedLimit 70 with existing bounds. BodyDamage applies the two damage values by direct multiplication, without division by 100. CarController compares getCurrentSpeedKmHour against SpeedLimit and zeros engine force at the threshold; AntiCheatSpeed also reads this limit. This establishes multiplier and km/h semantics, not a forced velocity clamp. SHA256: zombie/network/ServerOptions.class 50a54b1cbba203fa20bd3b94f33299bba70d93eedbe6eaea9d22ba5129ea3fb5; zombie/characters/BodyDamage/BodyDamage.class e3509531e997649a240db7a8427a4d9df67582fe2460baf436ade26aae8c638e; zombie/core/physics/CarController.class d6cdb04f4baba0bc53bc51f221d0b0cbbde2a5ef3b6a101a82f9cbbedff28304; zombie/network/anticheats/AntiCheatSpeed.class e271141928aaeb48b0091cf1f6f1b003d98b35b6a4fdb68de579478b9e8a3039."

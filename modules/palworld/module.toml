@@ -1,0 +1,203 @@
+id = "palworld"
+name = "Palworld Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Palworld via SteamCMD."
+steam_app_id = 2394010
+supported_platforms = ["windows"]
+
+[workshop]
+provider = "steam"
+consumer_app_id = 1623730
+
+[install]
+shared_game_dir = "palworld"
+
+[process]
+executable = "Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe"
+args_template = [
+  "-port={{ports.game.port}}",
+  "-players={{settings.max_players}}",
+  "-logformat={{settings.log_format}}",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "{{palworld.gamedata_api_flag}}",
+  "{{palworld.public_lobby_flag}}",
+  "{{palworld.public_ip_flag}}",
+  "{{palworld.public_port_flag}}",
+  "{{palworld.use_perf_threads_flag}}",
+  "{{palworld.no_async_loading_thread_flag}}",
+  "{{palworld.use_multithread_for_ds_flag}}",
+  "{{palworld.worker_thread_count_flag}}"
+]
+working_directory_template = "{{paths.install_root}}/Pal/Binaries/Win64"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The dedicated -Cmd server runs in the instance's private runtime. Native WindowsServer configuration is written before launch. stdout and FullStdOutLogOutput enable the installed engine's output device without filtering its enabled log categories, and the managed runtime retains that output."
+
+[storage]
+runtime_copy_exclusions = ["Pal/Saved", "Pal/Binaries/Win64/Mods/Workshop", "Pal/Binaries/Win64/Mods/PalModSettings.ini"]
+saves_path_template = "{{paths.install_root}}/Pal/Saved/SaveGames/0/{{instance.id}}"
+retained_paths = [
+  "Pal/Saved/Config/WindowsServer",
+  "Pal/Binaries/Win64/Mods/PalModSettings.ini",
+]
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/app/1623730/workshop/"
+install_note = "Palworld dedicated servers load server-compatible Workshop mods from Mods/Workshop beside the launched server executable. After staging, enable each mod by its Info.json PackageName in PalModSettings.ini."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/Pal/Binaries/Win64/Mods/Workshop"
+target_label = "Pal/Binaries/Win64/Mods/Workshop"
+accepts = ["folder", "zip"]
+
+[mods.enablement]
+setting_key = "mod_package_names"
+setting_label = "Active Mod Packages"
+id_strategy = "palworld_package_name"
+reference_strategy = "plain_id"
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 8211
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 25575
+
+[[default_ports]]
+name = "rest_api"
+protocol = "tcp"
+port = 8212
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "http_api"
+player_action_ids = ["kick_player", "ban_player"]
+response_codec = "palworld_players"
+identity_kind = "palworld_user_id"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "palworld_rest"
+command = '{"operation":"save"}'
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+wait_after_ms = 2000
+
+[[runtime.shutdown.commands]]
+transport = "palworld_rest"
+command = '{"operation":"shutdown"}'
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+wait_after_ms = 10000
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "palworld_rest"
+reason = "Palworld uses the authenticated REST API for online players, broadcasts, moderation, saving, and shutdown. Player actions bind the platform userId returned by the current server run."
+verification = "Enable RESTAPIEnabled with AdminPassword and the instance RESTAPIPort. Refresh online players, compare their userId with connected clients, then verify a kick and rejoin. The official 1.0.4 REST endpoints must return HTTP 200; synthetic HTTP fixtures validate request and failure handling."
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "palworld_rest"
+command_template = "announce {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+
+[[runtime.player_actions]]
+id = "show_players"
+label = "Show players"
+label_zh_cn = "在线玩家"
+transport = "palworld_rest"
+command_template = "players"
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "palworld_rest"
+command_template = "save"
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "palworld_rest"
+command_template = "kick {{target}}"
+target_label = "Palworld user ID"
+target_label_zh_cn = "Palworld 用户 ID"
+target_placeholder = "Exact userId from the REST player list"
+target_placeholder_zh_cn = "REST 玩家列表中的完整 userId"
+target_required = true
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "palworld_rest"
+command_template = "ban {{target}}"
+target_label = "Palworld user ID"
+target_label_zh_cn = "Palworld 用户 ID"
+target_placeholder = "Exact userId from the REST player list"
+target_placeholder_zh_cn = "REST 玩家列表中的完整 userId"
+target_required = true
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban"
+label_zh_cn = "解封"
+transport = "palworld_rest"
+command_template = "unban {{target}}"
+target_label = "Palworld user ID"
+target_label_zh_cn = "Palworld 用户 ID"
+target_placeholder = "Exact userId from the REST player list"
+target_placeholder_zh_cn = "REST 玩家列表中的完整 userId"
+target_required = true
+port_name = "rest_api"
+password_setting_key = "admin_password"
+enabled_setting_key = "rest_api_enabled"
+destructive = true
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon", "rest_api"]

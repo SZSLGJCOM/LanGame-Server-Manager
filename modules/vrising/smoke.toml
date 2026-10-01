@@ -1,0 +1,40 @@
+schema_version = 1
+module_id = "vrising"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# The private fixture does not advertise on Steam or EOS. Require completed
+# world startup and a real autosave before testing data retention.
+[fixture.settings]
+list_on_steam = false
+list_on_eos = false
+autosave_interval_seconds = 30
+
+[[probes]]
+id = "world-hosted"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["[Server] Startup Completed - Disabling Scene Loading Systems"]
+
+[[probes]]
+id = "world-saved"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["PersistenceV2 - Finished Saving to '"]
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "query-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "query"
+protocol = "udp"

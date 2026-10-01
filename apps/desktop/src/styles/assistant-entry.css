@@ -1,0 +1,81 @@
+.assistant-shell {
+  position: relative;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+}
+
+.assistant-shell.is-open {
+  z-index: 1400;
+}
+
+.assistant-capsule {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 126px;
+  min-width: 126px;
+  max-width: 126px;
+  height: 37px;
+  min-height: 37px;
+  padding: 0 16px;
+  overflow: hidden;
+  appearance: none;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 999px;
+  background: var(--theme-card-surface);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--shell-text) 4%, transparent);
+  color: var(--shell-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+  -webkit-app-region: no-drag;
+}
+
+.assistant-capsule:hover {
+  border-color: var(--shell-focus);
+  background: var(--theme-control-hover);
+  box-shadow: 0 3px 12px -6px color-mix(in srgb, var(--shell-text) 24%, transparent);
+}
+
+.assistant-capsule:active,
+.assistant-shell.is-open .assistant-capsule {
+  border-color: var(--shell-focus);
+  background: var(--shell-focus-soft);
+}
+
+/* The portal carries the same interactive entry while its shell is expanded. */
+.assistant-shell.is-open .assistant-capsule {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.assistant-capsule:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 3px;
+}
+
+.assistant-island-logo {
+  display: block;
+  width: 47px;
+  height: 31px;
+  flex: 0 0 auto;
+  color: inherit;
+  pointer-events: none;
+  user-select: none;
+  transition: transform 140ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assistant-capsule,
+  .assistant-island-logo {
+    animation: none;
+    transition: none;
+  }
+}

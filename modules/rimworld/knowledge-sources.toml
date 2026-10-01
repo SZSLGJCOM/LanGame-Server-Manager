@@ -1,0 +1,19 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "rimworld"
+scope = "RimWorld Together community-mod dedicated-server prerequisites, installation, persistent data and maintainer deployment instructions."
+gaps = ["This module hosts the RimWorld Together community mod; Ludeon does not publish this dedicated server.","The maintainer README is not a complete settings reference; repository license has noncommercial and no-derivatives conditions."]
+
+[[sources]]
+id = "together-maintainer-readme"
+title = "RimWorld Together maintainer server instructions"
+authority = "RimWorld Together maintainers"
+kind = "community"
+seeds = ["https://raw.githubusercontent.com/RimWorld-Together/Rimworld-Together/development/README.md"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://github.com/RimWorld-Together/Rimworld-Together"
+license_note = "The upstream repository LICENSE is CC BY-NC-ND 4.0. Preserve attribution and the noncommercial/no-derivatives conditions; do not claim publisher endorsement or unconditional redistribution rights."
+reviewed_on = "2026-09-28"
+license_url = "https://raw.githubusercontent.com/RimWorld-Together/Rimworld-Together/development/LICENSE"

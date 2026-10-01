@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<ServerSettings>
+  <!-- Browser identity -->
+  <property name="ServerName" value="{{xml.settings.server_name}}"/>
+  <property name="ServerDescription" value="{{xml.settings.server_description}}"/>
+  <property name="ServerWebsiteURL" value="{{xml.settings.server_website_url}}"/>
+  <property name="ServerLoginConfirmationText" value="{{xml.settings.server_login_confirmation_text}}"/>
+  <property name="ServerPassword" value="{{xml.settings.server_password}}"/>
+  <property name="Region" value="{{xml.settings.region}}"/>
+  <property name="Language" value="{{xml.settings.language}}"/>
+
+  <!-- Networking -->
+  <property name="ServerPort" value="{{ports.game_udp.port}}"/>
+  <property name="ServerVisibility" value="{{visibility}}"/>
+  <property name="ServerDisabledNetworkProtocols" value="{{xml.settings.server_disabled_network_protocols}}"/>
+  <property name="ServerMaxWorldTransferSpeedKiBs" value="{{server_max_world_transfer_speed_kibs}}"/>
+
+  <!-- Slots and overflow -->
+  <property name="ServerMaxPlayerCount" value="{{max_players}}"/>
+  <property name="ServerReservedSlots" value="{{reserved_slots}}"/>
+  <property name="ServerReservedSlotsPermission" value="{{reserved_slots_permission}}"/>
+  <property name="ServerAdminSlots" value="{{admin_slots}}"/>
+  <property name="ServerAdminSlotsPermission" value="{{admin_slots_permission}}"/>
+
+  <!-- Admin interfaces -->
+  <property name="WebDashboardEnabled" value="{{web_dashboard_enabled}}"/>
+  <property name="WebDashboardPort" value="{{ports.web_dashboard.port}}"/>
+  <property name="WebDashboardUrl" value="{{xml.settings.web_dashboard_url}}"/>
+  <property name="EnableMapRendering" value="{{enable_map_rendering}}"/>
+  <property name="TelnetEnabled" value="{{telnet_enabled}}"/>
+  <property name="TelnetPort" value="{{ports.telnet.port}}"/>
+  <property name="TelnetPassword" value="{{xml.settings.telnet_password}}"/>
+  <property name="TelnetFailedLoginLimit" value="{{telnet_failed_login_limit}}"/>
+  <property name="TelnetFailedLoginsBlocktime" value="{{telnet_failed_logins_blocktime}}"/>
+  <property name="TerminalWindowEnabled" value="{{terminal_window_enabled}}"/>
+
+  <!-- Persistence -->
+  <property name="AdminFileName" value="serveradmin.xml"/>
+  <property name="UserDataFolder" value="{{paths.instance_root}}"/>
+
+  <!-- World identity -->
+  <property name="ServerAllowCrossplay" value="{{server_allow_crossplay}}"/>
+  <property name="EACEnabled" value="{{eac_enabled}}"/>
+  <property name="IgnoreEOSSanctions" value="{{ignore_eos_sanctions}}"/>
+  <property name="HideCommandExecutionLog" value="{{hide_command_execution_log}}"/>
+  <property name="MaxUncoveredMapChunksPerPlayer" value="{{max_uncovered_map_chunks_per_player}}"/>
+  <property name="PersistentPlayerProfiles" value="{{persistent_player_profiles}}"/>
+  <property name="MaxChunkAge" value="{{max_chunk_age}}"/>
+  <property name="SaveDataLimit" value="{{save_data_limit}}"/>
+  <property name="GameWorld" value="{{xml.settings.game_world}}"/>
+  <property name="WorldGenSeed" value="{{xml.settings.world_seed}}"/>
+  <property name="WorldGenSize" value="{{world_size}}"/>
+  <property name="GameName" value="{{xml.settings.world_name}}"/>
+  <property name="GameMode" value="{{xml.settings.game_mode}}"/>
+
+  <!-- Sandbox and explicit game rules -->
+  <property name="SandboxCode" value="{{xml.settings.sandbox_code}}"/>
+  <property name="PlayerSafeZoneLevel" value="{{player_safe_zone_level}}"/>
+  <property name="PlayerSafeZoneHours" value="{{player_safe_zone_hours}}"/>
+  <property name="BuildCreate" value="{{build_create}}"/>
+
+  <!-- Player rules -->
+  <property name="BedrollDeadZoneSize" value="{{bedroll_dead_zone_size}}"/>
+  <property name="BedrollExpiryTime" value="{{bedroll_expiry_time}}"/>
+  <property name="AllowSpawnNearFriend" value="{{allow_spawn_near_friend}}"/>
+  <property name="CameraRestrictionMode" value="{{camera_restriction_mode}}"/>
+  <property name="PartySharedKillRange" value="{{party_shared_kill_range}}"/>
+  <property name="PlayerKillingMode" value="{{player_killing_mode}}"/>
+
+  <!-- Spawn and blood moon pressure -->
+  <property name="MaxSpawnedZombies" value="{{max_spawned_zombies}}"/>
+  <property name="MaxSpawnedAnimals" value="{{max_spawned_animals}}"/>
+  <property name="ServerMaxAllowedViewDistance" value="{{server_max_allowed_view_distance}}"/>
+  <property name="MaxQueuedMeshLayers" value="{{max_queued_mesh_layers}}"/>
+
+  <!-- Land claim and base protection -->
+  <property name="LandClaimCount" value="{{land_claim_count}}"/>
+  <property name="LandClaimSize" value="{{land_claim_size}}"/>
+  <property name="LandClaimDeadZone" value="{{land_claim_dead_zone}}"/>
+  <property name="LandClaimExpiryTime" value="{{land_claim_expiry_time}}"/>
+  <property name="LandClaimDecayMode" value="{{land_claim_decay_mode}}"/>
+  <property name="LandClaimOnlineDurabilityModifier" value="{{land_claim_online_durability_modifier}}"/>
+  <property name="LandClaimOfflineDurabilityModifier" value="{{land_claim_offline_durability_modifier}}"/>
+  <property name="LandClaimOfflineDelay" value="{{land_claim_offline_delay}}"/>
+  <property name="DynamicMeshEnabled" value="{{dynamic_mesh_enabled}}"/>
+  <property name="DynamicMeshLandClaimOnly" value="{{dynamic_mesh_land_claim_only}}"/>
+  <property name="DynamicMeshLandClaimBuffer" value="{{dynamic_mesh_land_claim_buffer}}"/>
+  <property name="DynamicMeshMaxItemCache" value="{{dynamic_mesh_max_item_cache}}"/>
+
+  <!-- Community interaction -->
+  <property name="TwitchServerPermission" value="{{twitch_server_permission}}"/>
+  <property name="TwitchBloodMoonAllowed" value="{{twitch_blood_moon_allowed}}"/>
+</ServerSettings>

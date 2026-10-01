@@ -1,0 +1,144 @@
+{
+  "fixture_version": 1,
+  "module_id": "astroneer",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-08",
+    "build": "Configuration inventory build 23473323; native TCP console probe build 24411584",
+    "source_ids": [
+      "steamcmd_anonymous_validate_728470",
+      "official_astroneer_dedicated_server_guide",
+      "astro_server_settings",
+      "engine_ini",
+      "game_ini",
+      "launch_args",
+      "player_management",
+      "native_console_probe_24411584",
+      "astrolauncher_native_console",
+      "astrolauncher_console_configuration"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "Astro/Saved/Config/WindowsServer/AstroServerSettings.ini",
+        "content": "; server-owned values\n[/Script/Astro.AstroServerSettings]\nServerGuid=stable-guid\nShareCode=stable-code\nServerAdvertisedName=stable-advertised\nServerName=Before\nUnknownFuture=keep\n\n[AstroServerSettings]\nPublicIPName=obsolete\n"
+      },
+      {
+        "root": "install",
+        "path": "Astro/Saved/Config/WindowsServer/Engine.ini",
+        "content": "[/Script/OnlineSubsystemUtils.IpNetDriver]\nUnknownDriverKey=keep\n\n[PackageOwned]\nKeep=True\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 19,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 6
+  },
+  "classifications": {
+    "editable": [
+      "astro_server_settings.ServerName",
+      "game_ini.MaxPlayers",
+      "astro_server_settings.ServerPassword",
+      "astro_server_settings.DenyUnlistedPlayers",
+      "astro_server_settings.OwnerName",
+      "astro_server_settings.OwnerGuid",
+      "astro_server_settings.ConsolePassword",
+      "astro_server_settings.PublicIP",
+      "astro_server_settings.bLoadAutoSave",
+      "astro_server_settings.ActiveSaveFileDescriptiveName",
+      "astro_server_settings.AutoSaveGameInterval",
+      "astro_server_settings.BackupSaveGamesInterval",
+      "astro_server_settings.bDisableServerTravel",
+      "astro_server_settings.MaxServerFramerate",
+      "astro_server_settings.MaxServerIdleFramerate",
+      "astro_server_settings.bWaitForPlayersBeforeShutdown",
+      "astro_server_settings.PlayerActivityTimeout",
+      "astro_server_settings.VerbosePlayerProperties",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "native_console_probe_24411584.ConsolePort",
+      "engine_ini.URL.Port",
+      "astro_server_settings.ServerGuid",
+      "astro_server_settings.ShareCode",
+      "astro_server_settings.ServerAdvertisedName",
+      "player_management.live kick/ban/unban transport"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Astroneer",
+    "max_players": 8,
+    "server_password": "acceptance-pass",
+    "deny_unlisted_players": true,
+    "server_owner_display_name": "LanGame Owner",
+    "owner_guid": "owner-guid",
+    "console_password": "",
+    "public_ip": "203.0.113.10",
+    "load_auto_save": true,
+    "active_save_file_name": "LAN_WORLD",
+    "auto_save_interval_seconds": 600,
+    "backup_save_interval_seconds": 3600,
+    "disable_server_travel": true,
+    "max_server_framerate": 45,
+    "max_server_idle_framerate": 5,
+    "wait_for_players_before_shutdown": true,
+    "player_activity_timeout_seconds": 300,
+    "verbose_player_properties": true,
+    "extra_launch_args": "-log -NoSound"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "Astro/Saved/Config/WindowsServer/AstroServerSettings.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/Astro.AstroServerSettings.ServerName": "LanGame Astroneer",
+          "/Script/Astro.AstroServerSettings.ConsolePort": "0",
+          "/Script/Astro.AstroServerSettings.ConsolePassword": "",
+          "/Script/Astro.AstroServerSettings.MaxServerFramerate": "45",
+          "/Script/Astro.AstroServerSettings.ServerGuid": "stable-guid",
+          "/Script/Astro.AstroServerSettings.ShareCode": "stable-code",
+          "/Script/Astro.AstroServerSettings.ServerAdvertisedName": "stable-advertised",
+          "/Script/Astro.AstroServerSettings.UnknownFuture": "keep"
+        }
+      },
+      {
+        "root": "install",
+        "path": "Astro/Saved/Config/WindowsServer/Engine.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/OnlineSubsystemUtils.IpNetDriver.UnknownDriverKey": "keep",
+          "PackageOwned.Keep": "True",
+          "URL.Port": "8777"
+        }
+      },
+      {
+        "root": "install",
+        "path": "Astro/Saved/Config/WindowsServer/Game.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/Engine.GameSession.MaxPlayers": "8"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "AstroServer.exe",
+      "arguments": [
+        "-log",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-log",
+        "-NoSound"
+      ]
+    }
+  }
+}

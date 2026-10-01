@@ -1,0 +1,170 @@
+{
+  "fixture_version": 1,
+  "module_id": "conanexiles",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-30",
+    "build": "Steam app 443030 build 25488622; native and packaged Blueprint contracts with synthetic persistence regression",
+    "source_ids": [
+      "native_semantics_existing_unconscious",
+      "death_drop_numeric_contract_25488622",
+      "packaged_blueprint_contracts_25488622",
+      "action_stamina_consumer_25488622",
+      "official_enhanced_settings_2026_09_28",
+      "authentication_ban_check_25488622"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini",
+        "content": "[ServerSettings]\nUnconsciousTimeSeconds=600\nDropEquipmentOnDeath=0\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 50,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 12
+  },
+  "classifications": {
+    "editable": [
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormEnabled",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormCooldown",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormAccumulationTime",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormDuration",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormDissipationTime",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormMinimumOnlinePlayers",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormMapBlocker",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormEnduranceDrainMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormBuildingAllowed",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormBuildingDamageEnabled",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormBuildingDamageMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormBuildingDamageRateMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.MinimumStormDamageBuildingPieces",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ElderThingsEnabled",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ElderThingsIdleLifespan",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ElderThingSpawnRate",
+      "official_enhanced_settings_2026_09_28.ServerSettings.MaxAmbushElderThings",
+      "official_enhanced_settings_2026_09_28.ServerSettings.SiegeElderThingsEnabled",
+      "official_enhanced_settings_2026_09_28.ServerSettings.MaxSiegeElderThings",
+      "official_enhanced_settings_2026_09_28.ServerSettings.SiegeElderThingRespawnRate",
+      "official_enhanced_settings_2026_09_28.ServerSettings.SiegeElderThingMapMarkers",
+      "official_enhanced_settings_2026_09_28.ServerSettings.MinimumBuildingSizeToBeSieged",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ElderThingSiegeBuildingSizeMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ElderThingSiegeDamageMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.SurgeDespawnTimer",
+      "official_enhanced_settings_2026_09_28.ServerSettings.SurgeSacrificeRequirementMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.AltarModuleActiveTimeMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.VaultRefreshTime",
+      "official_enhanced_settings_2026_09_28.ServerSettings.VaultRefreshDeviation",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerActiveHungerMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerActiveThirstMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerIdleHungerMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerIdleThirstMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.LogoutCharactersRemainInTheWorld",
+      "official_enhanced_settings_2026_09_28.ServerSettings.IsLoadErrorsFatal",
+      "official_enhanced_settings_2026_09_28.ServerSettings.DropEquipmentOnDeath",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StaminaCostMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.EnableBanCheck",
+      "official_enhanced_settings_2026_09_28.ServerSettings.OverrideDecayMaxBuildingPieces",
+      "official_enhanced_settings_2026_09_28.ServerSettings.OverrideDecayTime",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerOfflineHungerMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerOfflineThirstMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerWaterMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ShieldDurabilityMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.FeatsBlacklist",
+      "official_enhanced_settings_2026_09_28.ServerSettings.EnableBuildingDestructionCapsules",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormTimeWeekdayStart",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormTimeWeekdayEnd",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormTimeWeekendStart",
+      "official_enhanced_settings_2026_09_28.ServerSettings.StormTimeWeekendEnd"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "official_enhanced_settings_2026_09_28.ServerSettings.CoopTetheringLimit",
+      "official_enhanced_settings_2026_09_28.ServerSettings.TetheringMaxLimit",
+      "official_enhanced_settings_2026_09_28.ServerSettings.TetheringMinLimit",
+      "official_enhanced_settings_2026_09_28.ServerSettings.TetheringRangeDelta",
+      "official_enhanced_settings_2026_09_28.ServerSettings.IPBlackList",
+      "official_enhanced_settings_2026_09_28.ServerSettings.EnableWhitelist",
+      "official_enhanced_settings_2026_09_28.ServerSettings.CanImportDirectlyFromSameServer",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ChatFloodControlAheadCounter",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerBuildingDamageMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.PlayerMovementAccelerationMultiplier",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ServerBlacklistedFeatIDs",
+      "official_enhanced_settings_2026_09_28.ServerSettings.ServerBuildingPVPWhitelistIDs"
+    ]
+  },
+  "settings": {
+    "unconscious_time_seconds": 600,
+    "drop_equipment_on_death": 0,
+    "player_offline_hunger_multiplier": 1.25,
+    "player_offline_thirst_multiplier": 1.25,
+    "player_water_multiplier": 1.25,
+    "shield_durability_multiplier": 1.25,
+    "disabled_knowledge_ids": "(\"1\",\"2\",\"2\")",
+    "enable_building_destruction_capsules": true,
+    "storm_time_weekday_start": 1830,
+    "storm_time_weekday_end": 2130,
+    "storm_time_weekend_start": 1830,
+    "storm_time_weekend_end": 2130,
+    "everybody_can_loot_corpse": true,
+    "client_catch_up_time": 14,
+    "max_nudity": 2,
+    "action_stamina_cost_multiplier": 1.25,
+    "enable_ban_check": false
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "ConanSandbox/Saved/Config/WindowsServer/ServerSettings.ini",
+        "format": "ini",
+        "keys": {
+          "ServerSettings.UnconsciousTimeSeconds": "600",
+          "ServerSettings.DropEquipmentOnDeath": "0",
+          "ServerSettings.PlayerOfflineHungerMultiplier": "1.25",
+          "ServerSettings.PlayerOfflineThirstMultiplier": "1.25",
+          "ServerSettings.PlayerWaterMultiplier": "1.25",
+          "ServerSettings.ShieldDurabilityMultiplier": "1.25",
+          "ServerSettings.FeatsBlacklist": "(\"1\",\"2\",\"2\")",
+          "ServerSettings.EnableBuildingDestructionCapsules": "true",
+          "ServerSettings.StormTimeWeekdayStart": "1830",
+          "ServerSettings.StormTimeWeekdayEnd": "2130",
+          "ServerSettings.StormTimeWeekendStart": "1830",
+          "ServerSettings.StormTimeWeekendEnd": "2130",
+          "ServerSettings.EverybodyCanLootCorpse": "true",
+          "ServerSettings.ClientCatchUpTime": "14",
+          "ServerSettings.MaxNudity": "2",
+          "ServerSettings.StaminaCostMultiplier": "1.25",
+          "ServerSettings.EnableBanCheck": "false"
+        }
+      }
+    ],
+    "launch": {
+      "arguments": [
+        "ConanSandbox?listen",
+        "-Port=7777",
+        "-QueryPort=27015",
+        "-MaxPlayers=20",
+        "-ServerName=LanGame configuration acceptance",
+        "-RconPort=25575",
+        "-server",
+        "-NullRHI",
+        "-Unattended",
+        "-NoSplash",
+        "-abslog={{paths.logs_dir}}/conan-server.log",
+        "-useallavailablecores",
+        "-MULTIHOME=0.0.0.0",
+        "-MULTIHOMEHTTP=0.0.0.0"
+      ],
+      "executable_suffix": "ConanSandbox/Binaries/Win64/ConanSandboxServer-Win64-Shipping.exe"
+    }
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "fixture_version": 1,
+  "module_id": "soulmask",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Steam app 3017310 installed build 25117179; GameXishu template 282 keys x 3 profiles; static native package comparison, no server launch",
+    "source_ids": [
+      "game_xishu_build_25117179"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "WS/Saved/GameplaySettings/GameXishu.json",
+        "content": {
+          "0": {
+            "FuturePackageKey": {
+              "keep": true
+            }
+          },
+          "1": {
+            "FuturePackageKey": {
+              "keep": true
+            }
+          },
+          "2": {
+            "FuturePackageKey": {
+              "keep": true
+            }
+          }
+        }
+      }
+    ]
+  },
+  "classifications": {
+    "editable": [
+      "game_xishu_build_25117179.KuaiSuDaoDaOnZuDangKaiGuan",
+      "game_xishu_build_25117179.EnableFloatFoundation",
+      "game_xishu_build_25117179.MaxFloatFoundationNum",
+      "game_xishu_build_25117179.MaxCaiJiChangLimitCount",
+      "game_xishu_build_25117179.MaxFaMuChangLimitCount",
+      "game_xishu_build_25117179.MaxWaJueChangLimitCount"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "ConfigAuditSoulmask",
+    "admin_password": "acceptance-admin",
+    "rcon_password": "acceptance-rcon",
+    "xishu_kuai_su_dao_da_on_zu_dang_kai_guan": 1,
+    "xishu_enable_float_foundation": 0,
+    "xishu_max_float_foundation_num": 250,
+    "xishu_max_cai_ji_chang_limit_count": 30,
+    "xishu_max_fa_mu_chang_limit_count": 35,
+    "xishu_max_wa_jue_chang_limit_count": 40
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "WS/Saved/GameplaySettings/GameXishu.json",
+        "format": "json",
+        "keys": {
+          "0.KuaiSuDaoDaOnZuDangKaiGuan": 1,
+          "0.EnableFloatFoundation": 0,
+          "0.MaxFloatFoundationNum": 250,
+          "0.MaxCaiJiChangLimitCount": 30,
+          "0.MaxFaMuChangLimitCount": 35,
+          "0.MaxWaJueChangLimitCount": 40,
+          "1.KuaiSuDaoDaOnZuDangKaiGuan": 1,
+          "1.EnableFloatFoundation": 0,
+          "1.MaxFloatFoundationNum": 250,
+          "1.MaxCaiJiChangLimitCount": 30,
+          "1.MaxFaMuChangLimitCount": 35,
+          "1.MaxWaJueChangLimitCount": 40,
+          "2.KuaiSuDaoDaOnZuDangKaiGuan": 1,
+          "2.EnableFloatFoundation": 0,
+          "2.MaxFloatFoundationNum": 250,
+          "2.MaxCaiJiChangLimitCount": 30,
+          "2.MaxFaMuChangLimitCount": 35,
+          "2.MaxWaJueChangLimitCount": 40,
+          "0.FuturePackageKey.keep": true,
+          "1.FuturePackageKey.keep": true,
+          "2.FuturePackageKey.keep": true
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe",
+      "arguments": [
+        "Level01_Main",
+        "-server",
+        "-log",
+        "-UTF8Output",
+        "-forcepassthrough",
+        "-MULTIHOME=0.0.0.0",
+        "-Port=8777",
+        "-QueryPort=27015",
+        "-EchoPort=18888",
+        "-rconpsw=acceptance-rcon",
+        "-rconaddr=0.0.0.0",
+        "-rconport=19000",
+        "-SteamServerName=ConfigAuditSoulmask",
+        "-MaxPlayers=20",
+        "-PSW=",
+        "-adminpsw=acceptance-admin",
+        "-saving=300",
+        "-backup=900",
+        "-online=Steam"
+      ]
+    }
+  },
+  "coverage": {
+    "editable": 6,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  }
+}

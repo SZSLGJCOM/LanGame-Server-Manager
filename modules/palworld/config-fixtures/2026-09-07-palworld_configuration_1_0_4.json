@@ -1,0 +1,39 @@
+{
+  "fixture_version": 1,
+  "module_id": "palworld",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-07",
+    "build": "Official Palworld server documentation 1.0.4; deterministic configuration and launch assertions",
+    "source_ids": ["palworld_configuration_1_0_4", "palworld_arguments_1_0_4"]
+  },
+  "coverage": { "editable": 3, "specialized": 0, "derived": 0, "generated": 0, "excluded": 0 },
+  "classifications": {
+    "editable": [
+      "palworld_configuration_1_0_4.FishingDifficultyRate",
+      "palworld_configuration_1_0_4.bAllowEnemyCampSpawnNearBaseCamp",
+      "palworld_arguments_1_0_4.-enable-gamedata-api"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "fishing_difficulty_rate": 0.4,
+    "enemy_camp_spawn_near_base": "prevent",
+    "gamedata_api_enabled": true
+  },
+  "expected": {
+    "files": [{
+      "root": "config",
+      "path": "PalWorldSettings.ini",
+      "format": "text",
+      "fragments": ["FishingDifficultyRate=0.4", "bAllowEnemyCampSpawnNearBaseCamp=False"]
+    }],
+    "launch": {
+      "executable_suffix": "Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe",
+      "arguments": ["-port=8211", "-players=32", "-logformat=text", "-stdout", "-FullStdOutLogOutput", "-enable-gamedata-api"]
+    }
+  }
+}

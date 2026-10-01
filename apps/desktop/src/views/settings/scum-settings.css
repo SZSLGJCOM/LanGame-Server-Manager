@@ -1,0 +1,67 @@
+:is(.scum-json-settings-renderer, .scum-server-settings-renderer) .scum-settings-action {
+  justify-self: start;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+  min-height: var(--control-height);
+  padding: 4px var(--control-padding-inline);
+  border-radius: 8px;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-control);
+  letter-spacing: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+.scum-server-settings-renderer .scum-settings-confirmation {
+  margin-top: 6px;
+  border-color: var(--theme-danger-border);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.scum-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scum-json-settings-renderer .configuration-workspace__structured-list {
+  display: grid;
+  gap: 12px;
+}
+
+.scum-json-settings-renderer .configuration-workspace__structured-list > .runtime-box {
+  display: grid;
+  gap: 8px;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--shell-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.scum-json-settings-renderer .configuration-workspace__structured-list > .runtime-box:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.scum-json-settings-renderer .runtime-box .detail-label { margin-bottom: 0; }
+.scum-json-settings-renderer :is(.guided-field-group-head, .panel-head) { align-items: center; }
+
+.scum-server-settings-renderer .scum-settings-action.danger {
+  border-color: var(--theme-danger-border);
+  background: var(--theme-danger-bg);
+  color: var(--theme-danger-text);
+}
+
+.scum-server-settings-renderer .scum-settings-action.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--theme-danger-text) 12%, var(--theme-danger-bg));
+}
+
+.scum-settings-action-help {
+  display: inline-flex;
+  justify-self: start;
+}

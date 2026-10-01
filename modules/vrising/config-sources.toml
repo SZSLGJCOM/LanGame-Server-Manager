@@ -1,0 +1,1377 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "SteamCMD anonymous app_update 1829350 validate succeeded against the validated package on 2026-07-13. The installed public manifest reports V Rising Dedicated Server buildid 23401381, TargetBuildID 23401381, SizeOnDisk 2021415384, and depots 1004/1829351. The validated package includes the current ServerHostSettings.json and ServerGameSettings.json defaults plus GameDifficultyPresets and GameSettingPresets. The official Stunlock instructions currently document the 1.1.x PC server surface. Native verification on 2026-09-08 confirmed that empty admin/ban overrides must be omitted, and that ListOnSteam=false disables the A2S endpoint. Enabling ListOnSteam returned a complete zero-player list; the original visibility setting was restored. LanGame crosswalks every leaf in the installed host/game defaults: scalar paths are typed, and the three open-ended arrays remain editable through the validated specialized JSON editor."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/blob/master/1.1.x-pc/INSTRUCTIONS.md"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: Publisher news lists V Rising 1.1 Hot Fix 12 on 2026-09-11; installed app 1829350 reports build 25169871. All 166 leaves of the packaged ServerGameSettings.json are covered. All 23 ServerHostSettings.json leaves are covered or supplied by the three instance-owned ports. The current official host table still includes the separately modeled empty-server FPS, LAN and reconnect options. Native reset scheduling remains excluded from Configuration. No current-build process, RCON or client-join result is claimed."
+
+[[sources]]
+id = "official_host_settings_1_1"
+kind = "documentation"
+path = "Settings/ServerHostSettings.json"
+url = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/blob/master/1.1.x-pc/INSTRUCTIONS.md#server-host-settings"
+authority = "stunlock_studios_official_dedicated_server_instructions"
+description = "2026-09-28 official 1.1.x host-settings table confirms empty-server FPS controls, LAN mode and reconnect reservations. The installed build 24686592 default JSON omits these fields and the package uses IL2CPP; the documented examples are not claimed as defaults. Unset overrides remain absent from generated JSON. Binding remains instance-owned; reset/wipe policy belongs to maintenance."
+
+[[sources]]
+id = "native_private_lifecycle_build_24686592"
+kind = "install_probe"
+path = "modules/vrising/smoke.toml"
+authority = "isolated_installed_server_and_official_host_settings"
+url = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/blob/master/1.1.x-pc/INSTRUCTIONS.md#firewall--port-forwarding"
+description = "2026-09-20 independent native package-copy run uses installed build 24686592. With ListOnSteam/ListOnEOS false, the process owns both gameplay/query UDP sockets, completes world startup, and writes a real Saves/v4/world1/AutoSave_0.save.gz, while A2S does not reply. Official instructions distinguish direct gameplay from optional server-list queries. The private smoke now explicitly selects that mode and requires current-run startup-complete and persistence-complete markers plus owned endpoints; its 30-second autosave fixture does not change product defaults. Public A2S and remote client joins are separate verification scopes."
+
+[[sources]]
+id = "steamcmd_anonymous_app_1829350"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_1829350.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 1829350 validate completed successfully. Manifest name V Rising Dedicated Server, public buildid 23401381, TargetBuildID 23401381, SizeOnDisk 2021415384, installed depots 1004 and 1829351."
+
+[[sources]]
+id = "installed_streaming_assets_settings"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/Settings/ServerHostSettings.json / VRisingServer_Data/StreamingAssets/Settings/ServerGameSettings.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "The validated package includes first-party StreamingAssets defaults for ServerHostSettings.json (SHA-256 6A39CD00E06CC2F968847A99DFB552D3C9E56C8A59AEBF2EA386E130D119E2C9) and ServerGameSettings.json (SHA-256 51FD36070EB35814C7487B85903332892EF314A533059D54EC50469F14147B51). The latter includes WarEventGameSettings, player/unit/equipment modifiers, castle HeartLimits, and three open-ended arrays."
+
+[[sources]]
+id = "installed_streaming_assets_presets"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/GameDifficultyPresets/Difficulty_Brutal.json / VRisingServer_Data/StreamingAssets/GameSettingPresets"
+authority = "installed_v_rising_dedicated_server_package"
+description = "The validated package includes GameDifficultyPresets/Difficulty_Brutal.json, Difficulty_Easy.json, Difficulty_Normal.json, and GameSettingPresets such as StandardPvE.json, StandardPvP.json, DuoPvP.json, TrioPvP.json, and HardcorePvP.json."
+
+[[sources]]
+id = "server_host_settings_json"
+kind = "config_file"
+path = "Settings/ServerHostSettings.json"
+authority = "installed_default_and_lsgm_template"
+description = "V Rising host settings for room identity, ports, saves, RCON, presets, and service toggles."
+
+[[sources]]
+id = "server_game_settings_json"
+kind = "config_file"
+path = "Settings/ServerGameSettings.json"
+authority = "installed_default_and_lsgm_template"
+description = "V Rising game rules, rates, castle limits, schedules, and advanced game modifiers."
+
+[[sources]]
+id = "adminlist_file"
+kind = "generated_roster"
+path = "Settings/adminlist.txt"
+authority = "installed_default_and_lsgm_template"
+description = "V Rising admin Steam64 list rendered one ID per line."
+
+[[sources]]
+id = "banlist_file"
+kind = "generated_roster"
+path = "Settings/banlist.txt"
+authority = "installed_default_and_lsgm_template"
+description = "V Rising ban Steam64 list rendered one ID per line."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "VRisingServer.exe"
+authority = "module_launch_surface"
+description = "V Rising launch flags for persistent data path and bind address."
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "V Rising RCON"
+url = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/blob/master/1.1.x-pc/INSTRUCTIONS.md#rcon"
+authority = "upstream_official_dedicated_server_instructions"
+description = "The official 1.1.x RCON table supports service operations such as announce and shutdown. In-game administrator-console player commands are intentionally not exposed as LanGame RCON actions."
+
+[[sources]]
+id = "upstream_rcon_admin_command_gap"
+kind = "documentation"
+path = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/issues/173"
+url = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/issues/173"
+authority = "upstream_official_issue_tracker"
+description = "The upstream request to execute in-game administrator commands through RCON documents that these command surfaces remain separate; LanGame therefore keeps player moderation restart-backed."
+
+[[sources]]
+id = "vrising_steam_settings"
+kind = "config_file"
+path = "VRisingServer_Data/Plugins/x86_64/steam_settings/*"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Steamworks runtime settings shipped for V Rising."
+[[sources]]
+id = "vrising_steam_settings_examples"
+kind = "config_file"
+path = "VRisingServer_Data/Plugins/x86_64/steam_settings/_examples/*"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Steamworks example settings under VRising steam_settings/_examples."
+[[sources]]
+id = "vrising_runtime_initialize"
+kind = "config_file"
+path = "VRisingServer_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "V Rising runtime bootstrap metadata for startup and assemblies."
+[[sources]]
+id = "vrising_scripting_assemblies"
+kind = "config_file"
+path = "VRisingServer_Data/ScriptingAssemblies.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "V Rising managed assembly manifest for runtime API."
+[[sources]]
+id = "vrising_difficulty_presets"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/GameDifficultyPresets/*.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "V Rising game difficulty preset JSON documents."
+[[sources]]
+id = "vrising_unity_services"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/UnityServicesProjectConfiguration.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "V Rising Unity services project configuration document."
+
+[[sources]]
+id = "vrising_streamingassets_json_bundle"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/**/*.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Installed V Rising streaming assets JSON payloads including presets and host/game settings."
+
+[[sources]]
+id = "vrising_streamingassets_txt_bundle"
+kind = "config_file"
+path = "VRisingServer_Data/StreamingAssets/**/*.txt"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Installed V Rising streaming assets text payloads."
+
+[[sources]]
+id = "vrising_server_data_json_bundle"
+kind = "config_file"
+path = "VRisingServer_Data/*.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Installed V Rising root-level JSON runtime payloads under VRisingServer_Data."
+
+[[sources]]
+id = "vrising_server_data_cfg_bundle"
+kind = "config_file"
+path = "VRisingServer_Data/*.cfg"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Installed V Rising root-level CFG runtime payloads under VRisingServer_Data."
+
+[[sources]]
+id = "vrising_server_data_txt_bundle"
+kind = "config_file"
+path = "VRisingServer_Data/*.txt"
+authority = "installed_v_rising_dedicated_server_package"
+description = "Installed V Rising root-level text runtime payloads under VRisingServer_Data."
+
+[[sources]]
+id = "vrising_version_data"
+kind = "config_file"
+path = "VRisingServer_Data/VersionDataSettings.json"
+authority = "installed_v_rising_dedicated_server_package"
+description = "V Rising version and runtime data settings document."
+
+[[items]]
+source = "server_host_settings_json"
+key = "Name"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "Description"
+schema_key = "server_description"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "MaxConnectedUsers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "MaxConnectedAdmins"
+schema_key = "max_admins"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "Password"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "HideIPAddress"
+schema_key = "hide_ip_address"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "Secure"
+schema_key = "secure_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "ListOnEOS"
+schema_key = "list_on_eos"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "SaveName"
+schema_key = "save_name"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameDifficulty"
+schema_key = "game_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameModeType"
+schema_key = "game_mode_type"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleDamageMode"
+schema_key = "castle_damage_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "SiegeWeaponHealth"
+schema_key = "siege_weapon_health"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerDamageMode"
+schema_key = "player_damage_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleHeartDamageMode"
+schema_key = "castle_heart_damage_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PvPProtectionMode"
+schema_key = "pvp_protection_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DeathContainerPermission"
+schema_key = "death_container_permission"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "RelicSpawnType"
+schema_key = "relic_spawn_type"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CanLootEnemyContainers"
+schema_key = "can_loot_enemy_containers"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BloodBoundEquipment"
+schema_key = "blood_bound_equipment"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "TeleportBoundItems"
+schema_key = "teleport_bound_items"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BatBoundItems"
+schema_key = "bat_bound_items"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BatBoundShards"
+schema_key = "bat_bound_shards"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "AllowGlobalChat"
+schema_key = "allow_global_chat"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "AllWaypointsUnlocked"
+schema_key = "all_waypoints_unlocked"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "FreeCastleClaim"
+schema_key = "free_castle_claim"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "FreeCastleRaid"
+schema_key = "free_castle_raid"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "FreeCastleDestroy"
+schema_key = "free_castle_destroy"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InactivityKillEnabled"
+schema_key = "inactivity_kill_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InactivityKillTimeMin"
+schema_key = "inactivity_kill_time_min"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InactivityKillTimeMax"
+schema_key = "inactivity_kill_time_max"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InactivityKillSafeTimeAddition"
+schema_key = "inactivity_kill_safe_time_addition"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InactivityKillTimerMaxItemLevel"
+schema_key = "inactivity_kill_timer_max_item_level"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "StartingProgressionLevel"
+schema_key = "starting_progression_level"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WeaponSlots"
+schema_key = "weapon_slots"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DisableDisconnectedDeadEnabled"
+schema_key = "disable_disconnected_dead_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DisableDisconnectedDeadTimer"
+schema_key = "disable_disconnected_dead_timer"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DisconnectedSunImmunityTime"
+schema_key = "disconnected_sun_immunity_time"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "InventoryStacksModifier"
+schema_key = "inventory_stacks_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "MaterialYieldModifier_Global"
+schema_key = "material_yield_modifier_global"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BloodEssenceYieldModifier"
+schema_key = "blood_essence_yield_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DropTableModifier_General"
+schema_key = "drop_table_modifier_general"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DropTableModifier_Missions"
+schema_key = "drop_table_modifier_missions"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DropTableModifier_StygianShards"
+schema_key = "drop_table_modifier_stygian_shards"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "SoulShard_DurabilityLossRate"
+schema_key = "soul_shard_durability_loss_rate"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "JournalVBloodSourceUnitMaxDistance"
+schema_key = "journal_vblood_source_unit_max_distance"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PvPVampireRespawnModifier"
+schema_key = "pvp_vampire_respawn_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleMinimumDistanceInFloors"
+schema_key = "castle_minimum_distance_in_floors"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "ClanSize"
+schema_key = "clan_size"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BloodDrainModifier"
+schema_key = "blood_drain_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DurabilityDrainModifier"
+schema_key = "durability_drain_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GarlicAreaStrengthModifier"
+schema_key = "garlic_area_strength_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "HolyAreaStrengthModifier"
+schema_key = "holy_area_strength_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "SilverStrengthModifier"
+schema_key = "silver_strength_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "SunDamageModifier"
+schema_key = "sun_damage_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.CastleLimit"
+schema_key = "castle_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.NetherGateLimit"
+schema_key = "nether_gate_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.ThroneOfDarknessLimit"
+schema_key = "throne_of_darkness_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.ArenaStationLimit"
+schema_key = "arena_station_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.RoutingStationLimit"
+schema_key = "routing_station_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleDecayRateModifier"
+schema_key = "castle_decay_rate_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleBloodEssenceDrainModifier"
+schema_key = "castle_blood_essence_drain_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleSiegeTimer"
+schema_key = "castle_siege_timer"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleUnderAttackTimer"
+schema_key = "castle_under_attack_timer"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleRaidTimer"
+schema_key = "castle_raid_timer"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleRaidProtectionTime"
+schema_key = "castle_raid_protection_time"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleExposedFreeClaimTimer"
+schema_key = "castle_exposed_free_claim_timer"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleRelocationCooldown"
+schema_key = "castle_relocation_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleRelocationEnabled"
+schema_key = "castle_relocation_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "AnnounceSiegeWeaponSpawn"
+schema_key = "announce_siege_weapon_spawn"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "ShowSiegeWeaponMapIcon"
+schema_key = "show_siege_weapon_map_icon"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "BuildCostModifier"
+schema_key = "build_cost_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "RecipeCostModifier"
+schema_key = "recipe_cost_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CraftRateModifier"
+schema_key = "craft_rate_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "ResearchCostModifier"
+schema_key = "research_cost_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "RefinementCostModifier"
+schema_key = "refinement_cost_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "RefinementRateModifier"
+schema_key = "refinement_rate_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "ResearchTimeModifier"
+schema_key = "research_time_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "DismantleResourceModifier"
+schema_key = "dismantle_resource_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "ServantConvertRateModifier"
+schema_key = "servant_convert_rate_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "RepairCostModifier"
+schema_key = "repair_cost_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "Death_DurabilityFactorLoss"
+schema_key = "death_durability_factor_loss"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "Death_DurabilityLossFactorAsResources"
+schema_key = "death_durability_loss_factor_as_resources"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekdayTime.StartHour"
+schema_key = "vs_player_weekday_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekdayTime.StartMinute"
+schema_key = "vs_player_weekday_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekdayTime.EndHour"
+schema_key = "vs_player_weekday_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekdayTime.EndMinute"
+schema_key = "vs_player_weekday_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekendTime.StartHour"
+schema_key = "vs_player_weekend_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekendTime.StartMinute"
+schema_key = "vs_player_weekend_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekendTime.EndHour"
+schema_key = "vs_player_weekend_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSPlayerWeekendTime.EndMinute"
+schema_key = "vs_player_weekend_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekdayTime.StartHour"
+schema_key = "vs_castle_weekday_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekdayTime.StartMinute"
+schema_key = "vs_castle_weekday_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekdayTime.EndHour"
+schema_key = "vs_castle_weekday_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekdayTime.EndMinute"
+schema_key = "vs_castle_weekday_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekendTime.StartHour"
+schema_key = "vs_castle_weekend_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekendTime.StartMinute"
+schema_key = "vs_castle_weekend_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekendTime.EndHour"
+schema_key = "vs_castle_weekend_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.VSCastleWeekendTime.EndMinute"
+schema_key = "vs_castle_weekend_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.DayDurationInSeconds"
+schema_key = "day_duration_in_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.DayStartHour"
+schema_key = "day_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.DayStartMinute"
+schema_key = "day_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.DayEndHour"
+schema_key = "day_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.DayEndMinute"
+schema_key = "day_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.BloodMoonFrequency_Min"
+schema_key = "blood_moon_frequency_min"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.BloodMoonFrequency_Max"
+schema_key = "blood_moon_frequency_max"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "GameTimeModifiers.BloodMoonBuff"
+schema_key = "blood_moon_buff"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.Interval"
+schema_key = "war_event_interval"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.MajorDuration"
+schema_key = "war_event_major_duration"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.MinorDuration"
+schema_key = "war_event_minor_duration"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekdayTime.StartHour"
+schema_key = "war_event_weekday_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekdayTime.StartMinute"
+schema_key = "war_event_weekday_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekdayTime.EndHour"
+schema_key = "war_event_weekday_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekdayTime.EndMinute"
+schema_key = "war_event_weekday_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekendTime.StartHour"
+schema_key = "war_event_weekend_start_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekendTime.StartMinute"
+schema_key = "war_event_weekend_start_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekendTime.EndHour"
+schema_key = "war_event_weekend_end_hour"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.WeekendTime.EndMinute"
+schema_key = "war_event_weekend_end_minute"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers1.PointsModifier"
+schema_key = "war_event_scaling_players_1_points_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers1.DropModifier"
+schema_key = "war_event_scaling_players_1_drop_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers2.PointsModifier"
+schema_key = "war_event_scaling_players_2_points_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers2.DropModifier"
+schema_key = "war_event_scaling_players_2_drop_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers3.PointsModifier"
+schema_key = "war_event_scaling_players_3_points_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers3.DropModifier"
+schema_key = "war_event_scaling_players_3_drop_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers4.PointsModifier"
+schema_key = "war_event_scaling_players_4_points_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "WarEventGameSettings.ScalingPlayers4.DropModifier"
+schema_key = "war_event_scaling_players_4_drop_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "AutoSaveCount"
+schema_key = "autosave_count"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "AutoSaveInterval"
+schema_key = "autosave_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "AutoSaveSmartKeep"
+schema_key = "autosave_smart_keep"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "Rcon.Enabled"
+schema_key = "rcon_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "Rcon.Password"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[items]]
+source = "adminlist_file"
+key = "adminlist.txt"
+schema_key = "admin_list"
+surface = "generated_roster"
+
+[[items]]
+source = "banlist_file"
+key = "banlist.txt"
+schema_key = "ban_list"
+surface = "generated_roster"
+
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.MaxHealthModifier"
+schema_key = "vampire_max_health_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.PhysicalPowerModifier"
+schema_key = "vampire_physical_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.SpellPowerModifier"
+schema_key = "vampire_spell_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.ResourcePowerModifier"
+schema_key = "vampire_resource_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.SiegePowerModifier"
+schema_key = "vampire_siege_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.DamageReceivedModifier"
+schema_key = "vampire_damage_received_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VampireStatModifiers.ReviveCancelDelay"
+schema_key = "vampire_revive_cancel_delay"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_Global.MaxHealthModifier"
+schema_key = "global_unit_max_health_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_Global.PowerModifier"
+schema_key = "global_unit_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_Global.LevelIncrease"
+schema_key = "global_unit_level_increase"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_VBlood.MaxHealthModifier"
+schema_key = "vblood_unit_max_health_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_VBlood.PowerModifier"
+schema_key = "vblood_unit_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnitStatModifiers_VBlood.LevelIncrease"
+schema_key = "vblood_unit_level_increase"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.MaxHealthModifier"
+schema_key = "global_equipment_max_health_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.ResourceYieldModifier"
+schema_key = "global_equipment_resource_yield_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.PhysicalPowerModifier"
+schema_key = "global_equipment_physical_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.SpellPowerModifier"
+schema_key = "global_equipment_spell_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.SiegePowerModifier"
+schema_key = "global_equipment_siege_power_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "EquipmentStatModifiers_Global.MovementSpeedModifier"
+schema_key = "global_equipment_movement_speed_modifier"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level1.FloorLimit"
+schema_key = "castle_heart_level_1_floor_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level1.ServantLimit"
+schema_key = "castle_heart_level_1_servant_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level1.HeightLimit"
+schema_key = "castle_heart_level_1_height_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level2.FloorLimit"
+schema_key = "castle_heart_level_2_floor_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level2.ServantLimit"
+schema_key = "castle_heart_level_2_servant_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level2.HeightLimit"
+schema_key = "castle_heart_level_2_height_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level3.FloorLimit"
+schema_key = "castle_heart_level_3_floor_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level3.ServantLimit"
+schema_key = "castle_heart_level_3_servant_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level3.HeightLimit"
+schema_key = "castle_heart_level_3_height_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level4.FloorLimit"
+schema_key = "castle_heart_level_4_floor_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level4.ServantLimit"
+schema_key = "castle_heart_level_4_servant_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level4.HeightLimit"
+schema_key = "castle_heart_level_4_height_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level5.FloorLimit"
+schema_key = "castle_heart_level_5_floor_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level5.ServantLimit"
+schema_key = "castle_heart_level_5_servant_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.HeartLimits.Level5.HeightLimit"
+schema_key = "castle_heart_level_5_height_limit"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "VBloodUnitSettings"
+schema_key = "server_game_settings_json"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnlockedAchievements"
+schema_key = "server_game_settings_json"
+surface = "config_file"
+[[items]]
+source = "server_game_settings_json"
+key = "UnlockedResearchs"
+schema_key = "server_game_settings_json"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "raw JSON merge"
+schema_key = "server_game_settings_json"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "ListOnSteam"
+schema_key = "list_on_steam"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "ServerFps"
+schema_key = "server_fps"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "GameSettingsPreset"
+schema_key = "game_settings_preset"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "GameDifficultyPreset"
+schema_key = "game_difficulty_preset"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "PlayerInteractionSettings.TimeZone"
+schema_key = "player_interaction_time_zone"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "StarterEquipmentId"
+schema_key = "starter_equipment_id"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "StarterResourcesId"
+schema_key = "starter_resources_id"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.TickPeriod"
+schema_key = "castle_tick_period"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.SafetyBoxLimit"
+schema_key = "safety_box_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.EyeStructuresLimit"
+schema_key = "eye_structures_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.TombLimit"
+schema_key = "tomb_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.VerminNestLimit"
+schema_key = "vermin_nest_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.PrisonCellLimit"
+schema_key = "prison_cell_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "CastleStatModifiers_Global.CastleHeartLimitType"
+schema_key = "castle_heart_limit_type"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "TraderModifiers.StockModifier"
+schema_key = "trader_stock_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "TraderModifiers.PriceModifier"
+schema_key = "trader_price_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_game_settings_json"
+key = "TraderModifiers.RestockTimerModifier"
+schema_key = "trader_restock_timer_modifier"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "CompressSaveFiles"
+schema_key = "compress_save_files"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "AdminOnlyDebugEvents"
+schema_key = "admin_only_debug_events"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "DisableDebugEvents"
+schema_key = "disable_debug_events"
+surface = "config_file"
+
+[[items]]
+source = "server_host_settings_json"
+key = "API.Enabled"
+schema_key = "api_enabled"
+surface = "config_file"
+
+[[exclusions]]
+source = "server_host_settings_json"
+key = "Port/QueryPort/Rcon.Port"
+reason = "Game, query, and RCON ports are instance port-binding state."
+
+[[exclusions]]
+source = "launch_args"
+key = "-persistentDataPath"
+reason = "LanGame owns the per-instance persistent data path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-address/-ip"
+reason = "Bind address is instance-level network state."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "announce/shutdown"
+reason = "Officially supported RCON broadcast and shutdown commands are declared in module.toml instead of schema fields; in-game player-administration commands are excluded because the current RCON surface does not expose them."
+
+[[items]]
+source = "official_host_settings_1_1"
+key = "LowerFPSWhenEmpty"
+schema_key = "lower_fps_when_empty"
+surface = "config_file"
+
+[[items]]
+source = "official_host_settings_1_1"
+key = "LowerFPSWhenEmptyValue"
+schema_key = "lower_fps_when_empty_value"
+surface = "config_file"
+
+[[items]]
+source = "official_host_settings_1_1"
+key = "LanMode"
+schema_key = "lan_mode"
+surface = "config_file"
+
+[[items]]
+source = "official_host_settings_1_1"
+key = "SafeReconnectTime"
+schema_key = "safe_reconnect_time"
+surface = "config_file"
+
+[[items]]
+source = "official_host_settings_1_1"
+key = "SafeReconnectSlots"
+schema_key = "safe_reconnect_slots"
+surface = "config_file"
+
+[[exclusions]]
+source = "official_host_settings_1_1"
+key = "Address"
+reason = "Derived from the instance bind address through the existing -bindAddress argument; a second address editor would conflict with network ownership."
+
+[[exclusions]]
+source = "official_host_settings_1_1"
+key = "Rcon.BindAddress"
+reason = "An independent RCON override would bypass the instance bind-address constraint. RCON inherits the existing instance address; do not expose a separate binding."
+
+[[exclusions]]
+source = "official_host_settings_1_1"
+key = "ResetDaysInterval"
+reason = "Scheduled save reset/wipe policy belongs to maintenance, not configuration. No automatic wipe capability is added by this audit."
+
+[[exclusions]]
+source = "official_host_settings_1_1"
+key = "DayOfReset"
+reason = "Scheduled wipe weekday belongs with ResetDaysInterval in maintenance, not configuration."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://github.com/StunlockStudios/vrising-dedicated-server-instructions/blob/master/1.1.x-pc/INSTRUCTIONS.md"
+authority = "native_package_and_documentation_semantic_review"
+description = "Semantic review on 2026-09-30 of 194 presentation entries in English and Chinese against the referenced native package and documentation. Power denotes attack, physical or spell strength. Received-damage multipliers and equipment-stat contribution multipliers have distinct scopes. The five level settings identify their level and floor, servant or height limits. WarEventGameSettings uses Rift Incursion terminology. Reconnect reservation uses seconds, and V Blood tracking controls journal tracking. Boundaries: WarEventGameSettings.Interval, MajorDuration and MinorDuration exact numeric enum-to-frequency/duration mapping remains unconfirmed by first-party documentation. Community PDF not promoted to authoritative enum options. UI retains native integer contract and no fabricated time unit or zero behavior. No real gameplay/client run was performed for stat multiplier effects."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "GameAssembly.dll"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Build 25169871 static IL2CPP analysis resolves all three WarEventGameSettings enums. IDs 0 through 7 map Interval to 1800, 3600, 5400, 7200, 14400, 28800, 43200 and 86400 seconds. MajorDuration and MinorDuration use 900, 1200, 1500, 1800, 2100, 2700, 3600 and 7200 seconds. Metadata field references 139 and 137 identify the arrays at default-data offsets 20042736 and 20042656; WarEventGameSettings .cctor (06001069) initializes them. StructData.GetTotalDuration (0600106F) and GetTimeBetweenEvents (06001072) index these arrays; WarEventSystem converts their seconds to DateTime ticks. The interval is downtime in addition to active event duration. The UI now presents eight time presets and preserves native integer IDs. Zero selects the minimum preset and does not disable events. This resolves the earlier mapping uncertainty; no connected-client acceptance is claimed. Primary binary SHA256 ff366577fb0c707c42b8bde242304653aaa37f6ff0665ab9520150ceb692aed1."

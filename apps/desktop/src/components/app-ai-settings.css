@@ -1,0 +1,180 @@
+.app-settings-card--ai {
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.app-settings-card--ai .app-settings-form,
+.app-settings-card--ai .ai-settings-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  min-width: 0;
+}
+
+.app-settings-card--ai .ai-settings-field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-settings-card--ai .detail-label {
+  color: var(--shell-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-compact);
+}
+
+.app-settings-card--ai :is(.text-input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 9px 11px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 8px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  font: inherit;
+  font-size: var(--text-body);
+  line-height: var(--leading-compact);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.app-settings-card--ai :is(.text-input, select):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--shell-focus) 48%, var(--shell-line-strong));
+}
+
+.app-settings-card--ai :is(.text-input, select):focus-visible,
+.app-settings-card--ai button:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}
+
+.app-settings-card--ai :is(.text-input, select):disabled,
+.app-settings-card--ai button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.app-settings-card--ai .app-settings-model-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.app-settings-card--ai .app-settings-model-control > :only-child {
+  grid-column: 1 / -1;
+}
+
+.app-settings-card--ai .app-settings-inline-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 8px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  box-shadow: none;
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app-settings-card--ai .app-settings-inline-button:hover:not(:disabled) {
+  background: var(--theme-control-hover);
+  border-color: var(--shell-focus);
+}
+
+.app-settings-card--ai .app-settings-inline-button svg,
+.app-settings-card--ai .ai-settings-note svg,
+.app-settings-card--ai .ai-settings-save-state svg,
+.app-settings-card--ai .ai-settings-save-error > svg {
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.app-settings-card--ai .ai-settings-secret-field {
+  padding-top: 20px;
+  border-top: 1px solid var(--shell-line);
+}
+
+.app-settings-card--ai .ai-settings-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--shell-muted);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.app-settings-card--ai .ai-settings-note svg {
+  margin-top: 2px;
+}
+
+.app-settings-card--ai .ai-settings-note.is-error {
+  color: var(--theme-danger-text);
+}
+
+.app-settings-card--ai .ai-settings-save-state {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  color: var(--shell-muted);
+  font-size: var(--text-meta);
+  line-height: var(--leading-body);
+}
+
+.app-settings-card--ai .ai-settings-save-state.is-saved {
+  color: var(--success);
+}
+
+.app-settings-card--ai .ai-settings-save-state.is-saving {
+  color: var(--shell-focus);
+}
+
+.app-settings-card--ai .ai-settings-save-error {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--theme-danger-border);
+  color: var(--theme-danger-text);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.app-settings-card--ai .ai-settings-save-error > svg {
+  margin-top: 2px;
+}
+
+.app-settings-card--ai .ai-settings-save-error > div {
+  display: grid;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+
+.app-settings-card--ai .ai-settings-save-error strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-settings-card--ai :is(.text-input, select) {
+    transition: none;
+  }
+}

@@ -1,0 +1,94 @@
+.ai-connection-check {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--shell-line);
+}
+
+.ai-connection-heading,
+.ai-connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-connection-heading {
+  justify-content: space-between;
+}
+
+.ai-connection-heading h3 {
+  margin: 0;
+  color: var(--shell-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-compact);
+}
+
+.ai-connection-check :is(.ai-connection-note, .ai-connection-empty) {
+  margin: 0;
+  color: var(--shell-muted);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ai-connection-check .ai-connection-empty {
+  color: var(--shell-text);
+}
+
+.ai-connection-stages {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-connection-stages li {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  align-items: start;
+  column-gap: 8px;
+  color: var(--shell-muted);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}
+
+.ai-connection-stages li > svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+}
+
+.ai-connection-stage-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-connection-stage-label {
+  color: var(--shell-text);
+}
+
+.ai-connection-stages .is-passed :is(svg, .ai-connection-stage-status) {
+  color: var(--success);
+}
+
+.ai-connection-stages .is-failed :is(svg, .ai-connection-stage-status) {
+  color: var(--theme-danger-text);
+}
+
+.ai-connection-stage-status,
+.ai-connection-latency {
+  white-space: nowrap;
+}
+
+.ai-connection-latency {
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

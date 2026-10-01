@@ -1,0 +1,835 @@
+{
+  "release": "26.8.31.1",
+  "path_source": "https://raw.githubusercontent.com/RimWorld-Together/Rimworld-Together/26.8.31.1/Source/Server/Core/Program.cs",
+  "records": [
+    {
+      "type": "RTShared.Files.Configs.FL_ChatConfig",
+      "path": "Configs/ChatConfig.json",
+      "classification": "configuration",
+      "fields": {
+        "EnableMoTD": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "chat_enable_mo_td"
+        },
+        "MessageOfTheDay": {
+          "type": "string",
+          "signature": "06-0E",
+          "default": "Remember to drink water",
+          "schema_key": "chat_message_of_the_day"
+        },
+        "LoginNotifications": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "chat_login_notifications"
+        },
+        "DisconnectNotifications": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "chat_disconnect_notifications"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Configs.FL_DifficultyConfig",
+      "path": "Configs/DifficultyConfig.json",
+      "classification": "configuration",
+      "fields": {
+        "IsDifficultyEnforced": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_is_difficulty_enforced"
+        },
+        "ThreatScale": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_threat_scale"
+        },
+        "AllowBigThreats": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_big_threats"
+        },
+        "AllowViolentQuests": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_violent_quests"
+        },
+        "AllowIntroThreats": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_intro_threats"
+        },
+        "PredatorsHuntHumanlikes": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_predators_hunt_humanlikes"
+        },
+        "AllowExtremeWeatherIncidents": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_extreme_weather_incidents"
+        },
+        "CropYieldFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_crop_yield_factor"
+        },
+        "MineYieldFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_mine_yield_factor"
+        },
+        "ButcherYieldFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_butcher_yield_factor"
+        },
+        "ResearchSpeedFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_research_speed_factor"
+        },
+        "QuestRewardValueFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_quest_reward_value_factor"
+        },
+        "RaidLootPointsFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_raid_loot_points_factor"
+        },
+        "TradePriceFactorLoss": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.0,
+          "schema_key": "difficulty_trade_price_factor_loss"
+        },
+        "MaintenanceCostFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_maintenance_cost_factor"
+        },
+        "ScariaRotChance": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.6,
+          "schema_key": "difficulty_scaria_rot_chance"
+        },
+        "EnemyDeathOnDownedChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_enemy_death_on_downed_chance_factor"
+        },
+        "ColonistMoodOffset": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.0,
+          "schema_key": "difficulty_colonist_mood_offset"
+        },
+        "FoodPoisonChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_food_poison_chance_factor"
+        },
+        "ManhunterChanceOnDamageFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_manhunter_chance_on_damage_factor"
+        },
+        "PlayerPawnInfectionChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_player_pawn_infection_chance_factor"
+        },
+        "DiseaseIntervalFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_disease_interval_factor"
+        },
+        "EnemyReproductionRateFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_enemy_reproduction_rate_factor"
+        },
+        "DeepDrillInfestationChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_deep_drill_infestation_chance_factor"
+        },
+        "FriendlyFireChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.4,
+          "schema_key": "difficulty_friendly_fire_chance_factor"
+        },
+        "AllowInstantKillChance": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_allow_instant_kill_chance"
+        },
+        "PeacefulTemples": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_peaceful_temples"
+        },
+        "AllowCaveHives": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_cave_hives"
+        },
+        "UnwaveringPrisoners": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_unwavering_prisoners"
+        },
+        "AllowTraps": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_traps"
+        },
+        "AllowTurrets": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_turrets"
+        },
+        "AllowMortars": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "difficulty_allow_mortars"
+        },
+        "ClassicMortars": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_classic_mortars"
+        },
+        "AdaptationEffectFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.9,
+          "schema_key": "difficulty_adaptation_effect_factor"
+        },
+        "AdaptationGrowthRateFactorOverZero": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_adaptation_growth_rate_factor_over_zero"
+        },
+        "FixedWealthMode": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_fixed_wealth_mode"
+        },
+        "LowPopConversionBoost": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 3.0,
+          "schema_key": "difficulty_low_pop_conversion_boost"
+        },
+        "NoBabiesOrChildren": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_no_babies_or_children"
+        },
+        "BabiesAreHealthy": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_babies_are_healthy"
+        },
+        "ChildRaidersAllowed": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "difficulty_child_raiders_allowed"
+        },
+        "ChildAgingRate": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 4.0,
+          "schema_key": "difficulty_child_aging_rate"
+        },
+        "AdultAgingRate": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_adult_aging_rate"
+        },
+        "WastepackInfestationChanceFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_wastepack_infestation_chance_factor"
+        },
+        "NomadicMineableResourcesFactor": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 1.0,
+          "schema_key": "difficulty_nomadic_mineable_resources_factor"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Configs.FL_PlanetConfig",
+      "path": "Assets/WorldValuesFile.json",
+      "classification": "world_state",
+      "fields": {
+        "PersistentRandomValue": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 2147483647
+        },
+        "SeedString": {
+          "type": "string",
+          "signature": "06-0E",
+          "default": ""
+        },
+        "PlanetCoverage": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 3.4028235e+38
+        },
+        "Rainfall": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": -1
+        },
+        "Temperature": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 2147483647
+        },
+        "Population": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 2147483647
+        },
+        "LandmarkDensity": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 2147483647
+        },
+        "Pollution": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 3.4028235e+38
+        },
+        "Features": {
+          "type": "object",
+          "signature": "06-15-12-7D-01-12-81-08",
+          "default": {
+            "constructor": ".ctor"
+          }
+        },
+        "PollutedTiles": {
+          "type": "object",
+          "signature": "06-15-12-7D-01-12-81-10",
+          "default": {
+            "constructor": ".ctor"
+          }
+        },
+        "NPCFactions": {
+          "type": "object",
+          "signature": "06-15-12-7D-01-12-81-0C",
+          "default": {
+            "constructor": ".ctor"
+          }
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Configs.FL_ScenarioConfig",
+      "path": "Configs/ScenarioConfig.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnforced": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "scenario_is_enforced"
+        },
+        "Name": {
+          "type": "string",
+          "signature": "06-0E",
+          "default": "",
+          "schema_key": "scenario_name"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Configs.FL_StorytellerConfig",
+      "path": "Configs/StorytellerConfig.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnforced": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "storyteller_is_enforced"
+        },
+        "DefName": {
+          "type": "string",
+          "signature": "06-0E",
+          "default": "",
+          "schema_key": "storyteller_def_name"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Aid",
+      "path": "Configs/Actions/Aid.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_aid_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_aid_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Caravan",
+      "path": "Configs/Actions/Caravan.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_caravan_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 0.0,
+          "schema_key": "action_caravan_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Event",
+      "path": "Configs/Actions/Event.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_event_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 300000.0,
+          "schema_key": "action_event_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Guild",
+      "path": "Configs/Actions/Guild.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_guild_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_guild_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Leaderboard",
+      "path": "Configs/Actions/Leaderboard.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_leaderboard_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_leaderboard_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Market",
+      "path": "Configs/Actions/Market.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_market_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_market_cooldown"
+        },
+        "MinimumPrice": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 25,
+          "schema_key": "action_market_minimum_price"
+        },
+        "PriceMultiplier": {
+          "type": "float32",
+          "signature": "06-0C",
+          "default": 0.2,
+          "schema_key": "action_market_price_multiplier"
+        },
+        "MaxEntriesPerPlayer": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 5,
+          "schema_key": "action_market_max_entries_per_player"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Pollution",
+      "path": "Configs/Actions/Pollution.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": false,
+          "schema_key": "action_pollution_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 300000.0,
+          "schema_key": "action_pollution_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Raid",
+      "path": "Configs/Actions/Raid.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_raid_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_raid_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_River",
+      "path": "Configs/Actions/River.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_river_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_river_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Road",
+      "path": "Configs/Actions/Road.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_road_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_road_cooldown"
+        },
+        "RoadValues": {
+          "type": "object",
+          "signature": "06-12-80-BC",
+          "default": {
+            "constructor": "RTShared.Files.Configs.FL_RoadsConfig::.ctor"
+          },
+          "fields": {
+            "AllowDirtPath": {
+              "type": "boolean",
+              "signature": "06-02",
+              "default": true,
+              "schema_key": "action_road_allow_dirt_path"
+            },
+            "AllowDirtRoad": {
+              "type": "boolean",
+              "signature": "06-02",
+              "default": true,
+              "schema_key": "action_road_allow_dirt_road"
+            },
+            "AllowStoneRoad": {
+              "type": "boolean",
+              "signature": "06-02",
+              "default": true,
+              "schema_key": "action_road_allow_stone_road"
+            },
+            "AllowAsphaltPath": {
+              "type": "boolean",
+              "signature": "06-02",
+              "default": true,
+              "schema_key": "action_road_allow_asphalt_path"
+            },
+            "AllowAsphaltHighway": {
+              "type": "boolean",
+              "signature": "06-02",
+              "default": true,
+              "schema_key": "action_road_allow_asphalt_highway"
+            },
+            "DirtPathCost": {
+              "type": "integer",
+              "signature": "06-08",
+              "default": 10,
+              "schema_key": "action_road_dirt_path_cost"
+            },
+            "DirtRoadCost": {
+              "type": "integer",
+              "signature": "06-08",
+              "default": 20,
+              "schema_key": "action_road_dirt_road_cost"
+            },
+            "StoneRoadCost": {
+              "type": "integer",
+              "signature": "06-08",
+              "default": 25,
+              "schema_key": "action_road_stone_road_cost"
+            },
+            "AsphaltPathCost": {
+              "type": "integer",
+              "signature": "06-08",
+              "default": 30,
+              "schema_key": "action_road_asphalt_path_cost"
+            },
+            "AsphaltHighwayCost": {
+              "type": "integer",
+              "signature": "06-08",
+              "default": 50,
+              "schema_key": "action_road_asphalt_highway_cost"
+            },
+            "DirtPathMultiplier": {
+              "type": "float32",
+              "signature": "06-0C",
+              "default": 0.45,
+              "schema_key": "action_road_dirt_path_multiplier"
+            },
+            "DirtRoadMultiplier": {
+              "type": "float32",
+              "signature": "06-0C",
+              "default": 0.4,
+              "schema_key": "action_road_dirt_road_multiplier"
+            },
+            "StoneRoadMultiplier": {
+              "type": "float32",
+              "signature": "06-0C",
+              "default": 0.3,
+              "schema_key": "action_road_stone_road_multiplier"
+            },
+            "AsphaltPathMultiplier": {
+              "type": "float32",
+              "signature": "06-0C",
+              "default": 0.2,
+              "schema_key": "action_road_asphalt_path_multiplier"
+            },
+            "AsphaltHighwayMultiplier": {
+              "type": "float32",
+              "signature": "06-0C",
+              "default": 0.1,
+              "schema_key": "action_road_asphalt_highway_multiplier"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Scenario",
+      "path": "Configs/Actions/Scenario.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_scenario_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_scenario_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Site",
+      "path": "Configs/Actions/Site.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_site_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_site_cooldown"
+        },
+        "TimeInterval": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 1800000.0,
+          "schema_key": "action_site_time_interval"
+        },
+        "BuildingCost": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 3000,
+          "schema_key": "action_site_building_cost"
+        },
+        "RewardsCount": {
+          "type": "integer",
+          "signature": "06-08",
+          "default": 100,
+          "schema_key": "action_site_rewards_count"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Trade",
+      "path": "Configs/Actions/Trade.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_trade_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_trade_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_WorldObject",
+      "path": "Configs/Actions/WorldObject.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_world_object_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_world_object_cooldown"
+        }
+      }
+    },
+    {
+      "type": "RTShared.Files.Actions.ACT_Zoom",
+      "path": "Configs/Actions/Zoom.json",
+      "classification": "configuration",
+      "fields": {
+        "IsEnabled": {
+          "type": "boolean",
+          "signature": "06-02",
+          "default": true,
+          "schema_key": "action_zoom_is_enabled"
+        },
+        "Cooldown": {
+          "type": "float64",
+          "signature": "06-0D",
+          "default": 250.0,
+          "schema_key": "action_zoom_cooldown"
+        }
+      }
+    }
+  ],
+  "assembly_sha256": "e940eb47448a37a508007f3ab28f31cc348be231d874c4f8820284b2bf860157"
+}

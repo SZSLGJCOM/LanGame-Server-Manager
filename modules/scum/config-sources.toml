@@ -1,0 +1,3142 @@
+status = "download_verified_requires_elevation"
+last_verified = "2026-09-08"
+notes = "The archived generated v7 baseline plus four official August 2026 additions provide 436 specialized controls and one generated version key. The four new keys and default values also match the existing installed build 25187656 configuration inspected read-only on 2026-09-28; this is not a new clean-launch verification. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Runtime still requires elevation. The later authorized elevated startup observation is separately dated below; it does not replace the configuration acceptance baseline."
+
+[[sources]]
+id = "unreal_log_console_contract"
+kind = "documentation"
+path = "https://dev.epicgames.com/documentation/en-us/unreal-engine/command-line-arguments?application_version=4.27"
+authority = "first_party_engine_documentation"
+description = "2026-10-01: Epic's Unreal Engine 4.27 command-line reference documents -log as requesting a separate live log window, distinct from LOG=filename. LanGame requests this engine surface as a fixed SCUM launch argument on its managed private desktop. This is an engine contract, not a SCUM publisher guarantee or proof of a successful new graceful-stop run."
+
+[[sources]]
+id = "existing_instance_console_absent_20261001"
+kind = "runtime_probe"
+path = "SCUM/Binaries/Win64/SCUMServer.exe"
+authority = "authorized_existing_instance_and_elevated_read_only_native_inspection"
+description = "2026-10-01: the existing SCUM instance reached fresh world statistics but graceful Ctrl+C failed. A read-only elevated inspector pinned the exact process creation identity and verified that AttachConsole returned ERROR_INVALID_HANDLE (6), the GUI-subsystem game owned no top-level window, and its only descendant was crashpad. The elevated launch helper had a separate hidden console. The launch lacked -log; adding it and routing normal Ctrl+C through the already approved owner addresses these two observed boundaries. A fresh SCUM launch and natural stop remain required to verify the resulting behavior."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=513710&count=8&maxlength=0&feeds=steam_community_announcements"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The official publisher feed lists hotfix 1.3.3.4.149664 (2026-09-11). The installed app 3792580 manifest reports build 25247308. The existing ServerSettings.ini contains 436 scum-prefixed keys, all represented in the current ledger; its generated version marker is separately owned. The four August settings are already modeled. This was a key-only read of an existing generated file, not a fresh elevated launch or proof that a newer executable cannot generate more settings."
+
+[[sources]]
+id = "elevated_native_start_build_25187656"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "authorized_elevated_isolated_local_package_probe"
+description = "2026-09-21: source snapshot aa0eba1f602d ran native_package_lifecycle with the operator-authorized SCUM elevation acknowledgement against an isolated copy of existing local Steam build 25187656. The actual elevated worker was verified, its owned SCUMServer process reached current-world execution, and fresh Global Stats continued during observation. The managed wrapper returned exit 0; the owned process, fixture root and temporary firewall rules were absent after completion. PowerShell stream redirection captured the wrapper header but omitted native stdout, so individual stage lines and save/config file counts are not claimed from that log. A fully captured repeat and final integration checks were subsequently blocked by concurrent Assistant interface changes before any new native process started. This closes the non-elevated startup gap but does not establish fresh-download, populated-player, A2S or public-listing support. The prior generated-settings audit remains separately dated."
+
+[[sources]]
+id = "steamcmd_anonymous_app_3792580"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_3792580.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 anonymous install validation for SCUM Server build 24107648 (18,851,870,520 bytes)."
+
+[[sources]]
+id = "generated_current_server_settings"
+kind = "install_probe"
+path = "<validated-install-root>/SCUM/Saved/Config/WindowsServer/ServerSettings.ini"
+authority = "current_build_runtime_generation_probe"
+description = "Exact SHA256 FAE30EDB50B77F09AE9CD318F31816379E7E116A8EF1204109FF1C513FC8BF0D: v7, 433 native keys in six sections."
+
+[[sources]]
+id = "official_server_settings_2025"
+kind = "release"
+path = "SCUM server settings release notes"
+authority = "official_scum_steam_announcement"
+description = "Official 2025 release notes confirm current boolean migration and newly added ServerSettings keys."
+url = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1766340142"
+
+[[sources]]
+id = "official_wipe_and_players_2025"
+kind = "documentation"
+path = "SCUM Server Settings July 2025"
+authority = "official_scum_steam_announcement"
+description = "Official documentation defines FullWipe next-start behavior and MaxPlayers range 1 through 128."
+url = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1751638944"
+
+[[sources]]
+id = "generated_economy_override"
+kind = "install_probe"
+path = "<validated-install-root>/SCUM/Saved/Config/WindowsServer/EconomyOverride.json"
+authority = "current_build_runtime_generation_probe"
+description = "Exact SHA256 7B5993EDB295F47FA43556C31DA58B585CC47707A061506C8E3D72711BF0ECD0 generated economy globals and 32 trader buckets."
+
+[[sources]]
+id = "official_economy_override"
+kind = "documentation"
+path = "SCUM Economy Override JSON documentation"
+authority = "official_scum_steam_announcement"
+description = "Official documentation defines structured economy-override globals and ordered trader tradeable rows."
+url = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1648048252&feed=steam_community_announcements"
+
+[[sources]]
+id = "generated_raid_times"
+kind = "install_probe"
+path = "<validated-install-root>/SCUM/Saved/Config/WindowsServer/RaidTimes.json"
+authority = "current_build_runtime_generation_probe"
+description = "Exact SHA256 99F62CCFCA6271271B4A4DD25C2381C8CB243CF66C807E62D343A13662491DDA generated five representative raid-window rows."
+
+[[sources]]
+id = "official_raid_times"
+kind = "documentation"
+path = "SCUM Global Raid Times documentation"
+authority = "official_scum_steam_announcement"
+description = "Official documentation defines the RaidTimes.json row fields, syntax, and 50-entry limit."
+url = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1716386557&feed=steam_community_announcements"
+
+[[sources]]
+id = "generated_notifications"
+kind = "install_probe"
+path = "<validated-install-root>/SCUM/Saved/Config/WindowsServer/Notifications.json"
+authority = "current_build_runtime_generation_probe"
+description = "Exact SHA256 CEE739C424D233F601F7E806717E0D3ECE5F1BEE45CF01274C260201054A3F95 generated Notifications root with an empty ordered list."
+
+[[sources]]
+id = "official_notifications"
+kind = "documentation"
+path = "SCUM Scheduled Notifications documentation"
+authority = "official_scum_steam_announcement"
+description = "Official documentation defines day, time, duration, color, wait, and message fields and live reload."
+url = "https://store.steampowered.com/news/posts/?appgroupname=SCUM&appids=513710&enddate=1757957113&feed=steam_community_announcements"
+
+[[sources]]
+id = "admin_users_file"
+kind = "generated_roster"
+path = "SCUM/Saved/Config/WindowsServer/ServerSettingsAdminUsers.ini"
+authority = "current_build_runtime_generation_probe"
+description = "Native administrator Steam64 roster, owned by Player Access rather than Configuration."
+
+[[sources]]
+id = "other_player_access_rosters"
+kind = "generated_roster"
+path = "SCUM/Saved/Config/WindowsServer/*Users.ini"
+authority = "current_build_runtime_generation_probe"
+description = "Other generated SCUM identity rosters are explicitly assigned to Player Access and excluded from Configuration parameters."
+
+[[sources]]
+id = "unreal_generated_support_files"
+kind = "install_probe"
+path = "<validated-install-root>/SCUM/Saved/Config/WindowsServer"
+authority = "current_build_runtime_generation_probe"
+description = "Generated Unreal input/user files and backup are runtime support artifacts, not the SCUM server-parameter contract."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "SCUMServer.exe launch"
+authority = "module_launch_surface"
+description = "Instance port binding plus advanced process arguments appended by LanGame."
+
+[[sources]]
+id = "non_elevated_runtime_probe"
+kind = "runtime_probe"
+path = "<validated-instance-root>/logs/scum-nonadmin-direct-test.err.log"
+authority = "local_runtime_smoke"
+description = "Non-admin process creation failed with Windows elevation-required error; runtime.requires_admin remains true."
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerName"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerDescription"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerPassword"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxPlayers"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WelcomeMessage"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowThirdPerson"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PlaySafeIdProtection"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerBannerUrl"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerPlaystyle"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MessageOfTheDay"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MessageOfTheDayCooldown"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MinServerTickRate"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxServerTickRate"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxPingCheckEnabled"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxPing"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxNumberOfConsecutiveHighPingReadings"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogoutTimer"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogoutTimerWhileCaptured"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogoutTimerInBunker"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowFirstPerson"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowCrosshair"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowVoting"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowMapScreen"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowKillClaiming"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowComa"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowMinesAndTraps"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowSkillGainInSafeZones"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowEvents"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LimitGlobalChat"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowGlobalChat"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowLocalChat"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowSquadChat"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowAdminChat"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RustyLocksLogging"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HideKillNotification"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableExamineGhost"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableTimedGifts"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.UseMapBaseBuildingRestriction"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.UseBuildingProximityRestrictions"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableBaseBuilding"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.VotingDuration"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PlayerMinimalVotingInterest"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PlayerPositiveVotePercentage"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MasterServerUpdateSendInterval"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MasterServerIsLocalTest"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PartialWipe"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GoldWipe"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FullWipe"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemVirtualizationRelevancyUpdatePeriod"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemVirtualizationEventProcessingTimeBudget"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemVirtualizationVisitorDistanceTravelledForUpdate"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemVirtualizationVisitorBounds"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.VirtualizedItemBounds"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FameGainMultiplier"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FamePointPenaltyOnDeath"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FamePointPenaltyOnKilled"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FamePointRewardOnKill"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogSuicides"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableSpawnOnGround"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DeleteInactiveUsers"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DaysSinceLastLoginToBecomeInactive"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DeleteBannedUsers"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumTimeForChestsInForbiddenZones"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogChestOwnership"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DeleteDuplicateChestsOnServerStartup"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ServerSettingsVersion"
+schema_key = "server_general"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AreAnimalsAllowedInWorld"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AnimalGlobalDensityMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxNonVirtualAnimalsInWorld"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BearPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BoarPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ChickenPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DeerPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DonkeyPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GoatPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HorsePrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RabbitPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WolfPrevalenceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FishingHighActivityZoneRotationTime"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FishingHighActivityZoneAmount"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RadiationEnabled"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedBirds"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedCharacters"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedPuppets"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedNPCs"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedDrones"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableSentrySpawning"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableSentryRespawning"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableSuicidePuppetSpawning"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableLootPuppetSpawning"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableLootPuppetHorde"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerCommotionThreshold"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerCommotionThresholdPerPlayerExtra"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerEnemyActivationThreshold"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerEnemyActivationThresholdPerPlayerExtra"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerResetArmoryLockersOnActivationOnly"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetsCanOpenDoors"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetsCanVaultWindows"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetRunningSpeedMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetCullDistanceOverride"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetLimpingHealthThreshold"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SentryHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingAttackerSentryHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCDifficultyLevel"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCDamageMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCSpreadMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCRunningSpeedMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCNetCullDistanceOverride"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ProbabilityForArmedNPCToDropItemFromHandsWhenSearched"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MinimumDurabilityOfArmedNPCsDroppedItemFromHands"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumDurabilityOfArmedNPCsDroppedItemFromHands"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArmedNPCLimpingHealthThreshold"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AnimalNetCullDistanceOverride"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterBaseCharacterAmountMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterExtraCharacterPerPlayerMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterExtraCharacterPlayerCapMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnTimeMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnBatchSizeMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterAggressiveSpawnChanceOverride"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterAINoiseResponseRadiusMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeGroupBaseCharacterAmountMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeGroupExtraCharacterPerPlayerMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeGroupExtraCharacterPlayerCapMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeBaseCharacterAmountMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeExtraCharacterPerPlayerMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeExtraCharacterPlayerCapMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeActivationChanceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeNoiseCheckCooldownMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeSpawnDistanceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeGroupRefillTimeMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordeShouldPlayActivationSound"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHordePuppetHordeActivationScreamOverrideChance"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCanRemoveLowPriorityCharacters"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCanClampCharacterNumWhenOutOfResources"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterSpawnDistanceMinOverrideLTZ"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterSpawnDistanceMaxOverrideLTZ"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterSpawnDistanceMinOverrideLargePOI"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterSpawnDistanceMaxOverrideLargePOI"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnDistanceMinOverrideLTZ"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnDistanceMaxOverrideLTZ"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnDistanceMinOverrideLargePOI"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterCharacterRespawnDistanceMaxOverrideLargePOI"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterLTZRadiusMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterMTZRadiusMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterHTZRadiusMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterVirtualizedTimeOverride"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterZoneActivationDistanceMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterGlobalZoneCooldownMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterEnableSpawnPreventionAreaSpawnOnCharacterDeath"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EncounterNeverRespawnCharacters"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PuppetWorldEncounterSpawnWeightMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipWorldEncounterSpawnWeightMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableDropshipAbandonedBunkerEncounter"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipAbandonedBunkerEncounterTriggerChance"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterTriggerChance"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterTriggerTimeMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableDropshipBaseBuildingEncounter"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SpawnEncountersInThreatZonesIgnoringBaseBuilding"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableEncounterManagerLowPlayerCountMode"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterMinNumElementsToStart"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterMinNumElementsToEnd"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterDamagePercentageIncreasePerSquadMember"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterTimeToFullMinNumToEnd"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingEncounterMaximumMinToEndReduction"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.StartTimeOfDay"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TimeOfDaySpeed"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.NighttimeDarkness"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SunriseTime"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SunsetTime"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableFog"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShouldDestroyEntitiesOutsideMapLimitsOnRestart"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableLockedLootContainers"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CustomMapEnabled"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CustomMapCenterXCoordinate"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CustomMapCenterYCoordinate"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CustomMapWidth"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CustomMapHeight"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DoorLockability.Garage"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropCooldownMinimum"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropCooldownMaximum"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropFallDelay"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropFallDuration"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropSelfdestructTime"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropZombieEncounterWeightMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CargoDropDropshipEncounterWeightMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BearMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BoarMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ChickenMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DeerMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DonkeyMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GoatMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HorseMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RabbitMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WolfMaxHealthMultiplier"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedKillboxKeycards"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedKillboxKeycards_PoliceStation"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxAllowedKillboxKeycards_RadiationZone"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerMaxSimultaneouslyActive"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerActiveDurationHours"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerKeyCardActiveDurationHours"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AbandonedBunkerBCUTerminalCooldown"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SecretBunkerKeyCardActiveDurationHours"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableSelectedSkillsPromotion"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SmokerMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SmokerStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowMultipleFlagsPerPlayer"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.NumberOfAllowedFlagsPerPlayer"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TombstoneMaxAmountPerSquad"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FlagOvertakeDuration"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumAmountOfElementsPerFlag"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ExtraElementsPerFlagForAdditionalSquadMember"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumNumberOfExpandedElementsPerFlag"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowFlagPlacementOnBBElements"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ChestAcquisitionDuration"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WeaponRackMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WeaponRackStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WallWeaponRackMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WallWeaponRackStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WellMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WellStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.OvenMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.OvenStartDecayingIfFlagAreaHasMoreThan"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GardenMaxAmountPerFlagArea"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowFloorPlacementOnHalfAndLowWalls"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowWallPlacementOnHalfAndLowWalls"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseElementsDecayRateMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingDestructionLogDamageThreshold"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionType"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionEnableLog"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionFlagSpecificChangeSettingCooldown"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionFlagSpecificChangeSettingPrice"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionFlagSpecificMaxProtectionTime"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionOfflineProtectionStartDelay"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionOfflineMaxProtectionTime"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionGlobalShouldShowRaidTimesMessage"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionGlobalShouldShowRaidAnnouncementMessage"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RaidProtectionGlobalShouldShowRaidStartEndMessages"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterPricePerUnitMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterPeriodicInitialAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterPeriodicMaxAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterPeriodicReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterPeriodicReplenishIntervalMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterProximityReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterProximityReplenishChanceMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WaterProximityReplenishTimeoutMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolinePricePerUnitMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolinePeriodicInitialAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolinePeriodicMaxAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolinePeriodicReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolinePeriodicReplenishIntervalMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolineProximityReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolineProximityReplenishChanceMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.GasolineProximityReplenishTimeoutMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropanePricePerUnitMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropanePeriodicInitialAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropanePeriodicMaxAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropanePeriodicReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropanePeriodicReplenishIntervalMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropaneProximityReplenishAmountMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropaneProximityReplenishChanceMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PropaneProximityReplenishTimeoutMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SpawnerProbabilityMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ExamineSpawnerProbabilityMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ExamineSpawnerExpirationTimeMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SpawnerExpirationTimeMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableItemCooldownGroups"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemCooldownGroupsDurationMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountAtIntLevel1"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountAtIntLevel2"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountAtIntLevel3"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountAtIntLevel4"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountAtIntLevel5"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMemberCountLimitForPunishment"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RTSquadProbationDuration"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadMoneyPenaltyPerPrevSquadMember"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadFamePointsPenaltyPerPrevSquadMember"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableSquadMemberNameWidget"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PlantHarvestExamineTimeMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FirstPlantHarvestAdditionalChance"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ArcherySkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AviationSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AwarenessSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BrawlingSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CamouflageSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CookingSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DemolitionSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DrivingSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnduranceSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EngineeringSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FarmingSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HandgunSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MedicalSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MeleeWeaponsSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MotorcycleSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RiflesSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RunningSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SnipingSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.StealthSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SurvivalSkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ThieverySkillMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestsEnabled"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestsGlobalCycleDuration"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxQuestsPerCyclePerTrader"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaxSimultaneousQuestsPerTrader"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestsTraderRefillCooldown"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestsPhoneRefillCooldown"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestsNoticeBoardRefillCooldown"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.QuestRequirementsBlockTradeableItems"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackPrisoners"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackPuppets"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackVehicles"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackSentries"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackAnimals"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TurretsAttackArmedNPCs"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MovementInertiaAmount"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.StaminaDrainOnJumpMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.StaminaDrainOnClimbMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DisableExhaustion"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BodySimulationSpeedMultiplier"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaintainItemsExpirationTime"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.KillboxDefuseFailureBonus"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BedrollVisibilityTimer"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableBCULocking"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.NameChangeCooldown"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.NameChangeCost"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableNewPlayerProtection"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.NewPlayerProtectionDuration"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowAutomaticParachuteOpening"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HideQuickAccessBar"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HideLifeIndicators"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableDeenaOnServer"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableDigitalDeluxeStarterPack"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableDigitalDeluxeFreeGoldCard"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableNetWatchdog"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.EnableNetworkObjectLogging"
+schema_key = "server_features"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowSectorRespawn"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowShelterRespawn"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.AllowSquadmateRespawn"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RandomRespawnPrice"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SectorRespawnPrice"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterRespawnPrice"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterRespawnPriceOutsideFlagArea"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadRespawnPrice"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RandomRespawnInitialTime"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SectorRespawnInitialTime"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterRespawnInitialTime"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadRespawnInitialTime"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RandomRespawnCooldown"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SectorRespawnCooldown"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterRespawnCooldown"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadRespawnCooldown"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RandomCooldownResetMultiplier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SectorCooldownResetMultiplier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterCooldownResetMultiplier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SquadCooldownResetMultiplier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RandomPricePerSquadmateModifier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SectorPricePerSquadmateModifier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ShelterPricePerSquadmateModifier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CommitSuicideInitialTime"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CommitSuicideCooldown"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CommitSuicideCooldownResetMultiplier"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumBaseProximityWhenSpawning"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.PermadeathThreshold"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FuelDrainFromEngineMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BatteryDrainFromEngineMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BatteryDrainFromDevicesMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BatteryDrainFromInactivityMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BatteryChargeWithAlternatorMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BatteryChargeWithDynamoMultiplier"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.KingletDusterMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.KingletDusterMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DirtbikeMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DirtbikeMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DirtbikeMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LaikaMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LaikaMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LaikaMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MotorboatMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MotorboatMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WheelbarrowMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WheelbarrowMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WolfswagenMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WolfswagenMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WolfswagenMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BicycleMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BicycleMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RagerMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RagerMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RagerMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CruiserMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CruiserMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.CruiserMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RisMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RisMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.RisMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DinghyMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DinghyMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SUPMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SUPMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.KingletMarinerMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.KingletMarinerMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TractorMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.TractorMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SidecarBikeMaxAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SidecarBikeMaxFunctionalAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SidecarBikeMinPurchasedAmount"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumTimeOfVehicleInactivity"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.MaximumTimeForVehiclesInForbiddenZones"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LogVehicleDestroyed"
+schema_key = "server_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HumanToHumanDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HumanToHumanArmedMeleeDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HumanToHumanUnarmedMeleeDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.HumanToHumanThrowingDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SentryDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SentryRailgunDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SentryGrenadeDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingAttackerSentryDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingAttackerSentryRailgunDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.BaseBuildingAttackerSentryGrenadeDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.SentryBaseBuildingDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipRailgunDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.DropshipBaseBuildingElementsDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ZombieDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.ItemDecayDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.FoodDecayDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.WeaponDecayDamageOnFiring"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_current_server_settings"
+key = "scum.LockProtectionDamageMultiplier"
+schema_key = "server_damage"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.economy-reset-time-hours"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.prices-randomization-time-hours"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.tradeable-rotation-time-ingame-hours-min"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.tradeable-rotation-time-ingame-hours-max"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.tradeable-rotation-time-of-day-min"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.tradeable-rotation-time-of-day-max"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.fully-restock-tradeable-hours"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.trader-funds-change-rate-per-hour-multiplier"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.prices-subject-to-delta"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.prices-subject-to-player-count"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.gold-price-subject-to-global-multiplier"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.gold-base-price"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.gold-sale-price-modifier"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.gold-price-change-percentage-step"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.gold-price-change-per-step"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.economy-logging"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.traders-unlimited-funds"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.traders-unlimited-stock"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.global-only-after-player-sale-tradeable-availability-enabled"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.tradeable-rotation-enabled"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.enable-fame-point-requirement"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_economy_override"
+key = "economy-override.traders"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].tradeable-code"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].base-purchase-price"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].base-sell-price"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].delta-price"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].can-be-purchased"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].required-famepoints"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "official_economy_override"
+key = "economy-override.traders[].available-after-sale-only"
+schema_key = "economy_override"
+surface = "config_file"
+
+[[items]]
+source = "generated_raid_times"
+key = "raiding-times"
+schema_key = "raid_times"
+surface = "config_file"
+
+[[items]]
+source = "generated_raid_times"
+key = "raiding-times[].day"
+schema_key = "raid_times"
+surface = "config_file"
+
+[[items]]
+source = "generated_raid_times"
+key = "raiding-times[].time"
+schema_key = "raid_times"
+surface = "config_file"
+
+[[items]]
+source = "generated_raid_times"
+key = "raiding-times[].start-announcement-time"
+schema_key = "raid_times"
+surface = "config_file"
+
+[[items]]
+source = "generated_raid_times"
+key = "raiding-times[].end-announcement-time"
+schema_key = "raid_times"
+surface = "config_file"
+
+[[items]]
+source = "generated_notifications"
+key = "Notifications"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].day"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].time"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].duration"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].color"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].wait"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "official_notifications"
+key = "Notifications[].message"
+schema_key = "notifications"
+surface = "config_file"
+
+[[items]]
+source = "admin_users_file"
+key = "ServerSettingsAdminUsers.ini"
+schema_key = "admin_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-Port"
+reason = "Instance port-binding state, not a Configuration parameter."
+
+[[exclusions]]
+source = "launch_args"
+key = "-QueryPort"
+reason = "Instance query-port binding state, not a Configuration parameter."
+
+[[exclusions]]
+source = "other_player_access_rosters"
+key = "AdminUsers.ini"
+reason = "Native identity roster belongs to Player Access; its exact mutation semantics are outside Configuration."
+
+[[exclusions]]
+source = "other_player_access_rosters"
+key = "BannedUsers.ini"
+reason = "Native identity roster belongs to Player Access; its exact mutation semantics are outside Configuration."
+
+[[exclusions]]
+source = "other_player_access_rosters"
+key = "ExclusiveUsers.ini"
+reason = "Native identity roster belongs to Player Access; its exact mutation semantics are outside Configuration."
+
+[[exclusions]]
+source = "other_player_access_rosters"
+key = "SilencedUsers.ini"
+reason = "Native identity roster belongs to Player Access; its exact mutation semantics are outside Configuration."
+
+[[exclusions]]
+source = "other_player_access_rosters"
+key = "WhitelistedUsers.ini"
+reason = "Native identity roster belongs to Player Access; its exact mutation semantics are outside Configuration."
+
+[[exclusions]]
+source = "unreal_generated_support_files"
+key = "GameUserSettings.ini"
+reason = "Generated Unreal runtime/support artifact, not a SCUM server parameter surface."
+
+[[exclusions]]
+source = "unreal_generated_support_files"
+key = "Input.ini"
+reason = "Generated Unreal runtime/support artifact, not a SCUM server parameter surface."
+
+[[exclusions]]
+source = "unreal_generated_support_files"
+key = "Input.ini.bak"
+reason = "Generated Unreal runtime/support artifact, not a SCUM server parameter surface."
+
+[[sources]]
+id = "scum_player_extension_2026_09_08"
+kind = "runtime_probe"
+path = "extensions/SOURCE.md"
+authority = "isolated_dedicated_server_and_read_only_reflection"
+description = "Steam app 3792580 build 24973389, UE 4.27.2 and official UE4SS 3.0.1-1125-g527a483b. The independent read-only extension returned two current complete empty rosters from the authoritative The_Island connection and player-state arrays; 28 Lua constructed cases passed. A2S remains unavailable; real populated sessions and moderation are not verified. This is not a new settings-inventory acceptance run."
+
+[[sources]]
+id = "official_august_update_1_3_3_0"
+kind = "release"
+path = "SCUM/Saved/Config/WindowsServer/ServerSettings.ini"
+authority = "official_scum_steam_announcement"
+url = "https://store.steampowered.com/news/app/513710/view/692016318956700096"
+description = "2026-08-25 release 1.3.3.0.144566 documents three Research Facility keycard limits under World and CloningSicknessEnabled under Respawn. Their names, sections and defaults match the existing build 25187656 INI inspected read-only on 2026-09-28. Existing normalized values and all 433 earlier keys are unchanged; this does not claim a fresh first-launch inventory."
+
+[[items]]
+source = "official_august_update_1_3_3_0"
+key = "scum.MaxAllowedApexFacilityKeycards"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "official_august_update_1_3_3_0"
+key = "scum.MaxAllowedApexFacilityKeycards_PoliceStation"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "official_august_update_1_3_3_0"
+key = "scum.MaxAllowedApexFacilityKeycards_RadiationZone"
+schema_key = "server_world"
+surface = "config_file"
+
+[[items]]
+source = "official_august_update_1_3_3_0"
+key = "scum.CloningSicknessEnabled"
+schema_key = "server_respawn"
+surface = "config_file"
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1716386557&feed=steam_community_announcements"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 448 presentation entries reviewed in EN/ZH against the referenced package/docs. Removed 436 native and 37 JSON generated title/key echoes. Added eight evidence-backed native helps and 17 JSON helps; unsupported help remains absent. Notification duration seconds, repeat wait minutes, raid announcement lead minutes, day weekday-rule and RGB color labels corrected. Four broken NP Cs acronym labels normalized to NPCs in inventory and matching schema. partial_wipe, gold_wipe, full_wipe moved to explicit Maintenance editor; ordinary Configuration retains 433 native controls. Stops require status Stopped, zero processes and no active run. Enabling still requires per-field confirmation. Saves use scoped nested merge, CAS, persisted readback and save coordinator; local conflicts/failures block starts until retry or discard. The three saved wipe switches persist across materialization; the shared notice and every per-switch confirmation require manual disabling, without promising automatic one-shot consumption. Boundaries: Vehicle MinPurchasedAmount precise interpretation is not established by retrieved current first-party text. disable_examine_ghost precise game behavior is not established by its variable name. logout_timer_in_bunker uses a large numeric default but its unit was not inferred as milliseconds. item_virtualization_visitor_bounds, virtualized_item_bounds and visitor_distance_travelled_for_update spatial units remain undocumented in retrieved sources. Inventory/nativeDefault equality is a serialization check, not proof that every old generated value is the pristine current-build engine default. Most native settings have no retrieved detailed behavior reference beyond native names and current generated inventory; absence of an extra help bubble is intentional, not a claim that all gameplay effects were tested."
+
+[[sources]]
+id = "semantic_reference_20260930_1"
+kind = "documentation"
+path = "https://store.steampowered.com/news/posts/?appgroupname=SCUM&appids=513710&enddate=1757957113&feed=steam_community_announcements"
+authority = "first_party_reference"
+description = "2026-09-30: Publisher notification format: seconds for duration, minutes for wait, RGB color and placeholders."
+
+[[sources]]
+id = "semantic_reference_20260930_2"
+kind = "documentation"
+path = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1648048252&feed=steam_community_announcements"
+authority = "first_party_reference"
+description = "2026-09-30: Publisher economy overrides: negative sentinels, stock/reset timing, item IDs and price multipliers."
+
+[[sources]]
+id = "semantic_reference_20260930_3"
+kind = "documentation"
+path = "https://steamcommunity.com/app/513710/discussions/0/3046109410076878154/"
+authority = "first_party_reference"
+description = "2026-09-30: Developer xKiCkx explanation of time-of-day multiplier; current direct page is partially unavailable, prior retrieved developer reply retained as evidence."
+
+[[sources]]
+id = "native_semantics_build_25247308"
+kind = "documentation"
+path = "SCUM/Binaries/Win64/SCUMServer.exe"
+authority = "first_party_installed_executable_static_analysis"
+description = "2026-09-30 read-only analysis of Steam app 3792580 build 25247308; executable SHA256 4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad. Native localized setting descriptions confirm fifteen MinPurchasedAmount controls are minimum quantities available to buy (some include engines), LogoutTimerInBunker is seconds, virtualization visitor movement/bounds and assumed item bounds are centimeters, update period is seconds and processing budget is milliseconds. Numeric registration confirms MaxPing=200, MaxAllowedKillboxKeycards=4 and its PoliceStation variant=3. Explicit stored values remain unchanged. Seven apparent numeric differences are single-player branches: the multiplayer branch (identified by the PartialWipe_Multiplayer description path) retains ZombieDamageMultiplier, both spawner expiration multipliers, PuppetHealthMultiplier and both encounter multipliers at 1, and NighttimeDarkness at 0. ServerSettingsVersion remains the generated version 7, not its pre-initialization constructor value 0. Of 437 inventory defaults, 304 numeric constructor registrations were examined; 133 Boolean/text registrations retain the dated generated baseline because their current default construction was not fully resolved. The bunker logout tooltip says maximum 36000 while the registered bound is 86400; no restrictive maximum is added. This evidence does not require launching a user instance."
+
+[[sources]]
+id = "official_seasonal_ghost_setting"
+kind = "documentation"
+path = "SCUM Hotfix 0.9.604.85906 and Holiday update"
+authority = "official_scum_steam_announcement"
+url = "https://store.steampowered.com/news/posts/?appids=513710&enddate=1736792054&feed=steam_community_announcements"
+description = "The December 2024 holiday update documents scum.DisableExamineGhost as the seasonal ghost spawn switch, consistent with the December 2022 Christmas hotfix. It does not control item examination hints."
+
+[[sources]]
+id = "packaged_defaults_crosscheck_25247308"
+kind = "documentation"
+path = "SCUM/Content/Paks and multiplayer settings registration"
+authority = "independent_current_official_package_and_native_review"
+description = "2026-09-30 independent review read all 47 current package indices with SHA1 verification and checked all 50 packaged INI files. None contains MaxPing, MaxAllowedKillboxKeycards or MaxAllowedKillboxKeycards_PoliceStation; there is no DefaultServerSettings.ini and DedicatedServerEngine.ini is empty. DefaultEngine.ini SHA256 60a19344f8b8842bfe4a213d9e1b28f4b370e62bf46d65b6c4abea54fc245fa2; DefaultGame.ini SHA256 61677ca246ebfd285cffaf6e2b7a223cd022aa32cc6634ca7846436251ebdfa4. The multiplayer initialization branch at 0x142303e8d passes mode1 to0x142308c00. Float and integer setting constructors0x1422cbe10 and0x1422cb920 use the same parameter for the default text and initial CVar when absent. This supports effective uncustomized multiplayer defaults200/4/3 without inferring them solely from a preinitialization constructor. Existing user values and console overrides retain precedence; no game instance was executed."

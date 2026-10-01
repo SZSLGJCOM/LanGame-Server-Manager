@@ -1,0 +1,10 @@
+{
+  "protocol": 1,
+  "request_id": "b21b4a168333a78e408b3d83463b5440",
+  "boot_id": "6aa01f855bf4153b674b429763321020",
+  "timestamp": 1788878780,
+  "complete": true,
+  "source": "net_driver_client_connections",
+  "current_players": 0,
+  "players": []
+}

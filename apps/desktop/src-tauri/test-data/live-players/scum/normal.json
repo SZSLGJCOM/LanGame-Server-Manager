@@ -1,0 +1,19 @@
+{
+  "protocol": 1,
+  "request_id": "5bd362c35e2a418080ba3d539efd603d",
+  "boot_id": "6a9f732a0f511c4309e31e9532a33032",
+  "timestamp": 1788834635,
+  "complete": true,
+  "source": "net_driver_client_connections",
+  "current_players": 2,
+  "players": [
+    {
+      "name": "玩家一 <script>",
+      "session_id": "11"
+    },
+    {
+      "name": "玩家一 <script>",
+      "session_id": "12"
+    }
+  ]
+}

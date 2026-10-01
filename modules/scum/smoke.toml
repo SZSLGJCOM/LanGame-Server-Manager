@@ -1,0 +1,18 @@
+schema_version = 1
+module_id = "scum"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[preconditions]]
+id = "windows-elevation"
+kind = "elevation"
+reason_code = "windows_elevation_required"
+
+[[probes]]
+id = "running-world"
+kind = "log_marker"
+sources = [{ kind = "install", path = "SCUM/Saved/Logs/SCUM.log" }]
+any_of = ["LogSCUM: Global Stats:"]

@@ -1,0 +1,35 @@
+.ai-data-disclosure,
+.privacy-notice-body {
+  min-width: 0;
+  color: var(--shell-muted);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ai-data-disclosure { display: grid; gap: 6px; }
+.ai-data-disclosure p { margin: 0; }
+.ai-data-recipient bdi { color: var(--shell-text); }
+.privacy-notice-body:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.privacy-notice-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.privacy-notice-body section + section { margin-top: 16px; }
+.privacy-notice-body h3 { margin: 0 0 6px; color: var(--shell-text); font: inherit; font-weight: var(--font-weight-medium); }
+.privacy-notice-body p { margin: 0 0 8px; white-space: pre-line; }
+.assistant-privacy-surface {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 22px 24px;
+}
+.assistant-privacy-surface:focus-visible { outline-offset: -3px; }
+@media (max-width: 680px) {
+  .assistant-privacy-surface { padding: 18px; }
+}

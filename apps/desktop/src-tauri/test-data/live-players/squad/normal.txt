@@ -1,0 +1,4 @@
+----- Active Players -----
+ID: 0 | Online IDs: EOS: 00000000000000000000000000000001 steam: 76561190000000001 | Name: Squad, 北境 | Team ID: 1 | Squad ID: 3 | Is Leader: True | Role: USA_SquadLeader
+ID: 4 | Online IDs: EOS: 00000000000000000000000000000002 | Name: Spectator | Team ID: N/A | Squad ID: N/A | Is Leader: False | Role:
+----- Recently Disconnected Players [Max of 15] -----

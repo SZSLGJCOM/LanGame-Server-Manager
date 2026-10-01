@@ -1,0 +1,32 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "romestead"
+scope = "Dedicated-server prerequisites, installation, configuration, networking, startup, console commands and maintenance."
+gaps = ["No readable standalone publisher-authored administration manual was verified. The wiki source is community material; publisher endorsement was not established.","The wiki body returned HTTP 403 during review. The official Steam hotfix body is available through its publisher news feed with a selector pinned to that exact post; it documents version 0.25.1_4 server CPU settings, not a complete or current installation/configuration manual."]
+
+[[sources]]
+id = "community-server-guide"
+title = "Romestead dedicated-server setup guide"
+authority = "Romestead Wiki contributors"
+kind = "community"
+seeds = ["https://romestead.wiki.gg/wiki/Romestead_Dedicated_Server_Setup_Guide"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://romestead.wiki.gg/wiki/Romestead_Dedicated_Server_Setup_Guide"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution. The wiki robots content signals must be evaluated at synchronization time."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-server-hotfix"
+title = "Romestead dedicated-server CPU settings (hotfix 0.25.1_4)"
+authority = "Beartwigs / Three Friends"
+kind = "official"
+seeds = ["https://store.steampowered.com/news/posts/?appids=1805320&enddate=1780080430&feed=steam_community_announcements"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+content_selector = "#post_1833968530892044 .body"
+authority_evidence = "https://steamcommunity.com/games/1805320/announcements/detail/672870313012233904"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

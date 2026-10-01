@@ -1,0 +1,24 @@
+{
+  "module_id": "squad",
+  "verified_at": "2026-10-01",
+  "installed_build_id": "25295557",
+  "help_command": "ShowCommandInfo AdminKillServer",
+  "help_response": "AdminKillServer <Force [0|1]>\n\n         Tells the server to stop execution",
+  "shutdown_command": "AdminKillServer 0",
+  "force": false,
+  "sent_at": "2026-10-01T07:22:29.474Z",
+  "transport_result": "completion_eof_after_send",
+  "native_exit_lines": [
+    "[2026.10.01-07.22.30:014][433]LogCore: Engine exit requested (reason: Server Killed)",
+    "[2026.10.01-07.22.30:252][434]LogExit: Preparing to exit.",
+    "[2026.10.01-07.22.31:011][434]LogExit: Game engine shut down",
+    "[2026.10.01-07.22.31:980][434]LogExit: Object subsystem successfully closed.",
+    "[2026.10.01-07.22.32:280][434]LogExit: Exiting."
+  ],
+  "observed_native_shutdown_ms": 2806,
+  "limits": [
+    "This recovery command and native exit sequence do not establish a new managed lifecycle pass.",
+    "The old launch profile omitted -log: current-world and online-session readiness appeared only in SquadGame.log.",
+    "The updated managed log capture and declared shutdown require a real combined lifecycle retest."
+  ]
+}

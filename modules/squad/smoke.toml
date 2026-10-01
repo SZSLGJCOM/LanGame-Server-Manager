@@ -1,0 +1,33 @@
+schema_version = 1
+module_id = "squad"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# Native startup requires this run's world and online session plus an
+# authenticated complete roster. A2S availability remains a separate check.
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "world-ready"
+kind = "log_marker"
+sources = [{ kind = "install", path = "SquadGame/Saved/Logs/SquadGame.log" }]
+any_of = ["LogGameState: Match State Changed from EnteringMap to WaitingToStart"]
+
+[[probes]]
+id = "session-created"
+kind = "log_marker"
+sources = [{ kind = "install", path = "SquadGame/Saved/Logs/SquadGame.log" }]
+any_of = ["LogSquadOnlineServices: Session created: Started USQOnlineServicesUpdateSessionManager updates"]
+
+[[probes]]
+id = "rcon-roster"
+kind = "squad_players"
+port_name = "rcon"

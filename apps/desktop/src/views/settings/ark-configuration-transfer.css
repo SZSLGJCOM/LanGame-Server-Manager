@@ -1,0 +1,23 @@
+.ark-configuration-toolbar { display: flex; justify-content: flex-end; padding: 4px 12px; border-bottom: 1px solid var(--shell-line); }
+.ark-configuration-toolbar > .settings-editor-toolbar { gap: 4px; }
+.ark-transfer-dialog { width: min(760px, 88vw); max-height: 82vh; padding: 0; color: var(--shell-text); background: var(--panel); border: 1px solid var(--shell-line); border-radius: 10px; }
+.ark-transfer-dialog::backdrop { background: rgb(0 0 0 / 35%); }
+.ark-transfer-dialog > header, .ark-transfer-dialog > footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; }
+.ark-transfer-dialog > header { border-bottom: 1px solid var(--shell-line); }
+.ark-transfer-dialog h2 { margin: 0; font-size: var(--text-section-title); font-weight: var(--font-weight-semibold); }
+.ark-transfer-dialog > header .ghost-button { width: 28px; min-height: 28px; height: 28px; padding: 0; }
+.ark-transfer-dialog > footer { border-top: 1px solid var(--shell-line); justify-content: flex-end; }
+.ark-transfer-body { display: grid; gap: 12px; max-height: 58vh; overflow: auto; padding: 16px; font-size: var(--text-body); line-height: var(--leading-body); }
+.ark-transfer-body > button { justify-self: start; }
+.ark-transfer-body .form-note { margin: 0; border: 0; background: transparent; font-size: var(--text-secondary); line-height: var(--leading-body); }
+.ark-transfer-file, .ark-transfer-source { display: grid; gap: 8px; }
+.ark-transfer-file input { min-width: 0; font: inherit; font-size: var(--text-body); }
+.ark-transfer-file input::file-selector-button { min-height: var(--control-height); margin-right: 10px; padding: 4px var(--control-padding-inline); border: 1px solid var(--shell-line); border-radius: 8px; background: var(--theme-control-surface); color: var(--shell-text); font: inherit; font-weight: var(--font-weight-medium); line-height: var(--leading-control); cursor: pointer; }
+.ark-transfer-file input::file-selector-button:hover { background: var(--theme-control-hover); }
+.ark-transfer-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 4px 0; border: 0; }
+.ark-transfer-sections label { display: flex; align-items: center; gap: 8px; }
+.ark-transfer-sections input { margin: 0; accent-color: var(--accent); }
+.ark-transfer-json { min-height: 160px; font: var(--text-code)/var(--leading-body) var(--font-mono); resize: vertical; }
+.ark-transfer-preview { margin: 0; }
+.ark-transfer-preview > div { display: grid; grid-template-columns: minmax(140px, 1fr) 1.4fr; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--shell-line); }
+.ark-transfer-preview dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--shell-muted); }

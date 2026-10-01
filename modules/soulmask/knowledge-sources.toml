@@ -1,0 +1,46 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "soulmask"
+scope = "Private dedicated-server setup reference plus publisher-authored 2024 Early Access save-before-restart and player-permission instructions. The available publisher announcements are partial operations guidance, not a complete or current-version installation/configuration manual."
+gaps = ["The publisher's 2024 EA FAQ explicitly links the Fandom private-server tutorial; community edits and later game versions require separate verification.","On 2026-09-28, the Fandom body returned HTTP 402 through the web reader and robots returned HTTP 403 through direct public retrieval. Full-text synchronization was not established; this source remains unavailable rather than being replaced by a summary.","The two readable publisher announcements date from June and August 2024. Their save-before-restart and ban/mute instructions have not been verified against Soulmask 1.0; the save procedure specifically references G-Portal administration.","A complete publicly readable first-party installation/configuration manual was not verified. The publisher's April 2026 launch FAQ directs cross-map private-server setup to a Discord message, whose guide body is not included here."]
+
+[[sources]]
+id = "endorsed-private-server-guide"
+title = "Soulmask private-server guide"
+authority = "Soulmask Wiki contributors, linked by Soulmask's publisher FAQ"
+kind = "official_community"
+seeds = ["https://soulmask.fandom.com/wiki/Private_Server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://store.steampowered.com/news/posts/?enddate=1717002476&feed=steam_community_announcements"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-save-before-restart"
+title = "Soulmask save-before-restart instructions (June 2024 Early Access)"
+authority = "CampFire Studio / Qooland Games"
+kind = "official"
+seeds = ["https://store.steampowered.com/news/posts/?appids=2646460&enddate=1717359678&feed=steam_community_announcements"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+content_selector = "#post_5742731639342091039 .body"
+authority_evidence = "https://steamcommunity.com/games/2646460/announcements/detail/4150709171071702966"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "publisher-private-server-permissions"
+title = "Soulmask private-server ban and mute commands (August 2024 Early Access)"
+authority = "CampFire Studio / Qooland Games"
+kind = "official"
+seeds = ["https://store.steampowered.com/news/posts/?appids=2646460&enddate=1722501616&feed=steam_community_announcements"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+content_selector = "#post_5963413728334450625 .body"
+authority_evidence = "https://steamcommunity.com/games/2646460/announcements/detail/4374768959777362633"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

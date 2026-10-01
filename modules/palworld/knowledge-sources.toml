@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "palworld"
+scope = "Complete English Palworld server-guide branches for getting started, configuration/operation and server APIs."
+gaps = []
+
+[[sources]]
+id = "pocketpair-server-docs"
+title = "Palworld Server Guide"
+authority = "Pocketpair"
+kind = "official"
+seeds = ["https://docs.palworldgame.com/"]
+allowed_prefixes = ["https://docs.palworldgame.com/category/","https://docs.palworldgame.com/getting-started/","https://docs.palworldgame.com/settings-and-operation/","https://docs.palworldgame.com/api/"]
+discover_links = true
+max_pages = 256
+authority_evidence = "https://docs.palworldgame.com/"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

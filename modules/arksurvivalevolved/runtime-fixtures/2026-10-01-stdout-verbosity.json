@@ -1,0 +1,107 @@
+{
+  "module_id": "arksurvivalevolved",
+  "verified_at": "2026-10-01",
+  "status": "native_lifecycle_observed",
+  "steam_app_id": 376030,
+  "build_id": "21241282",
+  "binary": {
+    "relative_path": "ShooterGame/Binaries/Win64/ShooterGameServer.exe",
+    "sha256": "6470c61c2329dc5139b663aa1112ece3f5c7d22648bcf13151a336661d06c336",
+    "size_bytes": 80055808
+  },
+  "stdout_verbosity": {
+    "argument": "-AllowStdOutLogVerbosity",
+    "utf16_literal_file_offset": 66637120,
+    "argument_parse_rva": "0x001b5a7c",
+    "serialize_rva": "0x001b5940",
+    "device_flag_offset": 16,
+    "default_max_verbosity": 4,
+    "enabled_max_verbosity": 5,
+    "default_max_level": "Display",
+    "enabled_max_level": "Log",
+    "fullstdout_literal_present": false
+  },
+  "observation": {
+    "previous_run_id": 87,
+    "managed_game_lines": 0,
+    "native_ui_lines_visible": 29,
+    "native_ui_nonempty_lines": 29,
+    "normal_stop_exit_code": 0
+  },
+  "native_file_flush": {
+    "argument": "-FORCELOGFLUSH",
+    "utf16_literal_file_offset": 63409952,
+    "argument_parse_rva": "0x01ec1f88",
+    "conditional_writer_flush_rva": "0x01ec1faa",
+    "observed_run_id": 101,
+    "native_world_ready_timestamp": "2026-10-01T08:50:46.842Z",
+    "native_full_startup_timestamp": "2026-10-01T08:50:50.548Z",
+    "last_observed_empty_ui_document_at": "2026-10-01T08:51:28.892Z",
+    "native_file_last_write_at": "2026-10-01T08:51:37.026777Z",
+    "first_observed_complete_ui_document_at": "2026-10-01T08:51:37.492Z",
+    "complete_ui_nonempty_lines": 29,
+    "complete_ui_exact_text_match": true
+  },
+  "scope": "The installed stdout serializer admits normal Log messages with the parsed switch. Preserve run 87's missing-output and run 101's delayed native-file UI observations above as failure comparisons. With FORCELOGFLUSH, run 107 passed the bounded native lifecycle and every recorded same-source UI sample matched the document, including live startup output before stopping. This does not enable suppressed Verbose/VeryVerbose categories, prove raw-byte completeness or end-to-end zero-copy, or cover every hidden dialog. Static binary inspection itself did not execute the game.",
+  "references": [
+    "https://dev.epicgames.com/documentation/en-us/unreal-engine/API/Runtime/Core/ELogVerbosity__Type",
+    "https://ark.wiki.gg/wiki/Server_configuration_(Survival_Evolved)",
+    "https://dev.epicgames.com/documentation/unreal-engine/unreal-engine-command-line-arguments-reference?lang=en-US"
+  ],
+  "observed_lifecycle": {
+    "run_id": 107,
+    "batch_id": "a60a0aca-e2a7-4204-a2ad-f714a0bdba88",
+    "desktop_build_id": "d34c6df544cabb53d51a77887e105c962e29ef6ac2113a6325f544d196e61db9",
+    "evidence_files": {
+      "receipt": "parallel-existing-acceptance/a60a0aca-e2a7-4204-a2ad-f714a0bdba88/arksurvivalevolved.json",
+      "ui_observations": "campaign-flush-ui-observations.jsonl",
+      "ui_validation": "ase-live-flush-validation.json"
+    },
+    "backend_acceptance_passed": true,
+    "native_ready": true,
+    "health_status": "ready",
+    "steady_observation": {
+      "required_ms": 30000,
+      "samples": 32,
+      "passed": true
+    },
+    "normal_stop": {
+      "api_succeeded": true,
+      "verified": true,
+      "elapsed_ms": 6526,
+      "exit_codes": [
+        0
+      ],
+      "verification_scope": "api_receipt_tracked_identities_and_storage_readback",
+      "owned_tree_observation": "not_exposed_by_ipc",
+      "required_backend_contract": "normal_stop_returns_only_after_full_owned_tree_exits_without_force"
+    },
+    "managed_game_output": true,
+    "managed_capture_sound": true,
+    "retained_transcripts_match": true,
+    "log_readback_ok": true,
+    "settings_unchanged": true,
+    "ports_unchanged": true,
+    "ui_samples": {
+      "source": "game",
+      "total": 33,
+      "same_source_comparable": 32,
+      "exact_text_matches": 32,
+      "text_mismatches": 0,
+      "not_comparable": 1,
+      "sampling_scope": "Includes the initial selection-transition sample with an unresolved outer run ID; 32 later samples are pinned to run 107 and comparable.",
+      "read_errors": 0,
+      "ready_samples": 22,
+      "ready_exact_text_matches": 22,
+      "final_stopped_exact_sample": {
+        "at_utc": "2026-10-01T09:06:23.025Z",
+        "nonempty_lines": 29
+      },
+      "first_live_exact_sample": {
+        "at_utc": "2026-10-01T09:04:49.055Z",
+        "nonempty_lines": 8
+      },
+      "stopped_exact_samples": 3
+    }
+  }
+}

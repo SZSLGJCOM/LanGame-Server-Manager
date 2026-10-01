@@ -1,0 +1,43 @@
+:root {
+  --theme-valheim-card-bg: rgba(30, 45, 30, 0.3);
+  --theme-valheim-card-hover: rgba(45, 65, 45, 0.5);
+  --theme-valheim-card-active: rgba(45, 75, 45, 0.4);
+  --theme-valheim-card-border: rgba(74, 124, 74, 0.2);
+  --theme-valheim-card-active-border: #4a7c4a;
+  --theme-valheim-accent: #4a7c4a;
+  --theme-valheim-glow: 0 0 10px rgba(74, 124, 74, 0.42);
+}
+
+:root[data-theme="light"] {
+  --theme-valheim-card-bg: rgba(220, 252, 231, 0.78);
+  --theme-valheim-card-hover: rgba(220, 252, 231, 0.94);
+  --theme-valheim-card-active: rgba(187, 247, 208, 0.98);
+  --theme-valheim-card-border: rgba(34, 197, 94, 0.18);
+  --theme-valheim-card-active-border: #22c55e;
+  --theme-valheim-accent: #22c55e;
+  --theme-valheim-glow: 0 0 10px rgba(34, 197, 94, 0.28);
+}
+
+.theme-valheim.row-card {
+  background: var(--theme-valheim-card-bg);
+  border-color: var(--theme-valheim-card-border);
+}
+
+.theme-valheim.row-card:hover {
+  background: var(--theme-valheim-card-hover);
+}
+
+.theme-valheim.row-card.is-active {
+  background: var(--theme-valheim-card-active);
+  border-color: var(--theme-valheim-card-active-border);
+}
+
+.theme-valheim .row-card-accent {
+  background: var(--theme-valheim-accent);
+  opacity: 0.3;
+}
+
+.theme-valheim.is-active .row-card-accent {
+  opacity: 1;
+  box-shadow: var(--theme-valheim-glow);
+}

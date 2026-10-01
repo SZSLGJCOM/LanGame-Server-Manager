@@ -1,0 +1,43 @@
+:root {
+  --theme-conan-card-bg: rgba(78, 37, 14, 0.22);
+  --theme-conan-card-hover: rgba(120, 53, 15, 0.3);
+  --theme-conan-card-active: rgba(146, 64, 14, 0.34);
+  --theme-conan-card-border: rgba(245, 158, 11, 0.14);
+  --theme-conan-card-active-border: #f59e0b;
+  --theme-conan-accent: #f59e0b;
+  --theme-conan-glow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+:root[data-theme="light"] {
+  --theme-conan-card-bg: rgba(255, 247, 237, 0.92);
+  --theme-conan-card-hover: rgba(254, 215, 170, 0.96);
+  --theme-conan-card-active: rgba(253, 186, 116, 0.98);
+  --theme-conan-card-border: rgba(180, 83, 9, 0.16);
+  --theme-conan-card-active-border: #b45309;
+  --theme-conan-accent: #c2410c;
+  --theme-conan-glow: 0 0 10px rgba(180, 83, 9, 0.22);
+}
+
+.theme-conanexiles.row-card {
+  background: var(--theme-conan-card-bg);
+  border-color: var(--theme-conan-card-border);
+}
+
+.theme-conanexiles.row-card:hover {
+  background: var(--theme-conan-card-hover);
+}
+
+.theme-conanexiles.row-card.is-active {
+  background: var(--theme-conan-card-active);
+  border-color: var(--theme-conan-card-active-border);
+}
+
+.theme-conanexiles .row-card-accent {
+  background: var(--theme-conan-accent);
+  opacity: 0.3;
+}
+
+.theme-conanexiles.is-active .row-card-accent {
+  opacity: 1;
+  box-shadow: var(--theme-conan-glow);
+}

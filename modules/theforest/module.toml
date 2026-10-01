@@ -1,0 +1,80 @@
+id = "theforest"
+name = "The Forest Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for The Forest via SteamCMD."
+steam_app_id = 556450
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "theforest"
+verification_path = "TheForestDedicatedServer.exe"
+
+[process]
+executable = "TheForestDedicatedServer.exe"
+args_template = [
+  "-batchmode",
+  "-nographics",
+  "-nosteamclient",
+  "-dedicated",
+  "-configfilepath",
+  "{{paths.config_dir}}/server.cfg",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The Forest reads the instance server.cfg through -configfilepath. LanGame prepares its control DLL only in this instance's verified owned program directory. The server's native DllModLoader connects managed stdin commands help, status, save and shutdown to its main-thread native APIs; shutdown verifies a new checkpoint before requesting the native shutdown coroutine. Unverified builds or conflicting user DLLs are refused."
+
+[process.environment_template]
+LANGAME_THEFOREST_STDIN_BRIDGE = "1"
+
+[[default_ports]]
+name = "steam"
+protocol = "udp"
+port = 8766
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27016
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 30000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "shutdown"
+wait_after_ms = 0
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "dedicated_server_console_or_server_cfg_admin_password"
+reason = "The Forest build 3488796 responds to A2S_INFO and A2S_PLAYER. LanGame reads names when the query supplies them, keeps incomplete/anonymous responses explicit, and exposes no unverified row moderation actions."
+verification = "Start TheForestDedicatedServer.exe with LanGame's server.cfg, confirm A2S query and admin password behavior, then verify any current console/admin command transport before exposing live player actions."
+
+[storage]
+saves_path_template = "{{paths.instance_root}}/saves"
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["steam", "game", "query"]

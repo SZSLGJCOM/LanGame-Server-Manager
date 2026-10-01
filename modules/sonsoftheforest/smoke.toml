@@ -1,0 +1,25 @@
+schema_version = 1
+module_id = "sonsoftheforest"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# This isolated run verifies local hosting. The native public-accessibility
+# self-test depends on external port forwarding and hairpin NAT.
+[fixture.settings]
+lan_only = true
+skip_network_accessibility_test = true
+
+[[probes]]
+id = "a2s-query"
+kind = "player_query"
+port_name = "query"
+
+# The query listener is available before native world loading has finished.
+[[probes]]
+id = "world-loaded"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["#DSL Dedicated server loaded."]

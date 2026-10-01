@@ -1,0 +1,380 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "Current install pin: official Terraria 1.4.5.8, verified 2026-09-28; the configuration sample remains byte-identical to 1.4.5.6. Historical evidence follows. Official Terraria Wiki server documentation, the downloaded 1.4.5.6 dedicated package, tModLoader dedicated-server utilities, and the tModLoader Steam Workshop are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist, and modpack surfaces currently exposed by this module. 2026-07-13 download verification: https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip returned the 45635619-byte archive; SHA256 D75C455AC217FD3434448C8F8251C1347F0875A85C438589DC71B557777E9155. Its Windows serverconfig.txt is byte-identical to the 1.4.5.5 sample. Steam Workshop verification: tModLoader Workshop app 1281930 is exposed at https://steamcommunity.com/app/1281930/workshop/. Some command-line switches and serverconfig path keys are intentionally managed by LanGame instance/port state rather than duplicated as schema fields."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=105600&count=6&maxlength=0&feeds=steam_community_announcements"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The current developer release post still links the official 1.4.5.8 dedicated-server ZIP, matching the module install pin. The installed 1458/Windows/serverconfig.txt SHA256 is 5675b49849b278d12da1909005b4a915ed921833d0e8eef4a51eabc75aae0ec4, matching the previously audited sample. No template change was found. This package/documentation comparison does not establish a new launch, tModLoader integration or multiplayer acceptance result."
+
+[[sources]]
+id = "official_dedicated_zip_1458"
+kind = "documentation"
+path = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1458.zip"
+url = "https://steamcommunity.com/app/105600/discussions/0/694251506632870036/"
+authority = "official_terraria_developer_release_post_and_download"
+description = "The developer-pinned current 1.4.5.8 release post links this dedicated-server ZIP. Downloaded in memory on 2026-09-28 without executing binaries: 46415317 bytes, SHA256 F513A4AC9789D34AF766291AE217C9CD7D9472E13782A0E2B17512F70D7A8334. Contains 1458/Windows/TerrariaServer.exe and serverconfig.txt. The configuration sample is byte-identical to the validated 1.4.5.6 sample, so no configuration keys were added."
+
+[[sources]]
+id = "official_dedicated_zip_1456"
+kind = "documentation"
+path = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip"
+authority = "official_terraria_dedicated_server_download"
+description = "Official Terraria 1.4.5.6 dedicated server package. Downloaded on 2026-07-13; archive contains 1456/Windows/TerrariaServer.exe, 1456/Windows/serverconfig.txt, and changelog Version 1.4.5.6."
+
+[[sources]]
+id = "installed_online_player_command"
+kind = "install_probe"
+path = "TerrariaServer.exe: Main.startDedInputCallBack / Main.ReadLineInput / LocalizedText.EqualsCommand / CLI localization resources"
+authority = "official_terraria_dedicated_server_download"
+description = "Read-only IL/resource inspection of installed 1.4.5.6 confirms piped Console.ReadLine input, playing output as name (remote address) followed by a complete 0/1/N connected-player count, and English command acceptance in every locale. LanGame recognizes all twelve shipped count localizations and exposes only names from a fresh complete response."
+url = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip"
+
+[[sources]]
+id = "serverconfig"
+kind = "config_file"
+path = "1458/Windows/serverconfig.txt"
+authority = "official_terraria_wiki_server_config_file_and_dedicated_package"
+description = "Terraria dedicated server configuration file invoked with TerrariaServer.exe -config. The 2026-09-28 downloaded 1.4.5.8 sample at 1458/Windows/serverconfig.txt is byte-identical to the validated 1.4.5.6 sample; its 4691 bytes have SHA256 5675B49849B278D12DA1909005B4A915ED921833D0E8EEF4A51EABC75AAE0EC4."
+url = "https://terraria.wiki.gg/wiki/Server"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "TerrariaServer.exe"
+authority = "official_terraria_wiki_command_line_parameters"
+description = "TerrariaServer command-line switches used by LanGame for config file selection and bind address ownership."
+url = "https://terraria.wiki.gg/wiki/Command-line_parameters"
+
+[[sources]]
+id = "banlist_file"
+kind = "generated_roster"
+path = "banlist.txt"
+authority = "official_terraria_wiki_banlist_parameter_and_console_ban_command"
+description = "Instance-local banlist file referenced by serverconfig.txt and maintained from schema roster entries."
+url = "https://terraria.wiki.gg/wiki/Server"
+
+[[sources]]
+id = "runtime_console"
+kind = "runtime_console"
+path = "TerrariaServer console"
+authority = "official_terraria_wiki_console_commands"
+description = "Managed stdin console commands for online player inspection, broadcast, kick, ban, save, and shutdown."
+url = "https://terraria.wiki.gg/wiki/Server"
+
+[[sources]]
+id = "tmodloader_dedicated_server_utils"
+kind = "documentation"
+path = "tmodloader/Mods and tmodloader/steamapps/workshop/content/1281930"
+authority = "official_tmodloader_dedicated_server_utils"
+description = "tModLoader dedicated server utilities document a Mods folder containing local .tmod files plus install.txt and enabled.json, with Steam Workshop content under a sibling steamapps folder. LanGame uses this for the tModLoader runtime mode while keeping vanilla Terraria as the default."
+url = "https://docs.tmodloader.net/docs/stable/md__github_workspace_src_t_mod_loader__terraria_release_extras__dedicated_server_utils__r_e_a_d_m_e.html"
+
+[[sources]]
+id = "tmodloader_steam_workshop"
+kind = "workshop"
+path = "steamapps/workshop/content/1281930"
+authority = "steam_tmodloader_workshop"
+description = "Steam exposes tModLoader mods through Workshop app 1281930. LanGame downloads selected Workshop items with SteamCMD and stages the item folders into the instance-local tmodloader/steamapps/workshop/content/1281930 cache."
+url = "https://steamcommunity.com/app/1281930/workshop/"
+
+[[items]]
+source = "serverconfig"
+key = "worldname"
+schema_key = "world_name"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "world"
+schema_key = "world_file"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "motd"
+schema_key = "motd"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "maxplayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "autocreate"
+schema_key = "world_size"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "difficulty"
+schema_key = "difficulty"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "seed"
+schema_key = "seed"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "seed_*"
+schema_key = "special_seed"
+surface = "materializer"
+
+[[items]]
+source = "serverconfig"
+key = "worldrollbackstokeep"
+schema_key = "worldrollbackstokeep"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "password"
+schema_key = "password"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "secure"
+schema_key = "secure"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "steam"
+schema_key = "steam"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "lobby"
+schema_key = "lobby"
+surface = "config_file"
+
+[[items]]
+source = "banlist_file"
+key = "banlist.txt"
+schema_key = "banlist_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "launch_args"
+key = "terraria.runtime"
+schema_key = "server_runtime"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "tmodloader.runtime_dir"
+schema_key = "tmodloader_runtime_dir"
+surface = "launch_arg"
+
+[[items]]
+source = "tmodloader_dedicated_server_utils"
+key = "Mods/install.txt"
+schema_key = "tmodloader_workshop_item_ids"
+surface = "generated_modpack"
+
+[[items]]
+source = "tmodloader_dedicated_server_utils"
+key = "Mods/enabled.json"
+schema_key = "tmodloader_enabled_mod_names"
+surface = "generated_modpack"
+
+[[items]]
+source = "serverconfig"
+key = "language"
+schema_key = "language"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "upnp"
+schema_key = "upnp"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "npcstream"
+schema_key = "npcstream"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "slowliquids"
+schema_key = "slowliquids"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "disableannouncementbox"
+schema_key = "disableannouncementbox"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "announcementboxrange"
+schema_key = "announcementboxrange"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "priority"
+schema_key = "priority"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setfrozen"
+schema_key = "journeypermission_time_setfrozen"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setdawn"
+schema_key = "journeypermission_time_setdawn"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setnoon"
+schema_key = "journeypermission_time_setnoon"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setdusk"
+schema_key = "journeypermission_time_setdusk"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setmidnight"
+schema_key = "journeypermission_time_setmidnight"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_time_setspeed"
+schema_key = "journeypermission_time_setspeed"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_godmode"
+schema_key = "journeypermission_godmode"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_setdifficulty"
+schema_key = "journeypermission_setdifficulty"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_setspawnrate"
+schema_key = "journeypermission_setspawnrate"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_increaseplacementrange"
+schema_key = "journeypermission_increaseplacementrange"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_biomespread_setfrozen"
+schema_key = "journeypermission_biomespread_setfrozen"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_wind_setstrength"
+schema_key = "journeypermission_wind_setstrength"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_wind_setfrozen"
+schema_key = "journeypermission_wind_setfrozen"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_rain_setstrength"
+schema_key = "journeypermission_rain_setstrength"
+surface = "config_file"
+
+[[items]]
+source = "serverconfig"
+key = "journeypermission_rain_setfrozen"
+schema_key = "journeypermission_rain_setfrozen"
+surface = "config_file"
+
+[[exclusions]]
+source = "serverconfig"
+key = "port"
+reason = "Instance port binding state is rendered into serverconfig.txt from the declared game TCP port, not duplicated as a game schema field."
+
+[[exclusions]]
+source = "serverconfig"
+key = "worldpath"
+reason = "LanGame owns the instance saves directory and renders the full world path directly through the serverconfig world key."
+
+[[exclusions]]
+source = "serverconfig"
+key = "banlist"
+reason = "LanGame owns the generated banlist path in serverconfig.txt while banlist_entries materializes the server-read banlist.txt content."
+
+[[exclusions]]
+source = "launch_args"
+key = "-config"
+reason = "LanGame always owns this switch to point the server at the rendered instance serverconfig.txt."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ip"
+reason = "Bind IP is instance-level state, not a game-specific schema field."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Port is instance port binding state and is rendered into serverconfig.txt from the declared game port."
+
+[[exclusions]]
+source = "launch_args"
+key = "-forcepriority"
+reason = "The serverconfig.txt priority key is exposed instead; the command-line override would conflict with that field."
+
+[[exclusions]]
+source = "runtime_console"
+key = "help"
+reason = "Informational command; exposing it as a persistent game configuration field would not change server behavior."
+
+[[exclusions]]
+source = "runtime_console"
+key = "exit-nosave"
+reason = "Destructive shutdown path is intentionally not exposed because LanGame shutdown policy saves before exit."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1458.zip"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 40 presentation entries reviewed in EN/ZH against the referenced package/docs. Applies to auto-created worlds, not server-browser name or renaming an existing save. Streaming smoothing parameter instead of fabricated radius. Reduces liquid update work with slower stabilization. Boundaries: npcstream exact unit is not defined in the packaged sample; no radius/meters claim remains."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "1458/Windows/TerrariaServer.exe"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Version 1.4.5.8 Windows TerrariaServer.exe Main.LoadDedConfig (060003E2) assigns npcstream to Main.npcStreamSpeed. NPC.UpdateNetworkCode (0600093A) invokes StreamUpdatesToNearbyPlayers (0600093B); the latter increments netStream, compares it with the configured threshold, and resets the counter when due. It separately weights outgoing updates by player distance. Nonpositive values disable this extra path; town NPCs, insufficiently moving NPCs and types outside the proximity-sync set are excluded. The unit is eligible NPC update count, not radius or a fixed wall-clock duration. Corrected the title, help and remaining radius validation message. Kept the packaged-sample/LGSM default 60; the compiled static default 30 is a distinct fallback. The prior unit uncertainty is resolved by consumer analysis. Primary binary SHA256 d87e3faf08637f6be8882c63e7f11fb7e792b0230006309618473ece0f863e1e."
