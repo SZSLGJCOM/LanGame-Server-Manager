@@ -1,0 +1,287 @@
+{
+  "type": "object",
+  "title": "The Forest Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "default": "The Forest Server",
+      "x-lsgm-default-source": "instance_name",
+      "minLength": 1,
+      "pattern": "^[^\\r\\n]+$",
+      "title": "Server Name",
+      "description": "Name shown in the server browser.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 4,
+      "minimum": 1,
+      "maximum": 8,
+      "title": "Player Slots",
+      "description": "Maximum simultaneous players.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "default": "",
+      "pattern": "^[^\\r\\n]*$",
+      "title": "Join Password",
+      "description": "Leave empty to allow joining without a password.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverPassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_password": {
+      "type": "string",
+      "default": "",
+      "pattern": "^[^\\r\\n]*$",
+      "title": "Admin Password",
+      "description": "Password for in-game server administration.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverPasswordAdmin",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "steam_account_token": {
+      "type": "string",
+      "default": "",
+      "pattern": "^[^\\r\\n]*$",
+      "title": "Steam Server Login Token",
+      "description": "Optional Steam Game Server Login Token; leave empty for anonymous login.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverSteamAccount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "difficulty": {
+      "type": "string",
+      "default": "Normal",
+      "enum": [
+        "Peaceful",
+        "Normal",
+        "Hard",
+        "HardSurvival"
+      ],
+      "enum_labels": [
+        "Peaceful",
+        "Normal",
+        "Hard",
+        "Hard Survival"
+      ],
+      "title": "Difficulty",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "difficulty",
+      "x-lsgm-source-surface": "config_file",
+      "description": "The Forest difficulty setting."
+    },
+    "save_slot": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 5,
+      "title": "Save Slot",
+      "description": "The numbered slot used to load or save the world.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 310,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "slot",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "init_type": {
+      "type": "string",
+      "default": "Continue",
+      "enum": [
+        "New",
+        "Continue"
+      ],
+      "enum_labels": [
+        "New World",
+        "Continue"
+      ],
+      "title": "World Startup Mode",
+      "description": "Create a new world or continue the selected save slot.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 320,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "initType",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "autosave_interval_minutes": {
+      "type": "integer",
+      "default": 30,
+      "minimum": 15,
+      "maximum": 120,
+      "title": "Autosave Interval (Minutes)",
+      "description": "Time between automatic world saves.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 330,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "serverAutoSaveInterval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "vac_enabled": {
+      "type": "boolean",
+      "default": false,
+      "title": "Enable Valve Anti-Cheat",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "enableVAC",
+      "x-lsgm-source-surface": "config_file",
+      "description": "Controls Valve Anti-Cheat in server.cfg."
+    },
+    "show_logs": {
+      "type": "boolean",
+      "default": false,
+      "title": "Show Server Logs",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 800,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "showLogs",
+      "x-lsgm-source-surface": "config_file",
+      "description": "Controls dedicated-server log display."
+    },
+    "vegan_mode": {
+      "type": "boolean",
+      "default": false,
+      "title": "Disable All Enemies",
+      "description": "Vegan mode prevents enemies from spawning at any time.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 340,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "veganMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "vegetarian_mode": {
+      "type": "boolean",
+      "default": false,
+      "title": "Disable Daytime Enemies",
+      "description": "Vegetarian mode prevents enemies from spawning during the day.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 350,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "vegetarianMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "allow_cheats": {
+      "type": "boolean",
+      "default": false,
+      "title": "Allow Client Cheat Console",
+      "description": "Allows connected players to use the built-in developer console.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "allowCheats",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "realistic_player_damage": {
+      "type": "boolean",
+      "default": false,
+      "title": "Realistic Player Damage",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 360,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "realisticPlayerDamage",
+      "x-lsgm-source-surface": "config_file",
+      "description": "Controls realistic player damage behavior."
+    },
+    "reset_holes_on_load": {
+      "type": "boolean",
+      "default": false,
+      "title": "Reset Floor Holes on Load",
+      "description": "Resets all floor holes when loading a save.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 361,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "resetHolesMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "tree_regrowth": {
+      "type": "boolean",
+      "default": false,
+      "title": "Regrow Trees During Sleep",
+      "description": "Regrows 10% of cut trees when players sleep.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 362,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "treeRegrowMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "building_destruction": {
+      "type": "boolean",
+      "default": true,
+      "title": "Allow Building Destruction",
+      "description": "Allows enemies and players to damage buildings.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 363,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "allowBuildingDestruction",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enemies_in_creative": {
+      "type": "boolean",
+      "default": false,
+      "title": "Spawn Enemies in Creative Mode",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 364,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "allowEnemiesCreativeMode",
+      "x-lsgm-source-surface": "config_file",
+      "description": "Allows enemies to spawn in Creative mode."
+    },
+    "idle_target_fps": {
+      "type": "integer",
+      "default": 5,
+      "minimum": 1,
+      "title": "Empty Server Target FPS",
+      "description": "Target server frame rate while no players are connected.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 810,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "targetFpsIdle",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "active_target_fps": {
+      "type": "integer",
+      "default": 60,
+      "minimum": 1,
+      "title": "Occupied Server Target FPS",
+      "description": "Target server frame rate while at least one player is connected.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 811,
+      "x-lsgm-source": "server_cfg",
+      "x-lsgm-source-key": "targetFpsActive",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "format": "textarea",
+      "default": "",
+      "title": "Extra Launch Arguments",
+      "description": "Additional arguments appended to the server launch command.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  },
+  "required": [
+    "server_name",
+    "max_players"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalevolved",
+  "evidence": {
+    "status": "exhaustive_verified",
+    "verified_at": "2026-09-08",
+    "source_ids": [
+      "evolved_native_user_settings_version"
+    ],
+    "build": "Windows dedicated server build 21241282; Version=5 retained SessionName, MaxPlayers and RCON configuration through startup; authenticated ListPlayers returned a complete empty roster."
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 1
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "evolved_native_user_settings_version./Script/ShooterGame.ShooterGameUserSettings.Version"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame ASE Native Settings",
+    "max_players": 8,
+    "rcon_enabled": true,
+    "admin_password": "fixture-admin-password",
+    "server_password": "fixture-server-password"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+          "SessionName=LanGame ASE Native Settings",
+          "MaxPlayers=8",
+          "RCONEnabled=true",
+          "RCONPort=27020",
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+          "SessionName=LanGame ASE Native Settings",
+          "MaxPlayers=8",
+          "RCONEnabled=true",
+          "RCONPort=27020",
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ShooterGameServer.exe",
+      "arguments": [
+        "TheIsland?AltSaveDirectoryName=acceptance-arksurvivalevolved?Port=7777?QueryPort=27015?MaxPlayers=8?SessionName=LanGame ASE Native Settings?RCONEnabled=true?RCONPort=27020",
+        "-NullRHI",
+        "-Unattended",
+        "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-evolved-server.log",
+        "-stdout",
+        "-AllowStdOutLogVerbosity",
+        "-FORCELOGFLUSH",
+        "-automanagedmods",
+        "-MaxNumOfSaveBackups=20",
+        "-MinimumTimeBetweenInventoryRetrieval=3600",
+        "-NotifyAdminCommandsInChat",
+        "-servergamelog",
+        "-servergamelogincludetribelogs",
+        "-ServerRCONOutputTribeLogs",
+        "-NoTransferFromFiltering"
+      ]
+    }
+  }
+}

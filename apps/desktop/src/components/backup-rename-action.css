@@ -1,0 +1,46 @@
+.backup-rename-action {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+  gap: 6px;
+  width: min(440px, 100%);
+  min-width: 0;
+  align-items: start;
+}
+
+.backup-rename-action input {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 6px;
+  background: var(--theme-card-surface);
+  color: var(--shell-text);
+  font: inherit;
+  font-size: var(--text-body);
+}
+
+.backup-rename-action input:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}
+
+.backup-rename-action-help,
+.backup-rename-action-error {
+  grid-column: 1 / -1;
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.backup-rename-action-help { color: var(--shell-muted); }
+.backup-rename-action-error { color: var(--theme-danger-text); }
+
+.server-file-backup-row:has(.backup-rename-action) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.server-file-backup-actions:has(.backup-rename-action) {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}

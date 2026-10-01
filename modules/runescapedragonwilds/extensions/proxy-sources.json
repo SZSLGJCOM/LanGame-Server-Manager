@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "ue4ss_commit": "527a483b63b4dd0104fe1ca1a3934a06b87fcfb2",
+  "fmt_version": "11.2.0",
+  "files": [
+    {
+      "path": "LICENSE",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/LICENSE",
+      "sha256": "ddc030e25d0ea87aca4ae84c0ed3f868d69273c00c0c12ea1e26f1c6130f5d2e",
+      "git_blob": "eee4c931619e9ae3ccf4cd4514732653939dffbc"
+    },
+    {
+      "path": "UE4SS/proxy_generator/CMakeLists.txt",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/proxy_generator/CMakeLists.txt",
+      "sha256": "02b71f041918930dcc8137d96632a3cfbcf02997674b44633c671510760d5f60",
+      "git_blob": "71d041f50059f06a1a5dfc7950bf26e6f862271e"
+    },
+    {
+      "path": "UE4SS/proxy_generator/main.cpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/proxy_generator/main.cpp",
+      "sha256": "2b9b962b418447e58b4630661bc034ff854ec5e72c77e7df3081f928cc577fef",
+      "git_blob": "1f0f554f4418859a842a471097441e4b27555db0"
+    },
+    {
+      "path": "UE4SS/proxy_generator/proxy/CMakeLists.txt",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/proxy_generator/proxy/CMakeLists.txt",
+      "sha256": "6b2eb8967adc7d2e1ba7a287bad5ae90229509857fb5d644b7c0b1c7b1b00aed",
+      "git_blob": "4046aac6414c8978894e69ad33d6b4abc73bc3cf"
+    },
+    {
+      "path": "UE4SS/proxy_generator/proxy/proxy.rc",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/proxy_generator/proxy/proxy.rc",
+      "sha256": "62eb3671660701de6258cafccce858150969d4f273de54a4fad2a1b9a01bfb04",
+      "git_blob": "e14588fd9b58b649fdf41df165260266202725b8"
+    },
+    {
+      "path": "deps/first/Constructs/include/Constructs/Views/EnumerateView.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/Constructs/include/Constructs/Views/EnumerateView.hpp",
+      "sha256": "cc7c70b235be258b0fa91e32978ac8d8f817ca781a5a28f25e722665c5438a56",
+      "git_blob": "409dc7e360c7e00b122d4a97e22a3d8fd47fede0"
+    },
+    {
+      "path": "deps/first/File/include/File/Common.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/Common.hpp",
+      "sha256": "7ed91983574ebb111a796bbe7b734896ec20d85cf3bfbca2bb43fbc339b3e93a",
+      "git_blob": "0aaf2cec53106c9e5b385e99f2f6b8059cbff1fd"
+    },
+    {
+      "path": "deps/first/File/include/File/Enums.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/Enums.hpp",
+      "sha256": "6a1b0ed9c7eaf58078e5d2bd81914bfd242f9bab1ffe73656c83216f477b24db",
+      "git_blob": "4a67aba8002610f6934fffe2be5a7276ffd38ac0"
+    },
+    {
+      "path": "deps/first/File/include/File/Exceptions.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/Exceptions.hpp",
+      "sha256": "a21c6e555e82ccd338741b95e2acfc95b7b616609756d83fca023baa1e9536bd",
+      "git_blob": "d4a093ee462f6741740f22a5c10a422fc73c6a4b"
+    },
+    {
+      "path": "deps/first/File/include/File/File.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/File.hpp",
+      "sha256": "b207c162b1835055386423af60565d9737871e500c4a45839e7f5233a7fd9b61",
+      "git_blob": "c0e38bf135ecd26f4dd6fc2ee332d4a21ef0baf4"
+    },
+    {
+      "path": "deps/first/File/include/File/FileDef.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/FileDef.hpp",
+      "sha256": "d8100fd409b37bf1e0b3c434322e9cb0a8e2ec0d0e58a2cd47dfdfa26f1fd1aa",
+      "git_blob": "64e5be8a62823f3d4d155a0e76d766446c8ca3f2"
+    },
+    {
+      "path": "deps/first/File/include/File/FileType/FileBase.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/FileType/FileBase.hpp",
+      "sha256": "d5b0f4f2801ced66bbe3b96a379fc6b25b1d9259b0bb8672a4997b0775dac9ab",
+      "git_blob": "b648c36957c6624d62c73c4c2ef9bfe6b850ca0e"
+    },
+    {
+      "path": "deps/first/File/include/File/FileType/WinFile.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/FileType/WinFile.hpp",
+      "sha256": "e21e45c62ecd6bb2b15c963d8a59cb069d15b59adb64f28e6f697fe1bbaaf85a",
+      "git_blob": "b5912958235a902dd0d9398ee78827b7e6b23bc5"
+    },
+    {
+      "path": "deps/first/File/include/File/HandleTemplate.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/HandleTemplate.hpp",
+      "sha256": "b9de9844f71fdd2151c1558dbb4c40b18e2daf6bf719f19a3f30052c063879ce",
+      "git_blob": "9cebc64a50965dce0856bd5a69e2c55730f87b73"
+    },
+    {
+      "path": "deps/first/File/include/File/InternalFile.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/InternalFile.hpp",
+      "sha256": "c49f3ea2b57fb411dc79ba08135271da22017d95626da102a917bb894d3e3b9e",
+      "git_blob": "357b20ae519f202c73be84108a90da08dac6cab7"
+    },
+    {
+      "path": "deps/first/File/include/File/Macros.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/include/File/Macros.hpp",
+      "sha256": "89a4bb25564b2661f536355bbe2fc4b85dfa2bc705858e40b460294a48a454e4",
+      "git_blob": "b1164b9463ba56d25a4b24b6d71d417d2c2d57e6"
+    },
+    {
+      "path": "deps/first/File/src/File.cpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/src/File.cpp",
+      "sha256": "55504910a09c4191d45e143889137c426781fa3c254a9ef08a3d3c1543799d4d",
+      "git_blob": "6869475cb8653782e8cc3a9bee455b93b13dce46"
+    },
+    {
+      "path": "deps/first/File/src/FileType/WinFile.cpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/File/src/FileType/WinFile.cpp",
+      "sha256": "269c1dfb3c6f4d69a9b41b581c5cd19a68bd16c346c804dd84abc6439ac6cb27",
+      "git_blob": "90354aee6911cea77ecf2755ed893f27f17f53f9"
+    },
+    {
+      "path": "deps/first/Helpers/include/Helpers/String.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/Helpers/include/Helpers/String.hpp",
+      "sha256": "178080ae71fb5717baf48dee47aedd22039c9e8199de41592a9c0ce30e4166a3",
+      "git_blob": "c24cacd1a03a330000e85bef450e8cae6206fafd"
+    },
+    {
+      "path": "deps/first/Helpers/include/Helpers/SysError.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/Helpers/include/Helpers/SysError.hpp",
+      "sha256": "79cf9db74be973f640012b582ec2c46f38a2f29bbbceedb46439269e6cf44a32",
+      "git_blob": "fd3349748b54310f99f743da9270ee5542122a1d"
+    },
+    {
+      "path": "deps/first/Helpers/src/SysError.cpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/Helpers/src/SysError.cpp",
+      "sha256": "425a5992077cab60db2c503efd3e8a71749f82195843c2ebc98e18c0501e97ed",
+      "git_blob": "8d352b31c33e83c8d9372c8c916b43e74681947a"
+    },
+    {
+      "path": "deps/first/String/include/String/StringType.hpp",
+      "url": "https://raw.githubusercontent.com/UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/deps/first/String/include/String/StringType.hpp",
+      "sha256": "1e821d829317898e76d4d91d5969f4315b937e1b2646d585c6cacd8668d22c11",
+      "git_blob": "9399380d0dd68cbf73943777789170ba5344db86"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/LICENSE",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/LICENSE",
+      "sha256": "07580f2a3b35709ce703d523f447b242f6dfec7582a8c0df102c7fa2849375f8",
+      "git_blob": "1cd1ef92696b65b2ecb0e560e622f0a0e869dcf3"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/base.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/base.h",
+      "sha256": "13c8d953fb2d98dc955289dd166999bd22dbabfeba7f486b3693c2c6d9d627db",
+      "git_blob": "87b3fd7cb489c88436d136f7cd5db9c9a8e6cec8"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/chrono.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/chrono.h",
+      "sha256": "aa4f1189f00ca287a9e5585cc3b6b57dfa8f1a000efafa881432f46eafbddaed",
+      "git_blob": "e0c81589ea115626f51e4b1d29b09e578fb3af78"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/color.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/color.h",
+      "sha256": "fbc34d42af762cd4e45ef2c93d050802d956d406c5c9e4c92ea9b0749fd02d8a",
+      "git_blob": "638f15b43f380f26f95925b4191bb44d7c59c231"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/core.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/core.h",
+      "sha256": "b2b6692145b11c7c2774db106078c97575a47d18e80c7783c68566475325ebb4",
+      "git_blob": "8ca735f0c00498a19b7bcc44493b1417faf4fb8c"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/format-inl.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/format-inl.h",
+      "sha256": "7ac4d4907568ac99c28461881595053d2e4045ee81c89d0bddb779c718ee736c",
+      "git_blob": "a1e01661178a46e8cf0767e8b9d94a9ee5a9db36"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/format.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/format.h",
+      "sha256": "9ac34739eb99d5fe220c96d59519bf8da9fb0108d1cf5badbed157187e4c3cfb",
+      "git_blob": "50e571442e53933a24177187a6e92968c8f6e2d9"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/ostream.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/ostream.h",
+      "sha256": "c49f07be57b7fb2abc89e34284574740c24c2de6d6df0b08aff1a0b8f537c090",
+      "git_blob": "7bec4efe2b318cb3e6429ea2e3cc11f4bf8b4fb0"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/ranges.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/ranges.h",
+      "sha256": "0960928778290c8125be3bcf92542ef68b31545b6b79a3c1930cd09eb5b34473",
+      "git_blob": "23ff7de09131e7922a6a04fbc5428a3fe928688f"
+    },
+    {
+      "path": "deps/third/fmt-11.2.0/include/fmt/xchar.h",
+      "url": "https://raw.githubusercontent.com/fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21/include/fmt/xchar.h",
+      "sha256": "d4aad2213ca59d6dac301570dbde00e0f0daa088bf8669070b0283de93f7b251",
+      "git_blob": "90994fff6e2e7a1bd3029ffc2aabea488d2088ff"
+    }
+  ]
+}

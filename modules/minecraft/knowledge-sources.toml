@@ -1,0 +1,74 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "minecraft"
+scope = "Minecraft Java Edition vanilla server download/setup, EULA and Java-specific server.properties reference. Bedrock and third-party server distributions are outside this module's applicability."
+gaps = ["No complete first-party Java vanilla server.properties reference was verified; Mojang's download page links a community setup tutorial.","The official help site renders its setup article on the client. Use its reviewed same-origin public article API; this introductory Java guide does not replace a complete server.properties reference.","Minecraft Wiki robots.txt explicitly disallows AI crawlers including GPTBot, OAI-SearchBot, ClaudeBot and Claude-SearchBot. Its two sources are reference_only: preserve the links but do not fetch or index them for background RAG.","The community properties page may include Bedrock sections. Only explicitly Java Edition sections apply; no verified Java-only content selector was available.","Paper, Bedrock and other server-distribution settings must not be applied to this vanilla Java module."]
+
+[[sources]]
+id = "mojang-java-server"
+title = "Minecraft Java Edition vanilla server download and setup"
+authority = "Mojang Studios / Microsoft"
+kind = "official"
+seeds = ["https://www.minecraft.net/en-us/download/server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.minecraft.net/en-us/download/server"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "mojang-java-help"
+title = "Minecraft Java Edition setup help article"
+authority = "Mojang Studios / Microsoft"
+kind = "official"
+seeds = ["https://help.minecraft.net/help_center/en-us/articles/360058525452"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+authority_evidence = "https://help.minecraft.net/hc/en-us/articles/360058525452-How-to-Setup-a-Minecraft-Java-Edition-Server"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-30"
+
+[[sources]]
+id = "mojang-eula"
+title = "Minecraft End User License Agreement"
+authority = "Mojang Studios / Microsoft"
+kind = "official"
+seeds = ["https://www.minecraft.net/en-us/eula"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.minecraft.net/en-us/eula"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"
+
+[[sources]]
+id = "community-properties"
+reference_only = true
+title = "Minecraft Wiki server.properties — Java Edition sections only"
+authority = "Minecraft Wiki contributors"
+kind = "community"
+seeds = ["https://minecraft.wiki/w/Server.properties"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://minecraft.wiki/w/Server.properties"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"
+license_url = "https://minecraft.wiki/w/Minecraft_Wiki:Copyrights"
+
+[[sources]]
+id = "endorsed-java-tutorial"
+reference_only = true
+title = "Minecraft Wiki Java server setup tutorial (linked by Mojang)"
+authority = "Minecraft Wiki contributors"
+kind = "official_community"
+seeds = ["https://minecraft.wiki/w/Tutorial:Setting_up_a_server"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://www.minecraft.net/en-us/download/server"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"
+license_url = "https://minecraft.wiki/w/Minecraft_Wiki:Copyrights"

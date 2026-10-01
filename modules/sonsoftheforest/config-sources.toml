@@ -1,0 +1,421 @@
+status = "exhaustive_verified"
+last_verified = "2026-09-08"
+notes = "Installed Steam build 20228410 was started on 2026-09-08. Native configuration is read from -userdatapath/dedicatedserver.cfg; The Forest's -configfilepath argument is not supported. After materializing the instance JSON into that directory, the configured ports and SkipNetworkAccessibilityTest were applied and the server returned a complete zero-player query. Password and ownerswhitelist.txt are the native access settings; AdminPassword and GameDifficulty are not native keys. All current top-level, GameSettings, and CustomGameModeSettings fields are covered; bind and port values come from instance bindings."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/sharedfiles/filedetails/?id=2992700419"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The current Endnight dedicated-server guide lists the same top-level, GameSettings and 25 CustomGameModeSettings fields already modeled. The installed app 2465200 manifest remains build 20228410. Endnight publisher news identifies the 2025-10-03 Unity security update as affecting this dedicated server. SaveInterval remains maintenance-owned and owner identities remain in Player Access. Documentation and manifest inspection did not repeat native startup or client-join acceptance."
+
+[[sources]]
+id = "steamcmd_anonymous_app_2465200"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_2465200.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 public-build recheck confirms Sons Of The Forest Dedicated Server buildid 20228410, TargetBuildID 20228410, SizeOnDisk 3425287354, and installed depots 1004 and 2465201."
+
+[[sources]]
+id = "installed_start_sotf_dedicated_bat"
+kind = "launch_arg"
+path = "StartSOTFDedicated.bat"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "The installed StartSOTFDedicated.bat writes steam_appid.txt 1326470, sets SteamAppId/SteamGameId, and launches either SonsOfTheForestDS.exe -verboseLogging or SonsOfTheForestDS.exe | consoleparser -colorize."
+
+[[sources]]
+id = "installed_verify_update_sotf_bat"
+kind = "documentation"
+path = "VerifyUpdateSOTFDedicated.bat"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "The bundled VerifyUpdateSOTFDedicated.bat downloads or reuses a local steamcmd_sotf_auto client and runs +force_install_dir . +login anonymous +app_update 2465200 validate +quit."
+
+[[sources]]
+id = "installed_package_config_boundary"
+kind = "documentation"
+path = "<validated-install-root>"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "The validated package has no packaged dedicatedserver.cfg or ownerswhitelist.txt; LanGame-owned template materialization remains the authoritative source for those per-instance config files."
+
+[[sources]]
+id = "dedicatedserver_cfg"
+kind = "config_file"
+path = "dedicatedserver.cfg"
+authority = "installed_default_and_lsgm_template"
+description = "Official Sons Of The Forest dedicatedserver.cfg JSON surface, including GameSettings and CustomGameModeSettings."
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=2992700419"
+
+[[sources]]
+id = "generated_current_dedicatedserver_cfg"
+kind = "install_probe"
+path = "<validated-instance-root>/data/dedicatedserver.cfg"
+authority = "current_build_runtime_generation_probe"
+description = "Current build-generated default confirms Password, performance targets, logging flags, and empty GameSettings/CustomGameModeSettings objects with no AdminPassword or GameDifficulty keys."
+
+[[sources]]
+id = "native_userdata_configuration_probe"
+kind = "install_probe"
+path = "<validated-instance-root>/data/dedicatedserver.cfg"
+authority = "installed_server_runtime_verification"
+description = "2026-09-08: the configuration in -userdatapath controls native startup. A configuration left only under config/ was ignored despite -configfilepath. Materializing the JSON into data/ applied the instance ports and temporary network self-test setting, followed by a complete A2S player query and normal shutdown."
+
+[[sources]]
+id = "native_lan_lifecycle_build_20228410"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "isolated_local_package_lifecycle_probe"
+description = "2026-09-20: the existing build 20228410 completed isolated creation, startup with a complete A2S reply, stop, server-file uninstall and instance deletion using native LanOnly=true and SkipNetworkAccessibilityTest=true. No save was generated without players. With public network self-tests enabled, this environment remained in Testing public accessibility before binding the declared UDP endpoints. This fixture covers local hosting and does not certify public port forwarding, Steam listing or client joins. Production defaults are unchanged."
+
+[[sources]]
+id = "native_public_mode_self_test_comparison_20261001"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "isolated_and_existing_instance_production_start_stop"
+description = "2026-10-01: build 20228410 stalled during public accessibility testing and three native shutdown dumps identified Steam HTTP request release. A single-variable comparison retained LanOnly=false and set SkipNetworkAccessibilityTest=true. The isolated production start/stop probe and existing-instance run 112 both reached the exact native '#DSL Dedicated server loaded.' event, remained running for 30 seconds, and stopped normally with exit code 0. Existing ports and other settings were preserved; the self-test override was retained for this workstation's instance. This does not certify public reachability, port forwarding, Steam listing, client joins, or long-duration stability. Generic listening and A2S alone do not prove the world has finished loading. Product defaults remain unchanged."
+
+[[sources]]
+id = "runtime_initialize_on_loads_json"
+kind = "config_file"
+path = "SonsOfTheForestDS_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Unity runtime initialize-on-load manifest shipped with the dedicated-server package."
+
+[[sources]]
+id = "scripting_assemblies_json"
+kind = "config_file"
+path = "SonsOfTheForestDS_Data/ScriptingAssemblies.json"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Unity scripting assemblies manifest shipped with the dedicated-server package."
+
+[[sources]]
+id = "aa_link_xml"
+kind = "config_file"
+path = "SonsOfTheForestDS_Data/StreamingAssets/aa/AddressablesLink/link.xml"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Addressables link manifest under the dedicated-server package."
+
+[[sources]]
+id = "aa_catalog_json"
+kind = "config_file"
+path = "SonsOfTheForestDS_Data/StreamingAssets/aa/catalog.json"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Addressables catalog metadata shipped with the dedicated-server package."
+
+[[sources]]
+id = "aa_settings_json"
+kind = "config_file"
+path = "SonsOfTheForestDS_Data/StreamingAssets/aa/settings.json"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Addressables settings metadata shipped with the dedicated-server package."
+
+[[sources]]
+id = "steambootstrapper_ukrainian_txt"
+kind = "config_file"
+path = "steamcmd_sotf_auto/installer/public/steambootstrapper_ukrainian.txt"
+authority = "installed_sons_of_the_forest_dedicated_server_package"
+description = "Steam bootstrapper translation marker shipped with the dedicated-server installer payload."
+
+[[sources]]
+id = "owners_whitelist_file"
+kind = "generated_roster"
+path = "ownerswhitelist.txt"
+authority = "installed_default_and_lsgm_template"
+description = "Sons Of The Forest owner whitelist Steam64 list rendered one ID per line."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "SonsOfTheForestDS.exe launch"
+authority = "module_launch_surface"
+description = "Advanced Sons Of The Forest process arguments appended by LanGame."
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "ServerName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "Password"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "owners_whitelist_file"
+key = "ownerswhitelist.txt"
+schema_key = "owner_whitelist_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "LanOnly"
+schema_key = "lan_only"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "GameMode"
+schema_key = "game_mode"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "SaveSlot"
+schema_key = "save_slot"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "SaveMode"
+schema_key = "save_mode"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "SaveInterval"
+schema_key = "save_interval"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "IdleDayCycleSpeed"
+schema_key = "idle_day_cycle_speed"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "IdleTargetFramerate"
+schema_key = "idle_target_framerate"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "ActiveTargetFramerate"
+schema_key = "active_target_framerate"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "GameSettings.Gameplay.TreeRegrowth"
+schema_key = "tree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "GameSettings.Structure.Damage"
+schema_key = "structure_damage"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Multiplayer.Cheats"
+schema_key = "custom_cheats"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Multiplayer.PvpDamage"
+schema_key = "custom_pvp_damage"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemySpawn"
+schema_key = "custom_enemy_spawns"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemyHealth"
+schema_key = "custom_enemy_health"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemyDamage"
+schema_key = "custom_enemy_damage"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemyArmour"
+schema_key = "custom_enemy_armour"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemyAggression"
+schema_key = "custom_enemy_aggression"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.AnimalSpawnRate"
+schema_key = "custom_animal_spawn_rate"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Vail.EnemySearchParties"
+schema_key = "custom_enemy_search_parties"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Environment.StartingSeason"
+schema_key = "custom_starting_season"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Environment.SeasonLength"
+schema_key = "custom_season_length"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Environment.DayLength"
+schema_key = "custom_day_length"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Environment.PrecipitationFrequency"
+schema_key = "custom_precipitation_frequency"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.ConsumableEffects"
+schema_key = "custom_consumable_effects"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.PlayerStatsDamage"
+schema_key = "custom_player_stats_damage"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.ColdPenalties"
+schema_key = "custom_cold_penalties"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.StatRegenerationPenalty"
+schema_key = "custom_stat_regeneration_penalty"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.ReducedFoodInContainers"
+schema_key = "custom_reduced_food_in_containers"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.SingleUseContainers"
+schema_key = "custom_single_use_containers"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.BuildingResistance"
+schema_key = "custom_building_resistance"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.CreativeMode"
+schema_key = "custom_creative_mode"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.PlayersImmortalMode"
+schema_key = "custom_players_immortal"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.FreeForm.ForcePlaceFullLoad"
+schema_key = "custom_force_place_full_load"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Construction.NoCuttingsSpawn"
+schema_key = "custom_no_cuttings_spawn"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "CustomGameModeSettings.GameSetting.Survival.OneHitToCutTrees"
+schema_key = "custom_one_hit_tree_cutting"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "LogFilesEnabled"
+schema_key = "log_files_enabled"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "TimestampLogFilenames"
+schema_key = "timestamp_log_filenames"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "TimestampLogEntries"
+schema_key = "timestamp_log_entries"
+surface = "config_file"
+
+[[items]]
+source = "dedicatedserver_cfg"
+key = "SkipNetworkAccessibilityTest"
+schema_key = "skip_network_accessibility_test"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "dedicatedserver_cfg"
+key = "IpAddress"
+reason = "Bind address is instance-level network state."
+
+[[exclusions]]
+source = "dedicatedserver_cfg"
+key = "GamePort"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "dedicatedserver_cfg"
+key = "QueryPort"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "dedicatedserver_cfg"
+key = "BlobSyncPort"
+reason = "Blob sync port is instance port-binding state."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/sharedfiles/filedetails/?id=2992700419"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 44 presentation entries reviewed in EN/ZH against the referenced package/docs. 25 Chinese custom-game names expanded and scope identified as new Custom save creation. New mode overwrites the selected slot on each startup; existing saves are not silently reconfigured. LAN listing and connectivity tests separated from automatic port-opening assumptions. Empty-server timescale 0 pauses/1 normal; FPS units; timestamp-disabled logging overwrite behavior. Hunger/thirst and food-related player damage labels distinguish their specific effects. Boundaries: No new native runtime/gameplay acceptance is claimed; historical verification dates remain unchanged."

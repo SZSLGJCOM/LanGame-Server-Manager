@@ -1,0 +1,71 @@
+id = "enshrouded"
+name = "Enshrouded Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Enshrouded via SteamCMD."
+steam_app_id = 2278520
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "enshrouded"
+
+[process]
+executable = "enshrouded_server.exe"
+args_template = []
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The dedicated server runs in the background from the instance's private runtime. Its native enshrouded_server.json is written before launch, and server output is captured in the instance logs."
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 15637
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["query"]
+startup_timeout_ms = 120000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "enshrouded_server.json roles and bans"
+reason = "Enshrouded role passwords and banned accounts are materialized into native server JSON. A2S_PLAYER is queried for read-only names when available; live kick, ban, and unban remain without a verified command adapter."
+verification = "Create an instance, confirm enshrouded_server.json contains the role and bans values, start the server, and verify role/ban behavior in-game. Runtime actions are unavailable because no verified live admin surface is declared."
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[storage]
+runtime_copy_exclusions = ["enshrouded_server.json", "mods"]
+saves_path_template = "{{paths.instance_root}}/savegame"
+retained_paths = ["enshrouded_server.json"]
+
+[mods.source]
+provider = "nexus"
+label = "Nexus Mods"
+url = "https://www.nexusmods.com/enshrouded"
+install_note = "Enshrouded has no official server mod API; install and patch Shroudtopia or EML separately, then stage downloaded Nexus packages into the loader-created mods directory. Some mods must also be installed on every player client."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/mods"
+target_label = "mods"
+accepts = ["folder", "zip", "dll"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000

@@ -1,0 +1,801 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "The 2026-07-13 source audit observed public build 24090743 and cached build 23476634. Facepunch's Creating a Server and Rust+ documentation expose the command-line, server.cfg, query, RCON, and app.port surfaces modeled here. The 2026-09-20 lifecycle fixture uses the locally updated package build 25129933, separately recorded below; it is not a fresh-download or current-public-branch claim. LanGame-owned server/<instance-id>/cfg materialization remains the config boundary."
+
+[[sources]]
+id = "unity_player_stdout_6000_3"
+kind = "documentation"
+path = "Unity 6.3 Player command line arguments: -logFile"
+url = "https://docs.unity.com/en-us/engine/6000.3/manual/unity-editor/command-line-arguments/player"
+authority = "official_unity_player_documentation_and_installed_runtime_observation"
+description = "2026-10-01: installed Rust build 25454815 reports Unity 6000.3.15x1-11. Its native rust.log contains Server startup complete and SteamServer Connected, while the managed pipe captures only Unity allocator initialization because the module routes -logfile to that separate file. Unity documents the dash pathname for console output and standard-output routing on Windows. LanGame now uses -logfile - to feed the existing continuously persisted run console; this launch-contract correction still requires a real post-change server run and does not change prior lifecycle evidence."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://rust.facepunch.com/news/breach-and-clear"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The official 2026-09-03 update documents group-size upkeep scaling and the optional new navigation mesh. The existing schema already covers these settings, the documented deep-sea terrain option and wipe-countdown convars. The installed app 258550 manifest reports build 25454815, newer than the dated native lifecycle evidence below. This documentation and manifest review does not revalidate native RCON or prove an exhaustive inventory of runtime convars."
+
+[[sources]]
+id = "native_cold_world_build_25129933"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "isolated_local_package_lifecycle_probe"
+description = "2026-09-20: the existing local appmanifest reports build 25129933. Cold-world processing took 144.3 seconds before navigation-mesh construction, so the bounded startup deadline is 600 seconds and still requires a real A2S reply. The default WebRCON lifecycle run on source snapshot 68a5bd924fb8 passed in 273.72 seconds: native readiness, stop with generated saves, uninstall retaining 28 save files, verified deletion archive, and final cleanup. This used an existing local package; it does not establish a fresh download, client join, performance improvement, or native Source RCON shutdown."
+
+[[sources]]
+id = "facepunch_server_save_command"
+kind = "runtime_console"
+path = "https://rust.facepunch.com/changelist/2734"
+authority = "Facepunch Rust changelog, 2015-10-16"
+description = "Rechecked 2026-09-20: documents the canonical server.save command and clean saves during server shutdown. LanGame sends server.save then quit using the instance rcon port and rcon_password. The Rust shutdown boundary selects WebSocket or Source RCON from the explicit rcon_web boolean before dispatch. Facepunch useful_commands documents server-side quit as saving and closing the server; its sv prefix is for forwarding from a game client. Both protocol paths have mock wire-command and authentication coverage; native lifecycle evidence currently covers default WebRCON only."
+
+[[sources]]
+id = "native_rcon_modes_build_25129933"
+kind = "documentation"
+path = "<validated-install-root>/RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_rust_dedicated_server_build_25129933_read_only_il"
+description = "2026-09-20 read-only PE/IL inspection, Assembly-CSharp.dll SHA256 CE9884CA79446BDA128FB7358DB56E6E11CE0C9400CD5CB2C482481013ED709D: Facepunch.RCon.Initialize branches on Web at IL_0174/IL_0179. True starts listenerNew as WebSocket RCON; false enters IL_027b, creates the Source RCON listener, and logs its deprecation. RConListener..ctor binds Ip/Port and calls Start. Facepunch commit https://commits.facepunch.com/510813 removes the old protocol on the remove_legacy_rcon branch, but that branch behavior is not present in this verified local build. This inspection does not claim native false-mode command or shutdown execution."
+
+[[sources]]
+id = "native_source_rcon_completion_build_25129933"
+kind = "documentation"
+path = "<validated-install-root>/RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_rust_dedicated_server_build_25129933_read_only_il"
+description = "RConClient.HandleMessage_UnAuthed replies with the auth request id/type 0 followed by success id/type 2, or rejection id -1/type 2. After executing a command, HandleMessage emits an empty id -1/type 0 completion; Output_OnMessage sends matching command id/type 0 and separate console id 0/type 4 broadcasts. Reply writes these ids unchanged. LanGame reuses Source framing and authentication with the existing eight-second total deadline and three-second socket I/O limit; its Rust-only completion reader is bounded to 64 frames and 256 KiB of response bodies. Unknown frames, nonempty or wrong-type completions, and negative authentication ids remain errors. Mock tests replay this native contract without executing a real false-mode server."
+
+[[sources]]
+id = "steam_public_build_24090743"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_update 1 +app_info_print 258550 +quit"
+authority = "steam_public_branch"
+description = "Public branch build 24090743, timeupdated 2026-07-08T09:51:11Z. The cached local package is older build 23476634 and is not used as exact-build evidence."
+
+[[sources]]
+id = "steamcmd_anonymous_app_258550"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_258550.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "The cached appmanifest reports Rust Dedicated Server buildid 23476634, TargetBuildID 23476634, SizeOnDisk 5793956963, with depots 258551 and 258554. This package is retained as package-layout evidence only; current public build evidence comes from steam_public_build_24090743."
+
+[[sources]]
+id = "installed_package_cfg_boundary"
+kind = "documentation"
+path = "<validated-install-root>/cfg / RustDedicated_Data/StreamingAssets"
+authority = "installed_rust_dedicated_server_package"
+description = "The validated package has no packaged server.cfg, users.cfg, or bans.cfg under <validated-install-root>/cfg. Only RustDedicated_Data/StreamingAssets/default_graphics.cfg and safemode_client.cfg were found as cfg files, so LanGame-owned server/<instance-id>/cfg materialization remains the authoritative server config path."
+
+[[sources]]
+id = "facepunch_creating_server"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/Creating-a-server"
+authority = "Facepunch Rust Wiki: Creating a server"
+description = "Documents RustDedicated launch parameters, server.cfg behavior, core server/rcon convars, server.identity cfg folder, users.cfg owner/moderator entries, and query/RCON ports."
+
+[[sources]]
+id = "facepunch_useful_commands"
+kind = "runtime_console"
+path = "https://wiki.facepunch.com/rust/useful_commands"
+authority = "Facepunch Rust Wiki: Useful Console Commands"
+description = "Documents Rust server console/RCON commands including banid, unban, status, players, ownerid, moderatorid, and server.writecfg."
+
+[[sources]]
+id = "facepunch_server_browser_tags"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/server-browser-tags"
+authority = "Facepunch Rust Wiki: Server Browser Tags"
+description = "Documents server tag values and PvE/tutorial/browser tag behavior."
+
+[[sources]]
+id = "facepunch_dns_records"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/dns-records"
+authority = "Facepunch Rust Wiki: Server DNS Records"
+description = "Documents server.favoritesEndpoint for favorite tracking through DNS hostnames."
+
+[[sources]]
+id = "facepunch_custom_icon"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/custom-server-icon"
+authority = "Facepunch Rust Wiki: Custom Server Icon"
+description = "Documents server.logoimage and image URL requirements."
+
+[[sources]]
+id = "facepunch_custom_maps"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/Hosting_a_custom_map"
+authority = "Facepunch Rust Wiki: Hosting Custom Maps"
+description = "Documents server.levelurl and the requirement to omit procedural seed/size when using custom maps."
+
+[[sources]]
+id = "facepunch_procedural_generation"
+kind = "launch_arg"
+path = "https://wiki.facepunch.com/rust/procedural_generation_customization"
+authority = "Facepunch Rust Wiki: Procedural Generation Customization"
+description = "Documents world.configfile/world.configstring JSON for procedural generation customization."
+
+[[sources]]
+id = "facepunch_hidden_whitelist"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/Creating_a_hidden_whitelisted_server"
+authority = "Facepunch Rust Wiki: Hidden/Whitelisted Server"
+description = "Documents hidden server posture, query port considerations, maxplayers 0 skip-queue behavior, global.skipqueueid, and censorplayerlist."
+
+[[sources]]
+id = "facepunch_server_gamemodes"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/server-gamemodes"
+authority = "Facepunch Rust Wiki: Server Gamemodes"
+description = "Documents server.gamemode, softcore reclaim fractions, and relationshipmanager.maxteamsize."
+
+[[sources]]
+id = "facepunch_wipe_timer"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/server-wipe-timer"
+authority = "Facepunch Rust Wiki: Server Wipe Timer"
+description = "Rechecked 2026-09-29: these convars calculate the in-game Nuclear Missile Silo countdown and time endgame events relative to the advertised wipe cycle. They configure countdown timing, not a LanGame maintenance job or automatic save deletion. The same page documents weekday, fractional hour, time zone, Cron override, and future Unix timestamp override."
+url = "https://wiki.facepunch.com/rust/server-wipe-timer"
+
+[[sources]]
+id = "facepunch_rust_plus"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/rust-companion-server"
+authority = "Facepunch Rust Wiki: Rust+ Server"
+description = "Documents app.port, app.listenip, app.publicip, and disabling Rust+ with app.port -1."
+
+[[sources]]
+id = "facepunch_centralized_banning"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/centralized-banning"
+authority = "Facepunch Rust Wiki: Centralized Banning"
+description = "Documents centralized ban endpoint, failure mode, timeout, and endpoint API behavior."
+
+[[sources]]
+id = "facepunch_receiving_reports"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/receiving-reports"
+authority = "Facepunch Rust Wiki: Receiving Player Reports"
+description = "Documents report console printing, reports endpoint, and endpoint key convars."
+
+[[sources]]
+id = "facepunch_creative_mode"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/creative"
+authority = "Facepunch Rust Wiki: Creative Mode"
+description = "Documents Creative Mode server variables."
+
+[[sources]]
+id = "facepunch_tutorial_island"
+kind = "config_file"
+path = "https://wiki.facepunch.com/rust/tutorial_island"
+authority = "Facepunch Rust Wiki: Tutorial Island"
+description = "Documents server.tutorialEnabled and the tutorial compatibility tag."
+
+[[sources]]
+id = "rust_bundles_json"
+kind = "config_file"
+path = "Bundles/**/*.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust bundle definitions and prefab JSON payloads under Bundles/."
+
+[[sources]]
+id = "rust_dedicated_streaming_assets_json"
+kind = "config_file"
+path = "RustDedicated_Data/**/*.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust dedicated-data JSON assets for runtime surfaces."
+
+[[sources]]
+id = "rust_dedicated_data_json_bundle"
+kind = "config_file"
+path = "RustDedicated_Data/**/*.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust runtime JSON payload assets under RustDedicated_Data."
+
+[[sources]]
+id = "rust_dedicated_data_cfg_bundle"
+kind = "config_file"
+path = "RustDedicated_Data/**/*.cfg"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust runtime CFG assets under RustDedicated_Data."
+
+[[sources]]
+id = "rust_server_bundle_json"
+kind = "config_file"
+path = "server/**/*.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust server and world JSON payloads."
+
+[[sources]]
+id = "rust_server_bundle_cfg"
+kind = "config_file"
+path = "server/**/*.cfg"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust server and world CFG payloads."
+
+[[sources]]
+id = "rust_cfg_root"
+kind = "config_file"
+path = "*/cfg/*.cfg"
+authority = "installed_rust_server_package"
+description = "Installed dedicated server cfg bundle. (7 discovered files)"
+
+
+[[sources]]
+id = "rust_cfg_nested"
+kind = "config_file"
+path = "*/*/cfg/*.cfg"
+authority = "installed_rust_server_package"
+description = "Installed dedicated server cfg bundle in nested folders. (7 discovered files)"
+
+[[sources]]
+id = "rust_mono_browscap_ini"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/browscap.ini"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Mono browscap metadata in the Rust dedicated-server runtime."
+
+[[sources]]
+id = "rust_runtime_initialize_on_loads_json"
+kind = "config_file"
+path = "RustDedicated_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust runtime manifest for Unity managed initialization metadata."
+
+[[sources]]
+id = "rust_scripting_assemblies_json"
+kind = "config_file"
+path = "RustDedicated_Data/ScriptingAssemblies.json"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust runtime scripting assembly manifest."
+
+[[sources]]
+id = "rust_mono_mconfig_xml"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/mconfig/config.xml"
+authority = "installed_rust_dedicated_server_package"
+description = "Installed Rust Mono runtime mconfig XML."
+[[items]]
+source = "facepunch_creating_server"
+key = "server.hostname"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.description"
+schema_key = "server_description"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.maxplayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_server_gamemodes"
+key = "server.gamemode"
+schema_key = "server_gamemode"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_server_browser_tags"
+key = "server.tags"
+schema_key = "tags"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.url"
+schema_key = "website_url"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.headerimage"
+schema_key = "header_image_url"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_custom_icon"
+key = "server.logoimage"
+schema_key = "logo_image_url"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_dns_records"
+key = "server.favoritesEndpoint"
+schema_key = "favorites_endpoint"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.level"
+schema_key = "level"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_custom_maps"
+key = "server.levelurl"
+schema_key = "level_url"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.seed"
+schema_key = "seed"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.worldsize"
+schema_key = "world_size"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.saveinterval"
+schema_key = "save_interval_seconds"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_procedural_generation"
+key = "world.configfile"
+schema_key = "world_config_json"
+surface = "launch_arg"
+
+[[items]]
+source = "facepunch_server_browser_tags"
+key = "server.pve"
+schema_key = "pve"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_security_launch_2025"
+key = "-insecure"
+schema_key = "secure"
+surface = "launch_arg"
+
+[[items]]
+source = "facepunch_hidden_whitelist"
+key = "censorplayerlist"
+schema_key = "censor_player_list"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "+rcon.password"
+schema_key = "rcon_password"
+surface = "launch_arg"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "rcon.web"
+schema_key = "rcon_web"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "ownerid users.cfg"
+schema_key = "owner_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "moderatorid users.cfg"
+schema_key = "moderator_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_hidden_whitelist"
+key = "global.skipqueueid users.cfg"
+schema_key = "skip_queue_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_useful_commands"
+key = "banid bans.cfg"
+schema_key = "banned_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_server_gamemodes"
+key = "relationshipmanager.maxteamsize"
+schema_key = "max_team_size"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_server_gamemodes"
+key = "gamemodesoftcore.reclaim_fraction_main"
+schema_key = "softcore_reclaim_fraction_main"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_server_gamemodes"
+key = "gamemodesoftcore.reclaim_fraction_belt"
+schema_key = "softcore_reclaim_fraction_belt"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_server_gamemodes"
+key = "gamemodesoftcore.reclaim_fraction_wear"
+schema_key = "softcore_reclaim_fraction_wear"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_tutorial_island"
+key = "server.tutorialEnabled"
+schema_key = "tutorial_enabled"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_wipe_timer"
+key = "wipetimer.wipeDayofWeek"
+schema_key = "wipe_day_of_week"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_wipe_timer"
+key = "wipetimer.wipeHourofDay"
+schema_key = "wipe_hour_of_day"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_wipe_timer"
+key = "wipetimer.wipeTimezone"
+schema_key = "wipe_timezone"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_wipe_timer"
+key = "wipetimer.wipecronoverride"
+schema_key = "wipe_cron_override"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_wipe_timer"
+key = "wipetimer.wipeUnixTimestampOverride"
+schema_key = "wipe_unix_timestamp_override"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_rust_plus"
+key = "app.port"
+schema_key = "app_port"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_rust_plus"
+key = "app.publicip"
+schema_key = "app_public_ip"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_rust_plus"
+key = "app.listenip"
+schema_key = "app_listen_ip"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_centralized_banning"
+key = "server.bansServerEndpoint"
+schema_key = "bans_server_endpoint"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_centralized_banning"
+key = "server.bansServerFailureMode"
+schema_key = "bans_server_failure_mode"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_centralized_banning"
+key = "server.bansServerTimeout"
+schema_key = "bans_server_timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_receiving_reports"
+key = "server.printReportsToConsole"
+schema_key = "reports_print_to_console"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_receiving_reports"
+key = "server.reportsServerEndpoint"
+schema_key = "reports_server_endpoint"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_receiving_reports"
+key = "server.reportsServerEndpointKey"
+schema_key = "reports_server_endpoint_key"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.allusers"
+schema_key = "creative_all_users"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.alwaysonenabled"
+schema_key = "creative_always_on_enabled"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.bypassholdtoplaceduration"
+schema_key = "creative_bypass_hold_to_place_duration"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.freebuild"
+schema_key = "creative_free_build"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.freeplacement"
+schema_key = "creative_free_placement"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.freerepair"
+schema_key = "creative_free_repair"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creative_mode"
+key = "creative.unlimitedio"
+schema_key = "creative_unlimited_io"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "server.cfg extra lines"
+schema_key = "server_cfg_extra"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "users.cfg extra lines"
+schema_key = "users_cfg_extra"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_useful_commands"
+key = "bans.cfg extra lines"
+schema_key = "bans_cfg_extra"
+surface = "generated_roster"
+
+[[items]]
+source = "facepunch_creating_server"
+key = "RustDedicated launch parameters"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "server.identity"
+reason = "Managed from the LanGame instance id and save path so multiple Rust worlds do not share identity state."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "server.port"
+reason = "Managed by the module game UDP port binding."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "server.queryport"
+reason = "Managed by the module query UDP port binding."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "rcon.port"
+reason = "Managed by the module RCON TCP port binding."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "-batchmode/-nographics/-logfile"
+reason = "Fixed launch hygiene and log routing are owned by the module process plan."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "server.ip/rcon.ip"
+reason = "LanGame uses the instance bind IP and port model instead of exposing divergent per-cvar bind controls."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "runtime find-only convars"
+reason = "Facepunch notes the convar set is not exhaustive in docs and recommends the runtime find command; these remain covered by server_cfg_extra/custom_launch_flags."
+
+[[exclusions]]
+source = "facepunch_creating_server"
+key = "weather_chance variables"
+reason = "Facepunch notes some variables do not work from server.cfg/launch and must be set after the server is running; keep in runtime/RCON tooling or server_cfg_extra only when proven."
+
+[[exclusions]]
+source = "facepunch_custom_maps"
+key = "local file:/// custom map hosting"
+reason = "Supported by level_url as a URL string, but LanGame does not yet manage the map asset lifecycle."
+
+[[exclusions]]
+source = "facepunch_procedural_generation"
+key = "world.configstring"
+reason = "LanGame uses world.configfile with a materialized JSON file because it is safer than quoting large JSON on the process command line."
+
+[[exclusions]]
+source = "facepunch_rust_plus"
+key = "app.id"
+reason = "Facepunch warns not to change app.id because it belongs to the generated companion.id identity lifecycle."
+
+[[exclusions]]
+source = "facepunch_creative_mode"
+key = "creative.toggle* commands"
+reason = "Runtime targeting commands are not startup/server.cfg configuration fields; the enabling variables are modeled."
+
+[[exclusions]]
+source = "facepunch_tutorial_island"
+key = "tut browser tag automation"
+reason = "The tag is already available through the generic server.tags field so operators can choose when to advertise tutorial compatibility."
+
+[[exclusions]]
+source = "facepunch_useful_commands"
+key = "ad hoc admin console commands"
+reason = "Runtime commands remain player action/RCON features or raw console usage, not persistent configuration fields."
+
+[[sources]]
+id = "facepunch_september_2026"
+kind = "documentation"
+path = "https://rust.facepunch.com/news/breach-and-clear"
+authority = "Facepunch Rust September 2026 release notes"
+description = "Published 2026-09-03, checked 2026-09-28. Documents group-size upkeep scaling and the optional -useNewNavmesh server startup switch. The default remains the old navigation mesh in the inspected build; this is not a claim about a future hotfix."
+
+[[sources]]
+id = "native_september_configuration_build_25129933"
+kind = "documentation"
+path = "<validated-install-root>/RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_rust_dedicated_server_build_25129933_read_only_il"
+description = "2026-09-28 PE metadata and IL inspection, SHA256 CE9884CA79446BDA128FB7358DB56E6E11CE0C9400CD5CB2C482481013ED709D. ConVar.Decay field metadata and .cctor establish eleven group-upkeep convars and defaults. BuildingPrivlidge.CalculateGroupUpkeepMultiplier returns min(1 + tier increases, max multiplier), so the default cap 3 is the total multiplier. RefreshDoorGroupMembers excludes locks with user count <= upkeep_lock_min_users, including the default 2. PruneGroupMembers clamps the history window to nonnegative hours, and TrimGroupMembersToMax clamps history capacity to nonnegative integers. UI accepts nonnegative tier rates and a total cap of at least 1; native field setters declare no narrower maximum. Bootstrap.Init_Tier0 IL_00fb-0108 reads -useNewNavmesh and negates it into AI.useUnityNavmesh. No game code was executed and no client-join or live gameplay result is claimed."
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_scaling"
+schema_key = "upkeep_group_scaling"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_window_hours"
+schema_key = "upkeep_group_window_hours"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_tier_0_playercount"
+schema_key = "upkeep_group_tier_0_playercount"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_tier_0_increase"
+schema_key = "upkeep_group_tier_0_increase"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_tier_1_playercount"
+schema_key = "upkeep_group_tier_1_playercount"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_tier_1_increase"
+schema_key = "upkeep_group_tier_1_increase"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_tier_2_increase"
+schema_key = "upkeep_group_tier_2_increase"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_max_multiplier"
+schema_key = "upkeep_group_max_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_count_locks"
+schema_key = "upkeep_group_count_locks"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_group_history_max"
+schema_key = "upkeep_group_history_max"
+surface = "config_file"
+
+[[items]]
+source = "native_september_configuration_build_25129933"
+key = "decay.upkeep_lock_min_users"
+schema_key = "upkeep_lock_min_users"
+surface = "config_file"
+
+[[items]]
+source = "facepunch_september_2026"
+key = "-useNewNavmesh"
+schema_key = "use_new_navmesh"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "native_september_configuration_build_25129933"
+key = "decay.addfakeauthhistory"
+reason = "Immediate test command that fabricates cupboard authorization history; not persistent configuration or a player-management setting."
+
+[[exclusions]]
+source = "native_september_configuration_build_25129933"
+key = "decay.clearauthhistory"
+reason = "Immediate command that clears cupboard authorization history; belongs to explicit runtime maintenance, not saved configuration."
+
+[[exclusions]]
+source = "native_september_configuration_build_25129933"
+key = "-checkTileValid"
+reason = "Navigation diagnostic startup switch observed in Bootstrap, without a published operator configuration contract; not part of the documented navmesh opt-in control."
+
+[[sources]]
+id = "facepunch_september_terrain_2026"
+kind = "documentation"
+path = "https://rust.facepunch.com/changes"
+url = "https://rust.facepunch.com/changes"
+authority = "facepunch_official_september_2026_changelog"
+description = "The September 3, 2026 Breach and Clear changelog, reviewed on 2026-09-29, documents deepsea.terrain_everywhere for extending deep-sea terrain to the main island."
+
+[[sources]]
+id = "native_deep_sea_terrain_build_25454815"
+kind = "documentation"
+path = "<validated-install-root>/RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_rust_dedicated_server_build_25454815_read_only_il"
+description = "2026-09-29 read-only PE metadata and IL inspection; SHA256 C747D6C58B01848E0FD70617F24B6E09A5C22A487BB79B8364211B1FE98AC4C9. ConVar.DeepSea.terrain_everywhere is boolean (field signature 06-02, token 0x0400982E), defaults to false (ldc.i4.0 followed by stsfld in .cctor), and has a Saved=true console attribute. The native help describes applying deep-sea terrain configuration and foliage to the whole map. Saved denotes persistent configuration, not world autosave or backup policy. Deterministic fixtures cover default and enabled cfg output; no game code or terrain gameplay was executed by this inspection."
+
+[[items]]
+source = "native_deep_sea_terrain_build_25454815"
+key = "deepsea.terrain_everywhere"
+schema_key = "deep_sea_terrain_everywhere"
+surface = "config_file"
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://wiki.facepunch.com/rust/creative"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 67 presentation entries reviewed in EN/ZH against the referenced package/docs. Seven fragmented Chinese labels replaced by full names; free repair includes cooldown and resource costs; free build includes upgrades; extended wiring does not promise physically unlimited reach. Console/endpoint/key labels identify report delivery surfaces. JSON world generator and tutorial island labels clarified. Boundaries: No real connected-client verification of creative effects or new current-build convars during this semantic pass."
+
+[[sources]]
+id = "semantic_reference_20260930_1"
+kind = "documentation"
+path = "https://rust.facepunch.com/news/road-renegades/?category=devblog"
+authority = "first_party_reference"
+description = "2026-09-30: Developer release detail: repair cost/cooldown, build/upgrade costs and extended wire reach."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "RustDedicated_Data/Managed/Assembly-CSharp.dll"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Build 25454815 contains 2230 generated console command registrations. All modeled config-file convars resolve except server.secure and rcon.password, which require launch handling. Bare censorplayerlist remains a valid Server.GlobalDict alias. Facepunch removed server.secure on 2025-09-04 in favor of -insecure. LGSM now emits that flag only for explicit secure=false; true, missing and null values keep the secure default. Removed the ineffective RCON password line from server.cfg; RCon.Initialize (06008AE8) reads the already-provided +rcon.password launch argument. Current IL confirms freeBuild, freeRepair and unlimitedIo require IsInCreativeMode. Free building also avoids consuming deployed items, free repair removes damage cooldown and costs, and WireTool.GetMaxWireLength (060038E2) returns 200 meters instead of 30. These findings establish the questioned contracts; they do not claim a connected-client gameplay run. Primary binary SHA256 c747d6c58b01848e0fd70617f24b6e09a5c22a487bb79b8364211b1fe98ac4c9."
+
+[[sources]]
+id = "facepunch_security_launch_2025"
+kind = "documentation"
+path = "https://rust.facepunch.com/news/maintenance"
+authority = "facepunch_official_release_notes"
+description = "2025-09-04: Removes server.secure. Insecure servers must pass -insecure at startup. Secure server-browser listing requires encryption level 2. Rechecked 2026-09-30 against the installed build 25454815 command registry."

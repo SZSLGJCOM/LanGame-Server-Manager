@@ -1,0 +1,67 @@
+id = "runescapedragonwilds"
+name = "RuneScape: Dragonwilds Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for RuneScape: Dragonwilds via SteamCMD."
+steam_app_id = 4019830
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "runescapedragonwilds"
+verification_path = "RSDragonwildsServer.exe"
+
+[process]
+executable = "RSDragonwildsServer.exe"
+args_template = [
+  "-log",
+  "-Port={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
+  "{{runescapedragonwilds.extra_launch_args}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Steam appinfo for app 4019830 reports RSDragonwildsServer.exe as the current Windows launch executable. RuneScape: Dragonwilds reads RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini under [/Script/Dominion.DedicatedServerSettings] for owner identity, server name, default world name, admin password, and optional world password. An empty owner_id represents no assigned owner: LanGame writes the explicit non-account marker LGSM_UNASSIGNED_OWNER required by the tested native startup gate. Real owner permissions require the in-game Player ID. LanGame renders and materializes that file before launch while preserving the server-generated ServerGuid, and passes the configured UDP game and query ports with -Port and -QueryPort. LanGame supplies the officially documented -log flag on its private desktop. Additional native flags remain available through extra_launch_args; runtime console and graceful-stop behavior require acceptance."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27057
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "file_ipc"
+response_codec = "dragonwilds_players"
+identity_kind = "session_id"
+refresh_interval_ms = 30000
+player_action_ids = []
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "in_game_server_management"
+reason = "Owner/admin roles and moderation remain in-game; no host-callable kick/ban transport is verified. Online names are independently available through the read-only LgsmPlayerQuery UE4SS extension. Its session identifiers do not authorize moderation. Standard Steam A2S_INFO remains unavailable on the verified QueryPort."
+verification = "Follow extensions/README.md for the verified loader, dedicated-server proxy and read-only player-query script. Keep runtime.player_actions absent until a real host moderation interface and identity binding are verified. Keep runtime.player_query disabled; file_ipc is the separately declared complete roster channel."
+
+[storage]
+runtime_copy_exclusions = ["RSDragonwilds/Saved", "langame_player_query"]
+saves_path_template = "{{paths.install_root}}/RSDragonwilds/Saved/SaveGames"
+retained_paths = ["RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]

@@ -1,0 +1,82 @@
+id = "astroneer"
+name = "ASTRONEER Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for ASTRONEER via SteamCMD."
+steam_app_id = 728470
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "astroneer"
+verification_path = "AstroServer.exe"
+
+[process]
+executable = "AstroServer.exe"
+args_template = [
+  "-log",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "{{astroneer.extra_launch_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "ASTRONEER reads Unreal config files from Astro/Saved/Config/WindowsServer. LanGame renders AstroServerSettings.ini, Engine.ini, and Game.ini into the instance config tree and materializes them into the install root before launch."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 8777
+
+[[default_ports]]
+name = "console"
+protocol = "tcp"
+port = 1234
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "tcp_console"
+player_action_ids = []
+response_codec = "astroneer_players"
+identity_kind = "astroneer_guid"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "native_tcp_console_moderation"
+reason = "The native DSListPlayers command supplies online names and ASTRONEER player GUIDs through the password-protected local console. Historical records are filtered by inGame; live moderation actions are not declared."
+verification = "Build 24411584 returned complete empty DSListPlayers JSON through an isolated local ConsolePort, rejected an incorrect password by closing the connection, and exited normally after DSServerShutdown. Non-empty rows are covered by synthetic protocol fixtures; no real player session was used. Keep moderation actions hidden until their command transport and target identity behavior are verified."
+
+[storage]
+runtime_copy_exclusions = ["Astro/Saved"]
+saves_path_template = "{{paths.install_root}}/Astro/Saved/SaveGames"
+retained_paths = ["Astro/Saved/Config/WindowsServer"]
+
+[mods.source]
+provider = "manual"
+label = "AstroModLoader Classic"
+url = "https://astroneermodding.readthedocs.io/en/latest/guides/faq.html"
+install_note = "Astroneer community server mods require AstroModLoader Classic or UE4SS integration; LanGame stages .pak packages into Astro/Saved/Paks but does not manage loader execution."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/Astro/Saved/Paks"
+target_label = "Astro/Saved/Paks"
+accepts = ["pak", "zip"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["console"]

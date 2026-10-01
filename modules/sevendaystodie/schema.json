@@ -1,0 +1,1216 @@
+{
+  "type": "object",
+  "title": "7 Days to Die Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "description": "Shown in the browser and in the join list your friends will search against.",
+      "default": "7DTD Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 1,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_description": {
+      "type": "string",
+      "title": "Server Description",
+      "description": "Short browser copy that explains what kind of host this is.",
+      "format": "textarea",
+      "default": "LanGame managed 7 Days to Die server",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 2,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerDescription",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_website_url": {
+      "type": "string",
+      "title": "Website URL",
+      "description": "Optional public URL shown in the browser.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 3,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerWebsiteURL",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_login_confirmation_text": {
+      "type": "string",
+      "title": "Join Confirmation Text",
+      "description": "Optional rules or warning text players must confirm before they finish joining.",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 4,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerLoginConfirmationText",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "title": "Join Password",
+      "description": "Leave blank for a public room. Set this when you are sharing directly with trusted players.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 5,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerPassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "Maximum concurrent player count for this instance.",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 64,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 6,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerMaxPlayerCount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "visibility": {
+      "type": "integer",
+      "title": "Browser Visibility",
+      "description": "Choose whether the room is public, only bootstrap-visible to friends, or completely hidden from listing.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Hidden / direct IP only",
+        "Friends bootstrap",
+        "Public browser"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 7,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerVisibility",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "region": {
+      "type": "string",
+      "title": "Region",
+      "description": "Browser region tag used by players when filtering rooms.",
+      "default": "Asia",
+      "enum": [
+        "NorthAmericaEast",
+        "NorthAmericaWest",
+        "CentralAmerica",
+        "SouthAmerica",
+        "Europe",
+        "Russia",
+        "Asia",
+        "MiddleEast",
+        "Africa",
+        "Oceania"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 8,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "Region",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "language": {
+      "type": "string",
+      "title": "Primary Language",
+      "description": "Free-text browser language tag. Use the English language name that players expect to search for.",
+      "default": "Chinese",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 9,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "Language",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_disabled_network_protocols": {
+      "type": "string",
+      "title": "Disabled Network Protocols",
+      "description": "Officially recommended for port-forwarded dedicated hosts: disable SteamNetworking and prefer direct socket transport.",
+      "default": "SteamNetworking",
+      "enum": [
+        "",
+        "SteamNetworking",
+        "LiteNetLib",
+        "SteamNetworking,LiteNetLib"
+      ],
+      "enum_labels": [
+        "Allow both",
+        "Disable SteamNetworking",
+        "Disable LiteNetLib",
+        "Disable both"
+      ],
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerDisabledNetworkProtocols",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_allow_crossplay": {
+      "type": "boolean",
+      "title": "Allow Crossplay",
+      "description": "Enable the native EOS crossplay discovery path. Current 7DTD servers are only searchable and joinable through crossplay when EOS sanctions are not ignored and the player-slot count stays at the default or lower.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 10.1,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerAllowCrossplay",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "ignore_eos_sanctions": {
+      "type": "boolean",
+      "title": "Ignore EOS Sanctions",
+      "description": "Ignore EOS sanctions when deciding whether a player may join. Leave this off for normal crossplay discovery.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 10.2,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "IgnoreEOSSanctions",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_max_world_transfer_speed_kibs": {
+      "type": "integer",
+      "title": "World Transfer Cap (KiB/s)",
+      "description": "Throttle first-join world transfer rate so one fresh client does not saturate the host.",
+      "default": 512,
+      "minimum": 64,
+      "maximum": 1300,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 11,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerMaxWorldTransferSpeedKiBs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "reserved_slots": {
+      "type": "integer",
+      "title": "Reserved Slots",
+      "description": "Player capacity reserved for users with the required permission level.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 64,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerReservedSlots",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "reserved_slots_permission": {
+      "type": "integer",
+      "title": "Reserved Slot Permission",
+      "description": "Required 7DTD permission level for using reserved slots. Lower numbers are more trusted.",
+      "default": 100,
+      "minimum": 0,
+      "maximum": 1000,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 101,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerReservedSlotsPermission",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_slots": {
+      "type": "integer",
+      "title": "Admin Overflow Slots",
+      "description": "Extra seats that admins can still use after the normal cap is full.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 64,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 102,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerAdminSlots",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_slots_permission": {
+      "type": "integer",
+      "title": "Admin Slot Permission",
+      "description": "Required 7DTD permission level for using the admin overflow slots.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1000,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 103,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerAdminSlotsPermission",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_users": {
+      "type": "array",
+      "title": "Admin Users",
+      "description": "Structured native admin user entries rendered into serveradmin.xml.",
+      "default": [],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 110,
+      "items": {
+        "type": "object",
+        "required": [
+          "platform",
+          "userid"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Account platform",
+            "description": "Platform namespace used by 7DTD for this account ID.",
+            "enum": [
+              "Steam",
+              "EOS",
+              "XBL",
+              "PSN"
+            ],
+            "default": "Steam",
+            "x-lsgm-player-access-identity": true
+          },
+          "userid": {
+            "type": "string",
+            "title": "Platform user ID",
+            "description": "The account ID recorded by 7DTD logs for the selected platform.",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "x-lsgm-player-access-platform-field": "platform",
+            "x-lsgm-player-access-identity": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Display name",
+            "maxLength": 128
+          },
+          "permission_level": {
+            "type": "integer",
+            "title": "Permission level",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          }
+        }
+      },
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "object_identity",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/users/user",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "admin_groups": {
+      "type": "array",
+      "title": "Admin Groups",
+      "description": "Structured native Steam group admin entries rendered into serveradmin.xml.",
+      "default": [],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 111,
+      "items": {
+        "type": "object",
+        "required": [
+          "steam_id"
+        ],
+        "properties": {
+          "steam_id": {
+            "type": "string",
+            "title": "Steam group ID",
+            "pattern": "^[0-9]{17,20}$",
+            "x-lsgm-player-access-identity": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Display name",
+            "maxLength": 128
+          },
+          "permission_level_default": {
+            "type": "integer",
+            "title": "Default member permission level",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 1000
+          },
+          "permission_level_mod": {
+            "type": "integer",
+            "title": "Moderator permission level",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 0
+          }
+        }
+      },
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "object_identity",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/users/group",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "whitelist_users": {
+      "type": "array",
+      "title": "Whitelisted Users",
+      "description": "Structured native whitelist user entries rendered into serveradmin.xml.",
+      "default": [],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 112,
+      "items": {
+        "type": "object",
+        "required": [
+          "platform",
+          "userid"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Account platform",
+            "description": "Platform namespace used by 7DTD for this account ID.",
+            "enum": [
+              "Steam",
+              "EOS",
+              "XBL",
+              "PSN"
+            ],
+            "default": "Steam",
+            "x-lsgm-player-access-identity": true
+          },
+          "userid": {
+            "type": "string",
+            "title": "Platform user ID",
+            "description": "The account ID recorded by 7DTD logs for the selected platform.",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "x-lsgm-player-access-platform-field": "platform",
+            "x-lsgm-player-access-identity": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Display name",
+            "maxLength": 128
+          }
+        }
+      },
+      "x-lsgm-player-access-kind": "allow",
+      "x-lsgm-player-access-codec": "object_identity",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/whitelist/user",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "whitelist_groups": {
+      "type": "array",
+      "title": "Whitelisted Groups",
+      "description": "Structured native whitelist Steam group entries rendered into serveradmin.xml.",
+      "default": [],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 113,
+      "items": {
+        "type": "object",
+        "required": [
+          "steam_id"
+        ],
+        "properties": {
+          "steam_id": {
+            "type": "string",
+            "title": "Steam group ID",
+            "pattern": "^[0-9]{17,20}$",
+            "x-lsgm-player-access-identity": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Display name",
+            "maxLength": 128
+          }
+        }
+      },
+      "x-lsgm-player-access-kind": "allow",
+      "x-lsgm-player-access-codec": "object_identity",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/whitelist/group",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "blacklist_entries": {
+      "type": "array",
+      "title": "Blacklist Entries",
+      "description": "Structured native blacklist entries rendered into serveradmin.xml.",
+      "default": [],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 114,
+      "items": {
+        "type": "object",
+        "required": [
+          "platform",
+          "userid"
+        ],
+        "properties": {
+          "platform": {
+            "type": "string",
+            "title": "Account platform",
+            "description": "Platform namespace used by 7DTD for this account ID.",
+            "enum": [
+              "Steam",
+              "EOS",
+              "XBL",
+              "PSN"
+            ],
+            "default": "Steam",
+            "x-lsgm-player-access-identity": true
+          },
+          "userid": {
+            "type": "string",
+            "title": "Platform user ID",
+            "description": "The account ID recorded by 7DTD logs for the selected platform.",
+            "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+            "x-lsgm-player-access-platform-field": "platform",
+            "x-lsgm-player-access-identity": true
+          },
+          "name": {
+            "type": "string",
+            "title": "Display name",
+            "maxLength": 128
+          },
+          "unbandate": {
+            "type": "string",
+            "title": "Unban date",
+            "description": "Local server date or date and time in YYYY-MM-DD or YYYY-MM-DD HH:mm:ss format. The default is an effectively permanent ban.",
+            "format": "date-or-local-datetime",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-([0-2][0-9]|3[01])( ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9])?$",
+            "default": "9999-12-31"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "maxLength": 256,
+            "default": "LanGame"
+          }
+        }
+      },
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "object_identity",
+      "x-lsgm-player-access-live-target": "platform_userid",
+      "x-lsgm-player-access-sync": {
+        "mode": "direct",
+        "remove_action_id": "unban_player",
+        "consume_action_ids": [
+          "unban_player"
+        ]
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/blacklist/blacklisted",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "command_permissions": {
+      "type": "array",
+      "title": "Command Permissions",
+      "description": "Structured native command permission rules rendered into serveradmin.xml.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 115,
+      "default": [
+        {
+          "cmd": "chunkcache",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "debugshot",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "debugweather",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "getgamepref",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "getgamestat",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "getoptions",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "gettime",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "gfx",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "help",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "listplayerids",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "listthreads",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "memcl",
+          "permission_level": 1000
+        },
+        {
+          "cmd": "settempunit",
+          "permission_level": 1000
+        }
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "cmd": {
+            "type": "string"
+          },
+          "permission_level": {
+            "type": "integer",
+            "default": 1000
+          }
+        }
+      },
+      "x-lsgm-source": "serveradmin_xml",
+      "x-lsgm-source-key": "adminTools/commands/permission",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "persistent_player_profiles": {
+      "type": "boolean",
+      "title": "Persistent Player Profiles",
+      "description": "If enabled, each player is locked to the last character profile they joined with on this server.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 104,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "PersistentPlayerProfiles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "game_world": {
+      "type": "string",
+      "title": "World Type / Name",
+      "description": "Use Navezgane for the handcrafted map, RWG for a generated world, or a custom pregen world folder name.",
+      "default": "Navezgane",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "GameWorld",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "game_mode": {
+      "type": "string",
+      "title": "Game Mode",
+      "description": "Current dedicated-server game mode. The supported native mode is GameModeSurvival.",
+      "default": "GameModeSurvival",
+      "enum": [
+        "GameModeSurvival"
+      ],
+      "enum_labels": [
+        "Survival"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 200.5,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "GameMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_name": {
+      "type": "string",
+      "title": "Save Name",
+      "description": "Save-game identity for this server. Changing it points the host at a different world save.",
+      "default": "LanGameWorld",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 201,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "GameName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_seed": {
+      "type": "string",
+      "title": "World Seed",
+      "description": "Only used for RWG worlds. The handcrafted Navezgane map ignores this.",
+      "default": "LanGame",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 202,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "WorldGenSeed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_size": {
+      "type": "integer",
+      "title": "Generated World Size",
+      "description": "Used only for RWG. The native configuration documents 6144, 8192, and 10240 as officially supported sizes.",
+      "default": 6144,
+      "minimum": 2048,
+      "maximum": 16384,
+      "multipleOf": 2048,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 203,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "WorldGenSize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "sandbox_code": {
+      "type": "string",
+      "title": "Sandbox Code",
+      "description": "Paste the code copied from the in-game Sandbox Options screen. Version 3.0 uses this code for difficulty, pacing, loot, zombie behavior, blood moon, and related sandbox rules.",
+      "default": "AAAJABJACJADJARFBNC",
+      "pattern": "^[A-Z]+$",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 204,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "SandboxCode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "build_create": {
+      "type": "boolean",
+      "title": "Creative Build Mode",
+      "description": "Enable creative-mode building on the server.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 205,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "BuildCreate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "camera_restriction_mode": {
+      "type": "integer",
+      "title": "Camera Restriction",
+      "description": "Controls whether players can use first person, third person, or freely switch between both camera modes.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Allow first and third person",
+        "First person only",
+        "Third person only"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 206,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "CameraRestrictionMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "player_killing_mode": {
+      "type": "integer",
+      "title": "Player Killing Mode",
+      "description": "Controls which players may damage each other.",
+      "default": 3,
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "enum_labels": [
+        "No killing",
+        "Kill allies only",
+        "Kill strangers only",
+        "Kill everyone"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 207,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "PlayerKillingMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "player_safe_zone_level": {
+      "type": "integer",
+      "title": "Spawn Safe-Zone Level",
+      "description": "Players at or below this level create a temporary no-enemy safe zone on spawn.",
+      "default": 5,
+      "minimum": 0,
+      "maximum": 300,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 212,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "PlayerSafeZoneLevel",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "player_safe_zone_hours": {
+      "type": "integer",
+      "title": "Spawn Safe-Zone Hours",
+      "description": "In-world hours that the beginner safe zone stays active.",
+      "default": 5,
+      "minimum": 0,
+      "maximum": 24,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 213,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "PlayerSafeZoneHours",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bedroll_dead_zone_size": {
+      "type": "integer",
+      "title": "Bedroll Dead-Zone Size",
+      "description": "Half-size of the anti-spawn box around each active bedroll, measured in blocks.",
+      "default": 15,
+      "minimum": 0,
+      "maximum": 100,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 218,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "BedrollDeadZoneSize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bedroll_expiry_time": {
+      "type": "integer",
+      "title": "Bedroll Expiry (Real Days)",
+      "description": "Real-world days a bedroll stays active after its owner was last online.",
+      "default": 45,
+      "minimum": 1,
+      "maximum": 365,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 219,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "BedrollExpiryTime",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "allow_spawn_near_friend": {
+      "type": "integer",
+      "title": "Spawn Near Friend",
+      "description": "Controls whether first-time players may spawn near an online friend when joining the server.",
+      "default": 2,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Disabled",
+        "Always",
+        "Forest-biome friends only"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 219.1,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "AllowSpawnNearFriend",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "party_shared_kill_range": {
+      "type": "integer",
+      "title": "Party Shared Kill Range",
+      "description": "Distance players must stay within to share kill XP and quest credit.",
+      "default": 100,
+      "minimum": 0,
+      "maximum": 1000,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 224,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "PartySharedKillRange",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_uncovered_map_chunks_per_player": {
+      "type": "integer",
+      "title": "Max Uncovered Map Chunks Per Player",
+      "description": "Caps how much of the in-game map each player can uncover. Higher values increase per-player map file size and can corrupt player data if pushed too far.",
+      "default": 131072,
+      "minimum": 0,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 225,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "MaxUncoveredMapChunksPerPlayer",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_chunk_age": {
+      "type": "integer",
+      "title": "Chunk Reset Age (Days)",
+      "description": "In-game days since a chunk was last visited before the server may reset it if it is not protected by a claim or nearby bedroll. Use -1 to disable age-based chunk reset.",
+      "default": -1,
+      "minimum": -1,
+      "maximum": 10000,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 225.1,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "MaxChunkAge",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "save_data_limit": {
+      "type": "integer",
+      "title": "Save Data Limit (MB)",
+      "description": "Maximum disk allowance per saved game in megabytes. The server may reset saved chunks to free space when the limit is reached. Use -1 to disable the limit.",
+      "default": -1,
+      "minimum": -1,
+      "maximum": 1048576,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 225.2,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "SaveDataLimit",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_spawned_zombies": {
+      "type": "integer",
+      "title": "Map Zombie Cap",
+      "description": "Total concurrent zombies allowed across the whole map. High values hit CPU hard.",
+      "default": 64,
+      "minimum": 10,
+      "maximum": 256,
+      "x-lsgm-section": "threat",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "MaxSpawnedZombies",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_spawned_animals": {
+      "type": "integer",
+      "title": "Map Animal Cap",
+      "description": "Total concurrent wildlife cap across the whole map.",
+      "default": 50,
+      "minimum": 10,
+      "maximum": 256,
+      "x-lsgm-section": "threat",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "MaxSpawnedAnimals",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_max_allowed_view_distance": {
+      "type": "integer",
+      "title": "Client View Distance Cap",
+      "description": "Upper limit clients may request. High values increase memory pressure.",
+      "default": 12,
+      "minimum": 6,
+      "maximum": 12,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 302,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "ServerMaxAllowedViewDistance",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_queued_mesh_layers": {
+      "type": "integer",
+      "title": "Queued Mesh Layer Cap",
+      "description": "Maximum chunk mesh layers the server may queue during mesh generation. Lower values reduce memory pressure but can slow chunk generation.",
+      "default": 1000,
+      "minimum": 100,
+      "maximum": 10000,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 302.5,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "MaxQueuedMeshLayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_count": {
+      "type": "integer",
+      "title": "Land Claims Per Player",
+      "description": "Maximum number of claim blocks each player may place.",
+      "default": 1,
+      "minimum": 0,
+      "maximum": 10,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimCount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_size": {
+      "type": "integer",
+      "title": "Land Claim Size",
+      "description": "Protected claim size in blocks. Use odd sizes so the claim stays centered.",
+      "default": 41,
+      "minimum": 21,
+      "maximum": 71,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 401,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimSize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_dead_zone": {
+      "type": "integer",
+      "title": "Land Claim Dead Zone",
+      "description": "Minimum spacing between claim blocks unless players are friends.",
+      "default": 30,
+      "minimum": 0,
+      "maximum": 100,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 402,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimDeadZone",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_expiry_time": {
+      "type": "integer",
+      "title": "Land Claim Expiry (Days)",
+      "description": "Real-world days a player can stay offline before claims expire.",
+      "default": 7,
+      "minimum": 0,
+      "maximum": 365,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 403,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimExpiryTime",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_decay_mode": {
+      "type": "integer",
+      "title": "Offline Claim Decay Mode",
+      "description": "Choose how claim protection decays while a player is offline.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "enum_labels": [
+        "Slow / linear",
+        "Fast / exponential",
+        "No decay until expiry"
+      ],
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 404,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimDecayMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_online_durability_modifier": {
+      "type": "integer",
+      "title": "Online Claim Durability",
+      "description": "Block-hardness multiplier while the owner is online. 0 means infinite protection.",
+      "default": 4,
+      "minimum": 0,
+      "maximum": 100,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 405,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimOnlineDurabilityModifier",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_offline_durability_modifier": {
+      "type": "integer",
+      "title": "Offline Claim Durability",
+      "description": "Block-hardness multiplier while the owner is offline. 0 means infinite protection.",
+      "default": 4,
+      "minimum": 0,
+      "maximum": 100,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 406,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimOfflineDurabilityModifier",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "land_claim_offline_delay": {
+      "type": "integer",
+      "title": "Offline Claim Delay (Minutes)",
+      "description": "Delay after logout before the claim transitions from online to offline hardness.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1440,
+      "x-lsgm-section": "claims",
+      "x-lsgm-order": 407,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "LandClaimOfflineDelay",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "dynamic_mesh_enabled": {
+      "type": "boolean",
+      "title": "Dynamic Mesh",
+      "description": "Enable dynamic mesh updates around player-built structures.",
+      "default": true,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 408,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "DynamicMeshEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "dynamic_mesh_land_claim_only": {
+      "type": "boolean",
+      "title": "Dynamic Mesh In Claim Areas Only",
+      "description": "Restrict dynamic mesh updates to land-claim areas only.",
+      "default": true,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 409,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "DynamicMeshLandClaimOnly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "dynamic_mesh_land_claim_buffer": {
+      "type": "integer",
+      "title": "Dynamic Mesh Claim Buffer",
+      "description": "Chunk radius around each claim where dynamic mesh stays active.",
+      "default": 3,
+      "minimum": 0,
+      "maximum": 16,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "DynamicMeshLandClaimBuffer",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "dynamic_mesh_max_item_cache": {
+      "type": "integer",
+      "title": "Concurrent Dynamic Mesh Work Items",
+      "description": "Number of mesh work items processed concurrently. Higher values use more RAM.",
+      "default": 3,
+      "minimum": 1,
+      "maximum": 16,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 411,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "DynamicMeshMaxItemCache",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "web_dashboard_enabled": {
+      "type": "boolean",
+      "title": "Enable Web Dashboard",
+      "description": "Turn on the dedicated server's built-in web dashboard.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 500,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "WebDashboardEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "web_dashboard_url": {
+      "type": "string",
+      "title": "Web Dashboard URL",
+      "description": "Optional full external URL for the built-in web dashboard when you place it behind a reverse proxy instead of sharing the host IP and dashboard port directly.",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 501,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "WebDashboardUrl",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_map_rendering": {
+      "type": "boolean",
+      "title": "Render Dashboard Map Tiles",
+      "description": "Enable the dedicated server's native map-tile rendering for its built-in Web Dashboard.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 502,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "EnableMapRendering",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "telnet_enabled": {
+      "type": "boolean",
+      "title": "Enable Telnet",
+      "description": "Written to serverconfig.xml as TelnetEnabled; when true the dedicated server opens Telnet for LanGame player and admin commands.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 503,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TelnetEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "telnet_password": {
+      "type": "string",
+      "title": "Telnet Password",
+      "description": "Written to serverconfig.xml as TelnetPassword; the dedicated server reads it for authenticated Telnet player and admin commands.",
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 504,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TelnetPassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "telnet_failed_login_limit": {
+      "type": "integer",
+      "title": "Telnet Failed Login Limit",
+      "description": "Number of wrong passwords allowed from one remote client before the server blocks that client from telnet.",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 100,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 504.1,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TelnetFailedLoginLimit",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "telnet_failed_logins_blocktime": {
+      "type": "integer",
+      "title": "Telnet Block Time (Seconds)",
+      "description": "How long the native telnet block lasts after a client reaches the failed-login limit.",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 86400,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 504.2,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TelnetFailedLoginsBlocktime",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "terminal_window_enabled": {
+      "type": "boolean",
+      "title": "Keep Terminal Window",
+      "description": "Keep the native dedicated-server terminal window visible. Leave this off to keep LanGame as the only operator-facing console surface.",
+      "default": false,
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 505,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TerminalWindowEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "eac_enabled": {
+      "type": "boolean",
+      "title": "Easy Anti-Cheat",
+      "description": "Enable Easy Anti-Cheat for the server.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 506,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "EACEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "hide_command_execution_log": {
+      "type": "integer",
+      "title": "Hide Command Execution Log",
+      "description": "Controls how aggressively command execution is hidden from logs and remote clients.",
+      "default": 0,
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "enum_labels": [
+        "Show everything",
+        "Hide telnet and web panel",
+        "Also hide remote game clients",
+        "Hide everything"
+      ],
+      "x-lsgm-section": "runtime",
+      "x-lsgm-order": 507,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "HideCommandExecutionLog",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "twitch_server_permission": {
+      "type": "integer",
+      "title": "Twitch Server Permission",
+      "description": "Required 7DTD permission level to use Twitch integration on the server.",
+      "default": 90,
+      "minimum": 0,
+      "maximum": 1000,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 508,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TwitchServerPermission",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "twitch_blood_moon_allowed": {
+      "type": "boolean",
+      "title": "Allow Twitch During Blood Moon",
+      "description": "Allow Twitch-triggered actions during blood moon. This can increase server load by spawning more zombies.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 509,
+      "x-lsgm-source": "serverconfig_xml",
+      "x-lsgm-source-key": "TwitchBloodMoonAllowed",
+      "x-lsgm-source-surface": "config_file"
+    }
+  },
+  "required": [
+    "server_name",
+    "max_players",
+    "game_world",
+    "world_name"
+  ]
+}

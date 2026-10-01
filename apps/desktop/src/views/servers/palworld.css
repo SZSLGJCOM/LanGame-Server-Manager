@@ -1,0 +1,43 @@
+:root {
+  --theme-palworld-card-bg: rgba(240, 249, 255, 0.04);
+  --theme-palworld-card-hover: rgba(56, 189, 248, 0.08);
+  --theme-palworld-card-active: rgba(56, 189, 248, 0.12);
+  --theme-palworld-card-border: rgba(56, 189, 248, 0.1);
+  --theme-palworld-card-active-border: #38bdf8;
+  --theme-palworld-accent: #38bdf8;
+  --theme-palworld-glow: 0 0 10px rgba(56, 189, 248, 0.36);
+}
+
+:root[data-theme="light"] {
+  --theme-palworld-card-bg: rgba(224, 242, 254, 0.84);
+  --theme-palworld-card-hover: rgba(224, 242, 254, 0.96);
+  --theme-palworld-card-active: rgba(186, 230, 253, 0.98);
+  --theme-palworld-card-border: rgba(2, 132, 199, 0.16);
+  --theme-palworld-card-active-border: #0284c7;
+  --theme-palworld-accent: #0284c7;
+  --theme-palworld-glow: 0 0 10px rgba(2, 132, 199, 0.28);
+}
+
+.theme-palworld.row-card {
+  background: var(--theme-palworld-card-bg);
+  border-color: var(--theme-palworld-card-border);
+}
+
+.theme-palworld.row-card:hover {
+  background: var(--theme-palworld-card-hover);
+}
+
+.theme-palworld.row-card.is-active {
+  background: var(--theme-palworld-card-active);
+  border-color: var(--theme-palworld-card-active-border);
+}
+
+.theme-palworld .row-card-accent {
+  background: var(--theme-palworld-accent);
+  opacity: 0.3;
+}
+
+.theme-palworld.is-active .row-card-accent {
+  opacity: 1;
+  box-shadow: var(--theme-palworld-glow);
+}

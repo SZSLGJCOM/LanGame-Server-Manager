@@ -1,0 +1,170 @@
+id = "dontstarve"
+name = "Don't Starve Together"
+version = "0.1.0"
+description = "Dedicated server installation, configuration, runtime, mod, and player-management integration for Don't Starve Together."
+steam_app_id = 343050
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "dontstarve"
+
+[process]
+executable = "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe"
+args_template = [
+  "-persistent_storage_root",
+  "{{paths.config_dir}}",
+  "-conf_dir",
+  "clusters",
+  "-cluster",
+  "main",
+  "-shard",
+  "Master",
+  "-ugc_directory",
+  "{{paths.data_dir}}/ugc/Master",
+  "-console",
+  "-bind_ip",
+  "{{instance.bind_ip}}",
+  "-port",
+  "{{ports.master.port}}",
+  "{{dontstarve.launch_args}}"
+]
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "The standard layout runs Master and optional Caves. Island Adventures runs Master, Caves, Islands and Volcano with independent ports, configuration and captured console logs."
+
+[[default_ports]]
+name = "master"
+protocol = "udp"
+port = 10999
+
+[[default_ports]]
+name = "caves"
+protocol = "udp"
+port = 11000
+
+[[default_ports]]
+name = "shard_master"
+protocol = "udp"
+port = 10888
+
+[[default_ports]]
+name = "islands"
+protocol = "udp"
+port = 11001
+
+[[default_ports]]
+name = "volcano"
+protocol = "udp"
+port = 11002
+
+[[default_ports]]
+name = "steam_query"
+protocol = "udp"
+port = 27016
+
+[[default_ports]]
+name = "steam_auth"
+protocol = "udp"
+port = 8766
+
+[[default_ports]]
+name = "caves_steam_query"
+protocol = "udp"
+port = 27017
+
+[[default_ports]]
+name = "caves_steam_auth"
+protocol = "udp"
+port = 8767
+
+[[default_ports]]
+name = "islands_steam_query"
+protocol = "udp"
+port = 27018
+
+[[default_ports]]
+name = "volcano_steam_query"
+protocol = "udp"
+port = 27019
+
+[[default_ports]]
+name = "islands_steam_auth"
+protocol = "udp"
+port = 8768
+
+[[default_ports]]
+name = "volcano_steam_auth"
+protocol = "udp"
+port = 8769
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["master"]
+startup_timeout_ms = 90000
+
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "list_online_players"
+label = "Refresh live players"
+label_zh_cn = "刷新在线玩家"
+transport = "stdin"
+command_template = 'print("[LGM-DST-PLAYERS-BEGIN]\t{{request_id}}");local n=0;local s=function(x)return tostring(x or ""):gsub("[\r\n\t]"," ") end;for _,v in ipairs(TheNet:GetClientTable() or {}) do if v.userid and v.userid~="" then n=n+1;print("[LGM-DST-PLAYER]\t{{request_id}}\t"..n.."\t"..s(v.userid).."\t"..s(v.name).."\t"..s(v.prefab).."\t"..(v.admin and "1" or "0")) end end;print("[LGM-DST-PLAYERS-END]\t{{request_id}}\t"..n)'
+process_key = "master"
+
+[[runtime.player_actions]]
+id = "kick_userid"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "stdin"
+command_template = "TheNet:Kick({{target}})"
+target_label = "Klei user ID"
+target_label_zh_cn = "Klei 用户 ID"
+target_placeholder = "KU_..."
+target_placeholder_zh_cn = "KU_... 格式的 Klei 用户 ID"
+target_required = true
+target_encoding = "quoted_string"
+process_key = "master"
+destructive = true
+
+[runtime.player_list]
+scope = "online"
+source = "structured_log"
+action_id = "list_online_players"
+player_action_ids = ["kick_userid"]
+response_codec = "dst_client_table_v1"
+identity_kind = "klei_user_id"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 8000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "c_save()"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "c_shutdown(true)"
+wait_after_ms = 5000
+
+[workshop]
+provider = "steam"
+consumer_app_id = 322330
+supports_collections = true
+[storage]
+# modsettings.lua can force-enable developer mods; never inherit edits from another server.
+runtime_copy_exclusions = ["mods/dedicated_server_mods_setup.lua", "mods/modsettings.lua"]
+saves_path_template = "{{paths.config_dir}}/clusters/main"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "master_shard_stdin_and_cluster_rosters"
+reason = "Don't Starve Together uses module-declared Master shard stdin actions for a live player snapshot and TheNet:Kick while persistent admins, whitelist, and blocklist remain schema-backed cluster files."
+verification = "Start a Windows DST cluster, confirm clusters/main/adminlist.txt, whitelist.txt, and blocklist.txt are rendered for the server to read, refresh the online-player snapshot, confirm marker rows appear in the Master shard log, and verify TheNet:Kick removes a test userid."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["master", "caves", "islands", "volcano", "shard_master", "steam_query", "steam_auth", "caves_steam_query", "caves_steam_auth", "islands_steam_query", "volcano_steam_query", "islands_steam_auth", "volcano_steam_auth"]

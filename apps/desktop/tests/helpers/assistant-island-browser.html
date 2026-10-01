@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LAN island motion and interaction fixture</title>
+    <style>
+      body { margin: 0; background: var(--theme-app-background); color: var(--shell-text); }
+      .island-fixture-header.shell-header { display: block; height: 86px; padding: 0; background: var(--theme-card-surface); }
+      .island-fixture-title { position: relative; display: flex; align-items: center; justify-content: center; height: 48px; }
+      .island-fixture-offset .island-fixture-title { width: calc(100% - 160px); }
+      .island-fixture-title > span { position: absolute; left: 24px; font-size: 13px; }
+      .island-fixture-nav { display: flex; align-items: center; height: 38px; padding: 0 24px; border-bottom: 1px solid var(--shell-line); }
+      .island-fixture-nav button { padding: 4px 12px; color: inherit; background: transparent; border: 0; font: inherit; }
+      .island-fixture-body { padding: 24px; color: var(--shell-muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div id="fixture"></div>
+    <script type="module" src="./assistant-island-browser.tsx"></script>
+  </body>
+</html>

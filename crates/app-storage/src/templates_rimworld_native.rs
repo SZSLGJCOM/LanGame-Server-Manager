@@ -1,0 +1,581 @@
+use super::{failure, read_optional_json};
+use crate::StorageError;
+use crate::templates::templates_materialize::ManagedConfigMergePlan;
+use crate::templates::{ManagedConfigMutation, ModuleSupportMaterializationContext};
+use serde_json::{Map, Value};
+use std::collections::BTreeMap;
+
+type SettingSpec = (&'static str, &'static str, &'static [&'static str]);
+
+fn rimworld_native_setting_specs() -> &'static [SettingSpec] {
+    &[
+        (
+            "chat_enable_mo_td",
+            "Configs/ChatConfig.json",
+            &["EnableMoTD"],
+        ),
+        (
+            "chat_message_of_the_day",
+            "Configs/ChatConfig.json",
+            &["MessageOfTheDay"],
+        ),
+        (
+            "chat_login_notifications",
+            "Configs/ChatConfig.json",
+            &["LoginNotifications"],
+        ),
+        (
+            "chat_disconnect_notifications",
+            "Configs/ChatConfig.json",
+            &["DisconnectNotifications"],
+        ),
+        (
+            "difficulty_is_difficulty_enforced",
+            "Configs/DifficultyConfig.json",
+            &["IsDifficultyEnforced"],
+        ),
+        (
+            "difficulty_threat_scale",
+            "Configs/DifficultyConfig.json",
+            &["ThreatScale"],
+        ),
+        (
+            "difficulty_allow_big_threats",
+            "Configs/DifficultyConfig.json",
+            &["AllowBigThreats"],
+        ),
+        (
+            "difficulty_allow_violent_quests",
+            "Configs/DifficultyConfig.json",
+            &["AllowViolentQuests"],
+        ),
+        (
+            "difficulty_allow_intro_threats",
+            "Configs/DifficultyConfig.json",
+            &["AllowIntroThreats"],
+        ),
+        (
+            "difficulty_predators_hunt_humanlikes",
+            "Configs/DifficultyConfig.json",
+            &["PredatorsHuntHumanlikes"],
+        ),
+        (
+            "difficulty_allow_extreme_weather_incidents",
+            "Configs/DifficultyConfig.json",
+            &["AllowExtremeWeatherIncidents"],
+        ),
+        (
+            "difficulty_crop_yield_factor",
+            "Configs/DifficultyConfig.json",
+            &["CropYieldFactor"],
+        ),
+        (
+            "difficulty_mine_yield_factor",
+            "Configs/DifficultyConfig.json",
+            &["MineYieldFactor"],
+        ),
+        (
+            "difficulty_butcher_yield_factor",
+            "Configs/DifficultyConfig.json",
+            &["ButcherYieldFactor"],
+        ),
+        (
+            "difficulty_research_speed_factor",
+            "Configs/DifficultyConfig.json",
+            &["ResearchSpeedFactor"],
+        ),
+        (
+            "difficulty_quest_reward_value_factor",
+            "Configs/DifficultyConfig.json",
+            &["QuestRewardValueFactor"],
+        ),
+        (
+            "difficulty_raid_loot_points_factor",
+            "Configs/DifficultyConfig.json",
+            &["RaidLootPointsFactor"],
+        ),
+        (
+            "difficulty_trade_price_factor_loss",
+            "Configs/DifficultyConfig.json",
+            &["TradePriceFactorLoss"],
+        ),
+        (
+            "difficulty_maintenance_cost_factor",
+            "Configs/DifficultyConfig.json",
+            &["MaintenanceCostFactor"],
+        ),
+        (
+            "difficulty_scaria_rot_chance",
+            "Configs/DifficultyConfig.json",
+            &["ScariaRotChance"],
+        ),
+        (
+            "difficulty_enemy_death_on_downed_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["EnemyDeathOnDownedChanceFactor"],
+        ),
+        (
+            "difficulty_colonist_mood_offset",
+            "Configs/DifficultyConfig.json",
+            &["ColonistMoodOffset"],
+        ),
+        (
+            "difficulty_food_poison_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["FoodPoisonChanceFactor"],
+        ),
+        (
+            "difficulty_manhunter_chance_on_damage_factor",
+            "Configs/DifficultyConfig.json",
+            &["ManhunterChanceOnDamageFactor"],
+        ),
+        (
+            "difficulty_player_pawn_infection_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["PlayerPawnInfectionChanceFactor"],
+        ),
+        (
+            "difficulty_disease_interval_factor",
+            "Configs/DifficultyConfig.json",
+            &["DiseaseIntervalFactor"],
+        ),
+        (
+            "difficulty_enemy_reproduction_rate_factor",
+            "Configs/DifficultyConfig.json",
+            &["EnemyReproductionRateFactor"],
+        ),
+        (
+            "difficulty_deep_drill_infestation_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["DeepDrillInfestationChanceFactor"],
+        ),
+        (
+            "difficulty_friendly_fire_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["FriendlyFireChanceFactor"],
+        ),
+        (
+            "difficulty_allow_instant_kill_chance",
+            "Configs/DifficultyConfig.json",
+            &["AllowInstantKillChance"],
+        ),
+        (
+            "difficulty_peaceful_temples",
+            "Configs/DifficultyConfig.json",
+            &["PeacefulTemples"],
+        ),
+        (
+            "difficulty_allow_cave_hives",
+            "Configs/DifficultyConfig.json",
+            &["AllowCaveHives"],
+        ),
+        (
+            "difficulty_unwavering_prisoners",
+            "Configs/DifficultyConfig.json",
+            &["UnwaveringPrisoners"],
+        ),
+        (
+            "difficulty_allow_traps",
+            "Configs/DifficultyConfig.json",
+            &["AllowTraps"],
+        ),
+        (
+            "difficulty_allow_turrets",
+            "Configs/DifficultyConfig.json",
+            &["AllowTurrets"],
+        ),
+        (
+            "difficulty_allow_mortars",
+            "Configs/DifficultyConfig.json",
+            &["AllowMortars"],
+        ),
+        (
+            "difficulty_classic_mortars",
+            "Configs/DifficultyConfig.json",
+            &["ClassicMortars"],
+        ),
+        (
+            "difficulty_adaptation_effect_factor",
+            "Configs/DifficultyConfig.json",
+            &["AdaptationEffectFactor"],
+        ),
+        (
+            "difficulty_adaptation_growth_rate_factor_over_zero",
+            "Configs/DifficultyConfig.json",
+            &["AdaptationGrowthRateFactorOverZero"],
+        ),
+        (
+            "difficulty_fixed_wealth_mode",
+            "Configs/DifficultyConfig.json",
+            &["FixedWealthMode"],
+        ),
+        (
+            "difficulty_low_pop_conversion_boost",
+            "Configs/DifficultyConfig.json",
+            &["LowPopConversionBoost"],
+        ),
+        (
+            "difficulty_no_babies_or_children",
+            "Configs/DifficultyConfig.json",
+            &["NoBabiesOrChildren"],
+        ),
+        (
+            "difficulty_babies_are_healthy",
+            "Configs/DifficultyConfig.json",
+            &["BabiesAreHealthy"],
+        ),
+        (
+            "difficulty_child_raiders_allowed",
+            "Configs/DifficultyConfig.json",
+            &["ChildRaidersAllowed"],
+        ),
+        (
+            "difficulty_child_aging_rate",
+            "Configs/DifficultyConfig.json",
+            &["ChildAgingRate"],
+        ),
+        (
+            "difficulty_adult_aging_rate",
+            "Configs/DifficultyConfig.json",
+            &["AdultAgingRate"],
+        ),
+        (
+            "difficulty_wastepack_infestation_chance_factor",
+            "Configs/DifficultyConfig.json",
+            &["WastepackInfestationChanceFactor"],
+        ),
+        (
+            "difficulty_nomadic_mineable_resources_factor",
+            "Configs/DifficultyConfig.json",
+            &["NomadicMineableResourcesFactor"],
+        ),
+        (
+            "scenario_is_enforced",
+            "Configs/ScenarioConfig.json",
+            &["IsEnforced"],
+        ),
+        ("scenario_name", "Configs/ScenarioConfig.json", &["Name"]),
+        (
+            "storyteller_is_enforced",
+            "Configs/StorytellerConfig.json",
+            &["IsEnforced"],
+        ),
+        (
+            "storyteller_def_name",
+            "Configs/StorytellerConfig.json",
+            &["DefName"],
+        ),
+        (
+            "action_aid_is_enabled",
+            "Configs/Actions/Aid.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_aid_cooldown",
+            "Configs/Actions/Aid.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_caravan_is_enabled",
+            "Configs/Actions/Caravan.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_caravan_cooldown",
+            "Configs/Actions/Caravan.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_event_is_enabled",
+            "Configs/Actions/Event.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_event_cooldown",
+            "Configs/Actions/Event.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_guild_is_enabled",
+            "Configs/Actions/Guild.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_guild_cooldown",
+            "Configs/Actions/Guild.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_leaderboard_is_enabled",
+            "Configs/Actions/Leaderboard.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_leaderboard_cooldown",
+            "Configs/Actions/Leaderboard.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_market_is_enabled",
+            "Configs/Actions/Market.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_market_cooldown",
+            "Configs/Actions/Market.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_market_minimum_price",
+            "Configs/Actions/Market.json",
+            &["MinimumPrice"],
+        ),
+        (
+            "action_market_price_multiplier",
+            "Configs/Actions/Market.json",
+            &["PriceMultiplier"],
+        ),
+        (
+            "action_market_max_entries_per_player",
+            "Configs/Actions/Market.json",
+            &["MaxEntriesPerPlayer"],
+        ),
+        (
+            "action_pollution_is_enabled",
+            "Configs/Actions/Pollution.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_pollution_cooldown",
+            "Configs/Actions/Pollution.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_raid_is_enabled",
+            "Configs/Actions/Raid.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_raid_cooldown",
+            "Configs/Actions/Raid.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_river_is_enabled",
+            "Configs/Actions/River.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_river_cooldown",
+            "Configs/Actions/River.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_road_is_enabled",
+            "Configs/Actions/Road.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_road_cooldown",
+            "Configs/Actions/Road.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_road_allow_dirt_path",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AllowDirtPath"],
+        ),
+        (
+            "action_road_allow_dirt_road",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AllowDirtRoad"],
+        ),
+        (
+            "action_road_allow_stone_road",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AllowStoneRoad"],
+        ),
+        (
+            "action_road_allow_asphalt_path",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AllowAsphaltPath"],
+        ),
+        (
+            "action_road_allow_asphalt_highway",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AllowAsphaltHighway"],
+        ),
+        (
+            "action_road_dirt_path_cost",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "DirtPathCost"],
+        ),
+        (
+            "action_road_dirt_road_cost",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "DirtRoadCost"],
+        ),
+        (
+            "action_road_stone_road_cost",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "StoneRoadCost"],
+        ),
+        (
+            "action_road_asphalt_path_cost",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AsphaltPathCost"],
+        ),
+        (
+            "action_road_asphalt_highway_cost",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AsphaltHighwayCost"],
+        ),
+        (
+            "action_road_dirt_path_multiplier",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "DirtPathMultiplier"],
+        ),
+        (
+            "action_road_dirt_road_multiplier",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "DirtRoadMultiplier"],
+        ),
+        (
+            "action_road_stone_road_multiplier",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "StoneRoadMultiplier"],
+        ),
+        (
+            "action_road_asphalt_path_multiplier",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AsphaltPathMultiplier"],
+        ),
+        (
+            "action_road_asphalt_highway_multiplier",
+            "Configs/Actions/Road.json",
+            &["RoadValues", "AsphaltHighwayMultiplier"],
+        ),
+        (
+            "action_scenario_is_enabled",
+            "Configs/Actions/Scenario.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_scenario_cooldown",
+            "Configs/Actions/Scenario.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_site_is_enabled",
+            "Configs/Actions/Site.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_site_cooldown",
+            "Configs/Actions/Site.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_site_time_interval",
+            "Configs/Actions/Site.json",
+            &["TimeInterval"],
+        ),
+        (
+            "action_site_building_cost",
+            "Configs/Actions/Site.json",
+            &["BuildingCost"],
+        ),
+        (
+            "action_site_rewards_count",
+            "Configs/Actions/Site.json",
+            &["RewardsCount"],
+        ),
+        (
+            "action_trade_is_enabled",
+            "Configs/Actions/Trade.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_trade_cooldown",
+            "Configs/Actions/Trade.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_world_object_is_enabled",
+            "Configs/Actions/WorldObject.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_world_object_cooldown",
+            "Configs/Actions/WorldObject.json",
+            &["Cooldown"],
+        ),
+        (
+            "action_zoom_is_enabled",
+            "Configs/Actions/Zoom.json",
+            &["IsEnabled"],
+        ),
+        (
+            "action_zoom_cooldown",
+            "Configs/Actions/Zoom.json",
+            &["Cooldown"],
+        ),
+    ]
+}
+
+pub(super) fn materialize(
+    context: &ModuleSupportMaterializationContext<'_>,
+    files: &mut ManagedConfigMutation,
+) -> Result<(), StorageError> {
+    files.apply(plan_overrides(context)?)
+}
+
+pub(crate) fn plan_overrides(
+    context: &ModuleSupportMaterializationContext<'_>,
+) -> Result<Vec<ManagedConfigMergePlan>, StorageError> {
+    let mut documents: BTreeMap<&str, (Value, Option<Vec<u8>>)> = BTreeMap::new();
+    for &(schema_key, relative, key_path) in rimworld_native_setting_specs() {
+        let Some(value) = context
+            .settings
+            .get(schema_key)
+            .filter(|value| !value.is_null())
+        else {
+            continue;
+        };
+        let path = context.install_root.join(relative);
+        if !documents.contains_key(relative) {
+            documents.insert(
+                relative,
+                read_optional_json(&path)?
+                    .map(|(value, bytes)| (value, Some(bytes)))
+                    .unwrap_or_else(|| (Value::Object(Map::new()), None)),
+            );
+        }
+        let mut node = &mut documents
+            .get_mut(relative)
+            .ok_or_else(|| failure(&path, "Missing RimWorld configuration document"))?
+            .0;
+        for (index, key) in key_path.iter().enumerate() {
+            let object = node.as_object_mut().ok_or_else(|| {
+                failure(&path, "RimWorld nested configuration must remain an object")
+            })?;
+            if index + 1 == key_path.len() {
+                object.insert((*key).to_owned(), value.clone());
+                break;
+            }
+            node = object
+                .entry((*key).to_owned())
+                .or_insert_with(|| Value::Object(Map::new()));
+        }
+    }
+    documents
+        .into_iter()
+        .map(|(relative, (document, original))| {
+            Ok(ManagedConfigMergePlan {
+                destination_path: context.install_root.join(relative),
+                original,
+                replacement: serde_json::to_vec_pretty(&document)?,
+            })
+        })
+        .collect()
+}

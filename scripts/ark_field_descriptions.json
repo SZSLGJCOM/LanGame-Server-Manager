@@ -1,0 +1,1802 @@
+{
+  "arksurvivalascended": {
+    "additional_maps": {
+      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
+      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。"
+    },
+    "admin_list_url": {
+      "en": "Loads administrator account IDs from a web resource in place of AllowedCheaterAccountIDs.txt. UpdateAllowedCheatersInterval controls how often the server checks that resource.",
+      "zh-CN": "从指定网页资源读取管理员账号 ID，替代 AllowedCheaterAccountIDs.txt。UpdateAllowedCheatersInterval 决定服务器检查该资源更新的频率。"
+    },
+    "always_tick_dedicated_skeletal_meshes": {
+      "en": "Keeps creature skeletal animations updating on the server, including idle creatures. This disables the optimization that skips those updates when server frame rates are low.",
+      "zh-CN": "让专用服务器持续更新生物的骨骼动画，包括处于空闲状态的生物。启用后不再使用服务器低帧率时跳过这类更新的优化。"
+    },
+    "b_allow_flyer_speed_leveling": {
+      "en": "Lets players assign Movement Speed levels to flying creatures. Ascended also requires bAllowSpeedLeveling to be enabled.",
+      "zh-CN": "允许为飞行生物的移动速度分配升级点数。Ascended 还需同时启用 bAllowSpeedLeveling。"
+    },
+    "b_allow_speed_leveling": {
+      "en": "Allows Movement Speed level increases for survivors and creatures that do not fly. Flyer speed has its own additional setting.",
+      "zh-CN": "允许提高幸存者和非飞行生物的移动速度等级。飞行生物的速度升级另有独立设置。"
+    },
+    "b_allow_unlimited_respecs": {
+      "en": "Removes the 24-hour wait between Mindwipe Tonic uses, allowing repeated character respecs.",
+      "zh-CN": "取消两次使用遗忘汤之间的 24 小时等待，允许连续重置角色属性和技能。"
+    },
+    "b_disable_friendly_fire": {
+      "en": "Blocks damage between members of the same tribe and their tames or structures.",
+      "zh-CN": "阻止同一部落成员及其驯服生物、建筑之间造成友军伤害。"
+    },
+    "b_disable_photo_mode": {
+      "en": "Prevents players from using Photo Mode on this server.",
+      "zh-CN": "禁止玩家在此服务器使用拍照模式。"
+    },
+    "b_disable_wireless_crafting": {
+      "en": "Requires crafting materials to be supplied without wireless access to Tek Dedicated Storage.",
+      "zh-CN": "禁止制作时从泰克专用储物箱无线提取材料，材料需通过其他方式提供。"
+    },
+    "b_disable_wireless_crafting_for_dinos": {
+      "en": "Stops crafting in creature inventories from drawing materials wirelessly from Tek Dedicated Storage.",
+      "zh-CN": "禁止在生物物品栏中制作时，从泰克专用储物箱无线提取材料。"
+    },
+    "b_disable_wireless_crafting_for_players": {
+      "en": "Stops crafting in a survivor's inventory from drawing materials wirelessly from Tek Dedicated Storage.",
+      "zh-CN": "禁止在幸存者物品栏中制作时，从泰克专用储物箱无线提取材料。"
+    },
+    "b_disable_wireless_crafting_for_structures": {
+      "en": "Stops crafting stations and other structure inventories from drawing materials wirelessly from Tek Dedicated Storage.",
+      "zh-CN": "禁止工作台及其他建筑物品栏在制作时，从泰克专用储物箱无线提取材料。"
+    },
+    "b_ignore_structures_prevention_volumes": {
+      "en": "Allows construction in areas normally blocked by map building restrictions, including some Obelisks and the Aberration Portal. Genesis: Part 1 also has the separate bGenesisUseStructuresPreventionVolumes control for mission areas.",
+      "zh-CN": "允许在地图通常禁止建造的区域施工，包括部分方舟区域和畸变传送门附近。创世纪第 1 部分的任务区域还受独立的 bGenesisUseStructuresPreventionVolumes 设置控制。"
+    },
+    "b_pv_edisable_friendly_fire": {
+      "en": "On PvE servers, blocks damage between tribe members and their tames or structures.",
+      "zh-CN": "在 PvE 服务器上，阻止部落成员及其驯服生物、建筑之间造成友军伤害。"
+    },
+    "base_hexagon_reward_multiplier": {
+      "en": "Adjusts Hexagon rewards from mission scores. In Ascended, it also adjusts Club ARK token rewards; higher values increase the payout.",
+      "zh-CN": "调整任务评分获得的六角币奖励。在 Ascended 中也调整 Club ARK 代币奖励；数值越高，奖励越多。"
+    },
+    "cheat_teleport_locations": {
+      "en": "Defines named destinations for the TP administrator command. Supply coordinates in Unreal world units, rather than the map's GPS latitude and longitude.",
+      "zh-CN": "为管理员 TP 命令定义带名称的传送目的地。坐标使用 Unreal 世界单位，不使用地图 GPS 经纬度。"
+    },
+    "craft_xpmultiplier": {
+      "en": "Adjusts experience gained from crafting items. Higher values award more crafting XP.",
+      "zh-CN": "调整制作物品获得的经验。数值越高，制作经验越多。"
+    },
+    "crafting_skill_bonus_multiplier": {
+      "en": "Adjusts the bonus contributed by points invested in Crafting Skill. Higher values increase that bonus.",
+      "zh-CN": "调整制作技能加点带来的额外加成。数值越高，该加成越大。"
+    },
+    "culture": {
+      "en": "Selects the language used for server output. This does not change the language chosen by connected players.",
+      "zh-CN": "选择服务器输出使用的语言，不改变已连接玩家各自选择的客户端语言。"
+    },
+    "custom_notification_url": {
+      "en": "Configures the HTTP URL used for custom notifications through the server-message system. This option does not support HTTPS.",
+      "zh-CN": "配置服务器消息系统用于自定义通知的 HTTP 地址。此选项不支持 HTTPS。"
+    },
+    "destroy_tames_over_level_clamp": {
+      "en": "Sets the highest tame level to retain at startup. The server deletes tamed creatures above this level when it starts.",
+      "zh-CN": "设置启动时允许保留的驯服生物最高等级。服务器启动时会删除超过此等级的已驯服生物。"
+    },
+    "disable_character_tracker": {
+      "en": "Turns off character tracking through a launch flag. This takes precedence over UseCharacterTracker in GameUserSettings.ini.",
+      "zh-CN": "通过启动参数关闭角色追踪。该参数优先于 GameUserSettings.ini 中的 UseCharacterTracker。"
+    },
+    "disable_custom_cosmetics": {
+      "en": "Turns off the Custom Cosmetic system, which otherwise supports cosmetic mods downloaded automatically by connected clients.",
+      "zh-CN": "关闭自定义外观系统。该系统通常允许已连接客户端自动下载并显示外观 Mod。"
+    },
+    "disabledinonetrangescaling": {
+      "en": "Turns off the optimization that scales how far creature updates are replicated to clients.",
+      "zh-CN": "关闭按距离调整生物网络同步范围的优化。"
+    },
+    "do_custom_cosmetic_validation": {
+      "en": "Enables the server's validation checks for custom cosmetic mods.",
+      "zh-CN": "启用服务器对自定义外观 Mod 的验证检查。"
+    },
+    "duration": {
+      "en": "Controls how many seconds the message of the day remains visible when a player joins.",
+      "zh-CN": "设置玩家加入时每日消息显示的持续时间，单位为秒。"
+    },
+    "easter_colors": {
+      "en": "Gives newly spawned creatures a chance to use Easter event colors.",
+      "zh-CN": "让新生成的生物有机会采用复活节活动配色。"
+    },
+    "enable_steel_shield": {
+      "en": "Enables the SteelShield DDoS-protection integration on servers hosted by Nitrado. It does not provide that protection on other hosts.",
+      "zh-CN": "在由 Nitrado 托管的服务器上启用 SteelShield DDoS 防护集成。此选项不会为其他主机提供该防护。"
+    },
+    "exclude_item_indices": {
+      "en": "Removes specified item IDs from supply-crate loot. Repeat this entry to exclude more than one item.",
+      "zh-CN": "按物品 ID 将指定物品排除出补给箱战利品。需要排除多个物品时，可重复添加此条目。"
+    },
+    "force_allow_cave_flyers": {
+      "en": "Allows flying creatures to enter caves even where the map would normally restrict them.",
+      "zh-CN": "允许飞行生物进入洞穴，覆盖地图通常对洞穴飞行生物的限制。"
+    },
+    "force_respawn_dinos": {
+      "en": "Removes wild creatures each time the server starts so the world can repopulate them. Tamed creatures are excluded.",
+      "zh-CN": "每次服务器启动时清除野生生物，使世界重新生成这些生物。已驯服生物不受影响。"
+    },
+    "forceuseperfthreads": {
+      "en": "Requests the engine's performance-thread mode for the server.",
+      "zh-CN": "请求服务器使用引擎的性能线程模式。"
+    },
+    "gbusage_to_force_restart": {
+      "en": "Sets the memory-use threshold in gigabytes at which the server requests a world save and restart. Use 0 to disable this behavior.",
+      "zh-CN": "设置服务器请求保存世界并重启的内存用量阈值，单位为 GB。设为 0 可关闭此行为。"
+    },
+    "generic_xpmultiplier": {
+      "en": "Adjusts passive experience earned over time. Higher values grant more XP from this source.",
+      "zh-CN": "调整随时间自动获得的经验。数值越高，这部分被动经验越多。"
+    },
+    "global_item_decomposition_time_multiplier": {
+      "en": "Adjusts how long dropped items and loot bags remain before disappearing. Higher values extend their lifetime.",
+      "zh-CN": "调整掉落物品和战利品袋消失前的保留时间。数值越高，保留时间越长。"
+    },
+    "global_spoiling_time_multiplier": {
+      "en": "Adjusts the time before perishable items spoil. Higher values preserve them longer.",
+      "zh-CN": "调整易腐物品变质前的时间。数值越高，保存时间越长。"
+    },
+    "hair_growth_speed_multiplier": {
+      "en": "Adjusts how quickly survivor hair grows. Higher values accelerate growth.",
+      "zh-CN": "调整幸存者毛发的生长速度。数值越高，生长越快。"
+    },
+    "harvest_resource_item_amount_class_multipliers": {
+      "en": "Sets separate harvest-yield multipliers for individual resource item classes. This lets you change one resource's yield without applying the same change to every resource.",
+      "zh-CN": "为不同资源物品类分别设置采集产量倍率。可只调整某一种资源的产量，而不改变所有资源。"
+    },
+    "harvest_xpmultiplier": {
+      "en": "Adjusts experience gained from gathering resources. Higher values grant more harvesting XP.",
+      "zh-CN": "调整采集资源获得的经验。数值越高，采集经验越多。"
+    },
+    "hexagon_cost_multiplier": {
+      "en": "Adjusts item prices in the Hexagon Store. In Ascended, it also adjusts Club ARK token prices; higher values make purchases more expensive.",
+      "zh-CN": "调整六角币商店的物品价格。在 Ascended 中也调整 Club ARK 的代币价格；数值越高，购买所需货币越多。"
+    },
+    "kill_xpmultiplier": {
+      "en": "XP awarded for kills, relative to the normal amount. Values above 1 increase the reward; values below 1 reduce it.",
+      "zh-CN": "击杀获得的经验倍率。大于 1 增加经验，小于 1 减少经验。"
+    },
+    "limit_generators_num": {
+      "en": "Maximum number of generators permitted within the area controlled by LimitGeneratorsRange. Adjust the count and range together to define the local generator limit.",
+      "zh-CN": "LimitGeneratorsRange 指定范围内允许的发电机数量上限。数量与范围共同决定局部发电机限制。"
+    },
+    "limit_generators_range": {
+      "en": "Range, in Unreal units, over which the server counts generators against LimitGeneratorsNum. This controls the area of the limit, not generator power coverage.",
+      "zh-CN": "统计发电机数量的范围，单位为 Unreal 单位，数量上限由 LimitGeneratorsNum 控制。此项不是发电机的供电覆盖范围。"
+    },
+    "max_fall_speed_multiplier": {
+      "en": "Scales the downward-speed threshold for player fall damage. Higher values allow longer falls before damage begins, while lower values make shorter falls dangerous; gravity and movement physics are unchanged.",
+      "zh-CN": "玩家开始受到坠落伤害的下降速度阈值倍率。数值越大，通常可以安全下落更久；数值越小，较短距离也可能受伤，此项不改变重力或移动物理。"
+    },
+    "message": {
+      "en": "Text shown to players after they log in. Enter it without surrounding quotes and use the literal sequence \\n wherever the displayed message should start a new line.",
+      "zh-CN": "玩家登录后显示的欢迎消息。无需添加外层引号，使用字面字符 \\n 指定消息中的换行位置。"
+    },
+    "no_ai": {
+      "en": "Starts creatures without AI controller objects. Wildcard does not document this option, so it should not be treated as a general server-performance preset.",
+      "zh-CN": "不为生物创建 AI 控制器。Wildcard 未公开说明此选项，不应将其当作通用性能优化预设。"
+    },
+    "no_dinos": {
+      "en": "Stops new wild-creature spawning. This overrides all NoDinosExcept spawn exceptions, so those flags cannot restore selected spawn types while NoDinos is enabled.",
+      "zh-CN": "阻止新的野生生物生成。此开关优先于所有 NoDinosExcept 例外，因此不能同时依靠例外开关恢复部分生成方式。"
+    },
+    "no_dinos_except_forced_spawn": {
+      "en": "Allows only forced wild-creature spawns and leaves existing wild creatures in the world. NoDinos takes precedence; enabling this also prevents the streaming, manual and water-only exception flags from taking effect. Wildcard does not document this option.",
+      "zh-CN": "只允许强制触发的野生生物生成，不删除世界中已有的野生生物。NoDinos 的优先级更高；此项又会覆盖流式加载、手动及水域生成例外。Wildcard 未公开说明此选项。"
+    },
+    "no_dinos_except_manual_spawn": {
+      "en": "Allows only manual wild-creature spawns without removing creatures already present. NoDinos, the forced-spawn exception and the streaming-spawn exception take precedence; this option takes precedence over the water-spawn exception. Wildcard does not document this option.",
+      "zh-CN": "只允许手动生成野生生物，不删除已有生物。NoDinos、强制生成例外和流式加载生成例外的优先级更高；此项会覆盖水域生成例外。Wildcard 未公开说明此选项。"
+    },
+    "no_dinos_except_streaming_spawn": {
+      "en": "Allows only streaming-triggered wild-creature spawns without removing existing creatures. NoDinos and the forced-spawn exception take precedence, while the manual and water-spawn exceptions cannot take effect alongside this option. Wildcard does not document this option.",
+      "zh-CN": "只允许随流式加载触发的野生生物生成，不删除已有生物。NoDinos 和强制生成例外优先级更高；手动及水域生成例外不能与此项同时生效。Wildcard 未公开说明此选项。"
+    },
+    "no_dinos_except_water_spawn": {
+      "en": "Allows only water-related wild-creature spawns and retains creatures already present. It has no effect if NoDinos or any forced, streaming or manual spawn exception is enabled. Wildcard does not document this option.",
+      "zh-CN": "只允许水域相关的野生生物生成，保留已有生物。启用 NoDinos 或强制、流式加载、手动生成例外中的任意一项时，本项不会生效。Wildcard 未公开说明此选项。"
+    },
+    "no_wild_babies": {
+      "en": "Prevents new wild baby creatures from spawning.",
+      "zh-CN": "阻止新的野生幼年生物生成。"
+    },
+    "noperfthreads": {
+      "en": "Disables the engine's performance worker threads. Wildcard does not document this option; enabling it does not establish a performance improvement.",
+      "zh-CN": "关闭引擎的性能工作线程。Wildcard 未公开说明此选项，启用它不代表性能一定会提高。"
+    },
+    "nosound": {
+      "en": "Disables server sound processing. Wildcard does not document this option, and its effect on resource usage depends on the workload.",
+      "zh-CN": "关闭服务器的声音处理。Wildcard 未公开说明此选项，实际资源占用变化取决于服务器负载。"
+    },
+    "onethread": {
+      "en": "Requests single-threaded engine operation instead of multithreading. Wildcard does not document this option; use it only when that execution mode is needed.",
+      "zh-CN": "请求引擎以单线程模式运行。Wildcard 未公开说明此选项，仅在确实需要这种执行模式时使用。"
+    },
+    "photo_mode_range_limit": {
+      "en": "Maximum permitted separation between a player's position and the photo-mode camera. This limits camera travel without changing the player's position.",
+      "zh-CN": "摄影模式相机与玩家之间允许的最大距离。此项限制相机移动范围，不改变玩家位置。"
+    },
+    "prevent_breeding_for_class_names": {
+      "en": "Creature classes that must not breed. Identify each creature with its native class name, such as Argent_Character_BP_C, rather than its display name.",
+      "zh-CN": "禁止繁殖的生物类别。使用 Argent_Character_BP_C 这样的原生类名，不要填写游戏中的显示名称。"
+    },
+    "server_platform": {
+      "en": "Platforms permitted to join: PC for Steam, PS5 for PlayStation 5, XSX for Xbox, and WINGDK for Microsoft Store. Combine platform codes with +, or use ALL for all supported platforms; omitting the option also permits all platforms.",
+      "zh-CN": "允许加入的平台：PC 表示 Steam，PS5 表示 PlayStation 5，XSX 表示 Xbox，WINGDK 表示 Microsoft Store。可用 + 组合平台代码；ALL 或不填写表示允许所有受支持平台。"
+    },
+    "server_use_event_colors": {
+      "en": "Enables the game's event color variants.",
+      "zh-CN": "启用游戏的活动配色。"
+    },
+    "special_xpmultiplier": {
+      "en": "XP awarded from the game's SpecialEvent category, relative to its normal reward. Values above 1 increase that reward; values below 1 reduce it.",
+      "zh-CN": "游戏 SpecialEvent 类别奖励的经验倍率。大于 1 增加该来源的经验，小于 1 减少经验。"
+    },
+    "stasis_keep_controllers": {
+      "en": "Retains actors' AI controllers in memory while those actors are in stasis, reducing the need to recreate them when players return. This uses additional memory, including when few players are connected, and can be significant on large maps.",
+      "zh-CN": "生物等对象进入休眠时继续保留其 AI 控制器，减少玩家返回时重新创建的开销。即使在线玩家很少也会占用额外内存，大地图上的影响可能更明显。"
+    },
+    "tribe_tower_bonus_multiplier": {
+      "en": "Scale applied to the Tribe Tower bonus. A value of 1 keeps the normal bonus; higher or lower values increase or reduce it.",
+      "zh-CN": "部落塔加成的倍率。1 保持常规加成，较大或较小的值分别增强或降低加成。"
+    },
+    "unstasis_dino_obstruction_check": {
+      "en": "Requests an obstruction check when creatures leave stasis, intended to reduce creatures passing through geometry or structures as they reappear. Wildcard does not document this option.",
+      "zh-CN": "生物退出休眠时请求执行障碍检查，用于减少重新出现时穿过地形或建筑的情况。Wildcard 未公开说明此选项。"
+    },
+    "use_server_net_speed_check": {
+      "en": "Limits the movement data a player can submit during one server tick by discarding excess updates. This can help constrain movement-processing load on busy servers; Wildcard does not document the full behavior.",
+      "zh-CN": "请求执行检查，丢弃单个玩家在一次服务器 tick 内提交的过量移动数据。这有助于约束繁忙服务器的移动处理负载，但 Wildcard 未公开说明完整行为。"
+    },
+    "usestore": {
+      "en": "Stores character data with the world save instead of maintaining separate regular .arkprofile saves; temporary profiles for new or transferred characters remain until the next world save, and tribe data uses .arktributetribe. This mode supports BackupTransferPlayerDatas, uses converttostore for existing data conversion, and must accompany newsaveformat when loading official 2023 server archives.",
+      "zh-CN": "将角色数据随世界一起保存，不再常规单独保存 .arkprofile；新建或传送角色的临时档案保留到下一次世界存档，部落数据使用 .arktributetribe。此模式支持 BackupTransferPlayerDatas，已有数据通过 converttostore 转换；加载 2023 年官方服务器存档时还须启用 newsaveformat。"
+    },
+    "valguero_memorial_entries": {
+      "en": "Names displayed by the interactive Valguero memorial. Use this list to choose whom the memorial honors on this server.",
+      "zh-CN": "Valguero 可交互纪念碑展示的姓名列表，用于设置本服务器希望纪念的人物。"
+    },
+    "wild_dino_character_food_drain_multiplier": {
+      "en": "Rate at which wild creatures use food. Values above 1 accelerate food loss; values below 1 slow it.",
+      "zh-CN": "野生生物的食物消耗速率。大于 1 加快食物下降，小于 1 减慢消耗。"
+    },
+    "wireless_crafting_range_override": {
+      "en": "Wireless crafting range of Tek Dedicated Storage, measured in Unreal units. This controls how far its wireless crafting access extends.",
+      "zh-CN": "泰克专用储物箱的无线制作范围，单位为 Unreal 单位。此项控制可使用其无线制作资源的距离。"
+    },
+    "active_event": {
+      "en": "Select a seasonal event supported by the installed server version.",
+      "zh-CN": "启用指定的季节活动；填写当前服务器版本支持的活动名称。"
+    },
+    "admin_password": {
+      "en": "Authenticates administrator console access and RCON player commands. Written to GameUserSettings.ini [ServerSettings] as ServerAdminPassword.",
+      "zh-CN": "执行游戏内管理员命令及验证 RCON 连接使用的密码。"
+    },
+    "allow_cave_building_pve": {
+      "en": "Allow building inside caves on PvE servers.",
+      "zh-CN": "允许在 PvE 服务器的洞穴中建造。"
+    },
+    "allow_cryo_fridge_on_saddle": {
+      "en": "Allows cryofridges to be placed on platform saddles when supported by ASA.",
+      "zh-CN": "允许将低温冰箱放在平台鞍上。"
+    },
+    "allow_flyer_carry_pve": {
+      "en": "Allows flyer carry while the server is running in PvE mode.",
+      "zh-CN": "允许 PvE 模式下的飞行生物抓取并搬运其他生物。"
+    },
+    "allow_hide_damage_source_from_logs": {
+      "en": "If false, damage sources are shown in tribe logs instead of being hidden.",
+      "zh-CN": "允许部落日志隐藏伤害来源；关闭后日志显示伤害来源。"
+    },
+    "allow_hit_markers": {
+      "en": "Keeps optional ranged hit markers enabled for players.",
+      "zh-CN": "允许显示远程攻击命中提示。"
+    },
+    "allow_multiple_attached_c4": {
+      "en": "Allows more than one C4 charge to be attached to a creature.",
+      "zh-CN": "允许在同一只生物身上附着多个 C4 炸药。"
+    },
+    "allow_raid_dino_feeding": {
+      "en": "Allows Titanosaurs and other raid dinos to be permanently fed where supported.",
+      "zh-CN": "允许给泰坦巨龙等突袭生物喂食，维持其食物值。"
+    },
+    "allow_third_person_player": {
+      "en": "Lets players switch to third-person view.",
+      "zh-CN": "允许玩家切换到第三人称视角。"
+    },
+    "auto_save_period_minutes": {
+      "en": "How often the server writes a world save to disk.",
+      "zh-CN": "世界自动保存的间隔，单位为分钟。"
+    },
+    "auto_unlock_all_engrams": {
+      "en": "Unlocks available engrams automatically as survivors level up.",
+      "zh-CN": "玩家升级时自动解锁达到等级要求的印痕技能。"
+    },
+    "baby_food_consumption_speed_multiplier": {
+      "en": "Controls how quickly babies consume food.",
+      "zh-CN": "幼崽食物消耗速度倍率；数值越大，食物消耗越快。"
+    },
+    "bad_word_list_url": {
+      "en": "Custom URL for the blocked-word list. Leave the default official list if you do not host your own.",
+      "zh-CN": "屏蔽词列表的网址；聊天、角色名和部落名过滤功能使用该列表。"
+    },
+    "bad_word_whitelist_url": {
+      "en": "Optional allow-list URL used to permit false positives.",
+      "zh-CN": "词语放行列表的网址，用于允许被屏蔽词列表误判的内容。"
+    },
+    "ban_list_url": {
+      "en": "Optional remote ban-list URL the server should load on boot. LanGame will quote it correctly in GameUserSettings.ini.",
+      "zh-CN": "服务器加载的远程封禁列表网址；实际玩家名单仍在玩家管理中维护。"
+    },
+    "battleye_enabled": {
+      "en": "Enable BattlEye anti-cheat; disabling it starts the server with -NoBattlEye.",
+      "zh-CN": "启用 BattlEye 反作弊；关闭后服务器使用 -NoBattlEye 启动。"
+    },
+    "crop_decay_speed_multiplier": {
+      "en": "Controls crop decay speed.",
+      "zh-CN": "作物枯萎速度倍率；数值越大，作物枯萎越快。"
+    },
+    "crop_growth_speed_multiplier": {
+      "en": "Controls crop growth speed.",
+      "zh-CN": "作物生长速度倍率；数值越大，作物成熟越快。"
+    },
+    "custom_launch_flags": {
+      "en": "Extra launch flags separated by spaces.",
+      "zh-CN": "追加到服务器启动命令的参数；多个参数用空格分隔。"
+    },
+    "custom_recipe_effectiveness_multiplier": {
+      "en": "Scale the effects of custom food and drink recipes; larger values make recipes more effective.",
+      "zh-CN": "自定义食物和饮料配方效果倍率；数值越大，配方效果越强。"
+    },
+    "custom_recipe_skill_multiplier": {
+      "en": "Scale the contribution of Crafting Skill to custom recipe effects.",
+      "zh-CN": "调整制作技能对自定义配方效果的影响强度。"
+    },
+    "day_cycle_speed_scale": {
+      "en": "Scale the whole day-night cycle speed; higher values shorten the cycle.",
+      "zh-CN": "整个昼夜周期的速度倍率；数值越大，一天越短。"
+    },
+    "day_time_speed_scale": {
+      "en": "Scale daytime clock speed; higher values shorten daylight hours.",
+      "zh-CN": "白天时间流逝速度倍率；数值越大，白天越短。"
+    },
+    "destroy_tames_over_soft_tame_limit": {
+      "en": "Marks and eventually destroys tames that stay above the soft tame cap.",
+      "zh-CN": "驯养生物数量超过全服软上限时，标记超额生物并开始清理倒计时。"
+    },
+    "difficulty_offset": {
+      "en": "Base difficulty factor affecting wild levels and loot quality; the map and official-difficulty override also affect the result.",
+      "zh-CN": "基础难度系数，影响野生生物等级及战利品品质；实际难度还受地图和官方难度覆盖值影响。"
+    },
+    "dino_character_food_drain_multiplier": {
+      "en": "Controls food drain for dinos.",
+      "zh-CN": "生物食物消耗倍率；数值越大，饥饿越快。"
+    },
+    "dino_damage_multiplier": {
+      "en": "Scale creature attack damage; higher values increase damage dealt.",
+      "zh-CN": "生物攻击伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "dino_resistance_multiplier": {
+      "en": "Scale damage received by creatures; higher values make them take more damage.",
+      "zh-CN": "生物承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "disable_cryopod_enemy_check": {
+      "en": "Allows deploying cryopods without the nearby-enemy restriction.",
+      "zh-CN": "解除释放低温舱生物时的附近敌人检查。"
+    },
+    "disable_cryopod_fridge_requirement": {
+      "en": "Removes the cryofridge placement requirement for cryopods.",
+      "zh-CN": "释放低温舱生物时不再要求附近有可用低温冰箱。"
+    },
+    "disable_dino_decay_pve": {
+      "en": "Disables PvE tame ownership decay so abandoned dinos do not become claimable over time.",
+      "zh-CN": "关闭 PvE 驯养生物的所有权衰退，避免长期无人照料的生物变为可认领。"
+    },
+    "disable_pve_gamma": {
+      "en": "Prevents the gamma console command while the server is running in PvE mode.",
+      "zh-CN": "禁止玩家在 PvE 模式中用控制台调整伽马亮度。"
+    },
+    "disable_structure_decay_pve": {
+      "en": "Disable PvE structure decay timers.",
+      "zh-CN": "关闭 PvE 建筑衰退计时，防止建筑因长期无人使用而变为可拆除。"
+    },
+    "disable_structure_placement_collision": {
+      "en": "Disables placement collision checks so structures can clip into terrain, foliage, and nearby pieces where the server allows it.",
+      "zh-CN": "放宽建筑放置时的碰撞检查，允许与地形或其他建筑部件重叠。"
+    },
+    "disable_weather_fog": {
+      "en": "Disables fog so players have clearer visibility during weather effects.",
+      "zh-CN": "关闭天气雾效，提高可见距离。"
+    },
+    "enable_auto_destroy_structures": {
+      "en": "Enable automatic removal of old structures using the configured destruction timers.",
+      "zh-CN": "启用旧建筑自动清理，并应用建筑自动拆除时间设置。"
+    },
+    "enable_extra_structure_prevention_volumes": {
+      "en": "Blocks building in special resource-rich map volumes such as major mountains on The Island.",
+      "zh-CN": "启用地图额外禁建区域，限制在重要资源区等位置建造。"
+    },
+    "enable_idle_player_kick": {
+      "en": "Disconnect inactive players after the configured idle timeout.",
+      "zh-CN": "启用挂机踢出；无操作时长达到指定秒数后断开玩家连接。"
+    },
+    "enable_pvp_gamma": {
+      "en": "Allows the gamma console command while the server is running in PvP mode.",
+      "zh-CN": "允许玩家在 PvP 模式中用控制台调整伽马亮度。"
+    },
+    "exclusive_join_enabled": {
+      "en": "Restricts joins to PlayersExclusiveJoinList.txt when enabled.",
+      "zh-CN": "仅允许专属加入名单中的账号连接；名单在玩家管理中维护。"
+    },
+    "force_all_structure_locking": {
+      "en": "Defaults newly placed structures to locked.",
+      "zh-CN": "让所有新放置的建筑默认处于上锁状态。"
+    },
+    "global_voice_chat": {
+      "en": "Enables server-wide voice chat.",
+      "zh-CN": "将语音聊天改为全服可听，不再局限于附近玩家。"
+    },
+    "harvest_amount_multiplier": {
+      "en": "Controls resource yield per harvest.",
+      "zh-CN": "每次采集获得的资源数量倍率；数值越大，单次产量越多。"
+    },
+    "item_stack_size_multiplier": {
+      "en": "Global stack-size multiplier for items that support stacking.",
+      "zh-CN": "可堆叠物品的全局堆叠数量倍率。"
+    },
+    "kick_idle_players_period": {
+      "en": "Idle timeout in seconds used with -EnableIdlePlayerKick.",
+      "zh-CN": "启用挂机踢出后，允许玩家无操作的最长秒数。"
+    },
+    "lay_egg_interval_multiplier": {
+      "en": "Scale the interval between egg-laying attempts; higher values mean less frequent eggs.",
+      "zh-CN": "生物产蛋间隔倍率；数值越大，产蛋间隔越长。"
+    },
+    "map_name": {
+      "en": "Map package to load at startup; use an identifier supported by this edition and installed content.",
+      "zh-CN": "启动时加载的地图包标识，必须与当前游戏版本及已安装地图匹配。"
+    },
+    "max_players": {
+      "en": "Maximum number of simultaneously connected players.",
+      "zh-CN": "服务器允许同时连接的玩家人数上限。"
+    },
+    "max_tamed_dinos_soft_tame_limit": {
+      "en": "Server-wide soft tame limit used before cleanup rules start counting down.",
+      "zh-CN": "全服驯养生物数量的软上限，供超额生物清理规则使用。"
+    },
+    "max_tamed_dinos_soft_tame_limit_countdown_for_deletion_duration": {
+      "en": "Countdown in seconds before marked tames above the soft cap are destroyed.",
+      "zh-CN": "标记超额驯养生物后，等待销毁的倒计时，单位为秒。"
+    },
+    "max_tribute_dinos": {
+      "en": "Maximum dinos stored in tribute at once.",
+      "zh-CN": "贡品上传存储中允许保存的生物数量上限。"
+    },
+    "max_tribute_items": {
+      "en": "Maximum tribute items stored at once.",
+      "zh-CN": "贡品上传存储中允许保存的物品数量上限。"
+    },
+    "night_time_speed_scale": {
+      "en": "Scale nighttime clock speed; higher values shorten the night.",
+      "zh-CN": "夜间时间流逝速度倍率；数值越大，夜晚越短。"
+    },
+    "no_tribute_downloads": {
+      "en": "Blocks downloading survivors, dinos, and items from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载幸存者、生物和物品。"
+    },
+    "override_official_difficulty": {
+      "en": "Override the map's difficulty value, affecting wild creature level limits and loot quality.",
+      "zh-CN": "覆盖地图使用的难度值，进而影响野生生物等级上限及战利品品质。"
+    },
+    "override_structure_platform_prevention": {
+      "en": "Allow structures normally prohibited on platform saddles, such as automated turrets.",
+      "zh-CN": "允许在平台鞍上放置通常被禁止的建筑，例如自动炮塔。"
+    },
+    "player_character_food_drain_multiplier": {
+      "en": "Higher values drain food faster.",
+      "zh-CN": "玩家食物消耗倍率；数值越大，饥饿越快。"
+    },
+    "player_character_health_recovery_multiplier": {
+      "en": "Scales natural health regeneration for players.",
+      "zh-CN": "玩家自然生命恢复速度倍率；数值越大，恢复越快。"
+    },
+    "player_character_stamina_drain_multiplier": {
+      "en": "Scales how quickly players spend stamina while sprinting, jumping, and fighting.",
+      "zh-CN": "玩家耐力消耗倍率；数值越大，奔跑等活动消耗耐力越快。"
+    },
+    "player_character_water_drain_multiplier": {
+      "en": "Higher values drain water faster.",
+      "zh-CN": "玩家水分消耗倍率；数值越大，口渴越快。"
+    },
+    "player_damage_multiplier": {
+      "en": "Scales the damage dealt by player attacks.",
+      "zh-CN": "玩家攻击伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "player_resistance_multiplier": {
+      "en": "Scales how much incoming damage players take.",
+      "zh-CN": "玩家承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "poop_interval_multiplier": {
+      "en": "Scale the interval between defecations; higher values mean less frequent defecation.",
+      "zh-CN": "生物排泄间隔倍率；数值越大，排泄间隔越长。"
+    },
+    "prevent_diseases": {
+      "en": "Stops swamp fever and other disease mechanics from spreading on the server.",
+      "zh-CN": "阻止沼泽热等疾病的传播。"
+    },
+    "prevent_download_dinos": {
+      "en": "Blocks dino downloads from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载生物。"
+    },
+    "prevent_download_items": {
+      "en": "Blocks item downloads from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载物品。"
+    },
+    "prevent_download_survivors": {
+      "en": "Blocks survivor character downloads from the cluster.",
+      "zh-CN": "禁止下载已上传的幸存者角色。"
+    },
+    "prevent_mate_boost": {
+      "en": "Disables the mate-boost bonus that nearby breeding pairs normally grant one another.",
+      "zh-CN": "禁用附近异性同种生物之间的配偶增益。"
+    },
+    "prevent_offline_pvp": {
+      "en": "Protect structures and tames belonging to offline players from PvP damage.",
+      "zh-CN": "为已离线玩家所属的建筑和生物启用离线 PvP 保护。"
+    },
+    "prevent_offline_pvp_interval": {
+      "en": "Delay in seconds after owners go offline before offline PvP protection begins.",
+      "zh-CN": "所有者离线后，开始应用离线 PvP 保护前等待的秒数。"
+    },
+    "prevent_spawn_animations": {
+      "en": "Skips spawn intro animation delays where supported.",
+      "zh-CN": "跳过角色生成或重生时的入场动画。"
+    },
+    "prevent_upload_dinos": {
+      "en": "Blocks dino uploads into tribute storage.",
+      "zh-CN": "禁止将生物上传到贡品存储。"
+    },
+    "prevent_upload_items": {
+      "en": "Blocks item uploads into tribute storage.",
+      "zh-CN": "禁止将物品上传到贡品存储。"
+    },
+    "prevent_upload_survivors": {
+      "en": "Blocks survivor character uploads into tribute storage.",
+      "zh-CN": "禁止将幸存者角色上传到贡品存储。"
+    },
+    "proximity_chat": {
+      "en": "Restrict text chat visibility to nearby players.",
+      "zh-CN": "仅允许附近的玩家看到彼此的文字聊天消息。"
+    },
+    "pve_allow_structures_at_supply_drops": {
+      "en": "Allows building near supply drop locations while in PvE mode.",
+      "zh-CN": "允许在 PvE 模式中靠近补给箱落点建造。"
+    },
+    "pve_dino_decay_period_multiplier": {
+      "en": "Scales how long abandoned PvE dinos keep their ownership before decaying.",
+      "zh-CN": "PvE 生物所有权衰退时间倍率；数值越大，变为可认领前等待越久。"
+    },
+    "random_supply_crate_points": {
+      "en": "Place supply drops at randomized locations.",
+      "zh-CN": "在随机位置生成补给箱。"
+    },
+    "rcon_enabled": {
+      "en": "Enables remote RCON commands, including player-management commands. Written to GameUserSettings.ini [ServerSettings] as RCONEnabled.",
+      "zh-CN": "启用远程控制台；连接时使用配置的 RCON 端口和管理员密码。"
+    },
+    "resource_no_replenish_radius_players": {
+      "en": "Player-side no-respawn radius for nearby resources.",
+      "zh-CN": "玩家附近禁止资源再生的半径倍率；数值越大，禁刷新区域越大。"
+    },
+    "resource_no_replenish_radius_structures": {
+      "en": "Structure-side no-respawn radius for nearby resources.",
+      "zh-CN": "建筑附近禁止资源再生的半径倍率；数值越大，禁刷新区域越大。"
+    },
+    "resources_respawn_period_multiplier": {
+      "en": "Scale the delay before harvested resources respawn; higher values mean a longer wait.",
+      "zh-CN": "资源再生等待时间倍率；数值越大，树木和矿石等资源再生越慢。"
+    },
+    "server_crosshair": {
+      "en": "Shows the default crosshair.",
+      "zh-CN": "显示游戏默认准星。"
+    },
+    "server_force_no_hud": {
+      "en": "Forces the in-game HUD off for every player.",
+      "zh-CN": "对所有玩家强制隐藏游戏 HUD 界面。"
+    },
+    "server_game_log": {
+      "en": "Write gameplay events to the server game log.",
+      "zh-CN": "将游戏事件写入服务器游戏日志。"
+    },
+    "server_game_log_include_tribe_logs": {
+      "en": "Include tribe events in server game logs and RCON log output.",
+      "zh-CN": "把部落日志事件也写入服务器游戏日志及 RCON 日志输出。"
+    },
+    "server_hardcore": {
+      "en": "Enable hardcore mode, where survivor death resets the character's level.",
+      "zh-CN": "启用硬核模式；死亡会使幸存者角色等级重置。"
+    },
+    "server_name": {
+      "en": "Displayed in the in-game server browser.",
+      "zh-CN": "在游戏服务器列表中显示的名称。"
+    },
+    "server_password": {
+      "en": "Leave empty for public join.",
+      "zh-CN": "玩家加入时使用的密码；留空允许无需密码加入。"
+    },
+    "server_pve": {
+      "en": "Runs the server with PvE rules when enabled.",
+      "zh-CN": "启用 PvE 规则，限制玩家之间的敌对伤害。"
+    },
+    "show_creative_mode": {
+      "en": "Keeps the creative-mode toggle visible to eligible players and admins.",
+      "zh-CN": "在暂停菜单中显示创造模式选项。"
+    },
+    "show_floating_damage_text": {
+      "en": "Shows RPG-style floating damage numbers to players.",
+      "zh-CN": "以飘字形式显示攻击造成的伤害数值。"
+    },
+    "show_map_player_location": {
+      "en": "Show the player's current position on the in-game map.",
+      "zh-CN": "在游戏地图上显示玩家当前位置。"
+    },
+    "structure_pickup_hold_duration": {
+      "en": "Seconds to hold the quick-pickup action; 0 makes pickup immediate.",
+      "zh-CN": "快速拾取建筑需要持续按住操作的秒数；0 表示立即拾取。"
+    },
+    "structure_pickup_time_after_placement": {
+      "en": "Seconds after placing a structure during which quick pickup remains available.",
+      "zh-CN": "建筑放置后允许快速拾取的时间窗口，单位为秒。"
+    },
+    "structure_resistance_multiplier": {
+      "en": "Scales how much incoming damage structures take from attacks.",
+      "zh-CN": "建筑承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "supply_crate_loot_quality_multiplier": {
+      "en": "Changes supply crate loot quality. Leave blank to use the game default.",
+      "zh-CN": "补给箱战利品品质倍率；数值越大，战利品品质越高。"
+    },
+    "taming_speed_multiplier": {
+      "en": "Higher values tame faster.",
+      "zh-CN": "驯服速度倍率；数值越大，驯服越快。"
+    },
+    "the_max_structures_in_range": {
+      "en": "Maximum structures allowed within the hard-coded placement radius.",
+      "zh-CN": "游戏固定检测半径内允许的建筑部件数量上限。"
+    },
+    "use_dino_level_up_animations": {
+      "en": "Keeps the default level-up animation on tamed creatures instead of suppressing it.",
+      "zh-CN": "生物升级时播放升级动画。"
+    },
+    "use_dynamic_config": {
+      "en": "Load supported runtime-adjustable settings from the configured dynamic-configuration URL.",
+      "zh-CN": "启用动态配置，从配置的网址加载可在运行时调整的服务器规则。"
+    },
+    "use_singleplayer_settings": {
+      "en": "Apply the game's single-player balancing preset, including taming and breeding adjustments.",
+      "zh-CN": "应用游戏的单人平衡设置，改变驯服、繁育等多项倍率。"
+    },
+    "xp_multiplier": {
+      "en": "Global XP gain multiplier.",
+      "zh-CN": "全局经验获取倍率；数值越大，获得经验越多。"
+    }
+  },
+  "arksurvivalevolved": {
+    "additional_maps": {
+      "en": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
+      "zh-CN": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。"
+    },
+    "adjustable_mutagen_spawn_delay_multiplier": {
+      "en": "Changes the wait between Mutagen spawn attempts. Higher multipliers make attempts less frequent; dedicated servers use an eight-hour interval before this multiplier is applied.",
+      "zh-CN": "调整诱变剂生成尝试之间的等待时间。倍率越高，尝试越不频繁；专用服务器在应用倍率前的基础间隔为 8 小时。"
+    },
+    "allow_chat_spam": {
+      "en": "Removes the server's chat-spam restriction. Check compatibility before combining this option with plugins that relay chat between maps.",
+      "zh-CN": "取消服务器聊天刷屏限制。与跨地图聊天转发插件同时使用前，应确认两者是否兼容。"
+    },
+    "allow_multiple_tamed_unicorns": {
+      "en": "On Ragnarok, allows players to keep multiple tamed Unicorns while the map still permits only one wild Unicorn at a time.",
+      "zh-CN": "在仙境地图允许保留多只已驯服的独角兽，同时仍限制地图上最多存在一只野生独角兽。"
+    },
+    "auto_pv_estart_time_seconds": {
+      "en": "Sets the daily start of the scheduled PvE period as a whole number of seconds from 0 to 86400. Enable the automatic PvE timer, choose its clock source, and configure the end time as well.",
+      "zh-CN": "设置每日定时 PvE 时段的开始时间，以 0 至 86400 的整数秒表示。还需启用自动 PvE 定时器，并设置时间来源和结束时间。"
+    },
+    "auto_pv_estop_time_seconds": {
+      "en": "Sets the daily end of the scheduled PvE period as a whole number of seconds from 0 to 86400. Enable the automatic PvE timer, choose its clock source, and configure the start time as well.",
+      "zh-CN": "设置每日定时 PvE 时段的结束时间，以 0 至 86400 的整数秒表示。还需启用自动 PvE 定时器，并设置时间来源和开始时间。"
+    },
+    "b_allow_flyer_speed_leveling": {
+      "en": "Lets players assign Movement Speed levels to flying creatures. Ascended also requires bAllowSpeedLeveling to be enabled.",
+      "zh-CN": "允许为飞行生物的移动速度分配升级点数。Ascended 还需同时启用 bAllowSpeedLeveling。"
+    },
+    "b_allow_platform_saddle_multi_floors": {
+      "en": "Permits buildings with more than one floor on platform saddles.",
+      "zh-CN": "允许在平台鞍上建造多层建筑。"
+    },
+    "b_allow_unclaim_dinos": {
+      "en": "Lets owners relinquish their tamed creatures. Turn this off to prevent players from unclaiming them.",
+      "zh-CN": "允许玩家解除对已驯服生物的所有权。关闭后，玩家不能主动放弃这些生物的归属。"
+    },
+    "b_allow_unlimited_respecs": {
+      "en": "Removes the 24-hour wait between Mindwipe Tonic uses, allowing repeated character respecs.",
+      "zh-CN": "取消两次使用遗忘汤之间的 24 小时等待，允许连续重置角色属性和技能。"
+    },
+    "b_auto_pv_etimer": {
+      "en": "Switches a PvPvE server into PvE during a configured daily time window. Set the start, end, and system-time preference to define that window.",
+      "zh-CN": "让 PvPvE 服务器在每日指定时段切换为 PvE。需同时设置开始时间、结束时间，以及是否使用系统时间。"
+    },
+    "b_auto_pv_euse_system_time": {
+      "en": "Uses the host computer's clock for scheduled PvE start and end times. When disabled, the schedule follows the game world's clock.",
+      "zh-CN": "定时 PvE 的开始和结束时间采用宿主机时钟。关闭后，改用游戏世界中的时间。"
+    },
+    "b_disable_default_map_item_sets": {
+      "en": "Stops Genesis: Part 2 from giving survivors the default Tek Suit when they spawn.",
+      "zh-CN": "阻止创世纪第 2 部分在幸存者出生时发放默认泰克套装。"
+    },
+    "b_disable_dino_breeding": {
+      "en": "Turns off breeding for tamed creatures.",
+      "zh-CN": "禁止已驯服生物繁殖。"
+    },
+    "b_disable_dino_riding": {
+      "en": "Prevents survivors from mounting tamed creatures.",
+      "zh-CN": "禁止幸存者骑乘已驯服生物。"
+    },
+    "b_disable_dino_taming": {
+      "en": "Blocks the taming of wild creatures.",
+      "zh-CN": "禁止玩家驯服野生生物。"
+    },
+    "b_disable_friendly_fire": {
+      "en": "Blocks damage between members of the same tribe and their tames or structures.",
+      "zh-CN": "阻止同一部落成员及其驯服生物、建筑之间造成友军伤害。"
+    },
+    "b_disable_genesis_missions": {
+      "en": "Makes Genesis missions unavailable on the server.",
+      "zh-CN": "关闭服务器上的创世纪任务。"
+    },
+    "b_disable_hexagon_store": {
+      "en": "Turns off purchases through the Hexagon Store.",
+      "zh-CN": "关闭六角币商店的购买功能。"
+    },
+    "b_disable_world_buffs": {
+      "en": "Removes the world-wide effects awarded by Genesis: Part 2 missions. To exclude individual effects instead, use the dynamic configuration's DisableWorldBuffs entries.",
+      "zh-CN": "关闭创世纪第 2 部分任务提供的全部世界效果。如只需禁用部分效果，应使用动态配置中的 DisableWorldBuffs 条目。"
+    },
+    "b_enable_world_buff_scaling": {
+      "en": "Makes Genesis: Part 2 mission world effects scale with the server's configured values instead of applying fixed additions or deductions.",
+      "zh-CN": "让创世纪第 2 部分的任务世界效果按服务器配置值缩放，而非在运行时加减固定数值。"
+    },
+    "b_flyer_platform_allow_unaligned_dino_basing": {
+      "en": "Allows tames from outside an allied tribe to stand on a Quetzal's platform while it is airborne.",
+      "zh-CN": "允许非盟友部落的驯服生物站在飞行中的风神翼龙平台上。"
+    },
+    "b_genesis_use_structures_prevention_volumes": {
+      "en": "Enforces building restrictions inside Genesis: Part 1 mission areas.",
+      "zh-CN": "在创世纪第 1 部分的任务区域执行禁止建造限制。"
+    },
+    "b_hex_store_allow_only_engram_trade_option": {
+      "en": "Limits the Hexagon Store to its Engram trade option and removes the other purchase options.",
+      "zh-CN": "六角币商店仅保留印痕技能兑换选项，关闭其他购买选项。"
+    },
+    "b_ignore_structures_prevention_volumes": {
+      "en": "Allows construction in areas normally blocked by map building restrictions, including some Obelisks and the Aberration Portal. Genesis: Part 1 also has the separate bGenesisUseStructuresPreventionVolumes control for mission areas.",
+      "zh-CN": "允许在地图通常禁止建造的区域施工，包括部分方舟区域和畸变传送门附近。创世纪第 1 部分的任务区域还受独立的 bGenesisUseStructuresPreventionVolumes 设置控制。"
+    },
+    "b_increase_pv_prespawn_interval": {
+      "en": "Adds a growing respawn delay after repeated PvP deaths to a team. The base delay, multiplier, and repeated-death time window are configured separately.",
+      "zh-CN": "玩家在 PvP 中短时间内被同一队伍反复击杀后，增加其重生等待时间。基础延迟、递增倍率和重复死亡判定时段分别设置。"
+    },
+    "b_only_allow_specified_engrams": {
+      "en": "Restricts available Engrams to those explicitly listed in OverrideEngramEntries or OverrideNamedEngramEntries. Enabling this also removes items and blueprints associated with the hidden Engrams.",
+      "zh-CN": "只开放 OverrideEngramEntries 或 OverrideNamedEngramEntries 中明确列出的印痕技能。启用后，隐藏技能对应的物品和蓝图也会被移除。"
+    },
+    "b_passive_defenses_damage_riderless_dinos": {
+      "en": "Lets spike-wall defenses damage wild creatures and creatures without a rider.",
+      "zh-CN": "允许尖刺墙伤害野生生物及没有骑手的生物。"
+    },
+    "b_pv_eallow_tribe_war": {
+      "en": "Allows tribes on PvE servers to agree to a war for a defined period.",
+      "zh-CN": "允许 PvE 服务器上的部落协商并发起有明确持续时间的部落战争。"
+    },
+    "b_pv_eallow_tribe_war_cancel": {
+      "en": "Lets tribes cancel an agreed war before its scheduled start.",
+      "zh-CN": "允许在约定的部落战争开始前取消战争。"
+    },
+    "b_pv_edisable_friendly_fire": {
+      "en": "On PvE servers, blocks damage between tribe members and their tames or structures.",
+      "zh-CN": "在 PvE 服务器上，阻止部落成员及其驯服生物、建筑之间造成友军伤害。"
+    },
+    "b_use_corpse_locator": {
+      "en": "Shows the green location beam above a survivor's corpse so they can find it after respawning.",
+      "zh-CN": "在幸存者尸体上方显示绿色定位光柱，便于重生后找回尸体。"
+    },
+    "b_use_tame_limit_for_structures_only": {
+      "en": "Counts tame units only for rafts and platforms carrying structures. Tames without platform structures no longer consume that allowance.",
+      "zh-CN": "驯服单位额度只统计木筏和搭载建筑的平台。没有平台建筑的驯服生物不再占用该额度。"
+    },
+    "backup_transfer_player_datas": {
+      "en": "Creates persistent character-profile backups separately from the world save. Requires -usestore and is needed to restore that backup behavior when running the official 2023 server-save backups.",
+      "zh-CN": "在世界存档之外，另外保留持久化角色档案备份。此功能需要 -usestore；运行官方 2023 年服务器存档备份时，也需此选项才能恢复该角色备份行为。"
+    },
+    "base_hexagon_reward_multiplier": {
+      "en": "Adjusts Hexagon rewards from mission scores. In Ascended, it also adjusts Club ARK token rewards; higher values increase the payout.",
+      "zh-CN": "调整任务评分获得的六角币奖励。在 Ascended 中也调整 Club ARK 代币奖励；数值越高，奖励越多。"
+    },
+    "base_temperature_multiplier": {
+      "en": "Adjusts the map's base environmental temperature. Lower values make the environment colder, while higher values make it warmer.",
+      "zh-CN": "调整地图的基础环境温度。数值越低，环境越冷；数值越高，环境越热。"
+    },
+    "battl_eye_server_recheck": {
+      "en": "Requests an additional BattlEye service-status check on every server tick.",
+      "zh-CN": "要求服务器在每个 tick 额外检查一次 BattlEye 服务状态。"
+    },
+    "craft_xpmultiplier": {
+      "en": "Adjusts experience gained from crafting items. Higher values award more crafting XP.",
+      "zh-CN": "调整制作物品获得的经验。数值越高，制作经验越多。"
+    },
+    "crafting_skill_bonus_multiplier": {
+      "en": "Adjusts the bonus contributed by points invested in Crafting Skill. Higher values increase that bonus.",
+      "zh-CN": "调整制作技能加点带来的额外加成。数值越高，该加成越大。"
+    },
+    "crossplay": {
+      "en": "Allows Steam and Epic Games Store players to join the same server. Configure PublicIPForEpic as well.",
+      "zh-CN": "允许 Steam 和 Epic Games Store 玩家加入同一专用服务器。还需配置 PublicIPForEpic。"
+    },
+    "culture": {
+      "en": "Selects the language used for server output. This does not change the language chosen by connected players.",
+      "zh-CN": "选择服务器输出使用的语言，不改变已连接玩家各自选择的客户端语言。"
+    },
+    "custom_admin_command_tracking_url": {
+      "en": "Sets the HTTP destination for administrator-command tracking records; HTTPS is not supported by this option. With an empty destination, records use ArkCustomAdminCommandTrackingURL.txt in the save directory.",
+      "zh-CN": "设置管理员命令追踪记录的 HTTP 接收地址；此选项不支持 HTTPS。地址为空时，记录写入存档目录中的 ArkCustomAdminCommandTrackingURL.txt。"
+    },
+    "custom_mertics_url": {
+      "en": "Sets the HTTP destination for server statistics; HTTPS is not supported by this option. With an empty destination, records use ArkCustomMetricsURL.txt in the save directory.",
+      "zh-CN": "设置服务器统计数据的 HTTP 接收地址；此选项不支持 HTTPS。地址为空时，记录写入存档目录中的 ArkCustomMetricsURL.txt。"
+    },
+    "custom_notification_url": {
+      "en": "Configures the HTTP URL used for custom notifications through the server-message system. This option does not support HTTPS.",
+      "zh-CN": "配置服务器消息系统用于自定义通知的 HTTP 地址。此选项不支持 HTTPS。"
+    },
+    "dedihibernation": {
+      "en": "Starts newly spawned wild creatures in hibernation mode. Do not combine this flag with -preventhibernation.",
+      "zh-CN": "让新生成的野生生物进入休眠模式。不要与 -preventhibernation 同时使用。"
+    },
+    "destroy_tames_over_level_clamp": {
+      "en": "Sets the highest tame level to retain at startup. The server deletes tamed creatures above this level when it starts.",
+      "zh-CN": "设置启动时允许保留的驯服生物最高等级。服务器启动时会删除超过此等级的已驯服生物。"
+    },
+    "dino_harvesting_damage_multiplier": {
+      "en": "Adjusts the damage tamed creatures deal to harvestable objects. Higher values let tames deplete those objects more quickly.",
+      "zh-CN": "调整驯服生物对可采集物体造成的伤害。数值越高，生物耗尽这些资源物体的速度越快。"
+    },
+    "dino_turret_damage_multiplier": {
+      "en": "Adjusts turret damage against creatures. Higher values make those turret hits deal more damage.",
+      "zh-CN": "调整炮塔对生物造成的伤害。数值越高，炮塔每次命中的伤害越大。"
+    },
+    "disable_custom_folders_in_tribute_inventories": {
+      "en": "Prevents players from adding custom folders inside Tribute inventories.",
+      "zh-CN": "禁止玩家在贡品物品栏中创建自定义文件夹。"
+    },
+    "disable_railgun_pvp": {
+      "en": "Makes the Tek Railgun unavailable on PvP servers.",
+      "zh-CN": "禁止在 PvP 服务器使用泰克轨道炮。"
+    },
+    "dormancy_net_multiplier": {
+      "en": "Adjusts how frequently NPCs enter the dormant state used to reduce network traffic. Values of 1.0 or below also require -nodormancythrottling.",
+      "zh-CN": "调整 NPC 进入低网络流量休眠状态的频率。数值不高于 1.0 时，还需启用 -nodormancythrottling。"
+    },
+    "duration": {
+      "en": "Controls how many seconds the message of the day remains visible when a player joins.",
+      "zh-CN": "设置玩家加入时每日消息显示的持续时间，单位为秒。"
+    },
+    "enable_victory_core_dupe_check": {
+      "en": "Requests an additional check for duplicated tamed creatures.",
+      "zh-CN": "请求对已驯服生物执行额外的重复复制检查。"
+    },
+    "enable_volcano": {
+      "en": "Allows Ragnarok's volcano to become active. Turn this off to keep it inactive.",
+      "zh-CN": "允许仙境地图的火山活动。关闭后，火山保持不活动状态。"
+    },
+    "epiconly": {
+      "en": "Restricts access to players using the Epic Games Store edition.",
+      "zh-CN": "只允许使用 Epic Games Store 版本的玩家连接。"
+    },
+    "event_colors_chance_override": {
+      "en": "Sets the chance that a newly spawned wild creature receives event colors, from 0 to 1; 1 means 100%. Existing creatures are not recolored.",
+      "zh-CN": "设置新生成野生生物获得活动配色的概率，范围为 0 至 1，其中 1 表示 100%。不会重新着色已有生物。"
+    },
+    "exclude_item_indices": {
+      "en": "Removes specified item IDs from supply-crate loot. Repeat this entry to exclude more than one item.",
+      "zh-CN": "按物品 ID 将指定物品排除出补给箱战利品。需要排除多个物品时，可重复添加此条目。"
+    },
+    "fast_decay_interval": {
+      "en": "Sets the fast-decay timer, in seconds, for eligible structures such as isolated foundations or pillars. FastDecayUnsnappedCoreStructures must also be enabled in GameUserSettings.ini.",
+      "zh-CN": "设置孤立地基、柱子等适用建筑的快速衰败时间，单位为秒。还需在 GameUserSettings.ini 中启用 FastDecayUnsnappedCoreStructures。"
+    },
+    "force_allow_cave_flyers": {
+      "en": "Allows flying creatures to enter caves even where the map would normally restrict them.",
+      "zh-CN": "允许飞行生物进入洞穴，覆盖地图通常对洞穴飞行生物的限制。"
+    },
+    "force_respawn_dinos": {
+      "en": "Removes wild creatures each time the server starts so the world can repopulate them. Tamed creatures are excluded.",
+      "zh-CN": "每次服务器启动时清除野生生物，使世界重新生成这些生物。已驯服生物不受影响。"
+    },
+    "fuel_consumption_interval_multiplier": {
+      "en": "Adjusts the time between fuel-consumption events. A larger multiplier extends the interval between fuel uses.",
+      "zh-CN": "调整两次燃料消耗之间的时间。倍率越高，每次使用燃料之间的间隔越长。"
+    },
+    "generic_xpmultiplier": {
+      "en": "Adjusts passive experience earned over time. Higher values grant more XP from this source.",
+      "zh-CN": "调整随时间自动获得的经验。数值越高，这部分被动经验越多。"
+    },
+    "global_corpse_decomposition_time_multiplier": {
+      "en": "Adjusts how long survivor and creature corpses remain before decomposing. Higher values keep them in the world longer.",
+      "zh-CN": "调整幸存者和生物尸体腐解前的保留时间。数值越高，尸体在世界中保留得越久。"
+    },
+    "global_item_decomposition_time_multiplier": {
+      "en": "Adjusts how long dropped items and loot bags remain before disappearing. Higher values extend their lifetime.",
+      "zh-CN": "调整掉落物品和战利品袋消失前的保留时间。数值越高，保留时间越长。"
+    },
+    "global_powered_battery_durability_decrease_per_second": {
+      "en": "Sets the rate at which Charge Battery durability is consumed while powering electrical objects. Higher values drain the battery more quickly.",
+      "zh-CN": "设置充电电池为电气设备供电时的耐久消耗速率。数值越高，电池消耗越快。"
+    },
+    "global_spoiling_time_multiplier": {
+      "en": "Adjusts the time before perishable items spoil. Higher values preserve them longer.",
+      "zh-CN": "调整易腐物品变质前的时间。数值越高，保存时间越长。"
+    },
+    "hair_growth_speed_multiplier": {
+      "en": "Adjusts how quickly survivor hair grows. Higher values accelerate growth.",
+      "zh-CN": "调整幸存者毛发的生长速度。数值越高，生长越快。"
+    },
+    "harvest_resource_item_amount_class_multipliers": {
+      "en": "Sets separate harvest-yield multipliers for individual resource item classes. This lets you change one resource's yield without applying the same change to every resource.",
+      "zh-CN": "为不同资源物品类分别设置采集产量倍率。可只调整某一种资源的产量，而不改变所有资源。"
+    },
+    "harvest_xpmultiplier": {
+      "en": "Adjusts experience gained from gathering resources. Higher values grant more harvesting XP.",
+      "zh-CN": "调整采集资源获得的经验。数值越高，采集经验越多。"
+    },
+    "hexagon_cost_multiplier": {
+      "en": "Adjusts item prices in the Hexagon Store. In Ascended, it also adjusts Club ARK token prices; higher values make purchases more expensive.",
+      "zh-CN": "调整六角币商店的物品价格。在 Ascended 中也调整 Club ARK 的代币价格；数值越高，购买所需货币越多。"
+    },
+    "imprintlimit": {
+      "en": "Deletes creatures whose imprinting bonus exceeds this percentage. A threshold such as 101 rather than 100 leaves room for floating-point rounding, particularly with custom imprinting rates.",
+      "zh-CN": "删除留痕加成超过此百分比的生物。使用 101 而非 100 一类略高的阈值，可为浮点舍入保留余量，尤其适用于自定义留痕倍率。"
+    },
+    "increase_pv_prespawn_interval_base_amount": {
+      "en": "Base penalty, in seconds, added to PvP respawns when increased respawn intervals are enabled. Repeated deaths to a team within the configured check period scale this penalty using IncreasePvPRespawnIntervalMultiplier.",
+      "zh-CN": "启用递增 PvP 复活延迟后，每次惩罚的基础时长，单位为秒。在检查窗口内反复被同一队伍击杀时，再按 IncreasePvPRespawnIntervalMultiplier 放大延迟。"
+    },
+    "increase_pv_prespawn_interval_check_period": {
+      "en": "Time window, in seconds, during which repeated PvP deaths to a team increase the respawn penalty. Requires bIncreasePvPRespawnInterval; the base penalty and multiplier determine the added delay.",
+      "zh-CN": "统计重复 PvP 死亡的时间窗口，单位为秒。需要启用 bIncreasePvPRespawnInterval；窗口内被同一队伍反复击杀时，复活延迟由基础时长和倍率共同决定。"
+    },
+    "increase_pv_prespawn_interval_multiplier": {
+      "en": "Multiplier applied to the additional respawn delay for repeated PvP deaths within IncreasePvPRespawnIntervalCheckPeriod. Requires bIncreasePvPRespawnInterval and works with IncreasePvPRespawnIntervalBaseAmount.",
+      "zh-CN": "检查窗口内重复 PvP 死亡时，额外复活延迟的递增倍率。需要启用 bIncreasePvPRespawnInterval，并配合基础惩罚时长及 IncreasePvPRespawnIntervalCheckPeriod 使用。"
+    },
+    "item_stat_clamps_attribute": {
+      "en": "Upper limits for individual item attributes, configured through indexed ItemStatClamps entries. The server must also start with ClampItemStats enabled for these limits to apply.",
+      "zh-CN": "按属性索引设置物品数值上限。服务器启动时还必须启用 ClampItemStats，这些限制才会生效。"
+    },
+    "kill_xpmultiplier": {
+      "en": "XP awarded for kills, relative to the normal amount. Values above 1 increase the reward; values below 1 reduce it.",
+      "zh-CN": "击杀获得的经验倍率。大于 1 增加经验，小于 1 减少经验。"
+    },
+    "limit_non_player_dropped_items_count": {
+      "en": "Maximum count for non-player-dropped items within the area defined by LimitNonPlayerDroppedItemsRange. Use the companion range setting to control how widely the limit applies.",
+      "zh-CN": "指定区域内非玩家掉落物的数量上限。统计范围由 LimitNonPlayerDroppedItemsRange 决定。"
+    },
+    "limit_non_player_dropped_items_range": {
+      "en": "Range, in Unreal units, used to enforce LimitNonPlayerDroppedItemsCount. It defines the area in which eligible dropped items share the configured count limit.",
+      "zh-CN": "执行非玩家掉落物数量限制的范围，单位为 Unreal 单位。此范围内的适用物品共同受 LimitNonPlayerDroppedItemsCount 限制。"
+    },
+    "map_mod_id": {
+      "en": "Steam Workshop ID of a custom map to load directly, instead of selecting it by map name. Configure ActiveMods in GameUserSettings.ini as well; any stacked game Mods still require their intended load order.",
+      "zh-CN": "通过 Steam 创意工坊 ID 直接选择自定义地图，无需填写地图名。还需在 GameUserSettings.ini 中配置 ActiveMods；叠加使用的游戏 Mod 仍须按预期顺序设置。"
+    },
+    "max_alliances_per_tribe": {
+      "en": "Maximum number of alliances that one tribe may join or establish. This limits alliance membership per tribe, rather than tribe membership per alliance.",
+      "zh-CN": "单个部落可以建立或加入的联盟数量上限。此项限制每个部落的联盟数，不是每个联盟的部落数。"
+    },
+    "max_connections_per_ip": {
+      "en": "Limit on simultaneous players connecting from one IP address; -1 leaves the count unrestricted. Further connections from an address at its limit time out; Wildcard does not document this option.",
+      "zh-CN": "同一 IP 地址可同时连接的玩家数量，-1 表示不限制。达到上限后，该地址的后续连接会超时；Wildcard 未公开说明此选项。"
+    },
+    "max_fall_speed_multiplier": {
+      "en": "Scales the downward-speed threshold for player fall damage. Higher values allow longer falls before damage begins, while lower values make shorter falls dangerous; gravity and movement physics are unchanged.",
+      "zh-CN": "玩家开始受到坠落伤害的下降速度阈值倍率。数值越大，通常可以安全下落更久；数值越小，较短距离也可能受伤，此项不改变重力或移动物理。"
+    },
+    "max_num_of_save_backups": {
+      "en": "Number of native save backups retained before the oldest are removed to make room for new ones. These backups are uncompressed and created about every two hours, so account for save size when choosing a retention count.",
+      "zh-CN": "原生存档备份的保留份数，新增备份超出数量时会删除最旧的备份。此类备份约每两小时创建一次且未经压缩，请结合存档大小选择数量。"
+    },
+    "max_number_of_players_in_tribe": {
+      "en": "Membership limit for each tribe. A value of 0 removes the limit; 1 restricts each tribe to a single survivor.",
+      "zh-CN": "每个部落的成员上限。0 表示不限制，1 表示每个部落只能有一名幸存者。"
+    },
+    "max_tribe_logs": {
+      "en": "Number of tribe-history entries available for display per tribe. Increase this to show more past tribe events.",
+      "zh-CN": "每个部落可显示的历史日志条数。调大后可以查看更多过往部落事件。"
+    },
+    "max_tribes_per_alliance": {
+      "en": "Maximum number of tribes allowed in a single alliance. This is separate from the number of alliances each tribe may join.",
+      "zh-CN": "单个联盟允许加入的部落数量上限，与每个部落可加入多少联盟分别设置。"
+    },
+    "message": {
+      "en": "Text shown to players after they log in. Enter it without surrounding quotes and use the literal sequence \\n wherever the displayed message should start a new line.",
+      "zh-CN": "玩家登录后显示的欢迎消息。无需添加外层引号，使用字面字符 \\n 指定消息中的换行位置。"
+    },
+    "minimum_time_between_inventory_retrieval": {
+      "en": "Cooldown, in seconds, for retrieving a player's inventory after death.",
+      "zh-CN": "玩家死亡后取回物品栏的冷却时间，单位为秒。"
+    },
+    "mutagen_level_boost_bred_stat_id": {
+      "en": "Levels granted by Mutagen to each selected stat of a bred tame. Configure the native stat-indexed entries to distinguish this bonus from the one for tames with wild ancestry.",
+      "zh-CN": "突变诱发剂为繁殖驯养生物的各项属性增加的等级数。按原生属性索引配置，与野生祖源驯养生物的加成分别设置。"
+    },
+    "mutagen_level_boost_stat_id": {
+      "en": "Levels granted by Mutagen to each selected stat of a tame with wild ancestry. Bred tames use the separate MutagenLevelBoost_Bred entries.",
+      "zh-CN": "突变诱发剂为具有野生祖源的驯养生物各项属性增加的等级数。繁殖生物使用独立的 MutagenLevelBoost_Bred 配置。"
+    },
+    "new_year1_utc": {
+      "en": "UTC Unix timestamp for the first New Year event occurrence. Requires NewYearEvent and an event-capable server build; the event cannot begin before January 1 at 00:00 EST.",
+      "zh-CN": "第一次新年活动的 UTC Unix 时间戳。需要 NewYearEvent 及支持该活动的服务器版本，不能早于 1 月 1 日美国东部标准时间 00:00 开始。"
+    },
+    "new_year2_utc": {
+      "en": "UTC Unix timestamp for the second New Year event occurrence. Requires NewYearEvent and an event-capable server build; the event cannot begin before January 1 at 00:00 EST.",
+      "zh-CN": "第二次新年活动的 UTC Unix 时间戳。需要 NewYearEvent 及支持该活动的服务器版本，不能早于 1 月 1 日美国东部标准时间 00:00 开始。"
+    },
+    "new_year_event": {
+      "en": "Requests the New Year celebration on server builds that support the scheduled event. Its default occurrences are January 1 at 00:00 and 12:00 EST; NewYear1UTC and NewYear2UTC can override those times, but the flag is not available year-round on every build.",
+      "zh-CN": "在支持该活动的服务器版本中启用新年庆祝。默认于 1 月 1 日美国东部标准时间 00:00 和 12:00 触发，可用 NewYear1UTC、NewYear2UTC 调整时间；并非所有版本全年都支持此开关。"
+    },
+    "newsaveformat": {
+      "en": "Selects save format version 11, which reduces the storage and save-time costs of cryopods. Use only when the save requires it; loading official 2023 server archives requires this option together with usestore to preserve tribe ownership.",
+      "zh-CN": "使用第 11 版存档格式，以减少低温舱相关的保存开销和占用空间。仅在存档需要时启用；加载 2023 年官方服务器存档时，须配合 usestore 才能正确处理部落所有权。"
+    },
+    "no_dinos": {
+      "en": "Stops new wild-creature spawning. This overrides all NoDinosExcept spawn exceptions, so those flags cannot restore selected spawn types while NoDinos is enabled.",
+      "zh-CN": "阻止新的野生生物生成。此开关优先于所有 NoDinosExcept 例外，因此不能同时依靠例外开关恢复部分生成方式。"
+    },
+    "no_hang_detection": {
+      "en": "Disables the server's hang watchdog, including the shutdown triggered when startup exceeds 2,700 seconds (45 minutes). This can accommodate unusually slow loading, but later hangs will no longer be detected by that watchdog.",
+      "zh-CN": "关闭服务器卡死监测，包括启动超过 2700 秒（45 分钟）时自动关闭的机制。可容纳特别缓慢的加载过程，但此监测机制也将无法处理运行后的卡死。"
+    },
+    "nocombineclientmoves": {
+      "en": "Turns off the server's default optimization that combines client movement updates for player physics. Enabling this flag removes an optimization rather than enabling one.",
+      "zh-CN": "关闭服务器默认合并客户端移动更新的物理优化。启用此开关会移除一项优化，而不是开启优化。"
+    },
+    "nodormancythrottling": {
+      "en": "Allows DormancyNetMultiplier values below 1.0 to take effect by disabling dormancy throttling. Wildcard does not document this option.",
+      "zh-CN": "关闭休眠节流，使低于 1.0 的 DormancyNetMultiplier 能够生效。Wildcard 未公开说明此选项。"
+    },
+    "override_engram_entries": {
+      "en": "Overrides whether an engram can be learned and the requirements for learning it. Each entry identifies its target by the engram's numeric index.",
+      "zh-CN": "覆盖指定印痕是否可学习及其学习条件。每条配置使用印痕的数字索引指定目标。"
+    },
+    "override_max_experience_points_dino": {
+      "en": "Absolute XP ceiling for a tamed creature. The value replaces the normal cap rather than multiplying it.",
+      "zh-CN": "驯养生物可积累的经验值上限。填写的是绝对经验值，不是倍率。"
+    },
+    "override_max_experience_points_player": {
+      "en": "Absolute XP ceiling for a player character. The value replaces the normal cap rather than multiplying it.",
+      "zh-CN": "玩家角色可积累的经验值上限。填写的是绝对经验值，不是倍率。"
+    },
+    "passive_tame_interval_multiplier": {
+      "en": "Adjusts the interval between taming interactions requested by creatures that use passive taming.",
+      "zh-CN": "调整被动驯服生物发出驯服交互请求的间隔。"
+    },
+    "pauseonddos": {
+      "en": "Requests a pause in game simulation when the server detects a player-originated DDoS attack. Wildcard does not document this behavior, and the flag is not a guarantee of attack prevention.",
+      "zh-CN": "服务器检测到来自玩家的 DDoS 攻击时，请求暂停游戏模拟。Wildcard 未公开说明此行为，此开关不能保证阻止攻击。"
+    },
+    "per_level_stats_multiplier_dino_tamed_type_integer": {
+      "en": "Stat multipliers for tamed creatures, using the native tamed-stat variant and numeric stat index. Choose the variant and index for the specific stat adjustment you intend to change.",
+      "zh-CN": "驯养生物的属性倍率，按原生驯养属性类别和数字属性索引分别设置。选择与目标属性调整对应的类别和索引。"
+    },
+    "per_level_stats_multiplier_dino_wild_integer": {
+      "en": "Per-level stat multipliers for wild creatures. Native numeric stat indexes select which attributes receive each multiplier.",
+      "zh-CN": "野生生物各项属性的每级增长倍率，通过原生数字属性索引选择具体属性。"
+    },
+    "per_level_stats_multiplier_player_integer": {
+      "en": "Per-level stat multipliers for player characters. Native numeric stat indexes select which attributes receive each multiplier.",
+      "zh-CN": "玩家角色各项属性的每级增长倍率，通过原生数字属性索引选择具体属性。"
+    },
+    "player_base_stat_multipliers_attribute": {
+      "en": "Multipliers for the default starting attributes of a newly spawned player. Configure each attribute through its native index; this changes base stats rather than per-level gains.",
+      "zh-CN": "新角色出生时各项初始属性的倍率，按原生属性索引分别配置。此项改变基础属性，不是升级时的每级加成。"
+    },
+    "player_harvesting_damage_multiplier": {
+      "en": "Damage a player's harvesting hits deal to resource objects, relative to the normal amount. Higher values break down harvestable objects faster.",
+      "zh-CN": "玩家采集攻击对资源对象造成的伤害倍率。数值越大，越快破坏可采集对象。"
+    },
+    "prevent_breeding_for_class_names": {
+      "en": "Creature classes that must not breed. Identify each creature with its native class name, such as Argent_Character_BP_C, rather than its display name.",
+      "zh-CN": "禁止繁殖的生物类别。使用 Argent_Character_BP_C 这样的原生类名，不要填写游戏中的显示名称。"
+    },
+    "prevent_dino_tame_class_names": {
+      "en": "Creature classes that players must not tame. Identify each creature with its native class name, such as Argent_Character_BP_C, rather than its display name.",
+      "zh-CN": "禁止驯服的生物类别。使用 Argent_Character_BP_C 这样的原生类名，不要填写游戏中的显示名称。"
+    },
+    "prevent_offline_pv_pconnection_invincible_interval": {
+      "en": "Damage immunity period, in seconds, immediately after a player logs in.",
+      "zh-CN": "玩家登录后的免伤时间，单位为秒。"
+    },
+    "prevent_total_conversion_save_dir": {
+      "en": "Makes a total-conversion Mod use the default save folder instead of a separate conversion-specific directory. Wildcard does not document this option.",
+      "zh-CN": "让完全转换 Mod 使用默认存档目录，而不是独立的转换专用目录。Wildcard 未公开说明此选项。"
+    },
+    "public_ipfor_epic": {
+      "en": "Public server address advertised to Epic Games Store clients. If omitted while MULTIHOME is set, those clients use the MULTIHOME address, which must be reachable from their network; a private bind address alone will not support Internet connections.",
+      "zh-CN": "Epic Games Store 客户端使用的服务器公网 IP。未填写而已设置 MULTIHOME 时，客户端会使用 MULTIHOME 地址；请配置公网地址以支持 Epic 连接。"
+    },
+    "pv_pzone_structure_damage_multiplier": {
+      "en": "Damage multiplier for structures inside or near caves. Smaller values reduce incoming damage; 1 gives them the same damage scale as surface structures.",
+      "zh-CN": "洞穴内或附近建筑承受的伤害倍率。较小值降低伤害，1 表示与地表建筑使用相同的伤害比例。"
+    },
+    "secure_send_ar_kpayload": {
+      "en": "Enables the game's safeguard for a creature-upload issue. It may affect Mods that interact with transfers, so verify their behavior before relying on it.",
+      "zh-CN": "启用游戏针对生物上传问题的保护措施。可能影响已安装的 Mod，请结合实际 Mod 组合验证兼容性。"
+    },
+    "server_allow_ansel": {
+      "en": "Permits connected clients to use NVIDIA Ansel where the game and client support it.",
+      "zh-CN": "允许客户端使用 NVIDIA Ansel，仍需游戏和客户端本身支持。"
+    },
+    "special_xpmultiplier": {
+      "en": "XP awarded from the game's SpecialEvent category, relative to its normal reward. Values above 1 increase that reward; values below 1 reduce it.",
+      "zh-CN": "游戏 SpecialEvent 类别奖励的经验倍率。大于 1 增加该来源的经验，小于 1 减少经验。"
+    },
+    "speedhackbias": {
+      "en": "Bias used by the server's movement-speed checks. Changing it can increase position corrections, experienced as rubber-banding, for players with high latency.",
+      "zh-CN": "服务器移动速度检查使用的偏置。调整此项可能使高延迟玩家更频繁地遇到位置校正或回弹。"
+    },
+    "stasis_keep_controllers": {
+      "en": "Retains actors' AI controllers in memory while those actors are in stasis, reducing the need to recreate them when players return. This uses additional memory, including when few players are connected, and can be significant on large maps.",
+      "zh-CN": "生物等对象进入休眠时继续保留其 AI 控制器，减少玩家返回时重新创建的开销。即使在线玩家很少也会占用额外内存，大地图上的影响可能更明显。"
+    },
+    "structure_damage_repair_cooldown": {
+      "en": "Wait, in seconds, after a structure last takes damage before repairs are allowed. The normal delay is 180 seconds; 0 removes the wait.",
+      "zh-CN": "建筑最后一次受伤后必须等待多久才能维修，单位为秒。常规值为 180 秒，0 表示无需等待。"
+    },
+    "structurememopts": {
+      "en": "Enables the game's structure-memory optimization. Structure Mods that do not support it may develop broken snap points, so keep it disabled for incompatible Mod sets.",
+      "zh-CN": "启用游戏的建筑内存优化。未适配此机制的建筑 Mod 可能出现吸附点异常，使用不兼容 Mod 时应保持关闭。"
+    },
+    "tamed_dino_character_food_drain_multiplier": {
+      "en": "Rate at which tamed creatures use food. Values above 1 make their food decrease faster; values below 1 slow the drain.",
+      "zh-CN": "驯养生物的食物消耗速率。大于 1 加快食物下降，小于 1 减慢消耗。"
+    },
+    "tamed_dino_torpor_drain_multiplier": {
+      "en": "Rate at which tamed creatures recover from torpor. Values above 1 make torpor fall faster; values below 1 slow that recovery.",
+      "zh-CN": "驯养生物的眩晕值下降速率。大于 1 加快恢复，小于 1 延缓恢复。"
+    },
+    "total_conversion_mod": {
+      "en": "Selects the total-conversion Mod used by the server, such as Primitive Plus. GameUserSettings.ini can alternatively select it through ActiveTotalConversion.",
+      "zh-CN": "选择服务器使用的完全转换 Mod，例如 Primitive Plus。也可通过 GameUserSettings.ini 的 ActiveTotalConversion 指定。"
+    },
+    "tribe_slot_reuse_cooldown": {
+      "en": "Wait, in seconds, before a departed member's tribe slot becomes available again. It applies both to a replacement member and to the survivor who left; 3,600 means a one-hour wait.",
+      "zh-CN": "成员离开后，其部落名额再次可用前的等待时间，单位为秒。新成员加入和原成员重新加入均受此限制；3600 表示一小时。"
+    },
+    "unicorn_spawn_interval": {
+      "en": "Minimum wait, in hours, before Ragnarok replaces a wild Unicorn that was killed. The replacement window extends to twice this value; taming also starts the wait when AllowMultipleTamedUnicorns is enabled.",
+      "zh-CN": "Ragnarok 的野生独角兽被杀死后，重新生成前的最短等待时间，单位为小时；最长等待为此值的两倍。启用 AllowMultipleTamedUnicorns 后，驯服野生独角兽也会开始这段等待。"
+    },
+    "unstasis_dino_obstruction_check": {
+      "en": "Requests an obstruction check when creatures leave stasis, intended to reduce creatures passing through geometry or structures as they reappear. Wildcard does not document this option.",
+      "zh-CN": "生物退出休眠时请求执行障碍检查，用于减少重新出现时穿过地形或建筑的情况。Wildcard 未公开说明此选项。"
+    },
+    "use_corpse_life_span_multiplier": {
+      "en": "Lifetime multiplier for corpses and dropped inventory boxes. Larger values keep them in the world longer; smaller values shorten their lifetime.",
+      "zh-CN": "尸体与掉落物品箱的存留时间倍率。较大值延长存留，较小值缩短存留。"
+    },
+    "use_item_dupe_check": {
+      "en": "Enables additional checks for duplicated items. These checks can affect Mod behavior and should be verified with the server's Mod set.",
+      "zh-CN": "启用额外的物品复制检查。可能影响 Mod 行为，需要结合服务器实际 Mod 组合验证。"
+    },
+    "use_secure_spawn_rules": {
+      "en": "Enables the game's additional safeguards for spawning items and creatures.",
+      "zh-CN": "启用游戏针对物品和生物生成的额外保护规则。"
+    },
+    "use_server_net_speed_check": {
+      "en": "Limits the movement data a player can submit during one server tick by discarding excess updates. This can help constrain movement-processing load on busy servers; Wildcard does not document the full behavior.",
+      "zh-CN": "请求执行检查，丢弃单个玩家在一次服务器 tick 内提交的过量移动数据。这有助于约束繁忙服务器的移动处理负载，但 Wildcard 未公开说明完整行为。"
+    },
+    "use_structure_stasis_grid": {
+      "en": "Enables the grid-based structure stasis system. It is intended to reduce server work around large bases with many connected players; results depend on the world and workload.",
+      "zh-CN": "启用基于网格的建筑休眠系统，旨在减少大型基地和大量在线玩家带来的服务器工作量。效果取决于世界内容与实际负载。"
+    },
+    "use_tame_effectiveness_clamp": {
+      "en": "Caps taming effectiveness at 100%. Wildcard does not document this option.",
+      "zh-CN": "将驯服效率限制在 100% 以内。Wildcard 未公开说明此选项。"
+    },
+    "use_vivox": {
+      "en": "Enables Vivox voice communication on a Steam-only server. Epic servers already use Vivox by default.",
+      "zh-CN": "在仅支持 Steam 的服务器上启用 Vivox 语音。Epic 服务器默认已经使用 Vivox。"
+    },
+    "usestore": {
+      "en": "Stores character data with the world save instead of maintaining separate regular .arkprofile saves; temporary profiles for new or transferred characters remain until the next world save, and tribe data uses .arktributetribe. This mode supports BackupTransferPlayerDatas, uses converttostore for existing data conversion, and must accompany newsaveformat when loading official 2023 server archives.",
+      "zh-CN": "将角色数据随世界一起保存，不再常规单独保存 .arkprofile；新建或传送角色的临时档案保留到下一次世界存档，部落数据使用 .arktributetribe。此模式支持 BackupTransferPlayerDatas，已有数据通过 converttostore 转换；加载 2023 年官方服务器存档时还须启用 newsaveformat。"
+    },
+    "volcano_intensity": {
+      "en": "Controls Ragnarok's volcanic eruption intensity inversely: smaller values produce stronger eruptions, while very large values can suppress the flaming rocks. Keep 1 for the usual intensity; the documented minimum is 0.25, with at least 0.5 advised for multiplayer.",
+      "zh-CN": "Ragnarok 火山喷发强度的反向控制值：越小越猛烈，极大值可能使喷出的燃烧岩石基本消失。1 为常规值，文档给出的最低值是 0.25，多人游戏建议不低于 0.5。"
+    },
+    "volcano_interval": {
+      "en": "Controls the wait between Ragnarok volcano activations: 0 uses the normal 5,000-15,000-second window, while positive values multiply that interval. Larger values make eruptions less frequent.",
+      "zh-CN": "Ragnarok 火山激活间隔：0 使用常规的 5000 至 15000 秒窗口，正数作为该间隔的倍率。数值越大，喷发越少。"
+    },
+    "webalarm": {
+      "en": "Enables web notifications for notable tribe events, including triggered tripwire alarms and creature births. Delivery depends on the game's web-notification setup.",
+      "zh-CN": "为部落的重要事件启用网页通知，例如绊线警报触发或幼兽出生。能否送达取决于游戏的网页通知配置。"
+    },
+    "wild_dino_character_food_drain_multiplier": {
+      "en": "Rate at which wild creatures use food. Values above 1 accelerate food loss; values below 1 slow it.",
+      "zh-CN": "野生生物的食物消耗速率。大于 1 加快食物下降，小于 1 减慢消耗。"
+    },
+    "wild_dino_torpor_drain_multiplier": {
+      "en": "Rate at which wild creatures lose torpor. Higher values allow them to recover faster; lower values keep torpor elevated longer.",
+      "zh-CN": "野生生物的眩晕值下降速率。较大值使其更快恢复，较小值让眩晕状态保持更久。"
+    },
+    "world_buff_scaling_efficacy": {
+      "en": "Strength multiplier for Genesis: Part 2 mission world effects when bEnableWorldBuffScaling is enabled. A value of 1 preserves their normal strength, 0.5 halves it, and 100 applies a hundredfold scale.",
+      "zh-CN": "启用 bEnableWorldBuffScaling 后，Genesis: Part 2 任务世界效果的强度倍率。1 保持常规强度，0.5 减半，100 为一百倍。"
+    },
+    "active_event": {
+      "en": "Select a seasonal event supported by the installed server version.",
+      "zh-CN": "启用指定的季节活动；填写当前服务器版本支持的活动名称。"
+    },
+    "admin_password": {
+      "en": "Authenticates administrator console access and RCON player commands. Written to GameUserSettings.ini [ServerSettings] as ServerAdminPassword.",
+      "zh-CN": "执行游戏内管理员命令及验证 RCON 连接使用的密码。"
+    },
+    "allow_cave_building_pve": {
+      "en": "Allow building inside caves on PvE servers.",
+      "zh-CN": "允许在 PvE 服务器的洞穴中建造。"
+    },
+    "allow_crate_spawns_on_top_of_structures": {
+      "en": "Lets supply crates land on top of structures instead of being blocked by them.",
+      "zh-CN": "允许补给箱落在建筑上方，避免建筑阻止其生成。"
+    },
+    "allow_custom_recipes": {
+      "en": "Allow players to create custom food and drink recipes.",
+      "zh-CN": "允许玩家制作自定义食物和饮料配方。"
+    },
+    "allow_flyer_carry_pve": {
+      "en": "Allows flyer carry while the server is running in PvE mode.",
+      "zh-CN": "允许 PvE 模式下的飞行生物抓取并搬运其他生物。"
+    },
+    "allow_flying_stamina_recovery": {
+      "en": "Allows flyers to recover stamina while players stand on them instead of actively riding.",
+      "zh-CN": "玩家站在飞行生物背上但未骑乘时，允许其恢复耐力。"
+    },
+    "allow_hide_damage_source_from_logs": {
+      "en": "If false, damage sources are shown in tribe logs instead of being hidden.",
+      "zh-CN": "允许部落日志隐藏伤害来源；关闭后日志显示伤害来源。"
+    },
+    "allow_hit_markers": {
+      "en": "Keeps optional ranged hit markers enabled for players.",
+      "zh-CN": "允许显示远程攻击命中提示。"
+    },
+    "allow_multiple_attached_c4": {
+      "en": "Allows more than one C4 charge to be attached to a creature.",
+      "zh-CN": "允许在同一只生物身上附着多个 C4 炸药。"
+    },
+    "allow_raid_dino_feeding": {
+      "en": "Allows Titanosaurs and other raid dinos to be permanently fed where supported.",
+      "zh-CN": "允许给泰坦巨龙等突袭生物喂食，维持其食物值。"
+    },
+    "allow_third_person_player": {
+      "en": "Lets players switch to third-person view.",
+      "zh-CN": "允许玩家切换到第三人称视角。"
+    },
+    "always_notify_player_left": {
+      "en": "Writes leave notices to chat.",
+      "zh-CN": "玩家离开服务器时，在聊天中显示通知。"
+    },
+    "auto_destroy_decayed_dinos": {
+      "en": "Automatically destroys claimable decayed dinos on load instead of leaving them around for claiming.",
+      "zh-CN": "自动销毁已经因 PvE 所有权衰退而可被认领的生物。"
+    },
+    "auto_destroy_old_structures_multiplier": {
+      "en": "Scale the age threshold for automatic structure removal; larger values delay removal.",
+      "zh-CN": "调整建筑自动拆除等待时间；数值越大，等待越久。"
+    },
+    "auto_save_period_minutes": {
+      "en": "How often the server writes a world save to disk.",
+      "zh-CN": "世界自动保存的间隔，单位为分钟。"
+    },
+    "auto_unlock_all_engrams": {
+      "en": "Writes bAutoUnlockAllEngrams under ShooterGameMode.",
+      "zh-CN": "玩家升级时自动解锁达到等级要求的印痕技能。"
+    },
+    "baby_food_consumption_speed_multiplier": {
+      "en": "Controls how quickly babies consume food.",
+      "zh-CN": "幼崽食物消耗速度倍率；数值越大，食物消耗越快。"
+    },
+    "bad_word_list_url": {
+      "en": "Custom URL for the blocked-word list. Leave the default official list if you do not host your own.",
+      "zh-CN": "屏蔽词列表的网址；聊天、角色名和部落名过滤功能使用该列表。"
+    },
+    "bad_word_whitelist_url": {
+      "en": "Optional allow-list URL used to permit false positives.",
+      "zh-CN": "词语放行列表的网址，用于允许被屏蔽词列表误判的内容。"
+    },
+    "ban_list_url": {
+      "en": "Optional remote ban-list URL the server should load on boot. LanGame will quote it correctly in GameUserSettings.ini.",
+      "zh-CN": "服务器加载的远程封禁列表网址；实际玩家名单仍在玩家管理中维护。"
+    },
+    "battleye_enabled": {
+      "en": "Enable BattlEye anti-cheat; disabling it starts the server with -NoBattlEye.",
+      "zh-CN": "启用 BattlEye 反作弊；关闭后服务器使用 -NoBattlEye 启动。"
+    },
+    "crop_decay_speed_multiplier": {
+      "en": "Controls crop decay speed.",
+      "zh-CN": "作物枯萎速度倍率；数值越大，作物枯萎越快。"
+    },
+    "crop_growth_speed_multiplier": {
+      "en": "Controls crop growth speed.",
+      "zh-CN": "作物生长速度倍率；数值越大，作物成熟越快。"
+    },
+    "cryopod_nerf_damage_mult": {
+      "en": "Outgoing damage multiplier during the cryopod nerf window. 0.01 means the released tame only deals 1% normal damage.",
+      "zh-CN": "低温舱释放后的削弱期内，生物造成的伤害倍率；0.01 表示正常伤害的 1%。"
+    },
+    "cryopod_nerf_duration": {
+      "en": "Duration in seconds for the cryopod vulnerability window after release.",
+      "zh-CN": "生物从低温舱释放后，伤害削弱效果持续的秒数。"
+    },
+    "cryopod_nerf_incoming_damage_mult_percent": {
+      "en": "Extra incoming-damage multiplier percentage applied during the cryopod nerf window.",
+      "zh-CN": "低温舱释放后的削弱期内，额外承受伤害的百分比。"
+    },
+    "custom_launch_flags": {
+      "en": "Extra ARK: Survival Evolved launch flags separated by spaces.",
+      "zh-CN": "追加到服务器启动命令的参数；多个参数用空格分隔。"
+    },
+    "custom_recipe_effectiveness_multiplier": {
+      "en": "Scale the effects of custom food and drink recipes; larger values make recipes more effective.",
+      "zh-CN": "自定义食物和饮料配方效果倍率；数值越大，配方效果越强。"
+    },
+    "custom_recipe_skill_multiplier": {
+      "en": "Scale the contribution of Crafting Skill to custom recipe effects.",
+      "zh-CN": "调整制作技能对自定义配方效果的影响强度。"
+    },
+    "day_cycle_speed_scale": {
+      "en": "Scale the whole day-night cycle speed; higher values shorten the cycle.",
+      "zh-CN": "整个昼夜周期的速度倍率；数值越大，一天越短。"
+    },
+    "day_time_speed_scale": {
+      "en": "Scale daytime clock speed; higher values shorten daylight hours.",
+      "zh-CN": "白天时间流逝速度倍率；数值越大，白天越短。"
+    },
+    "difficulty_offset": {
+      "en": "Base difficulty factor affecting wild levels and loot quality; the map and official-difficulty override also affect the result.",
+      "zh-CN": "基础难度系数，影响野生生物等级及战利品品质；实际难度还受地图和官方难度覆盖值影响。"
+    },
+    "dino_character_food_drain_multiplier": {
+      "en": "Controls food drain for dinos.",
+      "zh-CN": "生物食物消耗倍率；数值越大，饥饿越快。"
+    },
+    "dino_count_multiplier": {
+      "en": "Scales the overall number of wild creatures spawned across the map.",
+      "zh-CN": "野生生物生成数量倍率；数值越大，地图上可生成的野生生物越多。"
+    },
+    "dino_damage_multiplier": {
+      "en": "Scale creature attack damage; higher values increase damage dealt.",
+      "zh-CN": "生物攻击伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "dino_resistance_multiplier": {
+      "en": "Scale damage received by creatures; higher values make them take more damage.",
+      "zh-CN": "生物承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "disable_dino_decay_pve": {
+      "en": "Disables PvE tame ownership decay so abandoned dinos do not become claimable over time.",
+      "zh-CN": "关闭 PvE 驯养生物的所有权衰退，避免长期无人照料的生物变为可认领。"
+    },
+    "disable_loot_crates": {
+      "en": "Disable supply drops and cave loot crates.",
+      "zh-CN": "停止生成补给箱和洞穴战利品箱。"
+    },
+    "disable_pve_gamma": {
+      "en": "Prevents the gamma console command while the server is running in PvE mode.",
+      "zh-CN": "禁止玩家在 PvE 模式中用控制台调整伽马亮度。"
+    },
+    "disable_structure_decay_pve": {
+      "en": "Disable PvE structure decay timers.",
+      "zh-CN": "关闭 PvE 建筑衰退计时，防止建筑因长期无人使用而变为可拆除。"
+    },
+    "disable_structure_placement_collision": {
+      "en": "Disables placement collision checks so structures can clip into terrain, foliage, and nearby pieces where the server allows it.",
+      "zh-CN": "放宽建筑放置时的碰撞检查，允许与地形或其他建筑部件重叠。"
+    },
+    "disable_weather_fog": {
+      "en": "Disables fog so players have clearer visibility during weather effects.",
+      "zh-CN": "关闭天气雾效，提高可见距离。"
+    },
+    "enable_auto_destroy_structures": {
+      "en": "Enable automatic removal of old structures using the configured destruction timers.",
+      "zh-CN": "启用旧建筑自动清理，并应用建筑自动拆除时间设置。"
+    },
+    "enable_cryo_sickness_pve": {
+      "en": "Keeps cryo sickness active on PvE servers too.",
+      "zh-CN": "在 PvE 模式中也应用低温症限制。"
+    },
+    "enable_extra_structure_prevention_volumes": {
+      "en": "Blocks building in special resource-rich map volumes such as major mountains on The Island.",
+      "zh-CN": "启用地图额外禁建区域，限制在重要资源区等位置建造。"
+    },
+    "enable_idle_player_kick": {
+      "en": "Disconnect inactive players after the configured idle timeout.",
+      "zh-CN": "启用挂机踢出；无操作时长达到指定秒数后断开玩家连接。"
+    },
+    "enable_pvp_gamma": {
+      "en": "Allows the gamma console command while the server is running in PvP mode.",
+      "zh-CN": "允许玩家在 PvP 模式中用控制台调整伽马亮度。"
+    },
+    "exclusive_join_enabled": {
+      "en": "Restricts joins to PlayersExclusiveJoinList.txt when enabled.",
+      "zh-CN": "仅允许专属加入名单中的账号连接；名单在玩家管理中维护。"
+    },
+    "fast_decay_unsnapped_core_structures": {
+      "en": "Makes isolated unsnapped core pieces decay much faster than normal bases.",
+      "zh-CN": "加快未与其他部件吸附连接的独立基础建筑衰退，适用于孤立地基和柱子。"
+    },
+    "filter_character_names": {
+      "en": "Filters character names against the bad-word and allow-word lists.",
+      "zh-CN": "根据屏蔽词和放行词列表过滤角色名称。"
+    },
+    "filter_chat": {
+      "en": "Filters in-game chat against the bad-word and allow-word lists.",
+      "zh-CN": "根据屏蔽词和放行词列表过滤聊天消息。"
+    },
+    "filter_tribe_names": {
+      "en": "Filters tribe names against the bad-word and allow-word lists.",
+      "zh-CN": "根据屏蔽词和放行词列表过滤部落名称。"
+    },
+    "fishing_loot_quality_multiplier": {
+      "en": "Controls the quality multiplier for fishing loot.",
+      "zh-CN": "钓鱼战利品品质倍率；数值越大，战利品品质越高。"
+    },
+    "force_all_structure_locking": {
+      "en": "Defaults newly placed structures to locked.",
+      "zh-CN": "让所有新放置的建筑默认处于上锁状态。"
+    },
+    "force_can_ride_fliers": {
+      "en": "Writes bForceCanRideFliers so flying mounts remain rideable where maps or rules would normally restrict them.",
+      "zh-CN": "允许在原本限制飞行骑乘的地图或区域骑乘飞行生物。"
+    },
+    "global_voice_chat": {
+      "en": "Enables server-wide voice chat.",
+      "zh-CN": "将语音聊天改为全服可听，不再局限于附近玩家。"
+    },
+    "hard_limit_turrets_in_range": {
+      "en": "Retroactively enforces the turret cap on existing placements already over the limit.",
+      "zh-CN": "将炮塔数量限制应用到已有炮塔，使超出范围内上限的炮塔受到限制。"
+    },
+    "harvest_amount_multiplier": {
+      "en": "Controls resource yield per harvest.",
+      "zh-CN": "每次采集获得的资源数量倍率；数值越大，单次产量越多。"
+    },
+    "item_stack_size_multiplier": {
+      "en": "Global stack-size multiplier for items that support stacking.",
+      "zh-CN": "可堆叠物品的全局堆叠数量倍率。"
+    },
+    "kick_idle_players_period": {
+      "en": "Idle timeout in seconds used with -EnableIdlePlayerKick.",
+      "zh-CN": "启用挂机踢出后，允许玩家无操作的最长秒数。"
+    },
+    "lay_egg_interval_multiplier": {
+      "en": "Scale the interval between egg-laying attempts; higher values mean less frequent eggs.",
+      "zh-CN": "生物产蛋间隔倍率；数值越大，产蛋间隔越长。"
+    },
+    "limit_turrets_in_range": {
+      "en": "Enforces the turret cap within a configured radius.",
+      "zh-CN": "限制指定半径内可放置的自动炮塔数量。"
+    },
+    "limit_turrets_num": {
+      "en": "Maximum automated turrets allowed inside the turret-limit radius.",
+      "zh-CN": "炮塔限制半径内允许的自动炮塔数量上限。"
+    },
+    "limit_turrets_range": {
+      "en": "Radius in Unreal Units used when counting automated turrets against the limit.",
+      "zh-CN": "统计自动炮塔数量使用的半径，单位为 Unreal 世界单位。"
+    },
+    "map_name": {
+      "en": "Map package to load at startup; use an identifier supported by this edition and installed content.",
+      "zh-CN": "启动时加载的地图包标识，必须与当前游戏版本及已安装地图匹配。"
+    },
+    "max_platform_saddle_structure_limit": {
+      "en": "Server-wide limit on platform-saddle creatures and rafts, rather than the structure count on one platform.",
+      "zh-CN": "整个服务器允许的平台鞍生物与木筏总数，不是单个平台可建造的部件数。"
+    },
+    "max_players": {
+      "en": "Maximum number of simultaneously connected players.",
+      "zh-CN": "服务器允许同时连接的玩家人数上限。"
+    },
+    "max_tribute_characters": {
+      "en": "Maximum survivor characters stored in tribute at once.",
+      "zh-CN": "贡品上传存储中允许保存的幸存者数量上限。"
+    },
+    "max_tribute_dinos": {
+      "en": "Maximum dinos stored in tribute at once.",
+      "zh-CN": "贡品上传存储中允许保存的生物数量上限。"
+    },
+    "max_tribute_items": {
+      "en": "Maximum tribute items stored at once.",
+      "zh-CN": "贡品上传存储中允许保存的物品数量上限。"
+    },
+    "minimum_dino_reupload_interval": {
+      "en": "Cooldown in seconds before a downloaded dino can be uploaded again.",
+      "zh-CN": "下载生物后，再次将其上传前必须等待的秒数。"
+    },
+    "night_time_speed_scale": {
+      "en": "Scale nighttime clock speed; higher values shorten the night.",
+      "zh-CN": "夜间时间流逝速度倍率；数值越大，夜晚越短。"
+    },
+    "no_tribute_downloads": {
+      "en": "Blocks downloading survivors, dinos, and items from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载幸存者、生物和物品。"
+    },
+    "notify_admin_commands_in_chat": {
+      "en": "Show executed administrator commands in chat.",
+      "zh-CN": "将管理员执行的命令显示在聊天中。"
+    },
+    "only_auto_destroy_core_structures": {
+      "en": "Restricts auto-destruction to foundations and other core pieces first.",
+      "zh-CN": "自动拆除仅处理地基等基础部件；其上依赖支撑的部件仍可能随之倒塌。"
+    },
+    "only_decay_unsnapped_core_structures": {
+      "en": "Targets decay cleanup at isolated core pieces such as lone foundations and pillar spam.",
+      "zh-CN": "仅对未与其他部件吸附连接的独立基础建筑应用衰退规则。"
+    },
+    "override_official_difficulty": {
+      "en": "Override the map's difficulty value, affecting wild creature level limits and loot quality.",
+      "zh-CN": "覆盖地图使用的难度值，进而影响野生生物等级上限及战利品品质。"
+    },
+    "override_structure_platform_prevention": {
+      "en": "Allow structures normally prohibited on platform saddles, such as automated turrets.",
+      "zh-CN": "允许在平台鞍上放置通常被禁止的建筑，例如自动炮塔。"
+    },
+    "player_character_food_drain_multiplier": {
+      "en": "Higher values drain food faster.",
+      "zh-CN": "玩家食物消耗倍率；数值越大，饥饿越快。"
+    },
+    "player_character_health_recovery_multiplier": {
+      "en": "Scales natural health regeneration for players.",
+      "zh-CN": "玩家自然生命恢复速度倍率；数值越大，恢复越快。"
+    },
+    "player_character_stamina_drain_multiplier": {
+      "en": "Scales how quickly players spend stamina while sprinting, jumping, and fighting.",
+      "zh-CN": "玩家耐力消耗倍率；数值越大，奔跑等活动消耗耐力越快。"
+    },
+    "player_character_water_drain_multiplier": {
+      "en": "Higher values drain water faster.",
+      "zh-CN": "玩家水分消耗倍率；数值越大，口渴越快。"
+    },
+    "player_damage_multiplier": {
+      "en": "Scales the damage dealt by player attacks.",
+      "zh-CN": "玩家攻击伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "player_resistance_multiplier": {
+      "en": "Scales how much incoming damage players take.",
+      "zh-CN": "玩家承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "poop_interval_multiplier": {
+      "en": "Scale the interval between defecations; higher values mean less frequent defecation.",
+      "zh-CN": "生物排泄间隔倍率；数值越大，排泄间隔越长。"
+    },
+    "prevent_diseases": {
+      "en": "Stops swamp fever and other disease mechanics from spreading on the server.",
+      "zh-CN": "阻止沼泽热等疾病的传播。"
+    },
+    "prevent_download_dinos": {
+      "en": "Blocks dino downloads from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载生物。"
+    },
+    "prevent_download_items": {
+      "en": "Blocks item downloads from tribute storage.",
+      "zh-CN": "禁止从贡品上传存储下载物品。"
+    },
+    "prevent_download_survivors": {
+      "en": "Blocks survivor character downloads from the cluster.",
+      "zh-CN": "禁止下载已上传的幸存者角色。"
+    },
+    "prevent_mate_boost": {
+      "en": "Disables the mate-boost bonus that nearby breeding pairs normally grant one another.",
+      "zh-CN": "禁用附近异性同种生物之间的配偶增益。"
+    },
+    "prevent_offline_pvp": {
+      "en": "Protect structures and tames belonging to offline players from PvP damage.",
+      "zh-CN": "为已离线玩家所属的建筑和生物启用离线 PvP 保护。"
+    },
+    "prevent_offline_pvp_interval": {
+      "en": "Delay in seconds after owners go offline before offline PvP protection begins.",
+      "zh-CN": "所有者离线后，开始应用离线 PvP 保护前等待的秒数。"
+    },
+    "prevent_spawn_animations": {
+      "en": "Skips spawn intro animation delays where supported.",
+      "zh-CN": "跳过角色生成或重生时的入场动画。"
+    },
+    "prevent_upload_dinos": {
+      "en": "Blocks dino uploads into tribute storage.",
+      "zh-CN": "禁止将生物上传到贡品存储。"
+    },
+    "prevent_upload_items": {
+      "en": "Blocks item uploads into tribute storage.",
+      "zh-CN": "禁止将物品上传到贡品存储。"
+    },
+    "prevent_upload_survivors": {
+      "en": "Blocks survivor character uploads into tribute storage.",
+      "zh-CN": "禁止将幸存者角色上传到贡品存储。"
+    },
+    "proximity_chat": {
+      "en": "Restrict text chat visibility to nearby players.",
+      "zh-CN": "仅允许附近的玩家看到彼此的文字聊天消息。"
+    },
+    "pve_allow_structures_at_supply_drops": {
+      "en": "Allows building near supply drop locations while in PvE mode.",
+      "zh-CN": "允许在 PvE 模式中靠近补给箱落点建造。"
+    },
+    "pve_dino_decay_period_multiplier": {
+      "en": "Scales how long abandoned PvE dinos keep their ownership before decaying.",
+      "zh-CN": "PvE 生物所有权衰退时间倍率；数值越大，变为可认领前等待越久。"
+    },
+    "pve_structure_decay_period_multiplier": {
+      "en": "Scales how long PvE structures last before decay timers expire.",
+      "zh-CN": "PvE 建筑衰退时间倍率；数值越大，建筑衰退越慢。"
+    },
+    "random_supply_crate_points": {
+      "en": "Place supply drops at randomized locations.",
+      "zh-CN": "在随机位置生成补给箱。"
+    },
+    "rcon_enabled": {
+      "en": "Enables remote RCON commands, including player-management commands. Written to GameUserSettings.ini [ServerSettings] as RCONEnabled.",
+      "zh-CN": "启用远程控制台；连接时使用配置的 RCON 端口和管理员密码。"
+    },
+    "resource_no_replenish_radius_players": {
+      "en": "Player-side no-respawn radius for nearby resources.",
+      "zh-CN": "玩家附近禁止资源再生的半径倍率；数值越大，禁刷新区域越大。"
+    },
+    "resource_no_replenish_radius_structures": {
+      "en": "Structure-side no-respawn radius for nearby resources.",
+      "zh-CN": "建筑附近禁止资源再生的半径倍率；数值越大，禁刷新区域越大。"
+    },
+    "resources_respawn_period_multiplier": {
+      "en": "Scale the delay before harvested resources respawn; higher values mean a longer wait.",
+      "zh-CN": "资源再生等待时间倍率；数值越大，树木和矿石等资源再生越慢。"
+    },
+    "server_auto_force_respawn_wild_dinos_interval": {
+      "en": "Automatically wipes and respawns wild creatures on a fixed timer.",
+      "zh-CN": "按指定秒数间隔清除并重新生成野生生物。"
+    },
+    "server_crosshair": {
+      "en": "Shows the default crosshair.",
+      "zh-CN": "显示游戏默认准星。"
+    },
+    "server_force_no_hud": {
+      "en": "Forces the in-game HUD off for every player.",
+      "zh-CN": "对所有玩家强制隐藏游戏 HUD 界面。"
+    },
+    "server_game_log": {
+      "en": "Write gameplay events to the server game log.",
+      "zh-CN": "将游戏事件写入服务器游戏日志。"
+    },
+    "server_game_log_include_tribe_logs": {
+      "en": "Include tribe events in server game logs and RCON log output.",
+      "zh-CN": "把部落日志事件也写入服务器游戏日志及 RCON 日志输出。"
+    },
+    "server_hardcore": {
+      "en": "Enable hardcore mode, where survivor death resets the character's level.",
+      "zh-CN": "启用硬核模式；死亡会使幸存者角色等级重置。"
+    },
+    "server_name": {
+      "en": "Displayed in the in-game server browser and written to SessionName.",
+      "zh-CN": "在游戏服务器列表中显示的名称。"
+    },
+    "server_password": {
+      "en": "Leave empty for public join.",
+      "zh-CN": "玩家加入时使用的密码；留空允许无需密码加入。"
+    },
+    "server_pve": {
+      "en": "Runs the server with PvE rules when enabled.",
+      "zh-CN": "启用 PvE 规则，限制玩家之间的敌对伤害。"
+    },
+    "show_creative_mode": {
+      "en": "Keeps the creative-mode toggle visible to eligible players and admins.",
+      "zh-CN": "在暂停菜单中显示创造模式选项。"
+    },
+    "show_floating_damage_text": {
+      "en": "Shows RPG-style floating damage numbers to players.",
+      "zh-CN": "以飘字形式显示攻击造成的伤害数值。"
+    },
+    "show_map_player_location": {
+      "en": "Show the player's current position on the in-game map.",
+      "zh-CN": "在游戏地图上显示玩家当前位置。"
+    },
+    "spectator_password": {
+      "en": "Optional password for non-admin spectator access.",
+      "zh-CN": "非管理员进入观战模式时使用的密码。"
+    },
+    "structure_damage_multiplier": {
+      "en": "Scales the damage dealt by player-built structures where the server exposes that value.",
+      "zh-CN": "建筑造成的伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "structure_pickup_hold_duration": {
+      "en": "Seconds to hold the quick-pickup action; 0 makes pickup immediate.",
+      "zh-CN": "快速拾取建筑需要持续按住操作的秒数；0 表示立即拾取。"
+    },
+    "structure_pickup_time_after_placement": {
+      "en": "Seconds after placing a structure during which quick pickup remains available.",
+      "zh-CN": "建筑放置后允许快速拾取的时间窗口，单位为秒。"
+    },
+    "structure_resistance_multiplier": {
+      "en": "Scales how much incoming damage structures take from attacks.",
+      "zh-CN": "建筑承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "supply_crate_loot_quality_multiplier": {
+      "en": "Controls the quality multiplier for supply crate loot.",
+      "zh-CN": "补给箱战利品品质倍率；数值越大，战利品品质越高。"
+    },
+    "tamed_dino_damage_multiplier": {
+      "en": "Scales the damage dealt by tamed creatures.",
+      "zh-CN": "驯养生物攻击伤害倍率；数值越大，造成的伤害越高。"
+    },
+    "tamed_dino_resistance_multiplier": {
+      "en": "Scales how much incoming damage tamed creatures take.",
+      "zh-CN": "驯养生物承受伤害倍率；数值越大，受到的伤害越高。"
+    },
+    "taming_speed_multiplier": {
+      "en": "Higher values tame faster.",
+      "zh-CN": "驯服速度倍率；数值越大，驯服越快。"
+    },
+    "the_max_structures_in_range": {
+      "en": "Maximum structures allowed within the hard-coded placement radius.",
+      "zh-CN": "游戏固定检测半径内允许的建筑部件数量上限。"
+    },
+    "tribe_log_destroyed_enemy_structures": {
+      "en": "Shows destroyed enemy structures in the victim tribe log.",
+      "zh-CN": "将摧毁敌方建筑的事件记录到部落日志中。"
+    },
+    "tribute_character_expiration_seconds": {
+      "en": "How long uploaded survivor characters remain downloadable. Use 0 for no expiration.",
+      "zh-CN": "已上传幸存者在存储中保留的秒数。"
+    },
+    "tribute_dino_expiration_seconds": {
+      "en": "How long uploaded dinos remain downloadable from tribute.",
+      "zh-CN": "已上传生物在存储中保留的秒数。"
+    },
+    "tribute_item_expiration_seconds": {
+      "en": "How long uploaded items remain downloadable from tribute.",
+      "zh-CN": "已上传物品在存储中保留的秒数。"
+    },
+    "use_dino_level_up_animations": {
+      "en": "Keeps the default level-up animation on tamed creatures instead of suppressing it.",
+      "zh-CN": "生物升级时播放升级动画。"
+    },
+    "use_dynamic_config": {
+      "en": "Load supported runtime-adjustable settings from the configured dynamic-configuration URL.",
+      "zh-CN": "启用动态配置，从配置的网址加载可在运行时调整的服务器规则。"
+    },
+    "use_singleplayer_settings": {
+      "en": "Apply the game's single-player balancing preset, including taming and breeding adjustments.",
+      "zh-CN": "应用游戏的单人平衡设置，改变驯服、繁育等多项倍率。"
+    },
+    "xp_multiplier": {
+      "en": "Global XP gain multiplier.",
+      "zh-CN": "全局经验获取倍率；数值越大，获得经验越多。"
+    }
+  }
+}

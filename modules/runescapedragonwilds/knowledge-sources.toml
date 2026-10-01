@@ -1,0 +1,19 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "runescapedragonwilds"
+scope = "Dedicated-server installation, configuration, networking, ownership, world selection and server saves."
+gaps = ["The publisher's full how-to is dated 2026-03-30 and explicitly scopes some limits to version 0.11; retrieval time does not establish applicability to every later installed build.","The separate Jagex help-center endpoint rejected automated requests during review. This source uses the publisher's independently published public website guide, not an access-control bypass."]
+
+[[sources]]
+id = "jagex-server-guide"
+title = "RuneScape: Dragonwilds dedicated-server how-to"
+authority = "Jagex"
+kind = "official"
+seeds = ["https://dragonwilds.runescape.com/news/how-to-dedicated-servers"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 1
+content_selector = "[data-framer-name='Body content A']"
+authority_evidence = "https://dragonwilds.runescape.com/news/how-to-dedicated-servers"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

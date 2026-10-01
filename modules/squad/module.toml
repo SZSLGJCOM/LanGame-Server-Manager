@@ -1,0 +1,194 @@
+id = "squad"
+name = "Squad Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Squad via SteamCMD."
+steam_app_id = 403240
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "squad"
+verification_path = "SquadGameServer.exe"
+
+[workshop]
+provider = "steam"
+consumer_app_id = 393380
+supports_collections = false
+
+[mods.source]
+provider = "steam"
+label = "Steam Workshop"
+url = "https://steamcommunity.com/app/393380/workshop/"
+install_note = "Workshop items are installed into SquadGame/Plugins/Mods; restart the server after changing mods."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/SquadGame/Plugins/Mods"
+target_label = "SquadGame/Plugins/Mods"
+accepts = ["folder", "zip"]
+
+[process]
+executable = "SquadGameServer.exe"
+args_template = [
+  "-log",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "MULTIHOME={{instance.bind_ip}}",
+  "PORT={{ports.game.port}}",
+  "QUERYPORT={{ports.query.port}}",
+  "RCONPORT={{ports.rcon.port}}",
+  "FIXEDMAXPLAYERS={{settings.max_players}}",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Squad reads ServerConfig files from SquadGame/ServerConfig. LanGame renders Server.cfg, Rcon.cfg, Admins.cfg, and rotation/message files from the instance form and materializes them into that live directory. The Unreal console stays on the private desktop; stdout and FullStdOutLogOutput also route enabled Log-level world/session messages into managed capture. Normal shutdown uses the configured RCON endpoint and AdminKillServer 0."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7787
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27165
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 21114
+
+[runtime]
+player_count_source = "player_list"
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "none"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "AdminBroadcast {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_player", "ban_player"]
+response_codec = "squad_list_players"
+identity_kind = "eos_id"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "List players"
+label_zh_cn = "玩家列表"
+transport = "source_rcon"
+command_template = "ListPlayers"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "AdminKick {{target}} LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token exact player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的精确玩家名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "kick_player_id"
+label = "Kick by player ID"
+label_zh_cn = "按玩家 ID 踢出"
+transport = "source_rcon"
+command_template = "AdminKickById {{target}} LanGame"
+target_label = "Player ID"
+target_label_zh_cn = "玩家 ID"
+target_placeholder = "Player ID from ListPlayers"
+target_placeholder_zh_cn = "ListPlayers 输出中的玩家 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban"
+label_zh_cn = "封禁"
+transport = "source_rcon"
+command_template = "AdminBan {{target}} 0 LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Steam64 ID or single-token exact player name"
+target_placeholder_zh_cn = "Steam64 ID 或不含空格的精确玩家名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player_id"
+label = "Ban by player ID"
+label_zh_cn = "按玩家 ID 封禁"
+transport = "source_rcon"
+command_template = "AdminBanById {{target}} 0 LanGame"
+target_label = "Player ID"
+target_label_zh_cn = "玩家 ID"
+target_placeholder = "Player ID from ListPlayers"
+target_placeholder_zh_cn = "ListPlayers 输出中的玩家 ID"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+command = "AdminKillServer 0"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+wait_after_ms = 10000
+
+# The dedicated package ships CanadianArmedForces DLC under SquadGame/Plugins/Mods.
+# Exclude instance state without dropping packaged faction assets.
+[storage]
+runtime_copy_exclusions = ["SquadGame/Saved", "SquadGame/ServerConfig"]
+saves_path_template = "{{paths.install_root}}/SquadGame/Saved"
+retained_paths = ["SquadGame/ServerConfig"]
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon_and_admins_cfg"
+reason = "Squad materializes Admins.cfg for persistent roles and exposes ListPlayers, AdminKick, AdminKickById, AdminBan, and AdminBanById through the configured RCON port."
+verification = "Start the Squad server on Windows, confirm ServerConfig files are loaded, run ListPlayers over RCON, and verify kick/ban actions against a test player ID."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

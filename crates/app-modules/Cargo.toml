@@ -1,0 +1,15 @@
+[package]
+name = "app-modules"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+app-core = { path = "../app-core" }
+image = { version = "0.25.10", default-features = false, features = ["dds", "png"] }
+quick-xml = "0.42.0"
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+toml.workspace = true

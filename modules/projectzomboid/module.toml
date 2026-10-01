@@ -1,0 +1,257 @@
+id = "projectzomboid"
+name = "Project Zomboid Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Project Zomboid via SteamCMD."
+steam_app_id = 380870
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "projectzomboid"
+
+[process]
+executable = "jre64/bin/java.exe"
+args_template = [
+  "-Djava.awt.headless=true",
+  "-Dzomboid.steam=1",
+  "-Dzomboid.znetlog=1",
+  "-XX:+UseZGC",
+  "-XX:-CreateCoredumpOnCrash",
+  "-XX:-OmitStackTraceInFastThrow",
+  "-Xms{{settings.memory_gb}}g",
+  "-Xmx{{settings.memory_gb}}g",
+  "-Duser.home={{paths.config_dir}}/runtime-home",
+  "-Djava.library.path=natives/;natives/win64/;.",
+  "-cp",
+  "{{projectzomboid.classpath}}",
+  "zombie.network.GameServer",
+  "-statistic",
+  "0",
+  "-servername",
+  "{{instance.id}}",
+  "-adminusername",
+  "{{settings.admin_username}}",
+  "-adminpassword",
+  "{{settings.admin_password}}",
+  "-port",
+  "{{ports.game.port}}",
+  "-udpport",
+  "{{ports.direct.port}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Project Zomboid should direct-launch its bundled Java runtime on Windows. LanGame should materialize server.ini into the runtime-home server folder, derive the live Java classpath from the install, and keep all host-facing output inside the desktop app."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 16261
+
+[[default_ports]]
+name = "direct"
+protocol = "udp"
+port = 16262
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 27015
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.shutdown]
+grace_period_ms = 10000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "save"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+wait_after_ms = 3000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "quit"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+wait_after_ms = 6000
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "source_rcon"
+command_template = "save"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "servermsg {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = ["kick_user", "ban_user", "add_to_whitelist"]
+response_codec = "zomboid_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "Players"
+label_zh_cn = "玩家列表"
+transport = "source_rcon"
+command_template = "players"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+
+[[runtime.player_actions]]
+id = "kick_user"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "kickuser {{target}} -r \"LanGame\""
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_user"
+label = "Ban user"
+label_zh_cn = "封禁用户"
+transport = "source_rcon"
+command_template = "banuser {{target}} -r \"LanGame\""
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_steamid"
+label = "Ban SteamID"
+label_zh_cn = "封禁 SteamID"
+transport = "source_rcon"
+command_template = "banid {{target}}"
+target_label = "SteamID"
+target_label_zh_cn = "SteamID"
+target_placeholder = "SteamID64"
+target_placeholder_zh_cn = "SteamID64"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_user"
+label = "Unban user"
+label_zh_cn = "解封用户"
+transport = "source_rcon"
+command_template = "unbanuser {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "set_access_level"
+label = "Set access"
+label_zh_cn = "设置权限级别"
+transport = "source_rcon"
+command_template = "setaccesslevel {{target}} {{role}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+role_values = ["admin", "moderator", "overseer", "gm", "observer", "none"]
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "add_to_whitelist"
+label = "Whitelist"
+label_zh_cn = "加入白名单"
+transport = "source_rcon"
+command_template = "addusertowhitelist {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[[runtime.player_actions]]
+id = "remove_from_whitelist"
+label = "Remove whitelist"
+label_zh_cn = "移出白名单"
+transport = "source_rcon"
+command_template = "removeuserfromwhitelist {{target}}"
+target_label = "Username"
+target_label_zh_cn = "用户名"
+target_placeholder = "Project Zomboid username"
+target_placeholder_zh_cn = "Project Zomboid 用户名"
+target_required = true
+target_encoding = "quoted_string"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+destructive = true
+
+[workshop]
+provider = "steam"
+consumer_app_id = 108600
+supports_collections = false
+
+[storage]
+saves_path_template = "{{paths.config_dir}}/runtime-home/Zomboid/Saves/Multiplayer/{{instance.id}}"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon"
+reason = "Project Zomboid renders the instance RCON port and password and exposes players, kick, ban, unban, whitelist, and access-level commands through RCON."
+verification = "Start the Project Zomboid server on Windows, confirm the server.ini RCON settings are loaded, run players, and verify kick/ban/unban/whitelist/access-level effects against a test username."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "direct"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

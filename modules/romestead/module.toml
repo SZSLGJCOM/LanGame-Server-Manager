@@ -1,0 +1,75 @@
+id = "romestead"
+name = "Romestead Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Romestead via SteamCMD."
+steam_app_id = 4763510
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "romestead"
+verification_path = "Server.exe"
+
+[process]
+executable = "start-romestead.bat"
+args_template = [
+  "{{romestead.extra_launch_args}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Steam appinfo for app 4763510 reports Server.exe as the Windows launch executable. The inspected package is framework-dependent and requires a .NET 8 runtime. LanGame resolves a compatible portable dotnet runtime beside the configured SteamCMD directory and supplies DOTNET_ROOT_X64 and DOTNET_ROOT in the launch plan, including private instances and relocated installations; otherwise normal system runtime discovery applies. The generated start-romestead.bat wrapper launches Server.exe. Romestead reads config.json from the server install root for automatic world loading, join password, port, max players, and the reserved EnableCheats switch. LanGame renders and materializes config.json before launch, keeps the server in a managed terminal, and uses the configured UDP game port through the Port field."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 8050
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+scope = "online"
+source = "console_log"
+action_id = "list_online_players"
+player_action_ids = []
+response_codec = "romestead_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "list_online_players"
+label = "Players"
+label_zh_cn = "在线玩家"
+transport = "stdin"
+command_template = "list"
+process_key = "main"
+
+[runtime.shutdown]
+grace_period_ms = 30000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+command = "save"
+wait_after_ms = 3000
+
+[[runtime.shutdown.commands]]
+transport = "stdin"
+fallback_transport = "console_ctrl_c"
+command = "stop"
+wait_after_ms = 12000
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "dedicated_server_console_or_admin_commands"
+reason = "Romestead build 23662689 reads redirected stdin and exposes a counted list of connected character names. LanGame captures a fresh complete list for read-only rows; moderation commands remain unavailable until their target semantics and side effects are verified."
+verification = "Installed Server.dll Program.CommandChecker and CandideServer.dll BaseServer.CheckCommand confirm piped command input and the list response grammar. Parser fixtures validate declared counts, missing rows, duplicate peers, and bounded capture; the existing exact-build smoke confirms list/save/stop through managed stdin."
+
+[storage]
+runtime_copy_exclusions = ["saved_worlds", "config.json"]
+# installed_save_root_build_25128761 verifies that all world files live below this directory.
+saves_path_template = "{{paths.install_root}}/saved_worlds"
+retained_paths = ["config.json"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game"]

@@ -1,0 +1,31 @@
+{
+  "Name": {{json.settings.server_name}},
+  "Description": {{json.settings.server_description}},
+  "Port": {{ports.game.port}},
+  "QueryPort": {{ports.query.port}},
+  "HideIPAddress": {{hide_ip_address}},
+  "MaxConnectedUsers": {{max_players}},
+  "MaxConnectedAdmins": {{max_admins}},
+  "ServerFps": {{server_fps}},
+  "Password": {{json.settings.server_password}},
+  "Secure": {{secure_mode}},
+  "ListOnSteam": {{list_on_steam}},
+  "ListOnEOS": {{list_on_eos}},
+  "SaveName": {{json.settings.save_name}},
+  "AutoSaveCount": {{autosave_count}},
+  "AutoSaveInterval": {{autosave_interval_seconds}},
+  "CompressSaveFiles": {{compress_save_files}},
+  "AutoSaveSmartKeep": {{json.settings.autosave_smart_keep}},
+  "GameSettingsPreset": {{json.settings.game_settings_preset}},
+  "GameDifficultyPreset": {{json.settings.game_difficulty_preset}},
+  "AdminOnlyDebugEvents": {{admin_only_debug_events}},
+  "DisableDebugEvents": {{disable_debug_events}},
+  "API": {
+    "Enabled": {{api_enabled}}
+  },
+  "Rcon": {
+    "Enabled": {{rcon_enabled}},
+    "Password": {{json.settings.rcon_password}},
+    "Port": {{ports.rcon.port}}
+  }{{vrising.optional_host_settings_members}}
+}

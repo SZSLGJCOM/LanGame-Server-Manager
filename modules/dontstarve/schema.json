@@ -1,0 +1,5822 @@
+{
+  "type": "object",
+  "title": "Don't Starve Together",
+  "properties": {
+    "cluster_name": {
+      "type": "string",
+      "title": "房间名称",
+      "description": "显示在房间列表里的服务器名称。",
+      "default": "DST Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.cluster_name",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "cluster_description": {
+      "type": "string",
+      "title": "房间描述",
+      "description": "显示给玩家看的服务器简介。",
+      "format": "textarea",
+      "default": "Managed by LanGame Server Manager",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 1,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.cluster_description",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "玩家上限",
+      "description": "同时允许加入这台服务器的最大玩家数量。",
+      "default": 16,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 4,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "GAMEPLAY.max_players",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": 1,
+      "maximum": 64
+    },
+    "game_mode": {
+      "type": "string",
+      "title": "游戏模式",
+      "description": "控制死亡和重生的基础规则。",
+      "default": "survival",
+      "enum": [
+        "survival",
+        "endless",
+        "wilderness"
+      ],
+      "x-lsgm-section": "cluster-rules",
+      "x-lsgm-order": 2,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "GAMEPLAY.game_mode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "cluster_intention": {
+      "type": "string",
+      "title": "房间倾向",
+      "description": "控制房间在服务器列表里的玩法定位。默认跟随游戏模式。",
+      "default": "default",
+      "enum": [
+        "default",
+        "cooperative",
+        "competitive",
+        "social",
+        "madness"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 3,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.cluster_intention",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "shard_bind_ip": {
+      "type": "string",
+      "title": "Shard bind address",
+      "default": "127.0.0.1",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 0,
+      "description": "Address used by DST shards to communicate inside the cluster. Player listener binding remains instance network state.",
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "SHARD.bind_ip",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "cluster_password": {
+      "type": "string",
+      "title": "房间密码",
+      "description": "留空表示公开房间。",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 5,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.cluster_password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "pause_when_empty": {
+      "type": "boolean",
+      "title": "无人时暂停",
+      "description": "没有玩家在线时暂停世界时间。",
+      "default": false,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 6,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "GAMEPLAY.pause_when_empty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "pvp": {
+      "type": "boolean",
+      "title": "允许玩家互伤",
+      "description": "启用玩家之间的伤害判定。",
+      "default": false,
+      "x-lsgm-section": "cluster-rules",
+      "x-lsgm-order": 7,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "GAMEPLAY.pvp",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "vote_enabled": {
+      "type": "boolean",
+      "title": "启用投票",
+      "description": "允许玩家发起常规世界投票。",
+      "default": true,
+      "x-lsgm-section": "cluster-rules",
+      "x-lsgm-order": 8,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "GAMEPLAY.vote_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "offline_cluster": {
+      "type": "boolean",
+      "title": "离线模式",
+      "description": "不公开服务器，仅接受同一局域网连接；Steam 服务不可用。启用“禁用数据收集”时会自动开启。",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 9,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.offline_cluster",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "lan_only_cluster": {
+      "type": "boolean",
+      "title": "仅局域网",
+      "description": "仅接受同一局域网内的连接。Master 与已启用 Caves 的玩家端口必须位于 10998–11018。",
+      "default": false,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.lan_only_cluster",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "tick_rate": {
+      "type": "integer",
+      "title": "同步频率",
+      "description": "服务器每秒向客户端发送更新的次数，通常保持默认 15。",
+      "default": 15,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 11,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.tick_rate",
+      "x-lsgm-source-surface": "config_file",
+      "minimum": 15,
+      "maximum": 60
+    },
+    "autosaver_enabled": {
+      "type": "boolean",
+      "title": "自动存档",
+      "description": "关闭后不会在每天结束时自动存档，但停服和手动保存仍会落盘。",
+      "default": true,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 12,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.autosaver_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_caves": {
+      "type": "boolean",
+      "title": "启用洞穴分片",
+      "description": "标准布局启用后启动 Caves 分片。Island Adventures 布局始终启动四片。关闭标准洞穴时保留存档和配置。",
+      "default": false,
+      "x-lsgm-section": "cluster-shard-coordination",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "SHARD.shard_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "cluster_language": {
+      "type": "string",
+      "title": "Cluster language",
+      "description": "Language code advertised for this cluster in the server browser.",
+      "default": "en",
+      "minLength": 2,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 13,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.cluster_language",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_snapshots": {
+      "type": "integer",
+      "title": "World snapshots",
+      "description": "Number of rollback snapshots retained by the native cluster.",
+      "default": 6,
+      "minimum": 0,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 14,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "MISC.max_snapshots",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "disable_data_collection": {
+      "type": "boolean",
+      "title": "Disable data collection",
+      "description": "传递 -disabledatacollection。Klei 对该选项仅支持离线模式；启用后 LanGame 会同时开启离线模式。",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-disabledatacollection",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "backup_log_count": {
+      "type": "integer",
+      "title": "Server Log Backup Retention",
+      "description": "Maximum number of native server log backups to retain.",
+      "default": 100,
+      "minimum": 0,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 901,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-backup_log_count",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "backup_log_period": {
+      "type": "integer",
+      "title": "Server Log Backup Interval (Seconds)",
+      "description": "Seconds between native server log backups.",
+      "default": 86400,
+      "minimum": 1,
+      "x-lsgm-section": "cluster-runtime",
+      "x-lsgm-order": 902,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-backup_log_period",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "friends_only": {
+      "type": "boolean",
+      "title": "Friends only",
+      "description": "Passes -fo so only friends may join the server.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 903,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-fo",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "allow_ioopenwrite_sandbox_escape": {
+      "type": "boolean",
+      "title": "Allow Mod file-write sandbox escape",
+      "description": "Passes -allow_ioopenwrite_sandbox_escape. Enable only for trusted Mods because it permits io.open and io.write outside the normal sandbox.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 904,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "-allow_ioopenwrite_sandbox_escape",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "master_settings_preset": {
+      "type": "string",
+      "title": "World settings preset",
+      "description": "Select a built-in preset or enter an installed custom preset ID. Use survival as the cluster game mode. For another preset, fields still at base defaults inherit the preset; changed fields remain overrides. Extra Lua overrides can force a base default value.",
+      "default": "SURVIVAL_TOGETHER",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$",
+      "x-lsgm-suggestions": [
+        "SURVIVAL_TOGETHER",
+        "RELAXED",
+        "ENDLESS",
+        "WILDERNESS",
+        "LIGHTS_OUT"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "settings_preset",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_worldgen_preset": {
+      "type": "string",
+      "title": "World generation preset",
+      "description": "Select a built-in preset or enter an installed custom preset ID. Generation changes affect new terrain. For another preset, fields still at base defaults inherit the preset; changed fields remain overrides. Extra Lua overrides can force a base default value.",
+      "default": "SURVIVAL_TOGETHER",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$",
+      "x-lsgm-suggestions": [
+        "SURVIVAL_TOGETHER",
+        "RELAXED",
+        "ENDLESS",
+        "WILDERNESS",
+        "LIGHTS_OUT"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "worldgen_preset",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_specialevent": {
+      "type": "string",
+      "title": "世界活动",
+      "description": "控制当前世界的节日或季节活动。",
+      "default": "default",
+      "enum": [
+        "none",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 101,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.specialevent",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_autumn": {
+      "type": "string",
+      "title": "秋季长度",
+      "description": "控制秋季持续时间。",
+      "default": "default",
+      "enum": [
+        "noseason",
+        "veryshortseason",
+        "shortseason",
+        "default",
+        "longseason",
+        "verylongseason",
+        "random"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 102,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.autumn",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_winter": {
+      "type": "string",
+      "title": "冬季长度",
+      "description": "控制冬季持续时间。",
+      "default": "default",
+      "enum": [
+        "noseason",
+        "veryshortseason",
+        "shortseason",
+        "default",
+        "longseason",
+        "verylongseason",
+        "random"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 103,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.winter",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_spring": {
+      "type": "string",
+      "title": "春季长度",
+      "description": "控制春季持续时间。",
+      "default": "default",
+      "enum": [
+        "noseason",
+        "veryshortseason",
+        "shortseason",
+        "default",
+        "longseason",
+        "verylongseason",
+        "random"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 104,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spring",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_summer": {
+      "type": "string",
+      "title": "夏季长度",
+      "description": "控制夏季持续时间。",
+      "default": "default",
+      "enum": [
+        "noseason",
+        "veryshortseason",
+        "shortseason",
+        "default",
+        "longseason",
+        "verylongseason",
+        "random"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 105,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.summer",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_extrastartingitems": {
+      "type": "string",
+      "title": "新玩家额外开局资源",
+      "description": "Choose the world age after which newly joining survivors receive extra starting resources. This is a day threshold, not an item count.",
+      "default": "default",
+      "enum": [
+        "0",
+        "5",
+        "default",
+        "15",
+        "20",
+        "none"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 106,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.extrastartingitems",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_seasonalstartingitems": {
+      "type": "string",
+      "title": "新玩家季节开局物品",
+      "description": "为在非秋季加入的玩家补一件基础季节装备。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 107,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.seasonalstartingitems",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_spawnprotection": {
+      "type": "string",
+      "title": "出生保护",
+      "description": "在出生点危险或拥挤时给新玩家临时保护。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 108,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spawnprotection",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_dropeverythingondespawn": {
+      "type": "string",
+      "title": "离线掉落物品",
+      "description": "控制玩家离开服务器时是否掉落全部物品。",
+      "default": "default",
+      "enum": [
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.dropeverythingondespawn",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_darkness": {
+      "type": "string",
+      "title": "黑暗伤害",
+      "description": "控制黑暗伤害是否致命。",
+      "default": "default",
+      "enum": [
+        "nonlethal",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.1,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.darkness",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_temperaturedamage": {
+      "type": "string",
+      "title": "温度伤害",
+      "description": "控制过热和过冷伤害是否致命。",
+      "default": "default",
+      "enum": [
+        "nonlethal",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.2,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.temperaturedamage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_hunger": {
+      "type": "string",
+      "title": "饥饿伤害",
+      "description": "控制饥饿导致的伤害是否致命。",
+      "default": "default",
+      "enum": [
+        "nonlethal",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.3,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.hunger",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_healthpenalty": {
+      "type": "string",
+      "title": "最大生命惩罚",
+      "description": "控制死亡后是否保留最大生命惩罚。",
+      "default": "always",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.4,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.healthpenalty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_shadowcreatures": {
+      "type": "string",
+      "title": "暗影生物频率",
+      "description": "控制理智过低时暗影生物的出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.5,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.shadowcreatures",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_brightmarecreatures": {
+      "type": "string",
+      "title": "启蒙怪物频率",
+      "description": "控制启蒙值相关怪物的出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 109.6,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.brightmarecreatures",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_world_size": {
+      "type": "string",
+      "title": "地上世界大小",
+      "description": "控制主世界地图规模。",
+      "default": "default",
+      "enum": [
+        "small",
+        "medium",
+        "default",
+        "huge"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.world_size",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_season_start": {
+      "type": "string",
+      "title": "地上起始季节",
+      "description": "设置主世界开局季节。",
+      "default": "default",
+      "enum": [
+        "default",
+        "winter",
+        "spring",
+        "summer",
+        "autumn|spring",
+        "winter|summer",
+        "autumn|winter|spring|summer"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 111,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.season_start",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_task_set": {
+      "type": "string",
+      "title": "地上地形预设",
+      "description": "控制主世界使用 Together 还是 Classic 地形任务集。",
+      "default": "default",
+      "enum": [
+        "default",
+        "classic"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 112,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.task_set",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_start_location": {
+      "type": "string",
+      "title": "地上出生区域",
+      "description": "控制主世界出生点的起始布局。",
+      "default": "default",
+      "enum": [
+        "default",
+        "plus",
+        "darkness"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 113,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.start_location",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_day": {
+      "type": "string",
+      "title": "地上昼夜长度",
+      "description": "调整主世界白天、黄昏和夜晚的时间占比。",
+      "default": "default",
+      "enum": [
+        "default",
+        "longday",
+        "longdusk",
+        "longnight",
+        "noday",
+        "nodusk",
+        "nonight",
+        "onlyday",
+        "onlydusk",
+        "onlynight"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 114,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.day",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_branching": {
+      "type": "string",
+      "title": "地上分支地形",
+      "description": "控制大陆分支的复杂程度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "least",
+        "default",
+        "most",
+        "random"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 115,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.branching",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_loop": {
+      "type": "string",
+      "title": "地上环形地形",
+      "description": "控制地图是否更容易形成环路。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 116,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.loop",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_weather": {
+      "type": "string",
+      "title": "天气频率",
+      "description": "影响主世界天气事件出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 124,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.weather",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_frogs": {
+      "type": "string",
+      "title": "Pond Frog Population and Regrowth",
+      "description": "Control pond frog population and replenishment; frog rain is a separate setting.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 125,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.frogs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_hounds": {
+      "type": "string",
+      "title": "猎犬袭击频率",
+      "description": "控制主世界猎犬波次频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 126,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.hounds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_lightning": {
+      "type": "string",
+      "title": "闪电频率",
+      "description": "控制主世界闪电事件频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 127,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lightning",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_wildfires": {
+      "type": "string",
+      "title": "自燃频率",
+      "description": "控制主世界夏季自燃事件频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 128,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wildfires",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_touchstone": {
+      "type": "string",
+      "title": "试金石数量",
+      "description": "控制主世界试金石分布。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 117,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.touchstone",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_roads": {
+      "type": "string",
+      "title": "道路密度",
+      "description": "控制主世界生成道路的倾向。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 118,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.roads",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_boons": {
+      "type": "string",
+      "title": "随机资源礼物",
+      "description": "控制主世界 boons 的生成频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 119,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.boons",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_prefabswaps_start": {
+      "type": "string",
+      "title": "起始资源随机度",
+      "description": "控制出生点附近基础资源的随机组合程度。",
+      "default": "default",
+      "enum": [
+        "classic",
+        "default",
+        "highly random"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.prefabswaps_start",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_petrification": {
+      "type": "string",
+      "title": "石化频率",
+      "description": "控制树木和环境发生石化的频率。",
+      "default": "default",
+      "enum": [
+        "none",
+        "few",
+        "default",
+        "many",
+        "max"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 121,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.petrification",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_meteorshowers": {
+      "type": "string",
+      "title": "流星雨频率",
+      "description": "控制主世界流星雨事件频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 122,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.meteorshowers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_regrowth": {
+      "type": "string",
+      "title": "地上再生速度",
+      "description": "控制主世界资源整体再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 123,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_berrybush": {
+      "type": "string",
+      "title": "浆果丛密度",
+      "description": "控制主世界浆果丛数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 129,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.berrybush",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_carrot": {
+      "type": "string",
+      "title": "胡萝卜密度",
+      "description": "控制主世界胡萝卜数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 130,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.carrot",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_flint": {
+      "type": "string",
+      "title": "燧石密度",
+      "description": "控制主世界燧石数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 131,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flint",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_grass": {
+      "type": "string",
+      "title": "草密度",
+      "description": "控制主世界可采集草丛数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 132,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.grass",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_marshbush": {
+      "type": "string",
+      "title": "尖刺灌木密度",
+      "description": "控制主世界尖刺灌木数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 133,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.marshbush",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_reeds": {
+      "type": "string",
+      "title": "芦苇密度",
+      "description": "控制主世界芦苇数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 134,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.reeds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rock": {
+      "type": "string",
+      "title": "巨石密度",
+      "description": "控制主世界巨石数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 135,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rock",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_sapling": {
+      "type": "string",
+      "title": "树苗密度",
+      "description": "控制主世界树苗数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 136,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.sapling",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_trees": {
+      "type": "string",
+      "title": "树木密度",
+      "description": "控制主世界树木数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 137,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.trees",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_flowers": {
+      "type": "string",
+      "title": "花朵密度",
+      "description": "控制主世界花朵与恶魔花生成密度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 137.1,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flowers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ponds": {
+      "type": "string",
+      "title": "池塘密度",
+      "description": "控制主世界池塘数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 137.2,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ponds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_tumbleweed": {
+      "type": "string",
+      "title": "风滚草密度",
+      "description": "控制主世界风滚草生成密度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 137.3,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tumbleweed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bees": {
+      "type": "string",
+      "title": "蜂巢密度",
+      "description": "控制主世界蜂巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 138,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bees",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_beefalo": {
+      "type": "string",
+      "title": "牛群密度",
+      "description": "控制主世界皮弗娄牛数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 139,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.beefalo",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_butterfly": {
+      "type": "string",
+      "title": "蝴蝶密度",
+      "description": "控制主世界蝴蝶数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 140,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.butterfly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_buzzard": {
+      "type": "string",
+      "title": "秃鹫密度",
+      "description": "控制主世界秃鹫数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 141,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.buzzard",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_catcoon": {
+      "type": "string",
+      "title": "浣猫密度",
+      "description": "控制主世界浣猫刷新点数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 142,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.catcoon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moles": {
+      "type": "string",
+      "title": "鼹鼠密度",
+      "description": "控制主世界鼹鼠洞数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 143,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_pigs": {
+      "type": "string",
+      "title": "猪人房密度",
+      "description": "控制主世界猪人房数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 144,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.pigs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rabbits": {
+      "type": "string",
+      "title": "兔洞密度",
+      "description": "控制主世界兔洞数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 145,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rabbits",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_lightninggoat": {
+      "type": "string",
+      "title": "闪电羊密度",
+      "description": "控制主世界闪电羊数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 146,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lightninggoat",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_spiders": {
+      "type": "string",
+      "title": "蜘蛛巢密度",
+      "description": "控制主世界蜘蛛巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 147,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiders",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_tallbirds": {
+      "type": "string",
+      "title": "高脚鸟密度",
+      "description": "控制主世界高脚鸟数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 148,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tallbirds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_tentacles": {
+      "type": "string",
+      "title": "触手密度",
+      "description": "控制主世界触手数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tentacles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_penguins": {
+      "type": "string",
+      "title": "企鸥频率",
+      "description": "控制主世界企鸥出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.01,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.penguins",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_perd": {
+      "type": "string",
+      "title": "火鸡频率",
+      "description": "控制主世界火鸡出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.perd",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_angrybees": {
+      "type": "string",
+      "title": "杀人蜂巢密度",
+      "description": "控制主世界杀人蜂巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149.03,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.angrybees",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_chess": {
+      "type": "string",
+      "title": "发条生物密度",
+      "description": "控制主世界发条生物区域数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149.04,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.chess",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_krampus": {
+      "type": "string",
+      "title": "坎普斯频率",
+      "description": "控制主世界坎普斯出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.1,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.krampus",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_walrus": {
+      "type": "string",
+      "title": "海象营地频率",
+      "description": "控制主世界海象营地数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149.2,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.walrus",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_merm": {
+      "type": "string",
+      "title": "鱼人屋频率",
+      "description": "控制主世界鱼人小屋数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149.3,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.merm",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_houndmound": {
+      "type": "string",
+      "title": "猎犬丘频率",
+      "description": "控制主世界猎犬丘数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 149.4,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.houndmound",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_lureplants": {
+      "type": "string",
+      "title": "食人花频率",
+      "description": "控制主世界食人花出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.5,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lureplants",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bearger": {
+      "type": "string",
+      "title": "熊獾频率",
+      "description": "控制主世界熊獾出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.6,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bearger",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_beequeen": {
+      "type": "string",
+      "title": "蜂后频率",
+      "description": "控制主世界蜂后出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.7,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.beequeen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_deerclops": {
+      "type": "string",
+      "title": "独眼巨鹿频率",
+      "description": "控制主世界独眼巨鹿出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.8,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.deerclops",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_dragonfly": {
+      "type": "string",
+      "title": "龙蝇频率",
+      "description": "控制主世界龙蝇出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.9,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.dragonfly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_klaus": {
+      "type": "string",
+      "title": "克劳斯频率",
+      "description": "控制主世界克劳斯出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.905,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.klaus",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_goosemoose": {
+      "type": "string",
+      "title": "麋鹿鹅频率",
+      "description": "控制主世界麋鹿鹅出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.91,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.goosemoose",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_spiderqueen": {
+      "type": "string",
+      "title": "蜘蛛女王频率",
+      "description": "控制主世界蜘蛛女王出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.92,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiderqueen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_liefs": {
+      "type": "string",
+      "title": "树精守卫频率",
+      "description": "控制主世界树精守卫出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 149.93,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.liefs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_beefaloheat": {
+      "type": "string",
+      "title": "牛群发情频率",
+      "description": "控制主世界皮弗娄牛发情事件频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 177,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.beefaloheat",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_deciduoustree_regrowth": {
+      "type": "string",
+      "title": "落叶树再生速度",
+      "description": "控制主世界落叶树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 178,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.deciduoustree_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_carrots_regrowth": {
+      "type": "string",
+      "title": "胡萝卜再生速度",
+      "description": "控制主世界胡萝卜再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 179,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.carrots_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_evergreen_regrowth": {
+      "type": "string",
+      "title": "常青树再生速度",
+      "description": "控制主世界常青树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 180,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.evergreen_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_flowers_regrowth": {
+      "type": "string",
+      "title": "花朵再生速度",
+      "description": "控制主世界花朵再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 181,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flowers_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_tree_regrowth": {
+      "type": "string",
+      "title": "月树再生速度",
+      "description": "控制主世界月树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 182,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_tree_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_saltstack_regrowth": {
+      "type": "string",
+      "title": "盐堆再生速度",
+      "description": "控制主世界盐堆再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 183,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.saltstack_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_twiggytrees_regrowth": {
+      "type": "string",
+      "title": "尖枝树再生速度",
+      "description": "控制主世界尖枝树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 184,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.twiggytrees_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bees_setting": {
+      "type": "string",
+      "title": "蜜蜂频率",
+      "description": "控制主世界蜜蜂出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 150.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bees_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_birds": {
+      "type": "string",
+      "title": "鸟类频率",
+      "description": "控制主世界普通鸟类出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 151.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.birds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bunnymen_setting": {
+      "type": "string",
+      "title": "兔人频率",
+      "description": "控制主世界兔人出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 152.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bunnymen_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_catcoons": {
+      "type": "string",
+      "title": "浣猫频率",
+      "description": "控制主世界浣猫出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 153.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.catcoons",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_gnarwail": {
+      "type": "string",
+      "title": "独角鲸频率",
+      "description": "控制主世界独角鲸出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 154.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.gnarwail",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_grassgekkos": {
+      "type": "string",
+      "title": "草蜥变形频率",
+      "description": "控制主世界草蜥变形频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 155.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.grassgekkos",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moles_setting": {
+      "type": "string",
+      "title": "鼹鼠频率",
+      "description": "控制主世界鼹鼠出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 156.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moles_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_fishschools": {
+      "type": "string",
+      "title": "鱼群频率",
+      "description": "控制主世界海面鱼群出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 157.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.fishschools",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_wobsters": {
+      "type": "string",
+      "title": "龙虾频率",
+      "description": "控制主世界龙虾出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 158.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wobsters",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bats_setting": {
+      "type": "string",
+      "title": "蝙蝠频率",
+      "description": "控制主世界蝙蝠出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 159.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bats_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_cookiecutters": {
+      "type": "string",
+      "title": "饼干切割蟹频率",
+      "description": "控制主世界饼干切割蟹出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 160.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cookiecutters",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_hounds": {
+      "type": "string",
+      "title": "恐怖猎犬频率",
+      "description": "控制主世界恐怖猎犬出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 161.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_hounds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_wasps": {
+      "type": "string",
+      "title": "杀人蜂频率",
+      "description": "控制主世界杀人蜂出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 162.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wasps",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_merms": {
+      "type": "string",
+      "title": "鱼人频率",
+      "description": "控制主世界鱼人出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 163.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.merms",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_penguins_moon": {
+      "type": "string",
+      "title": "月岩企鸥频率",
+      "description": "控制主世界月岩企鸥出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 164.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.penguins_moon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mosquitos": {
+      "type": "string",
+      "title": "蚊子频率",
+      "description": "控制主世界蚊子出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 165.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mosquitos",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_sharks": {
+      "type": "string",
+      "title": "鲨鱼频率",
+      "description": "控制主世界鲨鱼出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 166.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.sharks",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_spider": {
+      "type": "string",
+      "title": "破碎蜘蛛频率",
+      "description": "控制主世界破碎蜘蛛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 167.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_spider",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_squid": {
+      "type": "string",
+      "title": "乌贼频率",
+      "description": "控制主世界乌贼出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 168.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.squid",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_spider_warriors": {
+      "type": "string",
+      "title": "蜘蛛战士频率",
+      "description": "控制主世界蜘蛛战士出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 169.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spider_warriors",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_antliontribute": {
+      "type": "string",
+      "title": "Antlion Tribute and Rage",
+      "description": "Configure tribute and rage timing, including initial and maximum waiting times and how tribute delays rage.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 185,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.antliontribute",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_crabking": {
+      "type": "string",
+      "title": "帝王蟹频率",
+      "description": "控制主世界帝王蟹出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 186,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.crabking",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_fruitfly": {
+      "type": "string",
+      "title": "果蝇王频率",
+      "description": "控制主世界果蝇王出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 187,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.fruitfly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_malbatross": {
+      "type": "string",
+      "title": "邪天翁频率",
+      "description": "控制主世界邪天翁出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 188,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.malbatross",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_deciduousmonster": {
+      "type": "string",
+      "title": "毒桦树精频率",
+      "description": "控制主世界毒桦树精出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 189,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.deciduousmonster",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mushroom": {
+      "type": "string",
+      "title": "蘑菇密度",
+      "description": "控制主世界蘑菇数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 170.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushroom",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_fissure": {
+      "type": "string",
+      "title": "月亮裂隙密度",
+      "description": "控制主世界月亮裂隙数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 171.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_fissure",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_starfish": {
+      "type": "string",
+      "title": "海星密度",
+      "description": "控制主世界海星数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 172.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_starfish",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_bullkelp": {
+      "type": "string",
+      "title": "搁浅海带密度",
+      "description": "控制主世界搁浅海带数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 173.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_bullkelp",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_bullkelp": {
+      "type": "string",
+      "title": "海带密度",
+      "description": "控制主世界海洋海带数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 174.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_bullkelp",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_cactus": {
+      "type": "string",
+      "title": "仙人掌密度",
+      "description": "控制主世界仙人掌数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 175.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cactus",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_hotspring": {
+      "type": "string",
+      "title": "温泉密度",
+      "description": "控制主世界温泉数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 176.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_hotspring",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_rock": {
+      "type": "string",
+      "title": "月岩密度",
+      "description": "控制主世界月岩数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 177.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_rock",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_sapling": {
+      "type": "string",
+      "title": "月树苗密度",
+      "description": "控制主世界月树苗数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 178.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_sapling",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_tree": {
+      "type": "string",
+      "title": "月树密度",
+      "description": "控制主世界月树数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 179.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_tree",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_meteorspawner": {
+      "type": "string",
+      "title": "流星场密度",
+      "description": "控制主世界流星场数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 180.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.meteorspawner",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rock_ice": {
+      "type": "string",
+      "title": "小冰川密度",
+      "description": "控制主世界小冰川数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 181.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rock_ice",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_seastack": {
+      "type": "string",
+      "title": "海蚀柱密度",
+      "description": "控制主世界海蚀柱数量。",
+      "default": "ocean_default",
+      "enum": [
+        "ocean_never",
+        "ocean_rare",
+        "ocean_uncommon",
+        "ocean_default",
+        "ocean_often",
+        "ocean_mostly",
+        "ocean_always",
+        "ocean_insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 182.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_seastack",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_berrybush": {
+      "type": "string",
+      "title": "石果灌木密度",
+      "description": "控制主世界石果灌木数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 183.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_berrybush",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_carrot": {
+      "type": "string",
+      "title": "胡萝卜鼠密度",
+      "description": "控制主世界胡萝卜鼠数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 184.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_carrot",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_fruitdragon": {
+      "type": "string",
+      "title": "沙拉蝾螈密度",
+      "description": "控制主世界沙拉蝾螈数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 185.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_fruitdragon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_shoal": {
+      "type": "string",
+      "title": "浅滩鱼群密度",
+      "description": "控制主世界浅滩鱼群数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 186.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_shoal",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_wobsterden": {
+      "type": "string",
+      "title": "海龙虾巢密度",
+      "description": "控制主世界海龙虾巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 187.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_wobsterden",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_waterplant": {
+      "type": "string",
+      "title": "海草密度",
+      "description": "控制主世界海草数量。",
+      "default": "ocean_default",
+      "enum": [
+        "ocean_never",
+        "ocean_rare",
+        "ocean_uncommon",
+        "ocean_default",
+        "ocean_often",
+        "ocean_mostly",
+        "ocean_always",
+        "ocean_insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 188.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_waterplant",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_moon_spiders": {
+      "type": "string",
+      "title": "破碎蜘蛛巢密度",
+      "description": "控制主世界破碎蜘蛛巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 189.02,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_spiders",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_ocean_otterdens": {
+      "type": "string",
+      "title": "Marotter Dens",
+      "description": "Set how many Marotter dens are placed when the ocean is generated.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ocean_otterdens",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_balatro": {
+      "type": "string",
+      "title": "JIMBO",
+      "description": "Include the JIMBO crossover landmark when generating a new world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.balatro",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_junkyard": {
+      "type": "string",
+      "title": "Junk Yard",
+      "description": "Include the Junk Yard landmark when generating a new world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 302,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.junkyard",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_stageplays": {
+      "type": "string",
+      "title": "Stage Plays",
+      "description": "Include the stage and its play area when generating a new world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 303,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.stageplays",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_terrariumchest": {
+      "type": "string",
+      "title": "Terrarium",
+      "description": "Include the chest containing the Terrarium when generating a new world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 304,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.terrariumchest",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_palmconetree": {
+      "type": "string",
+      "title": "Palmcone Tree",
+      "description": "Set the amount of Palmcone Trees placed during world generation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "mastergen",
+      "x-lsgm-order": 305,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.palmconetree",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_otters_setting": {
+      "type": "string",
+      "title": "Marotters population",
+      "description": "Control whether Marotter dens replenish their inhabitants and how quickly they do so.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 306,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.otters_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_pigs_setting": {
+      "type": "string",
+      "title": "Pigs population",
+      "description": "Control whether Pig Houses spawn pigs and how quickly pigs respawn.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 307,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.pigs_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rabbits_setting": {
+      "type": "string",
+      "title": "Rabbits population",
+      "description": "Control whether rabbits respawn and how quickly rabbit holes replenish them.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 308,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rabbits_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_crow_carnival": {
+      "type": "string",
+      "title": "Midsummer Cawnival",
+      "description": "Choose whether Midsummer Cawnival follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 309,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.crow_carnival",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_hallowed_nights": {
+      "type": "string",
+      "title": "Hallowed Nights",
+      "description": "Choose whether Hallowed Nights follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 310,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.hallowed_nights",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_winters_feast": {
+      "type": "string",
+      "title": "Winter's Feast",
+      "description": "Choose whether Winter's Feast follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 311,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.winters_feast",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_beefalo": {
+      "type": "string",
+      "title": "Year of the Beefalo",
+      "description": "Choose whether Year of the Beefalo follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 312,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_beefalo",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_bunnyman": {
+      "type": "string",
+      "title": "Year of the Bunnyman",
+      "description": "Choose whether Year of the Bunnyman follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 313,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_bunnyman",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_carrat": {
+      "type": "string",
+      "title": "Year of the Carrat",
+      "description": "Choose whether Year of the Carrat follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 314,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_carrat",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_catcoon": {
+      "type": "string",
+      "title": "Year of the Catcoon",
+      "description": "Choose whether Year of the Catcoon follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 320,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_catcoon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_dragonfly": {
+      "type": "string",
+      "title": "Year of the Dragonfly",
+      "description": "Choose whether Year of the Dragonfly follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 321,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_dragonfly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_gobbler": {
+      "type": "string",
+      "title": "Year of the Gobbler",
+      "description": "Choose whether Year of the Gobbler follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 322,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_gobbler",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_knight": {
+      "type": "string",
+      "title": "Year of the Clockwork Knight",
+      "description": "Choose whether Year of the Clockwork Knight follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 323,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_knight",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_pig": {
+      "type": "string",
+      "title": "Year of the Pig King",
+      "description": "Choose whether Year of the Pig King follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 324,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_pig",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_snake": {
+      "type": "string",
+      "title": "Year of the Depths Worm",
+      "description": "Choose whether Year of the Depths Worm follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 325,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_snake",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_year_of_the_varg": {
+      "type": "string",
+      "title": "Year of the Varg",
+      "description": "Choose whether Year of the Varg follows the game's event schedule or remains enabled.",
+      "default": "default",
+      "enum": [
+        "default",
+        "enabled"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 326,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.year_of_the_varg",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_daywalker2": {
+      "type": "string",
+      "title": "Scrappy Werepig",
+      "description": "Control the Scrappy Werepig encounter and its respawn interval.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 327,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.daywalker2",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_eyeofterror": {
+      "type": "string",
+      "title": "Eye of Terror",
+      "description": "Control the Eye of Terror encounter and the delay before it can appear again.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 328,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.eyeofterror",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_sharkboi": {
+      "type": "string",
+      "title": "Frostjaw",
+      "description": "Control the Frostjaw encounter and the cooldown before it can be repeated.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 329,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.sharkboi",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_ghostenabled": {
+      "type": "string",
+      "title": "Survivor Death",
+      "description": "Choose whether death leaves the survivor as a ghost or returns them to character selection.",
+      "default": "always",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 330,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ghostenabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_ghostsanitydrain": {
+      "type": "string",
+      "title": "Ghost Sanity Drain",
+      "description": "Choose whether player ghosts drain the sanity of living survivors.",
+      "default": "always",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 331,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.ghostsanitydrain",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_portalresurection": {
+      "type": "string",
+      "title": "Revive At Florid Postern",
+      "description": "Allow player ghosts to revive at the Florid Postern.",
+      "default": "none",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 332,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.portalresurection",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_resettime": {
+      "type": "string",
+      "title": "Death Reset Timer",
+      "description": "Choose whether the world resets after all survivors die and how long the reset countdown lasts.",
+      "default": "default",
+      "enum": [
+        "none",
+        "slow",
+        "default",
+        "fast",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 333,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.resettime",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_spawnmode": {
+      "type": "string",
+      "title": "Spawn Mode",
+      "description": "Choose between entering at the Florid Postern and spawning at a random location.",
+      "default": "fixed",
+      "enum": [
+        "fixed",
+        "scatter"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 334,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spawnmode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_bearger": {
+      "type": "string",
+      "title": "Armored Bearger",
+      "description": "Allow Beargers to undergo the lunar transformation into Armored Beargers.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 340,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_bearger",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_bird_gestalt": {
+      "type": "string",
+      "title": "Bright-Beaked Birds",
+      "description": "Allow the lunar transformation that produces Bright-Beaked Birds.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 341,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_bird_gestalt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_birds": {
+      "type": "string",
+      "title": "Mutated Birds",
+      "description": "Allow birds to undergo their lunar mutation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 342,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_birds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_buzzard_gestalt": {
+      "type": "string",
+      "title": "Crystal-Crested Buzzards",
+      "description": "Allow the lunar transformation that produces Crystal-Crested Buzzards.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 343,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_buzzard_gestalt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_deerclops": {
+      "type": "string",
+      "title": "Crystal Deerclops",
+      "description": "Allow Deerclops to undergo the lunar transformation into Crystal Deerclops.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 344,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_deerclops",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_merm": {
+      "type": "string",
+      "title": "Mutated Merms",
+      "description": "Allow Merms to undergo their lunar mutation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 345,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_merm",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_spiderqueen": {
+      "type": "string",
+      "title": "Shattered Spider Holes",
+      "description": "Allow the mutated Spider Queen transformation that creates Shattered Spider Holes.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 346,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_spiderqueen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mutated_warg": {
+      "type": "string",
+      "title": "Possessed Vargs",
+      "description": "Allow the lunar transformation that produces Possessed Vargs.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 347,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_warg",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_alternatehunt": {
+      "type": "string",
+      "title": "Hunt Surprises",
+      "description": "Set the chance that tracking a hunt leads to an unexpected creature instead of a Koalefant.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 348,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.alternatehunt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_frograin": {
+      "type": "string",
+      "title": "Frog Rain",
+      "description": "Set how often rain also brings falling frogs.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 349,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.frograin",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_hunt": {
+      "type": "string",
+      "title": "Hunts",
+      "description": "Set how often new animal tracks become available for hunting.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 350,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.hunt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_lunarhail_frequency": {
+      "type": "string",
+      "title": "Lunar Hail",
+      "description": "Set how often lunar hail occurs.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 351,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lunarhail_frequency",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rifts_enabled": {
+      "type": "string",
+      "title": "Lunar rifts",
+      "description": "Choose whether surface lunar rifts are disabled, follow game progression, or can appear without that progression.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 352,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rifts_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_rifts_frequency": {
+      "type": "string",
+      "title": "Lunar rift frequency",
+      "description": "Set the interval between surface lunar rift appearances.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 353,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rifts_frequency",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_summerhounds": {
+      "type": "string",
+      "title": "Fire Hound Waves",
+      "description": "Allow fire hounds to be included in seasonal hound attacks.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 354,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.summerhounds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_wanderingtrader_enabled": {
+      "type": "string",
+      "title": "Wandering Trader",
+      "description": "Allow the Wandering Trader to appear in the world.",
+      "default": "always",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 360,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wanderingtrader_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_winterhounds": {
+      "type": "string",
+      "title": "Ice Hound Waves",
+      "description": "Allow ice hounds to be included in seasonal hound attacks.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 361,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.winterhounds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_hound_mounds": {
+      "type": "string",
+      "title": "Hounds population",
+      "description": "Control hounds spawned by Hound Mounds, including their population and replenishment rate.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 362,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.hound_mounds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_pirateraids": {
+      "type": "string",
+      "title": "Moon Quay Pirates",
+      "description": "Set how often Moon Quay pirates launch raids.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 363,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.pirateraids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_spiders_setting": {
+      "type": "string",
+      "title": "Spiders population",
+      "description": "Control Spider Den populations and how quickly their spiders replenish.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 364,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiders_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_walrus_setting": {
+      "type": "string",
+      "title": "MacTusk population",
+      "description": "Control whether MacTusk respawns at his camp and the time between respawns.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 365,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.walrus_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_portal_spawnrate": {
+      "type": "string",
+      "title": "Portal Activity",
+      "description": "Set how often the Moon Quay portal releases creatures and resources.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 366,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.portal_spawnrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_bananabush_portalrate": {
+      "type": "string",
+      "title": "Banana Bushes from portal",
+      "description": "Set the relative chance that the Moon Quay portal releases Banana Bushes.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 367,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bananabush_portalrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_lightcrab_portalrate": {
+      "type": "string",
+      "title": "Crustashines from portal",
+      "description": "Set the relative chance that the Moon Quay portal releases Crustashines.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 368,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lightcrab_portalrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_monkeytail_portalrate": {
+      "type": "string",
+      "title": "Monkeytails from portal",
+      "description": "Set the relative chance that the Moon Quay portal releases Monkeytails.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 369,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.monkeytail_portalrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_palmcone_seed_portalrate": {
+      "type": "string",
+      "title": "Palmcone Sprouts from portal",
+      "description": "Set the relative chance that the Moon Quay portal releases Palmcone Sprouts.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 370,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.palmcone_seed_portalrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_powder_monkey_portalrate": {
+      "type": "string",
+      "title": "Powder Monkeys from portal",
+      "description": "Set the relative chance that the Moon Quay portal releases Powder Monkeys.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 371,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.powder_monkey_portalrate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_basicresource_regrowth": {
+      "type": "string",
+      "title": "Basic Resources regrowth",
+      "description": "Allow the world to replenish depleted basic resources.",
+      "default": "none",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 372,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.basicresource_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_cactus_regrowth": {
+      "type": "string",
+      "title": "Cacti regrowth",
+      "description": "Set whether new cacti regrow and how quickly they replenish the world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 373,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cactus_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_palmconetree_regrowth": {
+      "type": "string",
+      "title": "Palmcone Tree regrowth",
+      "description": "Set whether Palmcone Trees regrow and how quickly they replenish the world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 374,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.palmconetree_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_reeds_regrowth": {
+      "type": "string",
+      "title": "Reeds regrowth",
+      "description": "Set whether reeds regrow and how quickly they replenish the world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 375,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.reeds_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_lessdamagetaken": {
+      "type": "string",
+      "title": "Damage Taken",
+      "description": "Choose the amount of damage survivors receive.",
+      "default": "none",
+      "enum": [
+        "always",
+        "none",
+        "more"
+      ],
+      "x-lsgm-section": "mastersettings",
+      "x-lsgm-order": 376,
+      "x-lsgm-source": "shared_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lessdamagetaken",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_world_overrides_extra": {
+      "type": "string",
+      "title": "地上额外覆盖项",
+      "description": "写入 Master/worldgenoverride.lua 的 overrides 表中。每行一个 Lua 配置项，例如 touchstone = \"often\",",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 176,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "overrides.extra_lines",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "master_worldgenoverride_lua": {
+      "type": "string",
+      "title": "Advanced Override: Master worldgenoverride.lua",
+      "description": "A complete Master worldgenoverride.lua. Plain data tables synchronize with the form; scripts with executable logic are edited here directly. Unknown fields and comments are preserved.",
+      "format": "textarea",
+      "default": "return {\n  override_enabled = true,\n  settings_preset = \"SURVIVAL_TOGETHER\",\n  worldgen_preset = \"SURVIVAL_TOGETHER\",\n  overrides = {\n    world_size = \"default\",\n  }\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 176.5,
+      "x-lsgm-source": "master_worldgenoverride",
+      "x-lsgm-source-key": "worldgenoverride.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "caves_settings_preset": {
+      "type": "string",
+      "title": "World settings preset",
+      "description": "DST_CAVE is the built-in caves preset; custom IDs must exist in the installed game or mods. Master controls shared playstyle rules. For another preset, fields still at base defaults inherit the preset; changed fields remain overrides. Extra Lua overrides can force a base default value.",
+      "default": "DST_CAVE",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$",
+      "x-lsgm-suggestions": [
+        "DST_CAVE"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "settings_preset",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_worldgen_preset": {
+      "type": "string",
+      "title": "World generation preset",
+      "description": "DST_CAVE generates cave terrain; custom IDs must exist in the installed game or mods. Generation changes affect new terrain. For another preset, fields still at base defaults inherit the preset; changed fields remain overrides. Extra Lua overrides can force a base default value.",
+      "default": "DST_CAVE",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.-]*$",
+      "x-lsgm-suggestions": [
+        "DST_CAVE"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "worldgen_preset",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_world_size": {
+      "type": "string",
+      "title": "洞穴世界大小",
+      "description": "控制洞穴地图规模。",
+      "default": "default",
+      "enum": [
+        "small",
+        "medium",
+        "default",
+        "huge"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 150,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.world_size",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_branching": {
+      "type": "string",
+      "title": "洞穴分支地形",
+      "description": "控制洞穴分支的复杂程度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "least",
+        "default",
+        "most",
+        "random"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 151,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.branching",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_loop": {
+      "type": "string",
+      "title": "洞穴环形地形",
+      "description": "控制洞穴地图是否更容易形成环路。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 152,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.loop",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_atriumgate": {
+      "type": "string",
+      "title": "Atrium Gate Cooldown",
+      "description": "Wait before the Atrium Gate becomes available again: very slow/slow/default/fast/very fast use 40/30/20/10/5 game days.",
+      "default": "default",
+      "enum": [
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 153,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.atriumgate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_wormattacks": {
+      "type": "string",
+      "title": "洞穴蠕虫袭击",
+      "description": "控制洞穴蠕虫袭击频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 154,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wormattacks",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_earthquakes": {
+      "type": "string",
+      "title": "洞穴地震",
+      "description": "控制洞穴地震频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 155,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.earthquakes",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_regrowth": {
+      "type": "string",
+      "title": "洞穴再生速度",
+      "description": "控制洞穴资源整体再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 156,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_banana": {
+      "type": "string",
+      "title": "洞穴香蕉密度",
+      "description": "控制洞穴香蕉数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 157,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.banana",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_cave_ponds": {
+      "type": "string",
+      "title": "洞穴池塘密度",
+      "description": "控制洞穴池塘数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 158,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cave_ponds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_fern": {
+      "type": "string",
+      "title": "洞穴蕨类密度",
+      "description": "控制洞穴蕨类植物数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 159,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.fern",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_flint": {
+      "type": "string",
+      "title": "洞穴燧石密度",
+      "description": "控制洞穴燧石数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 160,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flint",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_lichen": {
+      "type": "string",
+      "title": "苔藓密度",
+      "description": "控制洞穴苔藓数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 161,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lichen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_marshbush": {
+      "type": "string",
+      "title": "洞穴尖刺灌木密度",
+      "description": "控制洞穴尖刺灌木数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 162,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.marshbush",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mushroom": {
+      "type": "string",
+      "title": "洞穴蘑菇密度",
+      "description": "控制洞穴蘑菇数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 163,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushroom",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_wormlights": {
+      "type": "string",
+      "title": "发光浆果密度",
+      "description": "控制洞穴发光浆果数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 163.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wormlights",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_flower_cave": {
+      "type": "string",
+      "title": "洞穴发光花密度",
+      "description": "控制洞穴发光花数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 163.2,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flower_cave",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mushtree": {
+      "type": "string",
+      "title": "蘑菇树密度",
+      "description": "控制洞穴蘑菇树数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 163.3,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushtree",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rock": {
+      "type": "string",
+      "title": "洞穴巨石密度",
+      "description": "控制洞穴巨石数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 164,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rock",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_sapling": {
+      "type": "string",
+      "title": "洞穴树苗密度",
+      "description": "控制洞穴树苗数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 165,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.sapling",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_bunnymen": {
+      "type": "string",
+      "title": "兔人房密度",
+      "description": "控制洞穴兔人房数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 166,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bunnymen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rocky": {
+      "type": "string",
+      "title": "石虾密度",
+      "description": "控制洞穴石虾数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 167,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rocky",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_slurper": {
+      "type": "string",
+      "title": "缀食者密度",
+      "description": "控制洞穴缀食者数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 168,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.slurper",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_slurtles": {
+      "type": "string",
+      "title": "蜗牛龟巢密度",
+      "description": "控制洞穴蜗牛龟巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 169,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.slurtles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_snurtles": {
+      "type": "string",
+      "title": "鼻涕蜗牛频率",
+      "description": "控制洞穴鼻涕蜗牛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 169.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.snurtles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_monkey": {
+      "type": "string",
+      "title": "洞穴猴窝密度",
+      "description": "控制洞穴猴窝数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 170,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.monkey",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_bats": {
+      "type": "string",
+      "title": "蝙蝠密度",
+      "description": "控制洞穴蝙蝠数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 171,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bats",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_worms": {
+      "type": "string",
+      "title": "穴居蠕虫密度",
+      "description": "控制洞穴蠕虫刷新点数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 172,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.worms",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spiders": {
+      "type": "string",
+      "title": "洞穴蜘蛛巢密度",
+      "description": "控制洞穴普通蜘蛛巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 173,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiders",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_cave_spiders": {
+      "type": "string",
+      "title": "石笋蜘蛛密度",
+      "description": "控制洞穴石笋蜘蛛巢数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 174,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cave_spiders",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_tentacles": {
+      "type": "string",
+      "title": "洞穴触手密度",
+      "description": "控制洞穴触手数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 175,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tentacles",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_molebats": {
+      "type": "string",
+      "title": "裸鼹鼠蝙蝠频率",
+      "description": "控制洞穴裸鼹鼠蝙蝠出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.molebats",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_nightmarecreatures": {
+      "type": "string",
+      "title": "遗迹梦魇频率",
+      "description": "控制遗迹梦魇生物出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.2,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.nightmarecreatures",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spider_dropper": {
+      "type": "string",
+      "title": "垂吊深渊爬蛛频率",
+      "description": "控制洞穴垂吊蜘蛛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.3,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spider_dropper",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spider_spitter": {
+      "type": "string",
+      "title": "喷射蜘蛛频率",
+      "description": "控制洞穴喷射蜘蛛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.31,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spider_spitter",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_fruitfly": {
+      "type": "string",
+      "title": "果蝇王频率",
+      "description": "控制果蝇王出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.32,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.fruitfly",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_fissure": {
+      "type": "string",
+      "title": "梦魇裂隙密度",
+      "description": "控制洞穴梦魇裂隙数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 175.33,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.fissure",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_weather": {
+      "type": "string",
+      "title": "洞穴降雨频率",
+      "description": "控制洞穴分片降雨频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 182,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.weather",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_flower_cave_regrowth": {
+      "type": "string",
+      "title": "洞穴发光花再生速度",
+      "description": "控制洞穴发光花再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 183,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.flower_cave_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_lightflier_flower_regrowth": {
+      "type": "string",
+      "title": "发光虫花再生速度",
+      "description": "控制发光虫花再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 184,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lightflier_flower_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mushtree_moon_regrowth": {
+      "type": "string",
+      "title": "月蘑菇树再生速度",
+      "description": "控制月蘑菇树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 185,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushtree_moon_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mushtree_regrowth": {
+      "type": "string",
+      "title": "蘑菇树再生速度",
+      "description": "控制洞穴蘑菇树再生速度。",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 186,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushtree_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_lightfliers": {
+      "type": "string",
+      "title": "球状发光虫频率",
+      "description": "控制洞穴球状发光虫出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 176,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.lightfliers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_bunnymen_setting": {
+      "type": "string",
+      "title": "兔人频率",
+      "description": "控制洞穴兔人出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 177,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bunnymen_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_dustmoths": {
+      "type": "string",
+      "title": "尘蛾频率",
+      "description": "控制洞穴尘蛾出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 178,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.dustmoths",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_grassgekkos": {
+      "type": "string",
+      "title": "草蜥变形频率",
+      "description": "控制洞穴草蜥变形频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 179,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.grassgekkos",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_moles_setting": {
+      "type": "string",
+      "title": "鼹鼠频率",
+      "description": "控制洞穴鼹鼠出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 180,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moles_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mushgnome": {
+      "type": "string",
+      "title": "蘑菇侏儒频率",
+      "description": "控制洞穴蘑菇侏儒出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 181,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mushgnome",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_pigs_setting": {
+      "type": "string",
+      "title": "猪人频率",
+      "description": "控制洞穴猪人出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 182.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.pigs_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rocky_setting": {
+      "type": "string",
+      "title": "石虾频率",
+      "description": "控制洞穴石虾出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 183.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rocky_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_slurtles_setting": {
+      "type": "string",
+      "title": "蜗牛龟频率",
+      "description": "控制洞穴蜗牛龟出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 184.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.slurtles_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_monkey_setting": {
+      "type": "string",
+      "title": "洞穴猴频率",
+      "description": "控制洞穴猴出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 185.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.monkey_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_bats_setting": {
+      "type": "string",
+      "title": "蝙蝠频率",
+      "description": "控制洞穴蝙蝠出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 186.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.bats_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spider_hider": {
+      "type": "string",
+      "title": "洞穴蜘蛛频率",
+      "description": "控制洞穴蜘蛛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 187,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spider_hider",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_merms": {
+      "type": "string",
+      "title": "鱼人频率",
+      "description": "控制洞穴鱼人出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 188,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.merms",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spider_warriors": {
+      "type": "string",
+      "title": "蜘蛛战士频率",
+      "description": "控制洞穴蜘蛛战士出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 189,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spider_warriors",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spiders_setting": {
+      "type": "string",
+      "title": "蜘蛛频率",
+      "description": "控制洞穴蜘蛛出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 190,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiders_setting",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_spiderqueen": {
+      "type": "string",
+      "title": "蜘蛛女王频率",
+      "description": "控制洞穴蜘蛛女王出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 187.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.spiderqueen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_toadstool": {
+      "type": "string",
+      "title": "毒菌蟾蜍频率",
+      "description": "控制洞穴毒菌蟾蜍出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 188.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.toadstool",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_liefs": {
+      "type": "string",
+      "title": "树精守卫频率",
+      "description": "控制洞穴树精守卫出现频率。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 189.1,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.liefs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_grass": {
+      "type": "string",
+      "title": "洞穴草密度",
+      "description": "控制洞穴草数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 191,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.grass",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_reeds": {
+      "type": "string",
+      "title": "洞穴芦苇密度",
+      "description": "控制洞穴芦苇数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 192,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.reeds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_trees": {
+      "type": "string",
+      "title": "洞穴树木密度",
+      "description": "控制洞穴树木数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 193,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.trees",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_chess": {
+      "type": "string",
+      "title": "洞穴发条生物密度",
+      "description": "控制洞穴发条生物区域数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 194,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.chess",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_boons": {
+      "type": "string",
+      "title": "Failed Survivors",
+      "description": "Set how many fallen-survivor remains and their supplies are placed during cave generation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.boons",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_cavelight": {
+      "type": "string",
+      "title": "Sinkhole Lights",
+      "description": "Adjust the light supplied by sinkholes in the generated caves.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 401,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.cavelight",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_prefabswaps_start": {
+      "type": "string",
+      "title": "Starting Resource Variety",
+      "description": "Choose how starting resources vary when generating the caves.",
+      "default": "default",
+      "enum": [
+        "classic",
+        "default",
+        "highly random"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 402,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.prefabswaps_start",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_start_location": {
+      "type": "string",
+      "title": "Spawn Area",
+      "description": "Choose the starting-area layout used when generating the caves.",
+      "default": "caves",
+      "enum": [
+        "caves"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 403,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.start_location",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_task_set": {
+      "type": "string",
+      "title": "Biomes",
+      "description": "Choose the set of biomes used to generate the caves.",
+      "default": "cave_default",
+      "enum": [
+        "cave_default"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 404,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.task_set",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_touchstone": {
+      "type": "string",
+      "title": "Touch Stones",
+      "description": "Set how many Touch Stones are placed when generating the caves.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 405,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.touchstone",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_berrybush": {
+      "type": "string",
+      "title": "Berry Bushes",
+      "description": "Set the amount of Berry Bushes placed during cave generation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 406,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.berrybush",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_tree_rock": {
+      "type": "string",
+      "title": "Boulderboughs",
+      "description": "Set the amount of Boulderboughs placed during cave generation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "uncommon",
+        "default",
+        "often",
+        "mostly",
+        "always",
+        "insane"
+      ],
+      "x-lsgm-section": "cavesgen",
+      "x-lsgm-order": 407,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tree_rock",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_daywalker": {
+      "type": "string",
+      "title": "Nightmare Werepig",
+      "description": "Control the Nightmare Werepig encounter and its respawn interval.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 408,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.daywalker",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_moon_spider": {
+      "type": "string",
+      "title": "Shattered Spiders",
+      "description": "Control the population and replenishment of Shattered Spiders.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 409,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.moon_spider",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mutated_birds": {
+      "type": "string",
+      "title": "Mutated Birds",
+      "description": "Allow birds to undergo their lunar mutation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_birds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mutated_merm": {
+      "type": "string",
+      "title": "Mutated Merms",
+      "description": "Allow Merms to undergo their lunar mutation.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 411,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_merm",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_mutated_spiderqueen": {
+      "type": "string",
+      "title": "Shattered Spider Holes",
+      "description": "Allow the mutated Spider Queen transformation that creates Shattered Spider Holes.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 420,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.mutated_spiderqueen",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_acidrain_enabled": {
+      "type": "string",
+      "title": "Acid Rain",
+      "description": "Allow acid rain in the caves.",
+      "default": "always",
+      "enum": [
+        "none",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 421,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.acidrain_enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rifts_enabled": {
+      "type": "string",
+      "title": "Shadow rifts",
+      "description": "Choose whether cave shadow rifts are disabled, follow game progression, or can appear without that progression.",
+      "default": "default",
+      "enum": [
+        "never",
+        "default",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 422,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rifts_enabled_cave",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rifts_frequency": {
+      "type": "string",
+      "title": "Shadow rift frequency",
+      "description": "Set the interval between cave shadow rift appearances.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 423,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.rifts_frequency_cave",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_wormattacks_boss": {
+      "type": "string",
+      "title": "Great Worm",
+      "description": "Control how often Great Worms participate in cave worm attacks.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 424,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.wormattacks_boss",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_chest_mimics": {
+      "type": "string",
+      "title": "Ornery Chests",
+      "description": "Set the chance that a chest becomes an Ornery Chest.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 425,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.chest_mimics",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_itemmimics": {
+      "type": "string",
+      "title": "Mimicreeps",
+      "description": "Control the number of Mimicreeps that imitate items.",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 426,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.itemmimics",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_evergreen_regrowth": {
+      "type": "string",
+      "title": "Evergreens regrowth",
+      "description": "Set whether Evergreens regrow in caves and how quickly they replenish.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 427,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.evergreen_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_reeds_regrowth": {
+      "type": "string",
+      "title": "Reeds regrowth",
+      "description": "Set whether reeds regrow and how quickly they replenish the world.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 428,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.reeds_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_tree_rock_regrowth": {
+      "type": "string",
+      "title": "Boulderboughs regrowth",
+      "description": "Set whether Boulderboughs regrow and how quickly they replenish.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 429,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.tree_rock_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_twiggytrees_regrowth": {
+      "type": "string",
+      "title": "Twiggy Trees regrowth",
+      "description": "Set whether Twiggy Trees regrow in caves and how quickly they replenish.",
+      "default": "default",
+      "enum": [
+        "never",
+        "veryslow",
+        "slow",
+        "default",
+        "fast",
+        "veryfast"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 430,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.twiggytrees_regrowth",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_world_overrides_extra": {
+      "type": "string",
+      "title": "洞穴额外覆盖项",
+      "description": "写入生成版 Caves/worldgenoverride.lua 的 overrides 表中。每行一个 Lua 配置项。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 177,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "overrides.extra_lines",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "caves_worldgenoverride_lua": {
+      "type": "string",
+      "title": "高级覆盖：洞穴 worldgenoverride.lua",
+      "description": "完整的 Caves/worldgenoverride.lua。普通数据表会与表单同步；包含程序逻辑的脚本在此直接编辑。保留未知字段与注释。",
+      "format": "textarea",
+      "default": "return {\n  override_enabled = true,\n  settings_preset = \"DST_CAVE\",\n  worldgen_preset = \"DST_CAVE\",\n  overrides = {\n    world_size = \"default\",\n  }\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 178,
+      "x-lsgm-source": "caves_worldgenoverride",
+      "x-lsgm-source-key": "worldgenoverride.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "cluster_token": {
+      "type": "string",
+      "title": "Cluster Token",
+      "description": "Klei 后台生成的专用服令牌。在线服务器启动前必填；离线模式可留空。",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "cluster_token",
+      "x-lsgm-source-key": "cluster_token.txt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "admin_list": {
+      "type": "string",
+      "title": "管理员列表",
+      "description": "每行一个 Klei 玩家 ID。LanGame 渲染 clusters/main/adminlist.txt，DST 专用服启动时读取。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 201,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "dst_klei_id",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "adminlist",
+      "x-lsgm-source-key": "adminlist.txt:KU_lines",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "whitelist": {
+      "type": "string",
+      "title": "白名单",
+      "description": "每行一个允许加入的 Klei 玩家 ID。LanGame 渲染 clusters/main/whitelist.txt，DST 专用服启动时读取。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 202,
+      "x-lsgm-player-access-kind": "allow",
+      "x-lsgm-player-access-codec": "dst_klei_id",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "whitelist",
+      "x-lsgm-source-key": "whitelist.txt:KU_lines",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "blocklist": {
+      "type": "string",
+      "title": "黑名单",
+      "description": "每行一个禁止加入的 Klei 玩家 ID。LanGame 渲染 clusters/main/blocklist.txt，DST 专用服启动时读取。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 203,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "dst_klei_id",
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "blocklist",
+      "x-lsgm-source-key": "blocklist.txt:KU_lines",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "whitelist_slots": {
+      "type": "integer",
+      "title": "白名单保留位",
+      "description": "为白名单玩家预留的额外名额。",
+      "default": 0,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 204,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "NETWORK.whitelist_slots",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "steam_group_only": {
+      "type": "boolean",
+      "title": "仅限 Steam 组成员",
+      "description": "只允许指定 Steam 组成员进入服务器。",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 205,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "STEAM.steam_group_only",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "steam_group_id": {
+      "type": "integer",
+      "title": "Steam 组 ID",
+      "description": "配合 Steam 组访问控制使用的组 ID。",
+      "default": 0,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 206,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "STEAM.steam_group_id",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "steam_group_admins": {
+      "type": "boolean",
+      "title": "Steam 组管理员同步为服管",
+      "description": "让目标 Steam 组的管理员自动拥有服管权限。",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 207,
+      "x-lsgm-source": "cluster_ini",
+      "x-lsgm-source-key": "STEAM.steam_group_admins",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "shared_workshop_mod_ids": {
+      "type": "string",
+      "title": "模组下载 ID",
+      "description": "每行一个供此实例下载的创意工坊模组 ID。实际启用位置由各分片模组列表分别控制。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "dedicated_server_mods_setup",
+      "x-lsgm-source-key": "ServerModSetup",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "shared_workshop_collection_ids": {
+      "type": "string",
+      "title": "合集下载 ID",
+      "description": "每行一个创意工坊合集 ID，供此实例下载。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 301,
+      "x-lsgm-source": "dedicated_server_mods_setup",
+      "x-lsgm-source-key": "ServerModCollectionSetup",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_enabled_workshop_mod_ids": {
+      "type": "string",
+      "title": "Master 启用模组 ID",
+      "description": "每行一个要在地上分片启用的 Workshop 模组 ID。会自动生成 Master/modoverrides.lua。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 302,
+      "x-lsgm-source": "master_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:enabled_workshop_ids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_enabled_workshop_mod_ids": {
+      "type": "string",
+      "title": "Caves 启用模组 ID",
+      "description": "每行一个要在洞穴分片启用的 Workshop 模组 ID。会自动生成 Caves/modoverrides.lua。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 303,
+      "x-lsgm-source": "caves_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:enabled_workshop_ids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "master_mod_configuration_options": {
+      "type": "object",
+      "title": "地上 Mod 结构化配置",
+      "description": "按 Workshop ID 保存地上世界每个 Mod 的 configuration_options。LanGame 会把这些结构化值写入 Master/modoverrides.lua。",
+      "default": {},
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 190,
+      "x-lsgm-source": "master_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:configuration_options",
+      "x-lsgm-source-surface": "config_file",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "caves_mod_configuration_options": {
+      "type": "object",
+      "title": "洞穴 Mod 结构化配置",
+      "description": "按 Workshop ID 保存洞穴世界每个 Mod 的 configuration_options。LanGame 会把这些结构化值写入 Caves/modoverrides.lua。",
+      "default": {},
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 191,
+      "x-lsgm-source": "caves_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:configuration_options",
+      "x-lsgm-source-surface": "config_file",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "master_modoverrides_lua": {
+      "type": "string",
+      "title": "高级覆盖：Master modoverrides.lua",
+      "description": "完整 Lua 文件内容会覆盖自动生成的 Master 分片模组配置。",
+      "format": "textarea",
+      "default": "return {\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "master_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "caves_modoverrides_lua": {
+      "type": "string",
+      "title": "高级覆盖：Caves modoverrides.lua",
+      "description": "完整 Lua 文件内容会覆盖自动生成的 Caves 分片模组配置。",
+      "format": "textarea",
+      "default": "return {\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 401,
+      "x-lsgm-source": "caves_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "shard_layout": {
+      "type": "string",
+      "title": "分片布局",
+      "description": "标准布局使用地表和可选洞穴。Island Adventures 使用 Forest、Caves、Islands、Volcano 四个分片；请先下载并在四片启用 Island Adventures Core 和 Shipwrecked。",
+      "default": "standard",
+      "enum": [
+        "standard",
+        "island_adventures"
+      ],
+      "x-lsgm-section": "cluster-shard-coordination",
+      "x-lsgm-order": 99,
+      "x-lsgm-source": "shard_layout",
+      "x-lsgm-source-key": "shard_layout",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "islands_enabled_workshop_mod_ids": {
+      "type": "string",
+      "title": "Islands 启用模组 ID",
+      "description": "每行一个要在岛屿分片启用的 Workshop 模组 ID。会自动生成 Islands/modoverrides.lua。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 305,
+      "x-lsgm-source": "islands_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:enabled_workshop_ids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "islands_mod_configuration_options": {
+      "type": "object",
+      "title": "岛屿 Mod 结构化配置",
+      "description": "按 Workshop ID 保存岛屿世界每个 Mod 的 configuration_options。LanGame 会把这些结构化值写入 Islands/modoverrides.lua。",
+      "default": {},
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 193,
+      "x-lsgm-source": "islands_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:configuration_options",
+      "x-lsgm-source-surface": "config_file",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "islands_modoverrides_lua": {
+      "type": "string",
+      "title": "高级覆盖：Islands modoverrides.lua",
+      "description": "完整 Lua 文件内容会覆盖自动生成的 Islands 分片模组配置。",
+      "format": "textarea",
+      "default": "return {\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 403,
+      "x-lsgm-source": "islands_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "islands_worldgenoverride_lua": {
+      "type": "string",
+      "title": "岛屿 worldgenoverride.lua",
+      "description": "留空使用 Island Adventures 作者的 SURVIVAL_SHIPWRECKED_CLASSIC（独立火山，不生成内嵌火山岛） 预设。填写完整 Lua 时覆盖此分片生成设置。已有地图继续加载原存档。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 402,
+      "x-lsgm-source": "island_adventures_presets",
+      "x-lsgm-source-key": "islands/worldgenoverride.lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "volcano_enabled_workshop_mod_ids": {
+      "type": "string",
+      "title": "Volcano 启用模组 ID",
+      "description": "每行一个要在火山分片启用的 Workshop 模组 ID。会自动生成 Volcano/modoverrides.lua。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 307,
+      "x-lsgm-source": "volcano_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:enabled_workshop_ids",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "volcano_mod_configuration_options": {
+      "type": "object",
+      "title": "火山 Mod 结构化配置",
+      "description": "按 Workshop ID 保存火山世界每个 Mod 的 configuration_options。LanGame 会把这些结构化值写入 Volcano/modoverrides.lua。",
+      "default": {},
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 195,
+      "x-lsgm-source": "volcano_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:configuration_options",
+      "x-lsgm-source-surface": "config_file",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "volcano_modoverrides_lua": {
+      "type": "string",
+      "title": "高级覆盖：Volcano modoverrides.lua",
+      "description": "完整 Lua 文件内容会覆盖自动生成的 Volcano 分片模组配置。",
+      "format": "textarea",
+      "default": "return {\n}\n",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 405,
+      "x-lsgm-source": "volcano_modoverrides",
+      "x-lsgm-source-key": "modoverrides.lua:raw_lua",
+      "x-lsgm-source-surface": "materializer"
+    },
+    "volcano_worldgenoverride_lua": {
+      "type": "string",
+      "title": "火山 worldgenoverride.lua",
+      "description": "留空使用 Island Adventures 作者的 SURVIVAL_VOLCANO_CLASSIC 预设。填写完整 Lua 时覆盖此分片生成设置。已有地图继续加载原存档。",
+      "format": "textarea",
+      "default": "",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 404,
+      "x-lsgm-source": "island_adventures_presets",
+      "x-lsgm-source-key": "volcano/worldgenoverride.lua",
+      "x-lsgm-source-surface": "materializer"
+    }
+  },
+  "required": [
+    "cluster_name"
+  ]
+}

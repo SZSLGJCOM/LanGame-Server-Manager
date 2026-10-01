@@ -1,0 +1,3 @@
+: Alice (192.0.2.1:7777)
+Bob (Builder) (192.0.2.2:7777)
+2 players connected.

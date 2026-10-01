@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "theforest"
+scope = "The Forest dedicated-server installation/update, startup flags, server.cfg, ports, saves and administration."
+gaps = ["Endnight explicitly linked this guide in its 2017 server release announcement; the Steam guide is community-authored and its version coverage is historical."]
+
+[[sources]]
+id = "endnight-endorsed-guide"
+title = "The Forest dedicated-server tutorial"
+authority = "Survivalist and collaborators; endorsed by Endnight Games"
+kind = "official_community"
+seeds = ["https://steamcommunity.com/sharedfiles/filedetails/?id=907906289"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 256
+authority_evidence = "https://endnightgames.com/updates/v059-dedicated-server-update"
+license_note = "Contributor copyright and site terms apply. No blanket reuse permission is inferred from public access or official endorsement. Preserve attribution; review the upstream license before redistribution."
+reviewed_on = "2026-09-28"

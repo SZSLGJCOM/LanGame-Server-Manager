@@ -1,0 +1,55 @@
+{
+  "fixture_version": 1,
+  "module_id": "palworld",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Installed Steam app 2394010 build 25080279 packaged defaults, read-only inspection",
+    "source_ids": [
+      "palworld_default_build_25080279"
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "palworld_default_build_25080279.MaxBuildingLimitNumPerPlayer"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "max_building_limit_num": 1200,
+    "max_building_limit_num_per_player": 300
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "PalWorldSettings.ini",
+        "format": "text",
+        "fragments": [
+          "MaxBuildingLimitNum=1200,",
+          "MaxBuildingLimitNumPerPlayer=300,"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "Pal/Binaries/Win64/PalServer-Win64-Shipping-Cmd.exe",
+      "arguments": [
+        "-port=8211",
+        "-players=32",
+        "-logformat=text",
+        "-stdout",
+        "-FullStdOutLogOutput"
+      ]
+    }
+  }
+}

@@ -1,0 +1,230 @@
+{
+  "type": "object",
+  "title": "ASTRONEER Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "default": "Astroneer Server",
+      "x-lsgm-default-source": "instance_name",
+      "title": "Server Name",
+      "description": "Public name written to the current Astro server settings section.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "ServerName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "default": 8,
+      "minimum": 1,
+      "maximum": 8,
+      "title": "Player Slots",
+      "description": "Maximum players written to Unreal's GameSession section.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "game_ini",
+      "x-lsgm-source-key": "MaxPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_password": {
+      "type": "string",
+      "default": "",
+      "title": "Join Password",
+      "description": "Optional password required to join the server.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "ServerPassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "deny_unlisted_players": {
+      "type": "boolean",
+      "default": false,
+      "title": "Deny Unlisted Players",
+      "description": "Restricts joining to players accepted by ASTRONEER's server-managed access list.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "DenyUnlistedPlayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_owner_display_name": {
+      "type": "string",
+      "default": "",
+      "title": "Owner Name",
+      "description": "Platform display name that ASTRONEER uses to associate the first matching owner.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "OwnerName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "owner_guid": {
+      "type": "string",
+      "default": "",
+      "title": "Owner GUID",
+      "description": "Optional owner platform identifier. ASTRONEER may replace the initial value after the owner joins.",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "OwnerGuid",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "console_password": {
+      "type": "string",
+      "x-lsgm-default-source": "generated_secret",
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]*$",
+      "title": "Console Password",
+      "description": "A unique password is generated for each new instance. The local console reads online player names and ASTRONEER GUIDs. An empty password disables its TCP port; restart after changing this setting.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 220,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "ConsolePassword",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "public_ip": {
+      "type": "string",
+      "default": "",
+      "title": "Public IPv4 Address",
+      "description": "Required before starting: the server's public IPv4 address used for native server registration. Saving an incomplete draft is allowed; the app does not guess or automatically publish an address.",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "PublicIP",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "load_auto_save": {
+      "type": "boolean",
+      "default": true,
+      "title": "Load Autosave",
+      "description": "Loads the configured active save automatically when the server starts.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "bLoadAutoSave",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "active_save_file_name": {
+      "type": "string",
+      "default": "SAVE_1",
+      "title": "Active Save Name",
+      "description": "Descriptive save slot selected by ASTRONEER for automatic loading.",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "ActiveSaveFileDescriptiveName",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "auto_save_interval_seconds": {
+      "type": "integer",
+      "default": 900,
+      "minimum": 0,
+      "title": "Autosave Interval (seconds)",
+      "description": "Interval between automatic world saves.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 420,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "AutoSaveGameInterval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "backup_save_interval_seconds": {
+      "type": "integer",
+      "default": 7200,
+      "minimum": 0,
+      "title": "Backup Interval (seconds)",
+      "description": "Interval between ASTRONEER's own save backups.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 430,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "BackupSaveGamesInterval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "disable_server_travel": {
+      "type": "boolean",
+      "default": false,
+      "title": "Disable Server Map Changes",
+      "description": "Prevents map changes requested through Unreal ServerTravel, including the native world-load and reload paths.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 440,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "bDisableServerTravel",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_server_framerate": {
+      "type": "number",
+      "default": 30,
+      "minimum": 1,
+      "title": "Active Server Framerate",
+      "description": "Server simulation framerate while active.",
+      "x-lsgm-section": "performance",
+      "x-lsgm-order": 500,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "MaxServerFramerate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_server_idle_framerate": {
+      "type": "number",
+      "default": 3,
+      "minimum": 1,
+      "title": "Idle Server Framerate",
+      "description": "Reduced simulation framerate while the server is idle.",
+      "x-lsgm-section": "performance",
+      "x-lsgm-order": 510,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "MaxServerIdleFramerate",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wait_for_players_before_shutdown": {
+      "type": "boolean",
+      "default": false,
+      "title": "Wait for Players on Exit Request",
+      "description": "When the ExitSemaphore request file exists, waits until no valid player controller remains before saving and quitting. This applies to that file-based shutdown path.",
+      "x-lsgm-section": "performance",
+      "x-lsgm-order": 520,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "bWaitForPlayersBeforeShutdown",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "player_activity_timeout_seconds": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "title": "Player Inactivity Timeout (Seconds)",
+      "description": "Disconnects players whose recorded inactivity exceeds this many game-world seconds. Set to 0 to disable the inactivity check.",
+      "x-lsgm-section": "performance",
+      "x-lsgm-order": 530,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "PlayerActivityTimeout",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "verbose_player_properties": {
+      "type": "boolean",
+      "default": false,
+      "title": "Verbose Player Properties",
+      "description": "Enables ASTRONEER's verbose player-property diagnostics.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 800,
+      "x-lsgm-source": "astro_server_settings",
+      "x-lsgm-source-key": "VerbosePlayerProperties",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "extra_launch_args": {
+      "type": "string",
+      "format": "textarea",
+      "default": "",
+      "title": "Extra Launch Arguments",
+      "description": "Optional raw arguments appended after all typed ASTRONEER settings.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 900,
+      "x-lsgm-source": "launch_args",
+      "x-lsgm-source-key": "extra_launch_args",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  },
+  "required": [
+    "server_name",
+    "max_players"
+  ]
+}

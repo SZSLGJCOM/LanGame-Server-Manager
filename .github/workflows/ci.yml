@@ -1,0 +1,196 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Python and publication policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the complete public history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Check changed-line whitespace
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ -n "${BASE_SHA}" ]] && \
+             [[ "${BASE_SHA}" != "0000000000000000000000000000000000000000" ]] && \
+             git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            git diff --check "${BASE_SHA}" HEAD
+          elif git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+          fi
+
+      - name: Run Python tests
+        run: python -B -m unittest discover -s scripts/tests -p "test_*.py"
+
+      - name: Verify secrets and publication boundaries
+        run: |
+          python -B scripts/verify_no_tracked_secrets.py
+          python -B scripts/verify_open_source_boundary.py
+          python -B scripts/verify_open_source_history.py
+
+      - name: Verify the public snapshot plan
+        run: python -B scripts/export_public_snapshot.py --verbose
+
+  frontend:
+    name: Frontend checks and build
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the complete public history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up Python for repository checks
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix apps/desktop --strict-allow-scripts
+
+      - name: Audit frontend dependencies
+        run: npm audit --prefix apps/desktop --audit-level=high
+
+      - name: Verify the distributed npm license inventory
+        run: node apps/desktop/scripts/generate_npm_third_party_licenses.mjs --check
+
+      - name: Lint localization catalogs
+        run: |
+          npm --prefix apps/desktop run audit:i18n
+          npm --prefix apps/desktop run verify:i18n
+
+      - name: Verify game configuration and media evidence
+        run: |
+          python -B scripts/audit_dedicated_settings_pages.py --strict
+          python -B scripts/verify_game_config_provenance.py --check
+          python -B scripts/verify_game_knowledge.py --check
+          python -B scripts/verify_module_setting_coverage.py
+          python -B scripts/verify_game_config_acceptance.py --require-all --check
+          python -B scripts/verify_library_media.py
+
+      - name: Run frontend tests
+        working-directory: apps/desktop
+        # Run one test file at a time so browser fixtures do not compete for runner resources.
+        run: node --test --test-concurrency=1
+
+      - name: Type-check and build the frontend
+        run: npm --prefix apps/desktop run build
+
+  rust:
+    name: Rust formatting, lint, and tests
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python for license verification
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Build the frontend required by the Tauri context
+        run: |
+          npm ci --prefix apps/desktop --strict-allow-scripts
+          npm --prefix apps/desktop run build
+
+      - name: Install the pinned Rust components
+        run: |
+          $match = Select-String -Path rust-toolchain.toml -Pattern '^channel\s*=\s*"([^"]+)"$'
+          if ($null -eq $match) { throw "rust-toolchain.toml does not declare a channel" }
+          $toolchain = $match.Matches[0].Groups[1].Value
+          rustup toolchain install $toolchain --profile minimal --component rustfmt,clippy
+
+      - name: Fetch every locked Rust package
+        run: cargo fetch --locked
+
+      - name: Verify the distributed Rust license inventory
+        run: python -B scripts/generate_rust_third_party_licenses.py --check --offline
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check the Rust workspace
+        run: cargo check --workspace --all-targets --locked
+
+      - name: Lint the Rust workspace
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Test the Rust workspace and synthetic runtime reliability
+        run: python -B scripts/verify_runtime_reliability.py --full-workspace --output "${{ runner.temp }}/runtime-reliability"
+
+      - name: Build the isolated native desktop acceptance host
+        run: |
+          cargo test -p langame-desktop --features desktop-reliability --locked desktop_reliability
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build -p langame-desktop --features desktop-reliability --locked
+
+      - name: Verify real Tauri and WebView2 recovery
+        run: |
+          $desktopFixture = (Resolve-Path target/debug/langame-desktop.exe).Path
+          node apps/desktop/scripts/verify_desktop_reliability.cjs --executable $desktopFixture --output "${{ runner.temp }}/desktop-reliability/report.json"
+
+  dependency-review:
+    name: Dependency and license review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high

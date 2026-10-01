@@ -1,0 +1,2282 @@
+status = "best_effort_verified"
+last_verified = "2026-09-28"
+notes = "The historical anonymous app_update 1110390 validate probe recorded buildid 24080174, TargetBuildID 24080174, SizeOnDisk 1860413320, and depots 1004/1110391/1110393/1110394. Current first-party 3.26.3.12 source and installed build 25107012 identify 282 native fields in Config.txt dictionary blocks: 274 settings are covered, six scheduled shutdown/update controls remain maintenance-owned, and two obsolete fields are not serialized. This corrects the earlier metadata-only interpretation of dotted property paths: Browser/Server/Players are native DAT dictionaries, not literal dotted keys. Unset values retain unowned native values; clearing an unchanged managed override releases it to native difficulty/map defaults. Unknown fields/comments and externally changed released values are retained."
+
+[[sources]]
+id = "windows_console_input_build_25444106"
+kind = "documentation"
+path = "https://github.com/SmartlyDressedGames/U3-SDK/blob/aba323a81558487ad8d2167ac20da9c0fd72b6d9/Assets/Runtime/Assembly-CSharp/Unturned/Command/ThreadedConsoleInputOutput.cs"
+authority = "first_party_source_and_read_only_installed_managed_assembly"
+description = "2026-10-01: the pinned official Windows handler selects ThreadedWindowsConsoleInputOutput. ThreadedConsoleInputOutput.consoleMain checks Console.KeyAvailable before Console.ReadLine. Installed app 1110390 build 25444106 Assembly-CSharp.dll SHA256 269794d065f9f115eec269c80a62c09f3fe2beee34da818063bd1d5b3491692a contains the same call sequence, and its XML describes the Win32 console handler. Ordinary redirected-pipe writes do not establish keyboard input availability. LanGame selects its existing managed pseudo-console transport while retaining native Save and Shutdown commands. This is static contract evidence and a candidate adaptation; new real-server Help, Save, Shutdown and complete output acceptance remain required."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/latest/servers/server-configuration.html"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: Publisher news identifies 3.26.3.12 on 2026-09-21; installed app 1110390 reports build 25444106. Current official U3-SDK master PlayConfigData.cs is byte-identical to the recorded aba323a81558487ad8d2167ac20da9c0fd72b6d9 source (SHA256 c5e6a7961c465faa289dc9ca0cb01e09b56c04e86985e32a09146d62bc72369f). The 282-field inventory therefore has no source delta: 274 controls, six maintenance exclusions and two obsolete fields. This checks source inventory and does not repeat native DAT preservation or multiplayer acceptance."
+
+[[sources]]
+id = "native_config_3_26_3_12"
+kind = "config_file"
+path = "Servers/<ServerID>/Config.txt"
+url = "https://github.com/SmartlyDressedGames/U3-SDK/blob/aba323a81558487ad8d2167ac20da9c0fd72b6d9/Assets/Runtime/Assembly-CSharp/Unturned/Settings/PlayConfigData.cs"
+authority = "installed_build_25107012_and_official_source_3_26_3_12"
+description = "2026-09-28 full inventory: installed generated Config.txt and official source commit aba323a81558487ad8d2167ac20da9c0fd72b6d9 agree on 282 fields in 13 categories. 11 fields were previously modeled; 263 are now typed. Six automatic shutdown/update policies belong to maintenance and two obsolete fields are excluded. New fields remain unset by default, preserving existing native values and difficulty/map defaults. Config.txt uses real nested DAT category dictionaries; dotted paths are metadata only. The renderer and preservation merge are independent implementations; no SDK source or prose is redistributed."
+
+[[sources]]
+id = "official_skill_override_2026"
+kind = "documentation"
+path = "Servers/<ServerID>/Config.txt"
+url = "https://support.smartlydressedgames.com/hc/en-us/articles/48936429472916-Can-I-unlock-skills-on-maps-with-skill-restrictions-For-example-California-2"
+authority = "smartly_dressed_games_official_support_and_source"
+description = "Official support article updated 2026-05-05 documents Prevent_Level_Skill_Overrides. Official U3-SDK commit aba323a81558487ad8d2167ac20da9c0fd72b6d9 (2026-09-21), Assets/Runtime/Assembly-CSharp/Unturned/Settings/PlayConfigData.cs:1682 declares PlayersConfigData.Prevent_Level_Skill_Overrides as bool with no initializer or constructor assignment, confirming false in every difficulty. The installed build 25107012 generated Config.txt includes the Players block field. This is global gameplay policy, not a player-access roster."
+
+[[sources]]
+id = "official_save_and_shutdown_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/latest/servers/server-hosting.html#save-and-shutdown"
+authority = "smartly_dressed_games_official_documentation"
+description = "Verified 2026-09-13: Unturned has no built-in autosave. Save persists the running server; Shutdown saves and closes it."
+
+[[sources]]
+id = "managed_periodic_save"
+kind = "runtime_console"
+path = "apps/desktop/src-tauri/src/commands_managed_save.rs"
+authority = "lsgm_runtime_scheduler_and_official_save_command"
+description = "LGSM schedules the declared save_world action for its owned live Unturned run. managed_save_interval_seconds is an integer from 0 to 86400, defaults to 300, and uses 0 to disable. It is manager policy, not an Unturned configuration directive."
+
+[[sources]]
+id = "steamcmd_anonymous_app_1110390"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_1110390.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 1110390 validate is fully installed. Manifest name Unturned Dedicated Server, buildid 24080174, TargetBuildID 24080174, SizeOnDisk 1860413320, installed depots 1004, 1110391, 1110393, and 1110394."
+
+[[sources]]
+id = "official_port_forwarding_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/stable/servers/port-forwarding.html"
+authority = "smartly_dressed_games_official_documentation"
+description = "The Port command selects the query port; in-game traffic uses the next consecutive port. The packaged ExampleServer.bat confirms the -Port/27015 command-line syntax. Verified against native A2S responses on 2026-09-08."
+
+[[sources]]
+id = "official_server_configuration_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/latest/servers/server-configuration.html"
+authority = "smartly_dressed_games_official_documentation"
+description = "First-party server configuration documentation identifies Servers/<ServerID>/Config.txt as the current gameplay configuration, documents empty-value/default behavior, and lists the supported gameplay-config launch flags."
+
+[[sources]]
+id = "official_data_file_format_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/latest/assets/data-file-format.html"
+authority = "smartly_dressed_games_official_documentation"
+description = "First-party data-file documentation defines the key-value syntax, quoting, escaped quotes, and newline escapes used by Config.txt."
+
+[[sources]]
+id = "official_game_server_login_token_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/stable/servers/game-server-login-tokens.html"
+authority = "smartly_dressed_games_official_documentation"
+description = "First-party documentation identifies Browser.Login_Token in Server Configuration as the current file-based GSLT setting."
+
+[[sources]]
+id = "official_fake_ip_docs"
+kind = "documentation"
+path = "https://docs.smartlydressedgames.com/en/latest/servers/fake-ip.html"
+authority = "smartly_dressed_games_official_documentation"
+description = "First-party documentation identifies Use_FakeIP in Server Configuration as the supported Steam Fake IP setting."
+
+[[sources]]
+id = "current_gameplay_config_assembly"
+kind = "documentation"
+path = "Unturned_Data/Managed/Assembly-CSharp.dll"
+authority = "installed_unturned_dedicated_server_package"
+description = "Historical build 24080174 metadata identified Config.txt and Version 1. Its TypeName.FieldName identifiers are inventory paths, not proof of flat DAT syntax; the current native_config_3_26_3_12 source establishes the real nested dictionaries."
+
+[[sources]]
+id = "official_package_example_server_bat"
+kind = "documentation"
+path = "ExampleServer.bat"
+authority = "installed_unturned_dedicated_server_package"
+description = "Packaged example documents +InternetServer/ServerId and +LanServer/ServerId, the Servers/ServerId/Server/Commands.dat startup-command path, command-line startup overrides with -CommandName/Arg0/Arg1/Arg#, and port examples such as Port 27017."
+
+[[sources]]
+id = "official_package_server_helper_bat"
+kind = "launch_arg"
+path = "ServerHelper.bat"
+authority = "installed_unturned_dedicated_server_package"
+description = "Packaged helper launches Unturned.exe with the fixed Unity headless wrapper -batchmode -nographics and forwards the selected ServerID mode plus additional arguments."
+
+[[sources]]
+id = "commands_dat"
+kind = "config_file"
+path = "Servers/<instance>/Server/Commands.dat"
+authority = "installed_default_and_lsgm_template"
+description = "Unturned startup commands for server identity, gameplay mode, access, owner/admins, and join messages."
+
+[[sources]]
+id = "config_txt"
+kind = "config_file"
+path = "Servers/<instance>/Config.txt"
+authority = "smartly_dressed_games_docs_current_package_and_lsgm_template"
+description = "Current Unturned gameplay configuration for browser identity, internet listing, security, Fake IP, ping, and queue timeout settings."
+
+[[sources]]
+id = "workshop_config_json"
+kind = "config_file"
+path = "Servers/<instance>/WorkshopDownloadConfig.json"
+authority = "installed_default_and_lsgm_template"
+description = "Unturned workshop download and cache configuration."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "Unturned.exe"
+authority = "module_launch_surface"
+description = "Unturned server launch mode and advanced gameplay config flags."
+
+[[sources]]
+id = "runtime_console"
+kind = "runtime_console"
+path = "Unturned managed console"
+authority = "module_runtime_surface"
+description = "Unturned console player and access commands declared in module.toml."
+
+[[sources]]
+id = "scripting_assemblies"
+kind = "config_file"
+path = "Unturned_Data/ScriptingAssemblies.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Unturned ScriptingAssemblies manifest for the managed runtime."
+
+[[sources]]
+id = "runtime_initialize_on_loads"
+kind = "config_file"
+path = "Unturned_Data/RuntimeInitializeOnLoads.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Unturned runtime initialization metadata generated with the dedicated-server package."
+
+[[sources]]
+id = "battl_eye_text_cs"
+kind = "config_file"
+path = "BattlEye/Text/cs.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_de"
+kind = "config_file"
+path = "BattlEye/Text/de.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_en"
+kind = "config_file"
+path = "BattlEye/Text/en.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_es"
+kind = "config_file"
+path = "BattlEye/Text/es.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_fr"
+kind = "config_file"
+path = "BattlEye/Text/fr.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_it"
+kind = "config_file"
+path = "BattlEye/Text/it.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_ja"
+kind = "config_file"
+path = "BattlEye/Text/ja.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_ko"
+kind = "config_file"
+path = "BattlEye/Text/ko.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_nl"
+kind = "config_file"
+path = "BattlEye/Text/nl.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_pl"
+kind = "config_file"
+path = "BattlEye/Text/pl.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_pt"
+kind = "config_file"
+path = "BattlEye/Text/pt.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_ru"
+kind = "config_file"
+path = "BattlEye/Text/ru.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_tr"
+kind = "config_file"
+path = "BattlEye/Text/tr.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_zh_tw"
+kind = "config_file"
+path = "BattlEye/Text/zh-TW.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "battl_eye_text_zh"
+kind = "config_file"
+path = "BattlEye/Text/zh.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Localized BattlEye client-facing and moderation text bundle."
+
+[[sources]]
+id = "mono_browscap_ini"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/browscap.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Mono browscap metadata shipped with the Unturned dedicated-server runtime."
+
+[[sources]]
+id = "mono_mconfig_xml"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/mconfig/config.xml"
+authority = "installed_unturned_dedicated_server_package"
+description = "Mono XML runtime configuration for the Unturned dedicated-server package."
+
+[[sources]]
+id = "unturned_status_json"
+kind = "config_file"
+path = "Status.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Unturned runtime status payload for server state reporting."
+
+[[sources]]
+id = "unturned_streamer_names_json"
+kind = "config_file"
+path = "StreamerNames.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Unturned streamer identity metadata for runtime/runtime status surfaces."
+
+[[sources]]
+id = "unturned_assembly_csharp_xml"
+kind = "config_file"
+path = "Unturned_Data/Managed/Assembly-CSharp.xml"
+authority = "installed_unturned_dedicated_server_package"
+description = "Managed API manifest XML generated by the Unturned dedicated-server package."
+
+[[sources]]
+id = "unturned_sdg_runtime_xml"
+kind = "config_file"
+path = "Unturned_Data/Managed/SDG.NetPak.Runtime.xml"
+authority = "installed_unturned_dedicated_server_package"
+description = "Managed API manifest XML for SDG NetPak in the Unturned dedicated-server package."
+
+[[sources]]
+id = "unturned_map_alpha_valley"
+kind = "config_file"
+path = "Maps/Alpha Valley/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Alpha Valley."
+
+[[sources]]
+id = "unturned_map_destruction"
+kind = "config_file"
+path = "Maps/Destruction/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Destruction."
+
+[[sources]]
+id = "unturned_map_germany"
+kind = "config_file"
+path = "Maps/Germany/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Germany."
+
+[[sources]]
+id = "unturned_map_monolith"
+kind = "config_file"
+path = "Maps/Monolith/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Monolith."
+
+[[sources]]
+id = "unturned_map_pei"
+kind = "config_file"
+path = "Maps/PEI/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for PEI."
+
+[[sources]]
+id = "unturned_map_russia"
+kind = "config_file"
+path = "Maps/Russia/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Russia."
+
+[[sources]]
+id = "unturned_map_tutorial"
+kind = "config_file"
+path = "Maps/Tutorial/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Tutorial."
+
+[[sources]]
+id = "unturned_map_washington"
+kind = "config_file"
+path = "Maps/Washington/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Washington."
+
+[[sources]]
+id = "unturned_map_yukon"
+kind = "config_file"
+path = "Maps/Yukon/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Built-in map JSON settings for Yukon."
+
+[[sources]]
+id = "unturned_battl_eye_text_bundle"
+kind = "config_file"
+path = "BattlEye/Text/*.ini"
+authority = "installed_unturned_dedicated_server_package"
+description = "Installed Unturned BattlEye localization text bundle used by native anti-cheat integration."
+
+[[sources]]
+id = "unturned_map_configs"
+kind = "config_file"
+path = "Maps/*/Config.json"
+authority = "installed_unturned_dedicated_server_package"
+description = "Installed Unturned map-level Config.json assets under Maps."
+
+[[sources]]
+id = "unturned_mono_bundle"
+kind = "config_file"
+path = "MonoBleedingEdge/etc/mono/**/*"
+authority = "installed_unturned_dedicated_server_package"
+description = "Installed Unturned Mono runtime support files under MonoBleedingEdge."
+
+[[sources]]
+id = "unturned_unity_xml_bundle"
+kind = "config_file"
+path = "Unturned_Data/**/*.xml"
+authority = "installed_unturned_dedicated_server_package"
+description = "Installed Unturned Unity managed XML metadata."
+
+[[items]]
+source = "managed_periodic_save"
+key = "managed_save_interval_seconds"
+schema_key = "managed_save_interval_seconds"
+surface = "runtime_console"
+
+[[items]]
+source = "commands_dat"
+key = "Name"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-InternetServer/-LanServer"
+schema_key = "internet_server"
+surface = "launch_arg"
+
+[[items]]
+source = "config_txt"
+key = "Browser.BookmarkHost"
+schema_key = "bookmark_host"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Server.Use_FakeIP"
+schema_key = "use_fake_ip"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Map"
+schema_key = "map"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Mode"
+schema_key = "game_mode"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Difficulty"
+schema_key = "difficulty"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Perspective"
+schema_key = "perspective"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Password"
+schema_key = "password"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Welcome"
+schema_key = "welcome_message"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Browser.Icon"
+schema_key = "browser_icon_url"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Browser.Desc_Hint"
+schema_key = "browser_desc_hint"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Browser.Desc_Full"
+schema_key = "browser_desc_full"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Owner"
+schema_key = "owner_steam_id"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Browser.Login_Token"
+schema_key = "game_server_login_token"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Admin"
+schema_key = "admin_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "commands_dat"
+key = "PVE"
+schema_key = "pve"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Cheats"
+schema_key = "cheats"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Whitelist"
+schema_key = "whitelist_enabled"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Server.BattlEye_Secure"
+schema_key = "battl_eye"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Server.VAC_Secure"
+schema_key = "vac_secure"
+surface = "config_file"
+
+[[items]]
+source = "commands_dat"
+key = "Hide_Admins"
+schema_key = "hide_admins"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Server.Timeout_Queue_Seconds"
+schema_key = "timeout_seconds"
+surface = "config_file"
+
+[[items]]
+source = "config_txt"
+key = "Server.Max_Ping_Milliseconds"
+schema_key = "max_ping"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "-NoLevelConfigOverrides"
+schema_key = "no_level_config_overrides"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-LogGameplayConfig"
+schema_key = "log_gameplay_config"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-GameplayConfigNoGeneratedComments"
+schema_key = "gameplay_config_no_generated_comments"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-GameplayConfigNoEmptyValues"
+schema_key = "gameplay_config_no_empty_values"
+surface = "launch_arg"
+
+[[items]]
+source = "workshop_config_json"
+key = "File_IDs"
+schema_key = "workshop_file_ids"
+surface = "config_file"
+
+[[items]]
+source = "workshop_config_json"
+key = "Ignore_Children_File_IDs"
+schema_key = "workshop_ignore_children_file_ids"
+surface = "config_file"
+
+[[items]]
+source = "workshop_config_json"
+key = "Query_Cache_Max_Age_Seconds"
+schema_key = "workshop_query_cache_max_age_seconds"
+surface = "config_file"
+
+[[items]]
+source = "workshop_config_json"
+key = "Max_Query_Retries"
+schema_key = "workshop_max_query_retries"
+surface = "config_file"
+
+[[items]]
+source = "workshop_config_json"
+key = "Use_Cached_Downloads"
+schema_key = "workshop_use_cached_downloads"
+surface = "config_file"
+
+[[items]]
+source = "workshop_config_json"
+key = "Monitor_Updates"
+schema_key = "workshop_monitor_updates"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-batchmode/-nographics"
+reason = "Fixed for headless managed hosting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-GameplayConfigFile"
+reason = "LanGame owns the standard per-instance Servers/<ServerID>/Config.txt path so the rendered configuration and loaded configuration cannot diverge."
+
+[[exclusions]]
+source = "config_txt"
+key = "Version"
+reason = "Fixed to the current Config.txt format version 1."
+
+[[exclusions]]
+source = "commands_dat"
+key = "Port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "runtime_console"
+key = "Players/Admins/Admin/Unadmin/Kick/Ban/Unban/Permit/Unpermit"
+reason = "Runtime player actions are declared in module.toml instead of schema fields."
+
+[[items]]
+source = "official_skill_override_2026"
+key = "Players.Prevent_Level_Skill_Overrides"
+schema_key = "prevent_level_skill_overrides"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Browser.Thumbnail"
+schema_key = "native_browser_thumbnail"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Browser.Desc_Server_List"
+schema_key = "native_browser_desc_server_list"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Browser.Is_Using_Anycast_Proxy"
+schema_key = "native_browser_is_using_anycast_proxy"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Browser.Monetization"
+schema_key = "native_browser_monetization"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Browser.Links"
+schema_key = "browser_links_json"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Timeout_Game_Seconds"
+schema_key = "native_server_timeout_game_seconds"
+surface = "config_file"
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Max_Packets_Per_Second"
+reason = "Obsolete and NonSerialized in current official source; not an active supported setting."
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Join_Rate_Limit_Window_Seconds"
+schema_key = "native_server_join_rate_limit_window_seconds"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Bad_Packet_Rate_Limit_Window_Seconds"
+schema_key = "native_server_bad_packet_rate_limit_window_seconds"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Bad_Packet_Rate_Limit_Threshold"
+schema_key = "native_server_bad_packet_rate_limit_threshold"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Rate_Limit_Kick_Threshold"
+schema_key = "native_server_rate_limit_kick_threshold"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Max_Clients_With_Same_IP_Address"
+schema_key = "native_server_max_clients_with_same_ip_address"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Max_Clients_With_Same_IP_Address_Log_Warnings"
+schema_key = "native_server_max_clients_with_same_ip_address_log_warnings"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Fake_Lag_Threshold_Seconds"
+schema_key = "native_server_fake_lag_threshold_seconds"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Fake_Lag_Log_Warnings"
+schema_key = "native_server_fake_lag_log_warnings"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Fake_Lag_Damage_Penalty_Multiplier"
+schema_key = "native_server_fake_lag_damage_penalty_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Enable_Kick_Input_Spam"
+schema_key = "native_server_enable_kick_input_spam"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Enable_Kick_Input_Timeout"
+schema_key = "native_server_enable_kick_input_timeout"
+surface = "config_file"
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Enable_Scheduled_Shutdown"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Scheduled_Shutdown_Time"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Scheduled_Shutdown_Warnings"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Enable_Update_Shutdown"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Update_Steam_Beta_Name"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Update_Shutdown_Warnings"
+reason = "Scheduled shutdown, update-triggered shutdown and warnings belong to Maintenance and are not duplicated in Configuration."
+
+[[exclusions]]
+source = "native_config_3_26_3_12"
+key = "Server.Chat_Always_Use_Rich_Text"
+reason = "Obsolete and NonSerialized in current official source; not an active supported setting."
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Validate_EconInfo_Hash"
+schema_key = "native_server_validate_econ_info_hash"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Server.Reset_Vehicles_Outside_Horizontal_Distance"
+schema_key = "native_server_reset_vehicles_outside_horizontal_distance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Spawn_Chance"
+schema_key = "native_items_spawn_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Despawn_Dropped_Time"
+schema_key = "native_items_despawn_dropped_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Despawn_Natural_Time"
+schema_key = "native_items_despawn_natural_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Respawn_Time"
+schema_key = "native_items_respawn_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Quality_Full_Chance"
+schema_key = "native_items_quality_full_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Quality_Multiplier"
+schema_key = "native_items_quality_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Gun_Bullets_Full_Chance"
+schema_key = "native_items_gun_bullets_full_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Gun_Bullets_Multiplier"
+schema_key = "native_items_gun_bullets_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Magazine_Bullets_Full_Chance"
+schema_key = "native_items_magazine_bullets_full_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Magazine_Bullets_Multiplier"
+schema_key = "native_items_magazine_bullets_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Crate_Bullets_Full_Chance"
+schema_key = "native_items_crate_bullets_full_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Crate_Bullets_Multiplier"
+schema_key = "native_items_crate_bullets_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Has_Durability"
+schema_key = "native_items_has_durability"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Food_Spawns_At_Full_Quality"
+schema_key = "native_items_food_spawns_at_full_quality"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Water_Spawns_At_Full_Quality"
+schema_key = "native_items_water_spawns_at_full_quality"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Clothing_Spawns_At_Full_Quality"
+schema_key = "native_items_clothing_spawns_at_full_quality"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Weapons_Spawn_At_Full_Quality"
+schema_key = "native_items_weapons_spawn_at_full_quality"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Default_Spawns_At_Full_Quality"
+schema_key = "native_items_default_spawns_at_full_quality"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Clothing_Has_Durability"
+schema_key = "native_items_clothing_has_durability"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Items.Weapons_Have_Durability"
+schema_key = "native_items_weapons_have_durability"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Decay_Time"
+schema_key = "native_vehicles_decay_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Decay_Damage_Per_Second"
+schema_key = "native_vehicles_decay_damage_per_second"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Has_Battery_Chance"
+schema_key = "native_vehicles_has_battery_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Min_Battery_Charge"
+schema_key = "native_vehicles_min_battery_charge"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Battery_Charge"
+schema_key = "native_vehicles_max_battery_charge"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Has_Tire_Chance"
+schema_key = "native_vehicles_has_tire_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Respawn_Time"
+schema_key = "native_vehicles_respawn_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Unlocked_After_Seconds_In_Safezone"
+schema_key = "native_vehicles_unlocked_after_seconds_in_safezone"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Armor_Multiplier"
+schema_key = "native_vehicles_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Child_Explosion_Armor_Multiplier"
+schema_key = "native_vehicles_child_explosion_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Gun_Lowcal_Damage_Multiplier"
+schema_key = "native_vehicles_gun_lowcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Gun_Highcal_Damage_Multiplier"
+schema_key = "native_vehicles_gun_highcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Melee_Damage_Multiplier"
+schema_key = "native_vehicles_melee_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Melee_Repair_Multiplier"
+schema_key = "native_vehicles_melee_repair_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Instances_Tiny"
+schema_key = "native_vehicles_max_instances_tiny"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Instances_Small"
+schema_key = "native_vehicles_max_instances_small"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Instances_Medium"
+schema_key = "native_vehicles_max_instances_medium"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Instances_Large"
+schema_key = "native_vehicles_max_instances_large"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Max_Instances_Insane"
+schema_key = "native_vehicles_max_instances_insane"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Vehicles.Min_Natural_Vehicles"
+schema_key = "native_vehicles_min_natural_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Spawn_Chance"
+schema_key = "native_zombies_spawn_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Loot_Chance"
+schema_key = "native_zombies_loot_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Crawler_Chance"
+schema_key = "native_zombies_crawler_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Sprinter_Chance"
+schema_key = "native_zombies_sprinter_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Flanker_Chance"
+schema_key = "native_zombies_flanker_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Burner_Chance"
+schema_key = "native_zombies_burner_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Acid_Chance"
+schema_key = "native_zombies_acid_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Boss_Electric_Chance"
+schema_key = "native_zombies_boss_electric_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Boss_Wind_Chance"
+schema_key = "native_zombies_boss_wind_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Boss_Fire_Chance"
+schema_key = "native_zombies_boss_fire_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Spirit_Chance"
+schema_key = "native_zombies_spirit_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.DL_Red_Volatile_Chance"
+schema_key = "native_zombies_dl_red_volatile_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.DL_Blue_Volatile_Chance"
+schema_key = "native_zombies_dl_blue_volatile_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Boss_Elver_Stomper_Chance"
+schema_key = "native_zombies_boss_elver_stomper_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Boss_Kuwait_Chance"
+schema_key = "native_zombies_boss_kuwait_chance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Respawn_Day_Time"
+schema_key = "native_zombies_respawn_day_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Respawn_Night_Time"
+schema_key = "native_zombies_respawn_night_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Respawn_Beacon_Time"
+schema_key = "native_zombies_respawn_beacon_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Quest_Boss_Respawn_Interval"
+schema_key = "native_zombies_quest_boss_respawn_interval"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Damage_Multiplier"
+schema_key = "native_zombies_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Armor_Multiplier"
+schema_key = "native_zombies_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Backstab_Multiplier"
+schema_key = "native_zombies_backstab_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.NonHeadshot_Armor_Multiplier"
+schema_key = "native_zombies_non_headshot_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Beacon_Experience_Multiplier"
+schema_key = "native_zombies_beacon_experience_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Full_Moon_Experience_Multiplier"
+schema_key = "native_zombies_full_moon_experience_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Min_Drops"
+schema_key = "native_zombies_min_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Max_Drops"
+schema_key = "native_zombies_max_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Min_Mega_Drops"
+schema_key = "native_zombies_min_mega_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Max_Mega_Drops"
+schema_key = "native_zombies_max_mega_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Min_Boss_Drops"
+schema_key = "native_zombies_min_boss_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Max_Boss_Drops"
+schema_key = "native_zombies_max_boss_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Slow_Movement"
+schema_key = "native_zombies_slow_movement"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Can_Stun"
+schema_key = "native_zombies_can_stun"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Only_Critical_Stuns"
+schema_key = "native_zombies_only_critical_stuns"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Weapons_Use_Player_Damage"
+schema_key = "native_zombies_weapons_use_player_damage"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Can_Target_Barricades"
+schema_key = "native_zombies_can_target_barricades"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Can_Target_Structures"
+schema_key = "native_zombies_can_target_structures"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Can_Target_Vehicles"
+schema_key = "native_zombies_can_target_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Can_Target_Objects"
+schema_key = "native_zombies_can_target_objects"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Beacon_Max_Rewards"
+schema_key = "native_zombies_beacon_max_rewards"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Beacon_Max_Participants"
+schema_key = "native_zombies_beacon_max_participants"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Zombies.Beacon_Rewards_Multiplier"
+schema_key = "native_zombies_beacon_rewards_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Respawn_Time"
+schema_key = "native_animals_respawn_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Damage_Multiplier"
+schema_key = "native_animals_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Armor_Multiplier"
+schema_key = "native_animals_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Max_Instances_Tiny"
+schema_key = "native_animals_max_instances_tiny"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Max_Instances_Small"
+schema_key = "native_animals_max_instances_small"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Max_Instances_Medium"
+schema_key = "native_animals_max_instances_medium"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Max_Instances_Large"
+schema_key = "native_animals_max_instances_large"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Max_Instances_Insane"
+schema_key = "native_animals_max_instances_insane"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Animals.Weapons_Use_Player_Damage"
+schema_key = "native_animals_weapons_use_player_damage"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Decay_Time"
+schema_key = "native_barricades_decay_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Armor_Lowtier_Multiplier"
+schema_key = "native_barricades_armor_lowtier_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Armor_Hightier_Multiplier"
+schema_key = "native_barricades_armor_hightier_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Gun_Lowcal_Damage_Multiplier"
+schema_key = "native_barricades_gun_lowcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Gun_Highcal_Damage_Multiplier"
+schema_key = "native_barricades_gun_highcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Melee_Damage_Multiplier"
+schema_key = "native_barricades_melee_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Melee_Repair_Multiplier"
+schema_key = "native_barricades_melee_repair_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Allow_Item_Placement_On_Vehicle"
+schema_key = "native_barricades_allow_item_placement_on_vehicle"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Allow_Trap_Placement_On_Vehicle"
+schema_key = "native_barricades_allow_trap_placement_on_vehicle"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Max_Item_Distance_From_Hull"
+schema_key = "native_barricades_max_item_distance_from_hull"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Barricades.Max_Trap_Distance_From_Hull"
+schema_key = "native_barricades_max_trap_distance_from_hull"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Decay_Time"
+schema_key = "native_structures_decay_time"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Armor_Lowtier_Multiplier"
+schema_key = "native_structures_armor_lowtier_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Armor_Hightier_Multiplier"
+schema_key = "native_structures_armor_hightier_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Gun_Lowcal_Damage_Multiplier"
+schema_key = "native_structures_gun_lowcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Gun_Highcal_Damage_Multiplier"
+schema_key = "native_structures_gun_highcal_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Melee_Damage_Multiplier"
+schema_key = "native_structures_melee_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Structures.Melee_Repair_Multiplier"
+schema_key = "native_structures_melee_repair_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Health_Default"
+schema_key = "native_players_health_default"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Health_Regen_Min_Food"
+schema_key = "native_players_health_regen_min_food"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Health_Regen_Min_Water"
+schema_key = "native_players_health_regen_min_water"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Health_Regen_Ticks"
+schema_key = "native_players_health_regen_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Food_Default"
+schema_key = "native_players_food_default"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Food_Use_Ticks"
+schema_key = "native_players_food_use_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Food_Damage_Ticks"
+schema_key = "native_players_food_damage_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Water_Default"
+schema_key = "native_players_water_default"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Water_Use_Ticks"
+schema_key = "native_players_water_use_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Water_Damage_Ticks"
+schema_key = "native_players_water_damage_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Virus_Default"
+schema_key = "native_players_virus_default"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Virus_Infect"
+schema_key = "native_players_virus_infect"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Virus_Use_Ticks"
+schema_key = "native_players_virus_use_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Virus_Damage_Ticks"
+schema_key = "native_players_virus_damage_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Leg_Regen_Ticks"
+schema_key = "native_players_leg_regen_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Bleed_Damage_Ticks"
+schema_key = "native_players_bleed_damage_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Bleed_Regen_Ticks"
+schema_key = "native_players_bleed_regen_ticks"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Armor_Multiplier"
+schema_key = "native_players_armor_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Experience_Multiplier"
+schema_key = "native_players_experience_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Detect_Radius_Multiplier"
+schema_key = "native_players_detect_radius_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Ray_Aggressor_Distance"
+schema_key = "native_players_ray_aggressor_distance"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Skills_PvP"
+schema_key = "native_players_lose_skills_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Skills_PvE"
+schema_key = "native_players_lose_skills_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Skill_Levels_PvP"
+schema_key = "native_players_lose_skill_levels_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Skill_Levels_PvE"
+schema_key = "native_players_lose_skill_levels_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Experience_PvP"
+schema_key = "native_players_lose_experience_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Experience_PvE"
+schema_key = "native_players_lose_experience_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Skill_Cost_Multiplier"
+schema_key = "native_players_skill_cost_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Items_PvP"
+schema_key = "native_players_lose_items_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Items_PvE"
+schema_key = "native_players_lose_items_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Clothes_PvP"
+schema_key = "native_players_lose_clothes_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Clothes_PvE"
+schema_key = "native_players_lose_clothes_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Weapons_PvP"
+schema_key = "native_players_lose_weapons_pv_p"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Lose_Weapons_PvE"
+schema_key = "native_players_lose_weapons_pv_e"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Can_Hurt_Legs"
+schema_key = "native_players_can_hurt_legs"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Can_Break_Legs"
+schema_key = "native_players_can_break_legs"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Can_Fix_Legs"
+schema_key = "native_players_can_fix_legs"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Can_Start_Bleeding"
+schema_key = "native_players_can_start_bleeding"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Can_Stop_Bleeding"
+schema_key = "native_players_can_stop_bleeding"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Spawn_With_Max_Skills"
+schema_key = "native_players_spawn_with_max_skills"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Spawn_With_Stamina_Skills"
+schema_key = "native_players_spawn_with_stamina_skills"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Skillset_Reduces_Skill_Cost"
+schema_key = "native_players_skillset_reduces_skill_cost"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Skillset_Prevents_Skill_Loss"
+schema_key = "native_players_skillset_prevents_skill_loss"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Allow_Instakill_Headshots"
+schema_key = "native_players_allow_instakill_headshots"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Allow_Per_Character_Saves"
+schema_key = "native_players_allow_per_character_saves"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Players.Enable_Terrain_Color_Kick"
+schema_key = "native_players_enable_terrain_color_kick"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Binary_State_Reset_Multiplier"
+schema_key = "native_objects_binary_state_reset_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Fuel_Reset_Multiplier"
+schema_key = "native_objects_fuel_reset_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Water_Reset_Multiplier"
+schema_key = "native_objects_water_reset_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Resource_Reset_Multiplier"
+schema_key = "native_objects_resource_reset_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Resource_Drops_Multiplier"
+schema_key = "native_objects_resource_drops_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Rubble_Reset_Multiplier"
+schema_key = "native_objects_rubble_reset_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Allow_Holiday_Drops"
+schema_key = "native_objects_allow_holiday_drops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Objects.Items_Obstruct_Tree_Respawns"
+schema_key = "native_objects_items_obstruct_tree_respawns"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Rain_Frequency_Min"
+schema_key = "native_events_rain_frequency_min"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Rain_Frequency_Max"
+schema_key = "native_events_rain_frequency_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Rain_Duration_Min"
+schema_key = "native_events_rain_duration_min"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Rain_Duration_Max"
+schema_key = "native_events_rain_duration_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Snow_Frequency_Min"
+schema_key = "native_events_snow_frequency_min"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Snow_Frequency_Max"
+schema_key = "native_events_snow_frequency_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Snow_Duration_Min"
+schema_key = "native_events_snow_duration_min"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Snow_Duration_Max"
+schema_key = "native_events_snow_duration_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Weather_Frequency_Multiplier"
+schema_key = "native_events_weather_frequency_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Weather_Duration_Multiplier"
+schema_key = "native_events_weather_duration_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Airdrop_Frequency_Min"
+schema_key = "native_events_airdrop_frequency_min"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Airdrop_Frequency_Max"
+schema_key = "native_events_airdrop_frequency_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Airdrop_Speed"
+schema_key = "native_events_airdrop_speed"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Airdrop_Force"
+schema_key = "native_events_airdrop_force"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Min_Players"
+schema_key = "native_events_arena_min_players"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Damage"
+schema_key = "native_events_arena_compactor_damage"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Extra_Damage_Per_Second"
+schema_key = "native_events_arena_compactor_extra_damage_per_second"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Clear_Timer"
+schema_key = "native_events_arena_clear_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Finale_Timer"
+schema_key = "native_events_arena_finale_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Restart_Timer"
+schema_key = "native_events_arena_restart_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Delay_Timer"
+schema_key = "native_events_arena_compactor_delay_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Pause_Timer"
+schema_key = "native_events_arena_compactor_pause_timer"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Use_Airdrops"
+schema_key = "native_events_use_airdrops"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Use_Compactor_Pause"
+schema_key = "native_events_arena_use_compactor_pause"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Speed_Tiny"
+schema_key = "native_events_arena_compactor_speed_tiny"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Speed_Small"
+schema_key = "native_events_arena_compactor_speed_small"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Speed_Medium"
+schema_key = "native_events_arena_compactor_speed_medium"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Speed_Large"
+schema_key = "native_events_arena_compactor_speed_large"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Speed_Insane"
+schema_key = "native_events_arena_compactor_speed_insane"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Events.Arena_Compactor_Shrink_Factor"
+schema_key = "native_events_arena_compactor_shrink_factor"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "UnityEvents.Allow_Server_Messages"
+schema_key = "native_unity_events_allow_server_messages"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "UnityEvents.Allow_Server_Commands"
+schema_key = "native_unity_events_allow_server_commands"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "UnityEvents.Allow_Client_Messages"
+schema_key = "native_unity_events_allow_client_messages"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "UnityEvents.Allow_Client_Commands"
+schema_key = "native_unity_events_allow_client_commands"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Repair_Level_Max"
+schema_key = "native_gameplay_repair_level_max"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Hitmarkers"
+schema_key = "native_gameplay_hitmarkers"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Crosshair"
+schema_key = "native_gameplay_crosshair"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Ballistics"
+schema_key = "native_gameplay_ballistics"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Chart"
+schema_key = "native_gameplay_chart"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Satellite"
+schema_key = "native_gameplay_satellite"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Compass"
+schema_key = "native_gameplay_compass"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Group_Map"
+schema_key = "native_gameplay_group_map"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Group_HUD"
+schema_key = "native_gameplay_group_hud"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Group_Player_List"
+schema_key = "native_gameplay_group_player_list"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Static_Groups"
+schema_key = "native_gameplay_allow_static_groups"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Dynamic_Groups"
+schema_key = "native_gameplay_allow_dynamic_groups"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Lobby_Groups"
+schema_key = "native_gameplay_allow_lobby_groups"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Shoulder_Camera"
+schema_key = "native_gameplay_allow_shoulder_camera"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Can_Suicide"
+schema_key = "native_gameplay_can_suicide"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Friendly_Fire"
+schema_key = "native_gameplay_friendly_fire"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Bypass_Buildable_Mobility"
+schema_key = "native_gameplay_bypass_buildable_mobility"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Bypass_No_Building_Zones"
+schema_key = "native_gameplay_bypass_no_building_zones"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Bypass_Building_In_Safezones"
+schema_key = "native_gameplay_bypass_building_in_safezones"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Holidays"
+schema_key = "native_gameplay_allow_holidays"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Freeform_Buildables"
+schema_key = "native_gameplay_allow_freeform_buildables"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Allow_Freeform_Buildables_On_Vehicles"
+schema_key = "native_gameplay_allow_freeform_buildables_on_vehicles"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Enable_Damage_Flinch"
+schema_key = "native_gameplay_enable_damage_flinch"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Enable_Explosion_Camera_Shake"
+schema_key = "native_gameplay_enable_explosion_camera_shake"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Enable_Workstation_Requirements"
+schema_key = "native_gameplay_enable_workstation_requirements"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Disable_Motion_Sickness_Options"
+schema_key = "native_gameplay_disable_motion_sickness_options"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Disable_Foliage_Off"
+schema_key = "native_gameplay_disable_foliage_off"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Use_2D_Scope_Overlay"
+schema_key = "native_gameplay_use_2_d_scope_overlay"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Enable_Fishing_Catch_Challenge"
+schema_key = "native_gameplay_enable_fishing_catch_challenge"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Timer_Exit"
+schema_key = "native_gameplay_timer_exit"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Timer_Respawn"
+schema_key = "native_gameplay_timer_respawn"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Timer_Home"
+schema_key = "native_gameplay_timer_home"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Timer_Leave_Group"
+schema_key = "native_gameplay_timer_leave_group"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Max_Group_Members"
+schema_key = "native_gameplay_max_group_members"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Explosion_Launch_Speed_Multiplier"
+schema_key = "native_gameplay_explosion_launch_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.AirStrafing_Acceleration_Multiplier"
+schema_key = "native_gameplay_air_strafing_acceleration_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.AirStrafing_Deceleration_Multiplier"
+schema_key = "native_gameplay_air_strafing_deceleration_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.FirstPerson_RecoilMultiplier"
+schema_key = "native_gameplay_first_person_recoil_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.FirstPerson_AimingRecoilMultiplier"
+schema_key = "native_gameplay_first_person_aiming_recoil_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.FirstPerson_AimingZoomRecoilReduction"
+schema_key = "native_gameplay_first_person_aiming_zoom_recoil_reduction"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.ThirdPerson_RecoilMultiplier"
+schema_key = "native_gameplay_third_person_recoil_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.ThirdPerson_SpreadMultiplier"
+schema_key = "native_gameplay_third_person_spread_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Viewmodel_AimingJumpLandMultiplier"
+schema_key = "native_gameplay_viewmodel_aiming_jump_land_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Viewmodel_AimingMisalignmentMultiplier"
+schema_key = "native_gameplay_viewmodel_aiming_misalignment_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Min_Fishing_Bite_Interval"
+schema_key = "native_gameplay_min_fishing_bite_interval"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Max_Fishing_Bite_Interval"
+schema_key = "native_gameplay_max_fishing_bite_interval"
+surface = "config_file"
+
+[[items]]
+source = "native_config_3_26_3_12"
+key = "Gameplay.Fishing_MaxStrength_Bite_Interval_Multiplier"
+schema_key = "native_gameplay_fishing_max_strength_bite_interval_multiplier"
+surface = "config_file"
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://github.com/SmartlyDressedGames/U3-SDK/blob/aba323a81558487ad8d2167ac20da9c0fd72b6d9/Assets/Runtime/Assembly-CSharp/Unturned/Settings/PlayConfigData.cs"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 301 presentation entries reviewed in EN/ZH against the referenced package/docs. Armor multipliers affect damage received, with the correct direction; barricade/structure gun/melee/repair controls include the object in their names. PvP/PvE experience and skill fractions are retained, not lost. Legacy rain/snow settings apply only to maps using legacy weather; intervals/durations use game days; modern frequency is inverse and duration 0 disables. Respawn_Time governs cleanup of wrecked vehicles; explosion-through-attached-barricade scope clarified. Full-moon spawn multiplier is not every night; non-headshot value is damage received; boss quest interval is seconds. Team count rather than individual players; stage-radius retained fraction; shrink speeds m/s. Automatic bleeding-stop and leg-healing controls, airdrop speed/drop-force direction, server mode versus mode-config override distinguished. Boundaries: Pinned upstream source comments are not proof that every current-build runtime default/effect was retested; changes since the pinned revision outside the existing current-package inventory remain a boundary."
+
+[[sources]]
+id = "native_semantic_resolution_20260930"
+kind = "documentation"
+path = "Unturned_Data/Managed/Assembly-CSharp.dll"
+authority = "read_only_installed_package_static_consumer_analysis"
+description = "2026-09-30: Build 25444106 Assembly-CSharp.dll contains 282 public native fields across 13 configuration categories. The current official U3-SDK main still resolves to aba323a81558487ad8d2167ac20da9c0fd72b6d9. PlayConfigData.cs remains byte-identical to the reviewed source, SHA256 c5e6a7961c465faa289dc9ca0cb01e09b56c04e86985e32a09146d62bc72369f. All 281 source fields are present, and their primitive types match. The package additionally contains Server.BattlEye_Secure, already modeled in LGSM and initialized to true by ServerConfigData..ctor (06004298). The two obsolete fields are marked NotSerialized in the actual assembly; six shutdown/update fields remain owned by Maintenance. The 274 active configuration controls need no additional keys. This resolves the current-package inventory difference without claiming whole-assembly source equivalence or fresh multiplayer acceptance. Primary binary SHA256 269794d065f9f115eec269c80a62c09f3fe2beee34da818063bd1d5b3491692a."

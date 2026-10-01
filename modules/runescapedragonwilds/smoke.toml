@@ -1,0 +1,13 @@
+schema_version = 1
+module_id = "runescapedragonwilds"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "ready-to-join"
+kind = "log_marker"
+sources = [{ kind = "install", path = "RSDragonwilds/Saved/Logs/RSDragonwilds.log" }]
+any_of = ['LogNetSessionSettings: Setting ["ReadyToJoin"] written with key[x0] value[1]']

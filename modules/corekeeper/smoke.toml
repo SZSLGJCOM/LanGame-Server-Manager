@@ -1,0 +1,32 @@
+schema_version = 1
+module_id = "corekeeper"
+primary_process_key = "main"
+readiness_timeout_ms = 90000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[fixture.settings]
+direct_connection_enabled = true
+
+# Build 23543502 emits this only after initial world loading completes and
+# the empty server pauses its simulation. Port ownership alone occurs earlier.
+[[probes]]
+id = "world-initialized-empty"
+kind = "log_marker"
+sources = [{ kind = "instance", path = "logs/CoreKeeperServer.log" }]
+any_of = ["timescale = 0"]
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "query-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "query"
+protocol = "udp"

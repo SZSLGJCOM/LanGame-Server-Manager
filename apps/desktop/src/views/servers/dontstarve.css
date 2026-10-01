@@ -1,0 +1,44 @@
+:root {
+  --theme-dontstarve-card-bg: rgba(26, 26, 26, 0.6);
+  --theme-dontstarve-card-hover: rgba(40, 40, 40, 0.8);
+  --theme-dontstarve-card-active: rgba(26, 26, 26, 0.92);
+  --theme-dontstarve-card-border: #2a2a2a;
+  --theme-dontstarve-card-active-border: #8b0000;
+  --theme-dontstarve-accent: #8b0000;
+  --theme-dontstarve-glow: 0 0 10px rgba(139, 0, 0, 0.42);
+}
+
+:root[data-theme="light"] {
+  --theme-dontstarve-card-bg: rgba(245, 240, 225, 0.84);
+  --theme-dontstarve-card-hover: rgba(251, 248, 241, 0.96);
+  --theme-dontstarve-card-active: rgba(251, 248, 241, 0.98);
+  --theme-dontstarve-card-border: rgba(120, 84, 15, 0.18);
+  --theme-dontstarve-card-active-border: rgba(153, 27, 27, 0.42);
+  --theme-dontstarve-accent: #991b1b;
+  --theme-dontstarve-glow: 0 0 10px rgba(153, 27, 27, 0.32);
+}
+
+.theme-dontstarve.row-card {
+  background: var(--theme-dontstarve-card-bg);
+  border-color: var(--theme-dontstarve-card-border);
+}
+
+.theme-dontstarve.row-card:hover {
+  background: var(--theme-dontstarve-card-hover);
+}
+
+.theme-dontstarve.row-card.is-active {
+  background: var(--theme-dontstarve-card-active);
+  border-color: var(--theme-dontstarve-card-active-border);
+  box-shadow: inset 0 0 15px color-mix(in srgb, var(--theme-dontstarve-accent) 22%, transparent);
+}
+
+.theme-dontstarve .row-card-accent {
+  background: var(--theme-dontstarve-accent);
+  opacity: 0.3;
+}
+
+.theme-dontstarve.is-active .row-card-accent {
+  opacity: 1;
+  box-shadow: var(--theme-dontstarve-glow);
+}

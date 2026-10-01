@@ -1,0 +1,91 @@
+id = "sonsoftheforest"
+name = "Sons Of The Forest Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Sons Of The Forest via SteamCMD."
+steam_app_id = 2465200
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "sonsoftheforest"
+verification_path = "SonsOfTheForestDS.exe"
+
+[process]
+executable = "SonsOfTheForestDS.exe"
+args_template = [
+  "-batchmode",
+  "-nographics",
+  "-userdatapath",
+  "{{paths.data_dir}}",
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Sons Of The Forest reads dedicatedserver.cfg and ownerswhitelist.txt from -userdatapath. LanGame materializes both files into the instance data directory alongside its native runtime data."
+
+[process.environment_template]
+SteamAppId = "1326470"
+SteamGameId = "1326470"
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 8766
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27016
+
+[[default_ports]]
+name = "blob_sync"
+protocol = "udp"
+port = 9700
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "userdatapath_owner_whitelist"
+reason = "Sons Of The Forest reads ownerswhitelist.txt from the user data root. LanGame materializes owner Steam64 IDs there, which grants in-game administration panel access; A2S_PLAYER is queried for read-only names when available; live kick and ban remain game-client actions until a remote command transport is verified."
+verification = "Run SonsOfTheForestDS.exe with the instance -userdatapath, verify data/ownerswhitelist.txt contains one Steam64 ID per line, join as that owner, and confirm the in-game Players admin panel can manage guests."
+
+[storage]
+runtime_copy_exclusions = ["Mods"]
+saves_path_template = "{{paths.data_dir}}/Saves"
+
+[mods.source]
+provider = "manual"
+label = "RedLoader / SOTF Mods"
+url = "https://sotf-mods.com/mods"
+install_note = "Sons Of The Forest dedicated-server mods require RedLoader to be installed in the server root first. LanGame stages mod folders and DLL payloads into the RedLoader-created Mods directory; all players usually need matching client mods."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/Mods"
+target_label = "Mods"
+accepts = ["folder", "dll", "zip"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query", "blob_sync"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000

@@ -1,0 +1,283 @@
+id = "minecraft"
+name = "Minecraft Java Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Minecraft Java Edition using Mojang's server.jar and a local Java runtime on Windows."
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "minecraft"
+source = "minecraft_java"
+verification_path = "server.jar"
+
+[install.minecraft]
+version = "latest_release"
+manifest_url = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+server_jar = "server.jar"
+java_policy = "mojang_version_metadata"
+default_distribution = "vanilla"
+
+[[install.minecraft.distributions]]
+id = "vanilla"
+label = "Vanilla"
+server_jar = "server.jar"
+source = "mojang_manifest"
+entrypoint_kind = "jar"
+supports_mods = false
+supports_plugins = false
+supports_datapacks = true
+supports_resource_packs = true
+
+[process]
+executable = "jre/bin/java.exe"
+args_template = [
+  "-Xms{{settings.memory_min_mb}}M",
+  "-Xmx{{settings.memory_max_mb}}M",
+  "-jar",
+  "{{paths.install_root}}/server.jar",
+  "nogui"
+]
+working_directory_template = "{{paths.instance_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Minecraft Java should run from an instance-owned working directory so server.properties, eula.txt, access JSON files, logs, and the world folder stay tied to the instance. Install root contains Mojang's server.jar and a bundled jre runtime at jre/bin/java.exe."
+
+[[default_ports]]
+name = "game"
+protocol = "tcp"
+port = 25565
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 25565
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 25575
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 120000
+
+[runtime.player_query]
+protocol = "minecraft_query"
+port_names = ["query"]
+
+[runtime.player_list]
+scope = "online"
+source = "runtime_action"
+action_id = "list_players"
+player_action_ids = []
+response_codec = "minecraft_players"
+identity_kind = "minecraft_uuid"
+refresh_interval_ms = 30000
+
+[mods.source]
+provider = "modrinth"
+label = "Modrinth"
+url = "https://modrinth.com/mods"
+install_note = "Installed jars require a compatible Forge, Fabric, NeoForge, or Quilt server jar. The vanilla Mojang server jar will not load them."
+
+[mods.manual_staging]
+target_template = "{{paths.instance_root}}/mods"
+target_label = "mods"
+accepts = ["jar", "folder", "zip"]
+
+[runtime.shutdown]
+grace_period_ms = 8000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "save-all flush"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+wait_after_ms = 2500
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "stdin"
+command = "stop"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+wait_after_ms = 5000
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "source_rcon"
+command_template = "save-all flush"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "say {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+
+[[runtime.player_actions]]
+id = "list_players"
+label = "List players"
+label_zh_cn = "在线玩家"
+transport = "source_rcon"
+command_template = "list uuids"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick"
+label_zh_cn = "踢出"
+transport = "source_rcon"
+command_template = "kick {{target}} LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list"
+target_placeholder_zh_cn = "list 输出中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban username immediately"
+label_zh_cn = "按用户名立即封禁"
+transport = "source_rcon"
+command_template = "ban {{target}} LanGame"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list"
+target_placeholder_zh_cn = "list 输出中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Pardon username immediately"
+label_zh_cn = "按用户名立即解封"
+transport = "source_rcon"
+command_template = "pardon {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list or banned-players.json"
+target_placeholder_zh_cn = "list 或 banned-players.json 中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "op_player"
+label = "Grant OP to username now"
+label_zh_cn = "按用户名立即授予 OP"
+transport = "source_rcon"
+command_template = "op {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list"
+target_placeholder_zh_cn = "list 输出中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "deop_player"
+label = "Revoke OP from username now"
+label_zh_cn = "按用户名立即移除 OP"
+transport = "source_rcon"
+command_template = "deop {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list"
+target_placeholder_zh_cn = "list 输出中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "list_whitelist"
+label = "Whitelist"
+label_zh_cn = "白名单"
+transport = "source_rcon"
+command_template = "whitelist list"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+
+[[runtime.player_actions]]
+id = "whitelist_add"
+label = "Allow username immediately"
+label_zh_cn = "按用户名立即加入白名单"
+transport = "source_rcon"
+command_template = "whitelist add {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list or whitelist.json"
+target_placeholder_zh_cn = "list 或 whitelist.json 中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[[runtime.player_actions]]
+id = "whitelist_remove"
+label = "Remove username from allowlist now"
+label_zh_cn = "按用户名立即移出白名单"
+transport = "source_rcon"
+command_template = "whitelist remove {{target}}"
+target_label = "Player"
+target_label_zh_cn = "玩家"
+target_placeholder = "Minecraft username from list or whitelist.json"
+target_placeholder_zh_cn = "list 或 whitelist.json 中的 Minecraft 用户名"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "enable_rcon"
+destructive = true
+
+[storage]
+program_sharing = "shared"
+saves_path_template = "{{paths.instance_root}}/{{settings.level_name}}"
+
+[player_management]
+status = "runtime_actions"
+planned_surface = "source_rcon_and_native_roster_json"
+reason = "Minecraft Java reads online names and UUIDs with list uuids over the instance RCON port. Online rows are read-only; existing name-targeted moderation and native access rosters retain their separate controls."
+verification = "Confirm enable-rcon/rcon.password/rcon.port, refresh the player list, and compare names and UUIDs with connected clients. The parser follows ListPlayersCommand and en_us.json in the verified Mojang 26.2 package; fixtures are synthetic. Verify existing moderation and native roster side effects separately."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]

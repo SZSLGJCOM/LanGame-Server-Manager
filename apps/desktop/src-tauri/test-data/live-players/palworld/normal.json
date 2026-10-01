@@ -1,0 +1,6 @@
+{
+  "players": [
+    {"name": "Builder", "accountName": "builder-account", "playerId": "00000000000000000000000000000001", "userId": "steam_00000000000000001", "ping": 3.14, "ip": "192.0.2.1", "location_x": 123.45, "location_y": 67.89, "level": 1, "building_count": 119},
+    {"name": "探索者", "accountName": "explorer-account", "playerId": "00000000000000000000000000000002", "userId": "steam_00000000000000002", "ping": 28.5, "ip": "192.0.2.2"}
+  ]
+}

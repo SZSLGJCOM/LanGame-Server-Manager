@@ -1,0 +1,18 @@
+# Source directory only; synchronized upstream bodies belong in the user-local cache.
+schema_version = 1
+module_id = "enshrouded"
+scope = "Dedicated-server installation, requirements, configuration, gameplay rules, roles, networking and server FAQs."
+gaps = ["Uses Zendesk's documented anonymous article API for the seven reviewed published public articles; ordinary help-page requests returned HTTP 403 during review.","API updated_at can reflect metadata changes; it is not proof that article text changed or matches the installed server version. Preserve each document's stated applicability."]
+
+[[sources]]
+id = "keen-server-help"
+title = "Enshrouded dedicated-server help articles"
+authority = "Keen Games"
+kind = "official"
+seeds = ["https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/16051370691485.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/16055628734109.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/16055441447709.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/20453241249821.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/19191581489309.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/16056312924957.json","https://enshrouded.zendesk.com/api/v2/help_center/en-us/articles/16454683440541.json"]
+allowed_prefixes = []
+discover_links = false
+max_pages = 7
+authority_evidence = "https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration"
+license_note = "Publisher copyright applies. No open redistribution license was verified; preserve attribution and upstream terms. This manifest supplies public retrieval locations, not permission to redistribute the full text."
+reviewed_on = "2026-09-28"

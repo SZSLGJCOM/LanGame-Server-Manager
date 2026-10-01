@@ -1,0 +1,168 @@
+.instance-isolation-panel {
+  display: grid;
+  min-width: 0;
+}
+
+.server-maintenance-card.instance-isolation-panel {
+  gap: 4px;
+  padding-block: 6px;
+}
+
+.instance-isolation-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.instance-isolation-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.instance-isolation-content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.instance-isolation-panel p,
+.instance-isolation-panel h4,
+.instance-isolation-paths {
+  margin: 0;
+}
+
+.instance-isolation-panel h4 {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.instance-isolation-header .instance-isolation-refresh {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 4px 7px;
+  font-size: var(--text-meta);
+}
+
+.instance-isolation-mode {
+  margin-left: auto;
+  min-width: 0;
+  padding: 3px 5px;
+  border-radius: 4px;
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  color: var(--shell-muted);
+  background: var(--theme-card-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instance-isolation-mode.is-private {
+  color: var(--success);
+}
+
+.instance-isolation-issues,
+.instance-isolation-mode.is-warning {
+  color: var(--theme-warning-text);
+}
+
+.instance-isolation-mode.is-damaged,
+.instance-isolation-error {
+  color: var(--theme-danger-text);
+}
+
+.instance-isolation-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.instance-isolation-paths > li {
+  min-width: 0;
+}
+
+.instance-isolation-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--shell-line);
+  border-radius: 4px;
+  background: var(--theme-card-muted);
+  color: var(--shell-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.instance-isolation-path:hover:not(:disabled) {
+  background: var(--theme-control-hover);
+  border-color: var(--shell-line-strong);
+}
+
+.instance-isolation-path:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.instance-isolation-path:focus-visible {
+  outline: 2px solid var(--shell-accent, var(--shell-focus));
+  outline-offset: 2px;
+}
+
+.instance-isolation-path > span {
+  flex-shrink: 0;
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.instance-isolation-panel code {
+  overflow-wrap: anywhere;
+  font-size: var(--text-code);
+  line-height: var(--leading-body);
+}
+
+.instance-isolation-path > code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--shell-muted);
+  font-size: var(--text-code);
+}
+
+.instance-isolation-conflicts ul,
+.instance-isolation-issues ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: var(--text-meta);
+}
+
+.instance-isolation-conflicts li {
+  margin-top: 10px;
+}
+
+.instance-isolation-conflicts li > span {
+  margin-left: 10px;
+  color: var(--shell-muted);
+}
+
+.instance-isolation-conflicts code {
+  display: block;
+  color: var(--shell-muted);
+}
+
+.instance-isolation-error {
+  font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+}

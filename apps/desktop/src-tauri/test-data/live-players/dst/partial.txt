@@ -1,0 +1,3 @@
+[00:00:01]: [LGM-DST-PLAYERS-BEGIN]	0123456789abcdef0123456789abcdef
+[00:00:01]: [LGM-DST-PLAYER]	0123456789abcdef0123456789abcdef	1	KU_partial	Waiting	wendy	0
+[00:00:02]: log append stopped before the response terminator

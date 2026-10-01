@@ -1,0 +1,183 @@
+{
+  "fixture_version": 1,
+  "module_id": "valheim",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "SteamCMD app 896660 build 21981590",
+    "source_ids": [
+      "steamcmd_anonymous_app_896660",
+      "official_package_start_headless_server_bat",
+      "official_package_manual_pdf",
+      "launch_args",
+      "adminlist_file",
+      "bannedlist_file",
+      "permittedlist_file",
+      "runtime_console",
+      "valheim_mono_browscap_ini",
+      "valheim_mono_config_xml",
+      "valheim_steam_settings_achievements_example_json",
+      "valheim_steam_settings_branches_example_json",
+      "valheim_steam_settings_config_app_example",
+      "valheim_steam_settings_config_main_example",
+      "valheim_steam_settings_config_overlay_example",
+      "valheim_steam_settings_config_user_example",
+      "valheim_steam_settings_default_items_example_json",
+      "valheim_steam_settings_gc_example_json",
+      "valheim_steam_settings_items_example_json",
+      "valheim_steam_settings_mods_example_json",
+      "valheim_steam_settings_stats_example_json",
+      "valheim_steam_settings_achievements_json",
+      "valheim_steam_settings_branches_json",
+      "valheim_steam_settings_config_app_ini",
+      "valheim_steam_settings_config_main_ini",
+      "valheim_steam_settings_config_overlay_ini",
+      "valheim_steam_settings_config_user_ini",
+      "valheim_steam_settings_default_items_json",
+      "valheim_steam_settings_gc_json",
+      "valheim_steam_settings_items_json",
+      "valheim_steam_settings_mods_json",
+      "valheim_steam_settings_stats_json",
+      "valheim_runtime_initialize_on_loads_json",
+      "valheim_scripting_assemblies_json",
+      "valheim_steam_settings_bundle",
+      "valheim_steam_settings_bundle_examples",
+      "valheim_mono_bundle",
+      "valheim_runtime_json"
+    ]
+  },
+  "coverage": {
+    "editable": 15,
+    "specialized": 3,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 7
+  },
+  "classifications": {
+    "editable": [
+      "launch_args.-name",
+      "launch_args.-world",
+      "launch_args.-password",
+      "launch_args.-public",
+      "launch_args.-crossplay",
+      "launch_args.-instanceid",
+      "launch_args.-saveinterval",
+      "launch_args.-backups",
+      "launch_args.-backupshort",
+      "launch_args.-backuplong",
+      "launch_args.-preset",
+      "launch_args.-modifier",
+      "launch_args.-setkey",
+      "launch_args.custom_launch_flags",
+      "launch_args.-logFile"
+    ],
+    "specialized": [
+      "adminlist_file.adminlist.txt",
+      "bannedlist_file.bannedlist.txt",
+      "permittedlist_file.permittedlist.txt"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-nographics",
+      "launch_args.-batchmode",
+      "launch_args.-port",
+      "launch_args.-savedir",
+      "runtime_console.kick",
+      "runtime_console.ban",
+      "runtime_console.unban"
+    ]
+  },
+  "settings": {
+    "server_name": "Valheim 验收服",
+    "world_name": "AcceptanceWorld",
+    "server_password": "acceptance-valheim",
+    "public_server": 1,
+    "crossplay_enabled": true,
+    "instance_id": "acceptance-shard",
+    "save_interval_seconds": 900,
+    "backup_count": 6,
+    "backup_short_seconds": 3600,
+    "backup_long_seconds": 21600,
+    "world_preset": "normal",
+    "world_modifiers": "combat hard\ndeathpenalty casual",
+    "world_set_keys": "playerevents\nnomap",
+    "admin_list": "76561198077777777\nSteam_ABC123",
+    "banned_list": "blocked-player\nCrossPlay-User",
+    "permitted_list": "friend_one\nfriend-three",
+    "log_file": "D:\\ValheimLogs\\server.log",
+    "custom_launch_flags": ""
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "saves",
+        "path": "adminlist.txt",
+        "format": "text",
+        "fragments": [
+          "76561198077777777\nSteam_ABC123"
+        ]
+      },
+      {
+        "root": "saves",
+        "path": "bannedlist.txt",
+        "format": "text",
+        "fragments": [
+          "blocked-player\nCrossPlay-User"
+        ]
+      },
+      {
+        "root": "saves",
+        "path": "permittedlist.txt",
+        "format": "text",
+        "fragments": [
+          "friend_one\nfriend-three"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "valheim_server.exe",
+      "arguments": [
+        "-nographics",
+        "-batchmode",
+        "-name",
+        "Valheim 验收服",
+        "-port",
+        "2456",
+        "-world",
+        "AcceptanceWorld",
+        "-preset",
+        "normal",
+        "-modifier",
+        "combat",
+        "hard",
+        "-modifier",
+        "deathpenalty",
+        "casual",
+        "-setkey",
+        "playerevents",
+        "-setkey",
+        "nomap",
+        "-password",
+        "acceptance-valheim",
+        "-savedir",
+        "{{paths.saves_dir}}",
+        "-public",
+        "1",
+        "-saveinterval",
+        "900",
+        "-backups",
+        "6",
+        "-backupshort",
+        "3600",
+        "-backuplong",
+        "21600",
+        "-crossplay",
+        "-instanceid",
+        "acceptance-shard",
+        "-logFile",
+        "D:\\ValheimLogs\\server.log"
+      ]
+    }
+  }
+}

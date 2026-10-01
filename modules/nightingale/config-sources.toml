@@ -1,0 +1,141 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "Steam public build 22204011 (updated 2026-03-05 UTC) matches the local appmanifest. The official seven-page guide and exact-build ExampleServerSettings.ini define the complete stable surface used here: StartingDifficulty, connection/admin passwords, MaxPlayers, UDP port, bind address, -EnableCheats, -statusPort with listener binding, structured JSON logging, and Control-C shutdown. Conditional switches now use typed launch tokens rather than relying on raw arguments."
+
+[[sources]]
+id = "native_lifecycle_build_22204011"
+kind = "runtime_probe"
+path = "../../apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs"
+authority = "isolated_local_package_lifecycle_probe"
+description = "2026-09-21: the existing local appmanifest still reports build 22204011. Source snapshot 8365b9182c65 passed native readiness, stop, uninstall preserving 4 declared-data files and ServerSettings.ini, verified instance archive, and cleanup in 54.10 seconds. The earlier post-stop directory rename failed with Windows access denied; a real descendant handle without delete sharing reproduced that error. The shared uninstall transaction now performs bounded file-lock retries on its blocking worker while retaining operation ownership through final database and job-state updates. This run copied an existing local package and does not establish a fresh download or player join."
+
+[[sources]]
+id = "steam_public_build_22204011"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_update 1 +app_info_print 3796810 +quit"
+authority = "steam_public_branch"
+description = "Public branch build 22204011, timeupdated 2026-03-05T16:26:19Z; the local appmanifest matches this build on 2026-07-13."
+
+[[sources]]
+id = "official_nightingale_dedicated_server_pdf_0_8"
+kind = "documentation"
+path = "https://a.storyblok.com/f/239842/x/e8167d5c91/nightingale-dedicated-server-0-8-final.pdf"
+url = "https://a.storyblok.com/f/239842/x/e8167d5c91/nightingale-dedicated-server-0-8-final.pdf"
+authority = "official_documentation"
+description = "Documents SteamCMD app 3796810, NWXServer.exe, NWX/Config/ServerSettings.ini, Password, AdminPassword, command-line MaxPlayers, -port, -multihome, -statusPort, log/save paths, and Control-C graceful shutdown. Rechecked 2026-09-30 against all seven pages and installed build 22204011. ExampleServerSettings.ini SHA256 c4f90f530220638ae2a2ba2d1af9e002de07287c1244c54384cf2e3d649c901e defines three INI keys, all covered; the documented command-line-only controls remain separate. No new native launch is claimed."
+
+[[sources]]
+id = "steamdb_app_3796810_config"
+kind = "documentation"
+path = "SteamDB app/3796810/config"
+authority = "steamdb_dedicated_server_config"
+description = "Lists Nightingale Dedicated Server app 3796810 with Windows executable NWXServer.exe and Linux executable NWXServer.sh."
+url = "https://steamdb.info/app/3796810/config/"
+
+[[sources]]
+id = "server_settings_ini"
+kind = "config_file"
+path = "NWX/Config/ServerSettings.ini"
+authority = "official_documentation"
+description = "Config file copied from NWX/Config/ExampleServerSettings.ini. Options are under [/Script/NWX.NWXServerSettings] unless documented otherwise."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "NWXServer.exe command line"
+authority = "official_documentation"
+description = "Port, multihome bind address, and max-player override are documented as command-line arguments. The first-party Dedicated Server 0.8 guide, reread on 2026-10-01, explicitly says to add -log on Windows for a console and use Control-C for graceful shutdown. LanGame supplies -log on its private desktop. The separately documented JSON logging profile retains its existing -noconsole behavior; neither this source review nor the launch contract claims new runtime console or stop acceptance."
+
+[[sources]]
+id = "player_management"
+kind = "documentation"
+path = "official Nightingale dedicated-server PDF"
+authority = "official_documentation"
+description = "AdminPassword allows in-game authentication for kick/ban use, and -statusPort exposes player count/names, but no host-callable kick, ban, or unban transport is documented for LanGame."
+
+[[items]]
+source = "server_settings_ini"
+key = "StartingDifficulty"
+schema_key = "starting_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "server_settings_ini"
+key = "Password"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "server_settings_ini"
+key = "AdminPassword"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "MaxPlayers"
+schema_key = "max_players"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-EnableCheats"
+schema_key = "enable_cheats"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-statusPort/HTTPServer.Listeners"
+schema_key = "status_endpoint_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "JsonLogger"
+schema_key = "json_logging"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "Port is owned by the LanGame game/UDP port binding and rendered from the instance port map, not duplicated as a schema field."
+
+[[exclusions]]
+source = "launch_args"
+key = "-multihome"
+reason = "Bind address is owned by the instance bind_ip field and rendered from instance metadata."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://a.storyblok.com/f/239842/x/e8167d5c91/nightingale-dedicated-server-0-8-final.pdf"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 8 active configuration fields in both languages. All 8 active fields have Chinese titles and descriptions. First-map difficulty applies only when an imported character has not supplied a map. Cheat commands require server and client flags plus in-game administrator authentication. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "Fixed Windows console flag documented by the first-party server guide; the managed private desktop controls visibility. Runtime control requires acceptance."
+
+[[sources]]
+id = "native_stdout_and_realm_readiness_20261001"
+kind = "runtime_probe"
+path = "NWX/Binaries/Win64/NWXServer-Win64-Shipping.exe and NWX/Saved/Logs/NWX.log"
+authority = "installed_package_and_existing_instance_runtime_observation"
+description = "The existing-instance run on 2026-10-01 completed OnAllLevelsLoaded world restoration and navigation, then set ready_for_players=true; native Control-C stopped it with exit 0. Its inherited output contained Display/Warning/Error lines but omitted ordinary LogNWXGameMode readiness lines. The installed engine contains stdout, FullStdOutLogOutput and the exact final OnAllLevelsLoaded ready message. LanGame now supplies both stdout flags and recognizes the final realm phase from the current run's bounded managed-log checkpoint. A listener, map load, no-Agones initial flag or SimStateManager waiting message is not realm readiness. This source establishes the original capture defect and native markers; the changed launch arguments still require a fresh server acceptance run."
+
+[[exclusions]]
+source = "launch_args"
+key = "-stdout"
+reason = "Fixed native standard-output routing so the managed console receives engine log output; not an operator setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-FullStdOutLogOutput"
+reason = "Fixed native output verbosity so ordinary realm-readiness messages reach the managed console, not only warnings and display messages."

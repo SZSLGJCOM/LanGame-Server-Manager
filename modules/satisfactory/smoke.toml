@@ -1,0 +1,38 @@
+schema_version = 1
+module_id = "satisfactory"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"
+
+[[probes]]
+id = "game-tcp-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game_tcp"
+protocol = "tcp"
+
+[[probes]]
+id = "reliable-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "reliable"
+protocol = "tcp"
+
+[[probes]]
+id = "game-tcp-connect"
+kind = "tcp_connect"
+port_name = "game_tcp"
+
+[[probes]]
+id = "reliable-connect"
+kind = "tcp_connect"
+port_name = "reliable"

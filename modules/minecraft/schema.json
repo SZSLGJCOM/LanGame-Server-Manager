@@ -1,0 +1,970 @@
+{
+  "type": "object",
+  "title": "Minecraft Java Dedicated Server",
+  "properties": {
+    "eula_accepted": {
+      "type": "boolean",
+      "title": "Accept Minecraft EULA",
+      "description": "Writes eula=true only after the operator has accepted Mojang's EULA. The vanilla server exits until this is enabled.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "eula_txt",
+      "x-lsgm-source-key": "eula",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "motd": {
+      "type": "string",
+      "title": "MOTD",
+      "description": "server.properties motd shown in the multiplayer server list.",
+      "default": "A LanGame Minecraft Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "motd",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "server.properties max-players slot limit.",
+      "default": 20,
+      "minimum": 1,
+      "maximum": 200,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "max-players",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_status": {
+      "type": "boolean",
+      "title": "Enable Status",
+      "description": "server.properties enable-status controls whether the server appears online in the server list.",
+      "default": true,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enable-status",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "hide_online_players": {
+      "type": "boolean",
+      "title": "Hide Online Players",
+      "description": "server.properties hide-online-players hides the online player list from status responses.",
+      "default": false,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "hide-online-players",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "online_mode": {
+      "type": "boolean",
+      "title": "Online Mode",
+      "description": "Require Mojang/Microsoft authentication. Keep enabled for public servers.",
+      "default": true,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 80,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "online-mode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enforce_secure_profile": {
+      "type": "boolean",
+      "title": "Enforce Secure Profile",
+      "description": "server.properties enforce-secure-profile requires signed player profiles.",
+      "default": true,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 85,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enforce-secure-profile",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "prevent_proxy_connections": {
+      "type": "boolean",
+      "title": "Prevent Proxy Connections",
+      "description": "Send the player IP to the authentication service for connection-origin verification; some proxy connections may be rejected.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 86,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "prevent-proxy-connections",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_whitelist": {
+      "type": "boolean",
+      "title": "Enable Whitelist",
+      "description": "server.properties white-list makes Minecraft read whitelist.json and only admit listed players.",
+      "default": true,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 90,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "white-list",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enforce_whitelist": {
+      "type": "boolean",
+      "title": "Enforce Whitelist",
+      "description": "server.properties enforce-whitelist kicks non-whitelisted players when the whitelist changes.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enforce-whitelist",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "operator_entries": {
+      "type": "string",
+      "title": "Operators",
+      "description": "One operator per line as uuid,name,level,bypassesPlayerLimit. LanGame renders ops.json for Minecraft to read.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 110,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "csv_uuid_name",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "uuid",
+          "format": "minecraft_uuid",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "minecraft_name",
+          "required": true
+        },
+        {
+          "name": "level",
+          "format": "integer",
+          "required": false,
+          "minimum": 1,
+          "maximum": 4
+        },
+        {
+          "name": "bypassesPlayerLimit",
+          "format": "boolean",
+          "required": false
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "roster_json",
+      "x-lsgm-source-key": "ops.json",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "whitelist_entries": {
+      "type": "string",
+      "title": "Whitelist Players",
+      "description": "One player per line as uuid,name. LanGame renders whitelist.json for Minecraft to read; Minecraft needs UUIDs.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 120,
+      "x-lsgm-player-access-kind": "allow",
+      "x-lsgm-player-access-codec": "csv_uuid_name",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "uuid",
+          "format": "minecraft_uuid",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "minecraft_name",
+          "required": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "roster_json",
+      "x-lsgm-source-key": "whitelist.json",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "banned_player_entries": {
+      "type": "string",
+      "title": "Banned Players",
+      "description": "One banned player per line as uuid,name,reason. LanGame renders banned-players.json for Minecraft to read.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 130,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "csv_uuid_name",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "uuid",
+          "format": "minecraft_uuid",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "minecraft_name",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "roster_json",
+      "x-lsgm-source-key": "banned-players.json",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "banned_ip_entries": {
+      "type": "string",
+      "title": "Banned IPs",
+      "description": "One banned IP per line, optionally followed by a comma and reason. LanGame renders banned-ips.json for Minecraft to read.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 140,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "minecraft_ip_csv",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "ip",
+          "format": "ip",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "roster_json",
+      "x-lsgm-source-key": "banned-ips.json",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "op_permission_level": {
+      "type": "integer",
+      "title": "OP Permission Level",
+      "description": "server.properties op-permission-level for operators.",
+      "default": 4,
+      "minimum": 1,
+      "maximum": 4,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 150,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "op-permission-level",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "function_permission_level": {
+      "type": "integer",
+      "title": "Function Permission Level",
+      "description": "server.properties function-permission-level for command functions.",
+      "default": 2,
+      "minimum": 1,
+      "maximum": 4,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 160,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "function-permission-level",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "broadcast_console_to_ops": {
+      "type": "boolean",
+      "title": "Broadcast Console to OPs",
+      "description": "server.properties broadcast-console-to-ops shows console command output to operators.",
+      "default": true,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 170,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "broadcast-console-to-ops",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "broadcast_rcon_to_ops": {
+      "type": "boolean",
+      "title": "Broadcast RCON to OPs",
+      "description": "server.properties broadcast-rcon-to-ops shows RCON command output to operators.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 180,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "broadcast-rcon-to-ops",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "log_ips": {
+      "type": "boolean",
+      "title": "Log IPs",
+      "description": "server.properties log-ips controls whether player IP addresses appear in logs.",
+      "default": true,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 190,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "log-ips",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_code_of_conduct": {
+      "type": "boolean",
+      "title": "Enable Code of Conduct",
+      "description": "Creates and serves codeofconduct.json so joining players must accept the server rules.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 195,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enable-code-of-conduct",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "level_name": {
+      "type": "string",
+      "title": "World Folder",
+      "description": "server.properties level-name. Keep this stable because backups and restores follow this path.",
+      "default": "world",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "level-name",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "level_seed": {
+      "type": "string",
+      "title": "World Seed",
+      "description": "server.properties level-seed used only when Minecraft creates a fresh world.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "level-seed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "level_type": {
+      "type": "string",
+      "title": "Level Type",
+      "description": "server.properties level-type world generation preset.",
+      "default": "minecraft:normal",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 220,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "level-type",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "generator_settings": {
+      "type": "string",
+      "title": "Generator Settings",
+      "description": "server.properties generator-settings JSON/string for custom world generation.",
+      "default": "{}",
+      "format": "textarea",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 230,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "generator-settings",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "generate_structures": {
+      "type": "boolean",
+      "title": "Generate Structures",
+      "description": "server.properties generate-structures controls villages, monuments, and similar structures.",
+      "default": true,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 240,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "generate-structures",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "gamemode": {
+      "type": "string",
+      "title": "Game Mode",
+      "description": "server.properties gamemode default mode for new players.",
+      "default": "survival",
+      "enum": [
+        "survival",
+        "creative",
+        "adventure",
+        "spectator"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 260,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "gamemode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "force_gamemode": {
+      "type": "boolean",
+      "title": "Force Game Mode",
+      "description": "server.properties force-gamemode forces players into the default mode on join.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 270,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "force-gamemode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "difficulty": {
+      "type": "string",
+      "title": "Difficulty",
+      "description": "server.properties difficulty.",
+      "default": "easy",
+      "enum": [
+        "peaceful",
+        "easy",
+        "normal",
+        "hard"
+      ],
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 280,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "difficulty",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "hardcore": {
+      "type": "boolean",
+      "title": "Hardcore",
+      "description": "server.properties hardcore mode.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 290,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "hardcore",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "spawn_protection": {
+      "type": "integer",
+      "title": "Spawn Protection",
+      "description": "server.properties spawn-protection protected spawn radius in blocks.",
+      "default": 16,
+      "minimum": 0,
+      "maximum": 128,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 350,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "spawn-protection",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_world_size": {
+      "type": "integer",
+      "title": "Max World Size",
+      "description": "server.properties max-world-size world border limit.",
+      "default": 29999984,
+      "minimum": 1,
+      "maximum": 29999984,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 360,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "max-world-size",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "player_idle_timeout": {
+      "type": "integer",
+      "title": "Player Idle Timeout Minutes",
+      "description": "server.properties player-idle-timeout. 0 disables idle kicking.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10080,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 370,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "player-idle-timeout",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "pause_when_empty_seconds": {
+      "type": "integer",
+      "title": "Pause When Empty Seconds",
+      "description": "server.properties pause-when-empty-seconds. Negative values disable pausing.",
+      "default": 60,
+      "minimum": -1,
+      "maximum": 86400,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 380,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "pause-when-empty-seconds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "status_heartbeat_interval": {
+      "type": "integer",
+      "title": "Status Heartbeat Interval",
+      "description": "Seconds between status heartbeats sent while the server is running. 0 disables heartbeats.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 86400,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 390,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "status-heartbeat-interval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_query": {
+      "type": "boolean",
+      "title": "Enable Query",
+      "description": "server.properties enable-query exposes Minecraft's UDP query endpoint.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enable-query",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_rcon": {
+      "type": "boolean",
+      "title": "Enable RCON",
+      "description": "server.properties enable-rcon opens the configured RCON TCP port for LanGame commands.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enable-rcon",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "rcon_password": {
+      "type": "string",
+      "title": "RCON Password",
+      "description": "LanGame generates a unique secret for this instance and writes it to server.properties rcon.password for authenticated remote player commands.",
+      "minLength": 24,
+      "maxLength": 128,
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 420,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "rcon.password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "network_compression_threshold": {
+      "type": "integer",
+      "title": "Network Compression Threshold",
+      "description": "server.properties network-compression-threshold.",
+      "default": 256,
+      "minimum": -1,
+      "maximum": 1048576,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 430,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "network-compression-threshold",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "rate_limit": {
+      "type": "integer",
+      "title": "Packet Rate Limit",
+      "description": "server.properties rate-limit packets per second per client. 0 disables.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1000000,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 440,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "rate-limit",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "use_native_transport": {
+      "type": "boolean",
+      "title": "Use Native Transport",
+      "description": "server.properties use-native-transport enables optimized Linux networking when available.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 450,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "use-native-transport",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "accepts_transfers": {
+      "type": "boolean",
+      "title": "Accepts Transfers",
+      "description": "server.properties accepts-transfers controls whether players can transfer from another server.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 460,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "accepts-transfers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_enabled": {
+      "type": "boolean",
+      "title": "Enable Management Server",
+      "description": "Enables Minecraft's WebSocket management server. Keep disabled unless the endpoint is explicitly secured and required.",
+      "default": false,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 470,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_host": {
+      "type": "string",
+      "title": "Management Server Host",
+      "description": "Host or address used by the management server.",
+      "default": "localhost",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 471,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-host",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_port": {
+      "type": "integer",
+      "title": "Management Server Port",
+      "description": "TCP port for the management server. 0 lets Minecraft choose an available port.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 472,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-port",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_secret": {
+      "type": "string",
+      "title": "Management Server Secret",
+      "description": "Exactly 40 alphanumeric characters when management is enabled. Set an explicit value for stable access across launches; an empty value lets Minecraft generate one.",
+      "default": "",
+      "pattern": "^$|^[A-Za-z0-9]{40}$",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 473,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-secret",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_allowed_origins": {
+      "type": "string",
+      "title": "Management Allowed Origins",
+      "description": "Comma-separated WebSocket Origin values allowed by the management server. Empty accepts only requests without an Origin header.",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 474,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-allowed-origins",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_tls_enabled": {
+      "type": "boolean",
+      "title": "Management TLS",
+      "description": "Enables TLS for the management server. The upstream default is enabled.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 475,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-tls-enabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_tls_keystore": {
+      "type": "string",
+      "title": "Management TLS Keystore",
+      "description": "Path to the PKCS#12 keystore required when management TLS is enabled.",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 476,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-tls-keystore",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "management_server_tls_keystore_password": {
+      "type": "string",
+      "title": "Management TLS Keystore Password",
+      "description": "Password for the management server PKCS#12 keystore.",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 477,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "management-server-tls-keystore-password",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "allow_flight": {
+      "type": "boolean",
+      "title": "Allow Flight",
+      "description": "Disable automatic kicks for floating or flying. This does not grant players the ability to fly.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 500,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "allow-flight",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "view_distance": {
+      "type": "integer",
+      "title": "View Distance",
+      "description": "server.properties view-distance chunks sent to players.",
+      "default": 10,
+      "minimum": 2,
+      "maximum": 32,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 510,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "view-distance",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "simulation_distance": {
+      "type": "integer",
+      "title": "Simulation Distance",
+      "description": "server.properties simulation-distance chunks around players that keep ticking.",
+      "default": 10,
+      "minimum": 2,
+      "maximum": 32,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 520,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "simulation-distance",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "entity_broadcast_range_percentage": {
+      "type": "integer",
+      "title": "Entity Broadcast Range Percent",
+      "description": "server.properties entity-broadcast-range-percentage.",
+      "default": 100,
+      "minimum": 10,
+      "maximum": 1000,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 530,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "entity-broadcast-range-percentage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_tick_time": {
+      "type": "integer",
+      "title": "Max Tick Time Milliseconds",
+      "description": "server.properties max-tick-time watchdog threshold. -1 disables.",
+      "default": 60000,
+      "minimum": -1,
+      "maximum": 3600000,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 540,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "max-tick-time",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "sync_chunk_writes": {
+      "type": "boolean",
+      "title": "Sync Chunk Writes",
+      "description": "server.properties sync-chunk-writes.",
+      "default": true,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 550,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "sync-chunk-writes",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_chained_neighbor_updates": {
+      "type": "integer",
+      "title": "Max Chained Neighbor Updates",
+      "description": "server.properties max-chained-neighbor-updates. Negative disables the cap.",
+      "default": 1000000,
+      "minimum": -1,
+      "maximum": 2147483647,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 560,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "max-chained-neighbor-updates",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "enable_jmx_monitoring": {
+      "type": "boolean",
+      "title": "Enable JMX Monitoring",
+      "description": "server.properties enable-jmx-monitoring.",
+      "default": false,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 570,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "enable-jmx-monitoring",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "chat_spam_threshold_seconds": {
+      "type": "integer",
+      "title": "Chat Spam Accumulation Threshold (Seconds)",
+      "description": "Each chat message adds one second to its counter; each game tick removes 0.05 seconds. Reaching the threshold kicks the player; 0 disables this check.",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 3600,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 580,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "chat-spam-threshold-seconds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "command_spam_threshold_seconds": {
+      "type": "integer",
+      "title": "Command Spam Accumulation Threshold (Seconds)",
+      "description": "Each player command adds one second to its counter; each game tick removes 0.05 seconds. Reaching the threshold kicks the player; 0 disables this check.",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 3600,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 581,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "command-spam-threshold-seconds",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bug_report_link": {
+      "type": "string",
+      "title": "Bug Report Link",
+      "description": "server.properties bug-report-link.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 590,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "bug-report-link",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "initial_enabled_packs": {
+      "type": "string",
+      "title": "Initial Enabled Packs",
+      "description": "server.properties initial-enabled-packs comma-separated pack IDs.",
+      "default": "vanilla",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 600,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "initial-enabled-packs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "initial_disabled_packs": {
+      "type": "string",
+      "title": "Initial Disabled Packs",
+      "description": "server.properties initial-disabled-packs comma-separated pack IDs.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 610,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "initial-disabled-packs",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "resource_pack": {
+      "type": "string",
+      "title": "Resource Pack URL",
+      "description": "server.properties resource-pack URL.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 620,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "resource-pack",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "resource_pack_id": {
+      "type": "string",
+      "title": "Resource Pack ID",
+      "description": "server.properties resource-pack-id UUID.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 630,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "resource-pack-id",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "resource_pack_sha1": {
+      "type": "string",
+      "title": "Resource Pack SHA1",
+      "description": "server.properties resource-pack-sha1 hash.",
+      "default": "",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 640,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "resource-pack-sha1",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "resource_pack_prompt": {
+      "type": "string",
+      "title": "Resource Pack Prompt",
+      "description": "server.properties resource-pack-prompt JSON text component.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 650,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "resource-pack-prompt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "require_resource_pack": {
+      "type": "boolean",
+      "title": "Require Resource Pack",
+      "description": "server.properties require-resource-pack.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 660,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "require-resource-pack",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "text_filtering_config": {
+      "type": "string",
+      "title": "Text Filtering Config",
+      "description": "server.properties text-filtering-config.",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 670,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "text-filtering-config",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "text_filtering_version": {
+      "type": "integer",
+      "title": "Text Filtering Version",
+      "description": "Protocol version supplied to the configured text-filtering service.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 675,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "text-filtering-version",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "region_file_compression": {
+      "type": "string",
+      "title": "Region File Compression",
+      "description": "server.properties region-file-compression.",
+      "default": "deflate",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 680,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "region-file-compression",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "memory_min_mb": {
+      "type": "integer",
+      "title": "Minimum Memory (MB)",
+      "description": "Java -Xms value for the server process.",
+      "default": 1024,
+      "minimum": 512,
+      "maximum": 65536,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 690,
+      "x-lsgm-source": "jvm_args",
+      "x-lsgm-source-key": "-Xms",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "memory_max_mb": {
+      "type": "integer",
+      "title": "Maximum Memory (MB)",
+      "description": "Java -Xmx value for the server process.",
+      "default": 4096,
+      "minimum": 1024,
+      "maximum": 131072,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 700,
+      "x-lsgm-source": "jvm_args",
+      "x-lsgm-source-key": "-Xmx",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "extra_properties": {
+      "type": "string",
+      "title": "Extra server.properties Lines",
+      "description": "Additional raw server.properties lines for new Minecraft versions or plugin/server-fork keys.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 710,
+      "x-lsgm-source": "server_properties",
+      "x-lsgm-source-key": "raw_extra_lines",
+      "x-lsgm-source-surface": "materializer"
+    }
+  },
+  "required": [
+    "motd",
+    "level_name",
+    "max_players",
+    "memory_min_mb",
+    "memory_max_mb"
+  ]
+}

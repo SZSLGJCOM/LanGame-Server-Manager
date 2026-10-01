@@ -1,0 +1,115 @@
+{
+  "fixture_version": 1,
+  "module_id": "terraria",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Official dedicated server 1.4.5.6",
+    "source_ids": [
+      "official_dedicated_zip_1456",
+      "serverconfig",
+      "launch_args",
+      "banlist_file",
+      "runtime_console",
+      "tmodloader_dedicated_server_utils",
+      "tmodloader_steam_workshop"
+    ]
+  },
+  "coverage": {
+    "editable": 38,
+    "specialized": 2,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 9
+  },
+  "classifications": {
+    "editable": [
+      "serverconfig.worldname",
+      "serverconfig.world",
+      "serverconfig.motd",
+      "serverconfig.maxplayers",
+      "serverconfig.autocreate",
+      "serverconfig.difficulty",
+      "serverconfig.seed",
+      "serverconfig.seed_*",
+      "serverconfig.worldrollbackstokeep",
+      "serverconfig.password",
+      "serverconfig.secure",
+      "serverconfig.steam",
+      "serverconfig.lobby",
+      "launch_args.terraria.runtime",
+      "launch_args.tmodloader.runtime_dir",
+      "tmodloader_dedicated_server_utils.Mods/enabled.json",
+      "serverconfig.language",
+      "serverconfig.upnp",
+      "serverconfig.npcstream",
+      "serverconfig.slowliquids",
+      "serverconfig.disableannouncementbox",
+      "serverconfig.announcementboxrange",
+      "serverconfig.priority",
+      "serverconfig.journeypermission_time_setfrozen",
+      "serverconfig.journeypermission_time_setdawn",
+      "serverconfig.journeypermission_time_setnoon",
+      "serverconfig.journeypermission_time_setdusk",
+      "serverconfig.journeypermission_time_setmidnight",
+      "serverconfig.journeypermission_time_setspeed",
+      "serverconfig.journeypermission_godmode",
+      "serverconfig.journeypermission_setdifficulty",
+      "serverconfig.journeypermission_setspawnrate",
+      "serverconfig.journeypermission_increaseplacementrange",
+      "serverconfig.journeypermission_biomespread_setfrozen",
+      "serverconfig.journeypermission_wind_setstrength",
+      "serverconfig.journeypermission_wind_setfrozen",
+      "serverconfig.journeypermission_rain_setstrength",
+      "serverconfig.journeypermission_rain_setfrozen"
+    ],
+    "specialized": [
+      "banlist_file.banlist.txt",
+      "tmodloader_dedicated_server_utils.Mods/install.txt"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "serverconfig.port",
+      "serverconfig.worldpath",
+      "serverconfig.banlist",
+      "launch_args.-config",
+      "launch_args.-ip",
+      "launch_args.-port",
+      "launch_args.-forcepriority",
+      "runtime_console.help",
+      "runtime_console.exit-nosave"
+    ]
+  },
+  "settings": {
+    "world_name": "LanGame \u4e16\u754c",
+    "server_runtime": "tmodloader",
+    "tmodloader_runtime_dir": "custom-runtime",
+    "tmodloader_enabled_mod_names": "CalamityMod\n\u6a21\u7ec4Core\nCalamityMod\n# ignored"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "instance",
+        "path": "tmodloader/Mods/enabled.json",
+        "format": "json",
+        "fragments": [
+          "\"CalamityMod\"",
+          "\"\u6a21\u7ec4Core\""
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "tmodloader/custom-runtime/start-tModLoaderServer.bat",
+      "arguments": [
+        "-nosteam",
+        "-config",
+        "{{paths.config_dir}}\\serverconfig.txt",
+        "-tmlsavedirectory",
+        "{{paths.instance_root}}\\tmodloader",
+        "-ip",
+        "0.0.0.0"
+      ]
+    }
+  }
+}

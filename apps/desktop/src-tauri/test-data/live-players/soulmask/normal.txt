@@ -1,0 +1,3 @@
+|              Account |                       PlayerName |                    PawnID |                       Position |
+|    76561198000000001 |                     'Explorer' |                FixturePawnA |             V(X=1 Y=2 Z=3) |
+|    76561198000000002 |                 '探索者 | O'Brien' |                FixturePawnB |             V(X=4 Y=5 Z=6) |

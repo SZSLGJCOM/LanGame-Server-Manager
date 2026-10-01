@@ -1,0 +1,19 @@
+.immediate-world-save .server-maintenance-card-label {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.immediate-world-save .server-maintenance-card-label button { margin-left: auto; }
+.immediate-world-save__error { margin: 0; color: var(--danger); overflow-wrap: anywhere; }
+.immediate-world-save__response {
+  max-height: 160px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: var(--text-code) / 1.5 var(--font-mono);
+  background: var(--theme-code-surface);
+  color: var(--theme-code-text);
+}

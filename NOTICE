@@ -1,0 +1,195 @@
+LanGame Server Manager
+Copyright (c) 2025-2026 LanGame Team
+
+Project source code
+-------------------
+
+The source code authored for this project is provided under the LanGame
+Source-Available License 1.0 in the repository-root LICENSE file. Cargo.toml
+uses license-file to refer to that text. Noncommercial use and private
+modification are permitted; commercial use requires separate written
+authorization, and independent modified releases are not permitted.
+
+The package-local apps/desktop/LICENSE is an identical distribution copy of
+the repository-root text. Existing rights lawfully granted under MIT are not
+revoked. This project license does not replace any separate licenses below.
+
+Third-party dependencies
+------------------------
+
+Dependencies remain subject to their respective licenses and notices. Package
+lock files are dependency inventories; they are not evidence that unrelated
+assets may be redistributed.
+
+Third-party source material and derived records
+-----------------------------------------------
+
+THIRD_PARTY_NOTICES.md records third-party documentation or data used as
+configuration evidence. The repository-root source-available license covers only
+project-authored code and original project material; it does not relicense
+upstream text, data, names, or trademarks.
+
+Raw upstream source captures used for internal verification are excluded from
+public snapshots. Public structured crosswalks retain provenance and
+modification notes without representing that upstream rights have been
+transferred to this project.
+
+Names and assets
+----------------
+
+The project code license does not grant rights to third-party game names,
+trademarks, logos, screenshots, map artwork, icons, audio, video, fonts, or
+other media.
+
+Brand use rules / 品牌使用规则
+-----------------------------
+
+These rules cover the names "LanGame" and "LanGame Server Manager" as used to
+identify this project, and the following project-owned brand assets. They are
+separate from the code license. Rights are granted only to the extent held by
+the relevant rightsholders; no rights in third-party names or artwork are
+claimed.
+
+* apps/desktop/src-tauri/icons/icon.ico
+* apps/desktop/src-tauri/icons/icon.png
+* apps/desktop/src-tauri/icons/icon.svg
+* apps/desktop/src-tauri/installer/branding/header.bmp
+* apps/desktop/src-tauri/installer/branding/header.svg
+* apps/desktop/src-tauri/installer/branding/sidebar.bmp
+* apps/desktop/src-tauri/installer/branding/sidebar.svg
+* apps/desktop/src/assets/langame-logo.svg
+* apps/desktop/src/assets/langame-logo-dark.svg
+
+Permitted uses
+
+You may copy and display these names and unaltered brand assets, worldwide,
+nonexclusively and without a brand-license fee, for:
+
+* normal display and use of an official version of LanGame Server Manager;
+* free, unchanged sharing of a complete official public distribution where
+  the code license permits that sharing, with its names, logos and notices;
+* truthful descriptions, tutorials, reviews, news, and screenshots or videos
+  about this project, clearly identifying what is being discussed;
+* private builds and contribution workflows already permitted by the code
+  license, retaining the original branding for development and review without
+  presenting those builds as official releases.
+
+You may proportionally resize a logo, choose an included light/dark variant,
+or convert its file format without changing its design or appearance. These
+technical adjustments are not permission to redesign, recolor, distort,
+combine, or otherwise alter the logo.
+
+Uses requiring separate permission
+
+Other brand uses require prior written permission from the relevant
+rightsholders. In particular, this permission does not allow you to:
+
+* use these names or assets as the identity or logo of your own product,
+  service, business, or merchandise;
+* create or distribute an altered logo or a new mark incorporating the logo;
+* falsely claim to be official, authorized, sponsored, or endorsed by LanGame.
+
+A truthful tutorial or review may include criticism. This policy does not
+require favorable coverage or prior review of permitted editorial content.
+Normal software display and screenshots do not require adding a new legal
+legend inside the interface or image. Keep the copyright and applicable
+license notices when distributing the asset files themselves.
+
+Request permission through the repository's private contact request process,
+selecting "Brand authorization request". A request is not an authorization.
+This brand permission does not grant commercial software-use rights or
+permission to release modified software. Those remain governed by LICENSE.
+
+These terms apply to assets offered under this policy. They do not revoke
+copyright permissions already lawfully granted under MIT or another license,
+override separately granted hosting-platform rights, or restrict uses that
+applicable law permits independently. Earlier copyright permissions do not
+by themselves establish official status or endorsement. All rights not
+expressly granted here remain reserved, subject to those existing rights.
+
+中文说明
+
+本规则适用于标识本项目的 LanGame、LanGame Server Manager 名称，以及上面列出的
+品牌资产文件，与代码许可分别适用。授权仅限相关权利人实际拥有的权利，
+不主张第三方名称或图像的权利。
+
+无需单独申请即可在以下范围内复制、展示名称与原样品牌图像，授权为全球、
+非独占且免收品牌许可费：
+
+* 正常使用和展示官方原版软件。
+* 按代码许可免费、完整、原样转发官方已公开的发行包，保留名称、Logo 和声明。
+* 写真实介绍、教程、评测、新闻，或展示相关截图和视频，清楚说明所介绍的是本项目。
+* 在代码许可已允许的私下构建和贡献流程中保留原品牌，用于开发与审查，不冒充官方发行版。
+
+可以等比例缩放、选用已有的明暗版本，或在不改变设计与外观的前提下转换文件格式；
+这不允许重新设计、改色、拉伸、拼接或以其他方式改造 Logo。
+
+其他品牌用途须事先获得相关权利人的书面授权。尤其不能把名称或图像当作自己的产品、
+服务、商家或商品标志，不能自行制作、发布改造后的 Logo，也不能虚称官方身份、
+授权、赞助或背书。
+
+真实教程和评测可以提出批评；不要求正面评价，也不要求对获准的介绍内容进行事前审核。
+正常软件展示和截图不必在界面或图片内额外嵌入法律声明；转发图像文件本身时须保留
+版权及适用许可声明。
+
+需要授权时，使用仓库的私下联系请求流程，选择“品牌授权申请”。提出申请不等于获准。
+品牌许可不授权商业使用软件，也不授权发布软件修改版；这些仍由 LICENSE 规定。
+
+本规则适用于按本规则提供的资产，不撤回此前按 MIT 或其他许可有效授予的版权权限，
+不替代托管平台独立授予的权利，也不限制法律独立允许的使用。旧有版权许可本身不代表
+官方身份或背书。除这些既有权利及本规则明确授权外，其余权利予以保留。
+
+Project-created illustration (separate MIT grant)
+------------------------------------------------
+
+The following project-created illustration retains the separate MIT grant
+reproduced below, limited to rights held by LanGame. It is not one of the
+standalone LanGame brand assets listed above:
+
+* apps/desktop/src/assets/minecraft-cover.png
+
+The maintainer identified this image as an in-house or AI-generated creation
+on 2026-09-30. That records the reported production source; it does not establish
+ownership of depicted Minecraft characters, designs, names or other third-party
+elements. The MIT text below does not license those rights or grant use of the
+LanGame name as someone else's brand. Review the Minecraft Usage Guidelines
+for the intended display and distribution: https://www.minecraft.net/en-us/usage-guidelines
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG
+OR MICROSOFT.
+
+维护者于 2026-09-30 确认该图为自行制作或 AI 生成。该记录说明制作来源，不证明
+图中 Minecraft 人物、造型、名称等第三方元素属于 LanGame。下方保留的 MIT 授权
+仅覆盖 LanGame 有权授予的部分，不授予第三方权利，也不允许将 LanGame 名称当作
+他人品牌使用。具体展示和分发仍须核对 Minecraft 使用规则。本产品并非 Minecraft
+官方产品，未经 Mojang 或 Microsoft 批准，也不与二者关联。
+
+These project asset lists are separate from the third-party redistribution
+ledger. Listing a path permits build/export selection; it does not prove a
+complete rights chain. Third-party assets need source and license evidence in
+THIRD_PARTY_ASSETS/NOTICE. Absence from either list does not imply approval.
+
+MIT License for minecraft-cover.png only
+----------------------------------------
+
+MIT License
+
+Copyright (c) 2025-2026 LanGame Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

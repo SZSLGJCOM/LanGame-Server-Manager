@@ -1,0 +1,101 @@
+{
+  "fixture_version": 1,
+  "module_id": "nightingale",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 22204011",
+    "source_ids": [
+      "steam_public_build_22204011",
+      "official_nightingale_dedicated_server_pdf_0_8",
+      "steamdb_app_3796810_config",
+      "server_settings_ini",
+      "launch_args",
+      "player_management",
+      "native_stdout_and_realm_readiness_20261001"
+    ]
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "NWX/Config/ServerSettings.ini",
+        "content": "[/Script/NWX.NWXServerSettings]\nPassword=before\nPackageOwned=keep\n\n[Future.Section]\nEnabled=True\n"
+      }
+    ]
+  },
+  "coverage": {
+    "editable": 8,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 5
+  },
+  "classifications": {
+    "editable": [
+      "server_settings_ini.StartingDifficulty",
+      "server_settings_ini.Password",
+      "server_settings_ini.AdminPassword",
+      "launch_args.MaxPlayers",
+      "launch_args.-EnableCheats",
+      "launch_args.-statusPort/HTTPServer.Listeners",
+      "launch_args.JsonLogger",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "launch_args.-log",
+      "launch_args.-port",
+      "launch_args.-multihome",
+      "launch_args.-stdout",
+      "launch_args.-FullStdOutLogOutput"
+    ]
+  },
+  "settings": {
+    "starting_difficulty": "hard",
+    "server_password": "join-pass",
+    "admin_password": "admin-pass",
+    "max_players": 6,
+    "enable_cheats": true,
+    "status_endpoint_enabled": true,
+    "json_logging": true,
+    "extra_launch_args": "-log -stdout"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "NWX/Config/ServerSettings.ini",
+        "format": "ini",
+        "keys": {
+          "/Script/NWX.NWXServerSettings.StartingDifficulty": "hard",
+          "/Script/NWX.NWXServerSettings.Password": "join-pass",
+          "/Script/NWX.NWXServerSettings.AdminPassword": "admin-pass",
+          "/Script/NWX.NWXServerSettings.PackageOwned": "keep",
+          "Future.Section.Enabled": "True"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "NWXServer.exe",
+      "arguments": [
+        "-log",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-port=7777",
+        "-multihome=0.0.0.0",
+        "-ini:Game:[/Script/Engine.GameSession]:MaxPlayers=6",
+        "-EnableCheats",
+        "-statusPort=8080",
+        "-ini:Engine:[HTTPServer.Listeners]:+ListenerOverrides=(Port=8080,BindAddress=0.0.0.0)",
+        "-ini:Engine:[JsonLogger]:bEnable=true",
+        "-ini:Engine:[JsonLogger]:bStdout=true",
+        "-noconsole",
+        "-log",
+        "-stdout"
+      ]
+    }
+  }
+}

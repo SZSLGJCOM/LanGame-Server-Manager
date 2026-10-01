@@ -1,0 +1,206 @@
+{
+  "fixture_version": 1,
+  "module_id": "rust",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam public build 24090743",
+    "source_ids": [
+      "steam_public_build_24090743",
+      "steamcmd_anonymous_app_258550",
+      "installed_package_cfg_boundary",
+      "facepunch_creating_server",
+      "facepunch_security_launch_2025",
+      "facepunch_useful_commands",
+      "facepunch_server_browser_tags",
+      "facepunch_dns_records",
+      "facepunch_custom_icon",
+      "facepunch_custom_maps",
+      "facepunch_procedural_generation",
+      "facepunch_hidden_whitelist",
+      "facepunch_server_gamemodes",
+      "facepunch_wipe_timer",
+      "facepunch_rust_plus",
+      "facepunch_centralized_banning",
+      "facepunch_receiving_reports",
+      "facepunch_creative_mode",
+      "facepunch_tutorial_island",
+      "rust_bundles_json",
+      "rust_dedicated_streaming_assets_json",
+      "rust_dedicated_data_json_bundle",
+      "rust_dedicated_data_cfg_bundle",
+      "rust_server_bundle_json",
+      "rust_server_bundle_cfg",
+      "rust_cfg_root",
+      "rust_cfg_nested",
+      "rust_mono_browscap_ini",
+      "rust_runtime_initialize_on_loads_json",
+      "rust_scripting_assemblies_json",
+      "rust_mono_mconfig_xml"
+    ]
+  },
+  "coverage": {
+    "editable": 50,
+    "specialized": 4,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 14
+  },
+  "classifications": {
+    "editable": [
+      "facepunch_creating_server.server.hostname",
+      "facepunch_creating_server.server.description",
+      "facepunch_creating_server.server.maxplayers",
+      "facepunch_server_gamemodes.server.gamemode",
+      "facepunch_server_browser_tags.server.tags",
+      "facepunch_creating_server.server.url",
+      "facepunch_creating_server.server.headerimage",
+      "facepunch_custom_icon.server.logoimage",
+      "facepunch_dns_records.server.favoritesEndpoint",
+      "facepunch_creating_server.server.level",
+      "facepunch_custom_maps.server.levelurl",
+      "facepunch_creating_server.server.seed",
+      "facepunch_creating_server.server.worldsize",
+      "facepunch_creating_server.server.saveinterval",
+      "facepunch_procedural_generation.world.configfile",
+      "facepunch_server_browser_tags.server.pve",
+      "facepunch_security_launch_2025.-insecure",
+      "facepunch_hidden_whitelist.censorplayerlist",
+      "facepunch_creating_server.+rcon.password",
+      "facepunch_creating_server.rcon.web",
+      "facepunch_server_gamemodes.relationshipmanager.maxteamsize",
+      "facepunch_server_gamemodes.gamemodesoftcore.reclaim_fraction_main",
+      "facepunch_server_gamemodes.gamemodesoftcore.reclaim_fraction_belt",
+      "facepunch_server_gamemodes.gamemodesoftcore.reclaim_fraction_wear",
+      "facepunch_tutorial_island.server.tutorialEnabled",
+      "facepunch_wipe_timer.wipetimer.wipeDayofWeek",
+      "facepunch_wipe_timer.wipetimer.wipeHourofDay",
+      "facepunch_wipe_timer.wipetimer.wipeTimezone",
+      "facepunch_wipe_timer.wipetimer.wipecronoverride",
+      "facepunch_wipe_timer.wipetimer.wipeUnixTimestampOverride",
+      "facepunch_rust_plus.app.port",
+      "facepunch_rust_plus.app.publicip",
+      "facepunch_rust_plus.app.listenip",
+      "facepunch_centralized_banning.server.bansServerEndpoint",
+      "facepunch_centralized_banning.server.bansServerFailureMode",
+      "facepunch_centralized_banning.server.bansServerTimeout",
+      "facepunch_receiving_reports.server.printReportsToConsole",
+      "facepunch_receiving_reports.server.reportsServerEndpoint",
+      "facepunch_receiving_reports.server.reportsServerEndpointKey",
+      "facepunch_creative_mode.creative.allusers",
+      "facepunch_creative_mode.creative.alwaysonenabled",
+      "facepunch_creative_mode.creative.bypassholdtoplaceduration",
+      "facepunch_creative_mode.creative.freebuild",
+      "facepunch_creative_mode.creative.freeplacement",
+      "facepunch_creative_mode.creative.freerepair",
+      "facepunch_creative_mode.creative.unlimitedio",
+      "facepunch_creating_server.server.cfg extra lines",
+      "facepunch_creating_server.users.cfg extra lines",
+      "facepunch_useful_commands.bans.cfg extra lines",
+      "facepunch_creating_server.RustDedicated launch parameters"
+    ],
+    "specialized": [
+      "facepunch_creating_server.ownerid users.cfg",
+      "facepunch_creating_server.moderatorid users.cfg",
+      "facepunch_hidden_whitelist.global.skipqueueid users.cfg",
+      "facepunch_useful_commands.banid bans.cfg"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "facepunch_creating_server.server.identity",
+      "facepunch_creating_server.server.port",
+      "facepunch_creating_server.server.queryport",
+      "facepunch_creating_server.rcon.port",
+      "facepunch_creating_server.-batchmode/-nographics/-logfile",
+      "facepunch_creating_server.server.ip/rcon.ip",
+      "facepunch_creating_server.runtime find-only convars",
+      "facepunch_creating_server.weather_chance variables",
+      "facepunch_custom_maps.local file:/// custom map hosting",
+      "facepunch_procedural_generation.world.configstring",
+      "facepunch_rust_plus.app.id",
+      "facepunch_creative_mode.creative.toggle* commands",
+      "facepunch_tutorial_island.tut browser tag automation",
+      "facepunch_useful_commands.ad hoc admin console commands"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Rust 验收",
+    "server_description": "原生配置覆盖验收",
+    "max_players": 250,
+    "rcon_password": "acceptance-rust-rcon",
+    "rcon_web": true,
+    "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}",
+    "owner_entries": "76561198077777777|Host|Created by LanGame",
+    "moderator_entries": "76561198011111111|Moderator|Weekend",
+    "skip_queue_entries": "76561198000000000|Priority Friend",
+    "banned_entries": "76561198022222222|Griefing|Repeated",
+    "custom_launch_flags": ""
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/server.cfg",
+        "format": "text",
+        "fragments": [
+          "server.hostname \"LanGame Rust 验收\"",
+          "server.maxplayers 250",
+          "server.writecfg"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/users.cfg",
+        "format": "text",
+        "fragments": [
+          "ownerid 76561198077777777 \"Host\" \"Created by LanGame\"",
+          "moderatorid 76561198011111111 \"Moderator\" \"Weekend\"",
+          "global.skipqueueid 76561198000000000 \"Priority Friend\""
+        ]
+      },
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/bans.cfg",
+        "format": "text",
+        "fragments": [
+          "banid 76561198022222222 \"LanGame\" \"Griefing|Repeated\""
+        ]
+      },
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/world-config.json",
+        "format": "json",
+        "keys": {
+          "MainRoads": false,
+          "FutureNative.keep": true
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RustDedicated.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-logfile",
+        "-",
+        "+server.ip",
+        "0.0.0.0",
+        "+server.identity",
+        "acceptance-rust",
+        "+world.configfile",
+        "world-config.json",
+        "+server.port",
+        "28015",
+        "+server.queryport",
+        "28017",
+        "+rcon.port",
+        "28016",
+        "+rcon.password",
+        "acceptance-rust-rcon",
+        "+rcon.web",
+        "true"
+      ]
+    }
+  }
+}

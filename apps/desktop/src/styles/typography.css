@@ -1,0 +1,117 @@
+/* Typography roles stay in logical pixels as Windows DPI and viewport size change.
+   Layout responds to available space; ordinary text never scales with the viewport. */
+@font-face {
+  font-family: "Inter";
+  src: url("../assets/fonts/InterVariable.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("../assets/fonts/InterVariable-Italic.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  --font-sans: "Inter", "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "SFMono-Regular", Menlo, Monaco, "Liberation Mono", "Microsoft YaHei UI", monospace;
+
+  --text-page-title: 1.375rem;
+  --text-section-title: 1rem;
+  --text-body: 0.8125rem;
+  --text-secondary: 0.75rem;
+  --text-meta: 0.75rem;
+  --text-code: 0.8125rem;
+
+  /* Prominent metrics and decorative artwork have their own presentation roles. */
+  --text-display: 1.75rem;
+  --text-hero: 2.5rem;
+  --text-artwork: 7.5rem;
+  --text-dial-primary: 3.375rem;
+  --text-dial-focused: 2.5rem;
+
+  /* Button density is independent of the surrounding panel geometry. */
+  --control-height: 30px;
+  --control-height-compact: 28px;
+  --control-padding-inline: 10px;
+  --control-padding-inline-compact: 8px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --leading-solid: 1;
+  --leading-heading: 1.25;
+  --leading-control: 1.25;
+  --leading-compact: 1.4;
+  --leading-body: 1.5;
+  --leading-prose: 1.65;
+
+  font-size: 16px;
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+}
+
+body {
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-body);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+button {
+  font-weight: var(--font-weight-medium);
+  line-height: var(--leading-control);
+}
+input, select, textarea { font-weight: var(--font-weight-regular); }
+strong, b { font-weight: var(--font-weight-semibold); }
+
+h1 {
+  font-size: var(--text-page-title);
+}
+
+h2,
+h3 {
+  font-size: var(--text-section-title);
+}
+
+h4,
+h5,
+h6 {
+  font-size: var(--text-body);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+}
+
+pre,
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+}
+
+pre {
+  line-height: var(--leading-body);
+}

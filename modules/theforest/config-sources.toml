@@ -1,0 +1,272 @@
+status = "exhaustive_verified"
+last_verified = "2026-07-13"
+notes = "SteamCMD public app info and the installed manifest match at buildid 3488796 on 2026-07-13. The current Assembly-CSharp.dll embeds the exact generated server.cfg inventory and defaults; its SteamDSConfig accessors also prove that the consumed cheat key is allowCheats and that the generated serverContact line has no current accessor. The historical Steam community guide independently documents the operator surface and -configfilepath startup flow. A 2026-09-08 isolated exact-build A2S probe established the zero-player query contract; read-only player queries are now enabled. Host-callable moderation remains unavailable."
+
+[[sources]]
+id = "native_loader_control_20261001"
+kind = "install_probe"
+path = "modules/theforest/control/LanGameTheForestControl.cs"
+authority = "installed_build_3488796_metadata_and_isolated_native_loader_probe"
+description = "2026-10-01 exact Assembly-CSharp hash BC0C9B79B125CE9A6D96D532359FDE8A539159378BD9F558309572B9744A9D7E: enabled DllModLoader in level0 loads DllMods DLLs and invokes exported static entry methods whose names start with two underscores. Isolated snapshot 03cddfb41cb4 logged execution of an inert marker and Dedicated Server Running. Checkpoint synchronously renames the old resume file and writes its replacement when serialization is not suspended; native shutdown is a separate coroutine. The BCL-only bridge accepts help, status, save and shutdown over owned stdin on the Unity main thread. Isolated snapshot 899e30c927e4 passed current-run help/status/save acknowledgements, changed nonempty checkpoint data in the declared saves directory, a 30-second observation, two native saves and normal shutdown with matching run identity and exit code zero in 2454 ms. The owned stdin reader is cancelled and joined before the native shutdown coroutine. The game build and bridge remain fingerprint-gated; this isolated probe does not establish multiplayer/client or UI behavior. The installed old Mono requires ReferenceEquals, the one-argument Monitor.Enter and a bridge-owned save callback delegate; emitted type/method checks cover these differences. Installed FileStream.SafeFileHandle creates another owning wrapper without transferring its raw handle, so metadata uses independently owned Win32 handles across native garbage collections. Real anonymous-pipe cancellation tests cover an idle reader and partial frame. The showLogs option was excluded as a shutdown fix because it attached the parent console and failed managed console ownership verification."
+
+[[sources]]
+id = "native_world_readiness_20261001"
+kind = "install_probe"
+path = "modules/theforest/control/LanGameTheForestControl.cs"
+authority = "installed_build_3488796_metadata_and_existing_instance_observation"
+description = "Existing-instance run 128 on 2026-10-01 reached the native Dedicated Server Running banner and previous ready health while the bridge status still reported world_ready=False and serialization_suspended=False. Help and subsequent normal shutdown worked, but the earlier readiness claim was invalid. Installed IL confirms DedicatedHost is set during bootstrap and the Running banner precedes Scene.FinishGameLoad. The bridge now observes DedicatedHost, FinishGameLoad and unsuspended serialization on the Unity main thread together with its live owned input reader; exact world_ready=True and world_ready=False transition lines drive health and startup checks. Status replies with additional fields are not standalone transition markers. A C# regression calls the production idle MoveNext path with native-state fixtures: the previous implementation emitted no transition, and the corrected implementation verifies all gates, one emission per change and revocation. Final exported source 453921bdccc0, existing-instance run 130, verified native and backend readiness, a 30-second stable observation, visible CMD help/status/save with fresh acknowledgements and status world_ready=True serialization_suspended=False, a 196240-byte manual save, and normal exit code zero in 2688 ms. No independent native window was visible; all 647 event lines matched the persisted log, and three stopped UI snapshots exactly matched the retained same-source tail. This does not establish multiplayer/client or save-restart recovery behavior."
+
+[[sources]]
+id = "native_save_directory_20261001"
+kind = "install_probe"
+path = "modules/theforest/templates/server.cfg.hbs"
+authority = "installed_build_3488796_metadata_and_isolated_native_save_probe"
+description = "Installed SaveSlotUtils.GetUserPath returns nonempty SteamDSConfig.SaveFolderPath unchanged; GetLocalSlotPath concatenates that string directly with player mode, a separator, save slot and a final separator. The storage renderer emits paths.saves_dir without a trailing separator. The previous template therefore placed multiplayer saves in a sibling savesMultiplayer directory, outside the declared saves inventory. Snapshot 95936879caf1 received the bridge's new-file-identity save proof but failed that inventory check. The template now appends a separator. Startup rejects nonempty or non-plain old sibling save directories with recovery instructions rather than silently starting a new world. Snapshot 899e30c927e4 then verified the new checkpoint beneath the declared Multiplayer save slot, with both manual save and shutdown-save acknowledgements. No existing worlds are automatically moved or overwritten."
+
+[[sources]]
+id = "configuration_review_20260930"
+kind = "documentation"
+path = "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=242760&count=6&maxlength=0&feeds=steam_community_announcements"
+authority = "first_party_documentation_and_read_only_installed_package_review"
+description = "2026-09-30: The installed app 556450 manifest remains build 3488796, matching the existing exact-build configuration evidence. Endnight publisher news explicitly states that the base game and its dedicated server were not affected by the 2025-10-03 Unity security update; the affected Forest product was VR. No later dedicated-server configuration change was established. The native allowCheats spelling and exclusion of unconsumed serverContact remain unchanged."
+
+[[sources]]
+id = "native_query_readiness_20260920"
+kind = "install_probe"
+path = "modules/theforest/smoke.toml"
+authority = "isolated_installed_build_3488796_and_steamworks_api"
+url = "https://partner.steamgames.com/doc/api/steam_gameserver"
+description = "2026-09-20 independent package-copy run of build 3488796 (source snapshot 1e5c0f3da1c3) kept both configured gameplay/query UDP sockets owned by the managed process and returned a valid A2S_INFO reply, while the configured Steam coordination port had no persistent owned listener. Installed CoopDedicatedServerStarter.Start IL still passes all three configured ports to GameServer.Init. Steamworks documents distinct coordination, gameplay, and browser-query purposes; readiness therefore verifies the owned gameplay/query endpoints and an actual A2S reply. This does not assert Internet listing or client join coverage, or remove the configured Steam port."
+
+[[sources]]
+id = "steam_public_build_3488796"
+kind = "install_probe"
+path = "steamcmd +login anonymous +app_info_update 1 +app_info_print 556450 +quit"
+authority = "steam_public_branch"
+description = "2026-07-13 Steam public app info reports The Forest Dedicated Server public buildid 3488796; app change number 34351876 was current on 2026-05-21."
+
+[[sources]]
+id = "steamcmd_anonymous_app_556450"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_556450.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 current installed manifest for The Forest Dedicated Server: StateFlags 4, buildid and TargetBuildID 3488796, SizeOnDisk 1762277705, depots 1004 and 556451."
+
+[[sources]]
+id = "exact_build_server_cfg_3488796"
+kind = "config_file"
+path = "modules/theforest/reference-configs/upstream-server.cfg"
+authority = "installed_server_binary_static_initializer"
+description = "Generated defaults embedded in SteamDSConfig.CreateServerCfg in Assembly-CSharp.dll SHA256 BC0C9B79B125CE9A6D96D532359FDE8A539159378BD9F558309572B9744A9D7E."
+
+[[sources]]
+id = "server_cfg"
+kind = "config_file"
+path = "server.cfg"
+authority = "steam_community_historical_dedicated_server_guide"
+description = "Historical Steam community reference for ports, identity, access, saves, gameplay toggles, and performance targets. Exact current behavior is gated by the installed binary evidence above."
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=907906289"
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "TheForestDedicatedServer.exe command line"
+authority = "langame_launch_configuration"
+description = "Operator-provided raw launch arguments appended to TheForestDedicatedServer.exe."
+
+[[sources]]
+id = "mono_browscap_ini"
+kind = "config_file"
+path = "TheForestDedicatedServer_Data/Mono/etc/mono/browscap.ini"
+authority = "installed_the_forest_dedicated_server_package"
+description = "Mono runtime browscap fallback shipped with The Forest dedicated server."
+
+[[sources]]
+id = "mono_mconfig_xml"
+kind = "config_file"
+path = "TheForestDedicatedServer_Data/Mono/etc/mono/mconfig/config.xml"
+authority = "installed_the_forest_dedicated_server_package"
+description = "Mono runtime config.xml shipped with The Forest dedicated server."
+
+[[items]]
+source = "server_cfg"
+key = "serverName"
+schema_key = "server_name"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "serverPlayers"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "serverPassword"
+schema_key = "server_password"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "serverPasswordAdmin"
+schema_key = "admin_password"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "serverSteamAccount"
+schema_key = "steam_account_token"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "difficulty"
+schema_key = "difficulty"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "slot"
+schema_key = "save_slot"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "initType"
+schema_key = "init_type"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "serverAutoSaveInterval"
+schema_key = "autosave_interval_minutes"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "enableVAC"
+schema_key = "vac_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "showLogs"
+schema_key = "show_logs"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "veganMode"
+schema_key = "vegan_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "vegetarianMode"
+schema_key = "vegetarian_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "resetHolesMode"
+schema_key = "reset_holes_on_load"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "treeRegrowMode"
+schema_key = "tree_regrowth"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "allowBuildingDestruction"
+schema_key = "building_destruction"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "allowEnemiesCreativeMode"
+schema_key = "enemies_in_creative"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "allowCheats"
+schema_key = "allow_cheats"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "realisticPlayerDamage"
+schema_key = "realistic_player_damage"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "targetFpsIdle"
+schema_key = "idle_target_fps"
+surface = "config_file"
+
+[[items]]
+source = "server_cfg"
+key = "targetFpsActive"
+schema_key = "active_target_fps"
+surface = "config_file"
+
+[[items]]
+source = "launch_args"
+key = "extra_launch_args"
+schema_key = "extra_launch_args"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "server_cfg"
+key = "serverIP"
+reason = "Bind address and game port are LanGame instance network state and are rendered as instance.bind_ip:ports.game.port."
+
+[[exclusions]]
+source = "server_cfg"
+key = "serverSteamPort"
+reason = "Steam port is LanGame instance network state and is rendered from ports.steam.port."
+
+[[exclusions]]
+source = "server_cfg"
+key = "serverGamePort"
+reason = "Game port is LanGame instance network state and is rendered from ports.game.port."
+
+[[exclusions]]
+source = "server_cfg"
+key = "serverQueryPort"
+reason = "Query port is LanGame instance network state and is rendered from ports.query.port."
+
+[[exclusions]]
+source = "server_cfg"
+key = "saveFolderPath"
+reason = "Save path is instance storage state and is rendered from paths.saves_dir with the trailing separator required by native path concatenation."
+
+[[exclusions]]
+source = "exact_build_server_cfg_3488796"
+key = "serverContact"
+reason = "The current binary still emits this legacy example line but SteamDSConfig has no accessor or other consumer for it, so presenting it as an effective server setting would be misleading."
+
+[[sources]]
+id = "a2s_player_probe_3488796"
+kind = "install_probe"
+path = "Steam dedicated-server build 3488796: isolated loopback A2S_INFO and A2S_PLAYER"
+authority = "installed_windows_dedicated_server"
+description = "2026-09-08 isolated blank-world probe of the installed build returned A2S_INFO with zero current players and an A2S_PLAYER response FF FF FF FF 44 00. The probe used separate files, saves and ports. Populated names are not yet verified; the runtime collector publishes only actual returned names, compares against INFO counts, and marks missing identities incomplete. No stable account identifiers or moderation are inferred from A2S. The temporary server was stopped after the probe."
+
+[[sources]]
+id = "semantic_review_20260930"
+kind = "documentation"
+path = "https://steamcommunity.com/sharedfiles/filedetails/?id=907906289"
+authority = "native_package_and_documentation_semantic_review"
+description = "2026-09-30: 22 presentation entries reviewed in EN/ZH against the referenced package/docs. New dedicated EN/ZH catalogs replace raw native-key labels for all 22 fields. Vegan disables enemies all day; vegetarian suppresses daytime enemies. New/Continue, floor-hole reset and sleep-time tree regrowth clarified. Empty and occupied FPS, Steam anonymous token, developer console, creative enemies and building damage distinguished. Boundaries: No new real server/client behavioral run was performed; older guide examples are not accepted as current defaults."
+
+[[sources]]
+id = "semantic_reference_20260930_1"
+kind = "documentation"
+path = "https://steamcommunity.com/sharedfiles/filedetails/?id=907906289"
+authority = "supplementary_community_reference"
+description = "2026-09-30: Supplementary dedicated-server guide; old example values do not override the current native baseline."

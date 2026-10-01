@@ -1,0 +1,15 @@
+[package]
+name = "app-network"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+httpdate = "=1.0.3"
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.11.0"
+thiserror.workspace = true
+tokio = { workspace = true, features = ["fs"] }

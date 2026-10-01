@@ -1,0 +1,294 @@
+{
+  "verified_on": "2026-09-08",
+  "steam_app_id": 2278520,
+  "steam_build_id": 23178631,
+  "readme_version": "0.9.0.0",
+  "server_executable_sha256": "001c1b40ed091d8c1aee583adde3800d7c858ae2c7f4dff54fca2938b2be1637",
+  "method": "Each case was saved and launched through LanGame against an isolated dedicated-server instance. All four preset roles used non-empty generated passwords and all five permissions enabled. The native process rewrote omitted custom permissions before its configuration check. Only permission values and process outcomes are retained.",
+  "observed_rule": "The current build rejects a public role whose enabled permission count exceeds that of any password-protected role. Equal counts are allowed even for disjoint permissions. This is a build-specific observed external contract, not an upstream guarantee for future versions.",
+  "custom_permission_defaults": {
+    "canKickBan": false,
+    "canAccessInventories": false,
+    "canEditWorld": true,
+    "canEditBase": false,
+    "canExtendBase": false
+  },
+  "official_roles_documentation": "https://enshrouded.zendesk.com/hc/en-us/articles/19191581489309-Server-Roles-Configuration",
+  "cases": [
+    {
+      "name": "disjoint",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Running",
+      "native_permission_error": false
+    },
+    {
+      "name": "subset",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Running",
+      "native_permission_error": false
+    },
+    {
+      "name": "public_omitted",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {},
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Stopped",
+      "native_permission_error": true
+    },
+    {
+      "name": "protected_omitted",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {},
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Running",
+      "native_permission_error": false
+    },
+    {
+      "name": "disjoint_reversed",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": false,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Running",
+      "native_permission_error": false
+    },
+    {
+      "name": "single_kick_vs_two",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": true,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": true,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Stopped",
+      "native_permission_error": true
+    },
+    {
+      "name": "two_vs_single_kick",
+      "roles": [
+        {
+          "password_present": true,
+          "input_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": false,
+            "canAccessInventories": true,
+            "canEditWorld": true,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        },
+        {
+          "password_present": false,
+          "input_permissions": {
+            "canKickBan": true,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          },
+          "native_permissions": {
+            "canKickBan": true,
+            "canAccessInventories": false,
+            "canEditWorld": false,
+            "canEditBase": false,
+            "canExtendBase": false
+          }
+        }
+      ],
+      "native_status": "Running",
+      "native_permission_error": false
+    }
+  ]
+}

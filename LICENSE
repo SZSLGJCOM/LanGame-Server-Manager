@@ -1,0 +1,142 @@
+LanGame Source-Available License 1.0
+
+Copyright (c) 2025-2026 LanGame Team
+
+1. Scope
+
+This license covers the project-authored source code, associated documentation,
+and executables made from that code that are provided under this license
+(the "Software"), only to the extent the relevant copyright holders are
+entitled to grant these rights. "Official project" means LanGame Server
+Manager maintained by LanGame Team, not a downstream fork.
+
+Separately licensed material is excluded. In particular, third-party code,
+fonts, models, game software, data, and media retain their own terms. The
+project-owned assets specifically listed in NOTICE are separately covered by
+its brand-use permission or MIT grant, as identified there. This license does
+not change ownership of your server configuration, saves, logs, or other user
+data.
+
+This is a source-available license with use and redistribution restrictions.
+It is not an Open Source Initiative open-source license. No rights are granted
+except as expressly stated here or in a separate applicable permission.
+
+2. Permitted noncommercial use
+
+Subject to this license, you may, without paying a license fee, view, download,
+copy, build, run, study, and privately modify the Software for your own
+noncommercial purposes. Private modifications need not be published or
+submitted. You may contribute improvements to the official project under
+section 5.
+
+You may let players connect to game servers that you operate for these
+noncommercial purposes. Player access to a managed game server alone is not
+distribution of the Software. Paying your own hosting, electricity, internet,
+or model-provider costs does not by itself make your use commercial.
+
+You may share an official, already publicly released distribution unchanged,
+in full, and free of charge, preserving its license, NOTICE, and copyright
+notices. This does not permit repackaging, substituting your own builds,
+releasing unpublished material, or commercial use.
+
+3. Commercial use requires separate permission
+
+Commercial use is not granted. You must obtain separate written authorization
+from the relevant rightsholders before any commercial use, including:
+
+- use in a business's operations, internally or on behalf of customers;
+- operating game servers that charge entry, subscriptions, memberships, or
+  payments for server-related items, privileges, or other benefits;
+- selling or renting the Software, commercial hosting or management panels,
+  or using the Software to provide paid deployment, maintenance, or services;
+- operating servers to earn advertising, commercial sponsorship, or other
+  business revenue.
+
+These restrictions apply to both unmodified and modified Software. Charging
+only to recover operating costs, or failing to make a profit, does not exempt
+a paid server or business activity. Free personal or community use with no
+commercial purpose remains permitted under section 2.
+
+An authorization request, donation, or contribution does not itself grant
+commercial rights. Requests may be made to the official project's maintainers
+through the repository's private contact request process. A maintainer may
+grant only rights they own or have been authorized to grant.
+
+4. No independent modified releases
+
+Except for section 5 and rights preserved by section 6, you may not distribute,
+publish, sublicense, or make modified versions available to others as an
+independent release, product, download, or hosted management service. This
+includes modified source code, binaries, installers, containers, and packages,
+as well as other software incorporating protected portions of this Software.
+
+The restriction applies whether a release is free or paid, whether its source
+is public or private, and whether it uses the LanGame name or a different name.
+Publishing source code does not make an independent modified release permitted.
+
+5. Contributions
+
+You may share patches with the official project's maintainers. You may also
+create and maintain source forks, branches, and pull requests solely to
+propose, discuss, review, and submit improvements to the official project.
+Keep the license and notices, identify the contribution purpose and changes,
+and do not use this permission to publish independent releases or build
+artifacts for general distribution. Submission does not promise acceptance.
+
+Intentionally offering a contribution for review permits the official
+maintainers to receive, copy, and review it for that purpose. It does not by
+itself accept an additional commercial grant or transfer your copyright.
+
+For inclusion of new contributions, read the repository-root
+CONTRIBUTOR_AGREEMENT.md (LanGame Contributor Agreement 1.0) and expressly
+confirm the agreement and covered contribution as described in CONTRIBUTING.md.
+When accepted, that separate agreement permits the Official Maintainers to
+use, modify, and distribute the contribution within LanGame Server Manager,
+including official commercial versions and written commercial-use permission
+for customers. It does not authorize unrelated products, separate sale of a
+contribution, arbitrary relicensing, customer sublicensing, or independent
+modified releases by customers. The public receives no additional commercial
+or brand rights merely because a contribution was accepted.
+
+A PR, discussion, private modification, or silence does not itself accept
+that agreement. Prior contributions retain their existing permissions; any
+additional grant for them requires the relevant rightsholder's explicit
+confirmation of the covered contribution. Contributors retain copyright and
+may independently use their own original material, without acquiring rights
+to redistribute the rest of the project.
+
+6. Notices and reserved rights
+
+Preserve the copyright, license, and applicable NOTICE text in copies and
+permitted contributions. This license does not override third-party or
+separate asset licenses, legal exceptions that cannot be excluded, or rights
+independently granted under an applicable hosting platform's terms, including
+GitHub's rights to view and fork public repositories within its service.
+
+Nothing here revokes rights already lawfully granted for copies previously
+provided under MIT or another license. This license applies to copies offered
+under these terms; it cannot retroactively withdraw earlier grants.
+
+No permission to claim official status, sponsorship, or endorsement is
+granted. This license does not grant trademark rights or patent rights beyond
+those, if any, necessarily implied by applicable law. A separate written
+agreement may grant additional rights only within its stated scope.
+
+7. Termination
+
+The permissions granted to you by this license terminate if you breach its
+conditions. You must then stop exercising those permissions unless the
+relevant rightsholders reinstate them in writing. Termination does not cancel
+independently granted rights described in section 6, erase ownership of your
+contributions or user data, or require disclosure of private modifications.
+The restrictions, ownership reservations, and disclaimer continue to apply.
+
+8. Disclaimer
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS",
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. THE AUTHORS AND
+COPYRIGHT HOLDERS ARE NOT LIABLE FOR CLAIMS, DAMAGES, OR OTHER LIABILITY
+ARISING FROM THE SOFTWARE OR ITS USE, WHETHER IN CONTRACT, TORT, OR OTHERWISE.
+THIS DOES NOT EXCLUDE LIABILITY OR RIGHTS THAT APPLICABLE LAW DOES NOT ALLOW
+TO BE EXCLUDED.

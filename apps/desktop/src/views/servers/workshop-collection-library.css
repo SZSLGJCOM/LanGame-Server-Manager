@@ -1,0 +1,31 @@
+.mw-collection-member-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.mw-collection-member-row > .mw-collection-member {
+  min-height: var(--control-height);
+  padding: 4px var(--control-padding-inline-compact);
+}
+
+.mw-collection-member-row > .mw-collection-member > svg,
+.mw-collection-member-row > .mw-collection-member > small {
+  flex-shrink: 0;
+}
+
+.mw-collection-member-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--control-padding-inline-compact);
+  padding: 4px var(--control-padding-inline-compact);
+}
+
+.mw-collection-member-actions > .mw-entry-enabled-toggle:focus-visible,
+.mw-collection-member-actions > .mw-entry-remove-button:focus-visible,
+.mw-collection-enabled-toggle:focus-visible {
+  outline: 2px solid var(--shell-focus);
+  outline-offset: 2px;
+}

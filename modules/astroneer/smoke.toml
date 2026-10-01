@@ -1,0 +1,26 @@
+schema_version = 1
+module_id = "astroneer"
+primary_process_key = "main"
+readiness_timeout_ms = 180000
+poll_interval_ms = 1000
+stability_window_ms = 3000
+probe_mode = "all"
+
+# A fresh server answers player queries before selecting its active world.
+# Require both native state replies to agree, without claiming disk persistence.
+[[probes]]
+id = "native-console-players"
+kind = "astroneer_players"
+port_name = "console"
+
+[[probes]]
+id = "active-world-selected"
+kind = "astroneer_world"
+port_name = "console"
+
+[[probes]]
+id = "game-endpoint"
+kind = "process_endpoint"
+process_key = "main"
+port_name = "game"
+protocol = "udp"

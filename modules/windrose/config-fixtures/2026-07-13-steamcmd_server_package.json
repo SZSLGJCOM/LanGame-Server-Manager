@@ -1,0 +1,268 @@
+{
+  "fixture_version": 1,
+  "module_id": "windrose",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "Steam build 24094403 / guide game version 0.10.0.5.120-073042fb; world identity spelling rechecked against native build 24913903 on 2026-09-30",
+    "source_ids": [
+      "steamcmd_server_package",
+      "configuration_review_20260930",
+      "server_description",
+      "world_description",
+      "admin_surface_gap",
+      "native_bootstrap_and_stdout_20261001",
+      "native_console_quit_20261001"
+    ]
+  },
+  "settings": {
+    "server_name": "海风测试服 ⚓",
+    "server_password": "",
+    "invite_code": "WindR5A1",
+    "direct_connect_enabled": true,
+    "p2p_proxy_address": "",
+    "direct_connection_proxy_address": "",
+    "max_players": 8,
+    "user_selected_region": "EU",
+    "world_island_id": "E24A22C9C8D3448951AFD002162576D5",
+    "world_name": "海风群岛 ⚓",
+    "world_preset_type": "Medium",
+    "coop_quests": false,
+    "easy_explore": true,
+    "mob_health_multiplier": 5.0,
+    "mob_damage_multiplier": 0.2,
+    "ship_health_multiplier": 0.4,
+    "ship_damage_multiplier": 2.5,
+    "boarding_difficulty_multiplier": 3.25,
+    "coop_stats_correction_modifier": 2.0,
+    "coop_ship_stats_correction_modifier": 0.0,
+    "combat_difficulty": "Hard",
+    "auto_load_latest_backup_if_has_broken": true,
+    "allow_multiple_server_instances": false
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "R5/ServerDescription.json",
+        "content": {
+          "Version": 1,
+          "DeploymentId": "build-owned-deployment",
+          "UnknownServerRoot": {
+            "preserve": true
+          },
+          "ServerDescription_Persistent": {
+            "PersistentServerId": "EXISTING-SERVER-ID",
+            "WorldIslandId": "E24A22C9C8D3448951AFD002162576D5",
+            "ServerName": "Before",
+            "UnknownPersistent": "keep-me",
+            "DirectConnectionServerAddress": "native-reserved-value"
+          }
+        }
+      },
+      {
+        "root": "install",
+        "path": "R5/Saved/SaveProfiles/Default/RocksDB_v2/0.10.0/Worlds/E24A22C9C8D3448951AFD002162576D5/WorldDescription.json",
+        "content": {
+          "Version": 1,
+          "UnknownWorldRoot": [
+            1,
+            2,
+            3
+          ],
+          "WorldDescription": {
+            "islandId": "E24A22C9C8D3448951AFD002162576D5",
+            "WorldName": "Before",
+            "CreationTime": 639118875766649980,
+            "WorldPresetType": "Medium",
+            "UnknownWorldDescription": {
+              "nested": "keep-me"
+            },
+            "WorldSettings": {
+              "UnknownSettings": true,
+              "BoolParameters": {
+                "{\"TagName\": \"WDS.Parameter.Coop.SharedQuests\"}": true,
+                "{\"TagName\": \"WDS.Parameter.EasyExplore\"}": false,
+                "UnknownBool": true
+              },
+              "FloatParameters": {
+                "{\"TagName\": \"WDS.Parameter.MobHealthMultiplier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.MobDamageMultiplier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.ShipsHealthMultiplier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.ShipsDamageMultiplier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.BoardingDifficultyMultiplier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.Coop.StatsCorrectionModifier\"}": 1.0,
+                "{\"TagName\": \"WDS.Parameter.Coop.ShipStatsCorrectionModifier\"}": 1.0,
+                "UnknownFloat": 9.25
+              },
+              "TagParameters": {
+                "{\"TagName\": \"WDS.Parameter.CombatDifficulty\"}": {
+                  "TagName": "WDS.Parameter.CombatDifficulty.Normal",
+                  "UnknownCombat": "keep-me"
+                },
+                "UnknownTag": {
+                  "TagName": "Unknown.Value"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "lifecycle": {
+    "save_stage": "Validate one exact existing world and write a pending update plan while leaving both native JSON files unchanged.",
+    "pre_start": "After the instance settings transaction commits and while the instance is stopped, atomically stage both native JSON files and run the official R5WorldDescriptionUpdater.exe before spawning WindroseServer.exe."
+  },
+  "coverage": {
+    "editable": 11,
+    "specialized": 12,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 13
+  },
+  "classifications": {
+    "editable": [
+      "server_description.ServerName",
+      "server_description.Password",
+      "server_description.InviteCode",
+      "server_description.UseDirectConnection",
+      "server_description.P2pProxyAddress",
+      "server_description.DirectConnectionProxyAddress",
+      "server_description.MaxPlayerCount",
+      "server_description.UserSelectedRegion",
+      "server_description.WorldIslandId",
+      "server_description.AutoLoadLatestBackupIfHasBroken",
+      "server_description.CanLaunchMultipleServerInstances"
+    ],
+    "specialized": [
+      "world_description.WorldName",
+      "world_description.WorldPresetType",
+      "world_description.WorldSettings.BoolParameters.Coop.SharedQuests",
+      "world_description.WorldSettings.BoolParameters.EasyExplore",
+      "world_description.WorldSettings.FloatParameters.MobHealthMultiplier",
+      "world_description.WorldSettings.FloatParameters.MobDamageMultiplier",
+      "world_description.WorldSettings.FloatParameters.ShipsHealthMultiplier",
+      "world_description.WorldSettings.FloatParameters.ShipsDamageMultiplier",
+      "world_description.WorldSettings.FloatParameters.BoardingDifficultyMultiplier",
+      "world_description.WorldSettings.FloatParameters.Coop.StatsCorrectionModifier",
+      "world_description.WorldSettings.FloatParameters.Coop.ShipStatsCorrectionModifier",
+      "world_description.WorldSettings.TagParameters.CombatDifficulty"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "steamcmd_server_package.-log",
+      "server_description.Version",
+      "server_description.DeploymentId",
+      "server_description.PersistentServerId",
+      "server_description.IsPasswordProtected",
+      "server_description.DirectConnectionServerPort",
+      "server_description.DirectConnectionServerAddress",
+      "world_description.islandId",
+      "world_description.CreationTime",
+      "admin_surface_gap.list/kick/ban runtime controls",
+      "steamcmd_server_package.-stdout",
+      "steamcmd_server_package.-FullStdOutLogOutput",
+      "steamcmd_server_package.-NewConsole"
+    ]
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "ServerDescription.json",
+        "format": "json",
+        "keys": {
+          "/ServerDescription_Persistent/ServerName": "海风测试服 ⚓",
+          "/ServerDescription_Persistent/WorldIslandId": "E24A22C9C8D3448951AFD002162576D5",
+          "/ServerDescription_Persistent/MaxPlayerCount": 8,
+          "/ServerDescription_Persistent/IsPasswordProtected": false,
+          "/ServerDescription_Persistent/DirectConnectionServerPort": 7777
+        }
+      },
+      {
+        "root": "install",
+        "path": "R5/ServerDescription.json",
+        "format": "json",
+        "keys": {
+          "/DeploymentId": "build-owned-deployment",
+          "/UnknownServerRoot/preserve": true,
+          "/ServerDescription_Persistent/UnknownPersistent": "keep-me",
+          "/ServerDescription_Persistent/DirectConnectionServerAddress": "native-reserved-value",
+          "/ServerDescription_Persistent/PersistentServerId": "EXISTING-SERVER-ID",
+          "/ServerDescription_Persistent/ServerName": "Before",
+          "/ServerDescription_Persistent/WorldIslandId": "E24A22C9C8D3448951AFD002162576D5"
+        }
+      },
+      {
+        "root": "install",
+        "path": "R5/Saved/SaveProfiles/Default/RocksDB_v2/0.10.0/Worlds/E24A22C9C8D3448951AFD002162576D5/WorldDescription.json",
+        "format": "json",
+        "keys": {
+          "/UnknownWorldRoot/2": 3,
+          "/WorldDescription/UnknownWorldDescription/nested": "keep-me",
+          "/WorldDescription/WorldSettings/BoolParameters/UnknownBool": true,
+          "/WorldDescription/WorldSettings/FloatParameters/UnknownFloat": 9.25,
+          "/WorldDescription/WorldSettings/TagParameters/UnknownTag/TagName": "Unknown.Value",
+          "/WorldDescription/islandId": "E24A22C9C8D3448951AFD002162576D5",
+          "/WorldDescription/WorldName": "Before",
+          "/WorldDescription/WorldPresetType": "Medium",
+          "/WorldDescription/WorldSettings/BoolParameters/{\"TagName\": \"WDS.Parameter.Coop.SharedQuests\"}": true,
+          "/WorldDescription/WorldSettings/BoolParameters/{\"TagName\": \"WDS.Parameter.EasyExplore\"}": false,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.MobHealthMultiplier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.MobDamageMultiplier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.ShipsHealthMultiplier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.ShipsDamageMultiplier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.BoardingDifficultyMultiplier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.Coop.StatsCorrectionModifier\"}": 1.0,
+          "/WorldDescription/WorldSettings/FloatParameters/{\"TagName\": \"WDS.Parameter.Coop.ShipStatsCorrectionModifier\"}": 1.0,
+          "/WorldDescription/WorldSettings/TagParameters/{\"TagName\": \"WDS.Parameter.CombatDifficulty\"}/TagName": "WDS.Parameter.CombatDifficulty.Normal",
+          "/WorldDescription/WorldSettings/TagParameters/{\"TagName\": \"WDS.Parameter.CombatDifficulty\"}/UnknownCombat": "keep-me"
+        }
+      },
+      {
+        "root": "config",
+        "path": "windrose-world-update-plan.json",
+        "format": "json",
+        "keys": {
+          "/version": 1,
+          "/pending": true,
+          "/world_island_id": "E24A22C9C8D3448951AFD002162576D5",
+          "/world_description_relative_path": "R5/Saved/SaveProfiles/Default/RocksDB_v2/0.10.0/Worlds/E24A22C9C8D3448951AFD002162576D5/WorldDescription.json",
+          "/world_parameters/world_name": "海风群岛 ⚓",
+          "/world_parameters/world_preset_type": "Medium",
+          "/world_parameters/coop_quests": false,
+          "/world_parameters/easy_explore": true,
+          "/world_parameters/mob_health_multiplier": 5.0,
+          "/world_parameters/mob_damage_multiplier": 0.2,
+          "/world_parameters/ship_health_multiplier": 0.4,
+          "/world_parameters/ship_damage_multiplier": 2.5,
+          "/world_parameters/boarding_difficulty_multiplier": 3.25,
+          "/world_parameters/coop_stats_correction_modifier": 2.0,
+          "/world_parameters/coop_ship_stats_correction_modifier": 0.0,
+          "/world_parameters/combat_difficulty": "Hard"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "WindroseServer.exe",
+      "arguments": [
+        "-log",
+        "-NewConsole",
+        "-stdout",
+        "-FullStdOutLogOutput"
+      ]
+    }
+  },
+  "safety_cases": [
+    "empty selection",
+    "zero match",
+    "multiple matches",
+    "malformed JSON",
+    "folder/file/selection/server identity mismatch",
+    "path traversal and target outside install root",
+    "unknown JSON key preservation",
+    "atomic replacement failure with byte-for-byte no-write"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "fixture_version": 1,
+  "module_id": "unturned",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-09-28",
+    "build": "Official U3-SDK aba323a81558487ad8d2167ac20da9c0fd72b6d9; installed build 25107012 generated Config.txt key comparison",
+    "source_ids": [
+      "official_skill_override_2026"
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "official_skill_override_2026.Players.Prevent_Level_Skill_Overrides"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "prevent_level_skill_overrides": true
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "Config.txt",
+        "format": "text",
+        "fragments": [
+          "Players\n{\n\tPrevent_Level_Skill_Overrides true\n}"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "Unturned.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-Port/27015",
+        "+InternetServer/acceptance-unturned"
+      ]
+    }
+  }
+}

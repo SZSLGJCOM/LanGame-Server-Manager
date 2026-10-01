@@ -1,0 +1,94 @@
+id = "corekeeper"
+name = "Core Keeper Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Core Keeper via SteamCMD."
+steam_app_id = 1963720
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "corekeeper"
+
+[process]
+executable = "CoreKeeperServer.exe"
+args_template = [
+  "-batchmode",
+  "-logfile",
+  "{{corekeeper.log_path}}",
+  "-datapath",
+  "{{paths.data_dir}}",
+  "{{corekeeper.direct_ip_flag}}",
+  "{{corekeeper.direct_ip_value}}",
+  "{{corekeeper.direct_port_flag}}",
+  "{{corekeeper.direct_port_value}}",
+  "{{corekeeper.direct_password_flag}}",
+  "{{corekeeper.direct_password_value}}",
+  "{{corekeeper.direct_allowed_platform_flag}}",
+  "{{corekeeper.direct_allowed_platform_value}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "LanGame runs Core Keeper in the background, prepares its data directory before launch, and provides the server log view in the desktop application."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 27015
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27016
+
+[[runtime.port_groups]]
+id = "game_query"
+members = ["game", "query"]
+member_offsets = { game = 0, query = 1 }
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+required_setting_key = "direct_connection_enabled"
+startup_timeout_ms = 90000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "Admins.json and PlayerBans.json"
+reason = "Core Keeper admin and ban lists are materialized under the instance data path. A2S_PLAYER is queried for read-only names when the server exposes them; no verified live moderation command transport is declared."
+verification = "Create an instance, confirm Admins.json and PlayerBans.json under the data path, start the server, and verify admin/ban effects in-game. Runtime commands are unavailable because no verified RCON or console path is declared."
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "window_close"
+command = "WM_CLOSE"
+wait_after_ms = 10000
+
+[mods.source]
+provider = "thunderstore"
+label = "Thunderstore"
+url = "https://thunderstore.io/c/core-keeper/"
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/CoreKeeperServer_Data/StreamingAssets/Mods"
+target_label = "CoreKeeperServer_Data/StreamingAssets/Mods"
+accepts = ["folder", "zip"]
+
+[storage]
+runtime_copy_exclusions = ["CoreKeeperServer_Data/StreamingAssets/Mods"]
+saves_path_template = "{{paths.data_dir}}/worlds"
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000

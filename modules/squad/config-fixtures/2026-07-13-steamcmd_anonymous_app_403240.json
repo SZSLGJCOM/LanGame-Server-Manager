@@ -1,0 +1,312 @@
+{
+  "fixture_version": 1,
+  "module_id": "squad",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-07-13",
+    "build": "SteamCMD app 403240 build 23797339",
+    "source_ids": [
+      "steamcmd_anonymous_app_403240",
+      "installed_server_config_files",
+      "server_cfg",
+      "rcon_cfg",
+      "admins_cfg",
+      "map_rotation_cfg",
+      "server_messages_cfg",
+      "custom_options_cfg",
+      "layer_voting_cfg",
+      "staged_build_ini",
+      "layer_rotation_cfg",
+      "level_rotation_cfg",
+      "layer_voting_low_players_cfg",
+      "layer_voting_night_cfg",
+      "vote_config_cfg",
+      "motd_cfg",
+      "remote_ban_list_hosts_cfg",
+      "remote_admin_list_hosts_cfg",
+      "bans_cfg",
+      "license_cfg",
+      "excluded_factions_cfg",
+      "excluded_layers_cfg",
+      "excluded_levels_cfg",
+      "launch_args",
+      "runtime_rcon",
+      "native_runtime_control_20261001",
+      "squad_windowsserver_ini",
+      "squad_crashreport_ini"
+    ]
+  },
+  "coverage": {
+    "editable": 60,
+    "specialized": 2,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 5
+  },
+  "classifications": {
+    "editable": [
+      "server_cfg.ServerName",
+      "server_cfg.MaxPlayers",
+      "server_cfg.NumReservedSlots",
+      "server_cfg.ShouldAdvertise",
+      "server_cfg.IsLANMatch",
+      "rcon_cfg.Password",
+      "admins_cfg.Group=LanGameAdmin:<permissions>",
+      "admins_cfg.additional Admins.cfg lines",
+      "map_rotation_cfg.MapRotation.cfg lines",
+      "server_messages_cfg.ServerMessages.cfg lines",
+      "custom_options_cfg.CustomOptions.cfg lines",
+      "layer_rotation_cfg.LayerRotation.cfg lines",
+      "level_rotation_cfg.LevelRotation.cfg lines",
+      "layer_voting_cfg.LayerVoting.cfg lines",
+      "layer_voting_low_players_cfg.LayerVotingLowPlayers.cfg lines",
+      "layer_voting_night_cfg.LayerVotingNight.cfg lines",
+      "vote_config_cfg.VoteConfig.cfg lines",
+      "motd_cfg.MOTD.cfg lines",
+      "remote_ban_list_hosts_cfg.RemoteBanListHosts.cfg lines",
+      "remote_admin_list_hosts_cfg.RemoteAdminListHosts.cfg lines",
+      "excluded_factions_cfg.ExcludedFactions.cfg lines",
+      "excluded_layers_cfg.ExcludedLayers.cfg lines",
+      "excluded_levels_cfg.ExcludedLevels.cfg lines",
+      "server_cfg.AllowTeamChanges",
+      "server_cfg.PreventTeamChangeIfUnbalanced",
+      "server_cfg.EnforceTeamBalance",
+      "server_cfg.RejoinSquadDelayAfterKick",
+      "server_cfg.RecordDemos",
+      "server_cfg.PublicQueueLimit",
+      "server_cfg.JoiningPlayerTimeout",
+      "server_cfg.Tags",
+      "server_cfg.Rules",
+      "server_cfg.MapRotationMode",
+      "server_cfg.RandomizeAtStart",
+      "server_cfg.UseVoteFactions",
+      "server_cfg.UseVoteLevel",
+      "server_cfg.UseVoteLayer",
+      "server_cfg.AllowFireteamLayersInRotation",
+      "server_cfg.NumPlayersDiffForTeamChanges",
+      "server_cfg.AllianceEnabled",
+      "server_cfg.AllowPublicClientsToRecord",
+      "server_cfg.ServerMessageInterval",
+      "server_cfg.TKAutoKickEnabled",
+      "server_cfg.AutoTKBanNumberTKs",
+      "server_cfg.AutoTKBanTime",
+      "server_cfg.VehicleKitRequirementDisabled",
+      "server_cfg.AllowCommunityAdminAccess",
+      "server_cfg.TimeBetweenMatches",
+      "server_cfg.TimeBeforeVote",
+      "server_cfg.AllowDevProfiling",
+      "server_cfg.AllowQA",
+      "server_cfg.VehicleClaimingDisabled",
+      "server_cfg.PrepTimeStandard",
+      "server_cfg.PrepTimeSmallScale",
+      "rcon_cfg.MaxConnections",
+      "rcon_cfg.MaxConnectionsFromSameHost",
+      "rcon_cfg.ConnectionTimeout",
+      "rcon_cfg.SecondsBeforeTimeoutCheck",
+      "rcon_cfg.AuthenticationTimeout",
+      "launch_args.extra_launch_args"
+    ],
+    "specialized": [
+      "admins_cfg.Admin=<steam64>:LanGameAdmin",
+      "admins_cfg.Admin=<steam64>:LanGameReserved"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": [
+      "rcon_cfg.Port",
+      "launch_args.MULTIHOME/PORT/QUERYPORT/RCONPORT",
+      "runtime_rcon.ListPlayers/AdminKick/AdminBan/AdminBroadcast",
+      "bans_cfg.Bans.cfg runtime entries",
+      "license_cfg.License.cfg content"
+    ]
+  },
+  "settings": {
+    "server_name": "LanGame Squad 验收",
+    "server_message": "Welcome to the acceptance server.",
+    "max_players": 96,
+    "rcon_password": "acceptance-squad-rcon",
+    "admin_steam_ids": "76561198077777777",
+    "priority_join_steam_ids": "76561198000000000",
+    "admins_cfg": "Group=EventAdmin:kick,ban",
+    "extra_launch_args": "",
+    "custom_options": "CustomOption=Acceptance",
+    "excluded_factions": "CAF",
+    "excluded_layers": "AlBasrah_RAAS_v1",
+    "excluded_levels": "AlBasrah",
+    "layer_rotation": "AlBasrah_RAAS_v1",
+    "layer_voting": "AlBasrah_RAAS_v1",
+    "layer_voting_low_players": "Sumari_AAS_v1",
+    "layer_voting_night": "Mutaha_RAAS_v1",
+    "level_rotation": "AlBasrah",
+    "map_rotation": "AlBasrah_RAAS_v1",
+    "motd_cfg": "Acceptance Squad rules",
+    "remote_admin_hosts": "https://config.example.invalid/admins.cfg",
+    "remote_ban_hosts": "https://config.example.invalid/bans.cfg",
+    "vote_config": "Mode=LayerList_Vote"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/Server.cfg",
+        "format": "text",
+        "fragments": [
+          "ServerName=\"LanGame Squad 验收\"",
+          "MaxPlayers=96"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/Rcon.cfg",
+        "format": "text",
+        "fragments": [
+          "Port=21114",
+          "Password=acceptance-squad-rcon"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/Admins.cfg",
+        "format": "text",
+        "fragments": [
+          "Admin=76561198077777777:LanGameAdmin",
+          "Admin=76561198000000000:LanGameReserved",
+          "Group=EventAdmin:kick,ban"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/ServerMessages.cfg",
+        "format": "text",
+        "fragments": [
+          "Welcome to the acceptance server."
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/CustomOptions.cfg",
+        "format": "text",
+        "fragments": [
+          "CustomOption=Acceptance"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/ExcludedFactions.cfg",
+        "format": "text",
+        "fragments": [
+          "CAF"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/ExcludedLayers.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah_RAAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/ExcludedLevels.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/LayerRotation.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah_RAAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/LayerVoting.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah_RAAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/LayerVotingLowPlayers.cfg",
+        "format": "text",
+        "fragments": [
+          "Sumari_AAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/LayerVotingNight.cfg",
+        "format": "text",
+        "fragments": [
+          "Mutaha_RAAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/LevelRotation.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/MapRotation.cfg",
+        "format": "text",
+        "fragments": [
+          "AlBasrah_RAAS_v1"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/MOTD.cfg",
+        "format": "text",
+        "fragments": [
+          "Acceptance Squad rules"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/RemoteAdminListHosts.cfg",
+        "format": "text",
+        "fragments": [
+          "https://config.example.invalid/admins.cfg"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/RemoteBanListHosts.cfg",
+        "format": "text",
+        "fragments": [
+          "https://config.example.invalid/bans.cfg"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "SquadGame/ServerConfig/VoteConfig.cfg",
+        "format": "text",
+        "fragments": [
+          "Mode=LayerList_Vote"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "SquadGameServer.exe",
+      "arguments": [
+        "-log",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "MULTIHOME=0.0.0.0",
+        "PORT=7787",
+        "QUERYPORT=27165",
+        "RCONPORT=21114",
+        "FIXEDMAXPLAYERS=96"
+      ]
+    }
+  }
+}

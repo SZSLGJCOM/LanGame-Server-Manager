@@ -1,0 +1,520 @@
+status = "exhaustive_verified"
+last_verified = "2026-09-08"
+notes = "The official launch-parameter and sandbox-option documentation was reviewed on 2026-09-08 against the current schema. ApocalypticAbilities and MaximizeEnemySpawns are now included with the documented false defaults; the exclusions tied to the July package have been removed. Their generated native INI values are covered by the current acceptance fixture; individual gameplay effects have not been verified. The July SteamCMD package record remains historical installation evidence. Installed build 24343458 boots and returns complete A2S_INFO/A2S_PLAYER responses. A controlled run changing only LANOnly from true to false restored Steam queries while UseLocalIPs stayed true; the original LAN-only configuration was restored afterward. LAN discovery uses the game-native port 14001. Admin.ini moderator entries remain separate from read-only online player names."
+
+[[sources]]
+id = "steamcmd_anonymous_app_2857200"
+kind = "documentation"
+path = "<validated-install-root>/steamapps/appmanifest_2857200.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-07-13 SteamCMD app_update 2857200 validate completed with Success! App '2857200' fully installed. Manifest name Abiotic Factor Dedicated Server, StateFlags 4, UpdateResult 0, buildid/TargetBuildID 23174893, SizeOnDisk 2973839093, and depot 2857201 manifest 2231203230929773799; Steam public app info reports the same build and depot manifest."
+
+[[sources]]
+id = "stable_hotfix_v1_3_0_26036"
+kind = "documentation"
+path = "Abiotic Factor Dedicated Server build 23174893"
+authority = "deep_field_games_official_steam_announcement"
+description = "Official stable hotfix announcement corresponding to the latest public dedicated-server package."
+url = "https://steamcommunity.com/ogg/427410/announcements/detail/675120209794696700"
+
+[[sources]]
+id = "installed_package_config_boundary"
+kind = "documentation"
+path = "<validated-install-root>"
+authority = "installed_abiotic_factor_dedicated_server_package"
+description = "The inspected package has no packaged SandboxSettings.ini or Admin.ini default files. Files under AbioticFactor/Saved/Config/WindowsServer/LanGame and AbioticFactor/Saved/SaveGames/Server/LanGame are LanGame materialized instance output, so the module continues to generate SandboxSettings.ini and Admin.ini per instance."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "AbioticFactorServer-Win64-Shipping.exe"
+authority = "official_abiotic_factor_dedicated_server_launch_parameters"
+description = "Dedicated-server startup parameters for server identity, player cap, world save folder, credentials, LAN/crossplay posture, bind address, local IP behavior, performance threads, ports, and config override paths."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Launch-Parameters"
+
+[[sources]]
+id = "sandbox_settings"
+kind = "config_file"
+path = "SandboxSettings.ini"
+authority = "official_abiotic_factor_sandbox_options"
+description = "World gameplay configuration under [SandboxSettings], covering difficulty, world tempo, resources, player needs, progression, enemies, radiation, and structures. Rechecked 2026-09-30: all 48 documented sandbox keys are modeled. EnemyDeployableDamageMultiplier accepts 0 through 5; the zero boundary is covered by the native-output fixture. This documentation review does not renew historical native-run evidence."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Sandbox-Options"
+
+[[sources]]
+id = "upstream_sandbox_template"
+kind = "documentation"
+path = "SandboxSettings.ini"
+authority = "official_abiotic_factor_dedicated_server_repository"
+description = "Upstream template revision inspected for options newer than the current public server package. Commit 8c0065ed6b797c3abee86164743d8aa2558083dd added two settings on 2026-07-12."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/commit/8c0065ed6b797c3abee86164743d8aa2558083dd"
+
+[[sources]]
+id = "admin_ini"
+kind = "generated_roster"
+path = "Admin.ini"
+authority = "official_abiotic_factor_dedicated_server_quickstart"
+description = "Moderator Steam64 roster under [Moderators], used as the persistent admin-access list when relying on Steam admin access instead of only an admin password."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Guide-%E2%80%90-Quickstart"
+
+[[sources]]
+id = "abiotic_steam_settings"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/*"
+authority = "installed_abiotic_factor_dedicated_server_package"
+description = "Steamworks runtime settings root shipped under steam_settings for Abiotic Factor dedicated server."
+[[sources]]
+id = "abiotic_steam_settings_examples"
+kind = "config_file"
+path = "Engine/Binaries/ThirdParty/Steamworks/Steamv157/Win64/steam_settings/_examples/*"
+authority = "installed_abiotic_factor_dedicated_server_package"
+description = "Steamworks example settings templates shipped under steam_settings/_examples."
+
+
+[[sources]]
+id = "abioticfactor_windowsserver_ini"
+kind = "config_file"
+path = "*/Saved/Config/WindowsServer/*.ini"
+authority = "installed_abioticfactor_server_package"
+description = "Installed dedicated server Unreal WindowsServer ini artifacts. (5 discovered files)"
+
+[[sources]]
+id = "abioticfactor_savegames_admin_ini"
+kind = "generated_roster"
+path = "*/Saved/SaveGames/Server/**/*.ini"
+authority = "installed_abioticfactor_server_package"
+description = "Collected save-game scoped admin/state ini artifacts from Installed Abiotic Factor dedicated package savegames."
+
+
+[[sources]]
+id = "abioticfactor_crashreport_ini"
+kind = "config_file"
+path = "*/Saved/Config/CrashReportClient/*/*.ini"
+authority = "installed_abioticfactor_server_package"
+description = "CrashReportClient runtime configuration artifacts from installed Unreal server package. (73 discovered files)"
+[[items]]
+source = "launch_args"
+key = "-SteamServerName"
+schema_key = "server_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-WorldSaveName"
+schema_key = "world_save_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-MaxServerPlayers"
+schema_key = "max_server_players"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ServerPassword"
+schema_key = "server_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-AdminPassword"
+schema_key = "admin_password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-LANOnly"
+schema_key = "lan_only"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-PlatformLimited"
+schema_key = "platform_limited"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-UseLocalIPs"
+schema_key = "use_local_ips"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-useperfthreads"
+schema_key = "use_perf_threads"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-DisableAsyncLoadingThread"
+schema_key = "disable_async_loading_thread"
+surface = "launch_arg"
+
+[[items]]
+source = "admin_ini"
+key = "Admin.ini:[Moderators].Moderator"
+schema_key = "moderator_steam_ids"
+surface = "generated_roster"
+
+[[items]]
+source = "sandbox_settings"
+key = "GameDifficulty"
+schema_key = "game_difficulty"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "HardcoreMode"
+schema_key = "hardcore_mode"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "AllowIronMode"
+schema_key = "allow_iron_mode"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DayNightCycleState"
+schema_key = "day_night_cycle_state"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DayNightCycleSpeedMultiplier"
+schema_key = "day_night_cycle_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "WeatherFrequency"
+schema_key = "weather_frequency"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "FirstTimeStartingWeapon"
+schema_key = "first_time_starting_weapon"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "HomeWorlds"
+schema_key = "home_worlds"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "AllowCharacterReset"
+schema_key = "allow_character_reset"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "BaseInventorySize"
+schema_key = "base_inventory_size"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "LootRespawnEnabled"
+schema_key = "loot_respawn_enabled"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "SinkRefillRate"
+schema_key = "sink_refill_rate"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "FoodSpoilSpeedMultiplier"
+schema_key = "food_spoil_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "RefrigerationEffectivenessMultiplier"
+schema_key = "refrigeration_effectiveness_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ItemStackSizeMultiplier"
+schema_key = "item_stack_size_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ItemWeightMultiplier"
+schema_key = "item_weight_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ItemDurabilityMultiplier"
+schema_key = "item_durability_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "StorageByTag"
+schema_key = "storage_by_tag"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "TaintedSinkWater"
+schema_key = "tainted_sink_water"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DamageToAlliesMultiplier"
+schema_key = "damage_to_allies_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "HungerSpeedMultiplier"
+schema_key = "hunger_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ThirstSpeedMultiplier"
+schema_key = "thirst_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "FatigueSpeedMultiplier"
+schema_key = "fatigue_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ContinenceSpeedMultiplier"
+schema_key = "continence_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "BonusPerkPoints"
+schema_key = "bonus_perk_points"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "PlayerXPGainMultiplier"
+schema_key = "player_xp_gain_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DurabilityLossOnDeathMultiplier"
+schema_key = "durability_loss_on_death_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "ShowDeathMessages"
+schema_key = "show_death_messages"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "AllowRecipeSharing"
+schema_key = "allow_recipe_sharing"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "AllowPagers"
+schema_key = "allow_pagers"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "AllowTransmog"
+schema_key = "allow_transmog"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DisableResearchMinigame"
+schema_key = "disable_research_minigame"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DeathPenalties"
+schema_key = "death_penalties"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "HostAccessPlayerCorpses"
+schema_key = "host_access_player_corpses"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "EnemySpawnRate"
+schema_key = "enemy_spawn_rate"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "EnemyHealthMultiplier"
+schema_key = "enemy_health_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "EnemyPlayerDamageMultiplier"
+schema_key = "enemy_player_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "EnemyDeployableDamageMultiplier"
+schema_key = "enemy_deployable_damage_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "DetectionSpeedMultiplier"
+schema_key = "detection_speed_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "EnemyAccuracy"
+schema_key = "enemy_accuracy"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "InvisibleRadiation"
+schema_key = "invisible_radiation"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "RadiationDealsDamage"
+schema_key = "radiation_deals_damage"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "PowerSocketsOffAtNight"
+schema_key = "power_sockets_off_at_night"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "StructuralSupportLimit"
+schema_key = "structural_support_limit"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "BridgeSupports"
+schema_key = "bridge_supports"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "PlayerFurnitureDestruction"
+schema_key = "player_furniture_destruction"
+surface = "config_file"
+
+[[exclusions]]
+source = "launch_args"
+key = "-log"
+reason = "Fixed by the module so this GUI-subsystem server creates the native console required by its CTRL_C shutdown strategy. The managed private desktop keeps the console hidden; this is not a user setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-newconsole"
+reason = "Excluded: Abiotic Factor build 24343458 with -newconsole does not expose the attachable Windows console required for CTRL_C, and ConPTY receives no output. The managed host uses -log without -newconsole, verified with native readiness and a normal exit."
+
+[[exclusions]]
+source = "launch_args"
+key = "-stdout"
+reason = "Fixed by the managed host to send Unreal log output to the captured standard-output stream."
+
+[[exclusions]]
+source = "launch_args"
+key = "-FullStdOutLogOutput"
+reason = "Fixed by the managed host so verbose native output is retained alongside warnings and errors."
+
+[[exclusions]]
+source = "launch_args"
+key = "-PORT"
+reason = "Game port is instance port-binding state, not a game-rule field on the settings page."
+
+[[exclusions]]
+source = "launch_args"
+key = "-QueryPort"
+reason = "Steam query port is instance port-binding state, not a game-rule field on the settings page."
+
+[[exclusions]]
+source = "launch_args"
+key = "-MultiHome"
+reason = "Rendered from the instance-level bind address so the native listener cannot diverge from shared network settings."
+
+[[exclusions]]
+source = "launch_args"
+key = "-SandboxIniPath"
+reason = "LanGame fixes this path to its generated per-instance SandboxSettings.ini so multiple instances cannot share one mutable file."
+
+[[exclusions]]
+source = "launch_args"
+key = "-AdminIniPath"
+reason = "LanGame fixes this path to its generated per-instance Admin.ini so moderator rosters stay isolated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NOSTEAM"
+reason = "Official launch-parameter docs explicitly warn not to use this for running the server."
+
+[[exclusions]]
+source = "launch_args"
+key = "-NoAsyncLoadingThread"
+reason = "Legacy quickstart spelling retained by older docs; LanGame now maps the setting to the current -DisableAsyncLoadingThread launch flag."
+
+[[exclusions]]
+source = "sandbox_settings"
+key = "[SandboxSettings]"
+reason = "Required INI section header materialized by the template, not a user-authored setting."
+
+[[items]]
+source = "sandbox_settings"
+key = "ApocalypticAbilities"
+schema_key = "apocalyptic_abilities"
+surface = "config_file"
+
+[[items]]
+source = "sandbox_settings"
+key = "MaximizeEnemySpawns"
+schema_key = "maximize_enemy_spawns"
+surface = "config_file"
+
+[[sources]]
+id = "a2s_player_probe_24343458"
+kind = "install_probe"
+path = "Steam dedicated-server build 24343458: isolated loopback A2S_INFO and A2S_PLAYER"
+authority = "installed_windows_dedicated_server"
+description = "2026-09-08 isolated blank-world probe of the installed build returned A2S_INFO with zero current players and an A2S_PLAYER response FF FF FF FF 44 00. The probe used separate files, saves and ports. Populated names are not yet verified; the runtime collector publishes only actual returned names, compares against INFO counts, and marks missing identities incomplete. No stable account identifiers or moderation are inferred from A2S. The temporary server was stopped after the probe."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Sandbox-Options"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 58 active configuration fields in both languages. Continence depletion increases toilet frequency. The furniture stacking count is independent of global structural strength; zero removes the stacking limit. IronMode is a starting job that requires Hardcore. No fresh server/client run was performed; existing evidence dates and status remain unchanged."

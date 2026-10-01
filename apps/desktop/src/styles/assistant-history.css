@@ -1,0 +1,69 @@
+.assistant-history-scrim {
+  position: absolute;
+  z-index: 8;
+  inset: var(--assistant-header-height) 0 0;
+  border: 0;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(2px);
+  cursor: default;
+}
+.assistant-history-drawer {
+  position: absolute;
+  z-index: 9;
+  inset: var(--assistant-header-height) auto 0 0;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, calc(100% - 36px));
+  border-right: 1px solid var(--shell-line);
+  background: var(--theme-card-elevated);
+  box-shadow: 8px 0 24px -16px color-mix(in srgb, var(--shell-text) 28%, transparent);
+  animation: assistant-history-enter 160ms ease-out;
+}
+@keyframes assistant-history-enter { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+.assistant-history-head { display: flex; align-items: center; flex: 0 0 58px; gap: 8px; padding: 0 16px; }
+.assistant-history-head strong { font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
+.assistant-history-head > span { color: var(--shell-muted); font-size: var(--text-meta); font-variant-numeric: tabular-nums; }
+.assistant-history-head .assistant-history-close { margin-left: auto; }
+.assistant-history-create { padding: 0 16px 14px; }
+.assistant-history-create button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 36px;
+  gap: 8px;
+  border: 1px solid var(--shell-line-strong);
+  border-radius: 8px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+.assistant-history-create button:hover:not(:disabled) { background: var(--theme-control-hover); }
+.assistant-history-create svg { width: 16px; height: 16px; }
+.assistant-history-list { flex: 1; min-height: 0; padding: 0 8px 12px; overflow-y: auto; overscroll-behavior: contain; }
+.assistant-history-empty { display: grid; gap: 8px; padding: 36px 16px; }
+.assistant-history-empty strong { font-size: var(--text-secondary); font-weight: var(--font-weight-semibold); }
+.assistant-history-empty span { color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
+.assistant-history-item { display: flex; align-items: center; min-height: 62px; border: 1px solid transparent; border-radius: 8px; }
+.assistant-history-item:hover { background: var(--theme-control-hover); }
+.assistant-history-item.is-active { border-color: var(--shell-line); background: var(--theme-card-active-bg); }
+.assistant-history-select,
+.assistant-history-delete { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.assistant-history-select { display: flex; flex: 1; align-self: stretch; align-items: center; min-width: 0; gap: 10px; padding: 10px; text-align: left; }
+.assistant-history-select > svg { width: 17px; height: 17px; flex: 0 0 17px; color: var(--shell-muted); }
+.assistant-history-item-copy { display: grid; min-width: 0; gap: 5px; }
+.assistant-history-item-copy strong { overflow: hidden; color: var(--shell-text); font-size: var(--text-secondary); font-weight: var(--font-weight-medium); line-height: var(--leading-compact); white-space: nowrap; text-overflow: ellipsis; }
+.assistant-history-item-copy small { color: var(--shell-muted); font-size: var(--text-meta); }
+.assistant-history-delete { display: inline-grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; margin-right: 6px; border-radius: 6px; color: var(--shell-muted); }
+.assistant-history-delete svg { width: 15px; height: 15px; }
+.assistant-history-delete:hover:not(:disabled) { background: var(--theme-danger-bg); color: var(--theme-danger-text); }
+.assistant-history-confirm { display: grid; flex: 0 0 auto; gap: 12px; padding: 16px; border-top: 1px solid var(--shell-line); }
+.assistant-history-confirm > span { font-size: var(--text-secondary); line-height: var(--leading-body); overflow-wrap: anywhere; }
+.assistant-history-confirm > div { display: flex; justify-content: flex-end; gap: 8px; }
+.assistant-history-confirm button { min-height: 32px; padding: 0 12px; border: 1px solid var(--shell-line-strong); border-radius: 7px; background: var(--theme-control-surface); color: var(--shell-text); font: inherit; font-weight: var(--font-weight-medium); font-size: var(--text-body); cursor: pointer; }
+.assistant-history-confirm button.is-danger { border-color: var(--theme-danger-border); background: var(--theme-danger-bg); color: var(--theme-danger-text); }
+.assistant-history-drawer button:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .assistant-history-drawer { animation: none; } }

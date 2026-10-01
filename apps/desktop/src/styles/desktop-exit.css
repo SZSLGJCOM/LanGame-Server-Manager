@@ -1,0 +1,32 @@
+.desktop-exit-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.desktop-exit-content {
+  width: min(100%, 540px);
+  display: grid;
+  gap: 16px;
+  text-align: center;
+}
+
+.desktop-exit-content h1 {
+  margin: 0;
+  font-size: var(--text-page-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-heading);
+  outline: none;
+}
+
+.desktop-exit-content p {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  text-wrap: balance;
+}
+
+.desktop-exit-detail { color: var(--muted); }

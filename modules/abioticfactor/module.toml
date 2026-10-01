@@ -1,0 +1,97 @@
+id = "abioticfactor"
+name = "Abiotic Factor Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Abiotic Factor via SteamCMD."
+steam_app_id = 2857200
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "abioticfactor"
+
+[process]
+executable = "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe"
+args_template = [
+  "-log",
+  "-stdout",
+  "-FullStdOutLogOutput",
+  "-PORT={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
+  "-MaxServerPlayers={{settings.max_server_players}}",
+  "-WorldSaveName={{settings.world_save_name}}",
+  "{{abioticfactor.sandbox_ini_flag}}",
+  "{{abioticfactor.admin_ini_flag}}",
+  "-SteamServerName={{settings.server_name}}",
+  "{{abioticfactor.server_password_flag}}",
+  "{{abioticfactor.admin_password_flag}}",
+  "{{abioticfactor.lan_only_flag}}",
+  "{{abioticfactor.platform_limited_flag}}",
+  "{{abioticfactor.multihome_flag}}",
+  "{{abioticfactor.use_local_ips_flag}}",
+  "{{abioticfactor.use_perf_threads_flag}}",
+  "{{abioticfactor.no_async_loading_thread_flag}}",
+]
+working_directory_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "LanGame writes the named sandbox and administrator configuration files into the Saved directory before launching Abiotic Factor in the background. Server logs are available in the desktop application."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 27015
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "Admin.ini moderator list"
+reason = "Abiotic Factor build 24343458 responds to A2S_INFO and A2S_PLAYER. LanGame reads names when supplied, preserves counts when identities are omitted, and keeps persistent Admin.ini moderators separate from the online list. No unverified row moderation actions are exposed."
+verification = "Create an instance, confirm Admin.ini contains the Moderator entries, start the server, and verify moderators can join with admin rights. Live actions are unavailable because no verified remote console path is declared."
+
+[runtime.shutdown]
+grace_period_ms = 12000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 10000
+
+[storage]
+runtime_copy_exclusions = ["AbioticFactor/Saved", "AbioticFactor/Binaries/Win64/ue4ss/Mods"]
+saves_path_template = "{{paths.install_root}}/AbioticFactor/Saved/SaveGames/Server/Worlds/{{settings.world_save_name}}"
+retained_paths = [
+  "AbioticFactor/Saved/Config/WindowsServer/LanGame",
+  "AbioticFactor/Saved/SaveGames/Server/LanGame",
+]
+
+[mods.source]
+provider = "nexus"
+label = "Abiotic Factor UE4SS mods"
+url = "https://www.nexusmods.com/abioticfactor"
+install_note = "Abiotic Factor server mods commonly require UE4SS in the dedicated server Win64 directory first. LanGame only stages UE4SS mod payloads here; install the correct UE4SS loader separately and follow each mod page for any Content/Paks placement."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64/ue4ss/Mods"
+target_label = "AbioticFactor/Binaries/Win64/ue4ss/Mods"
+accepts = ["folder", "zip", "lua", "pak"]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]

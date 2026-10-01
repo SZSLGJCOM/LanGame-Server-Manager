@@ -1,0 +1,75 @@
+id = "returntomoria"
+name = "The Lord of the Rings: Return to Moria Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for The Lord of the Rings: Return to Moria via SteamCMD."
+steam_app_id = 3349480
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "returntomoria"
+verification_path = "MoriaServer.exe"
+
+[process]
+executable = "MoriaServer.exe"
+args_template = [
+  "{{launch.extra_args}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Return to Moria reads its dedicated-server config files from the server root. LanGame renders MoriaServerConfig.ini and MoriaServerRules.txt into the instance config directory, then materializes them beside MoriaServer.exe before launch."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 7777
+
+[[default_ports]]
+name = "game_tcp"
+protocol = "tcp"
+port = 7777
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[[runtime.port_groups]]
+id = "game_transport"
+members = ["game", "game_tcp"]
+
+[runtime.player_query]
+protocol = "none"
+
+[runtime.player_list]
+source = "native_console"
+response_codec = "return_to_moria_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 12000
+
+[player_management]
+status = "pending_adapter"
+planned_surface = "native_windows_console"
+reason = "Connected-player labels are read through a separate, bounded Windows console helper when Console.Enabled=true. The native unescaped label is preserved without guessing account IDs. Row moderation remains unavailable because account targeting has not been verified; Status.json is only a count and never supplies roster entries."
+verification = "Verified on isolated build 21872765 on 2026-09-08: production background spawn_launch_plan registered the bootstrap PID; the helper resolved its verified shipping descendant on the hidden desktop and returned two complete fresh-nonce Players: 0/8 responses through private IPC. The helper rejects identity changes, screen rewrites, wrapping, truncation or partially connected responses. Runtime moderation commands stay hidden until their transport and account targets are verified with real clients."
+
+[storage]
+runtime_copy_exclusions = ["Moria/Saved", "MoriaServerConfig.ini", "MoriaServerRules.txt", "MoriaServerPermissions.txt"]
+saves_path_template = "{{paths.install_root}}/Moria/Saved/SaveGamesDedicated"
+retained_paths = [
+  "MoriaServerConfig.ini",
+  "MoriaServerRules.txt",
+  "MoriaServerPermissions.txt",
+]
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "game_tcp"]

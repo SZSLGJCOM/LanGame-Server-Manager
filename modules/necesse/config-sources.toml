@@ -1,0 +1,409 @@
+status = "best_effort_verified"
+last_verified = "2026-07-13"
+notes = "Steam public build 23522725 (updated 2026-06-02 UTC) is current and anonymous app_update 1169370 validate brought the local package to that exact build on 2026-07-13. The current official Necesse Wiki multiplayer parameter table still matches the launch parameters and managed console surfaces exposed by this module. StartServer-nogui.bat retains the bundled JVM wrapper flags LanGame preserves before -jar. No standalone server settings file is shipped; the runtime generates server.cfg and current native read-only evidence below adds independent optional overrides; LanGame-owned path, bind, port, and headless wrapper flags remain explicit exclusions."
+
+[[sources]]
+id = "steamcmd_anonymous_app_1169370"
+kind = "documentation"
+path = "<validated-install-root>"
+authority = "steamcmd_anonymous_validate"
+description = "Anonymous SteamCMD app_update 1169370 validate returned Success on 2026-07-13. appmanifest_1169370.acf reports Necesse Dedicated Server buildid 23522725 and SizeOnDisk 238462099. Package contains StartServer-nogui.bat, Server.jar, and jre/bin/java.exe; no standalone server settings file is shipped."
+
+[[sources]]
+id = "installed_online_player_command"
+kind = "install_probe"
+path = "Server.jar: PlayersServerCommand.runModular / CommandLog.print / GameLog.FileConsoleStream"
+authority = "downloaded_steamcmd_server_package"
+description = "Read-only class-file inspection of build 23522725 confirms players emits Players online: count/slots followed by Slot slot: authentication quoted-name, latency, level,conn fields to System.out for console callers. LanGame accepts only all counted rows from a fresh capture, exposes names and latency, and discards authentication and connection details. playernames is a separate historical command."
+url = "https://necessewiki.com/Multiplayer"
+
+[[sources]]
+id = "start_server_nogui_bat"
+kind = "launch_arg"
+path = "StartServer-nogui.bat"
+authority = "downloaded_steamcmd_server_package"
+description = "Bundled Windows no-GUI launcher invokes jre/bin/java.exe with the official JVM flags, then -jar Server.jar -nogui and forwarded user arguments."
+
+[[sources]]
+id = "launch_args"
+kind = "launch_arg"
+path = "jre/bin/java.exe -jar Server.jar"
+authority = "official_necesse_wiki_server_parameters"
+description = "Necesse dedicated-server launch parameters documented by the official wiki for world identity, slots, owner, MOTD, password, pause policy, authority checks, logging, save compression, language, bind/data paths, and seasonal content."
+url = "https://necessewiki.com/Multiplayer"
+
+[[sources]]
+id = "runtime_console"
+kind = "runtime_console"
+path = "Necesse dedicated server console"
+authority = "official_necesse_wiki_server_and_chat_commands"
+description = "Server command-line commands for player listing, permissions, bans, broadcast, save, and shutdown. Native verification on 2026-09-08 confirmed UTF-8 stored names and broadcast output, permission-level listing, and offline ban/unban persisted to the native ban file and restored exactly. The installed PermissionsServerCommand resolves ServerClientParameterHandler: permission get/set require an online target; a stored offline identity is insufficient."
+url = "https://necessewiki.com/Multiplayer"
+
+[[sources]]
+id = "necesse_jre_conf_properties"
+kind = "config_file"
+path = "jre/conf/*.properties"
+authority = "installed_necesse_dedicated_server_package"
+description = "Runtime Java properties files shipped with the embedded JRE."
+[[sources]]
+id = "necesse_jre_lib_cfg"
+kind = "config_file"
+path = "jre/lib/*.cfg"
+authority = "installed_necesse_dedicated_server_package"
+description = "Runtime Java VM config files shipped with the embedded JRE."
+[[sources]]
+id = "necesse_psfont_properties"
+kind = "config_file"
+path = "jre/lib/psfontj2d.properties"
+authority = "installed_necesse_dedicated_server_package"
+description = "JRE PostScript font mapping shipped with the bundled runtime."
+
+[[items]]
+source = "launch_args"
+key = "-world"
+schema_key = "world_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-slots"
+schema_key = "max_slots"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-motd"
+schema_key = "motd"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-owner"
+schema_key = "owner_name"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-password"
+schema_key = "password"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-pausewhenempty"
+schema_key = "pause_when_empty"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-strictserverauthority"
+schema_key = "strict_server_authority"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-logging"
+schema_key = "logging_enabled"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-zipsaves"
+schema_key = "zip_saves"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-language"
+schema_key = "language"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "-ignoreseasons"
+schema_key = "ignore_seasons"
+surface = "launch_arg"
+
+[[items]]
+source = "launch_args"
+key = "custom_launch_flags"
+schema_key = "custom_launch_flags"
+surface = "launch_arg"
+
+[[exclusions]]
+source = "launch_args"
+key = "-help"
+reason = "Informational command-line output, not persistent server configuration."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:+UnlockExperimentalVMOptions"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:+UseG1GC"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:+ExplicitGCInvokesConcurrent"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:G1NewSizePercent=20"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:G1ReservePercent=20"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:MaxGCPauseMillis=50"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "start_server_nogui_bat"
+key = "-XX:G1HeapRegionSize=32M"
+reason = "Bundled JVM host wrapper flag preserved in args_template, not a game setting."
+
+[[exclusions]]
+source = "launch_args"
+key = "-nogui"
+reason = "LanGame fixes this flag so the dedicated server stays background-hosted in the desktop app."
+
+[[exclusions]]
+source = "launch_args"
+key = "-settings"
+reason = "The native settings-file path is an implementation detail; LanGame writes explicit launch parameters and owns the instance data path."
+
+[[exclusions]]
+source = "launch_args"
+key = "-port"
+reason = "The UDP game port is instance port-binding state, not a Necesse-only schema field."
+
+[[exclusions]]
+source = "launch_args"
+key = "-logs"
+reason = "LanGame owns the per-instance logs directory and routes host-facing output through the managed terminal."
+
+[[exclusions]]
+source = "launch_args"
+key = "-ip"
+reason = "Bind IP is instance-level state shared across modules and should not be duplicated as a game-specific field."
+
+[[exclusions]]
+source = "launch_args"
+key = "-datadir"
+reason = "LanGame owns the per-instance data directory so cache, latest log, and saves remain isolated."
+
+[[exclusions]]
+source = "launch_args"
+key = "-localdir"
+reason = "LanGame uses an explicit per-instance data directory instead of binding server state to the install working directory."
+
+[[exclusions]]
+source = "runtime_console"
+key = "players"
+reason = "Exposed as a runtime player action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "playernames"
+reason = "Exposed as a runtime player action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "permissions list"
+reason = "Exposed as a runtime player action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "permissions get"
+reason = "Exposed as a runtime player action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "permissions set"
+reason = "Exposed as a runtime player action; persistent startup ownership is represented by -owner."
+
+[[exclusions]]
+source = "runtime_console"
+key = "bans"
+reason = "Exposed as a runtime player action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "ban"
+reason = "Exposed as a runtime moderation action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "unban"
+reason = "Exposed as a runtime moderation action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "say"
+reason = "Exposed as a runtime broadcast action, not persistent startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "save"
+reason = "Used by LanGame shutdown flow and manual runtime command surfaces, not startup configuration."
+
+[[exclusions]]
+source = "runtime_console"
+key = "stop"
+reason = "Used by LanGame shutdown flow, not startup configuration."
+
+[[sources]]
+id = "native_server_cfg_build_24926481"
+kind = "config_file"
+path = "Server.jar:necesse/engine/Settings.class"
+authority = "installed_necesse_dedicated_server_build_24926481_read_only_bytecode"
+description = "2026-09-28: Necesse 1.3.3 Settings class SHA256 b5eed1bb24e7d9589ed3e2add612e40814f16081bfa22900d7065fafb464954b. getServerSaveData, loadServerData and clinit confirm SERVER keys and defaults: maxClientLatencySeconds 30, unloadLevelsCooldown 30 (minimum 2), droppedItemsLifeMinutes 0, unloadSettlements false, maxSettlementsPerPlayer -1, maxSettlersPerSettlement -1. loadServerData also accepts worldBorderSize >= -1, default -1, although native saves omit that key. Optional LGSM overrides preserve current instance cfg values when unset. ServerLoader explicitly loads -settings via Settings.loadServerSettings(File,false); it accepts -strictserverauthority 1/true or 0/false and no longer reads -giveclientspower. Internal strict_server_authority values are retained. The selected -settings file is instance data/cfg/server.cfg; worlds and archives are not edited. Read-only recheck on 2026-09-30 confirms the installed build remains 24926481 and Settings.class retains the recorded SHA256. The official multiplayer guide still lists the older -giveclientspower argument; the exact native ServerLoader evidence remains authoritative for -strictserverauthority."
+url = "https://necessewiki.com/Multiplayer"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.maxClientLatencySeconds"
+schema_key = "max_client_latency_seconds"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.unloadLevelsCooldown"
+schema_key = "unload_levels_cooldown"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.droppedItemsLifeMinutes"
+schema_key = "dropped_items_life_minutes"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.unloadSettlements"
+schema_key = "unload_settlements"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.maxSettlementsPerPlayer"
+schema_key = "max_settlements_per_player"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.maxSettlersPerSettlement"
+schema_key = "max_settlers_per_settlement"
+surface = "config_file"
+
+[[items]]
+source = "native_server_cfg_build_24926481"
+key = "SERVER.worldBorderSize"
+schema_key = "world_border_size"
+surface = "config_file"
+
+[[sources]]
+id = "native_world_settings_build_24926481"
+kind = "config_file"
+path = "Server.jar:necesse/engine/world/WorldSettings.class"
+authority = "installed_necesse_dedicated_server_build_24926481_read_only_bytecode"
+description = "WorldSettings.getSaveScript stores gameplay rules inside each save directory/archive. The official wiki locates worldSettings.cfg inside the world ZIP, documents live difficulty/deathpenalty/raids/settings commands, and states allowcheats is irreversible. Editing existing world ZIPs or invoking irreversible commands is outside this safe server.cfg configuration path; no fictitious world-file writes are generated."
+url = "https://necessewiki.com/Multiplayer"
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "allowCheats"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "difficulty"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "deathPenalty"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "raidFrequency"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "survivalMode"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "playerHunger"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "disableMobSpawns"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "forcedPvP"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "allowOutsideCharacters"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "creativeMode"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "disableMobAI"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "canSettlersDie"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "dayTimeMod"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "nightTimeMod"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[exclusions]]
+source = "native_world_settings_build_24926481"
+key = "gameVersion"
+reason = "Stored inside the selected world save/archive or generated by the game. Requires a world-save editor or explicit native operation; not a standalone server configuration key."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://necessewiki.com/Multiplayer"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 18 active configuration fields in both languages. The reviewed validation setting checks client actions on the server. The island-only boundary behavior is resolved by current-build consumer evidence below. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[sources]]
+id = "native_semantics_build_24926481"
+kind = "install_probe"
+path = "Server.jar:WorldEntity.isWithinWorldBorder, GameMath.squareDistance, IslandData.generateIslandData"
+authority = "current_official_package_read_only_consumer_evidence"
+description = "2026-09-30: Read-only bytecode inspection: isWithinWorldBorder applies only when the spawn identifier is an island position and worldBorderSize >= 0. squareDistance returns max(abs(dx), abs(dy)); IslandData uses the predicate for travel eligibility. -1 disables the boundary and 0 retains only the spawn island. The 1.0 official release notes removed the world-border setting for the seamless-world transition; the retained native consumer applies to island-coordinate worlds, not the seamless map. SHA256: necesse/engine/Settings.class b5eed1bb24e7d9589ed3e2add612e40814f16081bfa22900d7065fafb464954b; necesse/engine/world/WorldEntity.class 3cd4982f5224cc2001218c937742e15ee5952ce328d0f24fa33fb83ba1c61a3b; necesse/engine/util/GameMath.class b50b13a377a4b48a9ff12fd3e0462234e4f1cbf8a31f9625fb2c44b24dc633b5; necesse/inventory/container/travel/IslandData.class 77f1f873f4bb521067558370423f8e619eb1b295436c6b94c87f0e027e92b318."

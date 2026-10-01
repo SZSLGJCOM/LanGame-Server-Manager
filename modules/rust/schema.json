@@ -1,0 +1,943 @@
+{
+  "type": "object",
+  "title": "Rust Dedicated Server",
+  "properties": {
+    "server_name": {
+      "type": "string",
+      "title": "Server Name",
+      "description": "Shown in the Rust server browser.",
+      "default": "LanGame Rust Server",
+      "x-lsgm-default-source": "instance_name",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 0,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.hostname",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Rust browser description written to server.cfg.",
+      "default": "Managed by LanGame Server Manager.",
+      "format": "textarea",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 10,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.description",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "max_players": {
+      "type": "integer",
+      "title": "Max Players",
+      "description": "Visible player capacity. 0 is used only for hidden/whitelist operations.",
+      "default": 100,
+      "minimum": 0,
+      "maximum": 500,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 20,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.maxplayers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_gamemode": {
+      "type": "string",
+      "title": "Game Mode",
+      "description": "Rust game mode cvar. Leave empty for normal survival behavior.",
+      "default": "",
+      "enum": [
+        "",
+        "softcore",
+        "hardcore"
+      ],
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 30,
+      "x-lsgm-source": "facepunch_server_gamemodes",
+      "x-lsgm-source-key": "server.gamemode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "tags": {
+      "type": "string",
+      "title": "Server Tags",
+      "description": "Comma-separated browser tags such as monthly, biweekly, weekly, vanilla, and solo.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 40,
+      "x-lsgm-source": "facepunch_server_browser_tags",
+      "x-lsgm-source-key": "server.tags",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "website_url": {
+      "type": "string",
+      "title": "Website URL",
+      "description": "Optional website link shown in the Rust browser.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 50,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.url",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "header_image_url": {
+      "type": "string",
+      "title": "Header Image URL",
+      "description": "Optional server browser header image URL.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 60,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.headerimage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "logo_image_url": {
+      "type": "string",
+      "title": "Server Icon URL",
+      "description": "Optional server icon URL (server.logoimage).",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 70,
+      "x-lsgm-source": "facepunch_custom_icon",
+      "x-lsgm-source-key": "server.logoimage",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "favorites_endpoint": {
+      "type": "string",
+      "title": "Favorites Endpoint",
+      "description": "Optional custom endpoint for player favorites tracking (server.favoritesEndpoint).",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 80,
+      "x-lsgm-source": "facepunch_dns_records",
+      "x-lsgm-source-key": "server.favoritesEndpoint",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "level": {
+      "type": "string",
+      "title": "Map Type",
+      "description": "Rust world generation preset.",
+      "default": "Procedural Map",
+      "enum": [
+        "Procedural Map",
+        "Barren",
+        "HapisIsland",
+        "SavasIsland"
+      ],
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 100,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.level",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "level_url": {
+      "type": "string",
+      "title": "Custom Map URL",
+      "description": "Optional custom map URL (server.levelurl). When set, world seed and size are skipped.",
+      "default": "",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 110,
+      "x-lsgm-source": "facepunch_custom_maps",
+      "x-lsgm-source-key": "server.levelurl",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "seed": {
+      "type": "integer",
+      "title": "World Seed",
+      "description": "Procedural world seed.",
+      "default": 12345,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 120,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.seed",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_size": {
+      "type": "integer",
+      "title": "World Size",
+      "description": "Procedural world size. Larger values increase memory and disk pressure.",
+      "default": 3500,
+      "minimum": 1000,
+      "maximum": 6000,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 130,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.worldsize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "deep_sea_terrain_everywhere": {
+      "type": "boolean",
+      "title": "Deep-sea terrain across the map",
+      "description": "Apply deep-sea terrain and foliage settings to the entire map. Disabled by default; changes apply on the next server start.",
+      "default": false,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 135,
+      "x-lsgm-source": "native_deep_sea_terrain_build_25454815",
+      "x-lsgm-source-key": "deepsea.terrain_everywhere",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "save_interval_seconds": {
+      "type": "integer",
+      "title": "Save Interval (Seconds)",
+      "description": "How often the server writes world state.",
+      "default": 300,
+      "minimum": 60,
+      "maximum": 3600,
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 140,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.saveinterval",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "world_config_json": {
+      "type": "string",
+      "title": "Procedural World Configuration (JSON)",
+      "description": "Optional JSON world-generation settings for procedural maps.",
+      "default": "{}",
+      "format": "textarea",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 150,
+      "x-lsgm-source": "facepunch_procedural_generation",
+      "x-lsgm-source-key": "world.configfile",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "pve": {
+      "type": "boolean",
+      "title": "PvE Mode",
+      "description": "Disables player-versus-player damage when enabled.",
+      "default": false,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 200,
+      "x-lsgm-source": "facepunch_server_browser_tags",
+      "x-lsgm-source-key": "server.pve",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "secure": {
+      "type": "boolean",
+      "title": "Secure / EAC",
+      "description": "Enables Easy Anti-Cheat protection. Keep enabled for normal public servers. Turning it off starts Rust with -insecure and removes the server from the normal secure browser listing.",
+      "default": true,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 210,
+      "x-lsgm-source": "facepunch_security_launch_2025",
+      "x-lsgm-source-key": "-insecure",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "censor_player_list": {
+      "type": "boolean",
+      "title": "Censor Player List",
+      "description": "Hide player identities in public surfaces (censorplayerlist).",
+      "default": false,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 220,
+      "x-lsgm-source": "facepunch_hidden_whitelist",
+      "x-lsgm-source-key": "censorplayerlist",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "rcon_password": {
+      "type": "string",
+      "title": "RCON Password",
+      "description": "Password required to authenticate remote console connections. Passed to the server at launch.",
+      "x-lsgm-default-source": "generated_secret",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 230,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "+rcon.password",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "rcon_web": {
+      "type": "boolean",
+      "title": "Web RCON",
+      "description": "Written to server.cfg and passed at launch as rcon.web; when true Rust uses WebSocket RCON for LanGame player and admin commands.",
+      "default": true,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 240,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "rcon.web",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "owner_entries": {
+      "type": "string",
+      "title": "Owners",
+      "description": "One entry per line: Steam64ID|Name|Reason. Materialized to users.cfg ownerid lines.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 250,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "pipe_steam64",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "steam_id",
+          "format": "steam64",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "text",
+          "required": false,
+          "maxLength": 128
+        },
+        {
+          "name": "reason",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "direct",
+        "add_action_id": "ownerid",
+        "remove_action_id": "removeowner",
+        "consume_action_ids": [
+          "ownerid",
+          "removeowner"
+        ]
+      },
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "ownerid users.cfg",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "moderator_entries": {
+      "type": "string",
+      "title": "Moderators",
+      "description": "One entry per line: Steam64ID|Name|Reason. Materialized to users.cfg moderatorid lines.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 260,
+      "x-lsgm-player-access-kind": "admin",
+      "x-lsgm-player-access-codec": "pipe_steam64",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "steam_id",
+          "format": "steam64",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "text",
+          "required": false,
+          "maxLength": 128
+        },
+        {
+          "name": "reason",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "direct",
+        "add_action_id": "moderatorid",
+        "remove_action_id": "removemoderator",
+        "consume_action_ids": [
+          "moderatorid",
+          "removemoderator"
+        ]
+      },
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "moderatorid users.cfg",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "skip_queue_entries": {
+      "type": "string",
+      "title": "Queue Priority",
+      "description": "One entry per line: Steam64ID|Name|Note. Materialized to users.cfg global.skipqueueid lines.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 270,
+      "x-lsgm-player-access-kind": "priority",
+      "x-lsgm-player-access-codec": "pipe_steam64",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "steam_id",
+          "format": "steam64",
+          "required": true
+        },
+        {
+          "name": "name",
+          "format": "text",
+          "required": false,
+          "maxLength": 128
+        },
+        {
+          "name": "note",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "restart"
+      },
+      "x-lsgm-source": "facepunch_hidden_whitelist",
+      "x-lsgm-source-key": "global.skipqueueid users.cfg",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "banned_entries": {
+      "type": "string",
+      "title": "Banned Steam IDs",
+      "description": "One entry per line: Steam64ID|Reason. Materialized to bans.cfg banid lines.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 280,
+      "x-lsgm-player-access-kind": "block",
+      "x-lsgm-player-access-codec": "pipe_steam64",
+      "x-lsgm-player-access-delimited-fields": [
+        {
+          "name": "steam_id",
+          "format": "steam64",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "format": "text",
+          "required": false,
+          "maxLength": 512,
+          "consumeRest": true
+        }
+      ],
+      "x-lsgm-player-access-sync": {
+        "mode": "direct",
+        "add_action_id": "ban_steamid",
+        "remove_action_id": "unban_steamid",
+        "verify_action_id": "banlistex",
+        "consume_action_ids": [
+          "ban_steamid",
+          "unban_steamid"
+        ]
+      },
+      "x-lsgm-source": "facepunch_useful_commands",
+      "x-lsgm-source-key": "banid bans.cfg",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "max_team_size": {
+      "type": "integer",
+      "title": "Max Team Size",
+      "description": "Team member cap (relationshipmanager.maxteamsize).",
+      "default": 8,
+      "minimum": 0,
+      "maximum": 128,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 300,
+      "x-lsgm-source": "facepunch_server_gamemodes",
+      "x-lsgm-source-key": "relationshipmanager.maxteamsize",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "softcore_reclaim_fraction_main": {
+      "type": "number",
+      "title": "Softcore Main Fraction",
+      "description": "Fraction of main inventory recoverable in softcore mode.",
+      "default": 0.5,
+      "minimum": 0,
+      "maximum": 1,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 310,
+      "x-lsgm-source": "facepunch_server_gamemodes",
+      "x-lsgm-source-key": "gamemodesoftcore.reclaim_fraction_main",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "softcore_reclaim_fraction_belt": {
+      "type": "number",
+      "title": "Softcore Belt Fraction",
+      "description": "Fraction of belt inventory recoverable in softcore mode.",
+      "default": 0.5,
+      "minimum": 0,
+      "maximum": 1,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 320,
+      "x-lsgm-source": "facepunch_server_gamemodes",
+      "x-lsgm-source-key": "gamemodesoftcore.reclaim_fraction_belt",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "softcore_reclaim_fraction_wear": {
+      "type": "number",
+      "title": "Softcore Wear Fraction",
+      "description": "Fraction of worn items recoverable in softcore mode.",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 330,
+      "x-lsgm-source": "facepunch_server_gamemodes",
+      "x-lsgm-source-key": "gamemodesoftcore.reclaim_fraction_wear",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "tutorial_enabled": {
+      "type": "boolean",
+      "title": "Enable Tutorial Island",
+      "description": "Allows eligible new players to start on Tutorial Island.",
+      "default": false,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 340,
+      "x-lsgm-source": "facepunch_tutorial_island",
+      "x-lsgm-source-key": "server.tutorialEnabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wipe_day_of_week": {
+      "type": "integer",
+      "title": "Countdown weekday",
+      "description": "Weekday used to calculate the in-game countdown (0=Sunday..6=Saturday).",
+      "default": 4,
+      "minimum": 0,
+      "maximum": 6,
+      "x-lsgm-section": "wipe",
+      "x-lsgm-order": 350,
+      "x-lsgm-source": "facepunch_wipe_timer",
+      "x-lsgm-source-key": "wipetimer.wipeDayofWeek",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wipe_hour_of_day": {
+      "type": "number",
+      "title": "Countdown hour",
+      "description": "Hour used to calculate the in-game countdown; fractional values specify minutes.",
+      "default": 19,
+      "minimum": 0,
+      "maximum": 23.99,
+      "x-lsgm-section": "wipe",
+      "x-lsgm-order": 360,
+      "x-lsgm-source": "facepunch_wipe_timer",
+      "x-lsgm-source-key": "wipetimer.wipeHourofDay",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wipe_timezone": {
+      "type": "string",
+      "title": "Countdown time zone",
+      "description": "Time zone used to calculate the in-game countdown.",
+      "default": "Europe/London",
+      "x-lsgm-section": "wipe",
+      "x-lsgm-order": 370,
+      "x-lsgm-source": "facepunch_wipe_timer",
+      "x-lsgm-source-key": "wipetimer.wipeTimezone",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wipe_cron_override": {
+      "type": "string",
+      "title": "Countdown Cron override",
+      "description": "Optional Cron expression for the in-game countdown and endgame event timing.",
+      "default": "",
+      "x-lsgm-section": "wipe",
+      "x-lsgm-order": 380,
+      "x-lsgm-source": "facepunch_wipe_timer",
+      "x-lsgm-source-key": "wipetimer.wipecronoverride",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "wipe_unix_timestamp_override": {
+      "type": "integer",
+      "title": "Countdown timestamp override",
+      "description": "Optional exact countdown target in Unix seconds. Past timestamps are ignored by Rust.",
+      "default": 0,
+      "minimum": 0,
+      "x-lsgm-section": "wipe",
+      "x-lsgm-order": 390,
+      "x-lsgm-source": "facepunch_wipe_timer",
+      "x-lsgm-source-key": "wipetimer.wipeUnixTimestampOverride",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "app_port": {
+      "type": "integer",
+      "title": "Rust+ Port",
+      "description": "Rust+ websocket port (app.port). Use -1 to disable.",
+      "default": 28082,
+      "minimum": -1,
+      "maximum": 65535,
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 400,
+      "x-lsgm-source": "facepunch_rust_plus",
+      "x-lsgm-source-key": "app.port",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "app_public_ip": {
+      "type": "string",
+      "title": "Rust+ Public IP",
+      "description": "Optional public IP override for Rust+ pairing (app.publicip).",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "facepunch_rust_plus",
+      "x-lsgm-source-key": "app.publicip",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "app_listen_ip": {
+      "type": "string",
+      "title": "Rust+ Listen IP",
+      "description": "Optional local listen IP for Rust+ websocket service (app.listenip).",
+      "default": "",
+      "x-lsgm-section": "network",
+      "x-lsgm-order": 420,
+      "x-lsgm-source": "facepunch_rust_plus",
+      "x-lsgm-source-key": "app.listenip",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bans_server_endpoint": {
+      "type": "string",
+      "title": "Central Ban Endpoint",
+      "description": "Optional external ban backend endpoint (server.bansServerEndpoint).",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 430,
+      "x-lsgm-source": "facepunch_centralized_banning",
+      "x-lsgm-source-key": "server.bansServerEndpoint",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bans_server_failure_mode": {
+      "type": "integer",
+      "title": "Ban Backend Failure Mode",
+      "description": "0=permit when backend is unreachable, 1=deny when backend is unreachable.",
+      "default": 0,
+      "enum": [
+        0,
+        1
+      ],
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 440,
+      "x-lsgm-source": "facepunch_centralized_banning",
+      "x-lsgm-source-key": "server.bansServerFailureMode",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "bans_server_timeout_seconds": {
+      "type": "integer",
+      "title": "Ban Backend Timeout (Seconds)",
+      "description": "Timeout for central ban backend requests (server.bansServerTimeout).",
+      "default": 5,
+      "minimum": 1,
+      "maximum": 120,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 450,
+      "x-lsgm-source": "facepunch_centralized_banning",
+      "x-lsgm-source-key": "server.bansServerTimeout",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "reports_print_to_console": {
+      "type": "boolean",
+      "title": "Print Player Reports to Console",
+      "description": "Print F7 player report summaries to the server log.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 460,
+      "x-lsgm-source": "facepunch_receiving_reports",
+      "x-lsgm-source-key": "server.printReportsToConsole",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "reports_server_endpoint": {
+      "type": "string",
+      "title": "Player Report Endpoint",
+      "description": "Optional HTTP endpoint receiving complete player reports.",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 470,
+      "x-lsgm-source": "facepunch_receiving_reports",
+      "x-lsgm-source-key": "server.reportsServerEndpoint",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "reports_server_endpoint_key": {
+      "type": "string",
+      "title": "Player Report Endpoint Key",
+      "description": "Private verification key sent with reports to the configured endpoint.",
+      "default": "",
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 480,
+      "x-lsgm-source": "facepunch_receiving_reports",
+      "x-lsgm-source-key": "server.reportsServerEndpointKey",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_all_users": {
+      "type": "boolean",
+      "title": "Creative: All Players",
+      "description": "Grants creative mode to every player.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 600,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.allusers",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_always_on_enabled": {
+      "type": "boolean",
+      "title": "Creative: Keep Devices Running",
+      "description": "Allows AlwaysOn commands to keep selected devices running.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 610,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.alwaysonenabled",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_bypass_hold_to_place_duration": {
+      "type": "boolean",
+      "title": "Creative: Instant Placement",
+      "description": "Removes the hold-to-place delay for deployable items.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 620,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.bypassholdtoplaceduration",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_free_build": {
+      "type": "boolean",
+      "title": "Creative: Free Building",
+      "description": "For players in creative mode, removes construction and upgrade costs and avoids consuming placed deployable items.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 630,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.freebuild",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_free_placement": {
+      "type": "boolean",
+      "title": "Creative: Unrestricted Placement",
+      "description": "Bypasses normal placement checks.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 640,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.freeplacement",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_free_repair": {
+      "type": "boolean",
+      "title": "Creative: Free Instant Repairs",
+      "description": "For players in creative mode, removes repair costs and the cooldown after damage.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 650,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.freerepair",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "creative_unlimited_io": {
+      "type": "boolean",
+      "title": "Creative: Extended Wiring",
+      "description": "For players in creative mode, bypasses wire-path validation and increases maximum wire length from 30 to 200 meters.",
+      "default": false,
+      "x-lsgm-section": "creative",
+      "x-lsgm-order": 660,
+      "x-lsgm-source": "facepunch_creative_mode",
+      "x-lsgm-source-key": "creative.unlimitedio",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "server_cfg_extra": {
+      "type": "string",
+      "title": "Advanced: server.cfg Extra Lines",
+      "description": "Additional server.cfg lines that do not replace managed identity, network, or RCON settings.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 500,
+      "x-lsgm-disallowed-line-prefixes": [
+        "server.ip",
+        "server.identity",
+        "server.port",
+        "server.queryport",
+        "rcon.ip",
+        "rcon.port",
+        "rcon.password",
+        "rcon.web"
+      ],
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "server.cfg extra lines",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "users_cfg_extra": {
+      "type": "string",
+      "title": "Advanced: users.cfg Extra Lines",
+      "description": "Non-roster users.cfg lines appended after managed ownership and queue entries. ownerid, moderatorid, and skipqueueid identities must be edited in Player Access.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 510,
+      "x-lsgm-disallowed-line-prefixes": [
+        "ownerid",
+        "moderatorid",
+        "skipqueueid"
+      ],
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "users.cfg extra lines",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "bans_cfg_extra": {
+      "type": "string",
+      "title": "Advanced: bans.cfg Extra Lines",
+      "description": "Non-roster bans.cfg lines appended after managed ban entries. banid identities must be edited in Player Access.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 520,
+      "x-lsgm-disallowed-line-prefixes": [
+        "banid"
+      ],
+      "x-lsgm-source": "facepunch_useful_commands",
+      "x-lsgm-source-key": "bans.cfg extra lines",
+      "x-lsgm-source-surface": "generated_roster"
+    },
+    "custom_launch_flags": {
+      "type": "string",
+      "title": "Advanced: Custom Launch Flags",
+      "description": "Additional RustDedicated launch flags appended to the launch plan.",
+      "default": "",
+      "format": "textarea",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 530,
+      "x-lsgm-source": "facepunch_creating_server",
+      "x-lsgm-source-key": "RustDedicated launch parameters",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "upkeep_group_scaling": {
+      "type": "boolean",
+      "title": "Group upkeep scaling",
+      "description": "Increase building upkeep according to the number of cupboard and qualifying code-lock users.",
+      "default": true,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 700,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_scaling",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_window_hours": {
+      "type": "number",
+      "title": "Authorization history (hours)",
+      "description": "Recently deauthorized players still count for this many hours. Zero expires their history immediately.",
+      "default": 24,
+      "minimum": 0,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 710,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_window_hours",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_tier_0_playercount": {
+      "type": "integer",
+      "title": "First tier players",
+      "description": "Number of players in the first upkeep tier. The default four players incur no increase.",
+      "default": 4,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 720,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_tier_0_playercount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_tier_0_increase": {
+      "type": "number",
+      "title": "First tier increase per player",
+      "description": "Fraction of base upkeep added per player in the first tier. 0.02 means an additional 2% per player.",
+      "default": 0,
+      "minimum": 0,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 730,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_tier_0_increase",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_tier_1_playercount": {
+      "type": "integer",
+      "title": "Second tier players",
+      "description": "Number of additional players in the second tier, after the first tier is filled.",
+      "default": 6,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 740,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_tier_1_playercount",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_tier_1_increase": {
+      "type": "number",
+      "title": "Second tier increase per player",
+      "description": "Fraction of base upkeep added per player in the second tier. 0.02 means an additional 2% per player.",
+      "default": 0.02,
+      "minimum": 0,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 750,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_tier_1_increase",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_tier_2_increase": {
+      "type": "number",
+      "title": "Remaining players increase",
+      "description": "Fraction of base upkeep added for each player beyond the first two tiers. 0.04 means an additional 4%.",
+      "default": 0.04,
+      "minimum": 0,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 760,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_tier_2_increase",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_max_multiplier": {
+      "type": "number",
+      "title": "Maximum total upkeep multiplier",
+      "description": "Caps the total upkeep multiplier after adding all tier increases. 3 means at most three times base upkeep, not an extra 300%.",
+      "default": 3,
+      "minimum": 1,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 770,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_max_multiplier",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_count_locks": {
+      "type": "boolean",
+      "title": "Count code-lock users",
+      "description": "Include users authorized by a door code or guest code when the lock exceeds the configured user threshold.",
+      "default": true,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 780,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_count_locks",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_group_history_max": {
+      "type": "integer",
+      "title": "Maximum remembered players",
+      "description": "Maximum recent players remembered per tool cupboard. The oldest entries are discarded first; current cupboard authorizations are counted separately.",
+      "default": 256,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 790,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_group_history_max",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "upkeep_lock_min_users": {
+      "type": "integer",
+      "title": "Code-lock user threshold",
+      "description": "A lock with this many or fewer main-code and guest-code users contributes no users to upkeep scaling. The default 2 counts locks with at least 3 users.",
+      "default": 2,
+      "minimum": 0,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 800,
+      "x-lsgm-source": "native_september_configuration_build_25129933",
+      "x-lsgm-source-key": "decay.upkeep_lock_min_users",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "use_new_navmesh": {
+      "type": "boolean",
+      "title": "Use new navigation mesh",
+      "description": "Opt in with -useNewNavmesh on the next server start. The new navigation mesh can be saved to disk and uses more background threads; animals may enter bases and monuments.",
+      "default": false,
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 810,
+      "x-lsgm-source": "facepunch_september_2026",
+      "x-lsgm-source-key": "-useNewNavmesh",
+      "x-lsgm-source-surface": "launch_arg"
+    }
+  },
+  "required": [
+    "server_name",
+    "max_players",
+    "rcon_password"
+  ]
+}

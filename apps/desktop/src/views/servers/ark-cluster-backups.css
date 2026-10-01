@@ -1,0 +1,11 @@
+.ark-cluster-backups { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); }
+.ark-cluster-backups h4 { margin: 0; font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
+.ark-cluster-backups p { font-size: var(--text-body); line-height: var(--leading-body); }
+.ark-cluster-exclusive { display: flex; align-items: flex-start; gap: 8px; font-size: var(--text-body); line-height: var(--leading-body); }
+.ark-cluster-exclusive input { margin-top: 3px; }
+.ark-cluster-exclusive code { display: block; color: var(--shell-muted); }
+.ark-cluster-backup-list { list-style: none; padding: 0; margin: 0; }
+.ark-cluster-backup-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.ark-cluster-backup-list li > div { display: grid; gap: 4px; font-size: var(--text-meta); }
+.ark-cluster-backup-list span { color: var(--shell-muted); }
+.ark-cluster-restore-confirm { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--theme-warning-border); border-radius: 6px; background: var(--theme-warning-bg); }

@@ -1,0 +1,110 @@
+id = "vrising"
+name = "V Rising Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for V Rising via SteamCMD."
+steam_app_id = 1829350
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "vrising"
+
+[process]
+executable = "VRisingServer.exe"
+args_template = [
+  "-persistentDataPath",
+  "{{paths.instance_root}}",
+  "{{vrising.bind_address_flag}}",
+  "{{vrising.bind_address_value}}",
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "V Rising should stay background-hosted after LanGame materializes the live persistent data layout and Settings files. The desktop app should remain the only operator-facing surface."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 9876
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 9877
+
+[[default_ports]]
+name = "rcon"
+protocol = "tcp"
+port = 25575
+
+[runtime.bind_address]
+mode = "strict"
+port_names = ["game"]
+startup_timeout_ms = 180000
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "source_rcon"
+command_template = "announce {{target}}"
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[runtime.shutdown]
+grace_period_ms = 15000
+
+[[runtime.shutdown.commands]]
+transport = "source_rcon"
+fallback_transport = "console_ctrl_c"
+command = "shutdown 0 \"LanGame app exit\""
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+wait_after_ms = 12000
+
+[storage]
+runtime_copy_exclusions = ["BepInEx/plugins", "BepInEx/config", "BepInEx/cache", "BepInEx/patchers", "BepInEx/LogOutput.log"]
+saves_path_template = "{{paths.instance_root}}/Saves"
+
+[mods.source]
+provider = "thunderstore"
+label = "Thunderstore"
+url = "https://thunderstore.io/c/v-rising/"
+install_note = "V Rising server mods require BepInEx to be installed in the dedicated server root first. LanGame stages downloaded Thunderstore payloads or local plugin files into BepInEx/plugins; install BepInExPack separately before expecting plugins to load."
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/BepInEx/plugins"
+target_label = "BepInEx/plugins"
+accepts = ["dll", "zip", "folder"]
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "settings_adminlist_and_banlist"
+reason = "V Rising loads persistent Settings/adminlist.txt and Settings/banlist.txt rosters. The current official RCON surface supports service commands such as announce and shutdown, but does not expose the in-game ListUsers, kick, banuser, unban, banned, or reloadbanlist administrator-console commands. A2S_PLAYER is queried separately for read-only names when the server exposes them."
+verification = "Start VRisingServer.exe on Windows, confirm Settings/adminlist.txt and Settings/banlist.txt are loaded, and verify access changes after restart. Keep live player moderation disabled until Stunlock documents and verifies a host-callable command transport."
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[[runtime.port_roles]]
+role = "service"
+port_names = ["rcon"]
+
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000

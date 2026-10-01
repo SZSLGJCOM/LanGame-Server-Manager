@@ -1,0 +1,613 @@
+status = "exhaustive_verified"
+last_verified = "2026-09-28"
+notes = "Mojang's version_manifest_v2.json resolves latest.release to 26.2, released 2026-06-16. Its version document identifies the formal server.jar as SHA1 823e2250d24b3ddac457a60c92a6a941943fcd6a (60894273 bytes) and requires Java 25. A clean launch with that exact artifact and a Temurin Java 25 runtime generated the 69-key upstream server.properties crosswalk used here. The 26.2 surface adds code-of-conduct, status heartbeat, management-server, spam-threshold, and text-filtering-version properties, and no longer emits the former allow-nether, pvp, command-block, spawn, or debug properties. LanGame replaces the native empty rcon.password default with one persisted 122-bit random secret per instance so the declared RCON command surface is immediately safe to enable. extra_properties remains available for future vanilla or fork-specific keys. On 2026-09-28 the live Mojang manifest resolves stable release 26.3 (2026-09-15); its official release notes change white-list to true by default. New instances follow that default; persisted explicit false remains false. The 69-key first-launch reference remains the historical 26.2 package probe, not a claimed 26.3 live-server run."
+
+[[sources]]
+id = "mojang_manifest_release_26_2"
+kind = "documentation"
+path = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
+authority = "mojang_piston_version_manifest"
+description = "2026-07-13 resolution: latest.release 26.2; version URL https://piston-meta.mojang.com/v1/packages/c8eb00be8a1f9fb9adf70ee415b7e1f746b636e8/26.2.json; server URL https://piston-data.mojang.com/v1/objects/823e2250d24b3ddac457a60c92a6a941943fcd6a/server.jar; server SHA1 823e2250d24b3ddac457a60c92a6a941943fcd6a; downloaded server SHA256 CDACDFB25898DE5E4B4B0E5DDCC2722F77067E46605709C2D886C000EBB63EC5; size 60894273; Java major version 25."
+
+[[sources]]
+id = "mojang_list_players_26_2"
+kind = "documentation"
+path = "server.jar!/META-INF/versions/26.2/server-26.2.jar!/net/minecraft/server/commands/ListPlayersCommand.class"
+authority = "official_mojang_server_package"
+url = "https://piston-data.mojang.com/v1/objects/823e2250d24b3ddac457a60c92a6a941943fcd6a/server.jar"
+description = "On 2026-09-07 the local server.jar SHA1 was verified as 823e2250d24b3ddac457a60c92a6a941943fcd6a and version.json as 26.2. ListPlayersCommand class constants confirm list uuids, GameProfile.id, and commands.list.nameAndId; packaged en_us.json defines '%s (%s)' rows and 'There are %s of a max of %s players online: %s'. ComponentUtils defines the comma-space separator. Fixtures are synthetic contract cases, not real connected-player captures."
+
+[[sources]]
+id = "upstream_first_launch_properties_26_2"
+kind = "config_file"
+path = "modules/minecraft/reference-configs/server.properties"
+authority = "formal_server_jar_first_launch"
+description = "Sanitized server.properties generated on 2026-07-13 by the Mojang 26.2 server.jar with a Java 25 runtime after accepting the EULA only for the isolated verification run. The native-generated management-server-secret is cleared; all 69 property names and other values are preserved."
+
+[[sources]]
+id = "server_properties"
+kind = "config_file"
+path = "server.properties"
+authority = "minecraft_wiki_server_properties"
+description = "Vanilla Minecraft Java server.properties keys for identity, authentication, access posture, world generation, gameplay, network services, performance, resource packs, and raw extra property lines."
+url = "https://minecraft.wiki/w/Server.properties"
+
+[[sources]]
+id = "minecraft_langame_server_json"
+kind = "config_file"
+path = ".langame/minecraft-server.json"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed package marker for version metadata in the hidden .langame folder."
+
+[[sources]]
+id = "minecraft_jre_jaxp_properties"
+kind = "config_file"
+path = "jre/conf/jaxp.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE JAXP properties file."
+
+[[sources]]
+id = "minecraft_jre_logging_properties"
+kind = "config_file"
+path = "jre/conf/logging.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE logging configuration."
+
+[[sources]]
+id = "minecraft_jre_management_properties"
+kind = "config_file"
+path = "jre/conf/management/management.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE management properties file."
+
+[[sources]]
+id = "minecraft_jre_net_properties"
+kind = "config_file"
+path = "jre/conf/net.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE network properties file."
+
+[[sources]]
+id = "minecraft_jre_sound_properties"
+kind = "config_file"
+path = "jre/conf/sound.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE sound properties file."
+
+[[sources]]
+id = "minecraft_jre_jvm_cfg"
+kind = "config_file"
+path = "jre/lib/jvm.cfg"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE JVM configuration file."
+
+[[sources]]
+id = "minecraft_jre_psfontj2d_properties"
+kind = "config_file"
+path = "jre/lib/psfontj2d.properties"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft JRE font rendering properties file."
+
+[[sources]]
+id = "minecraft_server_json_root"
+kind = "config_file"
+path = "minecraft-server.json"
+authority = "installed_minecraft_dedicated_server_package"
+description = "Installed Minecraft server metadata JSON at server root."
+
+[[sources]]
+id = "eula_txt"
+kind = "config_file"
+path = "eula.txt"
+authority = "mojang_minecraft_eula_file"
+description = "eula.txt acknowledgement file used by vanilla server.jar before startup continues."
+url = "https://www.minecraft.net/eula"
+
+[[sources]]
+id = "roster_json"
+kind = "generated_roster"
+path = "ops.json / whitelist.json / banned-players.json / banned-ips.json"
+authority = "minecraft_native_access_json_files"
+description = "Native Minecraft access-control JSON files generated from schema roster entries."
+url = "https://minecraft.wiki/w/Server.properties"
+
+[[sources]]
+id = "jvm_args"
+kind = "launch_arg"
+path = "java.exe"
+authority = "java_hotspot_xms_xmx_launch_flags"
+description = "Java heap flags used to launch server.jar."
+url = "https://docs.oracle.com/en/java/javase/"
+
+[[sources]]
+id = "runtime_rcon"
+kind = "runtime_rcon"
+path = "Minecraft RCON"
+authority = "minecraft_rcon_commands"
+description = "Minecraft server command surface used through RCON for list, say, kick, ban, pardon, op/deop, whitelist, save-all, and stop."
+url = "https://minecraft.wiki/w/Commands"
+
+[[items]]
+source = "eula_txt"
+key = "eula"
+schema_key = "eula_accepted"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "motd"
+schema_key = "motd"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "max-players"
+schema_key = "max_players"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enable-status"
+schema_key = "enable_status"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "hide-online-players"
+schema_key = "hide_online_players"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "online-mode"
+schema_key = "online_mode"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enforce-secure-profile"
+schema_key = "enforce_secure_profile"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "prevent-proxy-connections"
+schema_key = "prevent_proxy_connections"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "white-list"
+schema_key = "enable_whitelist"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enforce-whitelist"
+schema_key = "enforce_whitelist"
+surface = "config_file"
+
+[[items]]
+source = "roster_json"
+key = "ops.json"
+schema_key = "operator_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "roster_json"
+key = "whitelist.json"
+schema_key = "whitelist_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "roster_json"
+key = "banned-players.json"
+schema_key = "banned_player_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "roster_json"
+key = "banned-ips.json"
+schema_key = "banned_ip_entries"
+surface = "generated_roster"
+
+[[items]]
+source = "server_properties"
+key = "op-permission-level"
+schema_key = "op_permission_level"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "function-permission-level"
+schema_key = "function_permission_level"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "broadcast-console-to-ops"
+schema_key = "broadcast_console_to_ops"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "broadcast-rcon-to-ops"
+schema_key = "broadcast_rcon_to_ops"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "log-ips"
+schema_key = "log_ips"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enable-code-of-conduct"
+schema_key = "enable_code_of_conduct"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "level-name"
+schema_key = "level_name"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "level-seed"
+schema_key = "level_seed"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "level-type"
+schema_key = "level_type"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "generator-settings"
+schema_key = "generator_settings"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "generate-structures"
+schema_key = "generate_structures"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "gamemode"
+schema_key = "gamemode"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "force-gamemode"
+schema_key = "force_gamemode"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "difficulty"
+schema_key = "difficulty"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "hardcore"
+schema_key = "hardcore"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "spawn-protection"
+schema_key = "spawn_protection"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "max-world-size"
+schema_key = "max_world_size"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "player-idle-timeout"
+schema_key = "player_idle_timeout"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "pause-when-empty-seconds"
+schema_key = "pause_when_empty_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "status-heartbeat-interval"
+schema_key = "status_heartbeat_interval"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enable-query"
+schema_key = "enable_query"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enable-rcon"
+schema_key = "enable_rcon"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "rcon.password"
+schema_key = "rcon_password"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "network-compression-threshold"
+schema_key = "network_compression_threshold"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "rate-limit"
+schema_key = "rate_limit"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "use-native-transport"
+schema_key = "use_native_transport"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "accepts-transfers"
+schema_key = "accepts_transfers"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-enabled"
+schema_key = "management_server_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-host"
+schema_key = "management_server_host"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-port"
+schema_key = "management_server_port"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-secret"
+schema_key = "management_server_secret"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-allowed-origins"
+schema_key = "management_server_allowed_origins"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-tls-enabled"
+schema_key = "management_server_tls_enabled"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-tls-keystore"
+schema_key = "management_server_tls_keystore"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "management-server-tls-keystore-password"
+schema_key = "management_server_tls_keystore_password"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "allow-flight"
+schema_key = "allow_flight"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "view-distance"
+schema_key = "view_distance"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "simulation-distance"
+schema_key = "simulation_distance"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "entity-broadcast-range-percentage"
+schema_key = "entity_broadcast_range_percentage"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "max-tick-time"
+schema_key = "max_tick_time"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "sync-chunk-writes"
+schema_key = "sync_chunk_writes"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "max-chained-neighbor-updates"
+schema_key = "max_chained_neighbor_updates"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "enable-jmx-monitoring"
+schema_key = "enable_jmx_monitoring"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "chat-spam-threshold-seconds"
+schema_key = "chat_spam_threshold_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "command-spam-threshold-seconds"
+schema_key = "command_spam_threshold_seconds"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "bug-report-link"
+schema_key = "bug_report_link"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "initial-enabled-packs"
+schema_key = "initial_enabled_packs"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "initial-disabled-packs"
+schema_key = "initial_disabled_packs"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "resource-pack"
+schema_key = "resource_pack"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "resource-pack-id"
+schema_key = "resource_pack_id"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "resource-pack-sha1"
+schema_key = "resource_pack_sha1"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "resource-pack-prompt"
+schema_key = "resource_pack_prompt"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "require-resource-pack"
+schema_key = "require_resource_pack"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "text-filtering-config"
+schema_key = "text_filtering_config"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "text-filtering-version"
+schema_key = "text_filtering_version"
+surface = "config_file"
+
+[[items]]
+source = "server_properties"
+key = "region-file-compression"
+schema_key = "region_file_compression"
+surface = "config_file"
+
+[[items]]
+source = "jvm_args"
+key = "-Xms"
+schema_key = "memory_min_mb"
+surface = "launch_arg"
+
+[[items]]
+source = "jvm_args"
+key = "-Xmx"
+schema_key = "memory_max_mb"
+surface = "launch_arg"
+
+[[items]]
+source = "server_properties"
+key = "raw_extra_lines"
+schema_key = "extra_properties"
+surface = "materializer"
+
+[[exclusions]]
+source = "server_properties"
+key = "server-port"
+reason = "Game port is instance port-binding state."
+
+[[exclusions]]
+source = "server_properties"
+key = "server-ip"
+reason = "Bind IP is instance network state rendered from the instance bind address."
+
+[[exclusions]]
+source = "server_properties"
+key = "query.port"
+reason = "Query port is instance port-binding state."
+
+[[exclusions]]
+source = "server_properties"
+key = "rcon.port"
+reason = "RCON port is instance port-binding state."
+
+[[exclusions]]
+source = "runtime_rcon"
+key = "say/list/kick/ban/pardon/op/deop/whitelist/save-all/stop"
+reason = "Runtime actions and shutdown commands are declared in module.toml rather than schema fields."
+
+[[sources]]
+id = "mojang_release_26_3_configuration"
+kind = "documentation"
+path = "server.properties:white-list"
+authority = "official_mojang_java_release_notes"
+url = "https://www.minecraft.net/en-us/article/minecraft-java-edition-26-3"
+description = "Released 2026-09-15 and reverified 2026-09-28. The Server Properties section changes white-list default to true. Live version_manifest_v2.json resolves latest.release to 26.3, version document bc098d111a72e9f6178801544a42099bdfbb0cf2/26.3.json, server.jar SHA1 33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c, 62294556 bytes. The freshly downloaded package's version.json confirms stable 26.3, Java 25 and build_time 2026-09-15T11:20:48+00:00. Read-only inspection of META-INF/versions/26.3/server-26.3.jar!/net/minecraft/server/dedicated/DedicatedServerProperties.class confirms all 69 rendered property names; constructor bytecode at 0x02e4 loads white-list, iconst_1 and getMutable(String, boolean), while enforce-whitelist still uses iconst_0. The two additional legacy keys announce-player-achievements and resource-pack-hash use getLegacyBoolean/getLegacyString and are not new editable properties. Evidence is package metadata and static bytecode inspection; no 26.3 server or world was launched. On 2026-09-30 the live Mojang manifest still resolves latest.release to 26.3, released 2026-09-15, requiring Java 25. The installed 62294556-byte server.jar matches the official SHA1 33680f5f2ac32864d6d7cf5e56a705fdb3e05f4c. This artifact and release-note check is not a new first-launch properties capture."
+
+[[sources]]
+id = "official_spam_threshold_semantics_26_2"
+kind = "documentation"
+path = "https://www.minecraft.net/en-us/article/minecraft-java-edition-26-2"
+authority = "official_minecraft_release_notes"
+description = "Semantic review on 2026-09-30: chat-spam-threshold-seconds and command-spam-threshold-seconds are independent decaying accumulation thresholds, not minimum intervals between messages. Each message adds one second; each tick removes 1/20 second; zero disables the corresponding kick check. Defaults remain 10. Current installed 26.3 exposes both keys."
+
+[[sources]]
+id = "semantic_review_2026_09_30"
+kind = "documentation"
+path = "https://www.minecraft.net/en-us/article/minecraft-java-edition-26-2"
+authority = "first_party_documentation_and_installed_package_semantic_review"
+description = "Semantic review on 2026-09-30 of 69 active configuration fields in both languages. Chat and command spam settings use separate accumulation-counter thresholds. allow-flight disables the floating kick check without granting flight. prevent-proxy-connections verifies the connection origin and player IP through the authentication service. No fresh server/client run was performed; existing evidence dates and status remain unchanged."

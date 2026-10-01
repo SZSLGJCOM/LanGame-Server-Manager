@@ -1,0 +1,104 @@
+id = "valheim"
+name = "Valheim Dedicated Server"
+version = "0.1.0"
+description = "Dedicated server module for Valheim via SteamCMD."
+steam_app_id = 896660
+supported_platforms = ["windows"]
+
+[install]
+shared_game_dir = "valheim"
+
+[process]
+executable = "valheim_server.exe"
+args_template = [
+  "-nographics",
+  "-batchmode",
+  "-name",
+  "{{settings.server_name}}",
+  "-port",
+  "{{ports.game.port}}",
+  "-world",
+  "{{settings.world_name}}",
+  "{{valheim.world_preset_args}}",
+  "{{valheim.world_modifier_args}}",
+  "{{valheim.world_setkey_args}}",
+  "-password",
+  "{{settings.server_password}}",
+  "-savedir",
+  "{{paths.saves_dir}}",
+  "-public",
+  "{{settings.public_server}}",
+  "-saveinterval",
+  "{{settings.save_interval_seconds}}",
+  "-backups",
+  "{{settings.backup_count}}",
+  "-backupshort",
+  "{{settings.backup_short_seconds}}",
+  "-backuplong",
+  "{{settings.backup_long_seconds}}",
+  "{{valheim.crossplay_flag}}",
+  "{{valheim.instance_id_args}}",
+  "{{valheim.log_file_args}}",
+  "{{valheim.custom_launch_flags}}"
+]
+working_directory_template = "{{paths.install_root}}"
+window_policy = "background"
+host_surface = "managed_terminal"
+host_notes = "Valheim should launch the dedicated server binary directly in batchmode and nographics. LanGame should materialize the admin, ban, and permit lists into the active save root before launch."
+
+[[default_ports]]
+name = "game"
+protocol = "udp"
+port = 2456
+
+[[default_ports]]
+name = "query"
+protocol = "udp"
+port = 2457
+
+[[runtime.port_groups]]
+id = "game_query"
+members = ["game", "query"]
+member_offsets = { game = 0, query = 1 }
+
+[runtime.player_query]
+protocol = "a2s_info"
+port_names = ["query"]
+
+[player_management]
+status = "persistent_roster"
+planned_surface = "adminlist.txt, bannedlist.txt, and permittedlist.txt"
+reason = "Valheim's official dedicated server guide documents the admin, ban, and permitted files under the save directory, but the live kick/ban/unban commands are in-game admin console commands rather than a verified server stdin/RCON surface. A2S_PLAYER can provide read-only names when supported by the active networking backend; crossplay or anonymous query replies may omit names."
+verification = "Create an instance, confirm LanGame copies the three list files into the active save root, start the server, and verify access behavior in-game. Runtime actions are unavailable because no verified server-side command channel is declared."
+
+[runtime.shutdown]
+grace_period_ms = 30000
+
+[[runtime.shutdown.commands]]
+transport = "console_ctrl_c"
+command = "CTRL_C"
+wait_after_ms = 25000
+
+[mods.source]
+provider = "thunderstore"
+label = "Thunderstore"
+url = "https://thunderstore.io/c/valheim/"
+
+[mods.manual_staging]
+target_template = "{{paths.install_root}}/BepInEx/plugins"
+target_label = "BepInEx/plugins"
+accepts = ["dll", "folder", "zip"]
+
+[storage]
+runtime_copy_exclusions = ["BepInEx/plugins", "BepInEx/config", "BepInEx/cache", "BepInEx/patchers", "BepInEx/LogOutput.log"]
+saves_path_template = "{{paths.instance_root}}/saves"
+
+[[runtime.port_roles]]
+role = "player"
+port_names = ["game", "query"]
+
+[runtime.player_list]
+source = "server_query"
+response_codec = "a2s_players"
+identity_kind = "player_name"
+refresh_interval_ms = 30000
