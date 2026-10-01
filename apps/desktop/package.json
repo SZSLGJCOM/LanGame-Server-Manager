@@ -64,7 +64,7 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
-    "@react-three/fiber": "^9.7.0",
+    "@react-three/fiber": "^9.8.1",
     "@tauri-apps/api": "^2.11.1",
     "hls.js": "^1.7.2",
     "motion": "^13.2.0",
