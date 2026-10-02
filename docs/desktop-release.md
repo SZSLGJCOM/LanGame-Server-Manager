@@ -2,7 +2,7 @@
 
 The repository defaults to local builds: the update feed is empty, update checks are disabled, and ordinary NSIS builds do not require an updater signing key. Release preparation is local and does not publish a GitHub Release, upload assets, create a tag, change repository visibility, or enable a publishing workflow.
 
-The supported release target is Windows x86_64 with a stable `major.minor.patch` version. Keep `Cargo.toml` (`workspace.package.version`), `apps/desktop/package.json`, and `apps/desktop/src-tauri/tauri.conf.json` aligned. The desktop crate inherits the workspace version. Change the corresponding lockfile package version when bumping a version.
+The supported release target is Windows x86_64 with a stable `major.minor.patch` version. Keep `Cargo.toml` (`workspace.package.version`), `apps/desktop/package.json`, and `apps/desktop/src-tauri/tauri.conf.json` aligned. The desktop crate inherits the workspace version. Change the corresponding lockfile package version when bumping a version. Release builds statically link the Visual C++ runtime and use the UCRT provided by supported Windows systems, so a separate Visual C++ Redistributable is not required.
 
 ## WebView2 delivery
 
@@ -46,9 +46,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
     -BuildPortable -EnableGitHubUpdates -NotesFile 'C:\ReleaseStaging\release-notes.txt'
 ```
 
-`-BuildPortable` is explicit. It runs Tauri from `apps/desktop`, pins `x86_64-pc-windows-msvc` and NSIS, forwards Cargo `--locked`, applies the generated merge configuration, and restores the caller's frontend environment afterward. Both the exact current-version installer and its `.exe.sig` must be freshly generated. Omitting `-EnableGitHubUpdates` produces a signed build whose update checks remain disabled.
+`-BuildPortable` is explicit. It runs Tauri from `apps/desktop`, pins `x86_64-pc-windows-msvc` and NSIS, forwards Cargo `--locked`, applies the generated merge configuration, and restores the caller's frontend and static-runtime environment settings afterward. Both the exact current-version installer and its `.exe.sig` must be freshly generated. Omitting `-EnableGitHubUpdates` produces a signed build whose update checks remain disabled.
 
 `-BuildPortable` refuses managed build hosts. Follow that environment's approved build entry instead of bypassing its resource controls.
+
+The managed build entry checks static-runtime evidence in the build receipt and reads the exported main executable's PE imports; the portable entry checks both `langame-desktop.exe` and `install_catalog.exe`. Before publication, also check both executables from the actual NSIS payload or installation, since the managed receipt exports only the main executable:
+
+```powershell
+python -B scripts/verify_desktop_runtime_dependencies.py `
+    'C:\ReleaseStaging\installed\langame-desktop.exe' `
+    'C:\ReleaseStaging\installed\install_catalog.exe'
+```
+
+This rejects separate Visual C++ runtime dependencies in normal and delayed imports without executing either file; Windows system UCRT imports remain permitted.
 
 ## Export an existing signed installer
 

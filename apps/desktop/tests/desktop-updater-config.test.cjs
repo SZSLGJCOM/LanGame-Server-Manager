@@ -36,6 +36,21 @@ const fixturePublicKey = encodedRecord([
   Buffer.concat([Buffer.from("Ed"), Buffer.alloc(8, 7), Buffer.alloc(32, 2)]).toString("base64"),
 ]);
 
+function fixtureExecutable(importName = "KERNEL32.dll") {
+  const data = Buffer.alloc(1536);
+  data.write("MZ"); data.writeUInt32LE(128, 60); data.write("PE\0\0", 128);
+  data.writeUInt16LE(0x8664, 132); data.writeUInt16LE(1, 134);
+  data.writeUInt16LE(240, 148); data.writeUInt16LE(0x20b, 152);
+  data.writeBigUInt64LE(0x140000000n, 176);
+  data.writeUInt32LE(512, 212); data.writeUInt32LE(16, 260);
+  data.writeUInt32LE(0x1000, 272); data.writeUInt32LE(40, 276);
+  data.write(".rdata", 392);
+  data.writeUInt32LE(1024, 400); data.writeUInt32LE(0x1000, 404);
+  data.writeUInt32LE(1024, 408); data.writeUInt32LE(512, 412);
+  data.writeUInt32LE(0x1100, 524); data.write(importName, 768);
+  return data;
+}
+
 function createFixture(t) {
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "langame-updater-"));
   t.after(() => fs.rmSync(tempRoot, { recursive: true, force: true }));
@@ -46,7 +61,7 @@ function createFixture(t) {
   const artifactRoot = path.join(tempRoot, "artifacts");
   const outputRoot = path.join(tempRoot, "output");
   for (const directory of [scriptRoot, tauriRoot, artifactRoot]) fs.mkdirSync(directory, { recursive: true });
-  for (const name of ["build_desktop_update_artifacts.ps1", "generate_desktop_update_manifest.py"]) {
+  for (const name of ["build_desktop_update_artifacts.ps1", "generate_desktop_update_manifest.py", "verify_desktop_runtime_dependencies.py"]) {
     fs.copyFileSync(path.join(root, "scripts", name), path.join(scriptRoot, name));
   }
   fs.writeFileSync(path.join(repositoryRoot, "Cargo.toml"), '[workspace.package]\nversion = "0.1.0"\n');
@@ -279,7 +294,7 @@ param($Project, $CargoCommand, [switch]$SourceSnapshot, $DesktopBundle, $BundleC
   [switch]$DesktopUpdatesEnabled, [Parameter(ValueFromRemainingArguments=$true)]$CargoArguments)
 @{project=$Project; command=$CargoCommand; snapshot=[bool]$SourceSnapshot; bundle=$DesktopBundle;
   config=$BundleConfigPath; artifacts=$SnapshotArtifacts; updates=[bool]$DesktopUpdatesEnabled;
-  arguments=$CargoArguments} | ConvertTo-Json | Set-Content -Encoding UTF8 -LiteralPath
+  arguments=$CargoArguments; staticVcruntime=$env:STATIC_VCRUNTIME} | ConvertTo-Json | Set-Content -Encoding UTF8 -LiteralPath
   (Join-Path (Split-Path -Parent $SnapshotReceiptPath) 'managed-invocation.json')
 exit 42
 `.replace("-LiteralPath\n  ", "-LiteralPath "));
@@ -291,6 +306,7 @@ exit 42
   assert.equal(invocation.snapshot, true);
   assert.equal(invocation.bundle, "LanGameServerManager");
   assert.equal(invocation.updates, false);
+  assert.equal(invocation.staticVcruntime, "true");
   assert.ok(invocation.artifacts.includes(`release/bundle/nsis/${artifactName}`));
   assert.ok(!invocation.artifacts.includes(".sig"));
   assert.equal(config.bundle.createUpdaterArtifacts, false);
@@ -309,11 +325,26 @@ test("managed GitHub builds fail before writing output when no update signing ke
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
-for (const changedConfig of [false, true]) {
-  test(`managed installer export ${changedConfig ? "rejects a changed" : "accepts the matching"} build configuration`, (t) => {
+for (const { name, changedConfig, runtimeReceipt, rejection, executable } of [
+  { name: "accepts the matching build configuration", runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');" },
+  { name: "rejects a changed build configuration", changedConfig: true,
+    runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');", rejection: /receipt configuration does not match/ },
+  { name: "rejects dynamic VC runtime linkage", runtimeReceipt: "staticVcruntime=$false;", rejection: /static Visual C\+\+ runtime/ },
+  { name: "rejects a missing VC runtime receipt", runtimeReceipt: "", rejection: /staticVcruntime|static Visual C\+\+ runtime/ },
+  { name: "rejects an untyped VC runtime receipt", runtimeReceipt: "staticVcruntime='true';", rejection: /static Visual C\+\+ runtime/ },
+  { name: "rejects actual dynamic VC imports despite a static receipt", runtimeReceipt: "staticVcruntime=$true;",
+    executable: "dynamic", rejection: /runtime dependency verification failed/ },
+  { name: "rejects an invalid executable despite a static receipt", runtimeReceipt: "staticVcruntime=$true;",
+    executable: "invalid", rejection: /runtime dependency verification failed/ },
+  { name: "rejects a receipt without the executable", runtimeReceipt: "staticVcruntime=$true;",
+    executable: "missing", rejection: /exactly one desktop executable/ },
+]) {
+  test(`managed installer export ${name}`, (t) => {
     const fixture = createFixture(t);
     const managedScripts = path.join(fixture.tempRoot, "scripts");
     fs.mkdirSync(managedScripts);
+    fs.writeFileSync(path.join(fixture.artifactRoot, "langame-desktop.exe"), executable === "invalid"
+      ? Buffer.from("invalid PE fixture") : fixtureExecutable(executable === "dynamic" ? "VCRUNTIME140.dll" : undefined));
     // Replace only the external workstation builder/receipt-reader boundary.
     // This verifies the product export decision, not real compilation or signing.
     fs.writeFileSync(path.join(managedScripts, "codex-snapshot-build.psm1"), `
@@ -330,9 +361,12 @@ $payload = Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/${artifactNam
 $configHash = (Get-FileHash -LiteralPath $BundleConfigPath -Algorithm SHA256).Hash.ToLowerInvariant()
 ${changedConfig ? "$configHash = '0' * 64" : ""}
 @{
-  receipt=@{project=$Project;sourceIdentitySha256=('a' * 64);artifacts=@(@{
+  receipt=@{project=$Project;${runtimeReceipt}sourceIdentitySha256=('a' * 64);artifacts=@(@{
     path=$payload;targetRelativePath='release/bundle/nsis/${artifactName}';
-    sha256=(Get-FileHash -LiteralPath $payload -Algorithm SHA256).Hash.ToLowerInvariant()})}
+    sha256=(Get-FileHash -LiteralPath $payload -Algorithm SHA256).Hash.ToLowerInvariant()}
+    ${executable === "missing" ? "" : `@{path=(Join-Path (Split-Path -Parent $payload) 'langame-desktop.exe');
+      targetRelativePath='release/langame-desktop.exe';
+      sha256=(Get-FileHash -LiteralPath (Join-Path (Split-Path -Parent $payload) 'langame-desktop.exe') -Algorithm SHA256).Hash.ToLowerInvariant()}`})}
   source=@{source=@{files=@(@{path='apps/desktop/src-tauri/tauri.conf.json';
     sha256=(Get-FileHash -LiteralPath (Join-Path $repo 'apps/desktop/src-tauri/tauri.conf.json') -Algorithm SHA256).Hash.ToLowerInvariant()})}}
   desktopBundle=@{kind='LanGameServerManager';inputConfigurationSha256=$configHash;updatesEnabled=$false;signed=$false}
@@ -341,8 +375,8 @@ exit 0
 `);
     const result = runPreparation(fixture, ["-BuildManaged"]);
     const output = path.join(fixture.outputRoot, publicArtifactName);
-    if (changedConfig) {
-      expectFailure(result, /receipt configuration does not match/);
+    if (rejection) {
+      expectFailure(result, rejection);
       assert.equal(fs.existsSync(output), false);
       assert.equal(fs.existsSync(path.join(fixture.outputRoot, "desktop-installer-artifacts.json")), false);
     } else {
@@ -356,5 +390,37 @@ exit 0
       const hash = crypto.createHash("sha256").update(fs.readFileSync(output)).digest("hex");
       assert.equal(fs.readFileSync(path.join(fixture.outputRoot, "SHA256SUMS"), "utf8"), `${hash}  ${publicArtifactName}\n`);
     }
+  });
+}
+
+for (const previousValue of [null, "caller-value"]) {
+  test(`managed build failure restores ${previousValue === null ? "absent" : "existing"} runtime environment`, (t) => {
+    const fixture = createFixture(t);
+    const managedScripts = path.join(fixture.tempRoot, "scripts");
+    fs.mkdirSync(managedScripts);
+    fs.writeFileSync(path.join(managedScripts, "invoke-codex-cargo.ps1"), `
+param($SnapshotReceiptPath, [Parameter(ValueFromRemainingArguments=$true)]$OtherArguments)
+[IO.File]::WriteAllText((Join-Path (Split-Path -Parent $SnapshotReceiptPath) 'runtime-environment.txt'), $env:STATIC_VCRUNTIME)
+exit 42
+`);
+    const caller = path.join(fixture.repositoryRoot, "invoke-release-fixture.ps1");
+    fs.writeFileSync(caller, `
+$ErrorActionPreference = 'Stop'
+[Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', ${previousValue === null ? "$null" : "'caller-value'"}, 'Process')
+$failure = $null
+try { & (Join-Path $PSScriptRoot 'scripts/build_desktop_update_artifacts.ps1') -BuildManaged -OutputRoot (Join-Path (Split-Path -Parent $PSScriptRoot) 'output') }
+catch { $failure = $_.Exception.Message }
+@{value=[Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process'); failure=$failure} |
+  ConvertTo-Json | Set-Content -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot 'restored-environment.json')
+`);
+    const result = spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", caller], {
+      cwd: fixture.repositoryRoot, encoding: "utf8", timeout: preparationTimeoutMs,
+      env: { ...process.env, TAURI_SIGNING_PRIVATE_KEY: "" },
+    });
+    expectSuccess(result);
+    const restored = readJson(path.join(fixture.repositoryRoot, "restored-environment.json"));
+    assert.match(restored.failure, /Managed desktop build failed with exit code 42/);
+    assert.equal(restored.value, previousValue);
+    assert.equal(fs.readFileSync(path.join(fixture.outputRoot, "runtime-environment.txt"), "utf8"), "true");
   });
 }
