@@ -137,7 +137,7 @@ async fn creation_lifecycle_reuses_the_archived_only_program_through_the_desktop
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let owner = create_instance_record_inner(app.state::<DesktopState>(), input())
         .await
@@ -260,7 +260,7 @@ async fn creation_lifecycle_never_imports_modified_programs_when_official_repair
     let library = storage.paths.games_root.join("astroneer");
     fs::write(library.join("AstroServer.exe"), b"modified local program")?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let error = create_instance_record(
         app.state::<DesktopState>(),
@@ -297,7 +297,7 @@ async fn creation_lifecycle_shutdown_cancels_a_queued_create_without_waiting_for
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let program_roots = [storage.paths.games_root.join("astroneer")];
     let lifecycle =
@@ -330,7 +330,7 @@ async fn creation_lifecycle_shutdown_cancels_the_owned_worker_before_preparation
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let hooks = CreationHooks::new(true);
     let release = ReleaseWorkerOnDrop(hooks.clone());
@@ -374,7 +374,7 @@ async fn creation_lifecycle_waits_for_uninstall_then_reprobes_missing_program()
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let program_roots = [storage.paths.games_root.join("astroneer")];
     let lifecycle =
@@ -457,7 +457,7 @@ async fn creation_lifecycle_worker_keeps_lock_after_request_cancellation()
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let hooks = CreationHooks::new(true);
     let release = ReleaseWorkerOnDrop(hooks.clone());

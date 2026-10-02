@@ -30,7 +30,7 @@ impl Fixture {
         )
         .await?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(&storage))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
         Ok(Self {
             _environment: environment,

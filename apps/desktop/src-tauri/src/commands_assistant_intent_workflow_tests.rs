@@ -123,7 +123,9 @@ async fn exercise_existing(scenario: ExistingScenario) -> IntentTestResult {
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;
@@ -446,7 +448,9 @@ async fn assistant_intent_new_server_does_not_reuse_the_selected_existing_instan
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;

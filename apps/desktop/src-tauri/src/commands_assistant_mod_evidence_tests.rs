@@ -18,7 +18,9 @@ async fn assistant_installed_mod_evidence_requires_the_marked_private_runtime()
     let settings = isolated_smoke_app_settings(&run_root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>()).await?;
@@ -148,7 +150,9 @@ async fn assistant_installed_mod_evidence_binds_ugc_to_the_selected_instance()
     let settings = isolated_smoke_app_settings(&run_root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>()).await?;
@@ -232,7 +236,9 @@ async fn assistant_installed_mod_evidence_rejects_unsupported_game_before_storag
     let settings = isolated_smoke_app_settings(&run_root)?;
     prepare_fake_minecraft_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>()).await?;

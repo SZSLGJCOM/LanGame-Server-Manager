@@ -158,6 +158,19 @@ fn main() {
     let instance_lease = acquire_desktop_instance_lease()
         .unwrap_or_else(|error| panic!("failed to acquire the process instance lease: {error}"));
     let secondary_instance = instance_lease.is_secondary();
+    // A native error dialog pumps window messages. Resolve storage before a WebView
+    // can send IPC to the runtime client that setup has not installed yet.
+    let storage_paths = if secondary_instance {
+        None
+    } else {
+        match resolve_desktop_storage() {
+            Ok(paths) => Some(paths),
+            Err(error) => {
+                eprintln!("Failed to initialize LanGame data directory: {error}");
+                std::process::exit(1);
+            }
+        }
+    };
 
     let run_result =
         tauri::Builder::default()
@@ -171,10 +184,9 @@ fn main() {
             .setup(move |app| {
                 // The plugin can briefly miss a launch before its Windows message window exists.
                 // The file lease keeps that process from touching shared storage.
-                if secondary_instance {
+                let Some(storage_paths) = storage_paths else {
                     std::process::exit(0);
-                }
-                let storage_paths = resolve_desktop_storage()?;
+                };
                 #[cfg(not(windows))]
                 if !app.manage(state::DesktopState::default()) {
                     return Err(

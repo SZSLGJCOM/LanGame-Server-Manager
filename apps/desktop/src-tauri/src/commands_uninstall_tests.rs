@@ -63,7 +63,7 @@ async fn uninstall_astroneer_without_save_data_removes_program_and_preserves_nat
     let native_config_before = fs::read(&native_config)?;
     assert!(!install_root.join("Astro/Saved/SaveGames").exists());
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
 
     let result = uninstall_module_game(app.handle().clone(), "astroneer".into()).await?;
@@ -118,7 +118,7 @@ async fn uninstall_astroneer_without_retained_data_removes_install_root()
     fs::remove_file(&native_config)?;
     assert!(!install_root.join("Astro/Saved/SaveGames").exists());
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
 
     let result = uninstall_module_game(app.handle().clone(), "astroneer".into()).await?;
@@ -185,7 +185,7 @@ async fn uninstall_astroneer_rejects_nested_instance_root_and_preserves_data()
         runtime_root.canonicalize()?
     );
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let removed = uninstall_module_game(app.handle().clone(), "astroneer".into()).await?;
     assert!(matches!(removed.install_state, InstallState::NotInstalled));
@@ -320,7 +320,7 @@ async fn uninstall_astroneer_with_empty_first_instance_saves_keeps_private_world
     let native_config = install_root.join("Astro/Saved/Config/WindowsServer/Engine.ini");
     let native_config_before = fs::read(&native_config)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
 
     let result = uninstall_module_game(app.handle().clone(), "astroneer".into()).await?;
@@ -358,7 +358,7 @@ async fn uninstall_astroneer_preserves_unregistered_world_at_original_path()
         b"retained unregistered world",
     )?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
 
     let result = uninstall_module_game(app.handle().clone(), "astroneer".into()).await?;

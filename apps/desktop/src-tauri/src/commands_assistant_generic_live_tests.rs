@@ -40,7 +40,9 @@ async fn assistant_live_ollama_repairs_generic_synthetic_service_files() -> Test
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_minecraft_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;

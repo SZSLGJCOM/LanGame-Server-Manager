@@ -64,7 +64,7 @@ async fn uninstalled_without_program_sources_rejects_creation_without_download_o
         let mut fixture = Fixture::new().await?;
         let _environment = use_command_storage(&mut fixture).await?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(&fixture.storage))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
         let config = fixture
             .original
@@ -154,7 +154,7 @@ async fn uninstalled_library_can_create_from_private_or_archived_program_without
         let mut fixture = Fixture::new().await?;
         let _environment = use_command_storage(&mut fixture).await?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(&fixture.storage))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
         let existing = app_storage::create_instance_with_options(
             &fixture.storage.paths,

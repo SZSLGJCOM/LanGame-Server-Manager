@@ -12,7 +12,9 @@ async fn configuration_icons_without_artwork_leave_instance_files_untouched()
         let settings = isolated_smoke_app_settings(&run_root)?;
         prepare_fake_dontstarve_install(&settings)?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(
+                &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+            ))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
         sync_modules_to_storage(app.state::<DesktopState>()).await?;
         let provisioning = create_fake_module_instance(
@@ -101,7 +103,9 @@ async fn configuration_icon_ipc_reads_persistent_cache_without_changing_instance
         let settings = isolated_smoke_app_settings(&run_root)?;
         prepare_fake_dontstarve_install(&settings)?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(
+                &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+            ))
             .invoke_handler(tauri::generate_handler![
                 crate::commands::commands_configuration_icons::read_module_configuration_icons
             ])

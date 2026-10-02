@@ -123,7 +123,7 @@ pub(super) async fn run_native_new_launch(
         save_app_settings(environment.settings(run_root))?;
         let storage = bootstrap_storage()?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(&storage))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
         sync_modules_to_storage(app.state::<DesktopState>()).await?;
         let version = fs::read_to_string(environment.install_root.join("version.txt"))?;

@@ -12,7 +12,9 @@ async fn assistant_start_rechecks_preview_after_waiting_for_the_instance_lock()
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_project_zomboid_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;
@@ -87,7 +89,9 @@ async fn assistant_start_rechecks_confirmed_file_hash_after_waiting_for_instance
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;
@@ -192,7 +196,9 @@ async fn assistant_investigation_mod_repair_preserves_ids_and_verifies_native_or
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_project_zomboid_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     sync_modules_to_storage(app.state::<DesktopState>()).await?;
     let instance = create_fake_module_instance(

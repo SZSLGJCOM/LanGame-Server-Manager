@@ -24,9 +24,9 @@ fn check(condition: bool, message: &str) -> TestResult {
     }
 }
 
-fn app() -> TestResult<tauri::App<tauri::test::MockRuntime>> {
+fn app(storage: &StorageBootstrap) -> TestResult<tauri::App<tauri::test::MockRuntime>> {
     Ok(tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?)
 }
 
@@ -212,7 +212,7 @@ async fn verify_module(
         }],
     )
     .await?;
-    let first_app = app()?;
+    let first_app = app(&storage)?;
     let input = |name: &str| CreateInstanceInput {
         name: name.into(),
         module_id: descriptor.summary.id.clone(),
@@ -269,7 +269,7 @@ async fn verify_module(
     drop(first_app);
 
     // Recreate desktop state; neither instance is removed or archived.
-    let second_app = app()?;
+    let second_app = app(&storage)?;
     let second = create_instance_record(
         second_app.state::<DesktopState>(),
         input("MatrixSecond"),

@@ -28,7 +28,9 @@ async fn dst_materialized_world_overrides_execute_without_lua_globals()
         let settings = isolated_smoke_app_settings(&run_root)?;
         prepare_fake_dontstarve_install(&settings)?;
         let app = tauri::test::mock_builder()
-            .manage(DesktopState::default())
+            .manage(DesktopState::from_storage(
+                &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+            ))
             .build(tauri::test::mock_context(tauri::test::noop_assets()))
             .expect("mock tauri app");
         sync_modules_to_storage(app.state::<DesktopState>()).await?;
@@ -134,7 +136,7 @@ async fn smoke_palworld_access_commands() -> Result<(), Box<dyn std::error::Erro
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -426,7 +428,7 @@ async fn smoke_sevendaystodie_access_commands() -> Result<(), Box<dyn std::error
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -808,7 +810,7 @@ async fn smoke_vrising_access_commands() -> Result<(), Box<dyn std::error::Error
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -1048,7 +1050,7 @@ async fn smoke_corekeeper_access_commands() -> Result<(), Box<dyn std::error::Er
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -1279,7 +1281,7 @@ async fn smoke_valheim_access_commands() -> Result<(), Box<dyn std::error::Error
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -1488,7 +1490,7 @@ async fn smoke_project_zomboid_access_commands() -> Result<(), Box<dyn std::erro
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -1786,7 +1788,7 @@ async fn smoke_dst_access_commands() -> Result<(), Box<dyn std::error::Error>> {
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -2139,7 +2141,7 @@ async fn smoke_project_zomboid_backup_commands() -> Result<(), Box<dyn std::erro
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -2396,7 +2398,7 @@ async fn smoke_project_zomboid_delete_instance_command() -> Result<(), Box<dyn s
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 
@@ -2690,7 +2692,7 @@ async fn smoke_dst_import_and_backup_commands() -> Result<(), Box<dyn std::error
     let log_path = desktop_app_log_path(&storage);
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 

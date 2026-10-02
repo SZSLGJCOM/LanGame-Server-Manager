@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 const TEST_PASSWORD: &str = "isolated-test-password-12345678";
 
-fn headless_app() -> TestResult<tauri::App<tauri::test::MockRuntime>> {
+fn headless_app(storage: &StorageBootstrap) -> TestResult<tauri::App<tauri::test::MockRuntime>> {
     Ok(tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?)
 }
 
@@ -113,7 +113,7 @@ async fn verify_two_instances(module_id: &str, mode: app_core::InstanceProgramMo
         )
         .await?;
     }
-    let app = headless_app()?;
+    let app = headless_app(&storage)?;
     let create_input = |name: &str| CreateInstanceInput {
         name: name.into(),
         module_id: module_id.into(),
@@ -185,7 +185,7 @@ async fn verify_two_instances(module_id: &str, mode: app_core::InstanceProgramMo
     // Recreate desktop state to ensure isolation comes from persisted ownership,
     // not in-memory knowledge of the first creation. Neither instance is archived.
     drop(app);
-    let app = headless_app()?;
+    let app = headless_app(&storage)?;
     let second = create_instance_record(
         app.state::<DesktopState>(),
         create_input("Isolation second"),

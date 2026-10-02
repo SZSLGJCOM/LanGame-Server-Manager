@@ -69,7 +69,9 @@ async fn exercise_new_server_launch(confirm_start: bool) -> LaunchTestResult {
     fs::create_dir_all(java.parent().ok_or("fixture Java parent missing")?)?;
     fs::write(&java, "preflight-only executable; must never be launched")?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;
@@ -323,7 +325,9 @@ async fn assistant_launch_workflow_requires_explicit_module_selection_before_mod
     let _environment = ProgramDataEnvGuard::set(&root.join("programdata"));
     isolated_smoke_app_settings(&root)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;

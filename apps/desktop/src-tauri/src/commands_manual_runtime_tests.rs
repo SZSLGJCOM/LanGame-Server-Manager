@@ -324,7 +324,44 @@ impl ProgramDataEnvGuard {
     pub(in crate::commands) fn set(path: &Path) -> Self {
         let previous_program_data = env::var_os("PROGRAMDATA");
         let previous_local_app_data = env::var_os("LOCALAPPDATA");
-        let local_app_data = path.parent().unwrap_or(path).join("localappdata");
+        let fixture_root = path.parent().unwrap_or(path);
+        let local_app_data = fixture_root.join("localappdata");
+        let app_data_root = local_app_data.join("LanGame/ServerManager");
+        fs::create_dir_all(&app_data_root).expect("create isolated settings directory");
+        let settings_path = app_data_root.join("settings.json");
+        // An existing settings file selects the fixture's user directory without
+        // running first-use disk selection against the workstation's real disks.
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&settings_path)
+        {
+            Ok(mut file) => {
+                let settings = AppSettings {
+                    servers_root: fixture_root
+                        .join("instances")
+                        .to_string_lossy()
+                        .into_owned(),
+                    archives_root: fixture_root
+                        .join("instances/.trash")
+                        .to_string_lossy()
+                        .into_owned(),
+                    games_root: fixture_root.join("games").to_string_lossy().into_owned(),
+                    modules_root: workspace_root()
+                        .join("modules")
+                        .to_string_lossy()
+                        .into_owned(),
+                    steamcmd_root: fixture_root.join("steamcmd").to_string_lossy().into_owned(),
+                };
+                file.write_all(
+                    &serde_json::to_vec_pretty(&settings).expect("serialize fixture settings"),
+                )
+                .expect("write isolated settings");
+                file.sync_all().expect("sync isolated settings");
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => panic!("failed to initialize {}: {error}", settings_path.display()),
+        }
         unsafe {
             env::set_var("PROGRAMDATA", path);
             env::set_var("LOCALAPPDATA", local_app_data);
@@ -566,7 +603,9 @@ pub(super) async fn uninstall_module_game_removes_managed_server_files_only()
     fs::write(games_root.join("keep.txt"), "keep")?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
 

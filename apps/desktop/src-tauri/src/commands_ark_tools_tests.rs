@@ -131,7 +131,7 @@ async fn ark_tools_prepare_waits_for_instance_lock_and_rejects_pending_start()
     let _serial = command_smoke_lock().lock().await;
     let fixture = ArkFixture::new("arksurvivalevolved").await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&fixture.storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let held = app
         .state::<DesktopState>()
@@ -184,7 +184,7 @@ async fn ark_tools_prepare_requires_asa_symbol_download_consent_and_spawn_requir
     let _serial = command_smoke_lock().lock().await;
     let fixture = ArkFixture::new("arksurvivalascended").await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&fixture.storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let result = ark::prepare_ark_tools(
         app.state::<DesktopState>(),
@@ -237,7 +237,7 @@ async fn ark_tools_prepare_rejects_program_binding_to_another_runtime()
     pool.close().await;
     assert_eq!(changed?.rows_affected(), 1);
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&fixture.storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let result = ark::prepare_ark_tools(
         app.state::<DesktopState>(),
@@ -265,7 +265,7 @@ async fn ark_tools_prepare_accepts_first_exclusive_program_ownership_before_load
     let _serial = command_smoke_lock().lock().await;
     let fixture = ArkFixture::with_existing_program("arksurvivalevolved", true).await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&fixture.storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let result = ark::prepare_ark_tools(
         app.state::<DesktopState>(),
@@ -352,7 +352,7 @@ async fn ark_tools_interrupted_install_prevents_normal_server_start()
         b"interrupted preparation",
     )?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&fixture.storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let result = start_instance_process_after_reconcile(
         None,
