@@ -281,6 +281,12 @@ impl StoragePaths {
         storage_location::existing_paths(&default_app_data_root())
     }
 
+    /// Select a first-use LanGame directory with the same validation as automatic selection.
+    /// A saved data location always takes precedence and is never replaced.
+    pub fn resolve_in_directory(parent: &Path) -> Result<Self, StorageError> {
+        storage_location::resolve_in_directory(parent)
+    }
+
     fn from_data_roots(app_data_root: PathBuf, runtime_root: PathBuf) -> Self {
         let modules_root = default_modules_root();
 
@@ -470,6 +476,8 @@ struct DirectoryCopyStats {
 
 #[derive(Debug, Error)]
 pub enum StorageError {
+    #[error("没有可安全使用的 LanGame 数据目录。请选择其他位置。\n{details}")]
+    NoUsableStorageLocation { details: String },
     #[error("failed to create path {path}: {source}")]
     CreatePath {
         path: PathBuf,

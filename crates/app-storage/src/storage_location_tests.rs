@@ -187,7 +187,9 @@ fn a_candidate_that_is_a_file_falls_back_without_modifying_that_file() {
 fn an_unusable_business_directory_falls_back_before_publishing_a_location() {
     let fixture = Fixture::new();
     let blocked = fixture.candidate("blocked");
-    fs::create_dir_all(&blocked).unwrap();
+    let (_, guard) = super::prepare_candidate(&blocked).unwrap();
+    drop(guard);
+    fixture.remove_directory(&blocked.join("instances"));
     fs::write(blocked.join("instances"), b"preserve this file").unwrap();
     let fallback = fixture.candidate("fallback");
     let paths = resolve_paths(&fixture.user, || {
@@ -215,10 +217,11 @@ fn no_candidates_or_only_failed_candidates_return_an_error_without_a_pointer() {
             roots.push(path);
         }
         let error = resolve_paths(&fixture.user, || Ok(roots.clone())).unwrap_err();
-        assert!(
-            matches!(&error, StorageError::CreatePath { path, .. } if path == &fixture.pointer())
-        );
-        assert!(error.to_string().contains("No writable local drive"));
+        assert!(matches!(
+            &error,
+            StorageError::NoUsableStorageLocation { .. }
+        ));
+        assert!(error.to_string().contains("请选择其他位置"));
         assert!(!fixture.pointer().exists());
         for path in roots {
             assert_eq!(fs::read(path).unwrap(), b"preserve");
@@ -250,7 +253,9 @@ fn junction_business_roots_fall_back_without_touching_their_targets() {
         let blocked = fixture.candidate("blocked");
         let fallback = fixture.candidate("fallback");
         let outside = fixture.root.join("outside");
-        fs::create_dir_all(&blocked).unwrap();
+        let (_, guard) = super::prepare_candidate(&blocked).unwrap();
+        drop(guard);
+        fixture.remove_directory(&blocked.join(directory));
         fs::create_dir(&outside).unwrap();
         let sentinel = outside.join("retained-save.bin");
         fs::write(&sentinel, b"external save must remain unchanged").unwrap();
@@ -464,3 +469,9 @@ fn concurrent_first_starts_publish_one_location_and_share_its_files() {
         serde_json::from_slice(&fs::read(&paths[0].settings_path).unwrap()).unwrap();
     assert_eq!(settings, serde_json::to_value(paths[0].settings()).unwrap());
 }
+
+#[path = "storage_location_ownership_tests.rs"]
+mod ownership;
+
+#[path = "storage_candidate_tests.rs"]
+mod candidate;

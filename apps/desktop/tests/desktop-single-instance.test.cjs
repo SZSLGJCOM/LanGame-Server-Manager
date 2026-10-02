@@ -117,6 +117,23 @@ test("the process lease is acquired before Builder and held through run", () => 
   assert.match(mainSource, /cn\.langame\.servermanager\.shell\.lock/u);
 });
 
+test("pre-WebView storage recovery uses the backend selector and existing native picker", () => {
+  const mainSource = fs.readFileSync(mainPath, "utf8");
+  const startupSource = fs.readFileSync(path.join(path.dirname(mainPath), "startup_storage.rs"), "utf8");
+  const productionSource = startupSource.split("#[cfg(test)]")[0];
+
+  assert.match(mainSource, /^mod startup_storage;$/mu);
+  assert.match(mainSource, /fn resolve_desktop_storage\(\)[^{]+\{\s*startup_storage::resolve\(\)\s*\}/u);
+  assert.match(productionSource, /StoragePaths::resolve_default\(\)/u);
+  assert.match(productionSource, /crate::commands::pick_directory_path\(None\)/u);
+  assert.match(productionSource, /StoragePaths::resolve_in_directory/u);
+  assert.doesNotMatch(
+    productionSource,
+    /StoragePaths::default\(|tauri::Builder|runtime_service::setup|create_dir_all/u,
+    "recovery must not bypass storage validation or start a WebView/runtime"
+  );
+});
+
 test("tray exit surfaces shutdown failures in the main window", () => {
   const mainSource = fs.readFileSync(mainPath, "utf8");
   const lifecycleSource = fs.readFileSync(
