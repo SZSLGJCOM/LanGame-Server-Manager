@@ -8,7 +8,9 @@ async fn assistant_execute_operation_inner_rejects_start_server_without_app_hand
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -47,7 +49,9 @@ async fn assistant_execute_operation_inner_rejects_unbound_start_without_module_
     let _env_guard = ProgramDataEnvGuard::set(&run_root.join("programdata"));
     let _settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -91,7 +95,9 @@ async fn assistant_execute_operation_inner_rejects_unbound_start_with_selected_m
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -137,7 +143,9 @@ async fn assistant_execute_operation_inner_rejects_start_server_without_app_hand
     prepare_fake_enshrouded_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -195,7 +203,9 @@ async fn assistant_execute_operation_inner_rejects_unbound_start_with_selected_e
     prepare_fake_enshrouded_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -250,7 +260,9 @@ async fn assistant_execute_operation_inner_rejects_mocked_startserver_without_ap
     prepare_fake_enshrouded_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -311,7 +323,9 @@ async fn assistant_execute_operation_inner_rejects_mocked_unbound_start_with_sel
     prepare_fake_enshrouded_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -366,7 +380,9 @@ async fn assistant_execute_operation_inner_preserves_explicit_mock_none_for_rest
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -406,7 +422,9 @@ async fn assistant_execute_operation_inner_does_not_infer_restart_from_text_with
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -446,7 +464,9 @@ async fn assistant_execute_operation_inner_does_not_infer_stop_from_text_without
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -488,7 +508,9 @@ async fn assistant_execute_operation_inner_executes_minecraft_gm_command_via_sou
     prepare_fake_minecraft_install(&settings).expect("prepare fake Minecraft install");
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -582,7 +604,9 @@ async fn assistant_execute_operation_inner_executes_dontstarve_gm_command_via_st
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_dontstarve_install(&settings).expect("prepare fake Don't Starve Together install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -670,7 +694,9 @@ async fn assistant_execute_operation_inner_executes_terraria_gm_command_via_stdi
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_terraria_install(&settings).expect("prepare fake Terraria install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -756,7 +782,9 @@ async fn assistant_execute_operation_inner_executes_sevendaystodie_gm_command_vi
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_sevendaystodie_install(&settings).expect("prepare fake 7 Days to Die install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -854,7 +882,9 @@ async fn assistant_execute_operation_inner_executes_rust_gm_command_via_websocke
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_rust_install(&settings).expect("prepare fake Rust install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -948,7 +978,9 @@ async fn assistant_execute_operation_inner_rejects_terraria_gm_transport_mismatc
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_terraria_install(&settings).expect("prepare fake terraria install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -991,7 +1023,9 @@ async fn assistant_execute_operation_inner_rejects_gm_command_not_in_allowlist()
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1033,7 +1067,9 @@ async fn assistant_execute_operation_inner_rejects_gm_command_with_unsupported_s
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1073,7 +1109,9 @@ async fn assistant_execute_operation_inner_rejects_multiple_gm_commands() {
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1115,7 +1153,9 @@ async fn assistant_execute_operation_inner_rejects_config_action_without_identif
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1164,7 +1204,9 @@ async fn assistant_execute_operation_inner_rejects_install_server_without_identi
     let _env_guard = ProgramDataEnvGuard::set(&run_root.join("programdata"));
     let _app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1200,7 +1242,9 @@ async fn assistant_execute_operation_inner_rejects_install_fun_mod_without_expli
     let app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_terraria_install(&app_settings).expect("prepare fake terraria install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1252,7 +1296,9 @@ async fn assistant_execute_operation_inner_rejects_install_fun_mod_without_ident
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_dontstarve_install(&settings).expect("prepare fake dontstarve install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1299,7 +1345,9 @@ async fn assistant_execute_operation_inner_rejects_install_site_mod_without_work
     let app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_dontstarve_install(&app_settings).expect("prepare fake dontstarve install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1345,7 +1393,9 @@ async fn assistant_execute_operation_inner_rejects_broadcast_without_identifiabl
     let _env_guard = ProgramDataEnvGuard::set(&run_root.join("programdata"));
     let _app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1381,7 +1431,9 @@ async fn assistant_execute_operation_inner_rejects_broadcast_when_instance_not_r
     let settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1426,7 +1478,9 @@ async fn assistant_execute_operation_inner_rejects_gm_transport_mismatch_for_non
     let app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&app_settings).expect("prepare fake install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1468,7 +1522,9 @@ async fn assistant_execute_operation_inner_rejects_install_site_mod_without_refe
     let app_settings = isolated_smoke_app_settings(&run_root).expect("isolate app settings");
     prepare_fake_minecraft_install(&app_settings).expect("prepare fake minecraft install");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1542,7 +1598,9 @@ async fn assistant_execute_operation_inner_installs_site_mod_with_local_source_p
     fs::write(&local_mod_path, "fake jar content")?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>())
@@ -1614,7 +1672,9 @@ async fn stored_openai_compatible_ai_generates_and_sends_broadcast_mock()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     sync_modules_to_storage(app.state::<DesktopState>()).await?;
@@ -2319,7 +2379,9 @@ async fn palworld_rest_dispatch_uses_declared_actions_and_requires_snapshot_mode
     let settings = isolated_smoke_app_settings(&run_root)?;
     prepare_fake_palworld_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .unwrap();
     sync_modules_to_storage(app.state::<DesktopState>()).await?;

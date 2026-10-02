@@ -16,7 +16,7 @@ async fn installed_astroneer_creation_completes_while_asa_owns_steamcmd()
     .await?;
     let steamcmd = asa.acquire_steamcmd(&storage.settings).await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let created = tokio::time::timeout(
         Duration::from_secs(10),
@@ -55,7 +55,7 @@ async fn creation_from_a_private_source_completes_while_an_unrelated_archive_cat
     let _serial = command_smoke_lock().lock().await;
     let (_root, _environment, storage) = prepare_fixture().await?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let owner = create_instance_record_inner(app.state::<DesktopState>(), input()).await?;
     let independent = create_instance_record_inner(app.state::<DesktopState>(), input()).await?;

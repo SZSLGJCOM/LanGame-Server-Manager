@@ -13,7 +13,9 @@ async fn stored_openai_compatible_ai_generates_and_sends_broadcast_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -121,7 +123,9 @@ async fn stored_openai_compatible_ai_sends_ark_gm_command_smoke()
     prepare_fake_ark_survival_ascended_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -226,7 +230,9 @@ async fn stored_openai_compatible_ai_sends_minecraft_gm_command_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_minecraft_instance(
@@ -327,7 +333,9 @@ async fn stored_openai_compatible_ai_sends_project_zomboid_gm_command_smoke()
     prepare_fake_project_zomboid_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -429,7 +437,9 @@ async fn stored_openai_compatible_ai_sends_vrising_gm_command_smoke()
     prepare_fake_vrising_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -530,7 +540,9 @@ async fn stored_openai_compatible_ai_sends_dontstarve_gm_command_smoke()
     prepare_fake_dontstarve_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -623,7 +635,9 @@ async fn stored_openai_compatible_ai_sends_terraria_gm_command_smoke()
     prepare_fake_terraria_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -750,7 +764,9 @@ async fn stored_openai_compatible_ai_updates_minecraft_config_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -839,7 +855,9 @@ async fn stored_openai_compatible_ai_updates_dontstarve_config_smoke()
     prepare_fake_dontstarve_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -938,7 +956,9 @@ async fn stored_openai_compatible_ai_updates_ark_ascended_config_smoke()
     prepare_fake_ark_survival_ascended_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1039,7 +1059,9 @@ async fn stored_openai_compatible_ai_updates_palworld_config_smoke()
     prepare_fake_palworld_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1119,7 +1141,9 @@ async fn stored_openai_compatible_ai_sends_palworld_gm_command_smoke()
     prepare_fake_palworld_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1229,7 +1253,9 @@ async fn stored_openai_compatible_ai_sends_sevendaystodie_gm_command_smoke()
     prepare_fake_sevendaystodie_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1329,7 +1355,9 @@ async fn stored_openai_compatible_ai_sends_rust_gm_command_smoke()
     prepare_fake_rust_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1430,7 +1458,9 @@ async fn stored_openai_compatible_ai_updates_project_zomboid_config_smoke()
     prepare_fake_project_zomboid_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1514,7 +1544,9 @@ async fn stored_openai_compatible_ai_repairs_project_zomboid_oom_crash_smoke()
     prepare_fake_project_zomboid_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1586,7 +1618,9 @@ async fn stored_openai_compatible_ai_repairs_project_zomboid_port_conflict_smoke
     prepare_fake_project_zomboid_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = create_fake_module_instance(
@@ -1675,7 +1709,9 @@ async fn stored_openai_compatible_ai_refuses_ambiguous_instance_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let _alpha =
@@ -1731,7 +1767,9 @@ async fn stored_openai_compatible_ai_refuses_dangerous_delete_all_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -1783,7 +1821,9 @@ async fn stored_openai_compatible_ai_refuses_multi_step_combo_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -1884,7 +1924,9 @@ async fn stored_openai_compatible_ai_plans_start_but_requires_app_handle_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -1968,7 +2010,9 @@ async fn stored_openai_compatible_ai_refuses_shutdown_request_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -2010,7 +2054,9 @@ async fn stored_openai_compatible_ai_guidance_only_request_returns_none_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -2056,7 +2102,9 @@ async fn stored_openai_compatible_ai_refuses_restart_request_smoke()
     prepare_fake_minecraft_install(&settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning =
@@ -2424,7 +2472,9 @@ async fn stored_openai_compatible_ai_installs_modrinth_mod_smoke()
     save_app_settings(settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = command_result(
@@ -2534,7 +2584,9 @@ async fn stored_openai_compatible_ai_enables_curseforge_asa_mod_smoke()
     save_app_settings(settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = command_result(
@@ -2663,7 +2715,9 @@ async fn stored_openai_compatible_ai_installs_nexus_local_7dtd_mod_smoke()
     save_app_settings(settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = command_result(
@@ -2781,7 +2835,9 @@ async fn stored_openai_compatible_ai_rejects_nexus_web_download_without_local_pa
     save_app_settings(settings)?;
 
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("mock tauri app");
     let provisioning = command_result(

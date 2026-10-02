@@ -22,7 +22,9 @@ async fn assistant_start_rejects_occupied_confirmed_port_before_materializing_co
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_minecraft_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;

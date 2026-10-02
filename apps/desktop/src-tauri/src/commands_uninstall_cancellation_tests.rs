@@ -58,7 +58,7 @@ async fn cancelled_uninstall_finishes_with(
             .open(&program)?,
     );
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     let requester = tokio::spawn(uninstall_module_game(
@@ -178,7 +178,7 @@ async fn uninstall_uncertain_database_commit_preserves_recovery_until_command_re
         .share_mode(3)
         .open(&program)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     let mut unrelated = descriptor.summary.clone();

@@ -14,7 +14,9 @@ async fn assistant_request_rejects_storage_context_change_while_the_model_is_rep
     let _environment = ProgramDataEnvGuard::set(&root.join("programdata"));
     let _settings = isolated_smoke_app_settings(&root)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     state.app_state.write().map_err(|_| "state lock")?.modules = vec![ModuleSummary {
@@ -93,7 +95,9 @@ async fn assistant_conversation_host_tool_and_follow_up_need_no_server_or_storag
     let _environment = ProgramDataEnvGuard::set(&root.join("programdata"));
     let _settings = isolated_smoke_app_settings(&root)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     let _transition = state.begin_storage_context_transition()?;
@@ -342,7 +346,9 @@ async fn exercise_conversation(scenario: ConversationScenario) -> ConversationTe
     let settings = isolated_smoke_app_settings(&root)?;
     prepare_fake_dontstarve_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     sync_modules_to_storage(state.clone()).await?;

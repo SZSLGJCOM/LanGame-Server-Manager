@@ -143,6 +143,17 @@ impl Default for DesktopState {
 }
 
 impl DesktopState {
+    #[cfg(test)]
+    pub(crate) fn from_storage(storage: &StorageBootstrap) -> Self {
+        let mut app_state = AppState::bootstrap_default();
+        app_state.settings = storage.settings.clone();
+        app_state.storage = storage.storage_status.clone();
+        Self {
+            app_state: Arc::new(RwLock::new(app_state)),
+            ..Self::default()
+        }
+    }
+
     pub(crate) fn request_final_exit(&self) -> bool {
         !self.final_exit_requested.swap(true, Ordering::SeqCst)
     }

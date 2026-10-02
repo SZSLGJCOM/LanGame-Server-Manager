@@ -19,7 +19,9 @@ async fn assert_rust_shutdown_wire(web: bool) -> Result<(), Box<dyn std::error::
     let settings = isolated_smoke_app_settings(&run_root)?;
     prepare_fake_rust_install(&settings)?;
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     sync_modules_to_storage(app.state::<DesktopState>()).await?;
     let provisioning =

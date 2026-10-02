@@ -254,6 +254,67 @@ fn isolated_smoke_app_settings(run_root: &Path) -> Result<AppSettings, Box<dyn s
     Ok(settings)
 }
 
+#[tokio::test(flavor = "current_thread")]
+async fn command_fixture_storage_stays_isolated_and_initializes_desktop_state()
+-> Result<(), Box<dyn std::error::Error>> {
+    let _lock = command_smoke_lock().lock().await;
+    let root = temp_test_dir("state-storage");
+    let environment = ProgramDataEnvGuard::set(&root.join("programdata"));
+    let storage = bootstrap_storage()?;
+    for path in [
+        &storage.paths.app_data_root,
+        &storage.paths.database_path,
+        &storage.paths.logs_root,
+        &storage.paths.games_root,
+        &storage.paths.instances_root,
+        &storage.paths.archives_root,
+        &storage.paths.steamcmd_root,
+    ] {
+        assert!(
+            path.starts_with(&root),
+            "fixture path escaped: {}",
+            path.display()
+        );
+    }
+    assert!(
+        !storage
+            .paths
+            .app_data_root
+            .join("storage-location.json")
+            .exists()
+    );
+    assert!(
+        !storage
+            .paths
+            .app_data_root
+            .join("storage-location.lock")
+            .exists()
+    );
+    let saved = fs::read(&storage.paths.settings_path)?;
+    let nested = ProgramDataEnvGuard::set(&root.join("programdata"));
+    assert_eq!(fs::read(&storage.paths.settings_path)?, saved);
+    drop(nested);
+
+    let empty = DesktopState::default();
+    assert!(!storage_context_snapshot_is_current(
+        &empty,
+        &storage.settings
+    )?);
+    let state = DesktopState::from_storage(&storage);
+    ensure_storage_context_snapshot_current(&state, &storage, "fixture initialization")?;
+    let mut stale = storage.clone();
+    stale.settings.servers_root = root
+        .join("different-instances")
+        .to_string_lossy()
+        .into_owned();
+    assert!(
+        ensure_storage_context_snapshot_current(&state, &stale, "fixture stale snapshot").is_err()
+    );
+    drop(environment);
+    fs::remove_dir_all(root)?;
+    Ok(())
+}
+
 pub(super) async fn assistant_assessment_fixture() -> (
     tokio::sync::MutexGuard<'static, ()>,
     ProgramDataEnvGuard,
@@ -265,7 +326,9 @@ pub(super) async fn assistant_assessment_fixture() -> (
     let environment = ProgramDataEnvGuard::set(&root.join("programdata"));
     isolated_smoke_app_settings(&root).expect("isolated assessment settings");
     let app = tauri::test::mock_builder()
-        .manage(DesktopState::default())
+        .manage(DesktopState::from_storage(
+            &bootstrap_storage().expect("bootstrap isolated fixture storage"),
+        ))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("assessment mock app");
     // The app initializes only its isolated settings paths. Assessment receives
