@@ -12,6 +12,9 @@ use crate::{StorageError, StoragePaths};
 const LOCATION_FILE: &str = "storage-location.json";
 const MAX_LOCATION_BYTES: u64 = 8192;
 
+#[path = "storage_candidate.rs"]
+mod candidate;
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct StorageLocation {
@@ -41,6 +44,47 @@ pub(crate) fn resolve_default_paths() -> Result<StoragePaths, StorageError> {
                     io::Error::new(io::ErrorKind::NotFound, "Home directory unavailable")
                 })
         }
+    })
+}
+
+pub(crate) fn resolve_in_directory(parent: &Path) -> Result<StoragePaths, StorageError> {
+    resolve_selected_directory(&crate::default_app_data_root(), parent)
+}
+
+fn resolve_selected_directory(
+    user_root: &Path,
+    parent: &Path,
+) -> Result<StoragePaths, StorageError> {
+    resolve_paths(user_root, || {
+        if !parent.is_absolute()
+            || parent
+                .components()
+                .any(|part| matches!(part, Component::ParentDir | Component::CurDir))
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "请选择绝对路径表示的本地文件夹。",
+            ));
+        }
+        #[cfg(windows)]
+        if !matches!(parent.components().next(), Some(Component::Prefix(prefix))
+            if matches!(prefix.kind(), std::path::Prefix::Disk(_) | std::path::Prefix::VerbatimDisk(_)))
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "请选择本地磁盘上的文件夹。",
+            ));
+        }
+        let root = if parent
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.eq_ignore_ascii_case("LanGame"))
+        {
+            parent.with_file_name("LanGame")
+        } else {
+            parent.join("LanGame")
+        };
+        Ok(vec![root])
     })
 }
 
@@ -86,14 +130,22 @@ fn resolve_paths(
     if let Some(paths) = existing_paths(user_root)? {
         return Ok(paths);
     }
-    let roots = candidates().map_err(|source| StorageError::ReadPath {
-        path: user_root.to_owned(),
-        source,
+    let roots = candidates().map_err(|source| {
+        if source.kind() == io::ErrorKind::InvalidInput {
+            StorageError::NoUsableStorageLocation {
+                details: source.to_string(),
+            }
+        } else {
+            StorageError::ReadPath {
+                path: user_root.to_owned(),
+                source,
+            }
+        }
     })?;
     let mut failures = Vec::new();
     for root in roots {
         match prepare_candidate(&root) {
-            Ok(paths) => {
+            Ok((paths, _candidate_guard)) => {
                 let location = StorageLocation {
                     version: 1,
                     runtime_root: root,
@@ -111,12 +163,12 @@ fn resolve_paths(
             Err(error) => failures.push(format!("{}: {error}", root.display())),
         }
     }
-    Err(StorageError::CreatePath {
-        path: user_root.join(LOCATION_FILE),
-        source: io::Error::other(format!(
-            "No writable local drive is available for the LanGame data directory. {}",
-            failures.join("; ")
-        )),
+    Err(StorageError::NoUsableStorageLocation {
+        details: if failures.is_empty() {
+            "未找到可用的本地固定磁盘。".to_owned()
+        } else {
+            failures.join("\n")
+        },
     })
 }
 
@@ -213,8 +265,10 @@ fn validate_location(path: &Path, location: &StorageLocation) -> Result<(), Stor
     Ok(())
 }
 
-fn prepare_candidate(root: &Path) -> Result<StoragePaths, StorageError> {
-    create_normal_directory(root)?;
+fn prepare_candidate(
+    root: &Path,
+) -> Result<(StoragePaths, candidate::CandidateGuard), StorageError> {
+    let guard = candidate::prepare(root)?;
     probe_writable_directory(root)?;
     for directory in [
         root.join("cmd/steamcmd"),
@@ -222,11 +276,9 @@ fn prepare_candidate(root: &Path) -> Result<StoragePaths, StorageError> {
         root.join("instances"),
         root.join("instances/.trash"),
     ] {
-        create_normal_directory(&directory)?;
         probe_writable_directory(&directory)?;
     }
     let private_parent = root.join("app-data/ServerManager");
-    create_normal_directory(&private_parent)?;
     // Each account has its own pointer and private metadata. Do not adopt an
     // existing account's database simply because it shares the selected disk.
     let app_data_root = private_parent.join(Uuid::new_v4().simple().to_string());
@@ -249,7 +301,7 @@ fn prepare_candidate(root: &Path) -> Result<StoragePaths, StorageError> {
         source,
     })?;
     initialize_new_database(&paths)?;
-    Ok(paths)
+    Ok((paths, guard))
 }
 
 fn probe_writable_directory(root: &Path) -> Result<(), StorageError> {

@@ -24,6 +24,7 @@ mod runtime_log_stream;
 mod runtime_service;
 mod runtime_transport;
 mod runtime_transport_humanitz;
+mod startup_storage;
 mod state;
 mod steam_workshop;
 mod steamcmd_preparation;
@@ -103,37 +104,7 @@ enum WindowCloseAction {
 }
 
 fn resolve_desktop_storage() -> Result<app_storage::StoragePaths, app_storage::StorageError> {
-    app_storage::StoragePaths::resolve_default().inspect_err(|error| {
-        let message = format!(
-            "无法准备 LanGame 数据目录。\n\n请恢复或重新连接原数据位置后再启动；首次使用时，请检查本地磁盘的可用空间和写入权限。程序不会因已选位置不可用而另建数据目录。\n\n错误详情：\n{error}"
-        );
-        #[cfg(windows)]
-        {
-            use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxW};
-
-            let message: Vec<u16> = message
-                .replace('\0', "\\0")
-                .encode_utf16()
-                .chain(Some(0))
-                .collect();
-            let title: Vec<u16> = "LanGame Server Manager"
-                .encode_utf16()
-                .chain(Some(0))
-                .collect();
-            // Setup has not shown the WebView yet. These terminated buffers stay
-            // alive while the native dialog displays the storage failure.
-            unsafe {
-                MessageBoxW(
-                    std::ptr::null_mut(),
-                    message.as_ptr(),
-                    title.as_ptr(),
-                    MB_OK | MB_ICONERROR,
-                );
-            }
-        }
-        #[cfg(not(windows))]
-        eprintln!("{message}");
-    })
+    startup_storage::resolve()
 }
 
 fn main() {
