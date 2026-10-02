@@ -204,11 +204,21 @@ if ($BuildManaged) {
     )
     if ($EnableGitHubUpdates) { $buildArguments += '-DesktopUpdatesEnabled' }
     $buildArguments += '--locked'
-    & powershell.exe @buildArguments
-    if ($LASTEXITCODE -ne 0) { throw "Managed desktop build failed with exit code $LASTEXITCODE. No installer was exported." }
+    $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')
+    try {
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', 'true', 'Process')
+        & powershell.exe @buildArguments
+        if ($LASTEXITCODE -ne 0) { throw "Managed desktop build failed with exit code $LASTEXITCODE. No installer was exported." }
+    }
+    finally {
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
+    }
     Import-Module (Join-Path (Split-Path -Parent $managedCargoEntry) 'codex-snapshot-build.psm1') -Force
     $verified = Read-CodexSnapshotBuildReceipt -Path $receiptPath
     if ($verified.receipt.project -cne 'LanGameServerManager') { throw 'Build receipt belongs to another project.' }
+    if ($verified.receipt.staticVcruntime -isnot [bool] -or -not $verified.receipt.staticVcruntime) {
+        throw 'Build receipt does not confirm static Visual C++ runtime linkage.'
+    }
     if ($null -eq $verified.desktopBundle -or $verified.desktopBundle.kind -cne 'LanGameServerManager' -or
         $verified.desktopBundle.inputConfigurationSha256 -cne $mergeConfigSha256 -or
         [bool]$verified.desktopBundle.updatesEnabled -ne [bool]$EnableGitHubUpdates -or
@@ -219,6 +229,10 @@ if ($BuildManaged) {
     if ($capturedConfig.Count -ne 1 -or $capturedConfig[0].sha256 -cne $configSha256) {
         throw 'Installer source configuration changed before capture. Prepare again from the captured version.'
     }
+    $executable = @($verified.receipt.artifacts | Where-Object { $_.targetRelativePath -ceq 'release/langame-desktop.exe' })
+    if ($executable.Count -ne 1) { throw 'Build receipt does not contain exactly one desktop executable.' }
+    & python -B (Join-Path $PSScriptRoot 'verify_desktop_runtime_dependencies.py') $executable[0].path
+    if ($LASTEXITCODE -ne 0) { throw 'Desktop executable runtime dependency verification failed.' }
     $installer = @($verified.receipt.artifacts | Where-Object { $_.targetRelativePath -ceq "release/bundle/nsis/$artifactName" })
     if ($installer.Count -ne 1) { throw 'Build receipt does not contain the expected installer.' }
     $artifactRootAbs = Split-Path -Parent $installer[0].path
@@ -253,6 +267,7 @@ if ($BuildManaged) {
 if ($BuildPortable) {
     Push-Location $desktopRoot
     $oldUpdatesValue = [Environment]::GetEnvironmentVariable('VITE_LANGAME_DESKTOP_UPDATES_ENABLED', 'Process')
+    $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')
     try {
         $env:VITE_LANGAME_DESKTOP_UPDATES_ENABLED = $updatesValue
         $metadataJson = & cargo metadata --manifest-path $tauriManifest --no-deps --format-version 1 --locked
@@ -263,6 +278,7 @@ if ($BuildPortable) {
         $signaturePath = "$payloadPath.sig"
         $beforePayload = Get-Fingerprint -Path $payloadPath
         $beforeSignature = Get-Fingerprint -Path $signaturePath
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', 'true', 'Process')
         & cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis --config $mergeConfigPath -- --locked
         if ($LASTEXITCODE -ne 0) { throw 'cargo tauri build failed.' }
         $afterPayload = Get-Fingerprint -Path $payloadPath
@@ -271,9 +287,14 @@ if ($BuildPortable) {
             $beforePayload -eq $afterPayload -or $beforeSignature -eq $afterSignature) {
             throw 'The build must produce a fresh NSIS installer and matching signature for the current version.'
         }
+        $binaryRoot = Join-Path $cargoTargetRoot 'x86_64-pc-windows-msvc/release'
+        & python -B (Join-Path $PSScriptRoot 'verify_desktop_runtime_dependencies.py') `
+            (Join-Path $binaryRoot 'langame-desktop.exe') (Join-Path $binaryRoot 'install_catalog.exe')
+        if ($LASTEXITCODE -ne 0) { throw 'Desktop executable runtime dependency verification failed.' }
     }
     finally {
         [Environment]::SetEnvironmentVariable('VITE_LANGAME_DESKTOP_UPDATES_ENABLED', $oldUpdatesValue, 'Process')
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
         Pop-Location
     }
 }
