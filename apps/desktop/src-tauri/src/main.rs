@@ -102,6 +102,40 @@ enum WindowCloseAction {
     RequestAppExitShutdown,
 }
 
+fn resolve_desktop_storage() -> Result<app_storage::StoragePaths, app_storage::StorageError> {
+    app_storage::StoragePaths::resolve_default().inspect_err(|error| {
+        let message = format!(
+            "无法准备 LanGame 数据目录。\n\n请恢复或重新连接原数据位置后再启动；首次使用时，请检查本地磁盘的可用空间和写入权限。程序不会因已选位置不可用而另建数据目录。\n\n错误详情：\n{error}"
+        );
+        #[cfg(windows)]
+        {
+            use windows_sys::Win32::UI::WindowsAndMessaging::{MB_ICONERROR, MB_OK, MessageBoxW};
+
+            let message: Vec<u16> = message
+                .replace('\0', "\\0")
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
+            let title: Vec<u16> = "LanGame Server Manager"
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
+            // Setup has not shown the WebView yet. These terminated buffers stay
+            // alive while the native dialog displays the storage failure.
+            unsafe {
+                MessageBoxW(
+                    std::ptr::null_mut(),
+                    message.as_ptr(),
+                    title.as_ptr(),
+                    MB_OK | MB_ICONERROR,
+                );
+            }
+        }
+        #[cfg(not(windows))]
+        eprintln!("{message}");
+    })
+}
+
 fn main() {
     #[cfg(windows)]
     if let Some(code) = app_runtime::run_elevated_launcher_if_requested() {
@@ -140,6 +174,7 @@ fn main() {
                 if secondary_instance {
                     std::process::exit(0);
                 }
+                let storage_paths = resolve_desktop_storage()?;
                 #[cfg(not(windows))]
                 if !app.manage(state::DesktopState::default()) {
                     return Err(
@@ -149,10 +184,7 @@ fn main() {
                 #[cfg(windows)]
                 runtime_service::setup(app).map_err(std::io::Error::other)?;
                 app.manage(media_cache::MediaCacheState::new(
-                    app_storage::StoragePaths::default()
-                        .app_data_root
-                        .join("cache")
-                        .join("media"),
+                    storage_paths.app_data_root.join("cache/media"),
                 ));
                 app.handle()
                     .plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -180,9 +212,7 @@ fn main() {
                             window,
                             // The service owns desktop-app logs. Rotation has one
                             // process owner per directory, including WebView failures.
-                            log_path: app_storage::StoragePaths::default()
-                                .logs_root
-                                .join("desktop-ui/active.jsonl"),
+                            log_path: storage_paths.logs_root.join("desktop-ui/active.jsonl"),
                         },
                     )
                     .map_err(std::io::Error::other)?;

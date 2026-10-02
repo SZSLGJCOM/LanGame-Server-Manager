@@ -12,6 +12,70 @@ fn settings(root: &str) -> AppSettings {
 }
 
 #[test]
+fn blank_paths_keep_the_bootstrapped_volume() {
+    for root in [r"E:\LanGame", r"F:\LanGame"] {
+        let current = settings(root);
+        let input = AppPathSettingsInput {
+            servers_root: String::from(" "),
+            games_root: String::from("\t"),
+            archives_root: String::new(),
+            steamcmd_root: String::from("\n"),
+        };
+
+        let next = normalize_app_path_settings(&current, &input);
+
+        assert_eq!(next.servers_root, current.servers_root);
+        assert_eq!(next.games_root, current.games_root);
+        assert_eq!(next.steamcmd_root, current.steamcmd_root);
+        assert_eq!(next.modules_root, current.modules_root);
+        assert_eq!(
+            Path::new(&next.archives_root),
+            Path::new(&current.servers_root).join(".trash")
+        );
+    }
+}
+
+#[test]
+fn blank_archive_path_follows_the_effective_new_instance_root() {
+    let current = settings(r"E:\LanGame");
+    let input = AppPathSettingsInput {
+        servers_root: String::from(r"  F:\LanGame\instances  "),
+        games_root: String::new(),
+        archives_root: String::from(" \t"),
+        steamcmd_root: String::new(),
+    };
+
+    let next = normalize_app_path_settings(&current, &input);
+
+    assert_eq!(next.servers_root, r"F:\LanGame\instances");
+    assert_eq!(
+        Path::new(&next.archives_root),
+        Path::new(r"F:\LanGame\instances").join(".trash")
+    );
+    assert_eq!(next.games_root, current.games_root);
+    assert_eq!(next.steamcmd_root, current.steamcmd_root);
+}
+
+#[test]
+fn explicit_paths_are_preserved_without_changing_the_module_root() {
+    let current = settings(r"E:\LanGame");
+    let input = AppPathSettingsInput {
+        servers_root: String::from(r"F:\servers"),
+        games_root: String::from(r"G:\games"),
+        archives_root: String::from(r"H:\archives"),
+        steamcmd_root: String::from(r"I:\steamcmd"),
+    };
+
+    let next = normalize_app_path_settings(&current, &input);
+
+    assert_eq!(next.servers_root, input.servers_root);
+    assert_eq!(next.games_root, input.games_root);
+    assert_eq!(next.archives_root, input.archives_root);
+    assert_eq!(next.steamcmd_root, input.steamcmd_root);
+    assert_eq!(next.modules_root, current.modules_root);
+}
+
+#[test]
 fn path_change_detection_distinguishes_runtime_roots_from_steamcmd() {
     let current = settings(r"D:\current");
     let mut steamcmd_only = current.clone();

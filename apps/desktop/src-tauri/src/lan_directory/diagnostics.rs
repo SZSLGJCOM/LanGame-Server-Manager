@@ -6,10 +6,8 @@ pub(super) fn record(level: &str, action: &str, message: &str) {
     record_with(
         &mut io::stderr().lock(),
         |entry| {
-            crate::desktop_app_log::append(
-                &app_storage::StoragePaths::default().app_log_path(),
-                entry,
-            )
+            let paths = app_storage::StoragePaths::resolve_default().map_err(io::Error::other)?;
+            crate::desktop_app_log::append(&paths.app_log_path(), entry)
         },
         level,
         action,

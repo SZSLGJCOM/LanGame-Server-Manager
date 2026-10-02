@@ -13,23 +13,24 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
+#[cfg(test)]
+use app_core::DEFAULT_LANGAME_SERVER_FILES_ROOT;
 use app_core::{
     ActiveInstanceRun, AppPathSettingsInput, AppSettings, AppState, BackgroundJob, CpuCoreSnapshot,
-    CreateInstanceInput, DEFAULT_LANGAME_INSTANCES_ROOT, DEFAULT_LANGAME_SERVER_FILES_ROOT,
-    DEFAULT_LANGAME_STEAMCMD_ROOT, InsertInstanceBroadcastEventInput, InstallSource, InstallState,
-    InstanceBackupRestoreResult, InstanceBackupResult, InstanceBroadcastEvent,
-    InstanceBroadcastPolicy, InstanceDetails, InstanceProvisioning, InstanceRuntimeOverview,
-    InstanceStatus, InstanceSummary, JobKind, JobStatus, LaunchPlan, LogTailSnapshot,
-    MemoryModuleSnapshot, ModuleBindAddressMode, ModuleBindAddressSpec, ModuleDetails,
-    ModuleModsSpec, ModulePlayerActionSpec, ModulePlayerQuerySpec, ModuleShutdownSpec,
-    ModuleSummary, NetworkAdapterSnapshot, OperatorServiceProbe, PalworldOperatorServiceProbe,
-    PalworldOperatorSnapshot, PortBinding, ProcessIdentity, ProcessLaunchPlan, ProcessWindowPolicy,
-    RuntimeDiagnosticSignal, RuntimePerformanceApplication, RuntimePerformancePolicy,
-    RuntimePerformanceSnapshot, RuntimeProcessPerformanceSnapshot, RuntimeStartupQueueSnapshot,
-    RuntimeStartupSchedule, RuntimeWindowSnapshot, RuntimeWindowSuppressionAttempt,
-    RuntimeWindowSuppressionResult, SevenDaysOperatorSnapshot, StartInstanceResult,
-    StopInstanceResult, StorageStatus, SystemSnapshot, UpdateInstanceBroadcastPolicyInput,
-    UpdateInstanceInput,
+    CreateInstanceInput, DEFAULT_LANGAME_INSTANCES_ROOT, InsertInstanceBroadcastEventInput,
+    InstallSource, InstallState, InstanceBackupRestoreResult, InstanceBackupResult,
+    InstanceBroadcastEvent, InstanceBroadcastPolicy, InstanceDetails, InstanceProvisioning,
+    InstanceRuntimeOverview, InstanceStatus, InstanceSummary, JobKind, JobStatus, LaunchPlan,
+    LogTailSnapshot, MemoryModuleSnapshot, ModuleBindAddressMode, ModuleBindAddressSpec,
+    ModuleDetails, ModuleModsSpec, ModulePlayerActionSpec, ModulePlayerQuerySpec,
+    ModuleShutdownSpec, ModuleSummary, NetworkAdapterSnapshot, OperatorServiceProbe,
+    PalworldOperatorServiceProbe, PalworldOperatorSnapshot, PortBinding, ProcessIdentity,
+    ProcessLaunchPlan, ProcessWindowPolicy, RuntimeDiagnosticSignal, RuntimePerformanceApplication,
+    RuntimePerformancePolicy, RuntimePerformanceSnapshot, RuntimeProcessPerformanceSnapshot,
+    RuntimeStartupQueueSnapshot, RuntimeStartupSchedule, RuntimeWindowSnapshot,
+    RuntimeWindowSuppressionAttempt, RuntimeWindowSuppressionResult, SevenDaysOperatorSnapshot,
+    StartInstanceResult, StopInstanceResult, StorageStatus, SystemSnapshot,
+    UpdateInstanceBroadcastPolicyInput, UpdateInstanceInput,
 };
 use app_modules::{ModuleDescriptor, discover_modules};
 use app_platform_win::{
@@ -1424,30 +1425,7 @@ pub async fn update_app_settings(
     input: AppPathSettingsInput,
 ) -> Result<app_core::AppSettings, String> {
     let storage = bootstrap_storage().map_err(|error| error.to_string())?;
-    let next_settings = app_core::AppSettings {
-        archives_root: normalize_app_path_setting(
-            &input.archives_root,
-            &PathBuf::from(normalize_app_path_setting(
-                &input.servers_root,
-                DEFAULT_LANGAME_INSTANCES_ROOT,
-            ))
-            .join(".trash")
-            .to_string_lossy(),
-        ),
-        servers_root: normalize_app_path_setting(
-            &input.servers_root,
-            DEFAULT_LANGAME_INSTANCES_ROOT,
-        ),
-        games_root: normalize_app_path_setting(
-            &input.games_root,
-            DEFAULT_LANGAME_SERVER_FILES_ROOT,
-        ),
-        modules_root: storage.settings.modules_root.clone(),
-        steamcmd_root: normalize_app_path_setting(
-            &input.steamcmd_root,
-            DEFAULT_LANGAME_STEAMCMD_ROOT,
-        ),
-    };
+    let next_settings = normalize_app_path_settings(&storage.settings, &input);
     let runtime_roots_will_change = runtime_roots_changed(&storage.settings, &next_settings);
     let any_path_changed = app_paths_changed(&storage.settings, &next_settings);
     if !any_path_changed {
@@ -1524,6 +1502,20 @@ pub async fn update_app_settings(
     })?;
 
     Ok(saved)
+}
+
+fn normalize_app_path_settings(current: &AppSettings, input: &AppPathSettingsInput) -> AppSettings {
+    let servers_root = normalize_app_path_setting(&input.servers_root, &current.servers_root);
+    AppSettings {
+        archives_root: normalize_app_path_setting(
+            &input.archives_root,
+            &Path::new(&servers_root).join(".trash").to_string_lossy(),
+        ),
+        servers_root,
+        games_root: normalize_app_path_setting(&input.games_root, &current.games_root),
+        modules_root: current.modules_root.clone(),
+        steamcmd_root: normalize_app_path_setting(&input.steamcmd_root, &current.steamcmd_root),
+    }
 }
 
 fn normalize_app_path_setting(value: &str, fallback: &str) -> String {

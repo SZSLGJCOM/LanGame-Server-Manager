@@ -28,9 +28,10 @@ pub(crate) fn log_service_event(level: &str, action: &str, message: &str) {
         "level": level, "action": action, "message": message,
         "context": { "pid": std::process::id() },
     });
-    if let Err(error) =
-        crate::desktop_app_log::append(&app_storage::StoragePaths::default().app_log_path(), &entry)
-    {
+    let persisted = app_storage::StoragePaths::resolve_default()
+        .map_err(std::io::Error::other)
+        .and_then(|paths| crate::desktop_app_log::append(&paths.app_log_path(), &entry));
+    if let Err(error) = persisted {
         use std::io::Write;
         let _ = writeln!(
             std::io::stderr(),

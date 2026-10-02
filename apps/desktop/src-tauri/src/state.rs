@@ -6,7 +6,9 @@ use std::time::{Duration, Instant, SystemTime};
 use app_core::{AppState, RuntimeStartupSchedule, StorageStatus, SystemSnapshot};
 use app_platform_win::{BindAddressCandidate, WindowsHostMonitor};
 use app_runtime::RuntimeSupervisor;
-use app_storage::{StorageBootstrap, StoragePaths, bootstrap_storage};
+#[cfg(not(test))]
+use app_storage::bootstrap_storage;
+use app_storage::{StorageBootstrap, StoragePaths};
 
 use crate::live_players::cache::LivePlayerRegistry;
 
@@ -90,7 +92,17 @@ pub struct DesktopState {
 impl Default for DesktopState {
     fn default() -> Self {
         let default_paths = StoragePaths::default();
-        let app_state = initial_app_state(&default_paths, bootstrap_storage().ok());
+        #[cfg(not(test))]
+        let storage = match bootstrap_storage() {
+            Ok(storage) => Some(storage),
+            Err(error) => {
+                eprintln!("LanGame storage initialization failed: {error}");
+                None
+            }
+        };
+        #[cfg(test)]
+        let storage = None;
+        let app_state = initial_app_state(&default_paths, storage);
 
         Self {
             knowledge: Arc::new(crate::knowledge_runtime::KnowledgeCoordinator::default()),
