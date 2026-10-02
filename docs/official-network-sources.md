@@ -101,7 +101,7 @@ Store catalog generation accepts HLS playlists or native MP4/WebM trailer files.
 
 The source registry and cache policy verify network origins and delivery behavior; they do not grant copyright permission. Display, caching, LAN delivery and redistribution require a basis under the relevant publisher's terms. See [third-party distribution boundaries](../THIRD_PARTY_NOTICES.md#distribution-boundaries). Runtime cache contents are not source or installer inputs.
 
-Verified public images and videos use persistent caches under the application data directory: `cache/media` for the desktop adapter and `cache/media-service` for the runtime service (Windows base: `%LOCALAPPDATA%/LanGame/ServerManager`). Equivalent CDN origins share a key within a cache; the asset path and approved query parameters, including content versions and UGC transformations, remain part of that key. Changing interface language or restarting the application does not discard cached media. Changed asset URLs or version parameters create new entries.
+Verified public images and videos use persistent caches under the application data directory: `cache/media` for the desktop adapter and `cache/media-service` for the runtime service. For new users, the base is `LanGame/app-data/ServerManager/<local-user-directory-id>` on the saved data drive; existing users retain their previous application data directory without automatic migration. See [data locations](desktop-release.md#data-locations-and-uninstallation). This media cache is separate from WebView's Windows profile and browser cache. Equivalent CDN origins share a key within a cache; the asset path and approved query parameters, including content versions and UGC transformations, remain part of that key. Changing interface language or restarting the application does not discard cached media. Changed asset URLs or version parameters create new entries.
 
 Fresh hits require no upstream request. Cache freshness follows the origin's cache headers, defaults to seven days when unspecified, and is capped at thirty days. Expired objects use ETag or Last-Modified validation where available; an unchanged response renews the existing bytes. `no-store`, private responses and `Vary: *` are not persisted. A complete stale object may be used on a transport outage only when its cache directives allow it. This cache does not decide whether a publisher's change is a “major update.”
 
@@ -129,7 +129,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 
 来源清单与缓存策略核验网络来源和传输行为，不授予版权使用许可。展示、缓存、局域网提供及再分发须有相应发布者条款依据，见[第三方分发边界](../THIRD_PARTY_NOTICES.md#分发边界)。运行时缓存不作为源码或安装包输入。
 
-已核实来源的图片、视频接入持久缓存：桌面适配器使用应用数据目录下的 `cache/media`，运行服务使用 `cache/media-service`；Windows 基础目录默认为 `%LOCALAPPDATA%/LanGame/ServerManager`。在同一缓存内，相同资源的国内外 CDN 共用副本；重启、切换语言不清空缓存。资源路径、内容版本和图片变换参数参与缓存标识，地址或版本改变后下载新资源。
+已核实来源的图片、视频接入持久缓存：桌面适配器使用应用数据目录下的 `cache/media`，运行服务使用 `cache/media-service`。新用户的基础目录为已选数据盘上的 `LanGame/app-data/ServerManager/<本机用户的目录ID>`；已有用户保留原应用数据目录，不自动迁移，详见[数据位置说明](desktop-release.md#数据位置与卸载)。此媒体缓存与 WebView 的 Windows 配置和浏览器缓存分开。在同一缓存内，相同资源的国内外 CDN 共用副本；重启、切换语言不清空缓存。资源路径、内容版本和图片变换参数参与缓存标识，地址或版本改变后下载新资源。
 
 新鲜缓存直接读取本地，不请求上游。有效期遵循官方缓存头，未声明时默认七天，最长三十天；到期优先用 ETag 或 Last-Modified 检查变化，未变化则继续复用原文件。官方要求禁止保存、私有响应或 `Vary: *` 时不落盘。网络传输故障时，只在缓存指令允许且内容完整的情况下使用过期副本，不依靠猜测“是否大更新”决定刷新。
 

@@ -17,7 +17,7 @@ LAN 的 `search_game_docs` 与 `read_game_doc` 使用同步到本机的上游正
 第一次使用需要下载固定版本与 SHA-256 校验的本地多语向量模型；界面显示实际体积与下载进度。
 
 抓取支持 HTML、Markdown、纯文本与 PDF。正文保留在独立的本地 SQLite 文档库中，不写入 LGSM 实例数据库、
-仓库或聊天模型配置。Windows 默认位于 `%LOCALAPPDATA%/LanGame/ServerManager/knowledge`。
+仓库或聊天模型配置。新用户的知识库位于已选数据盘上的 `LanGame/app-data/ServerManager/<本机用户的目录ID>/knowledge`；已有用户保留原位置，不自动迁移。选盘与位置记录规则见[数据位置说明](desktop-release.md#数据位置与卸载)。
 Enshrouded、DST 启动参数和 7 Days to Die V3.0 说明使用 Zendesk 正式支持匿名读取的文章 API。
 Minecraft Java 帮助使用官网前端实际调用的同源公开文章 API。仅接受审核过的发行商、游戏、来源与精确文章 ID；
 解析会核对已发布、公开可见、语言与允许的官网文章身份，再提取 HTML 正文；缓存保留 API 的 ETag，
@@ -134,5 +134,8 @@ Public-source fetching enforces HTTPS scopes, redirect limits, publisher robots/
 restrictions and bounded bodies. Direct connections validate public DNS addresses; an explicit
 operator-configured proxy owns destination DNS resolution. Restricted pages are not bypassed.
 The independent local cache is not the instance database and is not redistributed with source code.
+For new users, knowledge is stored at `LanGame/app-data/ServerManager/<local-user-directory-id>/knowledge`
+on the saved data drive. Existing users retain their previous location without automatic migration.
+See [data locations](desktop-release.md#data-locations-and-uninstallation) for drive selection and the saved location record.
 Source review dates, successful refresh dates and game release versions have distinct meanings.
 See the Chinese operational details above and [source matrix](game-knowledge-sources.md).

@@ -54,7 +54,7 @@ fn load_persisted_app_settings(
 }
 
 pub fn save_app_settings(settings: AppSettings) -> Result<AppSettings, StorageError> {
-    let defaults = StoragePaths::default();
+    let defaults = StoragePaths::resolve_default()?;
     save_app_settings_with_paths(settings, &defaults)
 }
 
@@ -84,7 +84,7 @@ pub(crate) fn save_app_settings_with_paths(
 }
 
 pub fn bootstrap_storage() -> Result<StorageBootstrap, StorageError> {
-    bootstrap_storage_with_paths(StoragePaths::default())
+    bootstrap_storage_with_paths(StoragePaths::resolve_default()?)
 }
 
 pub fn bootstrap_storage_with_paths(

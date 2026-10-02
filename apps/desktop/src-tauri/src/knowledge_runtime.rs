@@ -62,8 +62,7 @@ struct RuntimeState {
 }
 
 pub(crate) struct KnowledgeCoordinator {
-    root: PathBuf,
-    modules_root: PathBuf,
+    paths: Result<(PathBuf, PathBuf), String>,
     library: AsyncMutex<Option<Arc<KnowledgeLibrary>>>,
     state: Mutex<RuntimeState>,
     admission: AsyncMutex<()>,
@@ -74,16 +73,27 @@ pub(crate) struct KnowledgeCoordinator {
 
 impl Default for KnowledgeCoordinator {
     fn default() -> Self {
-        let paths = app_storage::StoragePaths::default();
-        Self::new(paths.app_data_root.join("knowledge"), paths.modules_root)
+        #[cfg(not(test))]
+        let paths = app_storage::StoragePaths::resolve_default()
+            .map(|paths| (paths.app_data_root.join("knowledge"), paths.modules_root))
+            .map_err(|error| format!("Knowledge storage initialization failed: {error}"));
+        #[cfg(test)]
+        let paths = Err(String::from(
+            "Knowledge storage requires explicit test paths",
+        ));
+        Self::with_paths(paths)
     }
 }
 
 impl KnowledgeCoordinator {
+    #[cfg(test)]
     fn new(root: PathBuf, modules_root: PathBuf) -> Self {
+        Self::with_paths(Ok((root, modules_root)))
+    }
+
+    fn with_paths(paths: Result<(PathBuf, PathBuf), String>) -> Self {
         Self {
-            root,
-            modules_root,
+            paths,
             library: AsyncMutex::new(None),
             state: Mutex::new(RuntimeState::default()),
             admission: AsyncMutex::new(()),
@@ -103,6 +113,7 @@ impl KnowledgeCoordinator {
         if self.stopping.load(Ordering::Acquire) {
             return Err("Knowledge runtime is shutting down".into());
         }
+        let (root, modules_root) = self.paths.as_ref().map_err(Clone::clone)?;
         let mut slot = self.library.lock().await;
         // A reader may have passed the first check before shutdown acquired the
         // library lock. Never reopen the pool after the runtime has been sealed.
@@ -113,7 +124,7 @@ impl KnowledgeCoordinator {
             return Ok(library.clone());
         }
         let library = Arc::new(
-            KnowledgeLibrary::open(&self.root, &self.modules_root)
+            KnowledgeLibrary::open(root, modules_root)
                 .await
                 .map_err(|e| e.to_string())?,
         );
@@ -324,10 +335,9 @@ impl KnowledgeCoordinator {
     }
 
     async fn persist_job(&self, job: &KnowledgeSyncJob) -> Result<(), String> {
+        let (root, _) = self.paths.as_ref().map_err(Clone::clone)?;
         let bytes = serde_json::to_vec(job).map_err(|e| e.to_string())?;
-        let staging = self
-            .root
-            .join(format!("runtime-job-{}.json", uuid::Uuid::new_v4()));
+        let staging = root.join(format!("runtime-job-{}.json", uuid::Uuid::new_v4()));
         let write = async {
             let mut file = tokio::fs::OpenOptions::new()
                 .create_new(true)
@@ -342,7 +352,7 @@ impl KnowledgeCoordinator {
             let _ = tokio::fs::remove_file(&staging).await;
             return Err(format!("Cannot save knowledge job: {error}"));
         }
-        if let Err(error) = tokio::fs::rename(&staging, self.root.join("runtime-job.json")).await {
+        if let Err(error) = tokio::fs::rename(&staging, root.join("runtime-job.json")).await {
             let _ = tokio::fs::remove_file(&staging).await;
             return Err(format!("Cannot publish knowledge job: {error}"));
         }
@@ -350,7 +360,8 @@ impl KnowledgeCoordinator {
     }
 
     async fn load_job(&self) -> Result<Option<KnowledgeSyncJob>, String> {
-        let path = self.root.join("runtime-job.json");
+        let (root, _) = self.paths.as_ref().map_err(Clone::clone)?;
+        let path = root.join("runtime-job.json");
         let metadata = match tokio::fs::metadata(&path).await {
             Ok(metadata) => metadata,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),

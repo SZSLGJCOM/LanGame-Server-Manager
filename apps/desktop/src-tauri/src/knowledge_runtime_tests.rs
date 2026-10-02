@@ -30,6 +30,29 @@ impl Drop for Scratch {
     }
 }
 
+#[tokio::test]
+async fn unavailable_storage_paths_reject_every_knowledge_file_operation() {
+    let reason = String::from("Knowledge storage initialization failed: selected disk unavailable");
+    let owner = KnowledgeCoordinator::with_paths(Err(reason.clone()));
+
+    assert_eq!(owner.library().await.err(), Some(reason.clone()));
+    assert_eq!(owner.load_job().await.err(), Some(reason.clone()));
+    assert_eq!(owner.persist_job(&job()).await.err(), Some(reason));
+    assert!(owner.library.try_lock().unwrap().is_none());
+}
+
+#[tokio::test]
+async fn default_test_coordinator_requires_explicit_isolated_paths() {
+    let owner = KnowledgeCoordinator::default();
+
+    assert!(owner.paths.is_err());
+    assert_eq!(
+        owner.library().await.err().as_deref(),
+        Some("Knowledge storage requires explicit test paths")
+    );
+    assert!(owner.library.try_lock().unwrap().is_none());
+}
+
 #[test]
 fn automatic_sync_respects_disabled_interval_and_backwards_clock() {
     let mut settings = KnowledgeSettings::default();

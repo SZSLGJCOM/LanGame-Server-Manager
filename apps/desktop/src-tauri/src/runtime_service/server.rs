@@ -307,11 +307,10 @@ pub(super) fn run() -> Result<(), String> {
     context.config_mut().app.windows.clear();
     let app = tauri::Builder::default()
         .setup(move |app| {
+            let storage_paths = app_storage::StoragePaths::resolve_default()?;
             app.manage(crate::state::DesktopState::default());
             app.manage(crate::media_cache::MediaCacheState::new(
-                app_storage::StoragePaths::default()
-                    .app_data_root
-                    .join("cache/media-service"),
+                storage_paths.app_data_root.join("cache/media-service"),
             ));
             start_with_pipe(app.handle(), endpoint, first).map_err(std::io::Error::other)?;
             if crate::lan_host::is_lan_host_requested() {

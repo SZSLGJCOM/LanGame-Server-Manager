@@ -150,7 +150,11 @@ mod settings_value_formats;
 mod seven_days_ban;
 pub use seven_days_ban::{SevenDaysBanReceipt, record_seven_days_bans_from_native};
 mod storage_db;
+mod storage_location;
+mod storage_private_directory;
 mod storage_usage;
+#[cfg(windows)]
+mod storage_volumes;
 pub use storage_usage::{StorageUsageEntry, StorageUsageReport, scan_storage_usage};
 mod templates;
 mod windrose_bootstrap;
@@ -262,6 +266,22 @@ impl Default for StoragePaths {
     fn default() -> Self {
         let app_data_root = default_app_data_root();
         let runtime_root = default_runtime_root(&app_data_root);
+        Self::from_data_roots(app_data_root, runtime_root)
+    }
+}
+
+impl StoragePaths {
+    /// Resolve the saved data location, selecting and preparing it only on first use.
+    pub fn resolve_default() -> Result<Self, StorageError> {
+        storage_location::resolve_default_paths()
+    }
+
+    /// Inspect an existing location without choosing a disk or creating files.
+    pub fn resolve_existing_default() -> Result<Option<Self>, StorageError> {
+        storage_location::existing_paths(&default_app_data_root())
+    }
+
+    fn from_data_roots(app_data_root: PathBuf, runtime_root: PathBuf) -> Self {
         let modules_root = default_modules_root();
 
         Self {
@@ -280,9 +300,7 @@ impl Default for StoragePaths {
             archives_root: runtime_root.join("instances").join(".trash"),
         }
     }
-}
 
-impl StoragePaths {
     pub fn app_log_path(&self) -> PathBuf {
         self.logs_root.join("desktop-app").join("active.jsonl")
     }

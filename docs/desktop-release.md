@@ -85,7 +85,13 @@ The installer and uninstaller guard against a running desktop or runtime. Exit L
 
 An enabled build automatically prompts when a new version is found. Download opens that version's official GitHub Release page; Update in app starts the existing updater after the prompt explains saving, stopping and restarting. There is no header button or second confirmation screen. Dismissing the prompt does not install anything or cause repeated prompts for the same version during ordinary background checks.
 
-Uninstallation removes the application and preserves its default data directory, `%LOCALAPPDATA%\LanGame\ServerManager`, and external server directories. The optional interface-data cleanup targets the application-identifier/WebView directories; it does not erase server settings, saves, or separately configured game directories.
+### Data locations and uninstallation
+
+The application installation directory is independent of its data location. On first use without existing settings or a database, LGSM tries writable local fixed non-system drives in descending order of available space and creates `LanGame` at the selected drive root. If no other drive is usable, it tries the Windows system drive. If none is usable, initialization reports an error. The selected location is saved and is not recalculated when free space changes. An unavailable saved location is reported instead of silently selecting another drive.
+
+New installations use `LanGame/server-files` for game programs, `LanGame/instances` for instances and `LanGame/cmd/steamcmd` for SteamCMD. Server path settings, the database, logs, knowledge and media caches reside under `LanGame/app-data/ServerManager/<local-user-directory-id>`, in `settings.json`, `db`, `logs`, `knowledge` and `cache` respectively. Windows keeps the small location record at `%LOCALAPPDATA%\LanGame\ServerManager\storage-location.json`. Existing backend settings or databases in the previous user data directory remain there without automatic migration, including their existing local runtime and configured game directories.
+
+WebView's Windows profile, browser storage and browser cache are separate from these directories and remain under `%LOCALAPPDATA%\cn.langame.servermanager`. Uninstallation removes the application but preserves game data, server settings, the backend `settings.json`, databases, previously used data directories and the location record, so reinstallation can find them. The optional interface-data cleanup targets the application-identifier/WebView directories and resets interface settings stored in localStorage, including language, theme and model-service configuration. It does not erase the retained server data or backend files.
 
 The disposable NSIS guard fixture checks six install/uninstall process scenarios without using real server data:
 
@@ -123,4 +129,10 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 
 `-ArtifactRoot` 可导出已有当前版本 `.exe` 与 `.exe.sig`，生成 `latest.json`、`SHA256SUMS` 和回执，但不能修改或证明导入包内置的更新开关。Tauri 输入仍使用含空格的原始名称，公开附件统一使用 `LanGame.Server.Manager_<version>_x64-setup.exe` 及 `.exe.sig`，文件字节不变；清单与校验表使用相同的点号名称，发布前核对 GitHub 实际返回的附件名和下载地址。签名格式、key ID、复制一致性校验不等于密码学验签；正式私钥匹配、Windows 发布者证书、安装升级卸载及数据保留仍须以真实安装包验收。手动安装或卸载前应从 LGSM 安全退出，不能只关闭到托盘。`-CompileOnly` 只验证 NSIS 夹具编译；六个安装/卸载场景须在允许该夹具执行的受支持 Windows 测试机上完整运行，才能验证守卫的运行行为。
 
-卸载移除应用文件，保留默认数据目录 `%LOCALAPPDATA%\LanGame\ServerManager` 和外部服务器目录。可选的界面数据清理针对应用标识/WebView 目录，不等于擦除服务器设置、存档或另行配置的游戏目录。
+### 数据位置与卸载
+
+程序安装目录与数据目录独立。没有已有设置或数据库时，首次使用按可用空间从大到小尝试可写的本地固定非系统盘，自动创建选中盘根的 `LanGame`。没有可用的其他盘时尝试 Windows 系统盘；均不可用时明确报错。选择会保存，之后不随剩余空间变化重新选盘；已选位置不可用时提示恢复该位置，不静默另建一套数据。
+
+新用户的游戏程序位于 `LanGame/server-files`，实例位于 `LanGame/instances`，SteamCMD 位于 `LanGame/cmd/steamcmd`。服务器路径设置、数据库、日志、知识库和媒体缓存集中在 `LanGame/app-data/ServerManager/<本机用户的目录ID>`，分别对应 `settings.json`、`db`、`logs`、`knowledge` 和 `cache`。Windows 将小型位置记录保存在 `%LOCALAPPDATA%\LanGame\ServerManager\storage-location.json`。已有用户的后端设置或数据库继续使用原用户数据目录，包括原本地 runtime 和已配置的游戏目录，不自动迁移。
+
+WebView 的 Windows 配置、浏览器存储和浏览器缓存另行位于 `%LOCALAPPDATA%\cn.langame.servermanager`。卸载移除应用文件，保留游戏数据、服务器设置、后端 `settings.json`、数据库、旧数据目录和位置记录，供重装后继续读取。可选的界面数据清理针对应用标识/WebView 目录，会重置 localStorage 中的语言、主题、模型服务配置等界面设置，不会删除保留的服务器数据或后端文件。

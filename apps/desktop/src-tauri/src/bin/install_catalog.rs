@@ -283,7 +283,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn run_catalog() -> Result<(), Box<dyn Error>> {
     let options = parse_options(std::env::args().skip(1))?;
     let installing = options.module.is_some() && options.inspection.is_none();
-    let defaults = StoragePaths::default();
+    let defaults = StoragePaths::resolve_existing_default()?.unwrap_or_default();
     let mut settings = if defaults.settings_path.is_file() {
         serde_json::from_slice(&std::fs::read(&defaults.settings_path)?)?
     } else {

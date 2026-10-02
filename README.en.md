@@ -37,7 +37,9 @@ The LAN AI assistant supports your own model service (BYOK) and can help with lo
 
 Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases). The installer offers Simplified Chinese and includes the WebView2 runtime.
 
-Before manual installation or removal, choose **Exit** from the system tray and wait for servers to stop. Uninstalling the manager preserves server files and settings.
+Application installation and data locations are separate. First use creates `LanGame` at the root of the writable fixed non-system drive with the most available space, or uses the system drive if no other drive is usable. The saved choice does not change with free space; existing data stays in place without automatic migration. See [data locations](docs/desktop-release.md#data-locations-and-uninstallation) for the directory layout.
+
+Before manual installation or removal, choose **Exit** from the system tray and wait for servers to stop. Uninstallation preserves game data, server settings, databases, existing data and the saved location record; optional interface-data cleanup resets interface settings such as language, theme and model-service configuration.
 
 ## Requirements
 
