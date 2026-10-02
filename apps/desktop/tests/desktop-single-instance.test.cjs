@@ -55,12 +55,20 @@ test("a secondary launch restores and focuses the existing main window", () => {
 test("Windows stores server ownership in the service and connects the primary shell before its UI", () => {
   const mainSource = fs.readFileSync(mainPath, "utf8");
   const serverSource = fs.readFileSync(path.join(path.dirname(mainPath), "runtime_service", "server.rs"), "utf8");
+  const storage = mainSource.indexOf("let storage_paths = if secondary_instance {");
+  const builder = mainSource.indexOf("tauri::Builder::default()");
   const setup = mainSource.indexOf(".setup(move |app|");
-  const secondaryGuard = mainSource.indexOf("if secondary_instance {");
+  const secondaryGuard = mainSource.indexOf("let Some(storage_paths) = storage_paths else {", setup);
   const client = mainSource.indexOf("runtime_service::setup(app)", setup);
   const updater = mainSource.indexOf("tauri_plugin_updater::Builder::new().build()", setup);
   const tray = mainSource.indexOf("setup_tray(app)?", setup);
 
+  assert.ok(storage >= 0 && storage < builder, "storage must be resolved before a WebView can send IPC");
+  assert.match(
+    mainSource.slice(storage, builder),
+    /if secondary_instance \{\s*None\s*\} else \{\s*match resolve_desktop_storage\(\)/u,
+    "only the primary process may resolve storage before Builder"
+  );
   assert.notEqual(setup, -1, "the primary setup hook must remain registered");
   assert.ok(setup < secondaryGuard, "the secondary-instance guard must run inside setup");
   assert.ok(
