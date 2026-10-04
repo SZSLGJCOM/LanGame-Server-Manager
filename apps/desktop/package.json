@@ -73,7 +73,7 @@
     "three": "0.185.1"
   },
   "devDependencies": {
-    "@swc/core": "^1.16.2",
+    "@swc/core": "^1.16.13",
     "@tauri-apps/cli": "2.11.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
