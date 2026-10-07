@@ -12,7 +12,7 @@ $plugins = (Resolve-Path -LiteralPath (Join-Path $NsisRoot 'Plugins/x86-unicode/
 $hooks = Join-Path $repoRoot 'apps/desktop/src-tauri/installer/hooks.nsh'
 $languages = Join-Path $repoRoot 'apps/desktop/src-tauri/installer/languages'
 $tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
-$fixtureRoot = Join-Path $tempRoot ('lgsm-installer-guard-' + [guid]::NewGuid().ToString('N'))
+$fixtureRoot = Join-Path $tempRoot ('lgsm-installer-guard-' + [guid]::NewGuid().ToString('N') + ' with spaces')
 $null = New-Item -ItemType Directory -Path $fixtureRoot
 $utf8 = [System.Text.UTF8Encoding]::new($false)
 $ownedProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
@@ -92,7 +92,7 @@ OutFile "${OUTPUT}"
 !include LogicLib.nsh
 !addplugindir "@PLUGINS@"
 ; Tauri's template defines this macro before loading installerHooks.
-!macro CheckIfAppIsRunning executableName productName
+!macro CheckIfAppIsRunning executablePath productName
   !error "The unsafe default guard must have been replaced."
 !macroend
 !include "@HOOKS@"
@@ -105,7 +105,7 @@ Var UpdateMode
 Section
   StrCpy $PassiveMode 1
   StrCpy $UpdateMode ${UPDATE}
-  !insertmacro CheckIfAppIsRunning "@PROBENAME@" "LGSM disposable process probe"
+  !insertmacro CheckIfAppIsRunning "@PROBE@" "LGSM disposable process probe"
   FileOpen $0 "${RECEIPT}" w
   FileWrite $0 "install reached"
   FileClose $0
@@ -114,14 +114,14 @@ SectionEnd
 Section "Uninstall"
   StrCpy $PassiveMode 1
   StrCpy $UpdateMode 0
-  !insertmacro CheckIfAppIsRunning "@PROBENAME@" "LGSM disposable process probe"
+  !insertmacro CheckIfAppIsRunning "@PROBE@" "LGSM disposable process probe"
   FileOpen $0 "${UNINSTALL_RECEIPT}" w
   FileWrite $0 "uninstall reached"
   FileClose $0
 SectionEnd
 '@
     $fixtureSource = $source.Replace('@PLUGINS@', $plugins).Replace('@HOOKS@', $hooks)
-    $fixtureSource = $fixtureSource.Replace('@LANGUAGES@', $languages).Replace('@PROBENAME@', $probeName)
+    $fixtureSource = $fixtureSource.Replace('@LANGUAGES@', $languages).Replace('@PROBE@', $probeExe)
     $fixture = Write-Fixture 'guard.nsi' $fixtureSource
     $manual = Join-Path $fixtureRoot 'manual.exe'
     $update = Join-Path $fixtureRoot 'update.exe'

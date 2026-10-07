@@ -105,7 +105,7 @@ cargo run --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --bin langa
 生成本地安装包（默认关闭联网更新检查，无需发行签名密钥）：
 
 ```powershell
-cargo install tauri-cli --version "=2.11.4" --locked
+cargo install tauri-cli --version "=2.12.1" --locked
 Push-Location apps/desktop
 try {
     cargo tauri build -- --locked

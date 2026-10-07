@@ -1,21 +1,27 @@
-; Tauri CLI 2.11.4 includes installerHooks after utils.nsh. Replace its process
+; Tauri CLI 2.12.1 includes installerHooks after utils.nsh. Replace its process
 ; guard instead of allowing its later check to kill a newly started process.
 ; The desktop and runtime service share an executable name. Neither may be
 ; force-terminated by installation or removal: servers must save and stop first.
+!include FileFunc.nsh
+
 !ifmacrondef CheckIfAppIsRunning
   !error "Unsupported Tauri NSIS template: process guard is missing."
 !endif
 !macroundef CheckIfAppIsRunning
 
-!macro CheckIfAppIsRunning executableName productName
+!macro CheckIfAppIsRunning executablePath productName
   !define LGSM_GUARD_ID ${__LINE__}
   Push $R0
   Push $R1
+  Push $R2
+  ; Tauri passes a full installation path; the process plugin matches names.
+  ; Keep guarding every same-user runtime, including another installation.
+  ${GetFileName} "${executablePath}" $R2
   StrCpy $R1 50
 
   lgsm_probe_${LGSM_GUARD_ID}:
     ClearErrors
-    nsis_tauri_utils::FindProcessCurrentUser "${executableName}"
+    nsis_tauri_utils::FindProcessCurrentUser "$R2"
     Pop $R0
     IfErrors lgsm_probe_failed_${LGSM_GUARD_ID}
     StrCmp $R0 1 lgsm_ready_${LGSM_GUARD_ID}
@@ -40,12 +46,14 @@
     StrCmp $PassiveMode 1 lgsm_abort_${LGSM_GUARD_ID}
     MessageBox MB_OK|MB_ICONEXCLAMATION $R0
   lgsm_abort_${LGSM_GUARD_ID}:
+    Pop $R2
     Pop $R1
     Pop $R0
     SetErrorLevel 10
     Abort
 
   lgsm_ready_${LGSM_GUARD_ID}:
+    Pop $R2
     Pop $R1
     Pop $R0
   !undef LGSM_GUARD_ID
