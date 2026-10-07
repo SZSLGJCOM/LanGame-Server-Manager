@@ -22,7 +22,7 @@ app-steamcmd = { path = "../../../crates/app-steamcmd" }
 base64 = "0.23.1"
 dunce = "=1.0.5"
 dom_query = "=0.27.0"
-encoding_rs = "0.8.40"
+encoding_rs = "0.8.42"
 if-addrs = "0.15.0"
 keyring = "4.2.0"
 mlua = { version = "0.12.1", features = ["lua54", "vendored"] }
@@ -52,6 +52,6 @@ sqlx.workspace = true
 tauri = { workspace = true, features = ["test"] }
 
 [target.'cfg(windows)'.dependencies]
-webview2-com = "=0.38.2"
-windows-core = "=0.61.2"
+webview2-com = "=0.39.1"
+windows-core = "=0.62.2"
 windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Pipes", "Win32_System_Threading", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }

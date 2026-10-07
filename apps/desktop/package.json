@@ -65,22 +65,22 @@
   },
   "dependencies": {
     "@react-three/fiber": "^9.7.0",
-    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/api": "^2.12.1",
     "hls.js": "^1.7.2",
-    "motion": "^13.2.0",
+    "motion": "^13.5.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "0.185.1"
   },
   "devDependencies": {
     "@swc/core": "^1.16.2",
-    "@tauri-apps/cli": "2.11.4",
+    "@tauri-apps/cli": "2.12.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@types/three": "0.185.4",
     "@vitejs/plugin-react-swc": "^4.3.3",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.3.2"
   },
   "allowScripts": {
     "@swc/core@1.16.2": true,

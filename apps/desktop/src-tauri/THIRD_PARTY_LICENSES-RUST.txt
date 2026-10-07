@@ -35,9 +35,9 @@ Archive SHA-256 后按 gzip tar 归档解压，即可取得上游源码及其声
 LanGame 项目许可不限制接收者依 MPL 获得的源码权利。
 条款见 Mozilla Public License 2.0 第 3.1-3.3 节：https://www.mozilla.org/MPL/2.0/
 
-Locked external crates / 锁定外部 crate: 676
-Reviewed missing-file rules / 缺失文件审计规则: 51
-Unique legal texts / 唯一法律文本: 385
+Locked external crates / 锁定外部 crate: 669
+Reviewed missing-file rules / 缺失文件审计规则: 48
+Unique legal texts / 唯一法律文本: 383
 
 PACKAGE INVENTORY / 软件包清单
 ================================================================================
@@ -108,25 +108,25 @@ Legal text / 法律文本: 01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d4
 Legal text / 法律文本: 0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f — checksum-verified crate file aho-corasick-1.1.5/LICENSE-MIT
 Legal text / 法律文本: 7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c — checksum-verified crate file aho-corasick-1.1.5/UNLICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: alloc-no-stdlib@2.0.4
+Package / 软件包: alloc-no-stdlib@3.0.0
 Declared license / 声明许可证: BSD-3-Clause
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: cc7bb162ec39d46ab1ca8c77bf72e890535becd1751bb45f64c597edb4c8c6b3
-Source archive / 源码归档: https://static.crates.io/crates/alloc-no-stdlib/alloc-no-stdlib-2.0.4.crate
+Archive SHA-256: c2fb6cfd47bf496ff64095c20eaba0c201404ee38714d4142fcfa1dc334fcc7a
+Source archive / 源码归档: https://static.crates.io/crates/alloc-no-stdlib/alloc-no-stdlib-3.0.0.crate
 Repository / 仓库: https://github.com/dropbox/rust-alloc-no-stdlib
-VCS commit / 版本提交: 6032b6a9b20e03737135c55a0270ccffcc1438ef
+VCS commit / 版本提交: c87781251c135aa8d099da54b60287f4ff0ccf1c
 Authors metadata / 作者元数据: Daniel Reiter Horn <danielrh@dropbox.com>
-Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file alloc-no-stdlib-2.0.4/LICENSE
+Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file alloc-no-stdlib-3.0.0/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: alloc-stdlib@0.2.4
+Package / 软件包: alloc-stdlib@0.3.0
 Declared license / 声明许可证: BSD-3-Clause
 Selected reviewed terms / 选用审计条款: BSD-3-Clause
-Archive SHA-256: 0e76a019e91224d279006ff972f1e984179a6e9feb050adba6ce8274aef23195
-Source archive / 源码归档: https://static.crates.io/crates/alloc-stdlib/alloc-stdlib-0.2.4.crate
+Archive SHA-256: 0b5c1865780388bfa186411ab5f247819487fc4864c6e9c3106611fa347586e1
+Source archive / 源码归档: https://static.crates.io/crates/alloc-stdlib/alloc-stdlib-0.3.0.crate
 Repository / 仓库: https://github.com/dropbox/rust-alloc-no-stdlib
-VCS commit / 版本提交: ae42d22078b98549e987d2f03d12df7b984fde47
+VCS commit / 版本提交: 0a81fd6928ea3b33c8cd484aa4575d50ffb98012
 Authors metadata / 作者元数据: Daniel Reiter Horn <danielrh@dropbox.com>
-Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — repository-shared license from checksum-verified alloc-no-stdlib@2.0.4/LICENSE
+Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — repository-shared license from checksum-verified alloc-no-stdlib@3.0.0/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: allocator-api2@0.2.21
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -522,26 +522,26 @@ VCS commit / 版本提交: e29a5e6979f56c7537b04ab17ca7bdceee66ef5f
 Legal text / 法律文本: 23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3 — checksum-verified crate file blocking-1.7.0/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file blocking-1.7.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: brotli-decompressor@5.0.3
+Package / 软件包: brotli-decompressor@6.0.1
 Declared license / 声明许可证: BSD-3-Clause/MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3a32acac15fe1967bc3986b2a6347dffc965602354ea6f450ad07e8bfd253583
-Source archive / 源码归档: https://static.crates.io/crates/brotli-decompressor/brotli-decompressor-5.0.3.crate
+Archive SHA-256: 941cd9bd4ddab83cb46fa5a2d428f1c857b24ac78cb876cf7beb710840934bd7
+Source archive / 源码归档: https://static.crates.io/crates/brotli-decompressor/brotli-decompressor-6.0.1.crate
 Repository / 仓库: https://github.com/dropbox/rust-brotli-decompressor
-VCS commit / 版本提交: b56177b8eb3d2440536281397e5ffe06eedf1a5c
+VCS commit / 版本提交: e4f3bf3326256a5dc23e5fa9276d803f6a4ad527
 Authors metadata / 作者元数据: Daniel Reiter Horn <danielrh@dropbox.com>; The Brotli Authors
-Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file brotli-decompressor-5.0.3/LICENSE
+Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file brotli-decompressor-6.0.1/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: brotli@8.0.4
+Package / 软件包: brotli@9.0.0
 Declared license / 声明许可证: BSD-3-Clause AND MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 5cc91aac060a7a1e25823bdccbfb6af1875b88f17c6daac97894eed8207166b3
-Source archive / 源码归档: https://static.crates.io/crates/brotli/brotli-8.0.4.crate
+Archive SHA-256: f8b851b75c23ca7873623d612fe49bd1989aeb03d08fb9432187eb253d3d4c6b
+Source archive / 源码归档: https://static.crates.io/crates/brotli/brotli-9.0.0.crate
 Repository / 仓库: https://github.com/dropbox/rust-brotli
-VCS commit / 版本提交: 9651aa3ebfd23be83ca14d914fba2d7c12b32d2f
+VCS commit / 版本提交: a51b65e75f68e3485be12bc816118e523e95647d
 Authors metadata / 作者元数据: Daniel Reiter Horn <danielrh@dropbox.com>; The Brotli Authors
-Legal text / 法律文本: 3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94 — checksum-verified crate file brotli-8.0.4/LICENSE.MIT
-Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file brotli-8.0.4/LICENSE.BSD-3-Clause
+Legal text / 法律文本: 3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94 — checksum-verified crate file brotli-9.0.0/LICENSE.MIT
+Legal text / 法律文本: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae — checksum-verified crate file brotli-9.0.0/LICENSE.BSD-3-Clause
 --------------------------------------------------------------------------------
 Package / 软件包: bs58@0.5.1
 Declared license / 声明许可证: MIT/Apache-2.0
@@ -672,15 +672,15 @@ VCS commit / 版本提交: 0b4be024c57d7855a2dfbdf2ec2a48f3e16e9f78
 Authors metadata / 作者元数据: Oliver Schneider <git-spam-no-reply9815368754983@oli-obk.de>
 Legal text / 法律文本: 23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3 — checksum-verified crate file cargo_metadata-0.19.2/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: cargo_toml@0.22.3
+Package / 软件包: cargo_toml@1.0.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 374b7c592d9c00c1f4972ea58390ac6b18cbb6ab79011f3bdc90a0b82ca06b77
-Source archive / 源码归档: https://static.crates.io/crates/cargo_toml/cargo_toml-0.22.3.crate
+Archive SHA-256: 82f4b26e751e711a5302649417f2da046dce6391b2ea30a4820f37462314f0b9
+Source archive / 源码归档: https://static.crates.io/crates/cargo_toml/cargo_toml-1.0.1.crate
 Repository / 仓库: https://gitlab.com/lib.rs/cargo_toml
-VCS commit / 版本提交: 787729202ba6338ec4145d5efac650169b15d2d7
+VCS commit / 版本提交: 57e06c4f4eb702469db46ef1aa144b9d11e63171
 Authors metadata / 作者元数据: Kornel <kornel@geekhood.net>
-Legal text / 法律文本: ee874098519e956c23a3c5c7e20581f8e9b1d70aa05eb178f983be9775090a2f — checksum-verified crate file cargo_toml-0.22.3/LICENSE
+Legal text / 法律文本: ee874098519e956c23a3c5c7e20581f8e9b1d70aa05eb178f983be9775090a2f — checksum-verified crate file cargo_toml-1.0.1/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: castaway@0.2.4
 Declared license / 声明许可证: MIT
@@ -734,6 +734,16 @@ VCS commit / 版本提交: not included in crate metadata
 Authors metadata / 作者元数据: Eric Kidd <git@randomhacks.net>
 Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
 Legal text / 法律文本: 5ca77347e58205d3b543c04a9c5bdd11d20a9f3108a7b246640edffa999b5f35 — checksum-verified crate file cesu8-1.1.0/COPYRIGHT-RUST.txt
+--------------------------------------------------------------------------------
+Package / 软件包: cfb@0.14.0
+Declared license / 声明许可证: MIT
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: a347dcabdae9c31b0825fd6a8bed285ec9c2acb89c47827126d52fa4f59cece3
+Source archive / 源码归档: https://static.crates.io/crates/cfb/cfb-0.14.0.crate
+Repository / 仓库: https://github.com/mdsteele/rust-cfb
+VCS commit / 版本提交: 45d0d07adc8e95f9c239ac7dcc42761b1347ed3e
+Authors metadata / 作者元数据: Matthew D. Steele <mdsteele@alum.mit.edu>
+Legal text / 法律文本: ebaac853b53fec0ed475796f533ce676912a4df9ad9d8a621fa76d5060591e10 — checksum-verified crate file cfb-0.14.0/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: cfb@0.7.3
 Declared license / 声明许可证: MIT
@@ -1120,6 +1130,16 @@ VCS commit / 版本提交: 0ebd17bcd13808f087b083f34d2f816e380b5155
 Authors metadata / 作者元数据: Simon Sapin <simon.sapin@exyr.org>
 Legal text / 法律文本: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85 — checksum-verified crate file cssparser-macros-0.6.1/LICENSE
 --------------------------------------------------------------------------------
+Package / 软件包: cssparser-macros@0.7.1
+Declared license / 声明许可证: MPL-2.0
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: d045de693cb712d0b22c6a64be5b953f67b3ce00ab5ad3dd5d8b441886ab8e1a
+Source archive / 源码归档: https://static.crates.io/crates/cssparser-macros/cssparser-macros-0.7.1.crate
+Repository / 仓库: https://github.com/servo/rust-cssparser
+VCS commit / 版本提交: d128a90e1203fc4afb959420d6dc5e24f77a3191
+Authors metadata / 作者元数据: Simon Sapin <simon.sapin@exyr.org>
+Legal text / 法律文本: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85 — checksum-verified crate file cssparser-macros-0.7.1/LICENSE
+--------------------------------------------------------------------------------
 Package / 软件包: cssparser@0.36.0
 Declared license / 声明许可证: MPL-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -1130,27 +1150,26 @@ VCS commit / 版本提交: 9339ddd71443463dfb85d1185ad50cd98b34bc8f
 Authors metadata / 作者元数据: Simon Sapin <simon.sapin@exyr.org>
 Legal text / 法律文本: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85 — checksum-verified crate file cssparser-0.36.0/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: ctor-proc-macro@0.0.7
-Declared license / 声明许可证: Apache-2.0 OR MIT
+Package / 软件包: cssparser@0.37.0
+Declared license / 声明许可证: MPL-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1
-Source archive / 源码归档: https://static.crates.io/crates/ctor-proc-macro/ctor-proc-macro-0.0.7.crate
-Repository / 仓库: https://github.com/mmastrac/rust-ctor
-VCS commit / 版本提交: 350d397394f91332517cf2924737b79edf9581ab
-Authors metadata / 作者元数据: Matt Mastracci <matthew@mastracci.com>
-Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file ctor-proc-macro-0.0.7/LICENSE-APACHE
-Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file ctor-proc-macro-0.0.7/LICENSE-MIT
+Archive SHA-256: 8c9cdaae01d5ed7882b04d795e7f752f46ff52d2fa3b50a20d28c464510bba98
+Source archive / 源码归档: https://static.crates.io/crates/cssparser/cssparser-0.37.0.crate
+Repository / 仓库: https://github.com/servo/rust-cssparser
+VCS commit / 版本提交: 4c49486494fb24dc01390e3baca9698ef1744c71
+Authors metadata / 作者元数据: Simon Sapin <simon.sapin@exyr.org>
+Legal text / 法律文本: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85 — checksum-verified crate file cssparser-0.37.0/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: ctor@0.8.0
+Package / 软件包: ctor@1.0.13
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 352d39c2f7bef1d6ad73db6f5160efcaed66d94ef8c6c573a8410c00bf909a98
-Source archive / 源码归档: https://static.crates.io/crates/ctor/ctor-0.8.0.crate
-Repository / 仓库: https://github.com/mmastrac/rust-ctor
-VCS commit / 版本提交: f157640f88f958157371b39e83d85ec1a9d49cf2
+Archive SHA-256: 914a755b7c2d4af2bdcff7ce1739e2db9a1b81a9b07123d8015786ae03c0980d
+Source archive / 源码归档: https://static.crates.io/crates/ctor/ctor-1.0.13.crate
+Repository / 仓库: https://github.com/mmastrac/linktime
+VCS commit / 版本提交: 00ca36a7ed6d959d01866feeeec078a79b6dfa3f
 Authors metadata / 作者元数据: Matt Mastracci <matthew@mastracci.com>
-Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file ctor-0.8.0/LICENSE-APACHE
-Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file ctor-0.8.0/LICENSE-MIT
+Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file ctor-1.0.13/LICENSE-APACHE
+Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file ctor-1.0.13/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: ctutils@0.4.2
 Declared license / 声明许可证: Apache-2.0 OR MIT
@@ -1407,6 +1426,17 @@ Authors metadata / 作者元数据: Simon Ochsenreither <simon@ochsenreither.de>
 Legal text / 法律文本: 6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9 — checksum-verified crate file dirs-6.0.0/LICENSE-MIT
 Legal text / 法律文本: d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9 — checksum-verified crate file dirs-6.0.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
+Package / 软件包: dirs@7.0.0
+Declared license / 声明许可证: MIT OR Apache-2.0
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: 8d57d423b3c82e89b9a24ca3091fee61f456a26edbd28d26c65906f4bc1dcd8f
+Source archive / 源码归档: https://static.crates.io/crates/dirs/dirs-7.0.0.crate
+Repository / 仓库: https://codeberg.org/dirs/dirs-rs
+VCS commit / 版本提交: 793c8a97bea55669a806499839abd7b1d844279f
+Authors metadata / 作者元数据: Simon Ochsenreither <simon@ochsenreither.de>
+Legal text / 法律文本: 6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9 — checksum-verified crate file dirs-7.0.0/LICENSE-MIT
+Legal text / 法律文本: d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9 — checksum-verified crate file dirs-7.0.0/LICENSE-APACHE
+--------------------------------------------------------------------------------
 Package / 软件包: dispatch2@0.3.1
 Declared license / 声明许可证: Zlib OR Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: Apache-2.0
@@ -1459,6 +1489,16 @@ VCS commit / 版本提交: 94ef144a3c5a7459c6d952439bd329a96bd26d0d
 Authors metadata / 作者元数据: niklak <morgenpurple@gmail.com>; importcjj <importcjj@gmail.com>
 Legal text / 法律文本: 7554701d1e74fc434f68c522b1dd743c8c16d816a4b761b5213f367b898884c8 — checksum-verified crate file dom_query-0.27.0/LICENSE
 --------------------------------------------------------------------------------
+Package / 软件包: dom_query@0.28.0
+Declared license / 声明许可证: MIT
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: fac5fca71e65e94cc718a6e2af65d6e0f9c6027751c2aa562fbb5087fda639bc
+Source archive / 源码归档: https://static.crates.io/crates/dom_query/dom_query-0.28.0.crate
+Repository / 仓库: https://github.com/niklak/dom_query
+VCS commit / 版本提交: 186c02d9359762404054fbc8af3a5b07cdf795a9
+Authors metadata / 作者元数据: niklak <morgenpurple@gmail.com>; importcjj <importcjj@gmail.com>
+Legal text / 法律文本: 7554701d1e74fc434f68c522b1dd743c8c16d816a4b761b5213f367b898884c8 — checksum-verified crate file dom_query-0.28.0/LICENSE
+--------------------------------------------------------------------------------
 Package / 软件包: dotenvy@0.15.7
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -1499,28 +1539,6 @@ VCS commit / 版本提交: 4c30faa2d91f167d7c343d13ebc9d30730456d56
 Authors metadata / 作者元数据: David Tolnay <dtolnay@gmail.com>
 Legal text / 法律文本: 23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3 — checksum-verified crate file dtoa-1.0.11/LICENSE-MIT
 Legal text / 法律文本: 62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a — checksum-verified crate file dtoa-1.0.11/LICENSE-APACHE
---------------------------------------------------------------------------------
-Package / 软件包: dtor-proc-macro@0.0.6
-Declared license / 声明许可证: Apache-2.0 OR MIT
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: f678cf4a922c215c63e0de95eb1ff08a958a81d47e485cf9da1e27bf6305cfa5
-Source archive / 源码归档: https://static.crates.io/crates/dtor-proc-macro/dtor-proc-macro-0.0.6.crate
-Repository / 仓库: https://github.com/mmastrac/rust-ctor
-VCS commit / 版本提交: a28906f635093f9cb6ee90068a3a6e16872ae903
-Authors metadata / 作者元数据: Matt Mastracci <matthew@mastracci.com>
-Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file dtor-proc-macro-0.0.6/LICENSE-APACHE
-Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file dtor-proc-macro-0.0.6/LICENSE-MIT
---------------------------------------------------------------------------------
-Package / 软件包: dtor@0.3.0
-Declared license / 声明许可证: Apache-2.0 OR MIT
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: f1057d6c64987086ff8ed0fd3fbf377a6b7d205cc7715868cd401705f715cbe4
-Source archive / 源码归档: https://static.crates.io/crates/dtor/dtor-0.3.0.crate
-Repository / 仓库: https://github.com/mmastrac/rust-ctor
-VCS commit / 版本提交: f157640f88f958157371b39e83d85ec1a9d49cf2
-Authors metadata / 作者元数据: Matt Mastracci <matthew@mastracci.com>
-Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file dtor-0.3.0/LICENSE-APACHE
-Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file dtor-0.3.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: dunce@1.0.5
 Declared license / 声明许可证: CC0-1.0 OR MIT-0 OR Apache-2.0
@@ -1584,18 +1602,18 @@ Authors metadata / 作者元数据: Nikolai Vazquez <hello@nikolaivazquez.com>
 Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file embed_plist-1.2.2/LICENSE-APACHE
 Legal text / 法律文本: daacc37f680c7dd0a758ac99a109f2f57d9f21d3683df9e9245055922842a695 — checksum-verified crate file embed_plist-1.2.2/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: encoding_rs@0.8.40
+Package / 软件包: encoding_rs@0.8.42
 Declared license / 声明许可证: (Apache-2.0 OR MIT) AND BSD-3-Clause
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 2a7a45518d2863d18aa47f4a0cf9faec2aa4304cc09df5e41299f276b3ad135e
-Source archive / 源码归档: https://static.crates.io/crates/encoding_rs/encoding_rs-0.8.40.crate
+Archive SHA-256: 8e985e0451871ad22fb8d2b6b076e2028a502a0d3950998c2c5c0a4f9b5d9679
+Source archive / 源码归档: https://static.crates.io/crates/encoding_rs/encoding_rs-0.8.42.crate
 Repository / 仓库: https://github.com/hsivonen/encoding_rs
-VCS commit / 版本提交: 662cb427013c13eb4444e7e51e8579c9457f5e6b
+VCS commit / 版本提交: a155adc7271c9e507556d053c95b459186671d2a
 Authors metadata / 作者元数据: Henri Sivonen <hsivonen@hsivonen.fi>
-Legal text / 法律文本: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190 — checksum-verified crate file encoding_rs-0.8.40/COPYRIGHT
-Legal text / 法律文本: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c — checksum-verified crate file encoding_rs-0.8.40/LICENSE-MIT
-Legal text / 法律文本: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50 — checksum-verified crate file encoding_rs-0.8.40/LICENSE-WHATWG
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file encoding_rs-0.8.40/LICENSE-APACHE
+Legal text / 法律文本: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190 — checksum-verified crate file encoding_rs-0.8.42/COPYRIGHT
+Legal text / 法律文本: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c — checksum-verified crate file encoding_rs-0.8.42/LICENSE-MIT
+Legal text / 法律文本: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50 — checksum-verified crate file encoding_rs-0.8.42/LICENSE-WHATWG
+Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file encoding_rs-0.8.42/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: endi@1.1.1
 Declared license / 声明许可证: MIT
@@ -2318,6 +2336,17 @@ Authors metadata / 作者元数据: The html5ever Project Developers
 Legal text / 法律文本: 86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3 — checksum-verified crate file html5ever-0.38.0/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file html5ever-0.38.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
+Package / 软件包: html5ever@0.39.0
+Declared license / 声明许可证: MIT OR Apache-2.0
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: 46a1761807faccc9a19e86944bbf40610014066306f96edcdedc2fb714bcb7b8
+Source archive / 源码归档: https://static.crates.io/crates/html5ever/html5ever-0.39.0.crate
+Repository / 仓库: https://github.com/servo/html5ever
+VCS commit / 版本提交: ce64836c685025a5fef0860fa2e9c80b2683e8d0
+Authors metadata / 作者元数据: The html5ever Project Developers
+Legal text / 法律文本: 86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3 — checksum-verified crate file html5ever-0.39.0/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file html5ever-0.39.0/LICENSE-APACHE
+--------------------------------------------------------------------------------
 Package / 软件包: http-body-util@0.1.5
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -2393,15 +2422,15 @@ Legal text / 法律文本: 709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c
 Legal text / 法律文本: 7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4 — checksum-verified crate file hyper-rustls-0.27.9/LICENSE-ISC
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file hyper-rustls-0.27.9/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: hyper-util@0.1.20
+Package / 软件包: hyper-util@0.1.21
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 96547c2556ec9d12fb1578c4eaf448b04993e7fb79cbaad930a656880a6bdfa0
-Source archive / 源码归档: https://static.crates.io/crates/hyper-util/hyper-util-0.1.20.crate
+Archive SHA-256: ddc03d96684f9226b8a787cdb71488417b53ab5ea8fdb1dac946cb9431cc8bff
+Source archive / 源码归档: https://static.crates.io/crates/hyper-util/hyper-util-0.1.21.crate
 Repository / 仓库: https://github.com/hyperium/hyper-util
-VCS commit / 版本提交: b23a13e2b7ee73e15ba008cd9b19dcd2d3861957
+VCS commit / 版本提交: 23a868965964c1d6bb1b94f30ba4c420a4bebe7c
 Authors metadata / 作者元数据: Sean McArthur <sean@seanmonstar.com>
-Legal text / 法律文本: 9e0a97848ea543aef745c98e84fde696a9a3e0735538f6daefdd3cb1942effc1 — checksum-verified crate file hyper-util-0.1.20/LICENSE
+Legal text / 法律文本: 9e0a97848ea543aef745c98e84fde696a9a3e0735538f6daefdd3cb1942effc1 — checksum-verified crate file hyper-util-0.1.21/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: hyper@1.11.1
 Declared license / 声明许可证: MIT
@@ -2598,6 +2627,16 @@ Repository / 仓库: https://github.com/bojand/infer
 VCS commit / 版本提交: 4256ea07165a9393186b6c190541fac4b5e6f9f5
 Authors metadata / 作者元数据: Bojan <dbojan@gmail.com>
 Legal text / 法律文本: 270b0d81891aa44c7e8726cf9432dade9556a01c848bacd2f3ef839c9c1a1859 — checksum-verified crate file infer-0.19.0/LICENSE
+--------------------------------------------------------------------------------
+Package / 软件包: infer@0.22.0
+Declared license / 声明许可证: MIT
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: f4200d433cbd5178df7797c9c2e75b348b728e39631cf14520d1e2fc424201f4
+Source archive / 源码归档: https://static.crates.io/crates/infer/infer-0.22.0.crate
+Repository / 仓库: https://github.com/bojand/infer
+VCS commit / 版本提交: cb05400c5f43e07200fbc1c5753e15946e9b1de8
+Authors metadata / 作者元数据: Bojan <dbojan@gmail.com>
+Legal text / 法律文本: 270b0d81891aa44c7e8726cf9432dade9556a01c848bacd2f3ef839c9c1a1859 — checksum-verified crate file infer-0.22.0/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: inout@0.1.4
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -2817,38 +2856,38 @@ Authors metadata / 作者元数据: The wasm-bindgen Developers
 Legal text / 法律文本: 378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397 — checksum-verified crate file js-sys-0.3.105/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file js-sys-0.3.105/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: json-patch@3.0.1
+Package / 软件包: json-patch@4.2.0
 Declared license / 声明许可证: MIT/Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 863726d7afb6bc2590eeff7135d923545e5e964f004c2ccf8716c25e70a86f08
-Source archive / 源码归档: https://static.crates.io/crates/json-patch/json-patch-3.0.1.crate
+Archive SHA-256: 7421438de105a0827e44fadd05377727847d717c80ce29a229f85fd04c427b72
+Source archive / 源码归档: https://static.crates.io/crates/json-patch/json-patch-4.2.0.crate
 Repository / 仓库: https://github.com/idubrov/json-patch
-VCS commit / 版本提交: 96c93590f848ea6078f9ed320431d1c04faf9e87
+VCS commit / 版本提交: 1b0f707f9f4aad1009f0364f6ca73c5e88cdd85c
 Authors metadata / 作者元数据: Ivan Dubrov <dubrov.ivan@gmail.com>
-Legal text / 法律文本: 87f7527b1066337751f7f4d717089bf514ff8f7ee7d66c4c5b891b09e744ec11 — checksum-verified crate file json-patch-3.0.1/LICENSE-MIT
-Legal text / 法律文本: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1 — checksum-verified crate file json-patch-3.0.1/LICENSE-APACHE
+Legal text / 法律文本: 87f7527b1066337751f7f4d717089bf514ff8f7ee7d66c4c5b891b09e744ec11 — checksum-verified crate file json-patch-4.2.0/LICENSE-MIT
+Legal text / 法律文本: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1 — checksum-verified crate file json-patch-4.2.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: jsonptr@0.6.3
+Package / 软件包: jsonptr@0.7.1
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 5dea2b27dd239b2556ed7a25ba842fe47fd602e7fc7433c2a8d6106d4d9edd70
-Source archive / 源码归档: https://static.crates.io/crates/jsonptr/jsonptr-0.6.3.crate
+Archive SHA-256: a5a3cc660ba5d72bce0b3bb295bf20847ccbb40fd423f3f05b61273672e561fe
+Source archive / 源码归档: https://static.crates.io/crates/jsonptr/jsonptr-0.7.1.crate
 Repository / 仓库: https://github.com/chanced/jsonptr
-VCS commit / 版本提交: 73ce4ac37d601ee157c3813c70223685485dc9df
-Authors metadata / 作者元数据: chance dinkins; André Sá de Mello <codasm@pm.me>
-Legal text / 法律文本: 2bc107bdc18a74263d20bdefdb8073e17bc1a01b6b374dc5835683a33ee5ba7d — checksum-verified crate file jsonptr-0.6.3/LICENSE-MIT
-Legal text / 法律文本: 2cf31f2ae7f3feba667d50fc1d4d21ecf217703c04c3068b83c9a73b6dde723a — checksum-verified crate file jsonptr-0.6.3/LICENSE-APACHE
+VCS commit / 版本提交: c0201c7c45ab3f9982601cfe6947c64a0106d589
+Authors metadata / 作者元数据: chance dinkins; André Sá de Mello <codasm@pm.me>; Oliver Wangler <oliver@wngr.de>
+Legal text / 法律文本: 2bc107bdc18a74263d20bdefdb8073e17bc1a01b6b374dc5835683a33ee5ba7d — checksum-verified crate file jsonptr-0.7.1/LICENSE-MIT
+Legal text / 法律文本: 2cf31f2ae7f3feba667d50fc1d4d21ecf217703c04c3068b83c9a73b6dde723a — checksum-verified crate file jsonptr-0.7.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: keyboard-types@0.7.0
+Package / 软件包: keyboard-types@0.8.3
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: b750dcadc39a09dbadd74e118f6dd6598df77fa01df0cfcdc52c28dece74528a
-Source archive / 源码归档: https://static.crates.io/crates/keyboard-types/keyboard-types-0.7.0.crate
-Repository / 仓库: https://github.com/pyfisch/keyboard-types
-VCS commit / 版本提交: 61a081f1e78a881a369abc22c3a0e37049bd655e
+Archive SHA-256: 0fbe853b403ae61a04233030ae8a79d94975281ed9770a1f9e246732b534b28d
+Source archive / 源码归档: https://static.crates.io/crates/keyboard-types/keyboard-types-0.8.3.crate
+Repository / 仓库: https://github.com/rust-windowing/keyboard-types
+VCS commit / 版本提交: 24446d6fe974bca4303affd07072939f4a7aab6f
 Authors metadata / 作者元数据: Pyfisch <pyfisch@posteo.org>
-Legal text / 法律文本: 31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c — checksum-verified crate file keyboard-types-0.7.0/LICENSE-MIT
-Legal text / 法律文本: 769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb — checksum-verified crate file keyboard-types-0.7.0/LICENSE-APACHE
+Legal text / 法律文本: 31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c — checksum-verified crate file keyboard-types-0.8.3/LICENSE-MIT
+Legal text / 法律文本: 769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb — checksum-verified crate file keyboard-types-0.8.3/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: keyring-core@1.0.0
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -3068,6 +3107,17 @@ Authors metadata / 作者元数据: The html5ever Project Developers
 Legal text / 法律文本: 86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3 — checksum-verified crate file markup5ever-0.38.0/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file markup5ever-0.38.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
+Package / 软件包: markup5ever@0.39.0
+Declared license / 声明许可证: MIT OR Apache-2.0
+Selected reviewed terms / 选用审计条款: packaged upstream texts
+Archive SHA-256: 7122d987ec5f704ee56f6e5b41a7d93722e9aae27ae07cafa4036c4d3f9757de
+Source archive / 源码归档: https://static.crates.io/crates/markup5ever/markup5ever-0.39.0.crate
+Repository / 仓库: https://github.com/servo/html5ever
+VCS commit / 版本提交: ce64836c685025a5fef0860fa2e9c80b2683e8d0
+Authors metadata / 作者元数据: The html5ever Project Developers
+Legal text / 法律文本: 86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3 — checksum-verified crate file markup5ever-0.39.0/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file markup5ever-0.39.0/LICENSE-APACHE
+--------------------------------------------------------------------------------
 Package / 软件包: matrixmultiply@0.3.11
 Declared license / 声明许可证: MIT/Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -3245,38 +3295,16 @@ Authors metadata / 作者元数据: Radzivon Bartoshyk
 Legal text / 法律文本: 2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff — checksum-verified crate file moxcms-0.8.1/LICENSE.md
 Legal text / 法律文本: 90bf2d659c43045111b65c733ab2a6d4cbcb422a098368c8c58a9ba3db4ed0c5 — checksum-verified crate file moxcms-0.8.1/LICENSE-APACHE.md
 --------------------------------------------------------------------------------
-Package / 软件包: muda@0.19.3
+Package / 软件包: muda@0.20.0
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 1dd04e60bc0b07438a6771710ee1698f98f6ebbc7f89b61264af1563b8aeb878
-Source archive / 源码归档: https://static.crates.io/crates/muda/muda-0.19.3.crate
+Archive SHA-256: cca139e57da4383727f189e43e66e84fa372347027fc996f9f1a007ec0a37996
+Source archive / 源码归档: https://static.crates.io/crates/muda/muda-0.20.0.crate
 Repository / 仓库: https://github.com/tauri-apps/muda
-VCS commit / 版本提交: a375127ff39aded0804924026bf554682291d972
-Legal text / 法律文本: 2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a — checksum-verified crate file muda-0.19.3/LICENSE-MIT
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file muda-0.19.3/LICENSE-APACHE
-Legal text / 法律文本: b99f9d43803f2ac979c50949df630bd8eeaf2fcd1b9fdb9093710d70f5dfb63d — checksum-verified crate file muda-0.19.3/LICENSE.spdx
---------------------------------------------------------------------------------
-Package / 软件包: multiversion-macros@0.8.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: b093064383341eb3271f42e381cb8f10a01459478446953953c75d24bd339fc0
-Source archive / 源码归档: https://static.crates.io/crates/multiversion-macros/multiversion-macros-0.8.0.crate
-Repository / 仓库: https://github.com/calebzulawski/multiversion
-VCS commit / 版本提交: c1a7c68a2c7e3c70b57b05f251c0ade189fe5057
-Authors metadata / 作者元数据: Caleb Zulawski <caleb.zulawski@gmail.com>
-Legal text / 法律文本: 3c92a19e541755a97e51b4c963aa4335bbf93b64574dfbc36a5636c2899f3ab9 — checksum-verified crate file multiversion-macros-0.8.0/LICENSE-MIT
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file multiversion-macros-0.8.0/LICENSE-APACHE
---------------------------------------------------------------------------------
-Package / 软件包: multiversion@0.8.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 7edb7f0ff51249dfda9ab96b5823695e15a052dc15074c9dbf3d118afaf2c201
-Source archive / 源码归档: https://static.crates.io/crates/multiversion/multiversion-0.8.0.crate
-Repository / 仓库: https://github.com/calebzulawski/multiversion
-VCS commit / 版本提交: c1a7c68a2c7e3c70b57b05f251c0ade189fe5057
-Authors metadata / 作者元数据: Caleb Zulawski <caleb.zulawski@gmail.com>
-Legal text / 法律文本: 3c92a19e541755a97e51b4c963aa4335bbf93b64574dfbc36a5636c2899f3ab9 — checksum-verified crate file multiversion-0.8.0/LICENSE-MIT
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file multiversion-0.8.0/LICENSE-APACHE
+VCS commit / 版本提交: 87a3560b386243b50812cf0fa2836f3d07062a57
+Legal text / 法律文本: 2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a — checksum-verified crate file muda-0.20.0/LICENSE-MIT
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file muda-0.20.0/LICENSE-APACHE
+Legal text / 法律文本: b99f9d43803f2ac979c50949df630bd8eeaf2fcd1b9fdb9093710d70f5dfb63d — checksum-verified crate file muda-0.20.0/LICENSE.spdx
 --------------------------------------------------------------------------------
 Package / 软件包: multiversion_no_op@1.0.0
 Declared license / 声明许可证: Apache-2.0 OR MIT
@@ -3300,6 +3328,16 @@ VCS commit / 版本提交: 2cf23d6abf5f7a8a5e638fa1c69779dc4d7219a0
 Authors metadata / 作者元数据: Ulrik Sverdrup "bluss"; Jim Turner
 Legal text / 法律文本: 1fd6747d2c8e80f9fa766f57c5888864774621deb85cc2838ccaed727db32d45 — checksum-verified crate file ndarray-0.17.2/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file ndarray-0.17.2/LICENSE-APACHE
+--------------------------------------------------------------------------------
+Package / 软件包: ndk-context@0.1.1
+Declared license / 声明许可证: MIT OR Apache-2.0
+Selected reviewed terms / 选用审计条款: Apache-2.0
+Archive SHA-256: 27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b
+Source archive / 源码归档: https://static.crates.io/crates/ndk-context/ndk-context-0.1.1.crate
+Repository / 仓库: https://github.com/rust-windowing/android-ndk-rs
+VCS commit / 版本提交: 10f2ba388fca20f7349996ebae26ccda7a6fda5c
+Authors metadata / 作者元数据: The Rust Windowing contributors
+Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
 --------------------------------------------------------------------------------
 Package / 软件包: ndk-sys@0.6.0+11769913
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -4643,6 +4681,16 @@ VCS commit / 版本提交: 635e1a19d02960588a00e189bd4bd5bdb150ec3d
 Authors metadata / 作者元数据: The Servo Project Developers
 Legal text / 法律文本: 66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172 — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/MPL-2.0.txt
 --------------------------------------------------------------------------------
+Package / 软件包: selectors@0.38.0
+Declared license / 声明许可证: MPL-2.0
+Selected reviewed terms / 选用审计条款: MPL-2.0
+Archive SHA-256: 8adfa1c298912827b8a28b223b3b874357397ae706e6190acd9bf28cee99114d
+Source archive / 源码归档: https://static.crates.io/crates/selectors/selectors-0.38.0.crate
+Repository / 仓库: https://github.com/servo/stylo
+VCS commit / 版本提交: 572ecba2d1600e7c3d490586692a209faf703baa
+Authors metadata / 作者元数据: The Servo Project Developers
+Legal text / 法律文本: 66a3107d5ad6a058aab753eaac2047ccb2ed0e39465dd0fe5844da3e300d5172 — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/MPL-2.0.txt
+--------------------------------------------------------------------------------
 Package / 软件包: semver@1.0.28
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -5256,16 +5304,16 @@ Legal text / 法律文本: 8f96817f33d08e1248cec9eb99fa8407c246d0c5a27f971aa4fea
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file tao-macros-0.1.4/LICENSE-APACHE
 Legal text / 法律文本: ca52f53b2ee0b6a96d77d8ae0cb1b4624080dd0274c97f1cece24efaf4e145f2 — checksum-verified crate file tao-macros-0.1.4/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: tao@0.35.3
+Package / 软件包: tao@0.37.1
 Declared license / 声明许可证: Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: d1c93047acf68669466a34690ac58cca7010bd1b201e1ec86f1fd0a75d3dd4a9
-Source archive / 源码归档: https://static.crates.io/crates/tao/tao-0.35.3.crate
+Archive SHA-256: f37f381f4e048e6cdf038b5705f8cf14ad108279d46eb968140a7b291aba9400
+Source archive / 源码归档: https://static.crates.io/crates/tao/tao-0.37.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tao
-VCS commit / 版本提交: 5a14e624c81b7a799728129417e9218be25f17d9
+VCS commit / 版本提交: 37b7e8bc90a050e93be988df636f322c3ef147b6
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy; The winit contributors
-Legal text / 法律文本: 02b6448337b757772d90e5f31caaa0f9e6afaad2221c01771d0a3deaa4d4196c — checksum-verified crate file tao-0.35.3/LICENSE.spdx
-Legal text / 法律文本: 6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a — checksum-verified crate file tao-0.35.3/LICENSE
+Legal text / 法律文本: 02b6448337b757772d90e5f31caaa0f9e6afaad2221c01771d0a3deaa4d4196c — checksum-verified crate file tao-0.37.1/LICENSE.spdx
+Legal text / 法律文本: 6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a — checksum-verified crate file tao-0.37.1/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: tar@0.4.46
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5278,17 +5326,6 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 8ca6b96cea9e67c6c5c63f452c31bd396db8bd2406231fdea5d48ef462b48077 — checksum-verified crate file tar-0.4.46/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file tar-0.4.46/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: target-features@0.1.6
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: c1bbb9f3c5c463a01705937a24fdabc5047929ac764b2d5b9cf681c1f5041ed5
-Source archive / 源码归档: https://static.crates.io/crates/target-features/target-features-0.1.6.crate
-Repository / 仓库: https://github.com/calebzulawski/target-features
-VCS commit / 版本提交: c459fffbd0c1c9a63c52b39d5779a93846515b9d
-Authors metadata / 作者元数据: Caleb Zulawski <caleb.zulawski@gmail.com>
-Legal text / 法律文本: 6cfe51b21bd30814a17d34967ae9372bd7ec3ea043afafbf2f0ec0fc6371d7a1 — checksum-verified crate file target-features-0.1.6/LICENSE-MIT
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file target-features-0.1.6/LICENSE-APACHE
---------------------------------------------------------------------------------
 Package / 软件包: target-lexicon@0.12.16
 Declared license / 声明许可证: Apache-2.0 WITH LLVM-exception
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -5299,38 +5336,38 @@ VCS commit / 版本提交: 7c80d459a9fdd121e9f23feb680c3db13c1baa39
 Authors metadata / 作者元数据: Dan Gohman <sunfish@mozilla.com>
 Legal text / 法律文本: 268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5 — checksum-verified crate file target-lexicon-0.12.16/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-build@2.6.3
+Package / 软件包: tauri-build@2.7.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: bc9ce40b16101cb6ea63d3e221567affd1c3a9205f95d7bc574941a10636b632
-Source archive / 源码归档: https://static.crates.io/crates/tauri-build/tauri-build-2.6.3.crate
+Archive SHA-256: 59563ca5b331fd97f27ee9672ec8d36d33bb3c9e2c9f6710a1a5687256052e45
+Source archive / 源码归档: https://static.crates.io/crates/tauri-build/tauri-build-2.7.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-build-2.6.3/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-build-2.6.3/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-build-2.7.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-build-2.7.1/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-codegen@2.6.3
+Package / 软件包: tauri-codegen@2.7.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 08279169ff42f8fc45a1dbc9dcae888893ba95288142e5880c59b93a26d2cfc5
-Source archive / 源码归档: https://static.crates.io/crates/tauri-codegen/tauri-codegen-2.6.3.crate
+Archive SHA-256: e50213e463086ecc283d7e9f51c30cc0fd304ad457425158018be26dbf0d0a80
+Source archive / 源码归档: https://static.crates.io/crates/tauri-codegen/tauri-codegen-2.7.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-codegen-2.6.3/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-codegen-2.6.3/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-codegen-2.7.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-codegen-2.7.1/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-macros@2.6.3
+Package / 软件包: tauri-macros@2.7.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: e8b394794f399a421811d06966343e7933fcae92d59f5180b9388d1174497a45
-Source archive / 源码归档: https://static.crates.io/crates/tauri-macros/tauri-macros-2.6.3.crate
+Archive SHA-256: 8129fb43bb6e0d6b73ad3315cd172beaab17cd28899c594b1b32c80edbbfd99c
+Source archive / 源码归档: https://static.crates.io/crates/tauri-macros/tauri-macros-2.7.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-macros-2.6.3/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-macros-2.6.3/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-macros-2.7.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-macros-2.7.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: tauri-plugin-single-instance@2.4.4
 Declared license / 声明许可证: Apache-2.0 OR MIT
@@ -5364,40 +5401,40 @@ Source archive / 源码归档: https://static.crates.io/crates/tauri-plugin/taur
 Repository / 仓库: https://github.com/tauri-apps/tauri
 VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — repository-shared license from checksum-verified tauri-build@2.6.3/LICENSE_APACHE-2.0
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — repository-shared license from checksum-verified tauri-build@2.7.1/LICENSE-APACHE-2.0
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-runtime-wry@2.11.4
+Package / 软件包: tauri-runtime-wry@2.12.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 4e6fac707727b7a2f48e4ded90976324267371073edbb415ffb73bb0458d203f
-Source archive / 源码归档: https://static.crates.io/crates/tauri-runtime-wry/tauri-runtime-wry-2.11.4.crate
+Archive SHA-256: 7f9e7e0c9f80a5130773cfabb6df4dc924518fb1b2c923726966804634b57d22
+Source archive / 源码归档: https://static.crates.io/crates/tauri-runtime-wry/tauri-runtime-wry-2.12.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: ca90b46b2e2cbbc981dae1b809f4af4343fe0558
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-runtime-wry-2.11.4/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-runtime-wry-2.11.4/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-runtime-wry-2.12.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-runtime-wry-2.12.1/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-runtime@2.11.3
+Package / 软件包: tauri-runtime@2.12.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: b0b4bc95aed361b0019067d189a1174a603d460d0f6c72606512d59fc9c12ec8
-Source archive / 源码归档: https://static.crates.io/crates/tauri-runtime/tauri-runtime-2.11.3.crate
+Archive SHA-256: c2a57a2a9b8c8b7fc00d35b510fe808ded7f9f1b44fc1cdda6aee38632ea5413
+Source archive / 源码归档: https://static.crates.io/crates/tauri-runtime/tauri-runtime-2.12.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-runtime-2.11.3/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-runtime-2.11.3/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-runtime-2.12.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-runtime-2.12.1/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-utils@2.9.3
+Package / 软件包: tauri-utils@2.10.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3e176a18e67764923c4f1ce66f25ae4abe5f688384d5eb1a0fa6c77f3d90f887
-Source archive / 源码归档: https://static.crates.io/crates/tauri-utils/tauri-utils-2.9.3.crate
+Archive SHA-256: 2ff55a614843b9a3f010f211df637c94df2607175b8d0f6e0f4a7c19e18621ee
+Source archive / 源码归档: https://static.crates.io/crates/tauri-utils/tauri-utils-2.10.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-utils-2.9.3/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-utils-2.9.3/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-utils-2.10.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-utils-2.10.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: tauri-winres@0.3.6
 Declared license / 声明许可证: MIT
@@ -5409,16 +5446,16 @@ VCS commit / 版本提交: 9c2f320daf968f12669a48cefe57639bb79c50b7
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy; Max Resch <resch.max@gmail.com>
 Legal text / 法律文本: d9fa6b0e6fed50d4961b9c931587af6bd127df13e9473418d3e324f427db4f06 — checksum-verified crate file tauri-winres-0.3.6/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: tauri@2.11.6
+Package / 软件包: tauri@2.12.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 6fa5bacdb9bbad5954af3d1bd6cf6ae9192cab1b2e270f4a07f904610b9e85f4
-Source archive / 源码归档: https://static.crates.io/crates/tauri/tauri-2.11.6.crate
+Archive SHA-256: ed99ee9694a2deb776d91cae48ac7411ddfc89ecae2f9b5041111d8c88f2ace9
+Source archive / 源码归档: https://static.crates.io/crates/tauri/tauri-2.12.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri
-VCS commit / 版本提交: 9452ddee5ebefd9b678a94ff003521379df6c9ae
+VCS commit / 版本提交: 30da1fd6e17de6107ecc850c95dfb16b5729f2dd
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-2.11.6/LICENSE_APACHE-2.0
-Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-2.11.6/LICENSE_MIT
+Legal text / 法律文本: 0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594 — checksum-verified crate file tauri-2.12.1/LICENSE-APACHE-2.0
+Legal text / 法律文本: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d — checksum-verified crate file tauri-2.12.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: tempfile@3.27.0
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5624,16 +5661,6 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-0.8.2/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-0.8.2/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml@0.9.12+spec-1.1.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: cf92845e79fc2e2def6a5d828f0801e29a2f8acc037becc5ab08595c7d5e9863
-Source archive / 源码归档: https://static.crates.io/crates/toml/toml-0.9.12%2Bspec-1.1.0.crate
-Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: a26defd343a2fdb04a193b3fb70b58c80d48ef71
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-0.9.12+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-0.9.12+spec-1.1.0/LICENSE-APACHE
---------------------------------------------------------------------------------
 Package / 软件包: toml@1.1.5+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -5654,16 +5681,6 @@ VCS commit / 版本提交: bd45f69b046c404f652716f7aa7b90d6f626bd39
 Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-APACHE
---------------------------------------------------------------------------------
-Package / 软件包: toml_datetime@0.7.5+spec-1.1.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347
-Source archive / 源码归档: https://static.crates.io/crates/toml_datetime/toml_datetime-0.7.5%2Bspec-1.1.0.crate
-Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: e32c7a2f9b126d42fab0705e9783fec42b88e861
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_datetime-0.7.5+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml_datetime-0.7.5+spec-1.1.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: toml_datetime@1.1.1+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5798,16 +5815,16 @@ VCS commit / 版本提交: 2d55f6faf9be83e7e4634129fb96813241aac2b8
 Authors metadata / 作者元数据: Eliza Weisman <eliza@buoyant.io>; Tokio Contributors <team@tokio.rs>
 Legal text / 法律文本: 898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1 — checksum-verified crate file tracing-0.1.44/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: tray-icon@0.24.2
+Package / 软件包: tray-icon@0.25.1
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 045979e3f037cd18ad1cb2a419dfda133c5c29c9f3453370079f2255d46c257e
-Source archive / 源码归档: https://static.crates.io/crates/tray-icon/tray-icon-0.24.2.crate
+Archive SHA-256: b2b9c52859a94554803ccd4a24b98f74148ebc73b90676d783f3490b1bff9d72
+Source archive / 源码归档: https://static.crates.io/crates/tray-icon/tray-icon-0.25.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tray-icon
-VCS commit / 版本提交: e05dab06db5b441efe5c26f9be2e0c29f1ba2089
-Legal text / 法律文本: 2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a — checksum-verified crate file tray-icon-0.24.2/LICENSE-MIT
-Legal text / 法律文本: 6c1e5d0ccf5e8951401cb964036ae664d52fc8d1148173b53bc54fc534f5d404 — checksum-verified crate file tray-icon-0.24.2/LICENSE.spdx
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file tray-icon-0.24.2/LICENSE-APACHE
+VCS commit / 版本提交: b09ceda9f7357b4a1f6bc361fd912a7dfca077cc
+Legal text / 法律文本: 2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a — checksum-verified crate file tray-icon-0.25.1/LICENSE-MIT
+Legal text / 法律文本: 6c1e5d0ccf5e8951401cb964036ae664d52fc8d1148173b53bc54fc534f5d404 — checksum-verified crate file tray-icon-0.25.1/LICENSE.spdx
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file tray-icon-0.25.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: try-lock@0.2.5
 Declared license / 声明许可证: MIT
@@ -5882,56 +5899,6 @@ Repository / 仓库: https://github.com/haraldh/rust_uds_windows
 VCS commit / 版本提交: 0b3a6ff289a0426f96bbc0310505b8531469c896
 Authors metadata / 作者元数据: Azure IoT Edge Devs; Harald Hoyer <harald@redhat.com>
 Legal text / 法律文本: 27ebda9d51f0a56b7e281ccd8230a27236dcb51c05f64b07869ecf6e965d68b0 — checksum-verified crate file uds_windows-1.2.1/LICENSE
---------------------------------------------------------------------------------
-Package / 软件包: unic-char-property@0.9.0
-Declared license / 声明许可证: MIT/Apache-2.0
-Selected reviewed terms / 选用审计条款: Apache-2.0
-Archive SHA-256: a8c57a407d9b6fa02b4795eb81c5b6652060a15a7903ea981f3d723e6c0be221
-Source archive / 源码归档: https://static.crates.io/crates/unic-char-property/unic-char-property-0.9.0.crate
-Repository / 仓库: https://github.com/open-i18n/rust-unic/
-VCS commit / 版本提交: 5878605364af97a3358368a6eaef02104af2e016
-Authors metadata / 作者元数据: The UNIC Project Developers
-Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
---------------------------------------------------------------------------------
-Package / 软件包: unic-char-range@0.9.0
-Declared license / 声明许可证: MIT/Apache-2.0
-Selected reviewed terms / 选用审计条款: Apache-2.0
-Archive SHA-256: 0398022d5f700414f6b899e10b8348231abf9173fa93144cbc1a43b9793c1fbc
-Source archive / 源码归档: https://static.crates.io/crates/unic-char-range/unic-char-range-0.9.0.crate
-Repository / 仓库: https://github.com/open-i18n/rust-unic/
-VCS commit / 版本提交: 5878605364af97a3358368a6eaef02104af2e016
-Authors metadata / 作者元数据: The UNIC Project Developers
-Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
---------------------------------------------------------------------------------
-Package / 软件包: unic-common@0.9.0
-Declared license / 声明许可证: MIT/Apache-2.0
-Selected reviewed terms / 选用审计条款: Apache-2.0
-Archive SHA-256: 80d7ff825a6a654ee85a63e80f92f054f904f21e7d12da4e22f9834a4aaa35bc
-Source archive / 源码归档: https://static.crates.io/crates/unic-common/unic-common-0.9.0.crate
-Repository / 仓库: https://github.com/open-i18n/rust-unic/
-VCS commit / 版本提交: 5878605364af97a3358368a6eaef02104af2e016
-Authors metadata / 作者元数据: The UNIC Project Developers
-Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
---------------------------------------------------------------------------------
-Package / 软件包: unic-ucd-ident@0.9.0
-Declared license / 声明许可证: MIT/Apache-2.0
-Selected reviewed terms / 选用审计条款: Apache-2.0
-Archive SHA-256: e230a37c0381caa9219d67cf063aa3a375ffed5bf541a452db16e744bdab6987
-Source archive / 源码归档: https://static.crates.io/crates/unic-ucd-ident/unic-ucd-ident-0.9.0.crate
-Repository / 仓库: https://github.com/open-i18n/rust-unic/
-VCS commit / 版本提交: 8a6ce83063d90b91ae2ce59eddb803edd393fca9
-Authors metadata / 作者元数据: The UNIC Project Developers
-Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
---------------------------------------------------------------------------------
-Package / 软件包: unic-ucd-version@0.9.0
-Declared license / 声明许可证: MIT/Apache-2.0
-Selected reviewed terms / 选用审计条款: Apache-2.0
-Archive SHA-256: 96bd2f2237fe450fcd0a1d2f5f4e91711124f7857ba2e964247776ebeeb7b0c4
-Source archive / 源码归档: https://static.crates.io/crates/unic-ucd-version/unic-ucd-version-0.9.0.crate
-Repository / 仓库: https://github.com/open-i18n/rust-unic/
-VCS commit / 版本提交: 5878605364af97a3358368a6eaef02104af2e016
-Authors metadata / 作者元数据: The UNIC Project Developers
-Legal text / 法律文本: 074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff — reviewed upstream source https://github.com/spdx/license-list-data/blob/v3.27.0/text/Apache-2.0.txt
 --------------------------------------------------------------------------------
 Package / 软件包: unicode-bidi@0.3.18
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6037,15 +6004,15 @@ Authors metadata / 作者元数据: The rust-url developers
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file url-2.5.8/LICENSE-APACHE
 Legal text / 法律文本: b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5 — checksum-verified crate file url-2.5.8/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: urlpattern@0.3.0
+Package / 软件包: urlpattern@0.6.0
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 70acd30e3aa1450bc2eece896ce2ad0d178e9c079493819301573dae3c37ba6d
-Source archive / 源码归档: https://static.crates.io/crates/urlpattern/urlpattern-0.3.0.crate
+Archive SHA-256: df16f50ef4cc145211879a3867ba757076b25dfee812040dcb0658bd9ae7904b
+Source archive / 源码归档: https://static.crates.io/crates/urlpattern/urlpattern-0.6.0.crate
 Repository / 仓库: https://github.com/denoland/rust-urlpattern
-VCS commit / 版本提交: ea97a5de9740a7eda311281828b3270d92fb1afb
+VCS commit / 版本提交: e29804d15bdc60797c1c7f715d90480ace0bb451
 Authors metadata / 作者元数据: the Deno authors; crowlKats <crowlkats@toaxl.com>
-Legal text / 法律文本: 5cf1c9dc617e4cad7fa03181ff893601ad5243aa3be527ef39034e1cd6377676 — checksum-verified crate file urlpattern-0.3.0/LICENSE
+Legal text / 法律文本: 5cf1c9dc617e4cad7fa03181ff893601ad5243aa3be527ef39034e1cd6377676 — checksum-verified crate file urlpattern-0.6.0/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: utf8_iter@1.0.4
 Declared license / 声明许可证: Apache-2.0 OR MIT
@@ -6301,22 +6268,22 @@ Repository / 仓库: https://github.com/wravery/webview2-rs
 VCS commit / 版本提交: dffa41a8a46d3f5565eefbff2de57d38d399f158
 Legal text / 法律文本: 0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73 — reviewed upstream source https://github.com/wravery/webview2-rs/blob/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: webview2-com-sys@0.38.2
+Package / 软件包: webview2-com-sys@0.39.1
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: MIT
-Archive SHA-256: 381336cfffd772377d291702245447a5251a2ffa5bad679c99e61bc48bacbf9c
-Source archive / 源码归档: https://static.crates.io/crates/webview2-com-sys/webview2-com-sys-0.38.2.crate
+Archive SHA-256: b3a07132775117d6065853d9d1178157b8c90e228de47129d6bce2c7edebedfb
+Source archive / 源码归档: https://static.crates.io/crates/webview2-com-sys/webview2-com-sys-0.39.1.crate
 Repository / 仓库: https://github.com/wravery/webview2-rs
-VCS commit / 版本提交: b74dc5e2b394044bea5191052868ce7a106c202c
+VCS commit / 版本提交: edc2caf886175ccaebe86078c9cfe1ae2a187328
 Legal text / 法律文本: 0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73 — reviewed upstream source https://github.com/wravery/webview2-rs/blob/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: webview2-com@0.38.2
+Package / 软件包: webview2-com@0.39.1
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: MIT
-Archive SHA-256: 7130243a7a5b33c54a444e54842e6a9e133de08b5ad7b5861cd8ed9a6a5bc96a
-Source archive / 源码归档: https://static.crates.io/crates/webview2-com/webview2-com-0.38.2.crate
+Archive SHA-256: 3f89fca7a704cee10dcb3654c1dbb8941d1783132f1917358af75bec37a7d7e6
+Source archive / 源码归档: https://static.crates.io/crates/webview2-com/webview2-com-0.39.1.crate
 Repository / 仓库: https://github.com/wravery/webview2-rs
-VCS commit / 版本提交: b74dc5e2b394044bea5191052868ce7a106c202c
+VCS commit / 版本提交: edc2caf886175ccaebe86078c9cfe1ae2a187328
 Legal text / 法律文本: 0dcf41516e608bbcb6cdc5229feb7b86fe4a643b85e7df251133c93408fdac73 — reviewed upstream source https://github.com/wravery/webview2-rs/blob/b74dc5e2b394044bea5191052868ce7a106c202c/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: weezl@0.1.12
@@ -6394,48 +6361,47 @@ Authors metadata / 作者元数据: Peter Atashian <retep998@gmail.com>
 Legal text / 法律文本: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1 — checksum-verified crate file winapi-0.3.9/LICENSE-APACHE
 Legal text / 法律文本: ce7bc3499fee93d5022ef430d5e4201e79a6d9154f3974e42f41349f0569e09b — checksum-verified crate file winapi-0.3.9/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: window-vibrancy@0.6.0
+Package / 软件包: window-vibrancy@0.8.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: d9bec5a31f3f9362f2258fd0e9c9dd61a9ca432e7306cc78c444258f0dce9a9c
-Source archive / 源码归档: https://static.crates.io/crates/window-vibrancy/window-vibrancy-0.6.0.crate
+Archive SHA-256: 111e51caca442cafd9bab396628ac4d814880eaea4e63dfd76a12e9f342b5580
+Source archive / 源码归档: https://static.crates.io/crates/window-vibrancy/window-vibrancy-0.8.1.crate
 Repository / 仓库: https://github.com/tauri-apps/tauri-plugin-vibrancy
-VCS commit / 版本提交: 526926490c20252d7086b0ad432c6f9d57e90f19
+VCS commit / 版本提交: 74216857a010454ae4dd19618787f06b656747b3
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 617b85f62a4f1b6a62d3d9f28f6d7003b7f68a70b7675a8174bbcc68401ac62d — checksum-verified crate file window-vibrancy-0.6.0/LICENSE-MIT
-Legal text / 法律文本: 7ccef0d35e8507fa02d7e904a5277d62723f9ec576d52f6a865cab7b4dbf12ad — checksum-verified crate file window-vibrancy-0.6.0/LICENSE.spdx
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file window-vibrancy-0.6.0/LICENSE-APACHE
+Legal text / 法律文本: 617b85f62a4f1b6a62d3d9f28f6d7003b7f68a70b7675a8174bbcc68401ac62d — checksum-verified crate file window-vibrancy-0.8.1/LICENSE-MIT
+Legal text / 法律文本: 7ccef0d35e8507fa02d7e904a5277d62723f9ec576d52f6a865cab7b4dbf12ad — checksum-verified crate file window-vibrancy-0.8.1/LICENSE.spdx
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file window-vibrancy-0.8.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: windows-collections@0.2.0
+Package / 软件包: windows-collections@0.3.2
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3beeceb5e5cfd9eb1d76b381630e82c4241ccd0d27f1a39ed41b2760b255c5e8
-Source archive / 源码归档: https://static.crates.io/crates/windows-collections/windows-collections-0.2.0.crate
+Archive SHA-256: 23b2d95af1a8a14a3c7367e1ed4fc9c20e0a26e79551b1454d72583c97cc6610
+Source archive / 源码归档: https://static.crates.io/crates/windows-collections/windows-collections-0.3.2.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 50009500b686f542530515aedba8334dc5b617b0
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-collections-0.2.0/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-collections-0.2.0/license-mit
+VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-collections-0.3.2/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-collections-0.3.2/license-mit
 --------------------------------------------------------------------------------
-Package / 软件包: windows-core@0.61.2
+Package / 软件包: windows-core@0.62.2
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: c0fdd3ddb90610c7638aa2b3a3ab2904fb9e5cdbecc643ddb3647212781c4ae3
-Source archive / 源码归档: https://static.crates.io/crates/windows-core/windows-core-0.61.2.crate
+Archive SHA-256: b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb
+Source archive / 源码归档: https://static.crates.io/crates/windows-core/windows-core-0.62.2.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 49e5d37ef31838d027c41ee28d696e046d04c27f
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-core-0.61.2/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-core-0.61.2/license-mit
+VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-core-0.62.2/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-core-0.62.2/license-mit
 --------------------------------------------------------------------------------
-Package / 软件包: windows-future@0.2.1
+Package / 软件包: windows-future@0.3.2
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: fc6a41e98427b19fe4b73c550f060b59fa592d7d686537eebf9385621bfbad8e
-Source archive / 源码归档: https://static.crates.io/crates/windows-future/windows-future-0.2.1.crate
+Archive SHA-256: e1d6f90251fe18a279739e78025bd6ddc52a7e22f921070ccdc67dde84c605cb
+Source archive / 源码归档: https://static.crates.io/crates/windows-future/windows-future-0.3.2.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: c65ac17e5c714104dff156578ca54b3c4f92d76c
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-future-0.2.1/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-future-0.2.1/license-mit
+VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-future-0.3.2/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-future-0.3.2/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows-implement@0.60.2
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6456,17 +6422,6 @@ Repository / 仓库: https://github.com/microsoft/windows-rs
 VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
 Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-interface-0.59.3/license-apache-2.0
 Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-interface-0.59.3/license-mit
---------------------------------------------------------------------------------
-Package / 软件包: windows-link@0.1.3
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 5e6ad25900d524eaabdbbb96d20b4311e1e7ae1699af4fb28c17ae66c80d798a
-Source archive / 源码归档: https://static.crates.io/crates/windows-link/windows-link-0.1.3.crate
-Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 4b8893b307719ec23cce698269ca572ef301dc5c
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-link-0.1.3/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-link-0.1.3/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows-link@0.2.1
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6489,15 +6444,15 @@ Authors metadata / 作者元数据: Daniel Brotsky <dev@brotsky.com>
 Legal text / 法律文本: 1b9916aeb17b63b74372d5493b6c6ce828eef2853e1dc48ac2bba701f148920c — checksum-verified crate file windows-native-keyring-store-1.1.0/LICENSE-MIT
 Legal text / 法律文本: c50e49cbc9917204c7e1d9c046342069e839c4947ef8c6027d23a3184ae73706 — checksum-verified crate file windows-native-keyring-store-1.1.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: windows-numerics@0.2.0
+Package / 软件包: windows-numerics@0.3.1
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 9150af68066c4c5c07ddc0ce30421554771e528bde427614c61038bc2c92c2b1
-Source archive / 源码归档: https://static.crates.io/crates/windows-numerics/windows-numerics-0.2.0.crate
+Archive SHA-256: 6e2e40844ac143cdb44aead537bbf727de9b044e107a0f1220392177d15b0f26
+Source archive / 源码归档: https://static.crates.io/crates/windows-numerics/windows-numerics-0.3.1.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 79c2c3917cac805aeb0d000ae9e32e719b514ff4
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-numerics-0.2.0/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-numerics-0.2.0/license-mit
+VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-numerics-0.3.1/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-numerics-0.3.1/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows-registry@0.6.1
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6509,17 +6464,6 @@ VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
 Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-registry-0.6.1/license-apache-2.0
 Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-registry-0.6.1/license-mit
 --------------------------------------------------------------------------------
-Package / 软件包: windows-result@0.3.4
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 56f42bd332cc6c8eac5af113fc0c1fd6a8fd2aa08a0119358686e5160d0586c6
-Source archive / 源码归档: https://static.crates.io/crates/windows-result/windows-result-0.3.4.crate
-Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 49e5d37ef31838d027c41ee28d696e046d04c27f
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-result-0.3.4/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-result-0.3.4/license-mit
---------------------------------------------------------------------------------
 Package / 软件包: windows-result@0.4.1
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -6529,17 +6473,6 @@ Repository / 仓库: https://github.com/microsoft/windows-rs
 VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
 Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-result-0.4.1/license-apache-2.0
 Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-result-0.4.1/license-mit
---------------------------------------------------------------------------------
-Package / 软件包: windows-strings@0.4.2
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 56e6c93f3a0c3b36176cb1327a4958a0353d5d166c2a35cb268ace15e91d3b57
-Source archive / 源码归档: https://static.crates.io/crates/windows-strings/windows-strings-0.4.2.crate
-Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 49e5d37ef31838d027c41ee28d696e046d04c27f
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-strings-0.4.2/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-strings-0.4.2/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows-strings@0.5.1
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6637,16 +6570,15 @@ VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
 Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-targets-0.53.5/license-apache-2.0
 Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-targets-0.53.5/license-mit
 --------------------------------------------------------------------------------
-Package / 软件包: windows-threading@0.1.0
+Package / 软件包: windows-threading@0.2.1
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: b66463ad2e0ea3bbf808b7f1d371311c80e115c0b71d60efc142cafbcfb057a6
-Source archive / 源码归档: https://static.crates.io/crates/windows-threading/windows-threading-0.1.0.crate
+Archive SHA-256: 3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37
+Source archive / 源码归档: https://static.crates.io/crates/windows-threading/windows-threading-0.2.1.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: c65ac17e5c714104dff156578ca54b3c4f92d76c
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-threading-0.1.0/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-threading-0.1.0/license-mit
+VCS commit / 版本提交: d468916ac27a36fb8a12bafc1bf5c0ec2fe92238
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-threading-0.2.1/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-threading-0.2.1/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows-version@0.1.7
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6658,16 +6590,15 @@ VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
 Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-version-0.1.7/license-apache-2.0
 Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-version-0.1.7/license-mit
 --------------------------------------------------------------------------------
-Package / 软件包: windows@0.61.3
+Package / 软件包: windows@0.62.2
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 9babd3a767a4c1aef6900409f85f5d53ce2544ccdfaa86dad48c91782c6d6893
-Source archive / 源码归档: https://static.crates.io/crates/windows/windows-0.61.3.crate
+Archive SHA-256: 527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580
+Source archive / 源码归档: https://static.crates.io/crates/windows/windows-0.62.2.crate
 Repository / 仓库: https://github.com/microsoft/windows-rs
-VCS commit / 版本提交: 4b8893b307719ec23cce698269ca572ef301dc5c
-Authors metadata / 作者元数据: Microsoft
-Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-0.61.3/license-apache-2.0
-Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-0.61.3/license-mit
+VCS commit / 版本提交: 32c3144490c016fe496a0aed769bce60987a2e9d
+Legal text / 法律文本: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b — checksum-verified crate file windows-0.62.2/license-apache-2.0
+Legal text / 法律文本: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383 — checksum-verified crate file windows-0.62.2/license-mit
 --------------------------------------------------------------------------------
 Package / 软件包: windows_aarch64_gnullvm@0.42.2
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6923,15 +6854,6 @@ Repository / 仓库: https://github.com/winnow-rs/winnow
 VCS commit / 版本提交: 7613e84fe15f9f460f5c759e81d21fac31d0cde0
 Legal text / 法律文本: cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d — checksum-verified crate file winnow-0.5.40/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: winnow@0.7.15
-Declared license / 声明许可证: MIT
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945
-Source archive / 源码归档: https://static.crates.io/crates/winnow/winnow-0.7.15.crate
-Repository / 仓库: https://github.com/winnow-rs/winnow
-VCS commit / 版本提交: eae4d4a23c400fec27a01cfb7115bc7808374f40
-Legal text / 法律文本: cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d — checksum-verified crate file winnow-0.7.15/LICENSE-MIT
---------------------------------------------------------------------------------
 Package / 软件包: winnow@1.0.4
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
@@ -6973,17 +6895,17 @@ VCS commit / 版本提交: a14f2dad852be26bad277ae704abf27a15cbfed1
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file writeable-0.6.4/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: wry@0.55.1
+Package / 软件包: wry@0.57.0
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 186f9871daa55fd9c016578b810d149de58367113db7fb72b462d2323ce19514
-Source archive / 源码归档: https://static.crates.io/crates/wry/wry-0.55.1.crate
+Archive SHA-256: a819957a01b3119af85e638a38d242af76dbc87d130dca67bfd0441072e21ff0
+Source archive / 源码归档: https://static.crates.io/crates/wry/wry-0.57.0.crate
 Repository / 仓库: https://github.com/tauri-apps/wry
-VCS commit / 版本提交: a5bf203a1c8dbb3583588382538d6521655222a8
+VCS commit / 版本提交: 792d0359ba6501a4fc360ece17de2ae42329a47c
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 26235c41e314fb0da35b33b2bb5bcbc4dd523839f8eeca52efcd43586f441fb5 — checksum-verified crate file wry-0.55.1/LICENSE.spdx
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file wry-0.55.1/LICENSE-APACHE
-Legal text / 法律文本: ef88893533af22ffbb68ceef0724ba1389518df26165a34f3c99ad30b884df4f — checksum-verified crate file wry-0.55.1/LICENSE-MIT
+Legal text / 法律文本: 26235c41e314fb0da35b33b2bb5bcbc4dd523839f8eeca52efcd43586f441fb5 — checksum-verified crate file wry-0.57.0/LICENSE.spdx
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file wry-0.57.0/LICENSE-APACHE
+Legal text / 法律文本: ef88893533af22ffbb68ceef0724ba1389518df26165a34f3c99ad30b884df4f — checksum-verified crate file wry-0.57.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: x11-dl@2.21.0
 Declared license / 声明许可证: MIT
@@ -8095,7 +8017,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 02b6448337b757772d90e5f31caaa0f9e6afaad2221c01771d0a3deaa4d4196c
-Source / 来源: checksum-verified crate file tao-0.35.3/LICENSE.spdx
+Source / 来源: checksum-verified crate file tao-0.37.1/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
@@ -8783,17 +8705,17 @@ Source / 来源: checksum-verified crate file portable-atomic-1.15.0/LICENSE-APA
 Source / 来源: checksum-verified crate file portable-atomic-util-0.2.8/LICENSE-APACHE
 Source / 来源: checksum-verified crate file raw-window-handle-0.6.2/LICENSE-APACHE.md
 Source / 来源: checksum-verified crate file sync_wrapper-1.0.2/LICENSE
-Source / 来源: checksum-verified crate file tauri-2.11.6/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-build-2.6.3/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-codegen-2.6.3/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-macros-2.6.3/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-runtime-2.11.3/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-runtime-wry-2.11.4/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-utils-2.9.3/LICENSE_APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-2.12.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-build-2.7.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-codegen-2.7.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-macros-2.7.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-runtime-2.12.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-runtime-wry-2.12.1/LICENSE-APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-utils-2.10.1/LICENSE-APACHE-2.0
 Source / 来源: checksum-verified crate file time-0.3.55/LICENSE-Apache
 Source / 来源: checksum-verified crate file time-core-0.1.9/LICENSE-Apache
 Source / 来源: checksum-verified crate file time-macros-0.2.32/LICENSE-Apache
-Source / 来源: repository-shared license from checksum-verified tauri-build@2.6.3/LICENSE_APACHE-2.0
+Source / 来源: repository-shared license from checksum-verified tauri-build@2.7.1/LICENSE-APACHE-2.0
 --------------------------------------------------------------------------------
 
                                  Apache License
@@ -9060,7 +8982,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 11789f45bb180841cd362a5eee6789c68ddb573a11105e30768c308a6add0190
-Source / 来源: checksum-verified crate file encoding_rs-0.8.40/COPYRIGHT
+Source / 来源: checksum-verified crate file encoding_rs-0.8.42/COPYRIGHT
 --------------------------------------------------------------------------------
 encoding_rs is copyright Mozilla Foundation.
 
@@ -10935,7 +10857,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 26235c41e314fb0da35b33b2bb5bcbc4dd523839f8eeca52efcd43586f441fb5
-Source / 来源: checksum-verified crate file wry-0.55.1/LICENSE.spdx
+Source / 来源: checksum-verified crate file wry-0.57.0/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
@@ -11188,6 +11110,7 @@ Software.
 
 Text SHA-256 / 文本 SHA-256: 270b0d81891aa44c7e8726cf9432dade9556a01c848bacd2f3ef839c9c1a1859
 Source / 来源: checksum-verified crate file infer-0.19.0/LICENSE
+Source / 来源: checksum-verified crate file infer-0.22.0/LICENSE
 --------------------------------------------------------------------------------
 MIT License
 
@@ -11810,8 +11733,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Text SHA-256 / 文本 SHA-256: 2ab5537b8c0cb1d475e2145b6a7994b04e7c71e6e5bd836f7f9c47c221a5ad9a
-Source / 来源: checksum-verified crate file muda-0.19.3/LICENSE-MIT
-Source / 来源: checksum-verified crate file tray-icon-0.24.2/LICENSE-MIT
+Source / 来源: checksum-verified crate file muda-0.20.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file tray-icon-0.25.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -11836,7 +11759,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 2bc107bdc18a74263d20bdefdb8073e17bc1a01b6b374dc5835683a33ee5ba7d
-Source / 来源: checksum-verified crate file jsonptr-0.6.3/LICENSE-MIT
+Source / 来源: checksum-verified crate file jsonptr-0.7.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -11861,7 +11784,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 2cf31f2ae7f3feba667d50fc1d4d21ecf217703c04c3068b83c9a73b6dde723a
-Source / 来源: checksum-verified crate file jsonptr-0.6.3/LICENSE-APACHE
+Source / 来源: checksum-verified crate file jsonptr-0.7.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
                                  Apache License
                            Version 2.0, January 2004
@@ -12241,7 +12164,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 31dbbab009f1b2e59a1622d5955dfafc38ebe834000215b49d954c6f85fe927c
-Source / 来源: checksum-verified crate file keyboard-types-0.7.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file keyboard-types-0.8.3/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2017 Pyfisch
 
@@ -13003,20 +12926,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-Text SHA-256 / 文本 SHA-256: 3c92a19e541755a97e51b4c963aa4335bbf93b64574dfbc36a5636c2899f3ab9
-Source / 来源: checksum-verified crate file multiversion-0.8.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file multiversion-macros-0.8.0/LICENSE-MIT
---------------------------------------------------------------------------------
-Copyright 2019 Caleb Zulawski
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 Text SHA-256 / 文本 SHA-256: 3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94
-Source / 来源: checksum-verified crate file brotli-8.0.4/LICENSE.MIT
+Source / 来源: checksum-verified crate file brotli-9.0.0/LICENSE.MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2009, 2010, 2013-2016 by the Brotli Authors.
 
@@ -13063,7 +12974,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c
-Source / 来源: checksum-verified crate file encoding_rs-0.8.40/LICENSE-MIT
+Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-MIT
 Source / 来源: checksum-verified crate file multiversion_no_op-1.0.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file utf8_iter-1.0.4/LICENSE-MIT
 --------------------------------------------------------------------------------
@@ -16499,7 +16410,7 @@ their own copyright notices and license terms:
   copyright itself, held by the contributor.
 
 Text SHA-256 / 文本 SHA-256: 5cf1c9dc617e4cad7fa03181ff893601ad5243aa3be527ef39034e1cd6377676
-Source / 来源: checksum-verified crate file urlpattern-0.3.0/LICENSE
+Source / 来源: checksum-verified crate file urlpattern-0.6.0/LICENSE
 --------------------------------------------------------------------------------
 MIT License
 
@@ -16842,7 +16753,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 617b85f62a4f1b6a62d3d9f28f6d7003b7f68a70b7675a8174bbcc68401ac62d
-Source / 来源: checksum-verified crate file window-vibrancy-0.6.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file window-vibrancy-0.8.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -18067,6 +17978,7 @@ limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 6a2e0ade09a7d5f816f11566fee2b151b32235a7fad52b41d49cce96f833c1a9
 Source / 来源: checksum-verified crate file dirs-6.0.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file dirs-7.0.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file dirs-sys-0.5.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2018-2019 dirs-rs contributors
@@ -18167,7 +18079,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 6c1e5d0ccf5e8951401cb964036ae664d52fc8d1148173b53bc54fc534f5d404
-Source / 来源: checksum-verified crate file tray-icon-0.24.2/LICENSE.spdx
+Source / 来源: checksum-verified crate file tray-icon-0.25.1/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
@@ -18249,20 +18161,9 @@ https://creativecommons.org/licenses/publicdomain
 
 ===============================================================================
 
-Text SHA-256 / 文本 SHA-256: 6cfe51b21bd30814a17d34967ae9372bd7ec3ea043afafbf2f0ec0fc6371d7a1
-Source / 来源: checksum-verified crate file target-features-0.1.6/LICENSE-MIT
---------------------------------------------------------------------------------
-Copyright 2022 Caleb Zulawski
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 Text SHA-256 / 文本 SHA-256: 6dc0e068dcf3a5bc8e054205b85b7720e1d49265bbc64bf515d2cf79197df69a
 Source / 来源: checksum-verified crate file dpi-0.1.2/LICENSE
-Source / 来源: checksum-verified crate file tao-0.35.3/LICENSE
+Source / 来源: checksum-verified crate file tao-0.37.1/LICENSE
 --------------------------------------------------------------------------------
 Apache License
                            Version 2.0, January 2004
@@ -18690,9 +18591,7 @@ Text SHA-256 / 文本 SHA-256: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440
 Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
 Source / 来源: checksum-verified crate file serde_spanned-1.1.1/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml-0.9.12+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml-1.1.5+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_datetime-0.7.5+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-MIT
@@ -19643,6 +19542,7 @@ limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 7554701d1e74fc434f68c522b1dd743c8c16d816a4b761b5213f367b898884c8
 Source / 来源: checksum-verified crate file dom_query-0.27.0/LICENSE
+Source / 来源: checksum-verified crate file dom_query-0.28.0/LICENSE
 --------------------------------------------------------------------------------
 MIT License
 
@@ -19708,7 +19608,7 @@ DEALINGS IN THE SOFTWARE.
 Text SHA-256 / 文本 SHA-256: 769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb
 Source / 来源: checksum-verified crate file async-recursion-1.1.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file core_detect-1.0.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file keyboard-types-0.7.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file keyboard-types-0.8.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file weezl-0.1.12/LICENSE-APACHE
 --------------------------------------------------------------------------------
                               Apache License
@@ -20339,7 +20239,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 7ccef0d35e8507fa02d7e904a5277d62723f9ec576d52f6a865cab7b4dbf12ad
-Source / 来源: checksum-verified crate file window-vibrancy-0.6.0/LICENSE.spdx
+Source / 来源: checksum-verified crate file window-vibrancy-0.8.1/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
@@ -20729,7 +20629,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 838118388fe5c2e7f1dbbaeed13e1c7f3ebf88be91319c7c1d77c18e987d1a50
-Source / 来源: checksum-verified crate file encoding_rs-0.8.40/LICENSE-WHATWG
+Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-WHATWG
 --------------------------------------------------------------------------------
 Copyright © WHATWG (Apple, Google, Mozilla, Microsoft).
 
@@ -20850,7 +20750,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 86dd7f026f916daf7511e39951ad8ea8cf55a8db67ae64060dacf829761c18f3
 Source / 来源: checksum-verified crate file html5ever-0.38.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file html5ever-0.39.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file markup5ever-0.38.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file markup5ever-0.39.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file web_atoms-0.2.6/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2014 The html5ever Project Developers
@@ -21114,7 +21016,7 @@ Source / 来源: checksum-verified crate file ipnet-2.12.2/LICENSE-APACHE
    limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 87f7527b1066337751f7f4d717089bf514ff8f7ee7d66c4c5b891b09e744ec11
-Source / 来源: checksum-verified crate file json-patch-3.0.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file json-patch-4.2.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -23601,13 +23503,13 @@ Source / 来源: checksum-verified crate file zerocopy-derive-0.8.59/LICENSE-APA
    limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 9dd42ea92cff2ede5cd477cbfcce051b2d0115c0ac7f368ee88cb545055dff1d
-Source / 来源: checksum-verified crate file tauri-2.11.6/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-build-2.6.3/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-codegen-2.6.3/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-macros-2.6.3/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-runtime-2.11.3/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-runtime-wry-2.11.4/LICENSE_MIT
-Source / 来源: checksum-verified crate file tauri-utils-2.9.3/LICENSE_MIT
+Source / 来源: checksum-verified crate file tauri-2.12.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-build-2.7.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-codegen-2.7.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-macros-2.7.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-runtime-2.12.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-runtime-wry-2.12.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file tauri-utils-2.10.1/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -23670,7 +23572,7 @@ The above copyright notice and this permission notice (including the next paragr
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 9e0a97848ea543aef745c98e84fde696a9a3e0735538f6daefdd3cb1942effc1
-Source / 来源: checksum-verified crate file hyper-util-0.1.20/LICENSE
+Source / 来源: checksum-verified crate file hyper-util-0.1.21/LICENSE
 --------------------------------------------------------------------------------
 Copyright (c) 2023-2025 Sean McArthur
 
@@ -24240,6 +24142,7 @@ Source / 来源: checksum-verified crate file heck-0.4.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file heck-0.5.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file hermit-abi-0.5.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file html5ever-0.38.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file html5ever-0.39.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file httparse-1.10.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file hyper-rustls-0.27.9/LICENSE-APACHE
 Source / 来源: checksum-verified crate file idna-1.1.0/LICENSE-APACHE
@@ -24255,9 +24158,10 @@ Source / 来源: checksum-verified crate file linux-raw-sys-0.12.1/LICENSE-APACH
 Source / 来源: checksum-verified crate file lock_api-0.4.14/LICENSE-APACHE
 Source / 来源: checksum-verified crate file log-0.4.34/LICENSE-APACHE
 Source / 来源: checksum-verified crate file markup5ever-0.38.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file markup5ever-0.39.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file matrixmultiply-0.3.11/LICENSE-APACHE
 Source / 来源: checksum-verified crate file mime-0.3.17/LICENSE-APACHE
-Source / 来源: checksum-verified crate file muda-0.19.3/LICENSE-APACHE
+Source / 来源: checksum-verified crate file muda-0.20.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ndarray-0.17.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file num-0.4.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file num-bigint-0.4.8/LICENSE-APACHE
@@ -24313,7 +24217,7 @@ Source / 来源: checksum-verified crate file tar-0.4.46/LICENSE-APACHE
 Source / 来源: checksum-verified crate file tempfile-3.27.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file tendril-0.5.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_datetime-0.6.3/LICENSE-APACHE
-Source / 来源: checksum-verified crate file tray-icon-0.24.2/LICENSE-APACHE
+Source / 来源: checksum-verified crate file tray-icon-0.25.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ttf-parser-0.25.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode-bidi-0.3.18/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode-normalization-0.1.25/LICENSE-APACHE
@@ -24332,9 +24236,9 @@ Source / 来源: checksum-verified crate file wasm-bindgen-macro-support-0.2.128
 Source / 来源: checksum-verified crate file wasm-bindgen-shared-0.2.128/LICENSE-APACHE
 Source / 来源: checksum-verified crate file web-sys-0.3.105/LICENSE-APACHE
 Source / 来源: checksum-verified crate file web_atoms-0.2.6/LICENSE-APACHE
-Source / 来源: checksum-verified crate file window-vibrancy-0.6.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file window-vibrancy-0.8.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file wit-bindgen-0.57.1/LICENSE-APACHE
-Source / 来源: checksum-verified crate file wry-0.55.1/LICENSE-APACHE
+Source / 来源: checksum-verified crate file wry-0.57.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file xattr-1.6.1/LICENSE-APACHE
 Source / 来源: repository-shared license from checksum-verified libappindicator@0.9.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
@@ -24769,10 +24673,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae
-Source / 来源: checksum-verified crate file ctor-0.8.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file ctor-proc-macro-0.0.7/LICENSE-APACHE
-Source / 来源: checksum-verified crate file dtor-0.3.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file dtor-proc-macro-0.0.6/LICENSE-APACHE
+Source / 来源: checksum-verified crate file ctor-1.0.13/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Apache License
                            Version 2.0, January 2004
@@ -26253,7 +26154,7 @@ See src/polyfill/once_cell/LICENSE-APACHE and src/polyfill/once_cell/LICENSE-MIT
 for the license to code that was sourced from the once_cell project.
 
 Text SHA-256 / 文本 SHA-256: b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1
-Source / 来源: checksum-verified crate file json-patch-3.0.1/LICENSE-APACHE
+Source / 来源: checksum-verified crate file json-patch-4.2.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file winapi-0.3.9/LICENSE-APACHE
 Source / 来源: repository-shared license from checksum-verified winapi@0.3.9/LICENSE-APACHE
 --------------------------------------------------------------------------------
@@ -26775,7 +26676,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: b99f9d43803f2ac979c50949df630bd8eeaf2fcd1b9fdb9093710d70f5dfb63d
-Source / 来源: checksum-verified crate file muda-0.19.3/LICENSE.spdx
+Source / 来源: checksum-verified crate file muda-0.20.0/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
@@ -26900,10 +26801,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3
-Source / 来源: checksum-verified crate file ctor-0.8.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file ctor-proc-macro-0.0.7/LICENSE-MIT
-Source / 来源: checksum-verified crate file dtor-0.3.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file dtor-proc-macro-0.0.6/LICENSE-MIT
+Source / 来源: checksum-verified crate file ctor-1.0.13/LICENSE-MIT
 --------------------------------------------------------------------------------
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -26937,10 +26835,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae
-Source / 来源: checksum-verified crate file alloc-no-stdlib-2.0.4/LICENSE
-Source / 来源: checksum-verified crate file brotli-8.0.4/LICENSE.BSD-3-Clause
-Source / 来源: checksum-verified crate file brotli-decompressor-5.0.3/LICENSE
-Source / 来源: repository-shared license from checksum-verified alloc-no-stdlib@2.0.4/LICENSE
+Source / 来源: checksum-verified crate file alloc-no-stdlib-3.0.0/LICENSE
+Source / 来源: checksum-verified crate file brotli-9.0.0/LICENSE.BSD-3-Clause
+Source / 来源: checksum-verified crate file brotli-decompressor-6.0.1/LICENSE
+Source / 来源: repository-shared license from checksum-verified alloc-no-stdlib@3.0.0/LICENSE
 --------------------------------------------------------------------------------
 Copyright (c) 2016 Dropbox, Inc.
 All rights reserved.
@@ -27184,19 +27082,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b
-Source / 来源: checksum-verified crate file windows-0.61.3/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-collections-0.2.0/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-core-0.61.2/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-future-0.2.1/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-0.62.2/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-collections-0.3.2/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-core-0.62.2/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-future-0.3.2/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-implement-0.60.2/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-interface-0.59.3/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-link-0.1.3/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-link-0.2.1/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-numerics-0.2.0/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-numerics-0.3.1/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-registry-0.6.1/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-result-0.3.4/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-result-0.4.1/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-strings-0.4.2/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-strings-0.5.1/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-sys-0.45.0/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-sys-0.52.0/license-apache-2.0
@@ -27206,7 +27101,7 @@ Source / 来源: checksum-verified crate file windows-sys-0.61.2/license-apache-
 Source / 来源: checksum-verified crate file windows-targets-0.42.2/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-targets-0.52.6/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-targets-0.53.5/license-apache-2.0
-Source / 来源: checksum-verified crate file windows-threading-0.1.0/license-apache-2.0
+Source / 来源: checksum-verified crate file windows-threading-0.2.1/license-apache-2.0
 Source / 来源: checksum-verified crate file windows-version-0.1.7/license-apache-2.0
 Source / 来源: checksum-verified crate file windows_aarch64_gnullvm-0.42.2/license-apache-2.0
 Source / 来源: checksum-verified crate file windows_aarch64_gnullvm-0.52.6/license-apache-2.0
@@ -27435,19 +27330,16 @@ Source / 来源: checksum-verified crate file windows_x86_64_msvc-0.53.1/license
    limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383
-Source / 来源: checksum-verified crate file windows-0.61.3/license-mit
-Source / 来源: checksum-verified crate file windows-collections-0.2.0/license-mit
-Source / 来源: checksum-verified crate file windows-core-0.61.2/license-mit
-Source / 来源: checksum-verified crate file windows-future-0.2.1/license-mit
+Source / 来源: checksum-verified crate file windows-0.62.2/license-mit
+Source / 来源: checksum-verified crate file windows-collections-0.3.2/license-mit
+Source / 来源: checksum-verified crate file windows-core-0.62.2/license-mit
+Source / 来源: checksum-verified crate file windows-future-0.3.2/license-mit
 Source / 来源: checksum-verified crate file windows-implement-0.60.2/license-mit
 Source / 来源: checksum-verified crate file windows-interface-0.59.3/license-mit
-Source / 来源: checksum-verified crate file windows-link-0.1.3/license-mit
 Source / 来源: checksum-verified crate file windows-link-0.2.1/license-mit
-Source / 来源: checksum-verified crate file windows-numerics-0.2.0/license-mit
+Source / 来源: checksum-verified crate file windows-numerics-0.3.1/license-mit
 Source / 来源: checksum-verified crate file windows-registry-0.6.1/license-mit
-Source / 来源: checksum-verified crate file windows-result-0.3.4/license-mit
 Source / 来源: checksum-verified crate file windows-result-0.4.1/license-mit
-Source / 来源: checksum-verified crate file windows-strings-0.4.2/license-mit
 Source / 来源: checksum-verified crate file windows-strings-0.5.1/license-mit
 Source / 来源: checksum-verified crate file windows-sys-0.45.0/license-mit
 Source / 来源: checksum-verified crate file windows-sys-0.52.0/license-mit
@@ -27457,7 +27349,7 @@ Source / 来源: checksum-verified crate file windows-sys-0.61.2/license-mit
 Source / 来源: checksum-verified crate file windows-targets-0.42.2/license-mit
 Source / 来源: checksum-verified crate file windows-targets-0.52.6/license-mit
 Source / 来源: checksum-verified crate file windows-targets-0.53.5/license-mit
-Source / 来源: checksum-verified crate file windows-threading-0.1.0/license-mit
+Source / 来源: checksum-verified crate file windows-threading-0.2.1/license-mit
 Source / 来源: checksum-verified crate file windows-version-0.1.7/license-mit
 Source / 来源: checksum-verified crate file windows_aarch64_gnullvm-0.42.2/license-mit
 Source / 来源: checksum-verified crate file windows_aarch64_gnullvm-0.52.6/license-mit
@@ -27771,9 +27663,7 @@ Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-APACHE
 Source / 来源: checksum-verified crate file serde_spanned-1.1.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file stringprep-0.1.5/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml-0.9.12+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml-1.1.5+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_datetime-0.7.5+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-APACHE
@@ -28609,7 +28499,6 @@ THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d
 Source / 来源: checksum-verified crate file winnow-0.5.40/LICENSE-MIT
-Source / 来源: checksum-verified crate file winnow-0.7.15/LICENSE-MIT
 Source / 来源: checksum-verified crate file winnow-1.0.4/LICENSE-MIT
 --------------------------------------------------------------------------------
 Permission is hereby granted, free of charge, to any person obtaining
@@ -28886,15 +28775,12 @@ Text SHA-256 / 文本 SHA-256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3e
 Source / 来源: checksum-verified crate file cmov-0.5.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ctutils-0.4.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file embed_plist-1.2.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file encoding_rs-0.8.40/LICENSE-APACHE
+Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-APACHE
 Source / 来源: checksum-verified crate file lru-slab-0.1.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file multiversion-0.8.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file multiversion-macros-0.8.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file multiversion_no_op-1.0.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ort-2.0.0-rc.13/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ort-sys-2.0.0-rc.13/LICENSE-APACHE
 Source / 来源: checksum-verified crate file static_assertions-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file target-features-0.1.6/LICENSE-APACHE
 Source / 来源: checksum-verified crate file tinyvec-1.13.2/LICENSE-APACHE.md
 Source / 来源: checksum-verified crate file utf8_iter-1.0.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file zeroize-1.9.0/LICENSE-APACHE
@@ -29323,6 +29209,7 @@ DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: d3174ad63e721d4c9dccb8ad4320848992d314369bc46319720b5802c9153fe9
 Source / 来源: checksum-verified crate file dirs-6.0.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file dirs-7.0.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file dirs-sys-0.5.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
                               Apache License
@@ -31227,6 +31114,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git
 Creator: Person: Daniel Thompson-Yvetot
 
 Text SHA-256 / 文本 SHA-256: ebaac853b53fec0ed475796f533ce676912a4df9ad9d8a621fa76d5060591e10
+Source / 来源: checksum-verified crate file cfb-0.14.0/LICENSE
 Source / 来源: checksum-verified crate file cfb-0.7.3/LICENSE
 --------------------------------------------------------------------------------
 MIT License
@@ -31510,7 +31398,7 @@ Source / 来源: checksum-verified crate file deranged-0.5.8/LICENSE-Apache
    limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: ee874098519e956c23a3c5c7e20581f8e9b1d70aa05eb178f983be9775090a2f
-Source / 来源: checksum-verified crate file cargo_toml-0.22.3/LICENSE
+Source / 来源: checksum-verified crate file cargo_toml-1.0.1/LICENSE
 --------------------------------------------------------------------------------
 © Kornel Lesiński
 
@@ -31716,7 +31604,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: ef88893533af22ffbb68ceef0724ba1389518df26165a34f3c99ad30b884df4f
-Source / 来源: checksum-verified crate file wry-0.55.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file wry-0.57.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -32161,7 +32049,9 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85
 Source / 来源: checksum-verified crate file cssparser-0.36.0/LICENSE
+Source / 来源: checksum-verified crate file cssparser-0.37.0/LICENSE
 Source / 来源: checksum-verified crate file cssparser-macros-0.6.1/LICENSE
+Source / 来源: checksum-verified crate file cssparser-macros-0.7.1/LICENSE
 --------------------------------------------------------------------------------
 Mozilla Public License Version 2.0
 ==================================

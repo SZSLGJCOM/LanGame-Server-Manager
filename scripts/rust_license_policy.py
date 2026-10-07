@@ -94,12 +94,12 @@ for crate_name, version, vcs_sha1 in (
 
 
 add_rule(
-    "alloc-stdlib@0.2.4",
+    "alloc-stdlib@0.3.0",
     declared_license="BSD-3-Clause",
     selected_license="BSD-3-Clause",
     repository="https://github.com/dropbox/rust-alloc-no-stdlib",
-    vcs_sha1="ae42d22078b98549e987d2f03d12df7b984fde47",
-    sources=[sibling("alloc-no-stdlib@2.0.4", "LICENSE")],
+    vcs_sha1="0a81fd6928ea3b33c8cd484aa4575d50ffb98012",
+    sources=[sibling("alloc-no-stdlib@3.0.0", "LICENSE")],
 )
 add_rule(
     "cesu8@1.1.0",
@@ -170,6 +170,14 @@ add_rule(
     repository="https://github.com/mlua-rs/mlua",
     vcs_sha1="4fd87af2157b0a7ecd22ba299848e4ca3d462efe",
     sources=[sibling("mlua@0.12.1", "LICENSE")],
+)
+add_rule(
+    "ndk-context@0.1.1",
+    declared_license="MIT OR Apache-2.0",
+    selected_license="Apache-2.0",
+    repository="https://github.com/rust-windowing/android-ndk-rs",
+    vcs_sha1="10f2ba388fca20f7349996ebae26ccda7a6fda5c",
+    sources=[audited("spdx-apache-2.0")],
 )
 for package_id in ("ndk@0.9.0", "ndk-sys@0.6.0+11769913"):
     add_rule(
@@ -279,47 +287,29 @@ add_rule(
     vcs_sha1=None,
     sources=[sibling("rustls-platform-verifier@0.7.0", "LICENSE-APACHE")],
 )
-add_rule(
-    "selectors@0.36.1",
-    declared_license="MPL-2.0",
-    selected_license="MPL-2.0",
-    repository="https://github.com/servo/stylo",
-    vcs_sha1="635e1a19d02960588a00e189bd4bd5bdb150ec3d",
-    sources=[audited("spdx-mpl-2.0")],
-)
+for package_id, vcs_sha1 in (
+    ("selectors@0.36.1", "635e1a19d02960588a00e189bd4bd5bdb150ec3d"),
+    ("selectors@0.38.0", "572ecba2d1600e7c3d490586692a209faf703baa"),
+):
+    add_rule(
+        package_id,
+        declared_license="MPL-2.0",
+        selected_license="MPL-2.0",
+        repository="https://github.com/servo/stylo",
+        vcs_sha1=vcs_sha1,
+        sources=[audited("spdx-mpl-2.0")],
+    )
 add_rule(
     "tauri-plugin@2.6.3",
     declared_license="Apache-2.0 OR MIT",
     selected_license="Apache-2.0",
     repository="https://github.com/tauri-apps/tauri",
     vcs_sha1="6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a",
-    sources=[sibling("tauri-build@2.6.3", "LICENSE_APACHE-2.0")],
-)
-for crate_name in (
-    "unic-char-property",
-    "unic-char-range",
-    "unic-common",
-    "unic-ucd-version",
-):
-    add_rule(
-        f"{crate_name}@0.9.0",
-        declared_license="MIT/Apache-2.0",
-        selected_license="Apache-2.0",
-        repository="https://github.com/open-i18n/rust-unic/",
-        vcs_sha1="5878605364af97a3358368a6eaef02104af2e016",
-        sources=[audited("spdx-apache-2.0")],
-    )
-add_rule(
-    "unic-ucd-ident@0.9.0",
-    declared_license="MIT/Apache-2.0",
-    selected_license="Apache-2.0",
-    repository="https://github.com/open-i18n/rust-unic/",
-    vcs_sha1="8a6ce83063d90b91ae2ce59eddb803edd393fca9",
-    sources=[audited("spdx-apache-2.0")],
+    sources=[sibling("tauri-build@2.7.1", "LICENSE-APACHE-2.0")],
 )
 for package_id, vcs_sha1 in (
-    ("webview2-com@0.38.2", "b74dc5e2b394044bea5191052868ce7a106c202c"),
-    ("webview2-com-sys@0.38.2", "b74dc5e2b394044bea5191052868ce7a106c202c"),
+    ("webview2-com@0.39.1", "edc2caf886175ccaebe86078c9cfe1ae2a187328"),
+    ("webview2-com-sys@0.39.1", "edc2caf886175ccaebe86078c9cfe1ae2a187328"),
     ("webview2-com-macros@0.8.1", "dffa41a8a46d3f5565eefbff2de57d38d399f158"),
 ):
     add_rule(
