@@ -114,11 +114,13 @@ Nginx reload。APNIC 表仍须单独按期刷新并 `nginx -t` / reload；31 天
 
 发布工作站的 `LanGameDesktopReleaseMirror` 计划任务每五分钟匿名检查 GitHub 最新正式
 Release，以当前用户、非管理员权限运行，需要开机、登录和已配置的 GitHub 代理可用。
-部署目录为 `%LOCALAPPDATA%\LanGameReleaseMirror`，其中包含启动脚本、私有配置、固定
+部署目录由工作站配置指定，其中包含启动脚本、私有配置、固定
 发布器快照、状态及诊断记录；任务不依赖开发工作树或临时对话目录，也不自动拉取执行
 远程代码。发布器的四个 Python 文件、Node 验签器及公开 updater 配置逐一固定哈希。
 后续版本从 Release 和签名可信注释读取，快照配置中的旧版本号不会锁死未来发版。
-更换公钥、发布器或运行工具时需要重新核对快照及哈希。
+更换公钥、发布器或运行工具时需要重新核对快照及哈希。目录必须同时对部署工具和实际
+计划任务进程可见；打包应用可能将 `LOCALAPPDATA` 写入虚拟目录，不能仅凭同用户、相同
+路径字符串断定调度器可读。启用后应从调度器实际执行，验证退出码及发布证据。
 
 GitCode classic 令牌实际授予账户级“项目读写”，不能描述为单仓库权限；发布器在代码中
 限制目标仓库。令牌以 Windows CurrentUser DPAPI 加密，目录与文件仅当前用户和 SYSTEM
@@ -139,7 +141,8 @@ GitHub 的 `sync-gitcode-release.yml` 工作流须保持 `disabled_manually`。�
 ```powershell
 Get-ScheduledTask -TaskName LanGameDesktopReleaseMirror
 Get-ScheduledTaskInfo -TaskName LanGameDesktopReleaseMirror
-Get-Content "$env:LOCALAPPDATA\LanGameReleaseMirror\state.json"
+$mirrorRoot = Read-Host 'Mirror deployment directory'
+Get-Content (Join-Path $mirrorRoot 'state.json')
 ```
 
 首次部署只检查版本、不需要发布时，`state.json` 可以尚不存在。仅检查失败的诊断写入
