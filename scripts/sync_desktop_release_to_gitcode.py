@@ -87,7 +87,7 @@ def _curl_command(source):
     # -q must be first: a runner/user curlrc must not add redirects, retries,
     # tracing, credential headers or a second transfer. HTTPS is not configurable.
     return ["curl", "-q", "--config", "-", "--proto", "=https", "--proto-redir", "=https",
-            "--http1.1", "--globoff", "--request", "PUT", "--upload-file", str(source.resolve()),
+            "--http1.1", "--globoff", "--noproxy", "*", "--request", "PUT", "--upload-file", str(source.resolve()),
             "--retry", "0", "--max-redirs", "0", "--connect-timeout", "15", "--max-time", "1800",
             "--speed-limit", "32768", "--speed-time", "60", "--silent", "--show-error",
             "--output", os.devnull, "--write-out", CURL_WRITE_OUT]
@@ -199,6 +199,13 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
+def provider_opener(provider, redirect):
+    # Domestic GitCode transfers must not inherit an overseas system proxy.
+    # Preserve the existing GitHub route: direct mainland downloads can stall.
+    handlers = [urllib.request.ProxyHandler({})] if provider == "gitcode" else []
+    return urllib.request.build_opener(*handlers, redirect)
+
+
 class Transport:
     def __init__(self, github_token="", gitcode_token=""):
         self.tokens = {"github": github_token, "gitcode": gitcode_token}
@@ -219,7 +226,7 @@ class Transport:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(base + suffix, data=data, headers=headers, method=method)
         try:
-            with urllib.request.build_opener(NoRedirect()).open(req, timeout=timeout) as response:
+            with provider_opener(provider, NoRedirect()).open(req, timeout=timeout) as response:
                 raw = response.read(2 * 1024 * 1024 + 1)
                 require(len(raw) <= 2 * 1024 * 1024, "API response exceeds limit")
                 return parse_json(raw)
@@ -245,7 +252,7 @@ class Transport:
             req = urllib.request.Request(url, headers={"User-Agent": "LGSM-release-mirror"})
             with partial.open("xb") as output:
                 created_partial = True
-                with urllib.request.build_opener(PublicRedirect(provider)).open(req, timeout=60) as response:
+                with provider_opener(provider, PublicRedirect(provider)).open(req, timeout=60) as response:
                     require(response.status == 200, "Expected complete public artifact response")
                     received = 0
                     while chunk := response.read(1024 * 1024):
@@ -290,7 +297,7 @@ class Transport:
                 # urllib's timeout bounds a blocked socket operation, not the
                 # entire upload. SSL sendall may use all 60 seconds for one
                 # write even while bytes progress; this is not an idle timer.
-                with urllib.request.build_opener(NoRedirect()).open(request, timeout=UPLOAD_WRITE_TIMEOUT) as response:
+                with provider_opener("gitcode", NoRedirect()).open(request, timeout=UPLOAD_WRITE_TIMEOUT) as response:
                     require(response.status in (200, 201, 204), "Upload returned an unexpected status")
             except (urllib.error.URLError, TimeoutError, OSError):
                 raise SyncError("GitCode upload outcome unknown; next run must inspect the release, not replay blindly") from None

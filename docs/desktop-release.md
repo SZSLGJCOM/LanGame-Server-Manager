@@ -44,7 +44,7 @@ The regional endpoint returns only a small manifest: China-allocated addresses s
 
 The updater requires the trusted signature comment to contain the advertised version. Do not disable `requireSignedVersion` for a mirror: an old, validly signed binary must not be relabeled as a newer update. The pinned Tauri bundler writes the version into its signed comment; exported artifacts retain those signature bytes unchanged.
 
-Automatic updates reject small installers exceeding 256 MiB; oversized bodies or advertised lengths cancel that source before installation. This is a response-byte rejection threshold, not a hard process-memory limit: the plugin cancels at its next asynchronous yield and may allocate the current chunk and extra buffer capacity first. The mirror publisher enforces the same small-package limit. Offline companions remain manual downloads. The GitCode synchronization workflow runs on stable GitHub Release publication after `GITCODE_RELEASE_TOKEN` is configured; it verifies all seven attachments before publishing the regional pointer. Complete the first live synchronization and metadata-service acceptance before publishing regional builds.
+Automatic updates reject small installers exceeding 256 MiB; oversized bodies or advertised lengths cancel that source before installation. This is a response-byte rejection threshold, not a hard process-memory limit: the plugin cancels at its next asynchronous yield and may allocate the current chunk and extra buffer capacity first. The mirror publisher enforces the same small-package limit. Offline companions remain manual downloads. The release workstation checks stable GitHub Releases every five minutes and verifies all seven attachments before publishing the GitCode pointer. It must be on and logged in, with its configured GitHub proxy available. The GitHub mirror workflow remains disabled to keep one writer. See the [service guide](../deploy/desktop-updates/README.md) for credential storage, routing and recovery. Complete the first live synchronization and metadata-service acceptance before publishing regional builds.
 
 ## Build signed installers on a portable Windows build host
 
@@ -153,7 +153,7 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 
 官网只返回小型更新清单，按 APNIC 中国地址分配记录选择已验证的 GitCode 附件，其他地址选择 GitHub，安装包不经过官网服务器。地址分配记录只是地区判断依据，不保证实际物理位置。下载始终保持选定版本和签名，依次尝试清单附件、同版本 GitHub 附件及两个公共代理；30 秒不足 1 MiB 时切换下一源，第二轮允许慢速传输但拒绝连续 30 秒无进展，整体最多 30 分钟。每次切源重置进度，完整安装包经 Tauri 验签通过后才停止服务器并安装。公共代理政策和可用性须独立核实，不能作为可用性承诺。
 
-发布同步工作流在 GitHub 正式 Release 发布后运行，将两包、两份签名、两份校验表和唯一 `latest.json` 同步至 GitCode。只有七份附件完成匿名下载、哈希及安装包密码学验签后，才提交国内清单指针；失败保留上一份有效指针。首次启用须配置仓库 Secret `GITCODE_RELEASE_TOKEN` 并完成真实同步验证，配置步骤见服务指南。客户端要求签名的可信注释包含实际版本，不得为镜像关闭 `requireSignedVersion`，以防旧包被标成新版本。
+发布工作站每五分钟检查 GitHub 正式 Release，将两包、两份签名、两份校验表和唯一 `latest.json` 同步至 GitCode；需要工作站开机、用户登录且已配置的 GitHub 代理可用。GitHub 镜像工作流保持禁用，避免两个发布者同时写入。只有七份附件完成匿名下载、哈希及安装包密码学验签后，才提交国内清单指针；失败保留上一份有效指针。凭据保存、网络路由和失败恢复见[服务指南](../deploy/desktop-updates/README.md)。客户端要求签名的可信注释包含实际版本，不得为镜像关闭 `requireSignedVersion`，以防旧包被标成新版本。
 
 自动更新小包拒绝阈值为 256 MiB，同步发布器与客户端同时执行该限制；响应长度声明或实际流量超限时请求取消当前源。插件在下次异步让出时才执行取消，当前数据块和缓冲区预留容量可能额外占用内存，因此这不是进程内存峰值的硬上限。离线包仍供手动下载。
 

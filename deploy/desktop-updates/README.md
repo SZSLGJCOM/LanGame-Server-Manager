@@ -108,7 +108,43 @@ Nginx reload。APNIC 表仍须单独按期刷新并 `nginx -t` / reload；31 天
 
 已发布 pointer 的记录需要修正时提升版本，不能在同版本下静默替换签名或附件。紧急回退
 由管理员显式停 timer、核验旧目录后恢复旧 symlink；默认服务会拒绝从远端触发的降级。
-GitHub Actions 只需要 GitCode 镜像仓库写权限，不需要生产 SSH key 或服务器命令权限。
+镜像发布者不需要生产 SSH key 或服务器命令权限。
+
+## 本机自动镜像
+
+发布工作站的 `LanGameDesktopReleaseMirror` 计划任务每五分钟匿名检查 GitHub 最新正式
+Release，以当前用户、非管理员权限运行，需要开机、登录和已配置的 GitHub 代理可用。
+部署目录为 `%LOCALAPPDATA%\LanGameReleaseMirror`，其中包含启动脚本、私有配置、固定
+发布器快照、状态及诊断记录；任务不依赖开发工作树或临时对话目录，也不自动拉取执行
+远程代码。发布器的四个 Python 文件、Node 验签器及公开 updater 配置逐一固定哈希。
+后续版本从 Release 和签名可信注释读取，快照配置中的旧版本号不会锁死未来发版。
+更换公钥、发布器或运行工具时需要重新核对快照及哈希。
+
+GitCode classic 令牌实际授予账户级“项目读写”，不能描述为单仓库权限；发布器在代码中
+限制目标仓库。令牌以 Windows CurrentUser DPAPI 加密，目录与文件仅当前用户和 SYSTEM
+可访问，解密值只传入本次 Python 子进程环境，不放进参数、日志或仓库。服务器刷新仍为
+匿名读取。GitHub 请求沿用明确配置的本机代理，GitCode API、下载和上传显式绕过代理，
+避免国内附件绕境外上传；这只是网络路径策略，不能代替实际地区和速度验收。
+
+GitHub 的 `sync-gitcode-release.yml` 工作流须保持 `disabled_manually`。本机每次新发布
+前检查它已禁用且无待运行或运行中的任务，再读取令牌；原有云端 Secret 不会被读取或
+自动撤销。切换发布位置前先停当前发布者，并确认没有在途上传。
+
+发布前写入持久化 intent 并持有独占锁。七个附件完整回读、验签及最终 pointer 发布回执
+全部成功后，才将状态记为 `succeeded`。上传超时、断电或结果不明会保留 `running` 或
+`needs_attention`，阻止后续自动上传；不能直接删状态重新跑。先检查远端附件、完整字节
+和 pointer 提交结果，再为已查明的状态安排新的发布尝试。每次尝试保留独立产物及日志，
+不自动删除。定时检查成功或任务处于 Ready 均不证明新版本已经同步成功。
+
+```powershell
+Get-ScheduledTask -TaskName LanGameDesktopReleaseMirror
+Get-ScheduledTaskInfo -TaskName LanGameDesktopReleaseMirror
+Get-Content "$env:LOCALAPPDATA\LanGameReleaseMirror\state.json"
+```
+
+首次部署只检查版本、不需要发布时，`state.json` 可以尚不存在。仅检查失败的诊断写入
+`last-check.json`；完整发布证据位于对应尝试目录。暂停使用 `Disable-ScheduledTask`，
+它只阻止后续触发，不会中断已开始的上传；先核实当前尝试是否仍在执行。
 
 ## Nginx 1.24 接入前提
 
