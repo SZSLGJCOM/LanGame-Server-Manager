@@ -82,9 +82,12 @@ Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https
 <details>
 <summary>展开构建、运行和打包命令</summary>
 
-在仓库根目录安装依赖并检查工作区：
+在仓库根目录先安装 `packageManager` 固定的 npm 版本，再安装依赖并检查工作区。Node.js 附带的 npm 版本可能与项目要求不同：
 
 ```powershell
+$packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
+npm install --global $packageManager
+npm --version
 npm ci --prefix apps/desktop --strict-allow-scripts
 npm --prefix apps/desktop run build
 cargo check --workspace --locked
