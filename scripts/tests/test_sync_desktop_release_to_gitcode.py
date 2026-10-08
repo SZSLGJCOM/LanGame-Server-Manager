@@ -289,6 +289,27 @@ class ReleaseSyncTests(unittest.TestCase):
         self.assertNotIn("fixture-secret", request.full_url)
         self.assertNotIn("access_token", request.full_url)
 
+    def test_provider_routes_keep_github_proxy_and_bypass_it_for_gitcode(self):
+        for provider in ("github", "gitcode"):
+            with self.subTest(provider=provider):
+                response = MagicMock()
+                response.__enter__.return_value.read.return_value = b'{}'
+                with patch.object(sync.urllib.request, "build_opener") as build:
+                    build.return_value.open.return_value = response
+                    sync.Transport().api(provider, "GET", "/releases/latest")
+                    proxies = [handler for handler in build.call_args.args
+                               if isinstance(handler, sync.urllib.request.ProxyHandler)]
+                    self.assertEqual([handler.proxies for handler in proxies], [{}] if provider == "gitcode" else [])
+                response.__enter__.return_value.status = 200
+                response.__enter__.return_value.read.side_effect = [b"fixture", b""]
+                with patch.object(sync.urllib.request, "build_opener") as build:
+                    build.return_value.open.return_value = response
+                    sync.Transport().download(f"https://{provider}.com/fixture", self.root / (provider + ".bin"),
+                                              7, hashlib.sha256(b"fixture").hexdigest(), provider)
+                    proxies = [handler for handler in build.call_args.args
+                               if isinstance(handler, sync.urllib.request.ProxyHandler)]
+                    self.assertEqual([handler.proxies for handler in proxies], [{}] if provider == "gitcode" else [])
+
     def test_unrelated_upload_origin_or_credential_headers_are_rejected(self):
         client = sync.Transport(gitcode_token="fixture-secret")
         for ticket in ({"url": "https://other.test/upload", "headers": {"Content-Type": "application/octet-stream"}},
@@ -321,8 +342,9 @@ class ReleaseSyncTests(unittest.TestCase):
             return response
         opener.open.side_effect = consume
         logs = io.StringIO()
-        with patch.object(sync.urllib.request, "build_opener", return_value=opener), contextlib.redirect_stdout(logs):
+        with patch.object(sync.urllib.request, "build_opener", return_value=opener) as build, contextlib.redirect_stdout(logs):
             sync.Transport().upload(ticket, source)
+        self.assertEqual(build.call_args.args[0].proxies, {})
         self.assertEqual(bodies, [source.read_bytes()])
         self.assertEqual(opener.open.call_count, 1)
         self.assertNotIn("opaque-fixture", logs.getvalue())
@@ -377,7 +399,7 @@ class CurlUploadTests(unittest.TestCase):
             sync._curl_upload(self.url, self.headers, self.source, self.size)
         args = run.call_args.args[0]
         self.assertEqual(args[:4], ["curl", "-q", "--config", "-"])
-        for flag, value in {"--proto": "=https", "--proto-redir": "=https", "--retry": "0",
+        for flag, value in {"--proto": "=https", "--proto-redir": "=https", "--retry": "0", "--noproxy": "*",
                             "--max-redirs": "0", "--connect-timeout": "15", "--max-time": "1800",
                             "--speed-limit": "32768", "--speed-time": "60"}.items():
             self.assertEqual(args[args.index(flag) + 1], value)
