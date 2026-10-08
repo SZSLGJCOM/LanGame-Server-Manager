@@ -53,7 +53,7 @@
     "windows": {
       "allowDowngrades": false,
       "webviewInstallMode": {
-        "type": "offlineInstaller",
+        "type": "embedBootstrapper",
         "silent": true
       },
       "nsis": {

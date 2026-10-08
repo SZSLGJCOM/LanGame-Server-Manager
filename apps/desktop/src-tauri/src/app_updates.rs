@@ -6,7 +6,7 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 use thiserror::Error;
 
 const UPDATE_CHECK_TIMEOUT: Duration = Duration::from_secs(30);
-// The installer embeds WebView2; allow slow connections to transfer the full payload.
+// Allow slow connections to transfer the complete update installer.
 const UPDATE_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
 #[derive(Default)]

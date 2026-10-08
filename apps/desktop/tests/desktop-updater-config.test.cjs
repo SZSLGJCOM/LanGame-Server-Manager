@@ -15,6 +15,7 @@ const runtimeLifecyclePath = path.join(root, "apps", "desktop", "src-tauri", "sr
 const updaterBuildScriptPath = path.join(root, "scripts", "build_desktop_update_artifacts.ps1");
 const artifactName = "LanGame Server Manager_0.1.0_x64-setup.exe";
 const publicArtifactName = "LanGame.Server.Manager_0.1.0_x64-setup.exe";
+const offlineArtifactName = "LanGame.Server.Manager_0.1.0_x64-offline-setup.exe";
 const feedUrl = "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/latest/download/latest.json";
 const preparationTimeoutMs = 30000;
 
@@ -70,7 +71,7 @@ function createFixture(t) {
   const configPath = path.join(tauriRoot, "tauri.conf.json");
   fs.writeFileSync(configPath, JSON.stringify({
     productName: "LanGame Server Manager", version: "0.1.0",
-    bundle: { windows: { webviewInstallMode: { type: "offlineInstaller", silent: true } } },
+    bundle: { windows: { webviewInstallMode: { type: "embedBootstrapper", silent: true } } },
     plugins: { updater: { pubkey: fixturePublicKey, endpoints: [] } },
   }));
   fs.writeFileSync(path.join(artifactRoot, artifactName), "synthetic installer fixture");
@@ -150,7 +151,7 @@ test("desktop updates download before stopping the runtime and installing", () =
   assert.match(appUpdatesSource, /InstallationAfterShutdown/u);
 });
 
-test("release preparation is offline by default and requires no signing key", (t) => {
+test("release preparation uses a small installer by default and requires no signing key", (t) => {
   const fixture = createFixture(t);
   expectSuccess(runPreparation(fixture));
   const plan = readJson(path.join(fixture.outputRoot, "desktop-release-plan.json"));
@@ -158,7 +159,7 @@ test("release preparation is offline by default and requires no signing key", (t
   assert.equal(plan.mode, "Prepare");
   assert.equal(plan.published, false);
   assert.equal(plan.requested_updates_enabled, false);
-  assert.equal(plan.requested_webview_install_mode, "offlineInstaller");
+  assert.equal(plan.requested_webview_install_mode, "embedBootstrapper");
   assert.equal(plan.updates_enabled, undefined);
   assert.equal(plan.artifact_build_configuration, "not-inspected");
   assert.equal(plan.version, "0.1.0");
@@ -168,22 +169,58 @@ test("release preparation is offline by default and requires no signing key", (t
     "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/download/v0.1.0/" + publicArtifactName);
   assert.deepEqual(config.plugins.updater.endpoints, []);
   assert.equal(config.bundle.createUpdaterArtifacts, true);
-  assert.deepEqual(config.bundle.windows.webviewInstallMode, { type: "offlineInstaller", silent: true });
+  assert.deepEqual(config.bundle.windows.webviewInstallMode, { type: "embedBootstrapper", silent: true });
   assert.match(config.build.beforeBuildCommand, /VITE_LANGAME_DESKTOP_UPDATES_ENABLED=false/);
   assert.deepEqual(fs.readdirSync(fixture.outputRoot).sort(), ["desktop-release-plan.json", "tauri.release.conf.json"]);
 });
 
-test("release preparation rejects a WebView2 mode that violates offline silent installation", async (t) => {
-  for (const mode of ["downloadBootstrapper", "embedBootstrapper", "skip", "interactive-offline"]) {
+test("release preparation rejects a source mode that violates the silent embedded bootstrapper default", async (t) => {
+  for (const mode of ["downloadBootstrapper", "offlineInstaller", "skip", "interactive-bootstrapper"]) {
     await t.test(mode, (subtest) => {
       const fixture = createFixture(subtest);
       const config = readJson(fixture.configPath);
-      config.bundle.windows.webviewInstallMode = mode === "interactive-offline"
-        ? { type: "offlineInstaller", silent: false } : { type: mode, silent: true };
+      config.bundle.windows.webviewInstallMode = mode === "interactive-bootstrapper"
+        ? { type: "embedBootstrapper", silent: false } : { type: mode, silent: true };
       fs.writeFileSync(fixture.configPath, JSON.stringify(config));
-      expectFailure(runPreparation(fixture), /offlineInstaller.*silent/);
+      expectFailure(runPreparation(fixture), /embedBootstrapper.*silent/);
       assert.equal(fs.existsSync(fixture.outputRoot), false);
     });
+  }
+});
+
+test("offline installer preparation is explicit and keeps the same enabled updater", (t) => {
+  const fixture = createFixture(t);
+  const sourceBefore = fs.readFileSync(fixture.configPath, "utf8");
+  expectSuccess(runPreparation(fixture, ["-OfflineInstaller", "-EnableGitHubUpdates"]));
+  const config = readJson(path.join(fixture.outputRoot, "tauri.release.conf.json"));
+  const plan = readJson(path.join(fixture.outputRoot, "desktop-release-plan.json"));
+  assert.deepEqual(config.bundle.windows.webviewInstallMode, { type: "offlineInstaller", silent: true });
+  assert.deepEqual(config.plugins.updater.endpoints, [feedUrl]);
+  assert.equal(plan.artifact_name, offlineArtifactName);
+  assert.equal(plan.source_artifact_name, artifactName);
+  assert.equal(plan.requested_webview_install_mode, "offlineInstaller");
+  assert.equal(plan.generates_update_manifest, false);
+  assert.equal(fs.readFileSync(fixture.configPath, "utf8"), sourceBefore);
+});
+
+test("offline export preserves signed bytes and never creates a main update feed", (t) => {
+  const fixture = createFixture(t);
+  expectSuccess(runPreparation(fixture, ["-ArtifactRoot", fixture.artifactRoot, "-OfflineInstaller", "-EnableGitHubUpdates"]));
+  const summary = readJson(path.join(fixture.outputRoot, "desktop-offline-artifacts.json"));
+  assert.equal(summary.artifact_count, 2);
+  assert.equal(summary.signature_validation, "format-and-key-id-only");
+  assert.deepEqual(summary.artifacts.map((item) => item.name), [offlineArtifactName, offlineArtifactName + ".sig"]);
+  assert.deepEqual(fs.readFileSync(path.join(fixture.outputRoot, offlineArtifactName)),
+    fs.readFileSync(path.join(fixture.artifactRoot, artifactName)));
+  assert.deepEqual(fs.readFileSync(path.join(fixture.outputRoot, offlineArtifactName + ".sig")),
+    fs.readFileSync(path.join(fixture.artifactRoot, artifactName + ".sig")));
+  assert.equal(fs.existsSync(path.join(fixture.outputRoot, "latest.json")), false);
+  assert.equal(fs.existsSync(path.join(fixture.outputRoot, "SHA256SUMS")), false);
+  assert.equal(fs.existsSync(path.join(fixture.outputRoot, publicArtifactName)), false);
+  const checksums = fs.readFileSync(path.join(fixture.outputRoot, "SHA256SUMS.offline"), "utf8");
+  for (const asset of summary.artifacts) {
+    assert.equal(asset.sha256, crypto.createHash("sha256").update(fs.readFileSync(path.join(fixture.outputRoot, asset.name))).digest("hex"));
+    assert.ok(checksums.includes(`${asset.sha256}  ${asset.name}\n`));
   }
 });
 
@@ -256,15 +293,18 @@ test("release export copies exactly the current-version installer, signature, ma
 });
 
 test("release export rejects missing, malformed and wrong-key signatures", async (t) => {
-  for (const mode of ["missing", "empty", "malformed", "wrong-key"]) {
-    await t.test(mode, (subtest) => {
+  for (const { mode, offline } of ["missing", "empty", "malformed", "wrong-key"]
+    .flatMap((mode) => [false, true].map((offline) => ({ mode, offline })))) {
+    await t.test(`${offline ? "offline" : "small"} ${mode}`, (subtest) => {
       const fixture = createFixture(subtest);
       const signature = path.join(fixture.artifactRoot, artifactName + ".sig");
       if (mode === "missing") fs.unlinkSync(signature);
       else fs.writeFileSync(signature, mode === "empty" ? "" : mode === "wrong-key" ? fixtureSignature(8) : "invalid-signature");
-      expectFailure(runPreparation(fixture, ["-ArtifactRoot", fixture.artifactRoot]));
+      expectFailure(runPreparation(fixture, ["-ArtifactRoot", fixture.artifactRoot, ...(offline ? ["-OfflineInstaller"] : [])]));
       assert.equal(fs.existsSync(path.join(fixture.outputRoot, "latest.json")), false);
       assert.equal(fs.existsSync(path.join(fixture.outputRoot, publicArtifactName)), false);
+      assert.equal(fs.existsSync(path.join(fixture.outputRoot, offlineArtifactName)), false);
+      assert.equal(fs.existsSync(path.join(fixture.outputRoot, "desktop-offline-artifacts.json")), false);
     });
   }
 });
@@ -310,7 +350,7 @@ exit 42
   assert.ok(invocation.artifacts.includes(`release/bundle/nsis/${artifactName}`));
   assert.ok(!invocation.artifacts.includes(".sig"));
   assert.equal(config.bundle.createUpdaterArtifacts, false);
-  assert.deepEqual(config.bundle.windows.webviewInstallMode, { type: "offlineInstaller", silent: true });
+  assert.deepEqual(config.bundle.windows.webviewInstallMode, { type: "embedBootstrapper", silent: true });
   assert.deepEqual(config.plugins.updater.endpoints, []);
   assert.equal(fs.existsSync(path.join(fixture.outputRoot, artifactName)), false);
   assert.equal(fs.existsSync(path.join(fixture.outputRoot, "latest.json")), false);
@@ -325,7 +365,7 @@ test("managed GitHub builds fail before writing output when no update signing ke
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
-for (const { name, changedConfig, runtimeReceipt, rejection, executable } of [
+for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline } of [
   { name: "accepts the matching build configuration", runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');" },
   { name: "rejects a changed build configuration", changedConfig: true,
     runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');", rejection: /receipt configuration does not match/ },
@@ -338,8 +378,8 @@ for (const { name, changedConfig, runtimeReceipt, rejection, executable } of [
     executable: "invalid", rejection: /runtime dependency verification failed/ },
   { name: "rejects a receipt without the executable", runtimeReceipt: "staticVcruntime=$true;",
     executable: "missing", rejection: /exactly one desktop executable/ },
-]) {
-  test(`managed installer export ${name}`, (t) => {
+].flatMap((scenario) => [false, true].map((offline) => ({ ...scenario, offline })))) {
+  test(`managed ${offline ? "offline" : "small"} installer export ${name}`, (t) => {
     const fixture = createFixture(t);
     const managedScripts = path.join(fixture.tempRoot, "scripts");
     fs.mkdirSync(managedScripts);
@@ -373,8 +413,9 @@ ${changedConfig ? "$configHash = '0' * 64" : ""}
 } | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $SnapshotReceiptPath -Encoding UTF8
 exit 0
 `);
-    const result = runPreparation(fixture, ["-BuildManaged"]);
-    const output = path.join(fixture.outputRoot, publicArtifactName);
+    const result = runPreparation(fixture, ["-BuildManaged", ...(offline ? ["-OfflineInstaller"] : [])]);
+    const exportedName = offline ? offlineArtifactName : publicArtifactName;
+    const output = path.join(fixture.outputRoot, exportedName);
     if (rejection) {
       expectFailure(result, rejection);
       assert.equal(fs.existsSync(output), false);
@@ -388,7 +429,7 @@ exit 0
       assert.equal(summary.updater_signature, "not-requested");
       assert.equal(fs.existsSync(path.join(fixture.outputRoot, "latest.json")), false);
       const hash = crypto.createHash("sha256").update(fs.readFileSync(output)).digest("hex");
-      assert.equal(fs.readFileSync(path.join(fixture.outputRoot, "SHA256SUMS"), "utf8"), `${hash}  ${publicArtifactName}\n`);
+      assert.equal(fs.readFileSync(path.join(fixture.outputRoot, offline ? "SHA256SUMS.offline" : "SHA256SUMS"), "utf8"), `${hash}  ${exportedName}\n`);
     }
   });
 }

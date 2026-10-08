@@ -39,6 +39,78 @@ URL = "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/download/v0.
 
 
 class DesktopUpdateManifestTests(unittest.TestCase):
+    def test_offline_cli_rejects_update_metadata_or_feed_output(self):
+        import subprocess
+        import sys
+        from scripts.generate_desktop_update_manifest import REPOSITORY_ROOT
+        with tempfile.TemporaryDirectory(prefix="langame-offline-cli-") as temporary:
+            directory = Path(temporary)
+            artifact = directory / ARTIFACT_NAME
+            artifact.write_bytes(b"synthetic offline installer")
+            sig = directory / (ARTIFACT_NAME + ".sig")
+            sig.write_text(signature(), encoding="utf-8")
+            config = directory / "tauri.conf.json"
+            config.write_text(json.dumps({
+                "productName": "LanGame Server Manager", "version": "0.1.0",
+                "plugins": {"updater": {"pubkey": PUBLIC_KEY}},
+            }), encoding="utf-8")
+            base = [sys.executable, "-B", str(REPOSITORY_ROOT / "scripts/generate_desktop_update_manifest.py"),
+                    "--version", "0.1.0", "--offline-installer", "--artifact-file", str(artifact),
+                    "--signature-file", str(sig), "--tauri-config", str(config)]
+            for extra in (["--artifact-url", URL], ["--notes", "update notes"],
+                          ["--pub-date", "2026-10-08T00:00:00Z"], []):
+                with self.subTest(extra=extra):
+                    output = directory / "release" / ("desktop-offline-artifacts.json" if extra else "latest.json")
+                    result = subprocess.run([*base, "--output", str(output), *extra],
+                                            capture_output=True, text=True, check=False, timeout=10)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("offline export", result.stderr)
+                    self.assertFalse(output.parent.exists())
+
+    def test_offline_export_has_separate_names_and_preserves_main_feed(self):
+        with tempfile.TemporaryDirectory(prefix="langame-offline-") as temporary:
+            directory = Path(temporary)
+            artifact = directory / ARTIFACT_NAME
+            artifact.write_bytes(b"synthetic offline installer")
+            sig = directory / (ARTIFACT_NAME + ".sig")
+            sig.write_text(signature(), encoding="utf-8")
+            output = directory / "release" / "desktop-offline-artifacts.json"
+            output.parent.mkdir()
+            main_feed = output.parent / "latest.json"
+            main_feed.write_bytes(b"retained small-installer feed")
+            main_checksums = output.parent / "SHA256SUMS"
+            main_checksums.write_bytes(b"retained small-installer hashes")
+            write_outputs(output, {"version": "0.1.0", "signature": signature()}, artifact, sig, offline=True)
+            summary = json.loads(output.read_text())
+            name = "LanGame.Server.Manager_0.1.0_x64-offline-setup.exe"
+            self.assertEqual([asset["name"] for asset in summary["artifacts"]], [name, name + ".sig"])
+            self.assertNotIn("platforms", summary)
+            self.assertEqual((output.parent / name).read_bytes(), artifact.read_bytes())
+            self.assertEqual((output.parent / (name + ".sig")).read_bytes(), sig.read_bytes())
+            for asset in summary["artifacts"]:
+                self.assertEqual(asset["sha256"], hashlib.sha256((output.parent / asset["name"]).read_bytes()).hexdigest())
+            self.assertEqual(main_feed.read_bytes(), b"retained small-installer feed")
+            self.assertEqual(main_checksums.read_bytes(), b"retained small-installer hashes")
+            original_summary = output.read_bytes()
+            with self.assertRaisesRegex(ValueError, "refusing to overwrite"):
+                write_outputs(output, {"version": "0.1.0", "signature": signature()}, artifact, sig, offline=True)
+            self.assertEqual(output.read_bytes(), original_summary)
+
+    def test_offline_export_rejects_feed_output_and_signature_mutation(self):
+        with tempfile.TemporaryDirectory(prefix="langame-offline-reject-") as temporary:
+            directory = Path(temporary)
+            artifact = directory / ARTIFACT_NAME
+            artifact.write_bytes(b"synthetic offline installer")
+            sig = directory / (ARTIFACT_NAME + ".sig")
+            sig.write_text(signature(8), encoding="utf-8")
+            manifest = {"version": "0.1.0", "signature": signature()}
+            with self.assertRaisesRegex(ValueError, "desktop-offline-artifacts.json"):
+                write_outputs(directory / "release" / "latest.json", manifest, artifact, sig, offline=True)
+            self.assertFalse((directory / "release").exists())
+            with self.assertRaisesRegex(ValueError, "signature changed after validation"):
+                write_outputs(directory / "release" / "desktop-offline-artifacts.json", manifest, artifact, sig, offline=True)
+            self.assertEqual(list((directory / "release").iterdir()), [])
+
     def test_export_uses_github_safe_names_without_changing_signed_bytes(self):
         with tempfile.TemporaryDirectory(prefix="langame-release-names-") as temporary:
             directory = Path(temporary)
