@@ -128,15 +128,19 @@ class MetadataFetchTests(unittest.TestCase):
             build.return_value.open.return_value = response
             value = service.fetch_pointer()
             request = build.return_value.open.call_args.args[0]
-            self.assertEqual(request.full_url, service.POINTER_URL)
+            self.assertEqual(request.full_url,
+                             "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases"
+                             "/raw/updates/server-manager/release.json?ref=main")
             self.assertNotIn("Authorization", request.headers)
+            self.assertNotIn("Cookie", request.headers)
+            self.assertEqual(build.return_value.open.call_count, 1)
             self.assertEqual(build.call_args.args[0].proxies, {})
             self.assertIsInstance(build.call_args.args[1], service.NoRedirects)
             return value
 
     def test_anonymous_fixed_url_one_request(self):
         value = encoded(release_pointer())
-        self.assertEqual(self.fetch_with(Response(value)), value)
+        self.assertEqual(self.fetch_with(Response(value, {"Content-Type": "application/octet-stream;charset=UTF-8"})), value)
 
     def test_size_limit_with_and_without_content_length(self):
         for response in (Response(b"", {"Content-Length": str(service.MAX_POINTER_BYTES + 1)}),

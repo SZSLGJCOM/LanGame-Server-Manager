@@ -63,9 +63,14 @@ python -B scripts/prepare_desktop_update_service.py `
 两份 Minisign 签名由同步发布流程验证。不能把 pointer 内自述的哈希当作独立验签证据。
 
 服务器无 token，固定匿名读取：
-`https://raw.gitcode.com/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/main/updates/server-manager/release.json`。
-该路径遵循本仓库 README 页面实际公开的源码链接形式；`release.json` 本身必须在首次
-提交后再验证匿名 GET。服务只做一次最多 256 KiB 的 HTTPS 请求，不采用环境代理、
+`https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/updates/server-manager/release.json?ref=main`。
+使用 GitCode 官方的[获取 raw 文件 API](https://docs.gitcode.com/docs/apis/get-api-v-5-repos-owner-repo-raw-path/)，
+其中 `ref=main` 固定读取最后提交的完整版本指针。2026-10-08 已在本机和部署服务器上
+不带 token、Cookie、代理或重定向地读取 0.0.3 的完整 5,461 字节指针；两端 SHA-256
+一致，与发布提交内容一致，并通过生产 `validate_release_pointer`。该版本的七个附件
+也已通过匿名完整回读、SHA-256 及两份安装包签名验证。网站 `raw.gitcode.com` 预览链接
+对此 JSON 返回 403“暂不支持预览”，不能由 README 可读推断指针也可读。
+服务只做一次最多 256 KiB 的 HTTPS 请求，不采用环境代理、
 不跟随重定向、没有备用任意 URL。指针不满足契约时保留已有 current 并失败退出。
 
 将三个 Python 文件 `refresh_desktop_update_service.py`、`prepare_desktop_update_service.py`、
@@ -99,7 +104,7 @@ Nginx reload。APNIC 表仍须单独按期刷新并 `nginx -t` / reload；31 天
 不证明已取得最新版本。以 `systemctl status langame-desktop-updates.service`、服务退出码
 和 journal 中 `published` / `unchanged` 结果核查刷新状态；不要把 timer 活跃当作发布成功。
 网络读取有 deadline，systemd 另设 60 秒总上限；每五分钟执行一次，不在失败任务内重试。
-GitCode raw 可带五分钟公共缓存，因此新指针可见性并非即时。
+首次读取成功不保证后续 API 可用性；新指针可见性仍取决于服务下次成功刷新，并非即时推送。
 
 已发布 pointer 的记录需要修正时提升版本，不能在同版本下静默替换签名或附件。紧急回退
 由管理员显式停 timer、核验旧目录后恢复旧 symlink；默认服务会拒绝从远端触发的降级。
