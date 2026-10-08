@@ -280,7 +280,7 @@ class ReleaseSyncTests(unittest.TestCase):
 
     def test_upload_stream_preserves_bytes_headers_and_bounds_idle_socket(self):
         source = self.root / "upload.bin"
-        source.write_bytes(b"bounded upload fixture")
+        source.write_bytes(b"bounded upload fixture" * 65536)
         ticket = {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file",
                   "headers": {"Content-Type": "application/octet-stream", "x-obs-callback": "opaque-fixture"}}
         response = MagicMock()
@@ -293,7 +293,11 @@ class ReleaseSyncTests(unittest.TestCase):
             self.assertEqual(request.get_header("Content-length"), str(source.stat().st_size))
             self.assertEqual(request.get_header("Content-type"), ticket["headers"]["Content-Type"])
             self.assertEqual(request.get_header("X-obs-callback"), "opaque-fixture")
-            bodies.append(b"".join(iter(lambda: request.data.read(3), b"")))
+            self.assertIsNone(request.get_header("Transfer-encoding"))
+            chunks = list(request.data)
+            self.assertEqual(len(chunks[0]), 1024 * 1024)
+            self.assertTrue(all(len(chunk) <= 1024 * 1024 for chunk in chunks))
+            bodies.append(b"".join(chunks))
             return response
         opener.open.side_effect = consume
         logs = io.StringIO()
