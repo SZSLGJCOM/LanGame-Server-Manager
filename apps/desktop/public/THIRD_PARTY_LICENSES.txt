@@ -46,10 +46,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ================================================================================
-Package / 软件包: @react-three/fiber@9.7.0
+Package / 软件包: @react-three/fiber@9.8.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/@react-three/fiber/-/fiber-9.7.0.tgz
-License source / 许可证来源: reviewed upstream source: https://github.com/pmndrs/react-three-fiber/blob/v9.7.0/LICENSE
+Locked source / 锁定来源: https://registry.npmjs.org/@react-three/fiber/-/fiber-9.8.1.tgz
+License source / 许可证来源: reviewed upstream source: https://github.com/pmndrs/react-three-fiber/blob/v9.8.1/LICENSE
 SHA-256: 9c35b5de7b7493a707fffe4eb23bd2f7f449153c1911f7c6eefb4e591fd5349a
 --------------------------------------------------------------------------------
 MIT License
@@ -338,9 +338,9 @@ SHA-256: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383
     SOFTWARE
 
 ================================================================================
-Package / 软件包: @types/react@19.2.18
+Package / 软件包: @types/react@19.3.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/@types/react/-/react-19.2.18.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383
 --------------------------------------------------------------------------------
@@ -481,9 +481,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: framer-motion@13.5.1
+Package / 软件包: framer-motion@14.0.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/framer-motion/-/framer-motion-13.5.1.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/framer-motion/-/framer-motion-14.0.0.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 5ff46083b88563822b0560dd6221ab89d2f74bc97a52d4c97a75020fd62c6f32
 --------------------------------------------------------------------------------
@@ -510,9 +510,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: hls.js@1.7.2
+Package / 软件包: hls.js@1.7.3
 Declared license / 声明许可证: Apache-2.0
-Locked source / 锁定来源: https://registry.npmjs.org/hls.js/-/hls.js-1.7.2.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/hls.js/-/hls.js-1.7.3.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: ca8773cf798c7ed997d4dd7c8e23c348699f8d5b7462636694cc14de6cda12db
 --------------------------------------------------------------------------------
@@ -565,11 +565,11 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ================================================================================
-Package / 软件包: its-fine@2.0.0
+Package / 软件包: its-fine@2.1.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/its-fine/-/its-fine-2.0.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/its-fine/-/its-fine-2.1.1.tgz
 License source / 许可证来源: npm package file: LICENSE
-SHA-256: 506bca9e41227d2ae1fbea8342a1fcff853af8198e9e1f37693a635e86efc539
+SHA-256: 643123eeb38f154d93cb8323e1289a648d3f343b411a9340453c010e325d0c82
 --------------------------------------------------------------------------------
 MIT License
 
@@ -594,9 +594,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: motion-dom@13.5.1
+Package / 软件包: motion-dom@14.0.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/motion-dom/-/motion-dom-13.5.1.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/motion-dom/-/motion-dom-14.0.0.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 1bf0dc3f7727723e5a032ed12164a47cf92c05204cb1a3485f123c24e2833ed1
 --------------------------------------------------------------------------------
@@ -623,9 +623,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: motion-utils@13.5.0
+Package / 软件包: motion-utils@14.0.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/motion-utils/-/motion-utils-13.5.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/motion-utils/-/motion-utils-14.0.0.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 1bf0dc3f7727723e5a032ed12164a47cf92c05204cb1a3485f123c24e2833ed1
 --------------------------------------------------------------------------------
@@ -652,9 +652,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: motion@13.5.1
+Package / 软件包: motion@14.0.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/motion/-/motion-13.5.1.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/motion/-/motion-14.0.0.tgz
 License source / 许可证来源: npm package file: LICENSE.md
 SHA-256: 1bf0dc3f7727723e5a032ed12164a47cf92c05204cb1a3485f123c24e2833ed1
 --------------------------------------------------------------------------------
@@ -681,9 +681,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: react-dom@19.2.8
+Package / 软件包: react-dom@19.3.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/react-dom/-/react-dom-19.2.8.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/react-dom/-/react-dom-19.3.0.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93
 --------------------------------------------------------------------------------
@@ -739,9 +739,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: react@19.2.8
+Package / 软件包: react@19.3.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/react/-/react-19.2.8.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/react/-/react-19.3.0.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93
 --------------------------------------------------------------------------------
@@ -768,9 +768,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: scheduler@0.27.0
+Package / 软件包: scheduler@0.28.0
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93
 --------------------------------------------------------------------------------
@@ -826,9 +826,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-Package / 软件包: three@0.185.1
+Package / 软件包: three@0.186.1
 Declared license / 声明许可证: MIT
-Locked source / 锁定来源: https://registry.npmjs.org/three/-/three-0.185.1.tgz
+Locked source / 锁定来源: https://registry.npmjs.org/three/-/three-0.186.1.tgz
 License source / 许可证来源: npm package file: LICENSE
 SHA-256: 8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc
 --------------------------------------------------------------------------------

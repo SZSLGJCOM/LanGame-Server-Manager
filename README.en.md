@@ -77,7 +77,7 @@ Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)**.
 
 ## Run from source
 
-Requires Git, Rust `1.98.1` (MSVC), Node.js `^22.22.2` or `>=24.15.0`, npm `>=11.16.0`, and Python 3.11 or later. Node.js 24 LTS is recommended. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for C++ Build Tools and WebView2.
+Requires Git, Rust `1.99.0` (MSVC), Node.js `>=26.10.0 <27`, npm `>=12.2.0 <13`, and Python 3.11 or later. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for C++ Build Tools and WebView2.
 
 <details>
 <summary>Build, run, and package commands</summary>

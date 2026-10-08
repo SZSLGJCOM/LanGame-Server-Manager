@@ -77,7 +77,7 @@ Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https
 
 ## 从源码运行
 
-需要 Git、Rust `1.98.1`（MSVC）、Node.js `^22.22.2` 或 `>=24.15.0`、npm `>=11.16.0`，以及 Python 3.11 以上版本。推荐 Node.js 24 LTS；C++ Build Tools 和 WebView2 的安装方式见 [Tauri 前置条件](https://v2.tauri.app/start/prerequisites/)。
+需要 Git、Rust `1.99.0`（MSVC）、Node.js `>=26.10.0 <27`、npm `>=12.2.0 <13`，以及 Python 3.11 以上版本。C++ Build Tools 和 WebView2 的安装方式见 [Tauri 前置条件](https://v2.tauri.app/start/prerequisites/)。
 
 <details>
 <summary>展开构建、运行和打包命令</summary>

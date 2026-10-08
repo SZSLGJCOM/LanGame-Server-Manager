@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -88,8 +89,8 @@ function viewportCommands(t) {
   const source = fs.readFileSync(filename, "utf8");
   const declarations = new Map();
   visitSyntax(parseSource(source, filename), (node) => {
-    if (node.type === "FunctionDeclaration" && ["deadline", "openViewportSession"].includes(node.identifier?.value)) {
-      declarations.set(node.identifier.value, sourceText(source, node));
+    if (ts.isFunctionDeclaration(node) && ["deadline", "openViewportSession"].includes(node.name?.text)) {
+      declarations.set(node.name.text, sourceText(source, node));
       return false;
     }
   });

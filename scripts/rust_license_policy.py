@@ -80,7 +80,7 @@ def add_rule(
 # audited SPDX MIT text, without inventing a copyright year or ownership claim.
 for crate_name, version, vcs_sha1 in (
     ("adobe-cmap-parser", "0.4.1", "ac107d55f0d31a9d47955082238ab9e4fb157cdb"),
-    ("pdf-extract", "0.12.0", "b95bf9f6268772d5088f09b0034e488e64294835"),
+    ("pdf-extract", "0.12.1", "47b792ba04c5f3b6e478072b2efb8e1a2a06ec7e"),
     ("type1-encoding-parser", "0.1.1", "55d193e28c9a5909be02a5b1f91fd3f76b076747"),
 ):
     add_rule(
@@ -164,12 +164,12 @@ add_rule(
     sources=[sibling("libappindicator@0.9.0", "LICENSE-APACHE")],
 )
 add_rule(
-    "mlua-sys@0.12.0",
+    "mlua-sys@0.13.0",
     declared_license="MIT",
     selected_license="MIT",
     repository="https://github.com/mlua-rs/mlua",
-    vcs_sha1="4fd87af2157b0a7ecd22ba299848e4ca3d462efe",
-    sources=[sibling("mlua@0.12.1", "LICENSE")],
+    vcs_sha1="a186d461c7772aed4cb0a9fa1d1899121c6450e7",
+    sources=[sibling("mlua@0.12.2", "LICENSE")],
 )
 add_rule(
     "ndk-context@0.1.1",
@@ -211,11 +211,11 @@ add_rule(
     sources=OBJC_APACHE_SOURCES,
 )
 add_rule(
-    "objc2@0.6.4",
+    "objc2@0.6.5",
     declared_license="MIT",
     selected_license="MIT",
     repository="https://github.com/madsmtm/objc2",
-    vcs_sha1="8852b424193ca41602281b3d7540d7c8ed51e49a",
+    vcs_sha1="d7d2fa23ceaa5e6096c923b081040e5d81b3b9df",
     sources=OBJC_MIT_SOURCES,
 )
 for crate_name in (
@@ -280,15 +280,14 @@ for package_id, vcs_sha1 in (
         sources=[archive_member("AUTHORS")],
     )
 add_rule(
-    "rustls-platform-verifier-android@0.1.1",
+    "rustls-platform-verifier-android@0.2.0",
     declared_license="MIT OR Apache-2.0",
     selected_license="Apache-2.0",
     repository="https://github.com/rustls/rustls-platform-verifier",
-    vcs_sha1=None,
-    sources=[sibling("rustls-platform-verifier@0.7.0", "LICENSE-APACHE")],
+    vcs_sha1="252e25161a91af476cbea620e29d277592d27ec7",
+    sources=[sibling("rustls-platform-verifier@0.7.1", "LICENSE-APACHE")],
 )
 for package_id, vcs_sha1 in (
-    ("selectors@0.36.1", "635e1a19d02960588a00e189bd4bd5bdb150ec3d"),
     ("selectors@0.38.0", "572ecba2d1600e7c3d490586692a209faf703baa"),
 ):
     add_rule(
@@ -300,11 +299,11 @@ for package_id, vcs_sha1 in (
         sources=[audited("spdx-mpl-2.0")],
     )
 add_rule(
-    "tauri-plugin@2.6.3",
+    "tauri-plugin@2.7.1",
     declared_license="Apache-2.0 OR MIT",
     selected_license="Apache-2.0",
     repository="https://github.com/tauri-apps/tauri",
-    vcs_sha1="6f6ab1207bb3923c2721fbc67d2fdb1c8deb0c7a",
+    vcs_sha1="30da1fd6e17de6107ecc850c95dfb16b5729f2dd",
     sources=[sibling("tauri-build@2.7.1", "LICENSE-APACHE-2.0")],
 )
 for package_id, vcs_sha1 in (

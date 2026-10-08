@@ -21,21 +21,21 @@ app-storage = { path = "../../../crates/app-storage" }
 app-steamcmd = { path = "../../../crates/app-steamcmd" }
 base64 = "0.23.1"
 dunce = "=1.0.5"
-dom_query = "=0.27.0"
+dom_query = "=0.28.0"
 encoding_rs = "0.8.42"
 if-addrs = "0.15.0"
 keyring = "4.2.0"
-mlua = { version = "0.12.1", features = ["lua54", "vendored"] }
+mlua = { version = "0.12.2", features = ["lua54", "vendored"] }
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha1 = "0.11.0"
 sha2 = "0.11.0"
 socket2 = "0.6.5"
-subtle = "2.6"
+subtle = "2.6.1"
 tauri = { workspace = true, features = ["image-png", "tray-icon"] }
-tauri-plugin-single-instance = "=2.4.4"
-tauri-plugin-updater = "2.11.0"
+tauri-plugin-single-instance = "=2.5.2"
+tauri-plugin-updater = "2.13.1"
 thiserror.workspace = true
 tokio.workspace = true
 toml.workspace = true

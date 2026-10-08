@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -26,11 +27,11 @@ const syntax = parseSource(source, filename);
 function selectionEffect(dependency) {
   let callback;
   visitSyntax(syntax, (node) => {
-    if (node.type !== "CallExpression" || node.callee.value !== "useEffect") return;
-    const dependencies = node.arguments[1]?.expression;
-    if (dependencies?.elements?.some((item) => item?.expression?.value === dependency)) {
+    if (!ts.isCallExpression(node) || node.expression.text !== "useEffect") return;
+    const dependencies = node.arguments[1];
+    if (dependencies?.elements?.some((item) => item?.text === dependency)) {
       assert.equal(callback, undefined, `multiple selection effects for ${dependency}`);
-      callback = sourceText(source, node.arguments[0].expression);
+      callback = sourceText(source, node.arguments[0]);
     }
   });
   assert.ok(callback, `missing selection effect for ${dependency}`);
@@ -74,9 +75,9 @@ for (const entry of cases) {
 function loadFunctions(names, context) {
   const declarations = new Map();
   visitSyntax(syntax, (node) => {
-    if (node.type === "FunctionDeclaration" && names.includes(node.identifier?.value)) {
-      assert.equal(declarations.has(node.identifier.value), false);
-      declarations.set(node.identifier.value, sourceText(source, node));
+    if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text)) {
+      assert.equal(declarations.has(node.name.text), false);
+      declarations.set(node.name.text, sourceText(source, node));
     }
   });
   for (const name of names) assert.ok(declarations.has(name), `missing ${name}`);

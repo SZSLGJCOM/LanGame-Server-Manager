@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const desktopRequire = createRequire(path.join(scriptDirectory, "..", "apps", "desktop", "package.json"));
+const ts = desktopRequire("@typescript/typescript6");
 const { parseSource, visitSyntax } = desktopRequire(path.join(
   scriptDirectory,
   "..",
@@ -37,16 +38,16 @@ function extractModuleSpecifiers(source, contentType) {
   const sourceFile = parseSource(source, "vite-module.js");
   visitSyntax(sourceFile, (node) => {
     if (
-      (node.type === "ImportDeclaration" || node.type === "ExportAllDeclaration") &&
-      node.source?.type === "StringLiteral"
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)
     ) {
-      specifiers.add(node.source.value);
+      specifiers.add(node.moduleSpecifier.text);
     } else if (
-      node.type === "CallExpression" &&
-      node.callee.type === "Import" &&
-      node.arguments[0]?.expression?.type === "StringLiteral"
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      node.arguments[0] && ts.isStringLiteral(node.arguments[0])
     ) {
-      specifiers.add(node.arguments[0].expression.value);
+      specifiers.add(node.arguments[0].text);
     }
   });
   return specifiers;

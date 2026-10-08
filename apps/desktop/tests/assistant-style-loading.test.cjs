@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
@@ -13,9 +14,9 @@ function compiledStyles(result) {
   assert.ok(result?.code, "Vite must return a transformed stylesheet module");
   let css;
   visitSyntax(parseSource(result.code, "app.css.js"), (node) => {
-    if (node.type === "VariableDeclarator" && node.id?.value === "__vite__css") {
-      assert.equal(node.init?.type, "StringLiteral", "Vite must emit CSS for the browser");
-      css = node.init.value;
+    if (ts.isVariableDeclaration(node) && node.name?.text === "__vite__css") {
+      assert.ok(node.initializer && ts.isStringLiteral(node.initializer), "Vite must emit CSS for the browser");
+      css = node.initializer.text;
     }
   });
   assert.equal(typeof css, "string", "the transformed module must contain its CSS payload");

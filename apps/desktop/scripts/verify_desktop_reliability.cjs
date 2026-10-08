@@ -103,7 +103,7 @@ async function run(executable, output) {
       "--jsx", "react-jsx", "--esModuleInterop", "--skipLibCheck",
       "src/vite-env.d.ts", "tests/helpers/desktop-reliability.tsx",
     ], { cwd: desktopRoot, windowsHide: true, timeout: 30000, maxBuffer: outputLimit });
-    const [{ createServer }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react-swc")]);
+    const [{ createServer }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react")]);
     server = await createServer({
       configFile: false, root: desktopRoot, cacheDir: path.join(scratch, "vite-cache"),
       appType: "mpa", logLevel: "error", plugins: [react()],

@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -9,7 +10,7 @@ const filename = path.join(__dirname, "..", "src", "App.tsx");
 const source = fs.readFileSync(filename, "utf8");
 let declaration;
 visitSyntax(parseSource(source, filename), (node) => {
-  if (node.type === "FunctionDeclaration" && node.identifier?.value === "executeAssistantOperationRequest") {
+  if (ts.isFunctionDeclaration(node) && node.name?.text === "executeAssistantOperationRequest") {
     declaration = node;
     return false;
   }

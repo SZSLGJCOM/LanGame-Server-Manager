@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -33,7 +34,7 @@ function extractNamedFunction(source, filename, functionName) {
   const sourceFile = parseSource(source, filename);
   let declaration = null;
   visitSyntax(sourceFile, (node) => {
-    if (node.type === "FunctionDeclaration" && node.identifier?.value === functionName) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === functionName) {
       declaration = node;
       return false;
     }
@@ -122,16 +123,16 @@ test("mock module details project the manifest bind-address policy into runtime 
   );
   let runtime;
   visitSyntax(parseSource(moduleDetailsSource, "module-details.ts"), (node) => {
-    if (node.type === "VariableDeclarator" && node.id?.value === "runtime") {
-      runtime = node.init;
+    if (ts.isVariableDeclaration(node) && node.name?.text === "runtime") {
+      runtime = node.initializer;
       return false;
     }
   });
-  assert.equal(runtime?.type, "ObjectExpression", "module details must construct runtime capabilities");
+  assert.ok(runtime && ts.isObjectLiteralExpression(runtime), "module details must construct runtime capabilities");
   const bindAddress = runtime.properties.find((property) =>
-    property.type === "KeyValueProperty" && property.key.value === "bind_address");
+    ts.isPropertyAssignment(property) && property.name.text === "bind_address");
   assert.ok(bindAddress, "runtime capabilities must include bind_address");
-  assert.match(sourceText(moduleDetailsSource, bindAddress.value),
+  assert.match(sourceText(moduleDetailsSource, bindAddress.initializer),
     /^parseMockBindAddressFromModuleToml\(\s*summary\.id\s*\)$/);
 });
 

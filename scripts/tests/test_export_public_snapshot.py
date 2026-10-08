@@ -32,6 +32,19 @@ from scripts.export_public_snapshot import (
 
 
 class PublicSnapshotTests(unittest.TestCase):
+    def test_snapshot_requires_the_locked_react_three_fiber_license(self):
+        repository = Path(__file__).resolve().parents[2]
+        lock = json.loads(
+            (repository / "apps/desktop/package-lock.json").read_text(encoding="utf-8")
+        )
+        version = lock["packages"]["node_modules/@react-three/fiber"]["version"]
+        license_path = Path(
+            "apps/desktop/third-party-license-sources/npm"
+        ) / f"react-three-fiber-{version}-LICENSE"
+        self.assertIn(license_path.as_posix(), PUBLIC_SNAPSHOT_REQUIRED_PATHS)
+        self.assertTrue((repository / license_path).is_file())
+        self.assertIsNone(exclusion_reason(license_path, frozenset()))
+
     @staticmethod
     def _git_without_replace_environment() -> dict[str, str]:
         environment = os.environ.copy()

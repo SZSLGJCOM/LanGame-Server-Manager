@@ -213,21 +213,7 @@ fn parse_browse_page(
     page: u32,
     browse_kind: SteamWorkshopBrowseKind,
 ) -> Result<(Vec<SteamWorkshopLookupItem>, u64, bool), String> {
-    // Steam's SSR hydration contains the actual ordered catalog. Scanning all anchors also
-    // captures tutorial, promotion and description links, including on empty result pages.
-    // Decode JSON only: never evaluate the untrusted page's scripts.
-    let encoded = html
-        .split_once("window.SSR.renderContext")
-        .and_then(|(_, rest)| rest.trim_start().strip_prefix('='))
-        .and_then(|rest| rest.trim_start().strip_prefix("JSON.parse("))
-        .ok_or_else(|| unrecognized_browse_response("SSR hydration assignment is missing"))?;
-    let context_json = serde_json::Deserializer::from_str(encoded)
-        .into_iter::<String>()
-        .next()
-        .ok_or_else(|| unrecognized_browse_response("SSR hydration string is missing"))?
-        .map_err(|_| unrecognized_browse_response("SSR hydration string is invalid JSON"))?;
-    let context: Value = serde_json::from_str(&context_json)
-        .map_err(|_| unrecognized_browse_response("SSR hydration context is invalid JSON"))?;
+    let context = parse_browse_context(html)?;
     let query_data: Value = serde_json::from_str(
         context
             .get("queryData")
@@ -291,6 +277,46 @@ fn parse_browse_page(
         .collect::<Result<Vec<_>, _>>()?;
     items.retain(|item| item.status == "resolved" && item.item_kind == browse_kind.as_str());
     Ok((items, total_count, u64::from(page) < total_pages))
+}
+
+fn parse_browse_context(html: &str) -> Result<Value, String> {
+    // Hydration supplies the ordered catalog; page anchors also include tutorials
+    // and promotions. Parse JSON as data without evaluating any page scripts.
+    let document = dom_query::Document::from(html);
+    let hydration = document.select("script#valve-ssr-data");
+    if !hydration.is_empty() {
+        if hydration.length() != 1
+            || !hydration
+                .attr("type")
+                .is_some_and(|value| value.trim().eq_ignore_ascii_case("application/json"))
+        {
+            return Err(unrecognized_browse_response(
+                "SSR hydration container is ambiguous or has an invalid type",
+            ));
+        }
+        // Script text is raw JSON, so HTML entities must remain literal. A present
+        // but damaged new container must not be hidden by an older assignment.
+        let mut data: Value = serde_json::from_str(&hydration.text())
+            .map_err(|_| unrecognized_browse_response("SSR hydration data is invalid JSON"))?;
+        return data
+            .get_mut("renderContext")
+            .map(Value::take)
+            .ok_or_else(|| unrecognized_browse_response("SSR hydration context is missing"));
+    }
+
+    // Retain the previous response format for pages served during CDN rollout.
+    let encoded = html
+        .split_once("window.SSR.renderContext")
+        .and_then(|(_, rest)| rest.trim_start().strip_prefix('='))
+        .and_then(|rest| rest.trim_start().strip_prefix("JSON.parse("))
+        .ok_or_else(|| unrecognized_browse_response("SSR hydration assignment is missing"))?;
+    let context_json = serde_json::Deserializer::from_str(encoded)
+        .into_iter::<String>()
+        .next()
+        .ok_or_else(|| unrecognized_browse_response("SSR hydration string is missing"))?
+        .map_err(|_| unrecognized_browse_response("SSR hydration string is invalid JSON"))?;
+    serde_json::from_str(&context_json)
+        .map_err(|_| unrecognized_browse_response("SSR hydration context is invalid JSON"))
 }
 
 fn build_browse_item(detail: &Value, app_id: u32) -> Result<SteamWorkshopLookupItem, String> {
@@ -399,3 +425,11 @@ impl SteamWorkshopSearchSort {
 #[cfg(test)]
 #[path = "search_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "search_hydration_tests.rs"]
+mod hydration_tests;
+
+#[cfg(test)]
+#[path = "search_live_tests.rs"]
+mod live_tests;

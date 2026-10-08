@@ -52,7 +52,7 @@ test("hls.js attribution and derived-work terms are preserved verbatim", () => {
     fs.readFileSync(path.join(desktopRoot, "node_modules", "hls.js", "LICENSE"), "utf8")
   );
 
-  assert.match(output, /^Package \/ 软件包: hls\.js@1\.7\.2$/mu);
+  assert.match(output, /^Package \/ 软件包: hls\.js@1\.7\.3$/mu);
   assert.ok(output.includes(upstreamLicense));
   assert.match(output, /Copyright \(c\) 2017 Dailymotion/);
   assert.match(output, /Copyright \(c\) 2013-2015 Brightcove/);

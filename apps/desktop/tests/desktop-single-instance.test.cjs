@@ -11,7 +11,7 @@ test("desktop registers the pinned single-instance plugin before application sta
   const cargoToml = fs.readFileSync(cargoTomlPath, "utf8");
   const mainSource = fs.readFileSync(mainPath, "utf8");
 
-  assert.match(cargoToml, /^tauri-plugin-single-instance = "=2\.4\.4"$/mu);
+  assert.match(cargoToml, /^tauri-plugin-single-instance = "=2\.5\.2"$/mu);
 
   const pluginRegistration = mainSource.indexOf(
     ".plugin(tauri_plugin_single_instance::init("

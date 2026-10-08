@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const test = require("node:test");
@@ -103,7 +104,7 @@ test("ASA actual reorder resolves native aliases and preserves hidden active/pas
   const filename = require.resolve("../src/views/servers/ModWorkbench.tsx"), source = fs.readFileSync(filename, "utf8");
   const names = ["entryValueParser", "handleReorderEnabledRow", "assertAsaMembershipBase"], declarations = [];
   visitSyntax(parseSource(source, filename), (node) => {
-    if (node.type === "FunctionDeclaration" && names.includes(node.identifier?.value)) declarations.push(sourceText(source, node));
+    if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text)) declarations.push(sourceText(source, node));
   });
   const model = require("../src/views/servers/mod-workbench-model.ts");
   const asa = require("../src/views/servers/mod-workbench-asa.ts");

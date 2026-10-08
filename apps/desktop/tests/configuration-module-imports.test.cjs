@@ -4,7 +4,7 @@ const { registerHooks } = require("node:module");
 const path = require("node:path");
 const test = require("node:test");
 const { fileURLToPath, pathToFileURL } = require("node:url");
-const swc = require("@swc/core");
+const ts = require("@typescript/typescript6");
 
 const desktopRoot = path.resolve(__dirname, "..");
 const repositoryRoot = path.resolve(desktopRoot, "../..");
@@ -52,15 +52,25 @@ const hooks = registerHooks({
       return { format: "module", source: `export default ${JSON.stringify(filename)};`, shortCircuit: true };
     }
     if (extension !== ".ts" && extension !== ".tsx") return nextLoad(url, context);
-    const source = swc.transformSync(fs.readFileSync(filename, "utf8"), {
-      filename,
-      jsc: {
-        parser: { syntax: "typescript", tsx: extension === ".tsx" },
-        target: "es2022",
-        transform: { react: { runtime: "automatic" } }
-      },
-      module: { type: "es6" }
-    }).code;
+    const result = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
+      fileName: filename,
+      reportDiagnostics: true,
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        jsx: ts.JsxEmit.ReactJSX,
+        module: ts.ModuleKind.ESNext
+      }
+    });
+    const errors = result.diagnostics
+      .filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)
+      .map((diagnostic) => {
+        const position = diagnostic.file && diagnostic.start !== undefined
+          ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start) : null;
+        const location = position ? `${filename}:${position.line + 1}:${position.character + 1}` : filename;
+        return `${location}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`;
+      });
+    assert.deepEqual(errors, [], `TypeScript fixture must compile: ${filename}`);
+    const source = result.outputText;
     return { format: "module", source: `import.meta.env = { DEV: true, MODE: "development" };\n${source}`, shortCircuit: true };
   }
 });

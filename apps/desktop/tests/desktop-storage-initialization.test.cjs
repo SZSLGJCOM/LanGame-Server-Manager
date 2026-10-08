@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -365,10 +366,10 @@ test("desktop routes, counts, and storage polling stay gated until atomic initia
   assert.match(appSource, /const shouldPollSystemView = activeView === "system" && storageReady;/);
   let pollingEnabled;
   visitSyntax(parseSource(appSource, "App.tsx"), (node) => {
-    if (node.type !== "CallExpression" || node.callee?.value !== "useLibraryJobPolling") return;
-    const property = node.arguments[0]?.expression?.properties?.find((entry) => entry.key?.value === "enabled");
-    assert.ok(property?.value, "library polling must have an explicit admission condition");
-    pollingEnabled = sourceText(appSource, property.value);
+    if (!ts.isCallExpression(node) || node.expression?.text !== "useLibraryJobPolling") return;
+    const property = node.arguments[0]?.properties?.find((entry) => ts.isPropertyAssignment(entry) && entry.name.text === "enabled");
+    assert.ok(property?.initializer, "library polling must have an explicit admission condition");
+    pollingEnabled = sourceText(appSource, property.initializer);
   });
   assert.ok(pollingEnabled, "library job polling must remain registered");
   for (const storageReady of [false, true]) {

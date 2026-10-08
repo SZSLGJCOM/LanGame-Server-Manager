@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const ts = require("@typescript/typescript6");
 const { parseSource, sourceText, visitSyntax } = require("../scripts/typescript_source_tools.cjs");
 
 const repoRoot = path.resolve(__dirname, "../../..");
@@ -22,22 +23,24 @@ const maintenanceWorkspace = fs.readFileSync(maintenanceWorkspacePath, "utf8");
 
 function importedComponentProps(source, filename, owner, component, importPath) {
   const syntax = parseSource(source, filename);
-  const imported = syntax.body.find((node) => node.type === "ImportDeclaration" && node.source.value === importPath);
-  assert.ok(imported?.specifiers.some((specifier) => specifier.type === "ImportSpecifier"
-    && specifier.local.value === component && (specifier.imported?.value ?? component) === component),
+  const imported = syntax.statements.find((node) => ts.isImportDeclaration(node) && node.moduleSpecifier.text === importPath);
+  const bindings = imported?.importClause?.namedBindings;
+  assert.ok(bindings && ts.isNamedImports(bindings) && bindings.elements.some((specifier) =>
+    specifier.name.text === component && (specifier.propertyName?.text ?? component) === component),
   `${owner} imports the actual ${component} implementation`);
-  const declaration = syntax.body.find((node) => node.type === "ExportDeclaration"
-    && node.declaration.type === "FunctionDeclaration" && node.declaration.identifier.value === owner)?.declaration;
+  const declaration = syntax.statements.find((node) => ts.isFunctionDeclaration(node)
+    && node.name?.text === owner && node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword));
   assert.ok(declaration, `${owner} remains the rendered exported component`);
   const calls = [];
   visitSyntax(declaration.body, (node) => {
-    if (node.type === "JSXOpeningElement" && node.name.type === "Identifier" && node.name.value === component) calls.push(node);
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node))
+      && ts.isIdentifier(node.tagName) && node.tagName.text === component) calls.push(node);
   });
   assert.equal(calls.length, 1, `${owner} renders exactly one ${component}`);
-  return Object.fromEntries(calls[0].attributes.map((attribute) => {
-    assert.equal(attribute.type, "JSXAttribute", `${component} keeps explicit prop ownership`);
-    assert.equal(attribute.value?.type, "JSXExpressionContainer");
-    return [attribute.name.value, sourceText(source, attribute.value.expression).replace(/\s+/g, "")];
+  return Object.fromEntries(calls[0].attributes.properties.map((attribute) => {
+    assert.ok(ts.isJsxAttribute(attribute), `${component} keeps explicit prop ownership`);
+    assert.ok(attribute.initializer && ts.isJsxExpression(attribute.initializer));
+    return [attribute.name.text, sourceText(source, attribute.initializer.expression).replace(/\s+/g, "")];
   }));
 }
 

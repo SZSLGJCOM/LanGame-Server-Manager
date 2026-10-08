@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -11,12 +12,12 @@ function workshopPollingEffect() {
   const source = fs.readFileSync(filename, "utf8");
   const effects = [];
   visitSyntax(parseSource(source, filename), (node) => {
-    if (node.type !== "CallExpression" || node.callee.type !== "Identifier" || node.callee.value !== "useEffect") return;
-    const callback = node.arguments[0]?.expression;
-    if (callback?.type !== "ArrowFunctionExpression") return;
+    if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || node.expression.text !== "useEffect") return;
+    const callback = node.arguments[0];
+    if (!callback || !ts.isArrowFunction(callback)) return;
     let usesPoller = false;
     visitSyntax(callback.body, (nested) => {
-      if (nested.type === "NewExpression" && nested.callee.type === "Identifier" && nested.callee.value === "SingleFlightPoller") usesPoller = true;
+      if (ts.isNewExpression(nested) && ts.isIdentifier(nested.expression) && nested.expression.text === "SingleFlightPoller") usesPoller = true;
     });
     if (usesPoller) effects.push({ source: sourceText(source, node), callback: sourceText(source, callback) });
   });

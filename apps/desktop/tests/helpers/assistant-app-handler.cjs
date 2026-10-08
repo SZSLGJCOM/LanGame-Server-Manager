@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -18,7 +19,7 @@ function loadAppHandler(initial, responses, decisions, translations = {}, option
   const source = fs.readFileSync(filename, "utf8");
   const declarations = [];
   visitSyntax(parseSource(source, filename), (node) => {
-    if (node.type === "FunctionDeclaration" && ["executeAssistantOperationRequest", "handleAssistantResume", "handleAssistantStop", "handleDeleteAssistantConversation"].includes(node.identifier?.value)) {
+    if (ts.isFunctionDeclaration(node) && ["executeAssistantOperationRequest", "handleAssistantResume", "handleAssistantStop", "handleDeleteAssistantConversation"].includes(node.name?.text)) {
       declarations.push(node);
       return false;
     }
