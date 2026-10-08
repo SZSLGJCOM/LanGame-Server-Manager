@@ -87,7 +87,10 @@ From the repository root, install the npm version pinned by `packageManager`, th
 ```powershell
 $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
 npm install --global $packageManager
+$npmPrefix = npm prefix --global
+$env:PATH = "$npmPrefix;$env:PATH"
 npm --version
+npm.cmd --version
 npm ci --prefix apps/desktop --strict-allow-scripts
 npm --prefix apps/desktop run build
 cargo check --workspace --locked

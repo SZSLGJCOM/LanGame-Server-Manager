@@ -87,7 +87,10 @@ Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https
 ```powershell
 $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
 npm install --global $packageManager
+$npmPrefix = npm prefix --global
+$env:PATH = "$npmPrefix;$env:PATH"
 npm --version
+npm.cmd --version
 npm ci --prefix apps/desktop --strict-allow-scripts
 npm --prefix apps/desktop run build
 cargo check --workspace --locked
