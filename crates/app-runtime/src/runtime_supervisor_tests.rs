@@ -5,13 +5,33 @@ use app_core::{InstanceStatus, InstanceSummary};
 #[cfg(windows)]
 #[test]
 fn script_entrypoint_tracks_real_child_pid_and_stops_process_tree() {
+    assert_script_entrypoint_handoff(false);
+}
+
+#[cfg(windows)]
+#[test]
+fn script_entrypoint_reconciles_child_arriving_after_startup_grace() {
+    assert_script_entrypoint_handoff(true);
+}
+
+#[cfg(windows)]
+fn assert_script_entrypoint_handoff(after_startup_grace: bool) {
     let temp_root = unique_test_root();
     std::fs::create_dir_all(&temp_root).expect("create temp root");
+    // Declared before either owner so those owners drop before failure cleanup.
+    let mut cleanup = ScriptEntrypointCleanup {
+        root: temp_root.clone(),
+        handles: Vec::new(),
+    };
 
     let script_entrypoint_path = temp_root.join("launch-script-entrypoint.bat");
     std::fs::write(
         &script_entrypoint_path,
-        "@echo off\r\nstart \"\" /B powershell -NoProfile -Command \"Start-Sleep -Seconds 20\"\r\npowershell -NoProfile -Command \"Start-Sleep -Seconds 20\"\r\n",
+        concat!(
+            "@echo off\r\necho ready> launcher.ready\r\nset /p LGSM_SCRIPT_START=\r\n",
+            "start \"\" /B powershell -NoProfile -Command \"Set-Content -LiteralPath child-one.pid.tmp -Value $PID; Move-Item -LiteralPath child-one.pid.tmp -Destination child-one.pid; Start-Sleep -Seconds 120\"\r\n",
+            "powershell -NoProfile -Command \"Set-Content -LiteralPath child-two.pid.tmp -Value $PID; Move-Item -LiteralPath child-two.pid.tmp -Destination child-two.pid; Start-Sleep -Seconds 120\"\r\n",
+        ),
     )
     .expect("write script entrypoint");
 
@@ -42,20 +62,183 @@ fn script_entrypoint_tracks_real_child_pid_and_stops_process_tree() {
 
     let mut spawned = spawn_launch_plan(&plan, &log_path).expect("spawn script entrypoint");
     let root_pid = spawned.pid;
+    cleanup.handles.push(
+        WindowsProcessHandle::open(root_pid, PROCESS_TERMINATE)
+            .expect("open original launcher")
+            .expect("launcher is running"),
+    );
+    let mut stdin = spawned
+        .child
+        .as_mut()
+        .expect("owned launcher")
+        .take_stdin()
+        .expect("launcher gate stdin");
+    wait_for_script_fixture(|| temp_root.join("launcher.ready").is_file());
 
-    let startup_exit =
-        stabilize_spawned_process(&plan.executable_path, &mut spawned, Duration::from_secs(3))
-            .expect("stabilize spawn");
-    assert_eq!(startup_exit, None);
-    assert_ne!(spawned.pid, root_pid);
-    assert!(process_is_running(spawned.pid).expect("tracked pid running"));
+    let mut supervisor = RuntimeSupervisor::default();
+    if after_startup_grace {
+        // Ordinary scripts may outlive the startup observation without a child.
+        // The stdin gate makes this ordering deterministic, without a timed delay.
+        assert_eq!(
+            stabilize_spawned_process(&plan.executable_path, &mut spawned, Duration::ZERO)
+                .expect("observe gated launcher"),
+            None,
+        );
+        assert_eq!(spawned.pid, root_pid);
+        supervisor.insert_running(
+            test_running_summary(&plan.instance_id),
+            None,
+            vec![ManagedProcess {
+                run_id: 1,
+                process_key: String::from("main"),
+                display_name: plan.instance_name.clone(),
+                pid: spawned.pid,
+                process_identity: spawned.process_identity.clone(),
+                root_process_identity: spawned.root_process_identity.clone(),
+                log_path: spawned.log_path.clone(),
+                is_primary: true,
+                uses_script_entrypoint: true,
+                performance_policy: RuntimePerformancePolicy::default(),
+                last_performance_refresh: None,
+                last_performance_target_count: None,
+                last_performance_application: None,
+                child: spawned.child.take(),
+                hidden_desktop: spawned.hidden_desktop.take(),
+            }],
+        );
+    }
 
-    let stop_exit = stop_spawned_process(&mut spawned).expect("stop script entrypoint tree");
-    assert_eq!(stop_exit, None);
-    std::thread::sleep(Duration::from_millis(300));
-    assert!(!process_is_running(spawned.pid).expect("tracked pid stopped"));
+    let workload_released = std::time::Instant::now();
+    stdin
+        .write_stdin_line("start")
+        .expect("release launcher gate");
+    // Each child renames its complete PID file after closing it. A numeric prefix
+    // from a partially written file must never be accepted as another process.
+    let child_paths = [
+        temp_root.join("child-one.pid"),
+        temp_root.join("child-two.pid"),
+    ];
+    wait_for_script_fixture(|| {
+        child_paths.iter().all(|path| {
+            std::fs::read_to_string(path)
+                .ok()
+                .is_some_and(|value| value.trim().parse::<u32>().is_ok())
+        })
+    });
+    for path in child_paths {
+        let pid = std::fs::read_to_string(path)
+            .expect("read child readiness")
+            .trim()
+            .parse()
+            .expect("child PID");
+        cleanup.handles.push(
+            WindowsProcessHandle::open(pid, PROCESS_TERMINATE)
+                .expect("open exact child")
+                .expect("child is running"),
+        );
+    }
 
-    let _ = std::fs::remove_dir_all(temp_root);
+    let tracked_pid = if after_startup_grace {
+        assert!(
+            supervisor
+                .reap_exited()
+                .expect("reconcile late child")
+                .is_empty()
+        );
+        supervisor.tracked_instances()[0].pid.expect("tracked PID")
+    } else {
+        assert_eq!(
+            stabilize_spawned_process(&plan.executable_path, &mut spawned, Duration::ZERO)
+                .expect("stabilize ready children"),
+            None,
+        );
+        spawned.pid
+    };
+    assert_ne!(tracked_pid, root_pid);
+    assert!(
+        cleanup.handles[1..]
+            .iter()
+            .any(|handle| handle.pid == tracked_pid)
+    );
+    assert!(
+        cleanup
+            .handles
+            .iter()
+            .all(|handle| handle.is_running().unwrap())
+    );
+
+    // Keep the stop owner alive through the exit assertions: its Drop must not
+    // rescue a regression where stop returns before the original tree exits.
+    let mut instance = after_startup_grace.then(|| {
+        supervisor
+            .take_running_for_stop(&plan.instance_id)
+            .expect("retain exact instance for stop")
+    });
+    let stop_started = std::time::Instant::now();
+    if let Some(instance) = instance.as_mut() {
+        assert_eq!(
+            stop_managed_instance(instance)
+                .expect("stop late child tree")
+                .len(),
+            1
+        );
+    } else {
+        assert_eq!(
+            stop_spawned_process(&mut spawned).expect("stop ready child tree"),
+            None
+        );
+    }
+    let stop_elapsed = stop_started.elapsed();
+    eprintln!("script handoff after_grace={after_startup_grace}: stop elapsed {stop_elapsed:?}");
+    assert!(
+        cleanup
+            .handles
+            .iter()
+            .all(|handle| handle.wait_for_exit(1500).unwrap()),
+        "launcher and both original children must exit, not only the selected PID",
+    );
+    // This is a witness against natural fixture expiry, not a new stop SLA.
+    // Starting before either child can launch covers readiness, reconciliation,
+    // stop and handle waits; neither 120s sleeper can expire in this 60s window.
+    assert!(workload_released.elapsed() < Duration::from_secs(60));
+}
+
+#[cfg(windows)]
+fn wait_for_script_fixture(mut ready: impl FnMut() -> bool) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(10);
+    while !ready() {
+        assert!(
+            std::time::Instant::now() < deadline,
+            "script fixture did not become ready"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+}
+
+#[cfg(windows)]
+struct ScriptEntrypointCleanup {
+    root: PathBuf,
+    handles: Vec<WindowsProcessHandle>,
+}
+
+#[cfg(windows)]
+impl Drop for ScriptEntrypointCleanup {
+    fn drop(&mut self) {
+        // Failure cleanup only uses handles captured from this disposable fixture.
+        // Dropping the owner has already ended its Job; reap any pending exits.
+        for handle in &self.handles {
+            if !handle.wait_for_exit(1500).unwrap_or(false) {
+                let _ = handle.terminate();
+            }
+        }
+        if self
+            .handles
+            .iter()
+            .all(|handle| handle.wait_for_exit(1500).unwrap_or(false))
+        {
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
 }
 
 #[cfg(windows)]
