@@ -204,7 +204,12 @@ class Transport:
         # Signed URL/OBS callback headers are never logged or persisted. This is
         # the documented large-file PUT, not the 20 MB repository upload API.
         with source.open("rb") as stream:
-            request = urllib.request.Request(ticket["url"], data=UploadBody(stream, source.stat().st_size), method="PUT",
+            body = UploadBody(stream, source.stat().st_size)
+            # Fixed Content-Length still sends an ordinary PUT, without chunked
+            # transfer framing. Large bounded reads avoid http.client's default
+            # 8 KiB file writes on the high-latency cross-region upload path.
+            chunks = iter(lambda: body.read(1024 * 1024), b"")
+            request = urllib.request.Request(ticket["url"], data=chunks, method="PUT",
                 headers={**headers, "Content-Length": str(source.stat().st_size)})
             try:
                 # urllib's timeout bounds a blocked socket operation, not the
