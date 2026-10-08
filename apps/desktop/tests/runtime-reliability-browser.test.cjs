@@ -6,7 +6,7 @@ const { runBrowserFixture, removeScratch } = require("./helpers/runtime-browser-
 test("viewport preparation does not depend on a preliminary HTTP document", { timeout: 90000 }, async () => {
   let preparationRequests = 0;
   const viewport = { width: 960, height: 600 };
-  const report = await runBrowserFixture({ viewport, deviceScaleFactor: 1.5, reducedMotion: "reduce",
+  const report = await runBrowserFixture({ viewport, deviceScaleFactor: 1.5, reducedMotion: "reduce", browserStartupTimeoutMs: 20000,
     fixtureMiddleware(request, response, next) {
       if (request.url.startsWith("/__reliability_viewport/")) {
         preparationRequests += 1;
@@ -22,6 +22,7 @@ test("viewport preparation does not depend on a preliminary HTTP document", { ti
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_processes_remaining, 0);
   assert.equal(report.scratch_removed, true);
+  assert.equal(report.browser_startup.timeout_ms, 20000);
 });
 
 test("reliability real ReactDOM StrictMode lifecycle releases subscriptions and bounds the DOM tail", { timeout: 90000 }, async () => {
@@ -42,6 +43,7 @@ test("reliability real ReactDOM StrictMode lifecycle releases subscriptions and 
     "late_registration", "late_events", "bounded_dom_tail", "unmount_baseline", "service_generation_readback",
   ]);
   assert.equal(report.browser_exited, true);
+  assert.equal(report.browser_startup.timeout_ms, 15000);
   assert.ok(Number.isFinite(report.browser_startup.endpoint_ready_ms));
   assert.equal(report.browser_startup.viewport_ready_ms, null);
   assert.equal(report.browser_startup.browser_product, report.browser_product);
@@ -69,7 +71,7 @@ test("reliability browser startup failure preserves its cause and unverified pro
   }
   try {
     assert.ok(failure instanceof AggregateError);
-    assert.match(failure.errors[0].message, /Browser exited before reporting/);
+    assert.match(failure.errors[0].message, /Browser exited during startup/);
     assert.match(failure.message, /process-tree exit is unverified/);
     assert.equal(failure.browserExited, true);
     assert.equal(failure.browserStartup.endpoint_ready_ms, null);

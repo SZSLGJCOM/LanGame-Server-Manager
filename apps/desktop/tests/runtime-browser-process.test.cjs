@@ -2,7 +2,54 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const childProcess = require("node:child_process");
 const { setImmediate: nextTurn } = require("node:timers/promises");
-const { hostResourceUsage } = require("./helpers/runtime-browser-process.cjs");
+const { hostResourceUsage, runBrowserFixture, browserTimeBudgets, waitForBrowserEndpoint } = require("./helpers/runtime-browser-process.cjs");
+
+test("startup phase limits do not extend the shared command watchdog or fixture budget", () => {
+  const defaults = browserTimeBudgets();
+  assert.deepEqual(defaults, { fixtureTimeoutMs: 45000, browserStartupTimeoutMs: 15000, commandTimeoutMs: 80000 });
+  for (const browserStartupTimeoutMs of [1000, 15000, 20000, 30000]) {
+    const budgets = browserTimeBudgets({ browserStartupTimeoutMs });
+    assert.equal(budgets.commandTimeoutMs, defaults.commandTimeoutMs);
+    assert.equal(budgets.fixtureTimeoutMs, defaults.fixtureTimeoutMs);
+    assert.equal(budgets.browserStartupTimeoutMs, browserStartupTimeoutMs);
+  }
+  assert.equal(browserTimeBudgets({ fixtureTimeoutMs: 1000 }).commandTimeoutMs, 36000);
+});
+
+test("cold browser endpoint readiness can exceed five seconds within its separate startup budget", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let ready;
+  const pending = waitForBrowserEndpoint(new Promise((resolve) => { ready = resolve; }), new Promise(() => {}));
+  const completed = assert.doesNotReject(pending);
+  t.mock.timers.tick(5219); // Observed hosted Windows cold-start sample.
+  ready("ws://controlled.invalid/devtools");
+  await completed;
+  assert.equal(await pending, "ws://controlled.invalid/devtools");
+});
+
+test("a missing browser endpoint expires at its configured startup budget", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let settled = false;
+  const pending = waitForBrowserEndpoint(new Promise(() => {}), new Promise(() => {}), 1200);
+  pending.then(() => { settled = true; }, () => { settled = true; });
+  const rejected = assert.rejects(pending, /^Error: Browser DevTools startup exceeded 1200 ms$/);
+  t.mock.timers.tick(1199);
+  await nextTurn();
+  assert.equal(settled, false);
+  t.mock.timers.tick(1);
+  await rejected;
+});
+
+test("browser exit during startup is reported before the endpoint deadline", async () => {
+  await assert.rejects(waitForBrowserEndpoint(new Promise(() => {}), Promise.resolve({ code: 2 })),
+    /Browser exited during startup: \{"code":2\}/);
+});
+
+test("invalid startup budgets are rejected before browser launch", async () => {
+  for (const browserStartupTimeoutMs of [0, -1, 30001, 1.5, NaN, Infinity]) {
+    await assert.rejects(runBrowserFixture({ browserStartupTimeoutMs }), /Browser startup timeout must be/);
+  }
+});
 
 test("browser startup reports interval CPU use and host memory without lifetime averages", () => {
   const start = { sampled_at_ms: 100, available_parallelism: 2, logical_cpus: 4,
