@@ -46,6 +46,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITCODE_RELEASE_TOKEN: ${{ secrets.GITCODE_RELEASE_TOKEN }}
+          LGSM_GITCODE_UPLOAD_TRANSPORT: curl
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
           RELEASE_ID: ${{ github.event.release.id }}
         run: |
