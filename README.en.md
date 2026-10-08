@@ -82,9 +82,12 @@ Requires Git, Rust `1.99.0` (MSVC), Node.js `>=26.10.0 <27`, npm `>=12.2.0 <13`,
 <details>
 <summary>Build, run, and package commands</summary>
 
-Install dependencies and check the workspace from the repository root:
+From the repository root, install the npm version pinned by `packageManager`, then install dependencies and check the workspace. The npm version bundled with Node.js may differ from the project requirement:
 
 ```powershell
+$packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
+npm install --global $packageManager
+npm --version
 npm ci --prefix apps/desktop --strict-allow-scripts
 npm --prefix apps/desktop run build
 cargo check --workspace --locked

@@ -78,6 +78,17 @@ jobs:
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
 
+      - name: Install and verify the pinned npm version
+        run: |
+          $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
+          if ($packageManager -notmatch '^npm@(\d+\.\d+\.\d+)$') { throw "packageManager must pin an exact npm version" }
+          $expectedVersion = $Matches[1]
+          npm install --global $packageManager
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $actualVersion = npm --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($actualVersion -ne $expectedVersion) { throw "Expected npm $expectedVersion, got $actualVersion" }
+
       - name: Set up Python for repository checks
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -137,6 +148,17 @@ jobs:
           node-version: "26.10.0"
           cache: npm
           cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Install and verify the pinned npm version
+        run: |
+          $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
+          if ($packageManager -notmatch '^npm@(\d+\.\d+\.\d+)$') { throw "packageManager must pin an exact npm version" }
+          $expectedVersion = $Matches[1]
+          npm install --global $packageManager
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $actualVersion = npm --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($actualVersion -ne $expectedVersion) { throw "Expected npm $expectedVersion, got $actualVersion" }
 
       - name: Build the frontend required by the Tauri context
         run: |
