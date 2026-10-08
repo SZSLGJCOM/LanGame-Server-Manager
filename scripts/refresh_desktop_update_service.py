@@ -30,8 +30,10 @@ else:
     )
 
 
-POINTER_URL = ("https://raw.gitcode.com/SZSLGJCOM/LanGame-Server-Manager-Releases"
-               "/raw/main/updates/server-manager/release.json")
+# The documented raw API serves JSON bytes; the website's raw preview rejects
+# this release pointer with HTTP 403 even when the file is publicly readable.
+POINTER_URL = ("https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases"
+               "/raw/updates/server-manager/release.json?ref=main")
 GITHUB_REPOSITORY = "SZSLGJCOM/LanGame-Server-Manager"
 MAX_POINTER_BYTES = 256 * 1024
 HEX_SHA256 = re.compile(r"[0-9a-f]{64}\Z")
