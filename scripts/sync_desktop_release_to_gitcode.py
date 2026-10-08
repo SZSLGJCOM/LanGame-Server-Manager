@@ -15,6 +15,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -38,7 +39,10 @@ GC_API = "https://api.gitcode.com/api/v5/repos/" + GITCODE_REPO
 POINTER = "updates/server-manager/release.json"
 MAX_ASSET = 1024 * 1024 * 1024
 MAX_SMALL_INSTALLER = 256 * 1024 * 1024
-UPLOAD_IDLE_TIMEOUT = 60
+UPLOAD_WRITE_TIMEOUT = 60
+CURL_TIMINGS = ("time_namelookup", "time_connect", "time_appconnect", "time_pretransfer", "time_starttransfer", "time_total")
+CURL_WRITE_OUT = ('{"http_code":"%{http_code}","size_upload":%{size_upload},"speed_upload":%{speed_upload},'
+                  + ",".join(f'"{name}":%{{{name}}}' for name in CURL_TIMINGS) + "}")
 
 
 class UploadBody:
@@ -71,6 +75,63 @@ class SyncError(Exception):
 def require(value, message):
     if not value:
         raise SyncError(message)
+
+
+def _curl_quote(value):
+    require(isinstance(value, str) and all(ord(c) >= 32 and ord(c) != 127 or c == "\t" for c in value),
+            "Invalid curl configuration value")
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\t", "\\t") + '"'
+
+
+def _curl_command(source):
+    # -q must be first: a runner/user curlrc must not add redirects, retries,
+    # tracing, credential headers or a second transfer. HTTPS is not configurable.
+    return ["curl", "-q", "--config", "-", "--proto", "=https", "--proto-redir", "=https",
+            "--http1.1", "--globoff", "--request", "PUT", "--upload-file", str(source.resolve()),
+            "--retry", "0", "--max-redirs", "0", "--connect-timeout", "15", "--max-time", "1800",
+            "--speed-limit", "32768", "--speed-time", "60", "--silent", "--show-error",
+            "--output", os.devnull, "--write-out", CURL_WRITE_OUT]
+
+
+def _curl_statistics(raw):
+    try:
+        require(isinstance(raw, bytes) and len(raw) <= 4096, "Invalid curl statistics")
+        value = parse_json(raw)
+        require(isinstance(value, dict) and set(value) == {"http_code", "size_upload", "speed_upload", *CURL_TIMINGS},
+                "Invalid curl statistics")
+        require(isinstance(value["http_code"], str) and re.fullmatch(r"[0-9]{3}", value["http_code"]),
+                "Invalid curl statistics")
+        value["http_code"] = int(value["http_code"])
+        require(value["http_code"] == 0 or 100 <= value["http_code"] <= 599, "Invalid curl statistics")
+        require(type(value["size_upload"]) is int and 0 <= value["size_upload"] <= MAX_ASSET, "Invalid curl statistics")
+        for name in ("speed_upload", *CURL_TIMINGS):
+            require(type(value[name]) in (int, float) and math.isfinite(value[name]) and value[name] >= 0,
+                    "Invalid curl statistics")
+        return value
+    except (ValueError, TypeError, OverflowError, SyncError):
+        raise SyncError("Invalid curl statistics; upload outcome unknown, inspect remote state") from None
+
+
+def _curl_upload(url, headers, source, size):
+    # Called only after upload() has admitted the official HTTPS ticket. Tests
+    # replace only _curl_command's protocol with loopback HTTP; production has
+    # no HTTP flag. Sensitive URL/headers travel only through stdin, never argv.
+    config = "url = " + _curl_quote(url) + "\n"
+    for name, value in {**headers, "Content-Length": str(size)}.items():
+        config += "header = " + _curl_quote(f"{name}: {value}" if value else f"{name};") + "\n"
+    try:
+        completed = subprocess.run(_curl_command(source), input=config.encode("utf-8"),
+                                   capture_output=True, timeout=1815, check=False)
+    except (OSError, subprocess.SubprocessError):
+        raise SyncError("curl upload outcome unknown; inspect remote state, do not replay blindly") from None
+    stats = _curl_statistics(completed.stdout)
+    # Discard all stderr and any non-whitelisted stdout, including curl's URL,
+    # peer IP, response body, signed query and callback header error details.
+    print(json.dumps({"stage": "gitcode_upload_transport", "transport": "curl",
+                      "upload_host": urllib.parse.urlsplit(url).hostname,
+                      "exit_code": completed.returncode, **stats}), flush=True)
+    require(completed.returncode == 0 and 200 <= stats["http_code"] < 300 and stats["size_upload"] == size,
+            "curl upload outcome unknown; inspect remote state, do not replay blindly")
 
 
 def version_from_tag(tag):
@@ -141,6 +202,10 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
 class Transport:
     def __init__(self, github_token="", gitcode_token=""):
         self.tokens = {"github": github_token, "gitcode": gitcode_token}
+        # Keep urllib as the baseline until the explicit runner comparison is
+        # complete; selecting curl changes no global/user proxy configuration.
+        self.upload_transport = os.environ.get("LGSM_GITCODE_UPLOAD_TRANSPORT", "urllib")
+        require(self.upload_transport in ("urllib", "curl"), "Upload transport must be urllib or curl")
 
     def api(self, provider, method, suffix, payload=None, missing_ok=False, timeout=60):
         base = GH_API if provider == "github" else GC_API
@@ -199,23 +264,33 @@ class Transport:
         require(p.hostname.endswith((".myhuaweicloud.com", ".gitcode.com")), "Unexpected signed upload origin")
         headers = ticket.get("headers")
         require(isinstance(headers, dict) and headers and all(isinstance(k, str) and isinstance(v, str)
-                and "\r" not in k + v and "\n" not in k + v for k, v in headers.items()), "Invalid upload headers")
-        require(not any(k.lower() in {"authorization", "private-token", "cookie", "host"} for k in headers), "Unexpected credential or routing upload header")
+                and re.fullmatch(r"[!#$%&'*+.^_`|~0-9A-Za-z-]+", k)
+                and all(ord(c) >= 32 and ord(c) != 127 or c == "\t" for c in v)
+                for k, v in headers.items()), "Invalid upload headers")
+        require(len({k.lower() for k in headers}) == len(headers), "Duplicate upload header")
+        require(not any(k.lower() in {"authorization", "private-token", "proxy-authorization", "cookie",
+                                     "host", "content-length", "transfer-encoding"} for k in headers),
+                "Unexpected credential, routing or framing upload header")
         # Signed URL/OBS callback headers are never logged or persisted. This is
         # the documented large-file PUT, not the 20 MB repository upload API.
         with source.open("rb") as stream:
-            body = UploadBody(stream, source.stat().st_size)
+            size = os.fstat(stream.fileno()).st_size
+            require(0 < size <= MAX_ASSET, "Invalid upload file size")
+            if self.upload_transport == "curl":
+                _curl_upload(ticket["url"], headers, source, size)
+                return
+            body = UploadBody(stream, size)
             # Fixed Content-Length still sends an ordinary PUT, without chunked
             # transfer framing. Large bounded reads avoid http.client's default
             # 8 KiB file writes on the high-latency cross-region upload path.
             chunks = iter(lambda: body.read(1024 * 1024), b"")
             request = urllib.request.Request(ticket["url"], data=chunks, method="PUT",
-                headers={**headers, "Content-Length": str(source.stat().st_size)})
+                headers={**headers, "Content-Length": str(size)})
             try:
                 # urllib's timeout bounds a blocked socket operation, not the
-                # entire upload. Keep idle connections bounded; UploadBody and
-                # the workflow provide separate elapsed-time limits.
-                with urllib.request.build_opener(NoRedirect()).open(request, timeout=UPLOAD_IDLE_TIMEOUT) as response:
+                # entire upload. SSL sendall may use all 60 seconds for one
+                # write even while bytes progress; this is not an idle timer.
+                with urllib.request.build_opener(NoRedirect()).open(request, timeout=UPLOAD_WRITE_TIMEOUT) as response:
                     require(response.status in (200, 201, 204), "Upload returned an unexpected status")
             except (urllib.error.URLError, TimeoutError, OSError):
                 raise SyncError("GitCode upload outcome unknown; next run must inspect the release, not replay blindly") from None
@@ -371,7 +446,9 @@ def synchronize(client, tag, release_id, directory, node_command, execute=False)
     verified = directory / "gitcode-verified"
     verified.mkdir(exist_ok=True)
     verified_urls = {}
-    for name in asset_names(version):
+    # Exercise callback registration and anonymous verification with the tiny
+    # signed metadata first. Pointer contents keep their canonical order below.
+    for name in sorted(asset_names(version), key=lambda name: (frozen[name]["size"], name)):
         remote = client.api("gitcode", "GET", remote_path)
         existing = gitcode_assets(remote, tag)
         if name not in existing:

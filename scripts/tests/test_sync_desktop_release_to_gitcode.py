@@ -1,12 +1,17 @@
-"""Offline transport fixtures; cryptographic interoperability has separate tests."""
+"""Local HTTP/transport fixtures; cryptographic interoperability has separate tests."""
 import base64
 import contextlib
 from copy import deepcopy
 import hashlib
+import http.server
 import io
 import json
 from pathlib import Path
+import shutil
+import socket
+import subprocess
 import tempfile
+import threading
 import unittest
 from unittest.mock import MagicMock, patch
 import urllib.parse
@@ -91,6 +96,9 @@ class FixtureTransport:
 
 class ReleaseSyncTests(unittest.TestCase):
     def setUp(self):
+        transport = patch.dict(sync.os.environ, {"LGSM_GITCODE_UPLOAD_TRANSPORT": "urllib"})
+        transport.start()
+        self.addCleanup(transport.stop)
         output = contextlib.redirect_stdout(io.StringIO())
         output.__enter__()
         self.addCleanup(output.__exit__, None, None, None)
@@ -134,17 +142,27 @@ class ReleaseSyncTests(unittest.TestCase):
         self.assertEqual(self.run_sync(name="second")["pointer"], "unchanged")
         self.assertFalse(any(c[1] != "GET" for c in self.client.calls))
 
+    def test_uploads_small_assets_first_without_changing_canonical_pointer_order(self):
+        self.run_sync()
+        names = [urllib.parse.parse_qs(urllib.parse.urlsplit(c[2]).query)["file_name"][0]
+                 for c in self.client.calls if "/upload_url?" in c[2]]
+        self.assertEqual(names, sorted(self.client.names, key=lambda name: (len(self.client.files[name]), name)))
+        self.assertEqual([asset["name"] for asset in self.client.pointer["assets"]], list(self.client.names))
+
     def test_interrupted_upload_keeps_previous_pointer_and_can_resume(self):
         self.client.fail_upload = self.client.names[2]
         with self.assertRaisesRegex(sync.SyncError, "Unknown upload"):
             self.run_sync()
         self.assertIsNone(self.client.pointer)
         self.assertEqual(self.client.remote["release_status"], "pre")
+        already_uploaded = set(self.client.remote_bytes)
         self.client.fail_upload = None
         self.client.calls.clear()
         self.run_sync(name="resume")
         uploads = [c for c in self.client.calls if "/upload_url?" in c[2]]
-        self.assertEqual(len(uploads), 5)
+        uploaded_names = {urllib.parse.parse_qs(urllib.parse.urlsplit(c[2]).query)["file_name"][0] for c in uploads}
+        self.assertEqual(uploaded_names, set(self.client.names) - already_uploaded)
+        self.assertEqual(len(uploads), len(uploaded_names))
 
     def test_delayed_upload_callback_uses_only_bounded_read_probes(self):
         self.run_sync()
@@ -274,11 +292,13 @@ class ReleaseSyncTests(unittest.TestCase):
     def test_unrelated_upload_origin_or_credential_headers_are_rejected(self):
         client = sync.Transport(gitcode_token="fixture-secret")
         for ticket in ({"url": "https://other.test/upload", "headers": {"Content-Type": "application/octet-stream"}},
-                       {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file", "headers": {"Authorization": "secret"}}):
+                       {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file", "headers": {"Authorization": "secret"}},
+                       {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file", "headers": {"Transfer-Encoding": "chunked"}},
+                       {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file", "headers": {"Content-Length": "1"}}):
             with self.subTest(ticket=ticket), self.assertRaises(sync.SyncError):
                 client.upload(ticket, self.root / "nonexistent")
 
-    def test_upload_stream_preserves_bytes_headers_and_bounds_idle_socket(self):
+    def test_upload_stream_preserves_bytes_headers_and_bounds_socket_write(self):
         source = self.root / "upload.bin"
         source.write_bytes(b"bounded upload fixture" * 65536)
         ticket = {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file",
@@ -330,6 +350,177 @@ class ReleaseSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(sync.SyncError, "changed"):
             self.run_sync()
         self.assertIsNone(self.client.remote)
+
+
+class CurlUploadTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.source = self.root / "upload fixture.bin"
+        self.source.write_bytes(b"signed artifact fixture\x00" * 8192)
+        self.size = self.source.stat().st_size
+        self.opaque_header = 'opaque "quote" \\slash callback'
+        self.url = "https://bucket.obs.cn-north-4.myhuaweicloud.com/file?signed=fixture-secret"
+        self.headers = {"Content-Type": "application/octet-stream", "x-obs-callback": self.opaque_header}
+
+    def statistics(self, **changes):
+        stats = {"http_code": "201", "size_upload": self.size, "speed_upload": 123.5,
+                 **{name: 0.1 for name in sync.CURL_TIMINGS}}
+        stats.update(changes)
+        return json.dumps(stats).encode()
+
+    def test_production_command_hides_ticket_and_has_fixed_transfer_limits(self):
+        completed = subprocess.CompletedProcess([], 0, self.statistics(), b"stderr must not be printed")
+        output = io.StringIO()
+        with patch.object(sync.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(output):
+            sync._curl_upload(self.url, self.headers, self.source, self.size)
+        args = run.call_args.args[0]
+        self.assertEqual(args[:4], ["curl", "-q", "--config", "-"])
+        for flag, value in {"--proto": "=https", "--proto-redir": "=https", "--retry": "0",
+                            "--max-redirs": "0", "--connect-timeout": "15", "--max-time": "1800",
+                            "--speed-limit": "32768", "--speed-time": "60"}.items():
+            self.assertEqual(args[args.index(flag) + 1], value)
+        self.assertIn("--http1.1", args)
+        self.assertIn("--globoff", args)
+        self.assertNotIn("--location", args)
+        self.assertNotIn("-L", args)
+        self.assertNotIn(self.url, args)
+        self.assertNotIn(self.opaque_header, args)
+        self.assertEqual(run.call_args.kwargs["timeout"], 1815)
+        self.assertTrue(run.call_args.kwargs["capture_output"])
+        config = run.call_args.kwargs["input"].decode()
+        self.assertIn('url = "' + self.url + '"\n', config)
+        self.assertIn('header = "x-obs-callback: opaque \\"quote\\" \\\\slash callback"\n', config)
+        self.assertIn(f'header = "Content-Length: {self.size}"\n', config)
+        report = json.loads(output.getvalue())
+        self.assertEqual(report["upload_host"], "bucket.obs.cn-north-4.myhuaweicloud.com")
+        self.assertNotIn("fixture-secret", output.getvalue())
+        self.assertNotIn(self.opaque_header, output.getvalue())
+        self.assertNotIn("stderr", output.getvalue())
+        self.assertEqual(run.call_count, 1)
+
+    def test_statistics_are_strict_and_unknown_output_is_never_repeated(self):
+        invalid = [self.statistics(size_upload=True), self.statistics(size_upload=1.5),
+                   self.statistics(speed_upload=float("nan")), self.statistics(time_total=float("inf")),
+                   self.statistics(time_connect=-1), self.statistics(http_code="200\nsecret"),
+                   self.statistics(url_effective=self.url), b"secret response body", b"x" * 4097]
+        for raw in invalid:
+            with self.subTest(raw=raw[:35]):
+                output = io.StringIO()
+                with patch.object(sync.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, raw, b"secret")) as run:
+                    with contextlib.redirect_stdout(output), self.assertRaises(sync.SyncError) as error:
+                        sync._curl_upload(self.url, self.headers, self.source, self.size)
+                self.assertIn("unknown", str(error.exception))
+                self.assertNotIn("secret", str(error.exception))
+                self.assertEqual(output.getvalue(), "")
+                self.assertEqual(run.call_count, 1)
+
+    def test_failed_partial_or_non_success_response_is_unknown_without_retry(self):
+        for code, raw in [(28, self.statistics()), (0, self.statistics(http_code="302")),
+                          (0, self.statistics(size_upload=self.size - 1))]:
+            with self.subTest(code=code), contextlib.redirect_stdout(io.StringIO()):
+                with patch.object(sync.subprocess, "run", return_value=subprocess.CompletedProcess([], code, raw, b"secret")) as run:
+                    with self.assertRaisesRegex(sync.SyncError, "outcome unknown"):
+                        sync._curl_upload(self.url, self.headers, self.source, self.size)
+                    self.assertEqual(run.call_count, 1)
+
+    def test_curl_config_rejects_line_injection_and_transport_selection_is_closed(self):
+        for value in ["https://good/\nurl=https://other/", "header\rsecret", "nul\x00value"]:
+            with self.assertRaises(sync.SyncError):
+                sync._curl_quote(value)
+        for choice in ("urllib", "curl"):
+            with patch.dict(sync.os.environ, {"LGSM_GITCODE_UPLOAD_TRANSPORT": choice}):
+                self.assertEqual(sync.Transport().upload_transport, choice)
+        with patch.dict(sync.os.environ, {"LGSM_GITCODE_UPLOAD_TRANSPORT": "shell"}):
+            with self.assertRaises(sync.SyncError):
+                sync.Transport()
+
+    def test_production_rejects_http_and_forbidden_headers_before_starting_curl(self):
+        tickets = [{"url": "http://127.0.0.1:12345/upload", "headers": self.headers}]
+        for name in ("Host", "Transfer-Encoding", "Content-Length", "Authorization", "Proxy-Authorization"):
+            tickets.append({"url": self.url, "headers": {**self.headers, name: "forbidden"}})
+        tickets.extend([{"url": self.url, "headers": {"x-obs-callback": "value\r\nHost: other"}},
+                        {"url": self.url, "headers": {"x-obs-callback": "a", "X-Obs-Callback": "b"}}])
+        with patch.dict(sync.os.environ, {"LGSM_GITCODE_UPLOAD_TRANSPORT": "curl"}):
+            with patch.object(sync.subprocess, "run") as run:
+                for ticket in tickets:
+                    with self.subTest(ticket=ticket), self.assertRaises(sync.SyncError):
+                        sync.Transport().upload(ticket, self.source)
+                run.assert_not_called()
+
+    @contextlib.contextmanager
+    def fixture(self, behavior):
+        requests = []
+        class Handler(http.server.BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"
+
+            def do_PUT(self):
+                self.connection.settimeout(5)
+                size = int(self.headers.get("Content-Length", "0"))
+                body = self.rfile.read(size)
+                requests.append({"method": self.command, "path": self.path, "headers": self.headers, "body": body})
+                if behavior == "disconnect":
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                    self.connection.close()
+                    self.close_connection = True
+                    return
+                status = 302 if behavior == "redirect" else 201
+                self.send_response(status)
+                if status == 302:
+                    self.send_header("Location", "/redirect-target")
+                self.send_header("Content-Length", "20")
+                self.send_header("Connection", "close")
+                self.end_headers()
+                self.wfile.write(b"secret response body")
+
+            def log_message(self, *_args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        original_command = sync._curl_command
+        def local_command(source):
+            command = original_command(source)
+            command[command.index("--proto") + 1] = "=http"
+            return command
+        try:
+            # This test-only command seam admits only our loopback HTTP fixture.
+            # The actual curl process, socket, headers and body remain real.
+            with patch.object(sync, "_curl_command", side_effect=local_command):
+                with patch.dict(sync.os.environ, {"NO_PROXY": "127.0.0.1", "no_proxy": "127.0.0.1"}):
+                    yield f"http://127.0.0.1:{server.server_port}/upload?signature=fixture-secret", requests
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+            self.assertFalse(thread.is_alive())
+
+    def test_real_curl_put_preserves_body_length_headers_and_config_escaping(self):
+        self.assertIsNotNone(shutil.which("curl"), "Tests require the runner-provided curl")
+        output = io.StringIO()
+        with self.fixture("success") as (url, requests), contextlib.redirect_stdout(output):
+            sync._curl_upload(url, {**self.headers, "x-empty": ""}, self.source, self.size)
+        self.assertEqual(len(requests), 1)
+        received = requests[0]
+        self.assertEqual(received["method"], "PUT")
+        self.assertEqual(received["body"], self.source.read_bytes())
+        self.assertEqual(received["headers"].get_all("Content-Length"), [str(self.size)])
+        self.assertIsNone(received["headers"].get("Transfer-Encoding"))
+        self.assertEqual(received["headers"]["x-obs-callback"], self.opaque_header)
+        self.assertEqual(received["headers"]["x-empty"], "")
+        self.assertEqual(json.loads(output.getvalue())["size_upload"], self.size)
+        self.assertNotIn("secret", output.getvalue())
+        self.assertNotIn("callback", output.getvalue())
+
+    def test_real_curl_does_not_follow_redirect_or_replay_disconnected_upload(self):
+        for behavior in ("redirect", "disconnect"):
+            with self.subTest(behavior=behavior), self.fixture(behavior) as (url, requests):
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(sync.SyncError, "outcome unknown"):
+                    sync._curl_upload(url, self.headers, self.source, self.size)
+                self.assertEqual(len(requests), 1)
+                self.assertEqual(requests[0]["body"], self.source.read_bytes())
 
 
 if __name__ == "__main__":
