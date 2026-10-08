@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -82,19 +83,19 @@ test("SCUM zh-CN title inventory is explicit, complete, unique, and encoding-saf
   let titleMapLiteral;
   visitSyntax(sourceFile, (node) => {
     if (
-      node.type === "VariableDeclarator"
-      && node.id.type === "Identifier"
-      && node.id.value === "SCUM_NATIVE_ZH_TITLES"
-      && node.init?.type === "ObjectExpression"
+      ts.isVariableDeclaration(node)
+      && ts.isIdentifier(node.name)
+      && node.name.text === "SCUM_NATIVE_ZH_TITLES"
+      && node.initializer && ts.isObjectLiteralExpression(node.initializer)
     ) {
-      titleMapLiteral = node.init;
+      titleMapLiteral = node.initializer;
       return false;
     }
   });
   assert.ok(titleMapLiteral, "SCUM_NATIVE_ZH_TITLES should remain an auditable object literal");
   const sourceKeys = titleMapLiteral.properties.map((property) => {
-    assert.equal(property.type, "KeyValueProperty", "title map should only contain property assignments");
-    return property.key.value;
+    assert.ok(ts.isPropertyAssignment(property), "title map should only contain property assignments");
+    return property.name.text;
   });
   assert.equal(sourceKeys.length, specializedKeys.length);
   assert.equal(new Set(sourceKeys).size, sourceKeys.length, "title map must not contain duplicate keys");

@@ -2,7 +2,7 @@ use serde_json::json;
 
 use super::*;
 
-fn browse_query(page: u32) -> Value {
+pub(super) fn browse_query(page: u32) -> Value {
     json!({
         "queryKey": ["workshop_browse", {
             "appid": 322330, "browse_sort": "textsearch", "page": page,
@@ -20,15 +20,17 @@ fn browse_query(page: u32) -> Value {
     })
 }
 
-fn page_html(queries: Vec<Value>) -> String {
-    let context = json!({"queryData": json!({"queries": queries}).to_string()}).to_string();
+pub(super) fn page_html(queries: Vec<Value>) -> String {
+    let data = json!({"renderContext": {"queryData": json!({"queries": queries}).to_string()}});
     format!(
-        "<a href=\"https://steamcommunity.com/sharedfiles/filedetails/?id=441378551\">Learn more</a><script>window.SSR.renderContext = JSON.parse({});</script>",
-        serde_json::to_string(&context).expect("synthetic JSON")
+        "<a href=\"https://steamcommunity.com/sharedfiles/filedetails/?id=441378551\">Learn more</a><script type=\"application/json\" id=\"valve-ssr-data\">{data}</script><script>window.SSR={{loaderData:d.loaderData,clientAssets:d.clientAssets,renderContext:d.renderContext}};</script>"
     )
 }
 
-fn parse(html: &str, page: u32) -> Result<(Vec<SteamWorkshopLookupItem>, u64, bool), String> {
+pub(super) fn parse(
+    html: &str,
+    page: u32,
+) -> Result<(Vec<SteamWorkshopLookupItem>, u64, bool), String> {
     parse_browse_page(
         html,
         322330,

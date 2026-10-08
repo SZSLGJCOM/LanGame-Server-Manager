@@ -12,15 +12,15 @@ const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
 
 const REVIEWED_OVERRIDES = new Map([
   [
-    "@react-three/fiber@9.7.0",
+    "@react-three/fiber@9.8.1",
     {
       declaredLicense: "MIT",
       files: [
         {
-          name: "react-three-fiber-9.7.0-LICENSE",
+          name: "react-three-fiber-9.8.1-LICENSE",
           sha256: "9c35b5de7b7493a707fffe4eb23bd2f7f449153c1911f7c6eefb4e591fd5349a",
           upstream:
-            "https://github.com/pmndrs/react-three-fiber/blob/v9.7.0/LICENSE"
+            "https://github.com/pmndrs/react-three-fiber/blob/v9.8.1/LICENSE"
         }
       ]
     }

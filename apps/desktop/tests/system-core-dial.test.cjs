@@ -42,14 +42,14 @@ test("system core is an isolated Motion-powered SVG instrument", () => {
 });
 
 test("system core uses a data-linked WebGL2 field with a static reduced-motion mode", () => {
-  assert.match(packageJson.dependencies.motion, /^\^13\./);
+  assert.match(packageJson.dependencies.motion, /^\^14\./);
   assert.match(packageJson.dependencies["@react-three/fiber"], /^\^9\./);
   assert.equal(
     packageJson.dependencies.three,
-    "0.185.1",
+    "0.186.1",
     "keep Three on the audited version accepted by the R3F 9 peer range"
   );
-  assert.equal(packageJson.devDependencies["@types/three"], "0.185.4");
+  assert.equal(packageJson.devDependencies["@types/three"], "0.186.0");
   assert.match(fieldSource, /from "\.\.\/\.\.\/webgl-capabilities"/);
   assert.match(capabilitySource, /getContext\("webgl2"/);
   assert.match(capabilitySource, /cachedWebGl2Support/);

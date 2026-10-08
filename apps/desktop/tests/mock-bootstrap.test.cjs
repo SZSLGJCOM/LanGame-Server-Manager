@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -35,8 +36,8 @@ test("mock summary updates retain failed processes without counting them as Runn
   const mockBootstrap = loadBootstrap();
   const filename = path.join(__dirname, "../src/api-mock.ts");
   const source = fs.readFileSync(filename, "utf8");
-  const declaration = parseSource(source, filename).body.find(
-    (node) => node.type === "FunctionDeclaration" && node.identifier.value === "upsertMockSummary"
+  const declaration = parseSource(source, filename).statements.find(
+    (node) => ts.isFunctionDeclaration(node) && node.name.text === "upsertMockSummary"
   );
   assert.ok(declaration);
   const upsert = vm.runInNewContext(

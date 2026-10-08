@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -14,13 +15,13 @@ const source = fs.readFileSync(filename, "utf8");
 const functions = new Map();
 let contextEffect;
 visitSyntax(parseSource(source, filename), node => {
-  if (node.type === "FunctionDeclaration" && ["check", "apply"].includes(node.identifier?.value)) {
-    functions.set(node.identifier.value, sourceText(source, node));
+  if (ts.isFunctionDeclaration(node) && ["check", "apply"].includes(node.name?.text)) {
+    functions.set(node.name.text, sourceText(source, node));
   }
-  if (node.type === "CallExpression" && node.callee.value === "useEffect" &&
-      node.arguments[1]?.expression?.elements?.some(item => item?.expression?.value === "contextKey")) {
+  if (ts.isCallExpression(node) && node.expression.text === "useEffect" &&
+      node.arguments[1]?.elements?.some(item => item?.text === "contextKey")) {
     assert.equal(contextEffect, undefined);
-    contextEffect = sourceText(source, node.arguments[0].expression);
+    contextEffect = sourceText(source, node.arguments[0]);
   }
 });
 assert.equal(functions.size, 2);

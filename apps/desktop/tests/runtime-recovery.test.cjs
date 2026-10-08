@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const Module = require("node:module");
@@ -33,8 +34,8 @@ test("recovery policy ignores obsolete JSON keys and requires current scalar typ
 test("mock runtime stability uses current recovery defaults and preserves a zero backoff", () => {
   const filename = path.join(__dirname, "../src/api-mock.ts");
   const source = fs.readFileSync(filename, "utf8");
-  const declaration = parseSource(source, filename).body.find(
-    (node) => node.type === "FunctionDeclaration" && node.identifier.value === "buildMockStability"
+  const declaration = parseSource(source, filename).statements.find(
+    (node) => ts.isFunctionDeclaration(node) && node.name.text === "buildMockStability"
   );
   assert.ok(declaration);
   const stability = vm.runInNewContext(

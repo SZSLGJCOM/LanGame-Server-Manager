@@ -1,25 +1,26 @@
 {
   "name": "langame-desktop-ui",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "engines": {
-    "node": "^22.22.2 || >=24.15.0",
-    "npm": ">=11.16.0"
+    "node": ">=26.10.0 <27",
+    "npm": ">=12.2.0 <13"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^22.22.2 || >=24.15.0",
+      "version": ">=26.10.0 <27",
       "onFail": "error"
     },
     "packageManager": {
       "name": "npm",
-      "version": ">=11.16.0",
+      "version": ">=12.2.0 <13",
       "onFail": "error"
     }
   },
+  "packageManager": "npm@12.2.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 43170 --strictPort",
     "typecheck": "tsc --noEmit",
@@ -64,26 +65,25 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
-    "@react-three/fiber": "^9.7.0",
+    "@react-three/fiber": "^9.8.1",
     "@tauri-apps/api": "^2.12.1",
-    "hls.js": "^1.7.2",
-    "motion": "^13.5.1",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "three": "0.185.1"
+    "hls.js": "^1.7.3",
+    "motion": "^14.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "three": "0.186.1"
   },
   "devDependencies": {
-    "@swc/core": "^1.16.2",
+    "@typescript/typescript6": "6.0.2",
     "@tauri-apps/cli": "2.12.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.7",
-    "@types/three": "0.185.4",
-    "@vitejs/plugin-react-swc": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
-    "vite": "^8.3.2"
+    "vite": "^8.3.3"
   },
   "allowScripts": {
-    "@swc/core@1.16.2": true,
     "fsevents@2.3.3": false
   }
 }

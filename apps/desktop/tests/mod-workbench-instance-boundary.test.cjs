@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -21,7 +22,7 @@ const inventoryControls = require("../src/views/servers/mod-workbench-workshop-i
 function functionSource(name) {
   let result;
   visitSyntax(syntax, (node) => {
-    if (node.type === "FunctionDeclaration" && node.identifier?.value === name) {
+    if (ts.isFunctionDeclaration(node) && node.name?.text === name) {
       assert.equal(result, undefined, `multiple ${name} declarations`);
       result = sourceText(source, node);
     }

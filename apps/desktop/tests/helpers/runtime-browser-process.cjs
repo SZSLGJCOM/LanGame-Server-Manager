@@ -342,7 +342,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   }, commandTimeoutMs);
   watchdog.unref();
   try {
-    const [{ createServer }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react-swc")]);
+    const [{ createServer }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react")]);
     let receiveReport;
     let rejectReport;
     const result = new Promise((resolve, reject) => { receiveReport = resolve; rejectReport = reject; });

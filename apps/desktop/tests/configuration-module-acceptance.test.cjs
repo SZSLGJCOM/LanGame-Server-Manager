@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const ts = require("@typescript/typescript6");
 const {
   parseSource,
   transpileTypeScript
@@ -82,7 +83,7 @@ function readFixtureBindings(root) {
 
 function unwrapTypeScriptExpression(expression) {
   let current = expression;
-  while (current?.type === "TsAsExpression" || current?.type === "TsTypeAssertion") {
+  while (current && (ts.isAsExpression(current) || ts.isTypeAssertionExpression(current))) {
     current = current.expression;
   }
   return current;
@@ -93,38 +94,37 @@ function readSchemaRegistryBindings(sourcePath) {
   const sourceFile = parseSource(sourceText, sourcePath);
   const importedSchemaModuleIds = new Map();
 
-  for (const statement of sourceFile.body) {
-    if (statement.type !== "ImportDeclaration") {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement)) {
       continue;
     }
-    const defaultImport = statement.specifiers.find((specifier) => specifier.type === "ImportDefaultSpecifier");
+    const defaultImport = statement.importClause?.name;
     if (!defaultImport) {
       continue;
     }
-    const importPath = statement.source.value;
+    const importPath = statement.moduleSpecifier.text;
     const match = importPath.match(/\/modules\/([^/]+)\/schema\.json$/);
     if (match) {
-      importedSchemaModuleIds.set(defaultImport.local.value, match[1]);
+      importedSchemaModuleIds.set(defaultImport.text, match[1]);
     }
   }
 
-  for (const statement of sourceFile.body) {
-    const declaration = statement.type === "ExportDeclaration" ? statement.declaration : statement;
-    if (declaration?.type !== "VariableDeclaration") {
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) {
       continue;
     }
-    for (const variable of declaration.declarations) {
-      if (variable.id.type !== "Identifier" || variable.id.value !== "mockModuleSchemasById") {
+    for (const variable of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(variable.name) || variable.name.text !== "mockModuleSchemasById") {
         continue;
       }
-      const object = unwrapTypeScriptExpression(variable.init);
-      assert.equal(object.type, "ObjectExpression", "mock schema registry must be an object literal");
+      const object = unwrapTypeScriptExpression(variable.initializer);
+      assert.ok(ts.isObjectLiteralExpression(object), "mock schema registry must be an object literal");
       return object.properties.map((property) => {
-        assert.equal(property.type, "KeyValueProperty", "mock schema registry entries must be property assignments");
-        const ownerId = property.key.value;
-        const imported = unwrapTypeScriptExpression(property.value);
-        assert.equal(imported.type, "Identifier", `${ownerId} must reference an imported schema identifier`);
-        const importedIdentifier = imported.value;
+        assert.ok(ts.isPropertyAssignment(property), "mock schema registry entries must be property assignments");
+        const ownerId = property.name.text;
+        const imported = unwrapTypeScriptExpression(property.initializer);
+        assert.ok(ts.isIdentifier(imported), `${ownerId} must reference an imported schema identifier`);
+        const importedIdentifier = imported.text;
         const declaredId = importedSchemaModuleIds.get(importedIdentifier);
         assert.ok(declaredId, `schema registry entry ${ownerId} must reference a bundled schema import`);
         return { ownerId, declaredId };

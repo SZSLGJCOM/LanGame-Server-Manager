@@ -169,7 +169,7 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         "apps/desktop/src-tauri/Cargo.toml",
         "apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt",
         "apps/desktop/src-tauri/tauri.conf.json",
-        "apps/desktop/third-party-license-sources/npm/react-three-fiber-9.7.0-LICENSE",
+        "apps/desktop/third-party-license-sources/npm/react-three-fiber-9.8.1-LICENSE",
         "apps/desktop/vite.config.ts",
         "scripts/generate_rust_third_party_licenses.py",
         "scripts/rust_license_policy.py",

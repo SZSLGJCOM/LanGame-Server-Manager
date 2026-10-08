@@ -112,7 +112,7 @@ impl ConfiguredTrial {
         }
         let request = self
             .requests
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+            .try_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
                 (count < LIVE_REQUEST_LIMIT).then_some(count + 1)
             })
             .map_err(|_| "The live trial exhausted its eight-request budget.")?

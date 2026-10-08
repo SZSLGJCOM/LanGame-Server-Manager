@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -17,7 +18,7 @@ function extract(file, match) {
 }
 
 test("operation transport serializes exactly the backend's request fields without policy or alternate aliases", async () => {
-  const source = extract("api.ts", (node) => node.type === "VariableDeclarator" && node.id?.value === "executeAssistantOperation");
+  const source = extract("api.ts", (node) => ts.isVariableDeclaration(node) && node.name?.text === "executeAssistantOperation");
   const requests = [];
   const exports = {};
   vm.runInNewContext(transpileTypeScript(`const ${source}; export { executeAssistantOperation };`, "api-handler.ts"), {
@@ -40,7 +41,7 @@ test("operation transport serializes exactly the backend's request fields withou
 });
 
 test("assistant shortcuts use the same operation workflow as typed requests", async () => {
-  const source = extract("App.tsx", (node) => node.type === "FunctionDeclaration" && node.identifier?.value === "handleRunAssistantPrompt");
+  const source = extract("App.tsx", (node) => ts.isFunctionDeclaration(node) && node.name?.text === "handleRunAssistantPrompt");
   const requests = [];
   const exports = {};
   vm.runInNewContext(transpileTypeScript(`${source}\nexport { handleRunAssistantPrompt };`, "app-handler.ts"), {
@@ -56,8 +57,8 @@ test("assistant shortcuts use the same operation workflow as typed requests", as
 });
 
 test("changing conversation scope cannot clear a still-running request", () => {
-  const source = extract("App.tsx", (node) => node.type === "CallExpression" && node.callee?.value === "useEffect"
-    && node.arguments[1]?.expression?.elements?.[0]?.expression?.value === "assistantConversationScopeKey");
+  const source = extract("App.tsx", (node) => ts.isCallExpression(node) && node.expression?.text === "useEffect"
+    && node.arguments[1]?.elements?.[0]?.text === "assistantConversationScopeKey");
   for (const busy of [true, false]) {
     const states = [];
     const scope = { current: "old-scope" };
@@ -83,7 +84,7 @@ test("conversation lifecycle transport sends only its dedicated command inputs",
     ["getAssistantConversationState", "assistant_get_conversation_state", ["session", settings], { conversationId: "session", settings }],
     ["resumeAssistantConversation", "assistant_resume_conversation", ["session", settings], { conversationId: "session", settings }],
   ]) {
-    const source = extract("api.ts", (node) => node.type === "VariableDeclarator" && node.id?.value === name);
+    const source = extract("api.ts", (node) => ts.isVariableDeclaration(node) && node.name?.text === name);
     const requests = [];
     const exports = {};
     vm.runInNewContext(transpileTypeScript(`const ${source}; export { ${name} };`, "session-handler.ts"), {

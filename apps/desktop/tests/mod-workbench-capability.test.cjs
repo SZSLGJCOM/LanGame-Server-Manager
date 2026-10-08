@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -18,8 +19,8 @@ function declarations(relativePath, names) {
   const source = fs.readFileSync(filename, "utf8");
   const found = new Map();
   visitSyntax(parseSource(source, filename), (node) => {
-    if (node.type === "FunctionDeclaration" && names.includes(node.identifier?.value)) {
-      found.set(node.identifier.value, sourceText(source, node));
+    if (ts.isFunctionDeclaration(node) && names.includes(node.name?.text)) {
+      found.set(node.name.text, sourceText(source, node));
     }
   });
   return names.map((name) => { assert.ok(found.has(name), name); return found.get(name); }).join("\n");

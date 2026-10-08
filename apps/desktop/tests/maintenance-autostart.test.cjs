@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const Module = require("node:module");
@@ -220,7 +221,7 @@ test('autostart action patches current selection, cached details and list withou
   const source = fs.readFileSync(filename, 'utf8');
   let declaration;
   visitSyntax(parseSource(source, filename), node => {
-    if (node.type === 'FunctionDeclaration' && node.identifier?.value === 'handleSaveAutostart') { declaration = node; return false; }
+    if (ts.isFunctionDeclaration(node) && node.name?.text === 'handleSaveAutostart') { declaration = node; return false; }
   });
   assert.ok(declaration);
   const gate = deferred();

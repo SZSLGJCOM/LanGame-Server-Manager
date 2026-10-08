@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -18,7 +19,7 @@ const filename = path.resolve(__dirname, "../src/views/servers/ModWorkbench.tsx"
 const source = fs.readFileSync(filename, "utf8");
 let handler;
 visitSyntax(parseSource(source, filename), (node) => {
-  if (node.type === "FunctionDeclaration" && node.identifier?.value === "handleInstallWorkshopItems") handler = sourceText(source, node);
+  if (ts.isFunctionDeclaration(node) && node.name?.text === "handleInstallWorkshopItems") handler = sourceText(source, node);
 });
 assert.ok(handler);
 const script = transpileTypeScript(`${handler}\nexports.run = handleInstallWorkshopItems;`, filename);

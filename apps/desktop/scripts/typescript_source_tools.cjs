@@ -1,55 +1,39 @@
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const swc = require("@swc/core");
-
-const TYPESCRIPT_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts"]);
-
-function parserOptions(filename, syntax) {
-  const extension = path.extname(filename).toLowerCase();
-  return syntax === "typescript"
-    ? {
-        syntax: "typescript",
-        tsx: extension === ".tsx",
-        decorators: false,
-      }
-    : {
-        syntax: "ecmascript",
-        jsx: extension === ".jsx",
-      };
-}
-
-function inferSyntax(filename) {
-  return TYPESCRIPT_EXTENSIONS.has(path.extname(filename).toLowerCase())
-    ? "typescript"
-    : "ecmascript";
-}
+// TypeScript 7 owns type-checking; Microsoft's current compiler-API package
+// provides syntax inspection and fixture emission until its native API is stable.
+const ts = require("@typescript/typescript6");
 
 function parseSource(source, filename = "module.ts") {
-  return swc.parseSync(source, parserOptions(filename, inferSyntax(filename)));
+  const syntax = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true);
+  if (syntax.parseDiagnostics.length) {
+    throw new SyntaxError(syntax.parseDiagnostics.map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).join("\n"));
+  }
+  return syntax;
 }
 
 function transpileTypeScript(source, filename = "module.ts", { development = true } = {}) {
   // Node fixtures do not run through Vite. Supply the same compile-time mode
   // constant explicitly; transport regressions also exercise production mode.
   const resolvedSource = source.replaceAll("import.meta.env.DEV", String(development));
-  const result = swc.transformSync(resolvedSource, {
-    filename,
-    sourceMaps: false,
-    jsc: {
-      parser: parserOptions(filename, "typescript"),
-      target: "es2020",
-      transform: {
-        react: {
-          runtime: "automatic",
-        },
-      },
+  const result = ts.transpileModule(resolvedSource, {
+    fileName: filename,
+    reportDiagnostics: true,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2020,
+      module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+      sourceMap: false,
     },
-    module: {
-      type: "commonjs",
-    },
-    isModule: "unknown",
   });
-  return result.code;
+  const errors = result.diagnostics?.filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error) ?? [];
+  if (errors.length) {
+    throw new SyntaxError(errors.map((diagnostic) =>
+      ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")).join("\n"));
+  }
+  return result.outputText;
 }
 
 function runTypeScriptCli({ cwd, arguments = [] }) {
@@ -77,27 +61,14 @@ function visitSyntax(node, visitor) {
   if (visitor(node) === false) {
     return;
   }
-  for (const [key, value] of Object.entries(node)) {
-    if (key === "span") {
-      continue;
-    }
-    if (Array.isArray(value)) {
-      for (const child of value) {
-        visitSyntax(child, visitor);
-      }
-    } else {
-      visitSyntax(value, visitor);
-    }
-  }
+  ts.forEachChild(node, (child) => { visitSyntax(child, visitor); });
 }
 
 function sourceText(source, node) {
-  if (!node?.span || !Number.isInteger(node.span.start) || !Number.isInteger(node.span.end)) {
-    throw new TypeError("SWC syntax node does not expose a valid source span");
+  if (!node || typeof node.getStart !== "function" || !Number.isInteger(node.end)) {
+    throw new TypeError("TypeScript syntax node does not expose a valid source range");
   }
-  return Buffer.from(source, "utf8")
-    .subarray(node.span.start - 1, node.span.end - 1)
-    .toString("utf8");
+  return source.slice(node.getStart(), node.end);
 }
 
 module.exports = {

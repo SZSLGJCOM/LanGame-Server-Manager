@@ -1,3 +1,4 @@
+const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -35,35 +36,35 @@ function findDeclaration(sourceFile, predicate, description) {
 function typeAliasValues(name) {
   const declaration = findDeclaration(
     typesFile,
-    (node) => node.type === "TsTypeAliasDeclaration" && node.id.value === name,
+    (node) => ts.isTypeAliasDeclaration(node) && node.name.text === name,
     `type ${name}`
   );
-  const type = declaration.typeAnnotation;
-  const members = type.type === "TsUnionType" ? type.types : [type];
+  const type = declaration.type;
+  const members = ts.isUnionTypeNode(type) ? type.types : [type];
   return members.map((member) => {
-    assert.equal(member.type, "TsLiteralType", `${name} must contain literal types only`);
-    assert.equal(member.literal.type, "StringLiteral", `${name} must contain string literals only`);
-    return member.literal.value;
+    assert.ok(ts.isLiteralTypeNode(member), `${name} must contain literal types only`);
+    assert.ok(ts.isStringLiteral(member.literal), `${name} must contain string literals only`);
+    return member.literal.text;
   });
 }
 
 function interfaceProperties(name) {
   const declaration = findDeclaration(
     typesFile,
-    (node) => node.type === "TsInterfaceDeclaration" && node.id.value === name,
+    (node) => ts.isInterfaceDeclaration(node) && node.name.text === name,
     `interface ${name}`
   );
-  return declaration.body.body.map((member) => {
-    assert.equal(member.type, "TsPropertySignature", `${name} may contain properties only`);
-    assert.ok(member.key, `${name} property must have a key`);
-    return member.key.value;
+  return declaration.members.map((member) => {
+    assert.ok(ts.isPropertySignature(member), `${name} may contain properties only`);
+    assert.ok(member.name, `${name} property must have a key`);
+    return member.name.text;
   });
 }
 
 function apiFunctionSource(name) {
   const declaration = findDeclaration(
     apiFile,
-    (node) => node.type === "VariableDeclarator" && node.id.type === "Identifier" && node.id.value === name,
+    (node) => ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.name.text === name,
     `API ${name}`
   );
   return sourceText(apiSource, declaration);
