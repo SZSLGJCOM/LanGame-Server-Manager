@@ -38,6 +38,30 @@ GC_API = "https://api.gitcode.com/api/v5/repos/" + GITCODE_REPO
 POINTER = "updates/server-manager/release.json"
 MAX_ASSET = 1024 * 1024 * 1024
 MAX_SMALL_INSTALLER = 256 * 1024 * 1024
+UPLOAD_IDLE_TIMEOUT = 60
+
+
+class UploadBody:
+    """Bound one stream and report reads, not server acknowledgements."""
+
+    def __init__(self, stream, size):
+        self.stream, self.size = stream, size
+        self.started = time.monotonic()
+        self.read_bytes = 0
+        self.last_report = None
+
+    def read(self, size=-1):
+        elapsed = time.monotonic() - self.started
+        require(elapsed < 1800, "Upload body exceeded 30 minutes; remote outcome must be inspected")
+        data = self.stream.read(size)
+        self.read_bytes += len(data)
+        require(self.read_bytes <= self.size, "Upload source grew during transmission")
+        if (self.last_report is None or elapsed - self.last_report >= 5
+                or self.read_bytes == self.size and data):
+            print(json.dumps({"stage": "gitcode_upload_body_read", "bytes": self.read_bytes,
+                              "total_bytes": self.size, "elapsed_seconds": round(elapsed, 2)}), flush=True)
+            self.last_report = elapsed
+        return data
 
 
 class SyncError(Exception):
@@ -180,10 +204,13 @@ class Transport:
         # Signed URL/OBS callback headers are never logged or persisted. This is
         # the documented large-file PUT, not the 20 MB repository upload API.
         with source.open("rb") as stream:
-            request = urllib.request.Request(ticket["url"], data=stream, method="PUT",
+            request = urllib.request.Request(ticket["url"], data=UploadBody(stream, source.stat().st_size), method="PUT",
                 headers={**headers, "Content-Length": str(source.stat().st_size)})
             try:
-                with urllib.request.build_opener(NoRedirect()).open(request, timeout=1800) as response:
+                # urllib's timeout bounds a blocked socket operation, not the
+                # entire upload. Keep idle connections bounded; UploadBody and
+                # the workflow provide separate elapsed-time limits.
+                with urllib.request.build_opener(NoRedirect()).open(request, timeout=UPLOAD_IDLE_TIMEOUT) as response:
                     require(response.status in (200, 201, 204), "Upload returned an unexpected status")
             except (urllib.error.URLError, TimeoutError, OSError):
                 raise SyncError("GitCode upload outcome unknown; next run must inspect the release, not replay blindly") from None
@@ -335,6 +362,7 @@ def synchronize(client, tag, release_id, directory, node_command, execute=False)
         remote = client.api("gitcode", "POST", "/releases", {"tag_name": tag, "name": tag,
             "body": marker, "target_commitish": "main", "release_status": "pre"})
     require(marker in remote.get("body", ""), "GitCode release belongs to a different source identity")
+    print(json.dumps({"stage": "gitcode_release_ready", "tag": tag}), flush=True)
     verified = directory / "gitcode-verified"
     verified.mkdir(exist_ok=True)
     verified_urls = {}
@@ -343,8 +371,12 @@ def synchronize(client, tag, release_id, directory, node_command, execute=False)
         existing = gitcode_assets(remote, tag)
         if name not in existing:
             require(remote["release_status"] == "pre", "Published GitCode release is incomplete; refuse mutation")
+            print(json.dumps({"stage": "gitcode_upload_ticket", "name": name}), flush=True)
             ticket = client.api("gitcode", "GET", f"/releases/{tag}/upload_url?" + urllib.parse.urlencode({"file_name": name}))
+            started = time.monotonic()
+            print(json.dumps({"stage": "gitcode_upload_started", "name": name, "bytes": frozen[name]["size"]}), flush=True)
             client.upload(ticket, directory / name)
+            print(json.dumps({"stage": "gitcode_upload_completed", "name": name, "elapsed_seconds": round(time.monotonic() - started, 2)}), flush=True)
             # Successful PUT is not proof that the callback attached the asset.
             remote = wait_for_attachment(client, remote_path, tag, name)
             existing = gitcode_assets(remote, tag)
@@ -352,6 +384,7 @@ def synchronize(client, tag, release_id, directory, node_command, execute=False)
         # Always read remote bytes, even when this run directory was reused.
         destination = verified / name
         require(not destination.exists(), "Use a new work directory to reverify remote assets")
+        print(json.dumps({"stage": "gitcode_download_verification_started", "name": name}), flush=True)
         client.download(existing[name], destination, asset["size"], asset["sha256"], "gitcode")
         verified_urls[name] = existing[name]
         print(json.dumps({"stage": "gitcode_asset_verified", "name": name}), flush=True)

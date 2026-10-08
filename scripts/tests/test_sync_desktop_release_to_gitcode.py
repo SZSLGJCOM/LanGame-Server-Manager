@@ -278,6 +278,39 @@ class ReleaseSyncTests(unittest.TestCase):
             with self.subTest(ticket=ticket), self.assertRaises(sync.SyncError):
                 client.upload(ticket, self.root / "nonexistent")
 
+    def test_upload_stream_preserves_bytes_headers_and_bounds_idle_socket(self):
+        source = self.root / "upload.bin"
+        source.write_bytes(b"bounded upload fixture")
+        ticket = {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file",
+                  "headers": {"Content-Type": "application/octet-stream", "x-obs-callback": "opaque-fixture"}}
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        opener = MagicMock()
+        bodies = []
+        def consume(request, timeout):
+            self.assertEqual(timeout, 60)
+            self.assertEqual(request.get_method(), "PUT")
+            self.assertEqual(request.get_header("Content-length"), str(source.stat().st_size))
+            self.assertEqual(request.get_header("Content-type"), ticket["headers"]["Content-Type"])
+            self.assertEqual(request.get_header("X-obs-callback"), "opaque-fixture")
+            bodies.append(b"".join(iter(lambda: request.data.read(3), b"")))
+            return response
+        opener.open.side_effect = consume
+        logs = io.StringIO()
+        with patch.object(sync.urllib.request, "build_opener", return_value=opener), contextlib.redirect_stdout(logs):
+            sync.Transport().upload(ticket, source)
+        self.assertEqual(bodies, [source.read_bytes()])
+        self.assertEqual(opener.open.call_count, 1)
+        self.assertNotIn("opaque-fixture", logs.getvalue())
+        self.assertNotIn(ticket["url"], logs.getvalue())
+
+    def test_upload_body_deadline_does_not_retry_or_report_acknowledgement(self):
+        with patch.object(sync.time, "monotonic", side_effect=[0, 1801]):
+            body = sync.UploadBody(io.BytesIO(b"not read"), 8)
+            with self.assertRaisesRegex(sync.SyncError, "remote outcome must be inspected"):
+                body.read(8)
+        self.assertEqual(body.read_bytes, 0)
+
     def test_release_assets_change_prevents_publication(self):
         original = self.client.api
         count = 0
