@@ -9,6 +9,19 @@ const { randomUUID } = require("node:crypto");
 const execFileAsync = promisify(execFile);
 const desktopRoot = path.resolve(__dirname, "../..");
 const outputLimit = 64 * 1024;
+// Hosted Windows cold Chrome took 5219 ms before publishing DevTools. This is
+// an environment startup allowance, not a product SLA or extra fixture time.
+const defaultBrowserStartupTimeoutMs = 15000;
+
+function browserTimeBudgets({ fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
+  assert.ok(Number.isSafeInteger(fixtureTimeoutMs) && fixtureTimeoutMs > 0 && fixtureTimeoutMs <= 240000,
+    "Fixture timeout must be a positive integer at most 240 seconds");
+  assert.ok(Number.isSafeInteger(browserStartupTimeoutMs) && browserStartupTimeoutMs > 0 && browserStartupTimeoutMs <= 30000,
+    "Browser startup timeout must be a positive integer at most 30 seconds");
+  // Preparation, startup and cleanup share the existing command ceiling.
+  // A larger startup phase limit does not grant extra total execution time.
+  return { fixtureTimeoutMs, browserStartupTimeoutMs, commandTimeoutMs: fixtureTimeoutMs + 35000 };
+}
 
 function sampleHostResources() {
   const cpus = os.cpus();
@@ -52,6 +65,27 @@ async function deadline(promise, milliseconds, label) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function waitForBrowserEndpoint(endpointReady, exited, timeoutMs = defaultBrowserStartupTimeoutMs) {
+  return deadline(Promise.race([
+    endpointReady,
+    exited.then((exit) => { throw new Error(`Browser exited during startup: ${JSON.stringify(exit)}`); }),
+  ]), timeoutMs, "Browser DevTools startup");
+}
+
+async function waitForFixtureReport({ session, url, result, exited, timeoutMs }) {
+  const expires = performance.now() + timeoutMs;
+  if (session) {
+    const navigation = await session.command("Page.navigate", { url }, timeoutMs);
+    assert.equal(navigation.errorText, undefined, "Fixture navigation failed");
+  }
+  const remaining = Math.ceil(expires - performance.now());
+  assert.ok(remaining > 0, "Fixture navigation exhausted its total time budget");
+  return deadline(Promise.race([
+    result,
+    exited.then((exit) => { throw new Error(`Browser exited before reporting: ${JSON.stringify(exit)}`); }),
+  ]), remaining, "Real ReactDOM reliability fixture");
 }
 
 async function browserExecutable() {
@@ -265,10 +299,9 @@ async function removeScratch(scratch) {
 
 async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboard = false, pointer = false, screenshotPath, viewport,
   deviceScaleFactor = 1, reducedMotion, fontSelector, development = true, reactTransform = true, contentSecurityPolicy, fixtureMiddleware,
-  fixtureCleanup = false, fixtureTimeoutMs = 45000 } = {}) {
+  fixtureCleanup = false, fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
   assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
-  assert.ok(Number.isSafeInteger(fixtureTimeoutMs) && fixtureTimeoutMs > 0 && fixtureTimeoutMs <= 240000,
-    "Fixture timeout must be a positive integer at most 240 seconds");
+  const { commandTimeoutMs } = browserTimeBudgets({ fixtureTimeoutMs, browserStartupTimeoutMs });
   assert.ok(Number.isFinite(deviceScaleFactor) && deviceScaleFactor >= 1 && deviceScaleFactor <= 3,
     "Device scale factor must be between 1 and 3");
   assert.ok(viewport || deviceScaleFactor === 1, "DPI emulation requires an explicit CSS viewport");
@@ -296,7 +329,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let browserStartedAt;
   let startupResourceStart;
   let terminationError = null;
-  const startup = { endpoint_ready_ms: null, viewport_ready_ms: null,
+  const startup = { timeout_ms: browserStartupTimeoutMs, endpoint_ready_ms: null, viewport_ready_ms: null,
     fixture_requested_ms: null, exit: null, browser_product: null, host_resources: null };
   function finishStartupObservation() {
     if (startupResourceStart && !startup.host_resources) {
@@ -326,7 +359,6 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   }
   // This is a hard bound even if a library retains an open handle after an error.
   // Normal failures run the asynchronous cleanup below before this last resort.
-  const commandTimeoutMs = fixtureTimeoutMs + 35000;
   const watchdog = setTimeout(() => {
     console.error(`Browser reliability exceeded its ${commandTimeoutMs / 1000}-second command deadline`);
     if (child?.pid && child.exitCode === null && child.signalCode === null) {
@@ -487,11 +519,8 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
         receiveEndpoint(endpoint);
       }
     });
+    await waitForBrowserEndpoint(endpointReady, exited, browserStartupTimeoutMs);
     if (viewport) {
-      await deadline(Promise.race([
-        endpointReady,
-        exited.then((exit) => { throw new Error(`Browser exited before viewport setup: ${JSON.stringify(exit)}\n${stderr}`); }),
-      ]), 5000, "Browser DevTools startup");
       // A CDP-created blank target needs no HTTP request before emulation is set.
       const target = await browserCommand(endpoint, "Target.createTarget", { url: "about:blank" });
       assert.ok(typeof target.targetId === "string" && target.targetId.length > 0, "Viewport target was not created");
@@ -516,17 +545,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       startup.viewport_ready_ms = Math.round(performance.now() - browserStartedAt);
       finishStartupObservation();
     }
-    const fixtureDeadline = performance.now() + fixtureTimeoutMs;
-    if (viewportSession) {
-      const navigation = await viewportSession.command("Page.navigate", { url }, fixtureTimeoutMs);
-      assert.equal(navigation.errorText, undefined, "Fixture navigation failed");
-    }
-    const remainingFixtureMs = Math.ceil(fixtureDeadline - performance.now());
-    assert.ok(remainingFixtureMs > 0, "Fixture navigation exhausted its total time budget");
-    report = await deadline(Promise.race([
-      result,
-      exited.then((exit) => { throw new Error(`Browser exited before reporting: ${JSON.stringify(exit)}\n${stderr}`); }),
-    ]), remainingFixtureMs, "Real ReactDOM reliability fixture");
+    report = await waitForFixtureReport({ session: viewportSession, url, result, exited, timeoutMs: fixtureTimeoutMs });
     assert.equal(report.status, "passed", report.error || JSON.stringify(report));
     assert.ok(endpoint, "Browser did not publish its isolated DevTools endpoint");
     processIds = await browserProcessSnapshot(endpoint, child.pid);
@@ -649,4 +668,5 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     browser_processes_observed: processIds.length, browser_processes_remaining: 0, browser_exited: true, scratch_removed: true };
 }
 
-module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage };
+module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
+  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport };
