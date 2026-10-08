@@ -5,7 +5,13 @@ use tauri::{AppHandle, State, ipc::Channel};
 use tauri_plugin_updater::{Update, UpdaterExt};
 use thiserror::Error;
 
-const UPDATE_CHECK_TIMEOUT: Duration = Duration::from_secs(30);
+mod download;
+mod sources;
+#[cfg(test)]
+mod transport_tests;
+
+const UPDATE_CHECK_TIMEOUT: Duration = Duration::from_secs(60);
+const UPDATE_SOURCE_CHECK_TIMEOUT: Duration = Duration::from_secs(12);
 // Allow slow connections to transfer the complete update installer.
 const UPDATE_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
@@ -51,6 +57,12 @@ pub enum AppUpdateError {
         "downloading the application update timed out. Servers have not been stopped. Check your connection and check for updates again."
     )]
     DownloadTimedOut,
+    #[error("the update source stopped making sufficient download progress")]
+    DownloadStalled,
+    #[error("the automatic update installer exceeds the 256 MiB download limit")]
+    DownloadTooLarge,
+    #[error("the update download URL does not identify an official package for this version")]
+    InvalidDownloadSource,
     #[error("cannot stop the runtime service before updating: {0}")]
     RuntimeShutdown(String),
     #[cfg(windows)]
@@ -80,18 +92,74 @@ async fn with_update_timeout<T>(
         .map_err(AppUpdateError::Updater)
 }
 
+async fn check_update_sources(
+    builder: impl Fn() -> tauri_plugin_updater::UpdaterBuilder,
+    endpoints: &[tauri::Url],
+    source_timeout: Duration,
+) -> Result<Option<Update>, AppUpdateError> {
+    let mut last_error = AppUpdateError::CheckTimedOut;
+    let mut checked_current = false;
+    for endpoint in endpoints {
+        let https_only = endpoint.scheme() == "https";
+        let updater = builder()
+            .endpoints(vec![endpoint.clone()])?
+            .configure_client(move |client| {
+                client
+                    .connect_timeout(Duration::from_secs(8))
+                    .https_only(https_only)
+            })
+            .build()?;
+        match with_update_timeout(
+            source_timeout,
+            AppUpdateError::CheckTimedOut,
+            updater.check(),
+        )
+        .await
+        {
+            Ok(Some(update)) => {
+                match sources::download_sources(&update.download_url, &update.version) {
+                    Ok(_) => return Ok(Some(update)),
+                    Err(error) => last_error = error,
+                }
+            }
+            // A healthy mirror may still be awaiting synchronization. Ask the
+            // independent feeds before concluding that this version is current.
+            Ok(None) => checked_current = true,
+            Err(error) => last_error = error,
+        }
+    }
+    if checked_current {
+        Ok(None)
+    } else {
+        Err(last_error)
+    }
+}
+
 #[tauri::command]
 pub async fn check_app_update(
     app: AppHandle,
     pending_update: State<'_, PendingAppUpdate>,
 ) -> Result<AppUpdateCheckResult, AppUpdateError> {
-    let updater = app.updater()?;
-    let update = with_update_timeout(
-        UPDATE_CHECK_TIMEOUT,
-        AppUpdateError::CheckTimedOut,
-        updater.check(),
+    let config: tauri_plugin_updater::Config = serde_json::from_value(
+        app.config()
+            .plugins
+            .0
+            .get("updater")
+            .cloned()
+            .unwrap_or_default(),
     )
-    .await?;
+    .map_err(tauri_plugin_updater::Error::from)?;
+    let endpoints = sources::check_sources(&config.endpoints)?;
+    let update = tokio::time::timeout(
+        UPDATE_CHECK_TIMEOUT,
+        check_update_sources(
+            || app.updater_builder(),
+            &endpoints,
+            UPDATE_SOURCE_CHECK_TIMEOUT,
+        ),
+    )
+    .await
+    .map_err(|_| AppUpdateError::CheckTimedOut)??;
     let current_version = app.package_info().version.to_string();
     let metadata = update.as_ref().map(|update| AppUpdateMetadata {
         version: update.version.clone(),
@@ -124,24 +192,14 @@ pub async fn install_app_update(
         .take()
         .ok_or(AppUpdateError::NoPendingUpdate)?;
 
-    let mut started = false;
-    let bytes = with_update_timeout(
+    let bytes = tokio::time::timeout(
         UPDATE_DOWNLOAD_TIMEOUT,
-        AppUpdateError::DownloadTimedOut,
-        update.download(
-            |chunk_length, content_length| {
-                if !started {
-                    let _ = on_event.send(AppUpdateInstallEvent::Started { content_length });
-                    started = true;
-                }
-                let _ = on_event.send(AppUpdateInstallEvent::Progress { chunk_length });
-            },
-            || {
-                let _ = on_event.send(AppUpdateInstallEvent::Finished);
-            },
-        ),
+        download::download(&update, |event| {
+            let _ = on_event.send(event);
+        }),
     )
-    .await?;
+    .await
+    .map_err(|_| AppUpdateError::DownloadTimedOut)??;
 
     let _ = on_event.send(AppUpdateInstallEvent::Installing);
     #[cfg(windows)]

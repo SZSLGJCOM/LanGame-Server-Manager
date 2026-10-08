@@ -129,6 +129,9 @@ jobs:
         # Run one test file at a time so browser fixtures do not compete for runner resources.
         run: node --test --test-concurrency=1
 
+      - name: Verify release signature validation
+        run: node --test scripts/tests/verify_desktop_update_signature.test.cjs
+
       - name: Type-check and build the frontend
         run: npm --prefix apps/desktop run build
 

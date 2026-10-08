@@ -91,6 +91,7 @@
   },
   "plugins": {
     "updater": {
+      "requireSignedVersion": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0QjgyMkQ3NTY0RTA3NTIKUldSU0IwNVcxeUs0Wk5pamlNa1ZDb0crNy9xKzNwU2JBbVkvenNvS1g5NlJZaUlqWWFTTVlnRloK",
       "endpoints": [],
       "windows": {

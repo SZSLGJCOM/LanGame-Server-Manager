@@ -1,0 +1,27 @@
+[Unit]
+Description=Refresh signed LanGame desktop update metadata from public GitCode
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=lgsm-updates
+Group=lgsm-updates
+StateDirectory=langame/desktop-updates
+StateDirectoryMode=0755
+WorkingDirectory=/opt/langame-desktop-updates
+ExecStart=/usr/bin/python3 -B /opt/langame-desktop-updates/refresh_desktop_update_service.py --state-dir /var/lib/langame/desktop-updates --public-key-file /etc/langame-desktop-updates/desktop-updates.pub
+TimeoutStartSec=60
+UMask=0022
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true

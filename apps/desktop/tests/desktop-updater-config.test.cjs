@@ -124,6 +124,7 @@ test("desktop updater artifacts and plugin are configured", () => {
 
   assert.equal(config.bundle.createUpdaterArtifacts, false, "ordinary local installers require no release signing key");
   assert.equal(config.plugins.updater.windows.installMode, "passive");
+  assert.equal(config.plugins.updater.requireSignedVersion, true, "mirrors cannot relabel an older signed installer as a newer release");
   assert.deepEqual(config.plugins.updater.endpoints, [], "pre-release builds must not contact an update feed");
   assert.match(config.plugins.updater.pubkey, /BEGIN PUBLIC KEY|^[A-Za-z0-9+/=]{32,}$/);
   assert.match(cargoToml, /tauri-plugin-updater/);
@@ -143,7 +144,7 @@ test("desktop updates download before stopping the runtime and installing", () =
   assert.match(appUpdatesSource, /request_app_restart_shutdown\(app\)/);
   assert.doesNotMatch(appUpdatesSource, /\bapp\.restart\(\)/);
   assert.match(lifecycleSource, /AppShutdownCompletion::Restart => app_handle\.restart\(\)/);
-  const download = appUpdatesSource.indexOf(".download(");
+  const download = appUpdatesSource.indexOf("download::download(&update");
   const stop = appUpdatesSource.indexOf("runtime_service::stop_service(&app)");
   const install = appUpdatesSource.indexOf(".install(bytes)");
   assert.ok(download >= 0 && stop > download && install > stop,
@@ -234,6 +235,23 @@ test("GitHub update configuration requires an explicit opt-in and leaves source 
   assert.equal(fs.readFileSync(fixture.configPath, "utf8"), sourceBefore);
   assert.equal(readJson(path.join(fixture.outputRoot, "desktop-release-plan.json")).published, false);
 });
+
+for (const offline of [false, true]) {
+  test(`regional ${offline ? "offline" : "small"} builds retain the independent GitHub fallback`, (t) => {
+    const fixture = createFixture(t);
+    const sourceBefore = fs.readFileSync(fixture.configPath, "utf8");
+    expectSuccess(runPreparation(fixture, ["-DryRun", "-EnableRegionalUpdates", ...(offline ? ["-OfflineInstaller"] : [])]));
+    const config = readJson(path.join(fixture.outputRoot, "tauri.release.conf.json"));
+    const plan = readJson(path.join(fixture.outputRoot, "desktop-release-plan.json"));
+    const expected = ["https://langame.cn/updates/server-manager/latest.json", feedUrl];
+    assert.deepEqual(config.plugins.updater.endpoints, expected);
+    assert.deepEqual(plan.update_feeds, expected);
+    assert.equal(plan.update_feed, expected[0]);
+    assert.equal(plan.requested_updates_enabled, true);
+    assert.match(config.build.beforeBuildCommand, /VITE_LANGAME_DESKTOP_UPDATES_ENABLED=true/);
+    assert.equal(fs.readFileSync(fixture.configPath, "utf8"), sourceBefore);
+  });
+}
 
 test("release preparation rejects version disagreement before writing output", (t) => {
   const fixture = createFixture(t);

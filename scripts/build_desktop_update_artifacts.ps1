@@ -17,6 +17,7 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$ArtifactRoot,
     [switch]$EnableGitHubUpdates,
+    [switch]$EnableRegionalUpdates,
     [switch]$OfflineInstaller,
     [string]$NotesFile = ''
 )
@@ -33,6 +34,12 @@ $desktopRoot = Join-Path $root 'apps/desktop'
 $tauriManifest = Join-Path $desktopRoot 'src-tauri/Cargo.toml'
 $configPath = Join-Path $desktopRoot 'src-tauri/tauri.conf.json'
 $feedUrl = 'https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/latest/download/latest.json'
+$regionalFeedUrl = 'https://langame.cn/updates/server-manager/latest.json'
+if ($EnableRegionalUpdates) { $EnableGitHubUpdates = $true }
+$updateFeeds = @(
+    if ($EnableRegionalUpdates) { $regionalFeedUrl }
+    if ($EnableGitHubUpdates) { $feedUrl }
+)
 
 function Resolve-ExternalDirectory {
     param([Parameter(Mandatory = $true)][string]$Path)
@@ -130,7 +137,7 @@ $mergeConfig = @{
         createUpdaterArtifacts = [bool]$signedArtifacts
         windows = @{ webviewInstallMode = $webviewInstallMode }
     }
-    plugins = @{ updater = @{ endpoints = @($(if ($EnableGitHubUpdates) { $feedUrl })) } }
+    plugins = @{ updater = @{ endpoints = $updateFeeds } }
     build = @{ beforeBuildCommand = 'cmd /c "set VITE_LANGAME_DESKTOP_UPDATES_ENABLED=' + $updatesValue + '&& npm run build"' }
 }
 
@@ -181,7 +188,8 @@ Write-Json -Path $planPath -Value @{
     requested_webview_install_mode = [string]$webviewInstallMode.type
     generates_update_manifest = -not [bool]$OfflineInstaller
     artifact_build_configuration = 'not-inspected'
-    update_feed = $(if ($EnableGitHubUpdates) { $feedUrl } else { $null })
+    update_feed = $(if ($updateFeeds.Count) { $updateFeeds[0] } else { $null })
+    update_feeds = $updateFeeds
     source_artifact_name = $artifactName
     artifact_name = $publicArtifactName
     artifact_url = $artifactUrl
