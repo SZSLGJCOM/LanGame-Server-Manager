@@ -16,7 +16,7 @@ resolver = "3"
 edition = "2024"
 license-file = "LICENSE"
 rust-version = "1.99.0"
-version = "0.0.3"
+version = "0.0.4"
 
 [workspace.dependencies]
 regex = "1.13.1"
