@@ -22,7 +22,9 @@ concurrency:
 jobs:
   mirror:
     if: github.repository == 'SZSLGJCOM/LanGame-Server-Manager' && (github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease))
-    runs-on: ubuntu-latest
+    # Standard macOS uses GitHub's macOS cloud, a separate path from Azure.
+    # Verify this path after both Python and curl uploads stalled from Azure.
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
