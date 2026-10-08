@@ -4,6 +4,40 @@
 ; force-terminated by installation or removal: servers must save and stop first.
 !include FileFunc.nsh
 
+; Tauri invokes this macro in .onInit, before any install hook. MUI's default
+; skips its dialog for /S but not /P, so an older updater can wait forever when
+; a silent first install never saved a language. Keep manual language selection
+; and saved preferences; passive/silent installs use NSIS's OS-language default.
+!ifmacrondef MUI_LANGDLL_DISPLAY
+  !error "Unsupported Tauri NSIS template: language initialization is missing."
+!endif
+!macroundef MUI_LANGDLL_DISPLAY
+
+!macro MUI_LANGDLL_DISPLAY
+  !define LGSM_LANGUAGE_ID ${__LINE__}
+  Push $R0
+  ReadRegStr $R0 "${MUI_LANGDLL_REGISTRY_ROOT}" "${MUI_LANGDLL_REGISTRY_KEY}" "${MUI_LANGDLL_REGISTRY_VALUENAME}"
+  StrCmp $R0 "" lgsm_language_default_${LGSM_LANGUAGE_ID}
+  StrCpy $LANGUAGE $R0
+  Goto lgsm_language_ready_${LGSM_LANGUAGE_ID}
+
+  lgsm_language_default_${LGSM_LANGUAGE_ID}:
+    IfSilent lgsm_language_ready_${LGSM_LANGUAGE_ID}
+    StrCmp $PassiveMode 1 lgsm_language_ready_${LGSM_LANGUAGE_ID}
+    ; The language/codepage list comes from the configured MUI_LANGUAGE entries.
+    LangDLL::LangDialog "Installer Language" "Please select a language." AC ${MUI_LANGDLL_LANGUAGES_CP} ""
+    Pop $R0
+    StrCmp $R0 "cancel" 0 lgsm_language_selected_${LGSM_LANGUAGE_ID}
+    Pop $R0
+    Abort
+
+  lgsm_language_selected_${LGSM_LANGUAGE_ID}:
+    StrCpy $LANGUAGE $R0
+  lgsm_language_ready_${LGSM_LANGUAGE_ID}:
+    Pop $R0
+  !undef LGSM_LANGUAGE_ID
+!macroend
+
 !ifmacrondef CheckIfAppIsRunning
   !error "Unsupported Tauri NSIS template: process guard is missing."
 !endif

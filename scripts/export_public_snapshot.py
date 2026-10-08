@@ -104,6 +104,7 @@ PUBLIC_SNAPSHOT_INTERNAL_LIFECYCLE_PREFIXES = frozenset(
 PUBLIC_SNAPSHOT_ENTRYPOINT_PATHS = frozenset(
     {
         ".github/workflows/ci.yml",
+        ".github/workflows/sync-gitcode-release.yml",
         "CONTRIBUTING.md",
         "Cargo.toml",
         "README.md",
@@ -134,6 +135,7 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         ".github/dependabot.yml",
         ".github/pull_request_template.md",
         ".github/workflows/ci.yml",
+        ".github/workflows/sync-gitcode-release.yml",
         "CODE_OF_CONDUCT.md",
         "CONTRIBUTING.md",
         "CONTRIBUTOR_AGREEMENT.md",
@@ -174,6 +176,10 @@ PUBLIC_SNAPSHOT_REQUIRED_PATHS = frozenset(
         "scripts/generate_rust_third_party_licenses.py",
         "scripts/rust_license_policy.py",
         "scripts/project_license_policy.py",
+        "scripts/prepare_desktop_update_service.py",
+        "scripts/refresh_desktop_update_service.py",
+        "scripts/sync_desktop_release_to_gitcode.py",
+        "scripts/verify_desktop_update_signature.cjs",
         "scripts/third_party_asset_policy.py",
         "scripts/third_party_license_sources/rust/SPDX-Apache-2.0.txt",
         "scripts/third_party_license_sources/rust/SPDX-MIT.txt",

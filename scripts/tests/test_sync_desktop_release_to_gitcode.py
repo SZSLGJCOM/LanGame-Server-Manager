@@ -1,0 +1,299 @@
+"""Offline transport fixtures; cryptographic interoperability has separate tests."""
+import base64
+import contextlib
+from copy import deepcopy
+import hashlib
+import io
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import MagicMock, patch
+import urllib.parse
+
+from scripts import sync_desktop_release_to_gitcode as sync
+
+PUBLIC_FIXTURE = json.loads((Path(__file__).parent / "fixtures/desktop_update_signature.json").read_text())
+
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+class FixtureTransport:
+    def __init__(self):
+        self.tag = "v1.2.3"
+        self.version = "1.2.3"
+        self.names = sync.asset_names(self.version)
+        self.files = {n: ("fixture " + n).encode() for n in self.names}
+        for name in (self.names[1], self.names[3]):
+            self.files[name] = PUBLIC_FIXTURE["signature"].encode()
+        self.manifest = {"version": self.version, "notes": "Fixture release", "platforms": {"windows-x86_64": {
+            "url": f"https://github.com/{sync.GITHUB_REPO}/releases/download/{self.tag}/{self.names[0]}",
+            "signature": self.files[self.names[1]].decode()}}}
+        self.files["latest.json"] = (json.dumps(self.manifest, indent=2) + "\n").encode()
+        for checksum, names in (("SHA256SUMS", (self.names[0], self.names[1], "latest.json")),
+                                ("SHA256SUMS.offline", self.names[2:4])):
+            self.files[checksum] = "".join(f"{digest(self.files[n])}  {n}\n" for n in names).encode()
+        self.release = {"id": 123, "tag_name": self.tag, "draft": False, "prerelease": False, "assets": [
+            {"id": i + 1, "name": n, "size": len(b), "digest": "sha256:" + digest(b), "state": "uploaded",
+             "browser_download_url": f"https://github.com/{sync.GITHUB_REPO}/releases/download/{self.tag}/{n}"}
+            for i, (n, b) in enumerate(self.files.items())]}
+        self.remote = None
+        self.remote_bytes = {}
+        self.pointer = None
+        self.calls = []
+        self.fail_upload = None
+
+    def remote_url(self, name):
+        return f"{sync.GC_API}/releases/{self.tag}/attach_files/{name}/download"
+
+    def api(self, provider, method, suffix, payload=None, missing_ok=False, timeout=60):
+        self.calls.append((provider, method, suffix, deepcopy(payload)))
+        if provider == "github":
+            assert method == "GET"
+            return deepcopy(self.release)
+        if suffix.startswith("/contents/"):
+            if method == "GET":
+                if self.pointer is None:
+                    return None
+                raw = (json.dumps(self.pointer) + "\n").encode()
+                return {"type": "file", "encoding": "base64", "path": sync.POINTER,
+                        "sha": "a" * 40, "content": base64.b64encode(raw).decode()}
+            self.pointer = json.loads(base64.b64decode(payload["content"]))
+            return {"commit": {"sha": "b" * 40}}
+        if suffix.startswith("/releases/tags/"):
+            return deepcopy(self.remote)
+        if suffix == "/releases" and method == "POST":
+            self.remote = {**payload, "assets": []}
+            return deepcopy(self.remote)
+        if "/upload_url?" in suffix:
+            name = urllib.parse.parse_qs(urllib.parse.urlsplit(suffix).query)["file_name"][0]
+            return {"fixture_name": name}
+        if method == "PATCH":
+            self.remote.update(payload)
+            return deepcopy(self.remote)
+        raise AssertionError("Unexpected transport operation")
+
+    def download(self, url, destination, size, sha256, provider):
+        name = url.split("/")[-2] if provider == "gitcode" else url.rsplit("/", 1)[-1]
+        value = self.files[name] if provider == "github" else self.remote_bytes[name]
+        sync.require(len(value) == size and digest(value) == sha256, "Remote artifact mismatch")
+        destination.write_bytes(value)
+
+    def upload(self, ticket, source):
+        name = ticket["fixture_name"]
+        if name == self.fail_upload:
+            raise sync.SyncError("Unknown upload result")
+        self.remote_bytes[name] = source.read_bytes()
+        self.remote["assets"].append({"name": name, "browser_download_url": self.remote_url(name)})
+
+
+class ReleaseSyncTests(unittest.TestCase):
+    def setUp(self):
+        output = contextlib.redirect_stdout(io.StringIO())
+        output.__enter__()
+        self.addCleanup(output.__exit__, None, None, None)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.client = FixtureTransport()
+        # Only the signature-verifier subprocess boundary is replaced here.
+        # Real minisign and trusted-comment checks run in the Node tests/live check.
+        self.crypto = patch.object(sync, "verify_signature")
+        self.verifier = self.crypto.start()
+        self.addCleanup(self.crypto.stop)
+        self.key = patch.object(sync, "public_key", return_value=PUBLIC_FIXTURE["pubkey"])
+        self.key.start()
+        self.addCleanup(self.key.stop)
+
+    def run_sync(self, execute=True, name="run"):
+        return sync.synchronize(self.client, "v1.2.3", 123, self.root / name, ["node"], execute)
+
+    def test_inspection_downloads_and_validates_without_any_gitcode_request(self):
+        result = self.run_sync(False)
+        self.assertFalse(result["published"])
+        self.assertEqual(self.verifier.call_count, 2)
+        self.assertFalse(any(c[0] == "gitcode" for c in self.client.calls))
+
+    def test_complete_verified_pointer_precedes_latest_status(self):
+        self.assertTrue(self.run_sync()["published"])
+        self.assertEqual(self.verifier.call_count, 4)
+        self.assertEqual(len(self.client.remote_bytes), 7)
+        pointer = self.client.pointer
+        self.assertEqual(pointer["manifest_text"].encode(), self.client.files["latest.json"])
+        self.assertEqual(pointer["manifest"], json.loads(pointer["manifest_text"]))
+        writes = [c for c in self.client.calls if c[1] != "GET"]
+        self.assertEqual(writes[0][3]["release_status"], "pre")
+        self.assertTrue(writes[-2][2].startswith("/contents/"))
+        self.assertEqual(writes[-1][1], "PATCH")
+
+    def test_second_new_workspace_run_verifies_without_upload_or_pointer_rewrite(self):
+        self.run_sync()
+        self.client.calls.clear()
+        self.assertEqual(self.run_sync(name="second")["pointer"], "unchanged")
+        self.assertFalse(any(c[1] != "GET" for c in self.client.calls))
+
+    def test_interrupted_upload_keeps_previous_pointer_and_can_resume(self):
+        self.client.fail_upload = self.client.names[2]
+        with self.assertRaisesRegex(sync.SyncError, "Unknown upload"):
+            self.run_sync()
+        self.assertIsNone(self.client.pointer)
+        self.assertEqual(self.client.remote["release_status"], "pre")
+        self.client.fail_upload = None
+        self.client.calls.clear()
+        self.run_sync(name="resume")
+        uploads = [c for c in self.client.calls if "/upload_url?" in c[2]]
+        self.assertEqual(len(uploads), 5)
+
+    def test_delayed_upload_callback_uses_only_bounded_read_probes(self):
+        self.run_sync()
+        original = self.client.api
+        reads = 0
+        name = self.client.names[0]
+        def delayed(*args, **kwargs):
+            nonlocal reads
+            reads += 1
+            value = original(*args, **kwargs)
+            if reads < 3:
+                value["assets"] = [a for a in value["assets"] if a["name"] != name]
+            return value
+        self.client.api = delayed
+        self.client.calls.clear()
+        with patch.object(sync.time, "sleep") as sleep:
+            result = sync.wait_for_attachment(self.client, "/releases/tags/v1.2.3", "v1.2.3", name)
+        self.assertIn(name, sync.gitcode_assets(result, "v1.2.3"))
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2, 4])
+        self.assertTrue(all(c[1] == "GET" for c in self.client.calls))
+
+    def test_missing_callback_expires_without_replaying_upload(self):
+        self.run_sync()
+        self.client.remote["assets"].clear()
+        self.client.calls.clear()
+        clock = [0.0]
+        def sleep(seconds):
+            clock[0] += seconds
+        with patch.object(sync.time, "monotonic", side_effect=lambda: clock[0]), patch.object(sync.time, "sleep", side_effect=sleep):
+            with self.assertRaisesRegex(sync.SyncError, "30 seconds"):
+                sync.wait_for_attachment(self.client, "/releases/tags/v1.2.3", "v1.2.3", self.client.names[0])
+        self.assertEqual(clock[0], 30)
+        self.assertEqual(len(self.client.calls), 5)
+        self.assertTrue(all(c[1] == "GET" for c in self.client.calls))
+
+    def test_same_name_remote_conflicting_bytes_are_never_replaced(self):
+        self.run_sync()
+        self.client.remote_bytes[self.client.names[0]] = b"corrupt"
+        self.client.calls.clear()
+        with self.assertRaisesRegex(sync.SyncError, "Remote artifact"):
+            self.run_sync(name="conflict")
+        self.assertFalse(any(c[1] != "GET" for c in self.client.calls))
+
+    def test_signature_failure_prevents_any_gitcode_write(self):
+        self.verifier.side_effect = sync.SyncError("Invalid signature")
+        with self.assertRaisesRegex(sync.SyncError, "signature"):
+            self.run_sync()
+        self.assertFalse(any(c[0] == "gitcode" for c in self.client.calls))
+
+    def test_version_and_release_id_are_frozen(self):
+        for key, value in (("id", 124), ("tag_name", "v2.0.0"), ("draft", True), ("prerelease", True)):
+            with self.subTest(key=key):
+                release = deepcopy(self.client.release)
+                release[key] = value
+                with self.assertRaises(sync.SyncError):
+                    sync.freeze_release(release, "v1.2.3", 123)
+
+    def test_asset_shape_digest_and_duplicate_identity_are_rejected(self):
+        for kind in ("extra", "digest", "id", "path"):
+            release = deepcopy(self.client.release)
+            if kind == "extra":
+                release["assets"].append(deepcopy(release["assets"][0]))
+            elif kind == "digest":
+                release["assets"][0]["digest"] = None
+            elif kind == "id":
+                release["assets"][0]["id"] = release["assets"][1]["id"]
+            else:
+                release["assets"][0]["browser_download_url"] += "?token=hidden"
+            with self.subTest(kind=kind), self.assertRaises((sync.SyncError, TypeError)):
+                sync.freeze_release(release, "v1.2.3", 123)
+
+    def test_checksums_must_bind_every_file_exactly_once(self):
+        file = self.root / "sums"
+        file.write_text("a" * 64 + "  file.exe\n" + "a" * 64 + "  file.exe\n")
+        with self.assertRaisesRegex(sync.SyncError, "duplicated"):
+            sync.checksums(file, ["file.exe"], {"file.exe": {"sha256": "a" * 64}})
+
+    def test_small_installer_matches_client_limit_while_offline_can_be_larger(self):
+        release = deepcopy(self.client.release)
+        indexed = {a["name"]: a for a in release["assets"]}
+        indexed[self.client.names[2]]["size"] = 300 * 1024 * 1024
+        sync.freeze_release(release, "v1.2.3", 123)
+        indexed[self.client.names[0]]["size"] = 256 * 1024 * 1024 + 1
+        with self.assertRaisesRegex(sync.SyncError, "256 MiB"):
+            sync.freeze_release(release, "v1.2.3", 123)
+
+    def test_pointer_cannot_downgrade_or_mutate_same_version(self):
+        self.run_sync()
+        pointer = deepcopy(self.client.pointer)
+        for version in ("1.2.2", "1.2.3"):
+            pointer["version"] = version
+            pointer["manifest"]["notes"] = "Changed"
+            with self.subTest(version=version), self.assertRaisesRegex(sync.SyncError, "downgrade"):
+                sync.publish_pointer(self.client, pointer)
+
+    def test_pointer_update_uses_blob_sha(self):
+        self.run_sync()
+        pointer = deepcopy(self.client.pointer)
+        pointer["version"] = "1.2.4"
+        pointer["github"]["tag"] = "v1.2.4"
+        self.assertEqual(sync.publish_pointer(self.client, pointer), "published")
+        put = [c for c in self.client.calls if c[1] == "PUT"][-1]
+        self.assertEqual(put[3]["sha"], "a" * 40)
+
+    def test_public_redirects_reject_credentials_and_unrelated_origins(self):
+        credential_url = urllib.parse.urlunsplit(("https", ":".join(("user", "synthetic")) + "@github.com", "/file", "", ""))
+        for url in ("http://github.com/file", credential_url, "https://github.com.evil.test/file", "https://127.0.0.1/file"):
+            with self.subTest(url=url), self.assertRaises(sync.SyncError):
+                sync.public_url(url, "github")
+
+    def test_authenticated_api_never_follows_redirects(self):
+        with self.assertRaisesRegex(sync.SyncError, "redirected"):
+            sync.NoRedirect().redirect_request(None, None, 302, "", {}, "https://other.test")
+
+    def test_token_is_only_in_header_not_query(self):
+        response = MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"ok":true}'
+        opener = MagicMock()
+        opener.open.return_value = response
+        with patch.object(sync.urllib.request, "build_opener", return_value=opener):
+            self.assertEqual(sync.Transport(gitcode_token="fixture-secret").api("gitcode", "GET", "/releases/tags/v1.2.3"), {"ok": True})
+        request = opener.open.call_args.args[0]
+        self.assertEqual(request.get_header("Authorization"), "Bearer fixture-secret")
+        self.assertNotIn("fixture-secret", request.full_url)
+        self.assertNotIn("access_token", request.full_url)
+
+    def test_unrelated_upload_origin_or_credential_headers_are_rejected(self):
+        client = sync.Transport(gitcode_token="fixture-secret")
+        for ticket in ({"url": "https://other.test/upload", "headers": {"Content-Type": "application/octet-stream"}},
+                       {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file", "headers": {"Authorization": "secret"}}):
+            with self.subTest(ticket=ticket), self.assertRaises(sync.SyncError):
+                client.upload(ticket, self.root / "nonexistent")
+
+    def test_release_assets_change_prevents_publication(self):
+        original = self.client.api
+        count = 0
+        def changed(provider, method, suffix, *args, **kwargs):
+            nonlocal count
+            value = original(provider, method, suffix, *args, **kwargs)
+            if provider == "github":
+                count += 1
+                if count > 1:
+                    value["assets"][0]["digest"] = "sha256:" + "f" * 64
+            return value
+        self.client.api = changed
+        with self.assertRaisesRegex(sync.SyncError, "changed"):
+            self.run_sync()
+        self.assertIsNone(self.client.remote)
+
+
+if __name__ == "__main__":
+    unittest.main()
