@@ -81,10 +81,10 @@ test("installer identity, supported languages and maintenance policy are explici
   }
 });
 
-test("first installation embeds the official WebView2 runtime for both installer languages", () => {
+test("ordinary installers embed the official WebView2 bootstrapper for both installer languages", () => {
   assert.deepEqual(tauriConfig.bundle.windows.webviewInstallMode, {
-    type: "offlineInstaller", silent: true,
-  }, "a bootstrapper still needs the user's network to acquire the runtime");
+    type: "embedBootstrapper", silent: true,
+  }, "missing runtimes require Microsoft connectivity or the separate offline installer");
 });
 
 test("installer branding uses complete, correctly sized 24-bit NSIS bitmap inputs", () => {

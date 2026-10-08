@@ -35,7 +35,7 @@ LAN AI 助手支持自带模型服务（BYOK），可结合日志协助排障。
 
 ## 下载与安装
 
-前往 [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) 下载 Windows x64 安装包。安装向导提供简体中文，内置 WebView2 运行时。
+前往 [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) 下载 Windows x64 安装包。日常安装和软件内更新使用较小的 `x64-setup.exe`，安装向导提供简体中文；已有 WebView2 时直接复用，缺少时由内置微软引导器联网安装。无法连接微软下载服务或需要断网安装时，选择内置完整 WebView2 安装程序的 `x64-offline-setup.exe`。两种安装包安装相同应用，离线包不包含游戏服务端文件。
 
 程序安装目录与数据目录分开。首次使用会优先选择可写固定非系统盘中可用空间最多的一块，自动创建盘根 `LanGame`；没有可用的其他盘时使用系统盘。无法识别归属的非空 `LanGame` 目录会跳过，不接管或覆盖其中的数据。选定后不会随剩余空间变化，已有数据保留原位、不自动迁移。目录明细见[数据位置说明](docs/desktop-release.md#数据位置与卸载)。
 

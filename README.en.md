@@ -35,7 +35,7 @@ The LAN AI assistant supports your own model service (BYOK) and can help with lo
 
 ## Download and install
 
-Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases). The installer offers Simplified Chinese and includes the WebView2 runtime.
+Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases). Use the smaller `x64-setup.exe` for everyday installation and in-app updates. Setup offers Simplified Chinese and reuses an existing WebView2 runtime; when it is missing, the embedded Microsoft bootstrapper installs it over the internet. For disconnected machines or networks that cannot reach Microsoft's download service, choose `x64-offline-setup.exe`, which includes the full WebView2 installer. Both packages install the same application; the offline package does not include game server files.
 
 Application installation and data locations are separate. First use creates `LanGame` at the root of the writable fixed non-system drive with the most available space, or uses the system drive if no other drive is usable. A nonempty `LanGame` directory whose ownership cannot be verified is skipped without adopting or overwriting its contents. The saved choice does not change with free space; existing data stays in place without automatic migration. See [data locations](docs/desktop-release.md#data-locations-and-uninstallation) for the directory layout.
 

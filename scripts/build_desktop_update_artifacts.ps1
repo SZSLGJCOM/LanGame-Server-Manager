@@ -17,6 +17,7 @@ param(
     [ValidateNotNullOrEmpty()]
     [string]$ArtifactRoot,
     [switch]$EnableGitHubUpdates,
+    [switch]$OfflineInstaller,
     [string]$NotesFile = ''
 )
 
@@ -104,16 +105,19 @@ if ([string]::IsNullOrWhiteSpace([string]$config.plugins.updater.pubkey)) {
     throw 'An updater public key is required in tauri.conf.json.'
 }
 $webviewInstallMode = $config.bundle.windows.webviewInstallMode
-if ($webviewInstallMode.type -cne 'offlineInstaller' -or $webviewInstallMode.silent -isnot [bool] -or
+if ($webviewInstallMode.type -cne 'embedBootstrapper' -or $webviewInstallMode.silent -isnot [bool] -or
     -not $webviewInstallMode.silent) {
-    throw 'Keep WebView2 configured as offlineInstaller with silent=true so first installation needs no runtime download.'
+    throw 'Keep WebView2 configured as embedBootstrapper with silent=true; use -OfflineInstaller for the separate offline package.'
 }
+if ($OfflineInstaller) { $webviewInstallMode = @{ type = 'offlineInstaller'; silent = $true } }
 if (-not [string]::IsNullOrWhiteSpace($NotesFile)) {
     $NotesFile = (Resolve-Path -LiteralPath $NotesFile).Path
     if (-not (Test-Path -LiteralPath $NotesFile -PathType Leaf)) { throw 'NotesFile must be a text file.' }
 }
 $artifactName = "$($config.productName)_${version}_x64-setup.exe"
 $publicArtifactName = $artifactName.Replace(' ', '.')
+if ($OfflineInstaller) { $publicArtifactName = $publicArtifactName.Replace('_x64-setup.exe', '_x64-offline-setup.exe') }
+$checksumName = if ($OfflineInstaller) { 'SHA256SUMS.offline' } else { 'SHA256SUMS' }
 if ($publicArtifactName -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $publicArtifactName.EndsWith('.')) {
     throw 'Public artifact names must use ASCII letters, digits, dots, underscores or hyphens.'
 }
@@ -162,7 +166,7 @@ foreach ($path in @($mergeConfigPath, $planPath)) {
     if (Test-Path -LiteralPath $path) { throw 'Use a new OutputRoot; release preparation never overwrites existing output.' }
 }
 if ($BuildManaged) {
-    foreach ($name in @($publicArtifactName, "$publicArtifactName.sig", 'SHA256SUMS', 'latest.json',
+    foreach ($name in @($publicArtifactName, "$publicArtifactName.sig", $checksumName, 'latest.json', 'desktop-offline-artifacts.json',
         'desktop-installer-artifacts.json', 'desktop-build-receipt.json', 'desktop-build-receipt.artifacts')) {
         if (Test-Path -LiteralPath (Join-Path $outputRootAbs $name)) {
             throw "Use a new OutputRoot; existing release output will not be replaced: $name"
@@ -175,6 +179,7 @@ Write-Json -Path $planPath -Value @{
     version = $version
     requested_updates_enabled = [bool]$EnableGitHubUpdates
     requested_webview_install_mode = [string]$webviewInstallMode.type
+    generates_update_manifest = -not [bool]$OfflineInstaller
     artifact_build_configuration = 'not-inspected'
     update_feed = $(if ($EnableGitHubUpdates) { $feedUrl } else { $null })
     source_artifact_name = $artifactName
@@ -242,7 +247,7 @@ if ($BuildManaged) {
         $digest = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($digest -cne $installer[0].sha256) { throw 'Installer changed while exporting.' }
         $signatureStatus = [string](Get-AuthenticodeSignature -LiteralPath $destination).Status
-        $checksum = [System.IO.File]::Open((Join-Path $outputRootAbs 'SHA256SUMS'), [IO.FileMode]::CreateNew)
+        $checksum = [System.IO.File]::Open((Join-Path $outputRootAbs $checksumName), [IO.FileMode]::CreateNew)
         try {
             $checksumBytes = [Text.UTF8Encoding]::new($false).GetBytes("$digest  $publicArtifactName`n")
             $checksum.Write($checksumBytes, 0, $checksumBytes.Length)
@@ -308,11 +313,16 @@ foreach ($path in @($payloadPath, $signaturePath)) {
 }
 $manifestArguments = @(
     '-B', (Join-Path $PSScriptRoot 'generate_desktop_update_manifest.py'),
-    '--version', $version, '--artifact-url', $artifactUrl,
+    '--version', $version,
     '--artifact-file', $payloadPath, '--signature-file', $signaturePath,
-    '--tauri-config', $configPath, '--output', (Join-Path $outputRootAbs 'latest.json')
+    '--tauri-config', $configPath
 )
-if ($NotesFile) { $manifestArguments += @('--notes-file', $NotesFile) }
+if ($OfflineInstaller) {
+    $manifestArguments += @('--offline-installer', '--output', (Join-Path $outputRootAbs 'desktop-offline-artifacts.json'))
+} else {
+    $manifestArguments += @('--artifact-url', $artifactUrl, '--output', (Join-Path $outputRootAbs 'latest.json'))
+    if ($NotesFile) { $manifestArguments += @('--notes-file', $NotesFile) }
+}
 & python @manifestArguments
 if ($LASTEXITCODE -ne 0) { throw 'Release manifest validation/export failed.' }
 Write-Host "Local release assets: $outputRootAbs"

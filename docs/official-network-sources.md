@@ -35,7 +35,7 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Official knowledge synchronization | The reviewed publisher documentation sources and their approved paths, including scoped publisher help-center APIs; source, redirect and public-address checks remain enforced; no locale-based origin replacement |
 | Remote AI and local model providers | The operator's configured endpoint; requests remain with that provider, and loopback endpoints bypass HTTP proxies; no CDN substitution or cross-origin redirect of credentials/context |
 | Application updates | Disabled in the default configuration; an explicitly enabled release build uses the configured GitHub release feed and signed update artifacts through the updater; no China-specific feed or CDN replacement |
-| WebView2 prerequisite during desktop installation | The Tauri/NSIS `offlineInstaller` flow embeds Microsoft's Evergreen x64 standalone installer at build time; a user missing WebView2 does not need a separate runtime download during installation. Build-time acquisition remains on Microsoft's official delivery path |
+| WebView2 prerequisite during desktop installation | The default Tauri/NSIS `embedBootstrapper` package reuses installed WebView2 or runs the embedded Microsoft bootstrapper to download a missing runtime from Microsoft. The build acquires the bootstrapper from `https://go.microsoft.com/fwlink/p/?LinkId=2124703`. The separate `x64-offline-setup.exe` uses `offlineInstaller` and embeds Microsoft's Evergreen x64 standalone installer for disconnected installation. Neither mode uses a third-party runtime mirror; see the [release guide](desktop-release.md#webview2-delivery) |
 | Steam game-server and Workshop content | SteamCMD's native SteamPipe/Workshop delivery; bootstrap URL alternatives do not replace the content protocol |
 | Game-server control, LAN management and discovery | Instance endpoints, the authenticated LAN management service and local discovery protocols; these are not public interchangeable CDN resources |
 | Websites opened in the system browser | The requested Steam, mod-provider, release or documentation website; browser routing remains under the user's environment |
@@ -170,7 +170,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | 官方知识库同步 | 已审核的发布方文档来源及允许路径，包括限定范围的发布方帮助中心 API；保留来源、重定向与公网地址校验，不按语言替换域名 |
 | 远程 AI 与本地模型服务 | 操作者配置的端点，请求保持在该提供方，回环地址绕过 HTTP 代理；不换 CDN，也不跨来源重定向凭据或上下文 |
 | 应用更新 | 默认配置关闭；显式启用的发行构建通过更新器使用配置的 GitHub 发行源及签名更新包；没有国内专用更新源或 CDN 替换 |
-| 桌面安装时的 WebView2 前置 | 按 Tauri/NSIS 的 `offlineInstaller` 配置，在构建时嵌入微软 Evergreen x64 独立安装程序；用户缺少 WebView2 时，安装阶段无需另行下载运行时。构建时仍使用微软官方分发路径 |
+| 桌面安装时的 WebView2 前置 | 默认 Tauri/NSIS `embedBootstrapper` 小包复用已有 WebView2，缺少时由内嵌微软引导器从微软下载运行时；构建时从 `https://go.microsoft.com/fwlink/p/?LinkId=2124703` 获取引导器。独立 `x64-offline-setup.exe` 使用 `offlineInstaller` 内置微软 Evergreen x64 完整安装程序，支持断网安装。两种模式均不使用第三方运行时镜像，详见[发行指南](desktop-release.md#webview2-delivery) |
 | Steam 服务端与工坊 MOD 文件 | 继续由 SteamCMD 原生内容协议下载；引导包 CDN 不用于替换游戏内容地址 |
 | 游戏服务器控制、局域网管理与发现 | 实例端点、已认证的局域网管理服务及本地发现协议，不属于可互换的公共 CDN 资源 |
 | 系统浏览器打开的网站 | 请求的 Steam、模组提供方、发行或文档网站，连接继续由用户的浏览器环境管理 |

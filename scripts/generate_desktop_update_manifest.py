@@ -103,21 +103,30 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def write_outputs(output: Path, manifest: dict, artifact: Path | None, signature: Path) -> None:
+def write_outputs(output: Path, manifest: dict, artifact: Path | None, signature: Path,
+                  *, offline: bool = False) -> None:
     output = output.resolve()
     if output.is_relative_to(REPOSITORY_ROOT):
         raise ValueError("output must be outside the source repository")
+    if offline and (artifact is None or output.name != "desktop-offline-artifacts.json"):
+        raise ValueError("offline export requires an installer and desktop-offline-artifacts.json output")
     payloads = {}
     if artifact is not None:
         artifact_name = public_artifact_name(artifact.name)
+        if offline:
+            suffix = f"_{validate_version(manifest['version'])}_x64-setup.exe"
+            if not artifact_name.endswith(suffix):
+                raise ValueError("offline input must use the current version's original Tauri installer name")
+            artifact_name = artifact_name[:-len(suffix)] + suffix.replace("_x64-setup", "_x64-offline-setup")
         signature_name = artifact_name + ".sig"
-        validate_artifact_url(manifest["platforms"]["windows-x86_64"]["url"], artifact_name)
+        if not offline:
+            validate_artifact_url(manifest["platforms"]["windows-x86_64"]["url"], artifact_name)
         if signature.name != artifact.name + ".sig":
             raise ValueError("signature filename must match the input installer")
         payloads = {artifact_name: artifact, signature_name: signature}
     names = [output.name, *payloads]
     if artifact is not None:
-        names += ["SHA256SUMS", "desktop-update-artifacts.json"]
+        names += ["SHA256SUMS.offline"] if offline else ["SHA256SUMS", "desktop-update-artifacts.json"]
     if len(set(names)) != len(names):
         raise ValueError("output names must be distinct")
     for name in names:
@@ -137,24 +146,26 @@ def write_outputs(output: Path, manifest: dict, artifact: Path | None, signature
                 raise ValueError(f"release input changed while copying: {name}")
         if artifact is not None:
             copied_signature = (output.parent / signature_name).read_text(encoding="utf-8-sig").strip()
-            if copied_signature != manifest["platforms"]["windows-x86_64"]["signature"]:
+            expected_signature = manifest["signature"] if offline else manifest["platforms"]["windows-x86_64"]["signature"]
+            if copied_signature != expected_signature:
                 raise ValueError("signature changed after validation; exported manifest would not match")
             if (output.parent / artifact_name).stat().st_size == 0:
                 raise ValueError("exported installer must not be empty")
-        with output.open("x", encoding="utf-8", newline="\n") as target:
-            created.append(output)
-            json.dump(manifest, target, ensure_ascii=False, indent=2)
-            target.write("\n")
+        if not offline:
+            with output.open("x", encoding="utf-8", newline="\n") as target:
+                created.append(output)
+                json.dump(manifest, target, ensure_ascii=False, indent=2)
+                target.write("\n")
         if artifact is not None:
             assets = [
                 {"name": path.name, "bytes": path.stat().st_size, "sha256": sha256_file(path)}
                 for path in created
             ]
-            checksum = output.parent / "SHA256SUMS"
+            checksum = output.parent / ("SHA256SUMS.offline" if offline else "SHA256SUMS")
             with checksum.open("x", encoding="utf-8", newline="\n") as target:
                 created.append(checksum)
                 target.writelines(f"{item['sha256']}  {item['name']}\n" for item in assets)
-            summary = output.parent / "desktop-update-artifacts.json"
+            summary = output if offline else output.parent / "desktop-update-artifacts.json"
             with summary.open("x", encoding="utf-8", newline="\n") as target:
                 created.append(summary)
                 json.dump({
@@ -173,7 +184,9 @@ def write_outputs(output: Path, manifest: dict, artifact: Path | None, signature
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True)
-    parser.add_argument("--artifact-url", required=True)
+    parser.add_argument("--artifact-url")
+    parser.add_argument("--offline-installer", action="store_true",
+                        help="export a separate offline installer and inventory without an update manifest")
     parser.add_argument("--signature-file", type=Path, required=True)
     parser.add_argument("--artifact-file", type=Path)
     parser.add_argument("--tauri-config", type=Path,
@@ -190,7 +203,15 @@ def main() -> None:
         if config["version"] != version:
             raise ValueError("manifest version must match the Tauri configuration")
         name = f"{config['productName']}_{version}_x64-setup.exe"
-        url = validate_artifact_url(args.artifact_url, public_artifact_name(name))
+        if args.offline_installer:
+            if args.artifact_url or args.notes or args.notes_file or args.pub_date:
+                raise ValueError("offline export cannot include update URL, notes or publication date")
+            if args.artifact_file is None:
+                raise ValueError("offline export requires --artifact-file")
+        else:
+            if not args.artifact_url:
+                raise ValueError("update manifest requires --artifact-url")
+            url = validate_artifact_url(args.artifact_url, public_artifact_name(name))
         if args.signature_file.stat().st_size > 16384:
             raise ValueError("signature file is too large")
         signature = validate_signature(args.signature_file.read_text(encoding="utf-8-sig"),
@@ -200,13 +221,17 @@ def main() -> None:
                 raise ValueError("artifact and signature filenames must match the current version")
             if args.artifact_file.stat().st_size == 0:
                 raise ValueError("installer must not be empty")
-        release_notes = (args.notes_file.read_text(encoding="utf-8-sig")
-                         if args.notes_file is not None else args.notes)
-        manifest = {
-            "version": version, "notes": release_notes, "pub_date": validate_pub_date(args.pub_date),
-            "platforms": {"windows-x86_64": {"signature": signature, "url": url}},
-        }
-        write_outputs(args.output, manifest, args.artifact_file, args.signature_file)
+        if args.offline_installer:
+            manifest = {"version": version, "signature": signature}
+        else:
+            release_notes = (args.notes_file.read_text(encoding="utf-8-sig")
+                             if args.notes_file is not None else args.notes)
+            manifest = {
+                "version": version, "notes": release_notes, "pub_date": validate_pub_date(args.pub_date),
+                "platforms": {"windows-x86_64": {"signature": signature, "url": url}},
+            }
+        write_outputs(args.output, manifest, args.artifact_file, args.signature_file,
+                      offline=args.offline_installer)
     except (OSError, ValueError, KeyError) as error:
         parser.error(str(error))
 
