@@ -83,11 +83,18 @@ jobs:
           $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
           if ($packageManager -notmatch '^npm@(\d+\.\d+\.\d+)$') { throw "packageManager must pin an exact npm version" }
           $expectedVersion = $Matches[1]
-          npm install --global $packageManager
+          $npmPrefix = Join-Path $env:RUNNER_TEMP 'lgsm-npm'
+          npm install --global --prefix $npmPrefix $packageManager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # PowerShell and nested npm.cmd scripts must resolve the same npm.
+          $env:PATH = "$npmPrefix;$env:PATH"
+          $npmPrefix | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           $actualVersion = npm --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ($actualVersion -ne $expectedVersion) { throw "Expected npm $expectedVersion, got $actualVersion" }
+          $nestedVersion = npm.cmd --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($nestedVersion -ne $expectedVersion) { throw "Expected nested npm $expectedVersion, got $nestedVersion" }
 
       - name: Set up Python for repository checks
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -154,11 +161,18 @@ jobs:
           $packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
           if ($packageManager -notmatch '^npm@(\d+\.\d+\.\d+)$') { throw "packageManager must pin an exact npm version" }
           $expectedVersion = $Matches[1]
-          npm install --global $packageManager
+          $npmPrefix = Join-Path $env:RUNNER_TEMP 'lgsm-npm'
+          npm install --global --prefix $npmPrefix $packageManager
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # PowerShell and nested npm.cmd scripts must resolve the same npm.
+          $env:PATH = "$npmPrefix;$env:PATH"
+          $npmPrefix | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           $actualVersion = npm --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if ($actualVersion -ne $expectedVersion) { throw "Expected npm $expectedVersion, got $actualVersion" }
+          $nestedVersion = npm.cmd --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($nestedVersion -ne $expectedVersion) { throw "Expected nested npm $expectedVersion, got $nestedVersion" }
 
       - name: Build the frontend required by the Tauri context
         run: |
