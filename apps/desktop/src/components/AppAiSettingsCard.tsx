@@ -58,11 +58,13 @@ export function AppAiSettingsCard({ settings, onClearSecret, onSave }: AppAiSett
         retrySave: "重试保存",
         retryClear: "重试清除",
         providerPreset: "接口协议",
+        protocolHelp: "协议说明",
+        protocolNote: "OpenAI 兼容、Anthropic 兼容和 Ollama 表示接口协议；接收方由服务地址决定。",
         model: "模型",
         baseUrl: "服务地址",
         apiKey: "API Key",
         apiKeyHint: "密钥保存在管理端本机，并发送给配置的服务用于认证。",
-        storedKeyHint: "密钥已保存在管理端本机，并发送给配置的服务用于认证；输入新密钥可替换。",
+        storedKeyHint: "密钥已保存在管理端本机，发送给配置的服务用于认证；输入新密钥可替换。",
         autoSave: "修改后自动保存",
         savePending: "等待保存…",
         saving: "正在保存…",
@@ -81,11 +83,13 @@ export function AppAiSettingsCard({ settings, onClearSecret, onSave }: AppAiSett
         retrySave: "Retry save",
         retryClear: "Retry clear",
         providerPreset: "API protocol",
+        protocolHelp: "About API protocols",
+        protocolNote: "OpenAI-compatible, Anthropic-compatible and Ollama describe API protocols. The service URL determines the recipient.",
         model: "Model",
         baseUrl: "Service URL",
         apiKey: "API Key",
         apiKeyHint: "The key is stored on the management host and sent to the configured service for authentication.",
-        storedKeyHint: "A key is stored on the management host and sent to the configured service for authentication. Enter a new key to replace it.",
+        storedKeyHint: "Key saved on the management host and sent to the configured service for authentication. Enter a new key to replace it.",
         autoSave: "Changes save automatically",
         savePending: "Waiting to save…",
         saving: "Saving…",
@@ -277,7 +281,13 @@ export function AppAiSettingsCard({ settings, onClearSecret, onSave }: AppAiSett
       <form className="form-stack app-settings-form" onSubmit={(e) => e.preventDefault()}>
         <div className="ai-settings-grid">
           <div className="ai-settings-field">
-            <label className="detail-label" htmlFor="ai-settings-provider">{copy.providerPreset}</label>
+            <div className="ai-settings-field-heading">
+              <label className="detail-label" htmlFor="ai-settings-provider">{copy.providerPreset}</label>
+              <details className="ai-settings-protocol-help">
+                <summary tabIndex={0} aria-label={copy.protocolHelp} title={copy.protocolHelp}><ShellIcon name="alert-circle" /></summary>
+                <p>{copy.protocolNote}</p>
+              </details>
+            </div>
             <select
               id="ai-settings-provider"
               className="text-input"

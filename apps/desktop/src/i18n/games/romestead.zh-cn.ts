@@ -1,7 +1,11 @@
 import type { MessageCatalog } from "../../i18n-config";
 
 export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
-  "romestead.settings.validation.sleepThreshold": "填写 -1 可禁用休眠；启用休眠时请输入 1.0 到 16.5 毫秒。",
+  "romestead.settings.validation.sleepThreshold": "请输入 1 到 16.5 毫秒的阈值，或关闭 CPU 休眠。",
+  "settings.schema.romestead.auto_create_world_size.option.0": "小型",
+  "settings.schema.romestead.auto_create_world_size.option.1": "标准",
+  "settings.schema.romestead.auto_create_world_size.option.2": "大型",
+  "romestead.settings.sleep.threshold": "休眠阈值（毫秒）",
   "romestead.settings.sections.room": "服务器",
   "romestead.settings.sections.roomDescription": "写入 config.json 的玩家容量和基础房间限制。",
   "romestead.settings.sections.world": "世界",
@@ -10,6 +14,8 @@ export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
   "romestead.settings.sections.accessDescription": "服务器命令权限。",
   "romestead.settings.sections.admin": "管理",
   "romestead.settings.sections.adminDescription": "来自 Romestead 配置面的管理员开关。",
+  "romestead.settings.sections.performance": "性能",
+  "romestead.settings.sections.performanceDescription": "低负载 CPU 占用与服务器线程计时。",
   "romestead.settings.sections.advanced": "高级",
   "romestead.settings.sections.advancedDescription": "用于特定服务器版本的原始启动参数。",
   "romestead.settings.groups.identity.title": "房间身份",
@@ -20,6 +26,8 @@ export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
   "romestead.settings.groups.access.description": "玩家入服前需要填写的可选密码。",
   "romestead.settings.groups.admin.title": "管理开关",
   "romestead.settings.groups.admin.description": "config.json 暴露的服务端预留控制项。",
+  "romestead.settings.groups.performance.title": "CPU 休眠",
+  "romestead.settings.groups.performance.description": "调整服务器线程在低负载时的休眠方式。",
   "romestead.settings.groups.advanced.title": "启动覆盖",
   "romestead.settings.groups.advanced.description": "仅在特定 Romestead 服务端版本需要时追加原始参数。",
   "settings.schema.romestead.auto_start_world_name.title": "世界名称",
@@ -27,7 +35,7 @@ export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
   "settings.schema.romestead.auto_create_and_load_world.title": "自动创建并加载世界",
   "settings.schema.romestead.auto_create_and_load_world.description": "所选世界不存在时先创建，再加载。",
   "settings.schema.romestead.auto_create_world_size.title": "新世界大小",
-  "settings.schema.romestead.auto_create_world_size.description": "仅用于创建世界：0 为小型，1 为标准，2 为大型。",
+  "settings.schema.romestead.auto_create_world_size.description": "创建新世界时使用的大小；已有世界保持原大小。",
   "settings.schema.romestead.password.title": "加入密码",
   "settings.schema.romestead.password.description": "留空时，玩家加入无需密码。",
   "settings.schema.romestead.max_players.title": "最大玩家数",
@@ -38,6 +46,6 @@ export const ZH_CN_ROMESTEAD_MESSAGES: MessageCatalog = {
   "settings.schema.romestead.extra_launch_args.description": "追加到 Romestead 服务器生成启动命令末尾的原始参数。",
   "settings.schema.romestead.auto_create_world_seed.title": "新世界种子",
   "settings.schema.romestead.auto_create_world_seed.description": "创建世界时使用的生成种子。留空时使用随机种子。",
-  "settings.schema.romestead.sleep_threshold_ms.title": "服务器线程休眠阈值（毫秒）",
-  "settings.schema.romestead.sleep_threshold_ms.description": "控制低负载时的 CPU 休眠。1.0 至 16.5 毫秒启用休眠；-1 禁用休眠，可减少计时抖动，但会增加 CPU 占用。",
+  "settings.schema.romestead.sleep_threshold_ms.title": "低负载 CPU 休眠",
+  "settings.schema.romestead.sleep_threshold_ms.description": "允许服务器线程在低负载时休眠，以降低 CPU 占用。关闭后可减少计时抖动，但会增加 CPU 占用。休眠阈值可设为 1 到 16.5 毫秒。",
 };

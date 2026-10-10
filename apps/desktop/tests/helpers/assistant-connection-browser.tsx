@@ -98,6 +98,8 @@ async function run() {
   await start();
   await finish();
   check(fixture.querySelectorAll(".ai-connection-stages .is-passed").length === 3 && text().includes("聊天和工具通信均已通过") && text().includes("3 次模型请求"), "Success did not expose the three tested stages"); checks++;
+  check(fixture.querySelector<HTMLDetailsElement>(".ai-connection-details")?.open === false
+    && fixture.querySelector(".ai-connection-status")?.textContent?.includes("聊天和工具通信均已通过"), "Passed check should keep a visible summary with details collapsed"); checks++;
 
   const edits: Array<Partial<AiSettings>> = [
     { model: "changed-model" }, { baseUrl: "https://other.example.invalid/v1" }, { apiKey: ["synthetic", "changed", "key"].join("-") },
@@ -133,6 +135,7 @@ async function run() {
   await start();
   await finish({ toolCall: { status: "failed", diagnostic: "tool_not_called", latencyMs: 150 }, toolReplay: { status: "skipped", diagnostic: "tool_call_not_ready", latencyMs: 0 }, requestCount: 2 });
   check(text().includes("聊天可用，工具通信尚未通过") && text().includes("请确认它支持工具调用") && fixture.querySelectorAll(".is-skipped").length === 1, "Chat-only service was incorrectly described as ready for operations"); checks++;
+  check(fixture.querySelector<HTMLDetailsElement>(".ai-connection-details")?.open === true, "Failed tool diagnostics should expand without requiring discovery"); checks++;
   await start();
   await finish({ chat: { status: "failed", diagnostic: "authentication_rejected", latencyMs: 20 }, toolCall: { status: "skipped", diagnostic: "chat_not_ready", latencyMs: 0 }, toolReplay: { status: "skipped", diagnostic: "chat_not_ready", latencyMs: 0 }, requestCount: 1 });
   check(text().includes("服务拒绝了密钥") && !text().includes("聊天可用"), "Authentication failure did not remain a failed chat connection"); checks++;

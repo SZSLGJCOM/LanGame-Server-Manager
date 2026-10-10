@@ -3,7 +3,6 @@ import { getAiSettingsStatus, sameAiSettings, type AiSettings } from "../ai-sett
 import { assistantConnectionCheckAvailable, cancelAssistantConnectionCheck, checkAssistantConnection } from "../api-assistant-connection";
 import type { AssistantConnectionCheckOutput, AssistantConnectionStage } from "../assistant-connection-types";
 import { isChineseLocale, useI18n } from "../i18n";
-import { ActivityNotice } from "./ActivityNotice";
 import { ShellIcon } from "./ShellIcon";
 import "./app-ai-connection.css";
 
@@ -65,7 +64,7 @@ export function AppAiConnectionCheck({ settings, persistedSettings, disabled = f
   const hostAvailable = assistantConnectionCheckAvailable();
   const copy = chinese ? {
     title: "连接与工具检测", check: "检测连接", checking: "正在检测…", cancel: "取消检测", cancelling: "正在停止…",
-    note: "发送少量测试消息，验证聊天、工具调用和结果回传。不读取服务器或会话数据，模型服务可能计费。",
+    note: "仅发送测试消息，不读取服务器或会话数据；模型服务可能计费。", details: "检测详情",
     missing: "请先填写服务地址、模型和所需的 API Key。", empty: "尚未检测当前配置。",
     unavailableHost: "请在 LGSM 桌面端或已连接的管理界面中检测。",
     running: "正在检测聊天和工具通信，最多需要 90 秒。", stopping: "正在停止检测，等待请求结束。",
@@ -77,7 +76,7 @@ export function AppAiConnectionCheck({ settings, persistedSettings, disabled = f
     unavailable: "聊天连接未通过，请按检测结果检查配置。", requests: "次模型请求", elapsed: "用时"
   } : {
     title: "Connection and tools", check: "Check connection", checking: "Checking…", cancel: "Cancel check", cancelling: "Stopping…",
-    note: "Sends a few test messages to check chat, tool calls and result replay. No server or conversation data is read. Model service charges may apply.",
+    note: "Sends test messages only, without server or conversation data. Model service charges may apply.", details: "Check details",
     missing: "Enter a service URL, model and the required API key first.", empty: "This configuration has not been checked.",
     unavailableHost: "Run this check in the LGSM desktop app or a connected management interface.",
     running: "Checking chat and tool communication. This can take up to 90 seconds.", stopping: "Stopping the check and waiting for requests to finish.",
@@ -171,6 +170,9 @@ export function AppAiConnectionCheck({ settings, persistedSettings, disabled = f
   const allPassed = result?.chat.status === "passed" && result.toolCall.status === "passed" && result.toolReplay.status === "passed";
   const summary = result ? allPassed ? copy.allPassed : result.chat.status === "passed" ? copy.chatOnly : copy.unavailable : null;
   const noticeText = notice ? copy[notice] : summary;
+  const statusText = busy ? cancelling ? copy.stopping : copy.running
+    : noticeText ?? (!hostAvailable ? copy.unavailableHost : ready ? copy.empty : copy.missing);
+  const failed = notice === "requestFailed" || notice === "cancelFailed" || result?.chat.status === "failed";
   const stages: Array<[string, AssistantConnectionStage]> = result ? [
     [copy.chat, result.chat], [copy.toolCall, result.toolCall], [copy.toolReplay, result.toolReplay]
   ] : [];
@@ -190,8 +192,11 @@ export function AppAiConnectionCheck({ settings, persistedSettings, disabled = f
         </button> : null}
       </div>
     </div>
+    <p className={`ai-connection-status${failed ? " is-error" : allPassed ? " is-passed" : result ? " is-warning" : ""}`}
+      role={failed ? "alert" : "status"}>{statusText}</p>
     <p id={noteId} className="ai-connection-note">{copy.note}</p>
-    {result ? <>
+    {result ? <details className="ai-connection-details" key={result.requestId} open={!allPassed}>
+      <summary tabIndex={0}>{copy.details}</summary>
       <ol className="ai-connection-stages">
         {stages.map(([label, stage]) => <li key={label} className={`is-${stage.status}`}>
           <ShellIcon name={stage.status === "passed" ? "check-circle" : stage.status === "failed" ? "alert-circle" : "minus"} />
@@ -204,7 +209,6 @@ export function AppAiConnectionCheck({ settings, persistedSettings, disabled = f
         </li>)}
       </ol>
       <p className="ai-connection-note ai-connection-summary">{copy.elapsed} {seconds(result.elapsedMs)} · {result.requestCount} {copy.requests}</p>
-    </> : <p className="ai-connection-empty" role="status">{busy ? cancelling ? copy.stopping : copy.running : !hostAvailable ? copy.unavailableHost : ready ? copy.empty : copy.missing}</p>}
-    {noticeText ? <ActivityNotice tone={notice === "requestFailed" || notice === "cancelFailed" || result?.chat.status === "failed" ? "error" : allPassed ? "success" : result ? "warning" : "info"}>{noticeText}</ActivityNotice> : null}
+    </details> : null}
   </section>;
 }

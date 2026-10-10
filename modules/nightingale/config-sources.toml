@@ -1,5 +1,5 @@
 status = "best_effort_verified"
-last_verified = "2026-07-13"
+last_verified = "2026-10-10"
 notes = "Steam public build 22204011 (updated 2026-03-05 UTC) matches the local appmanifest. The official seven-page guide and exact-build ExampleServerSettings.ini define the complete stable surface used here: StartingDifficulty, connection/admin passwords, MaxPlayers, UDP port, bind address, -EnableCheats, -statusPort with listener binding, structured JSON logging, and Control-C shutdown. Conditional switches now use typed launch tokens rather than relying on raw arguments."
 
 [[sources]]
@@ -139,3 +139,10 @@ reason = "Fixed native standard-output routing so the managed console receives e
 source = "launch_args"
 key = "-FullStdOutLogOutput"
 reason = "Fixed native output verbosity so ordinary realm-readiness messages reach the managed console, not only warnings and display messages."
+
+[[sources]]
+id = "guided_status_copy_review_20261010"
+kind = "documentation"
+path = "apps/desktop/src/i18n/games/nightingale.en.ts and nightingale.zh-cn.ts"
+authority = "existing_typed_status_endpoint_contract"
+description = "Advanced-group help points to the already supported HTTP status switch and instance network port instead of asking users to enter -statusPort. Native fields and runtime behavior remain unchanged; no new server launch or multiplayer acceptance is claimed."

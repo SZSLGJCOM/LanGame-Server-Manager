@@ -7,6 +7,14 @@ use std::io::{self, Read, Write};
 use std::path::{Component, Path, PathBuf};
 use std::time::{Duration, Instant};
 
+#[cfg(test)]
+use app_steamcmd::steam_depot::relative;
+
+pub(super) use app_steamcmd::steam_depot::{
+    DepotCandidate, Entry, Inventory, acf_app_id, bounded, check_plain, folded, invalid, inventory,
+    inventory_for_inspection, open_read, validate_entries,
+};
+
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 
@@ -14,30 +22,26 @@ use sha1::{Digest, Sha1};
 mod manifest_format;
 #[cfg(test)]
 use manifest_format::manifest;
-use manifest_format::{
-    Object, collect_depots, decimal, depot_gid, insert_depot, object, parse_acf, text,
-};
-
+use manifest_format::parse_acf;
 const RECEIPT: &str = ".langame-steam-cache-seed.json";
 const ACQUISITION: &str = ".langame-program-acquisition.json";
 const MAX_MANIFEST: usize = 128 * 1024 * 1024;
 const MAX_ACF: usize = 4 * 1024 * 1024;
 const MAX_FILES: usize = 500_000;
-const MAX_BYTES: u64 = 2 * 1024 * 1024 * 1024 * 1024;
 type Result<T> = io::Result<T>;
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub(super) struct Entry {
-    pub(super) size: u64,
-    pub(super) sha1: String,
-}
-
-#[derive(Clone, Debug, Serialize)]
-pub(super) struct DepotCandidate {
-    pub(super) depot: u64,
-    pub(super) manifest: u64,
-    #[serde(flatten)]
-    pub(super) entry: Entry,
+// Preserve historical receipt path spelling; the shared reader uses only
+// relative inventory keys and does not persist canonical roots.
+pub(super) fn checked_root(root: &Path) -> Result<PathBuf> {
+    if !root.is_absolute()
+        || root
+            .components()
+            .any(|part| matches!(part, Component::ParentDir))
+    {
+        return Err(invalid("absolute cache root without traversal required"));
+    }
+    check_plain(root, true)?;
+    dunce::canonicalize(root)
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -64,10 +68,6 @@ pub struct SeedReceipt {
     files: BTreeMap<String, Entry>,
     acfs: BTreeMap<String, String>,
     pub summary: SeedSummary,
-}
-
-pub(super) fn invalid(message: impl std::fmt::Display) -> io::Error {
-    io::Error::new(io::ErrorKind::InvalidData, message.to_string())
 }
 
 /// Detect this before allowing any ordinary acquisition-to-baseline path.
@@ -303,96 +303,6 @@ fn validate_acquisition(receipt: &SeedReceipt, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
-pub(super) fn folded(value: &str) -> String {
-    value.to_uppercase()
-}
-
-fn relative(value: &str) -> Result<String> {
-    let value = value.replace('\\', "/");
-    if value.len() > 2048 || value.split('/').count() > 64 {
-        return Err(invalid("excessive cache path"));
-    }
-    for part in value.split('/') {
-        let stem = part.split('.').next().unwrap_or("").to_ascii_uppercase();
-        if part.is_empty()
-            || matches!(part, "." | "..")
-            || part.ends_with([' ', '.'])
-            || part
-                .chars()
-                .any(|c| c.is_control() || ":<>\"|?*".contains(c))
-            || part.to_ascii_lowercase().starts_with(".langame-")
-            || matches!(stem.as_str(), "CON" | "PRN" | "AUX" | "NUL")
-            || ((stem.starts_with("COM") || stem.starts_with("LPT"))
-                && stem.len() == 4
-                && matches!(stem.as_bytes()[3], b'1'..=b'9'))
-        {
-            return Err(invalid("unsafe Steam relative path"));
-        }
-    }
-    Ok(value)
-}
-
-pub(super) fn check_plain(path: &Path, directory: bool) -> Result<()> {
-    for ancestor in path.ancestors() {
-        let metadata = fs::symlink_metadata(ancestor)?;
-        #[cfg(windows)]
-        let linked = {
-            use std::os::windows::fs::MetadataExt;
-            metadata.file_attributes() & 0x400 != 0
-        };
-        #[cfg(not(windows))]
-        let linked = metadata.file_type().is_symlink();
-        if linked || metadata.file_type().is_symlink() || (ancestor != path && !metadata.is_dir()) {
-            return Err(invalid("linked or non-directory cache ancestor"));
-        }
-        if ancestor == path
-            && (if directory {
-                !metadata.is_dir()
-            } else {
-                !metadata.is_file()
-            })
-        {
-            return Err(invalid("unexpected cache entry type"));
-        }
-    }
-    Ok(())
-}
-
-pub(super) fn checked_root(root: &Path) -> Result<PathBuf> {
-    if !root.is_absolute()
-        || root
-            .components()
-            .any(|part| matches!(part, Component::ParentDir))
-    {
-        return Err(invalid("absolute cache root without traversal required"));
-    }
-    check_plain(root, true)?;
-    dunce::canonicalize(root)
-}
-
-pub(super) fn open_read(path: &Path) -> Result<File> {
-    check_plain(path, false)?;
-    let mut options = OpenOptions::new();
-    options.read(true);
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::OpenOptionsExt;
-        options.share_mode(1);
-    }
-    options.open(path)
-}
-
-pub(super) fn bounded(path: &Path, maximum: usize) -> Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    open_read(path)?
-        .take(maximum as u64 + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() > maximum {
-        return Err(invalid("cache metadata exceeds bound"));
-    }
-    Ok(bytes)
-}
-
 #[cfg(test)]
 fn create_parents(root: &Path, name: &str) -> Result<()> {
     let parent = Path::new(name)
@@ -538,225 +448,6 @@ fn copy_matching(
     result
 }
 
-#[derive(Default)]
-pub(super) struct Inventory {
-    pub(super) files: BTreeMap<String, Entry>,
-    pub(super) overlapping_files: BTreeMap<String, Vec<DepotCandidate>>,
-    pub(super) directories: BTreeSet<String>,
-    pub(super) acfs: BTreeMap<String, String>,
-    pub(super) missing_manifests: Vec<PathBuf>,
-    missing_depots: usize,
-}
-
-pub(super) fn inventory(
-    root: &Path,
-    steamcmd: &Path,
-    app_id: u32,
-    strict: bool,
-) -> Result<Inventory> {
-    read_inventory(root, steamcmd, app_id, strict, false)
-}
-
-/// Preserve declared official alternatives for observation, without guessing
-/// Steam's mount priority. The seed copier continues to reject differing bytes.
-pub(super) fn inventory_for_inspection(
-    root: &Path,
-    steamcmd: &Path,
-    app_id: u32,
-    strict: bool,
-) -> Result<Inventory> {
-    read_inventory(root, steamcmd, app_id, strict, true)
-}
-
-fn read_inventory(
-    root: &Path,
-    steamcmd: &Path,
-    app_id: u32,
-    strict: bool,
-    retain_overlaps: bool,
-) -> Result<Inventory> {
-    let cache = checked_root(steamcmd)?.join("depotcache");
-    let mut result = Inventory::default();
-    let app = read_acf(root, app_id, &mut result.acfs)?;
-    let mut depots = BTreeMap::new();
-    collect_depots(&app, &mut depots)?;
-    if let Some(shared) = app.get("shareddepots") {
-        for (depot, owner) in object(shared)? {
-            let owner = decimal(text(owner)?)?;
-            let owner = u32::try_from(owner).map_err(invalid)?;
-            let dependency = read_acf(root, owner, &mut result.acfs)?;
-            let installed = object(
-                dependency
-                    .get("installeddepots")
-                    .ok_or_else(|| invalid("shared depots missing"))?,
-            )?;
-            let details = installed
-                .get(depot)
-                .ok_or_else(|| invalid("shared depot absent from owner ACF"))?;
-            insert_depot(&mut depots, decimal(depot)?, depot_gid(details)?)?;
-        }
-    }
-    if depots.is_empty() || depots.len() > 128 {
-        return Err(invalid("missing or excessive installed depots"));
-    }
-    let mut origins = BTreeMap::new();
-    let mut candidate_count = 0_usize;
-    for (depot, gid) in depots {
-        let path = cache.join(format!("{depot}_{gid}.manifest"));
-        let bytes = match bounded(&path, MAX_MANIFEST) {
-            Ok(bytes) => bytes,
-            Err(error) if !strict && error.kind() == io::ErrorKind::NotFound => {
-                result.missing_depots += 1;
-                result.missing_manifests.push(path);
-                continue;
-            }
-            Err(error) => return Err(error),
-        };
-        let (files, directories) = manifest_format::manifest_inventory(&bytes, depot, gid)?;
-        result.directories.extend(directories);
-        if result.directories.len() > MAX_FILES {
-            return Err(invalid("too many mounted Steam directories"));
-        }
-        for (name, entry) in files {
-            if let Some(old) = result.files.get(&name) {
-                if !retain_overlaps && old != &entry {
-                    return Err(invalid(format!(
-                        "conflicting content in mounted depots: {name}"
-                    )));
-                }
-                if retain_overlaps {
-                    let candidates =
-                        result
-                            .overlapping_files
-                            .entry(name.clone())
-                            .or_insert_with(|| {
-                                candidate_count += 1;
-                                let (depot, manifest) = origins[&name];
-                                vec![DepotCandidate {
-                                    depot,
-                                    manifest,
-                                    entry: old.clone(),
-                                }]
-                            });
-                    candidates.push(DepotCandidate {
-                        depot,
-                        manifest: gid,
-                        entry,
-                    });
-                    candidate_count += 1;
-                    if candidate_count > MAX_FILES * 2 {
-                        return Err(invalid("too many overlapping Steam file candidates"));
-                    }
-                }
-            } else {
-                origins.insert(name.clone(), (depot, gid));
-                result.files.insert(name, entry);
-            }
-            if result.files.len() > MAX_FILES {
-                return Err(invalid("too many mounted Steam files"));
-            }
-        }
-    }
-    validate_entries(&result.files)?;
-    if retain_overlaps {
-        // Individually bounded depots can have different large files at the
-        // same paths. Bound every possible selected combination, not just the
-        // first representative entries retained for path validation.
-        let mut maximum_bytes = 0_u64;
-        for (name, entry) in &result.files {
-            let maximum = result
-                .overlapping_files
-                .get(name)
-                .and_then(|candidates| {
-                    candidates
-                        .iter()
-                        .map(|candidate| candidate.entry.size)
-                        .max()
-                })
-                .unwrap_or(entry.size);
-            maximum_bytes = maximum_bytes
-                .checked_add(maximum)
-                .ok_or_else(|| invalid("Steam candidate size overflow"))?;
-            if maximum_bytes > MAX_BYTES {
-                return Err(invalid("Steam candidate package exceeds byte bound"));
-            }
-        }
-    }
-    let file_keys: BTreeSet<_> = result.files.keys().map(|path| folded(path)).collect();
-    let mut spellings = BTreeMap::new();
-    for path in result.files.keys().chain(result.directories.iter()) {
-        let mut prefix = String::new();
-        for part in path.split('/') {
-            if !prefix.is_empty() {
-                prefix.push('/');
-            }
-            prefix.push_str(part);
-            let key = folded(&prefix);
-            if let Some(old) = spellings.insert(key.clone(), prefix.clone())
-                && old != prefix
-            {
-                return Err(invalid("case-conflicting mounted directory"));
-            }
-            if spellings.len() > MAX_FILES * 2 {
-                return Err(invalid("too many mounted directory prefixes"));
-            }
-            if (prefix != *path || result.directories.contains(path)) && file_keys.contains(&key) {
-                return Err(invalid("mounted directory conflicts with a file"));
-            }
-        }
-    }
-    if strict && result.files.is_empty() {
-        return Err(invalid("updated package has no verified files"));
-    }
-    Ok(result)
-}
-
-fn validate_entries(files: &BTreeMap<String, Entry>) -> Result<()> {
-    if files.len() > MAX_FILES {
-        return Err(invalid("too many Steam files"));
-    }
-    let mut spellings = BTreeMap::new();
-    let mut total = 0_u64;
-    let file_keys: BTreeSet<_> = files.keys().map(|name| folded(name)).collect();
-    for (name, entry) in files {
-        if relative(name)? != *name
-            || entry.size > MAX_BYTES
-            || entry.sha1.len() != 40
-            || !entry
-                .sha1
-                .bytes()
-                .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
-        {
-            return Err(invalid("invalid Steam inventory entry"));
-        }
-        total = total
-            .checked_add(entry.size)
-            .ok_or_else(|| invalid("Steam size overflow"))?;
-        if total > MAX_BYTES {
-            return Err(invalid("Steam package exceeds byte bound"));
-        }
-        let mut prefix = String::new();
-        for part in name.split('/') {
-            if !prefix.is_empty() {
-                prefix.push('/');
-            }
-            prefix.push_str(part);
-            if let Some(old) = spellings.insert(folded(&prefix), prefix.clone())
-                && old != prefix
-            {
-                return Err(invalid("case-conflicting Steam paths"));
-            }
-            if spellings.len() > MAX_FILES * 2 {
-                return Err(invalid("too many Steam path prefixes"));
-            }
-            if prefix != *name && file_keys.contains(&folded(&prefix)) {
-                return Err(invalid("Steam file is also a directory ancestor"));
-            }
-        }
-    }
-    Ok(())
-}
-
 fn check_tree(receipt: &SeedReceipt, inventory: &Inventory) -> Result<()> {
     let mut allowed: BTreeSet<_> = inventory
         .files
@@ -803,25 +494,6 @@ fn check_tree(receipt: &SeedReceipt, inventory: &Inventory) -> Result<()> {
         }
     }
     Ok(())
-}
-
-pub(super) fn acf_app_id(path: &str) -> Result<u32> {
-    let id = path
-        .strip_prefix("steamapps/appmanifest_")
-        .and_then(|s| s.strip_suffix(".acf"))
-        .ok_or_else(|| invalid("invalid dependency ACF path"))?;
-    u32::try_from(decimal(id)?).map_err(invalid)
-}
-
-fn read_acf(root: &Path, id: u32, acfs: &mut BTreeMap<String, String>) -> Result<Object> {
-    if acfs.len() > 128 {
-        return Err(invalid("too many dependency ACF files"));
-    }
-    let relative = format!("steamapps/appmanifest_{id}.acf");
-    let bytes = bounded(&root.join(&relative), MAX_ACF)?;
-    let app = parse_acf(&bytes, id)?;
-    acfs.insert(relative, String::from_utf8(bytes).map_err(invalid)?);
-    Ok(app)
 }
 
 #[cfg(test)]

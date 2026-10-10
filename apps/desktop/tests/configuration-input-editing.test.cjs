@@ -54,6 +54,38 @@ test("Core Keeper preserves existing 32-character passwords through input and sa
   assert.deepEqual(issues(field, draft), []);
 });
 
+test("Valheim password help and validation enforce the native five-character minimum", () => {
+  const details = {
+    summary: { id: "valheim", name: "Valheim" },
+    schema_json: fs.readFileSync(path.resolve(__dirname, "../../../modules/valheim/schema.json"), "utf8")
+  };
+  const { EN_US_VALHEIM_MESSAGES } = require("../src/i18n/games/valheim.en.ts");
+  const { ZH_CN_VALHEIM_MESSAGES } = require("../src/i18n/games/valheim.zh-cn.ts");
+  for (const [locale, catalog, help] of [
+    ["en-US", EN_US_VALHEIM_MESSAGES, "at least 5 characters"],
+    ["zh-CN", ZH_CN_VALHEIM_MESSAGES, "至少 5 个字符"]
+  ]) {
+    const translate = (key, _params, fallback) => catalog[key] ?? fallback ?? key;
+    const schema = parseGuidedSettingsSchema(details, locale, translate);
+    const field = schema.fields.find((candidate) => candidate.key === "server_password");
+    assert.ok(field);
+    assert.equal(field.minLength, 5);
+    assert.ok(field.description.includes(help), `${locale}: help explains the minimum`);
+    const html = renderToStaticMarkup(React.createElement(ConfigurationField, {
+      field, value: "12345", settings: { server_password: "12345" }, onPatch() {}, t: translate,
+      copy: { concealSecret: "Hide", revealSecret: "Show", restartScopes: {} }
+    }));
+    assert.match(html, /<input\b[^>]*minLength="5"/i);
+    assert.ok(html.includes(help), `${locale}: accessible tooltip contains the minimum`);
+    for (const [password, valid] of [["", false], ["1", false], ["1234", false], ["😀😀😀", false],
+      ["12345", true], ["123456", true], ["😀😀😀😀😀", true], ["longer-test-password", true]]) {
+      const settings = { server_password: password };
+      assert.equal(issues(field, settings).length === 0, valid, `${locale}: length ${password.length}`);
+      assert.equal(settings.server_password, password, "validation must not replace the entered password");
+    }
+  }
+});
+
 test("Terraria world filenames agree between browser pattern and save validation", () => {
   const schema = parseGuidedSettingsSchema({
     summary: { id: "terraria", name: "Terraria" },
@@ -191,6 +223,7 @@ test("every bundled module preserves omitted boolean overrides and valid numeric
   const modules = fs.readdirSync(modulesRoot).filter((id) => fs.existsSync(path.join(modulesRoot, id, "schema.json")));
   assert.equal(modules.length, 32);
   const copy = { concealSecret: "Hide", revealSecret: "Show", restartScopes: {} };
+  const specializedBooleanFields = [];
   for (const id of modules) {
     const schema = parseGuidedSettingsSchema({
       summary: { id, name: id }, schema_json: fs.readFileSync(path.join(modulesRoot, id, "schema.json"), "utf8")
@@ -199,11 +232,63 @@ test("every bundled module preserves omitted boolean overrides and valid numeric
     for (const field of schema.fields.filter((field) => field.control === "checkbox" && isOptionalBooleanOverride(field))) {
       const state = { unrelated: "preserve", [field.key]: false };
       assert.deepEqual(writeGuidedFieldValue(state, field, undefined), { unrelated: "preserve" }, `${id}:${field.key}`);
+      if (field.presentation.state === "specialized") {
+        const definition = resolveSettingsModuleDefinition(id);
+        const registration = definition.specializedRenderers?.[field.presentation.rendererId];
+        assert.equal(registration?.kind, "module-addon", `${id}:${field.key}: registered native editor`);
+        assert.equal(registration.sectionId, field.sectionId);
+        assert.equal(typeof registration.Renderer, "function");
+        specializedBooleanFields.push(`${id}:${field.key}`);
+        continue;
+      }
       const html = renderToStaticMarkup(React.createElement(ConfigurationField, {
         field, settings: {}, value: readGuidedFieldValue(field, {}), copy, onPatch() {}
       }));
       assert.ok(html.includes(`<option value="" selected="">${field.preserveNativeWhenUnset
         ? "Keep native setting (current value not read)" : "Use game default"}</option>`), `${id}:${field.key}`);
+    }
+  }
+  assert.deepEqual(specializedBooleanFields.sort(), [
+    "satisfactory:auto_pause_when_empty", "satisfactory:send_gameplay_data"
+  ], "every delegated boolean editor has dedicated native rendering coverage below");
+});
+
+test("Satisfactory specialized boolean editors preserve unread native values and explicit overrides", () => {
+  const { I18nContext } = require("../src/i18n-context.ts");
+  const { EN_US_MESSAGES } = require("../src/i18n-messages.ts");
+  const { ZH_CN_MESSAGES } = require("../src/i18n-messages-zh-cn.ts");
+  const moduleDetails = {
+    summary: { id: "satisfactory", name: "Satisfactory" },
+    schema_json: fs.readFileSync(path.resolve(__dirname, "../../../modules/satisfactory/schema.json"), "utf8")
+  };
+  const definition = resolveSettingsModuleDefinition("satisfactory");
+  const details = { summary: { id: "satisfactory-unread", status: "stopped" } };
+  for (const [locale, catalog] of [["en-US", EN_US_MESSAGES], ["zh-CN", ZH_CN_MESSAGES]]) {
+    const t = (key, _params, fallback) => catalog[key] ?? fallback ?? key;
+    const schema = parseGuidedSettingsSchema(moduleDetails, locale, t);
+    for (const key of ["auto_pause_when_empty", "send_gameplay_data"]) {
+      const field = schema.fields.find((candidate) => candidate.key === key);
+      assert.equal(field.presentation.state, "specialized");
+      const { Renderer } = definition.specializedRenderers[field.presentation.rendererId];
+      const render = (settings) => renderToStaticMarkup(React.createElement(I18nContext.Provider, {
+        value: { locale, t, setLocale() {} }
+      }, React.createElement(definition.workspaceProvider, { details }, React.createElement(Renderer, {
+        sectionId: field.sectionId, fieldKey: key, moduleDetails, details, settings,
+        disabled: false, onPatch() {}
+      }))));
+      const omitted = {};
+      const html = render(omitted);
+      assert.ok(html.includes(`<option value="" selected="">${t("satisfactory.settings.native.currentValueUnavailable")}</option>`),
+        `${locale}:${key}: an unread native value remains unset`);
+      assert.deepEqual(omitted, {}, "rendering must not invent or persist a native default");
+      for (const value of [false, true]) {
+        const settings = { [key]: value };
+        const explicit = render(settings);
+        assert.match(explicit, /<input\b[^>]*type="checkbox"/);
+        assert.equal(/<input\b[^>]*checked=""/.test(explicit), value, `${locale}:${key}: explicit ${value}`);
+        assert.doesNotMatch(explicit, /<select/);
+        assert.deepEqual(settings, { [key]: value });
+      }
     }
   }
 });

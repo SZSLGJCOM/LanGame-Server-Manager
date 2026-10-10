@@ -10,7 +10,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     const report = await runBrowserFixture({ fixturePath: "assistant-connection-browser.html", viewport, screenshotPath });
     assert.equal(report.status, "passed", JSON.stringify(report));
     assert.deepEqual(report.browser_errors, []);
-    assert.equal(report.checks, 25);
+    assert.equal(report.checks, 27);
     assert.equal(report.browser_exited, true);
     assert.equal(report.browser_processes_remaining, 0);
     assert.equal(report.scratch_removed, true);

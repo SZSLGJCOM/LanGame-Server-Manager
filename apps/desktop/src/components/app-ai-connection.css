@@ -27,7 +27,7 @@
   line-height: var(--leading-compact);
 }
 
-.ai-connection-check :is(.ai-connection-note, .ai-connection-empty) {
+.ai-connection-check :is(.ai-connection-note, .ai-connection-status) {
   margin: 0;
   color: var(--shell-muted);
   font-size: var(--text-secondary);
@@ -35,9 +35,17 @@
   overflow-wrap: anywhere;
 }
 
-.ai-connection-check .ai-connection-empty {
+.ai-connection-check .ai-connection-status {
   color: var(--shell-text);
 }
+
+.ai-connection-status.is-passed { color: var(--success); }
+.ai-connection-status.is-error { color: var(--theme-danger-text); }
+.ai-connection-status.is-warning { color: var(--theme-warning-text); }
+.ai-connection-details summary { cursor: pointer; color: var(--shell-muted); font-size: var(--text-secondary); }
+.ai-connection-details summary:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 3px; }
+.ai-connection-details[open] .ai-connection-stages { margin-top: 12px; }
+.ai-connection-details .ai-connection-summary { margin-top: 12px; }
 
 .ai-connection-stages {
   display: grid;

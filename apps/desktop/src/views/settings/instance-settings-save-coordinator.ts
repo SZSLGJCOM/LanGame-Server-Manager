@@ -1,6 +1,7 @@
 interface SaveRegistration {
   owner: object | string;
   kind: "editor" | "operation";
+  beforeStop: boolean;
   flush(): Promise<void>;
   completion: Promise<void> | null;
   settled: boolean;
@@ -10,8 +11,9 @@ interface SaveRegistration {
 export class InstanceSettingsSaveCoordinator {
   private readonly registrations = new Map<string, Set<SaveRegistration>>();
 
-  register(instanceId: string, flush: () => Promise<void>, owner: object = flush): { detach(completion: Promise<void>): void } {
-    return this.createRegistration(instanceId, flush, owner, "editor");
+  register(instanceId: string, flush: () => Promise<void>, owner: object = flush,
+    options: { beforeStop?: boolean } = {}): { detach(completion: Promise<void>): void } {
+    return this.createRegistration(instanceId, flush, owner, "editor", options.beforeStop === true);
   }
 
   /** Register before invoking the operation, including any preliminary read or download. */
@@ -22,7 +24,7 @@ export class InstanceSettingsSaveCoordinator {
   }
 
   private createRegistration(
-    instanceId: string, flush: () => Promise<void>, owner: object | string, kind: SaveRegistration["kind"]
+    instanceId: string, flush: () => Promise<void>, owner: object | string, kind: SaveRegistration["kind"], beforeStop = false
   ): { detach(completion: Promise<void>): void } {
     const entries = this.registrations.get(instanceId) ?? new Set<SaveRegistration>();
     // Reopening the editor loads persisted settings and replaces abandoned, settled drafts.
@@ -30,10 +32,11 @@ export class InstanceSettingsSaveCoordinator {
     // Reusing an owner follows queue.reset(), including StrictMode's effect replay.
     for (const entry of entries) {
       const sameEditor = kind === "editor" && entry.kind === "editor" && entry.owner === owner;
-      const replacedFailure = entry.completion && entry.settled && (kind === "editor" || entry.owner === owner);
+      const replacedFailure = entry.completion && entry.settled &&
+        ((kind === "editor" && entry.beforeStop === beforeStop) || entry.owner === owner);
       if (sameEditor || replacedFailure) entries.delete(entry);
     }
-    const entry: SaveRegistration = { owner, kind, flush, completion: null, settled: false };
+    const entry: SaveRegistration = { owner, kind, beforeStop, flush, completion: null, settled: false };
     entries.add(entry);
     this.registrations.set(instanceId, entries);
     return {
@@ -55,8 +58,17 @@ export class InstanceSettingsSaveCoordinator {
   }
 
   async flush(instanceId: string): Promise<void> {
+    return this.flushPhase(instanceId, false);
+  }
+
+  /** Live game APIs must finish while the server still runs, before shutdown. */
+  async flushBeforeStop(instanceId: string): Promise<void> {
+    return this.flushPhase(instanceId, true);
+  }
+
+  private async flushPhase(instanceId: string, beforeStop: boolean): Promise<void> {
     for (;;) {
-      const entries = [...(this.registrations.get(instanceId) ?? [])];
+      const entries = [...(this.registrations.get(instanceId) ?? [])].filter((entry) => entry.beforeStop === beforeStop);
       const completions = entries.map((entry) => entry.completion);
       await Promise.all(entries.map(async (entry) => {
         const completion = entry.completion;
@@ -67,7 +79,7 @@ export class InstanceSettingsSaveCoordinator {
           else throw error;
         }
       }));
-      const current = [...(this.registrations.get(instanceId) ?? [])];
+      const current = [...(this.registrations.get(instanceId) ?? [])].filter((entry) => entry.beforeStop === beforeStop);
       if (current.every((entry) => {
         const index = entries.indexOf(entry);
         return index >= 0 && entry.completion === completions[index];

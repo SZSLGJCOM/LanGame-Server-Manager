@@ -19,6 +19,8 @@ mod file_stamp;
 #[path = "program_package_verification.rs"]
 mod verification;
 use verification::{CachedVerification, PackageVerifier};
+#[path = "program_steam_metadata.rs"]
+mod steam_metadata;
 
 #[path = "program_package_reuse.rs"]
 mod reuse;
@@ -28,7 +30,7 @@ pub(super) const CLEAN_PACKAGE: &str = ".langame-clean-package.json";
 const INITIAL_PACKAGE: &str = ".langame-initial-package.json";
 pub(super) const MAX_MANIFEST_BYTES: u64 = 64 * 1024 * 1024;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(super) struct CleanPackage {
     pub(super) version: u32,
@@ -44,97 +46,9 @@ pub(super) struct CleanPackage {
     pub(super) verified_files: BTreeMap<String, CachedVerification>,
 }
 
-/// Only the installer may assert this after acquiring into a new, empty directory,
-/// or after official validation plus complete exact depot size/hash verification
-/// establishes an equivalent tree with no non-package contents. Validation of an
-/// old installation alone is not proof: it can leave unknown files behind.
-pub fn record_library_program_baseline(
-    root: &Path,
-    descriptor: &ModuleDescriptor,
-    source_is_clean: bool,
-    cancellation: Option<&AtomicBool>,
-) -> Result<(), StorageError> {
-    if !source_is_clean {
-        // An update has already changed this directory. Even a cancellation
-        // arriving now must not leave the previous package's whitelist trusted.
-        for name in [CLEAN_PACKAGE, INITIAL_PACKAGE] {
-            let path = normalize_resource_path(&root.join(name))?;
-            match fs::remove_file(&path) {
-                Ok(()) => {}
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(source) => return Err(StorageError::DeletePath { path, source }),
-            }
-        }
-        return check_creation_cancelled(cancellation);
-    }
-    check_creation_cancelled(cancellation)?;
-    let root = normalize_path(root)?;
-    // Unknown roots have no marker; a present marker must belong to this exact
-    // acquisition before the caller can finalize it as an official package.
-    super::library_program_acquisition_is_trusted(&root, descriptor)?;
-    let mut exclusions = package_exclusions(descriptor)?;
-    // The runtime scanner intentionally recognizes only numeric Workshop
-    // IDs. A clean seed must also omit manually named workshop-* directories.
-    if descriptor.summary.id == "dontstarve" && root.join("mods").is_dir() {
-        normalize_path(&root.join("mods"))?;
-        for entry in
-            fs::read_dir(root.join("mods")).map_err(|source| StorageError::ReadDirectory {
-                path: root.join("mods"),
-                source,
-            })?
-        {
-            check_creation_cancelled(cancellation)?;
-            let entry = entry.map_err(|source| StorageError::ReadDirectory {
-                path: root.join("mods"),
-                source,
-            })?;
-            if entry
-                .file_name()
-                .to_string_lossy()
-                .to_ascii_lowercase()
-                .starts_with("workshop-")
-            {
-                exclusions.insert(format!("mods/{}", entry.file_name().to_string_lossy()));
-            }
-        }
-    }
-    let (package, verified_files) = verification::scan_verified_package(&root, cancellation)?;
-    // The full acquisition inventory proves that shipped default configuration
-    // is original. The filtered manifest remains the only source for copies.
-    let initial = CleanPackage {
-        version: 1,
-        module_id: descriptor.summary.id.clone(),
-        source: "official_clean_install".into(),
-        files: package.files.clone(),
-        directories: package.directories.clone(),
-        verified_files: verified_files.clone(),
-    };
-    validate_manifest(&initial, &root)?;
-    let manifest = CleanPackage {
-        version: 1,
-        module_id: descriptor.summary.id.clone(),
-        source: "official_clean_install".into(),
-        files: package
-            .files
-            .into_iter()
-            .filter(|(key, _)| !excluded(key, &exclusions, descriptor.summary.id == "dontstarve"))
-            .collect(),
-        directories: package
-            .directories
-            .into_iter()
-            .filter(|key| !excluded(key, &exclusions, descriptor.summary.id == "dontstarve"))
-            .collect(),
-        verified_files: verified_files
-            .into_iter()
-            .filter(|(key, _)| !excluded(key, &exclusions, descriptor.summary.id == "dontstarve"))
-            .collect(),
-    };
-    validate_manifest(&manifest, &root)?;
-    check_creation_cancelled(cancellation)?;
-    write_named_manifest(&root, &initial, INITIAL_PACKAGE)?;
-    write_manifest(&root, &manifest)?;
-    super::clear_completed_acquisition(&root, descriptor)
-}
+#[path = "program_baseline.rs"]
+mod baseline;
+pub use baseline::{record_library_program_baseline, record_verified_library_program_baseline};
 
 /// Destructive and archive operations always verify the current file bytes.
 pub(crate) fn read_clean_package_tree(
@@ -269,7 +183,9 @@ pub fn library_program_is_pristine(
 }
 
 /// After official validation of the same package version, retain only an
-/// existing allowlist whose bytes still match. The caller must invalidate the
+/// existing allowlist whose program bytes still match, refreshing only the
+/// validated Steam installation metadata already listed for this module. The
+/// caller must hold the installation lifecycle lease and invalidate the
 /// baseline instead when the version changed: new required files can leave all
 /// old hashes unchanged. Unknown files are never added to this allowlist.
 pub fn retain_verified_library_program_baseline(
@@ -298,15 +214,44 @@ fn retain_baseline(
 ) -> Result<bool, StorageError> {
     let mut verifier = PackageVerifier::new(root, allow_cached, cancellation);
     let module_id = Some(descriptor.summary.id.as_str());
-    let Some(clean) = verifier.verify(module_id, read_manifest(root)?)? else {
+    let original_clean = read_manifest(root)?;
+    let clean = prepare_retained_manifest(
+        root,
+        descriptor,
+        original_clean.as_ref(),
+        allow_cached,
+        cancellation,
+    )?;
+    let Some(clean) = verifier.verify(module_id, clean)? else {
         record_library_program_baseline(root, descriptor, false, cancellation)?;
         return Ok(false);
     };
-    verifier.persist_verification(&clean, CLEAN_PACKAGE)?;
-    let initial = read_named_manifest(root, INITIAL_PACKAGE)?;
-    if initial.is_some() {
+    persist_retained_manifest(
+        &verifier,
+        root,
+        original_clean.as_ref(),
+        &clean,
+        CLEAN_PACKAGE,
+        cancellation,
+    )?;
+    let original_initial = read_named_manifest(root, INITIAL_PACKAGE)?;
+    if original_initial.is_some() {
+        let initial = prepare_retained_manifest(
+            root,
+            descriptor,
+            original_initial.as_ref(),
+            allow_cached,
+            cancellation,
+        )?;
         if let Some(initial) = verifier.verify(module_id, initial)? {
-            verifier.persist_verification(&initial, INITIAL_PACKAGE)?;
+            persist_retained_manifest(
+                &verifier,
+                root,
+                original_initial.as_ref(),
+                &initial,
+                INITIAL_PACKAGE,
+                cancellation,
+            )?;
         } else {
             // Shipped defaults may have become instance data. Keep the filtered
             // program allowlist, but never use that stale full tree for first use.
@@ -316,6 +261,53 @@ fn retain_baseline(
         }
     }
     Ok(true)
+}
+
+fn prepare_retained_manifest(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    original: Option<&CleanPackage>,
+    allow_cached: bool,
+    cancellation: Option<&AtomicBool>,
+) -> Result<Option<CleanPackage>, StorageError> {
+    let Some(original) = original else {
+        return Ok(None);
+    };
+    let mut manifest = original.clone();
+    if !allow_cached
+        && !steam_metadata::refresh_existing_entry(root, descriptor, &mut manifest, cancellation)?
+    {
+        return Ok(None);
+    }
+    Ok(Some(manifest))
+}
+
+fn persist_retained_manifest(
+    verifier: &PackageVerifier<'_>,
+    root: &Path,
+    original: Option<&CleanPackage>,
+    manifest: &CleanPackage,
+    name: &str,
+    cancellation: Option<&AtomicBool>,
+) -> Result<(), StorageError> {
+    let original = original
+        .ok_or_else(|| invalid(root, "program inventory disappeared during verification"))?;
+    if original.files == manifest.files {
+        return verifier.persist_verification(manifest, name);
+    }
+    check_creation_cancelled(cancellation)?;
+    let current = read_named_manifest(root, name)?
+        .ok_or_else(|| invalid(root, "program inventory disappeared during verification"))?;
+    if current.module_id != original.module_id
+        || current.files != original.files
+        || current.directories != original.directories
+    {
+        return Err(invalid(
+            root,
+            "program inventory changed during verification",
+        ));
+    }
+    write_named_manifest(root, manifest, name)
 }
 
 fn read_verified_clean_package(

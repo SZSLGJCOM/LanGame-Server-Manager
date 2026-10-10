@@ -30,7 +30,8 @@ use package::{
 };
 pub use package::{
     library_program_is_pristine, record_library_program_baseline,
-    retain_published_library_program_baseline, retain_verified_library_program_baseline,
+    record_verified_library_program_baseline, retain_published_library_program_baseline,
+    retain_verified_library_program_baseline,
 };
 pub(crate) use package::{read_clean_package_tree, require_clean_package_tree};
 
@@ -40,8 +41,9 @@ mod acquisition;
 #[cfg(test)]
 use acquisition::{ACQUISITION, MAX_ACQUISITION_BYTES};
 pub use acquisition::{
-    LibraryProgramAcquisition, library_program_acquisition_is_trusted,
-    read_library_program_acquisition, restore_library_program_acquisition,
+    LibraryProgramAcquisition, begin_empty_library_program_acquisition,
+    library_program_acquisition_is_trusted, read_library_program_acquisition,
+    restore_library_program_acquisition,
 };
 use acquisition::{clear_completed_acquisition, write_acquisition};
 

@@ -60,16 +60,62 @@ pub(in crate::commands) async fn prepare_creation_program(
     .map_err(|error| error.to_string())?;
 
     let current_version = if library_root.exists() {
-        if app_storage::library_program_acquisition_is_trusted(library_root, descriptor)
-            .map_err(|error| error.to_string())?
-        {
-            return Ok(CreationProgramPreparation::NeedsRepair(String::from(
-                "服务器程序尚未下载完成，请先在游戏库完成安装或校验，再创建实例；本次没有启动下载。",
-            )));
-        }
         let root = library_root.to_string_lossy();
         let module =
             map_module_details_with_install_state(&storage.settings, descriptor, Some(&root));
+        let pending = app_storage::library_program_acquisition_is_trusted(library_root, descriptor)
+            .map_err(|error| error.to_string())?;
+        let has_inventory = library_root
+            .join(".langame-clean-package.json")
+            .try_exists()
+            .map_err(|error| error.to_string())?;
+        if pending || (!has_inventory && source == app_core::InstanceProgramSource::Verified) {
+            let completed = registered.as_ref().filter(|record| {
+                record.install_state == InstallState::Installed
+                    && module.summary.install_state == InstallState::Installed
+                    && descriptor
+                        .install
+                        .as_ref()
+                        .is_some_and(|install| install.download_url_windows.is_none())
+            });
+            if let Some((app_id, version)) = descriptor
+                .summary
+                .steam_app_id
+                .filter(|id| *id != 0)
+                .zip(completed.and_then(|record| record.current_version.clone()))
+            {
+                // Older successful retries persisted Installed while leaving
+                // acquisition pending or the package inventory absent. Recover
+                // their exact official bytes locally; the marker alone never
+                // authorizes a whole-tree scan.
+                LibraryBaselineRecorder::new(
+                    operation,
+                    descriptor,
+                    &app_steamcmd::InstallCancellation::new(),
+                )
+                .finish_steam_acquisition(
+                    (),
+                    library_root.to_owned(),
+                    storage.paths.steamcmd_root.clone(),
+                    app_id,
+                    version,
+                )
+                .await
+                .map_err(|error| {
+                    if matches!(error, app_steamcmd::SteamCmdError::InstallCancelled { .. }) {
+                        return String::from("installation_cancelled");
+                    }
+                    format!(
+                        "已有下载文件已保留，但无法确认完整的原版程序清单。请先在游戏库校验程序后重试：{}",
+                        steamcmd_error_message(&error)
+                    )
+                })?;
+            } else if pending {
+                return Ok(CreationProgramPreparation::NeedsRepair(String::from(
+                    "服务器程序尚未下载完成，请先在游戏库完成安装或校验，再创建实例；本次没有启动下载。",
+                )));
+            }
+        }
         if module.summary.install_state != InstallState::Installed
             || registered
                 .as_ref()

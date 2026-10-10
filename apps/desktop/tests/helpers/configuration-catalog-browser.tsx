@@ -1,6 +1,6 @@
 import { act, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { readModuleDetails } from "../../src/api";
+import { createInstance, readInstanceDetails, readModuleDetails } from "../../src/api";
 import { buildMockSettingsForModule } from "../../src/api-mock/module-settings";
 import { I18nProvider, useI18n } from "../../src/i18n";
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
@@ -27,6 +27,8 @@ addEventListener("unhandledrejection", (event) => errors.push(String(event.reaso
 window.alert = window.confirm = window.prompt = () => { throw new Error("Unexpected native dialog"); };
 
 const persisted = new Map<string, InstanceDetails>();
+const nativeInstances = new Map<string, InstanceDetails>();
+const nativeModuleIds = new Set(["runescapedragonwilds", "valheim", "astroneer", "satisfactory"]);
 const saves: UpdateInstanceInput[] = [];
 const modules: Array<{ id: string; sections: number; configuration_fields: number; specialized_editors: number }> = [];
 let activeSchema: GuidedSettingsSchema | null = null;
@@ -58,15 +60,31 @@ async function mount(moduleId: string, settingsOverrides: Record<string, unknown
   let descriptor!: ModuleDetails;
   // The previous workspace can finish a pending save while the next descriptor loads.
   await act(async () => { descriptor = await readModuleDetails(moduleId); });
-  const id = `configuration-catalog-${moduleId}`;
-  const initial: InstanceDetails = persisted.get(moduleId) ?? {
+  let registered = nativeInstances.get(moduleId);
+  if (nativeModuleIds.has(moduleId) && !registered) {
+    // Native readers resolve a registered instance's module and selected world.
+    // Exercise the public development API rather than inventing an unowned ID.
+    let createdDetails!: InstanceDetails;
+    await act(async () => {
+      const created = await createInstance({ module_id: moduleId, name: "Config review" });
+      createdDetails = await readInstanceDetails(created.summary.id);
+    });
+    check(createdDetails.summary.module_id === moduleId && createdDetails.summary.status === "Stopped",
+      `${moduleId}: public mock creation did not register the expected stopped instance`);
+    registered = createdDetails;
+    nativeInstances.set(moduleId, registered);
+  }
+  const id = registered?.summary.id ?? `configuration-catalog-${moduleId}`;
+  const initial: InstanceDetails = persisted.get(moduleId) ?? (registered ? {
+    ...registered, settings_json: JSON.stringify({ ...JSON.parse(registered.settings_json), ...settingsOverrides })
+  } : {
     summary: { id, module_id: moduleId, name: "Configuration review", status: "Stopped", active_process_count: 0,
       autostart: false, bind_ip: "0.0.0.0" },
     settings_json: JSON.stringify({ ...buildMockSettingsForModule(moduleId, "Configuration review", id), ...settingsOverrides }),
     ports: descriptor.default_ports, config_file_path: "C:/synthetic/configuration/settings.json",
     saves_path: "C:/synthetic/configuration/saves", backup_uses_declared_saves_path: true,
     auto_backup_on_stop: false, backup_retention_count: 5, active_run: null
-  };
+  });
   activeSchema = null;
   await act(async () => {
     root.render(<I18nProvider><InstanceSettingsSaveProvider key={moduleId}>
@@ -103,6 +121,12 @@ async function selectSection(sectionId: string) {
     `[data-configuration-section-id="${CSS.escape(sectionId)}"] > .configuration-section-navigation__button`);
   check(target, `${activeModule}.${sectionId}: missing actionable navigation`);
   await act(async () => { target.click(); await frame(); });
+  const deadline = performance.now() + 5000;
+  while (fixture.querySelector('.configuration-workspace [aria-busy="true"]') ||
+    activeModule === "valheim" && sectionId === "world" && fixture.querySelector('[data-valheim-rule-group="preset"] [role="status"]')) {
+    check(performance.now() < deadline, `${activeModule}.${sectionId}: native mock reader did not settle: ${fixture.textContent}`);
+    await act(async () => { await frame(); });
+  }
   check(target.getAttribute("aria-current") === "page", `${activeModule}.${sectionId}: category did not activate`);
 }
 
@@ -111,7 +135,9 @@ function verifySection(moduleId: string, sectionId: string, schema: GuidedSettin
     field.sectionId === sectionId && field.presentation.owner === "configuration" &&
     ["editable", "specialized"].includes(field.presentation.state)).map((field) => field.key).sort();
   const renderers = listConfigurationSpecializedRenderers(resolveSettingsModuleDefinition(moduleId), sectionId);
-  const cards = [...fixture.querySelectorAll<HTMLElement>(".configuration-workspace__main [data-field-key]")];
+  // Retained editors preserve unsaved native drafts while their section is hidden.
+  const cards = [...fixture.querySelectorAll<HTMLElement>(".configuration-workspace__main [data-field-key]")]
+    .filter((card) => card.getClientRects().length > 0);
   const actual = cards.map((card) => card.dataset.fieldKey!).sort();
   check(new Set(actual).size === actual.length && actual.every((key) => expected.includes(key)),
     `${moduleId}.${sectionId}: controls contain duplicate or unexpected fields: ${actual}`);

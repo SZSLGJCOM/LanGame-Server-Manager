@@ -392,7 +392,15 @@ export function ServersView(props: ServersViewProps) {
         props.onWorkspaceSectionChange("overview");
         await props.onStart(instanceId, expectedWorldStart);
       } else {
+        let saveFailure: string | null = null;
+        try {
+          await settingsSaveCoordinator.flushBeforeStop(instanceId);
+        } catch (error) {
+          // A failed live API must be reported, but must not prevent stopping a broken server.
+          saveFailure = describeError(error);
+        }
         await props.onStop(instanceId);
+        if (saveFailure) props.onActivity(message("settings.configuration.save.failed", { message: saveFailure }, { tone: "error" }));
       }
     } catch (error) {
       props.onActivity(error instanceof DstWorldStartError

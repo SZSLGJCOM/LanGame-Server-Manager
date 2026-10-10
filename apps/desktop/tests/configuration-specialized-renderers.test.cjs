@@ -53,7 +53,7 @@ test("ConfigurationWorkspace renders registry entries without game or renderer I
   assert.match(workspaceSource, /<registration\.Renderer/);
   assert.match(workspaceSource, /onPatch=\{\(patch\) => commitSettings\(\(current\) => applyPatch\(current, patch\)\)\}/);
   const rendererStart = workspaceSource.indexOf("const renderSpecializedRenderers =");
-  const rendererEnd = workspaceSource.indexOf("\n  return (", rendererStart);
+  const rendererEnd = workspaceSource.indexOf("\n  const workspace = (", rendererStart);
   assert.ok(rendererStart >= 0 && rendererEnd > rendererStart);
   assert.doesNotMatch(workspaceSource.slice(rendererStart, rendererEnd), /moduleId === "dontstarve"/,
     "specialized renderer hosting stays generic even when a workspace notice is game-specific");

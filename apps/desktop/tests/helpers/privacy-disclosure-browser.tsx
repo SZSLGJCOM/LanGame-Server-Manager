@@ -3,6 +3,7 @@ import { act, StrictMode, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nProvider } from "../../src/i18n";
 import { AssistantPanel } from "../../src/components/AssistantPanel";
+import { listAssistantFocusableElements } from "../../src/components/assistant-focus";
 import { createDefaultAiSettings, type AiSettings } from "../../src/ai-settings";
 import { fallbackBootstrap } from "../../src/app-state";
 import type { AssistantBuildInput } from "../../src/assistant-types";
@@ -113,7 +114,15 @@ async function run() {
     await render(locale);
     check(document.querySelector(".ai-data-disclosure") === null, "Recipient disclosure must live in AI settings, outside the conversation");
     visible(".assistant-chat-input");
+    visible(".assistant-new-button");
+    visible(".assistant-history-button");
     visible(".assistant-privacy-button");
+    const newBox = element(".assistant-new-button").getBoundingClientRect();
+    const historyBox = element(".assistant-history-button").getBoundingClientRect();
+    const privacyBox = element(".assistant-privacy-button").getBoundingClientRect();
+    const settingsBox = element(".assistant-settings-button").getBoundingClientRect();
+    check(newBox.right <= historyBox.left && historyBox.right <= privacyBox.left && privacyBox.right < settingsBox.left,
+      "New conversation, history and privacy did not render together to the left of configuration controls");
     const privacyLabel = element(".assistant-privacy-button").getAttribute("aria-label");
     check(privacyLabel === (locale === "zh-CN" ? "隐私与数据使用说明" : "Privacy and data use"), "Header privacy entry has the wrong language");
     await act(async () => { element(".assistant-history-button").click(); });
@@ -155,7 +164,13 @@ async function run() {
     check(disclosure.textContent?.includes("https://models.example:8443"), "Settings did not show recipient");
     check(!/private-|fixture-password/.test(disclosure.textContent ?? ""), "Secret URL fields escaped into the disclosure");
     check(disclosure.textContent?.includes(locale === "zh-CN" ? "发送范围：" : "Sends conversation"), "Settings did not explain data sent to AI");
-    check(disclosure.textContent?.includes(locale === "zh-CN" ? "接收方由服务地址决定" : "The service URL determines the recipient"), "Settings did not explain API protocol and recipient");
+    const protocolHelp = element<HTMLDetailsElement>(".ai-settings-protocol-help");
+    check(!protocolHelp.open, "Protocol explanation should stay collapsed by default");
+    check(listAssistantFocusableElements(element(".assistant-panel")).includes(element(".ai-settings-protocol-help summary")), "Collapsed help summary was excluded from dialog keyboard navigation");
+    await enter(element(".ai-settings-protocol-help summary"));
+    check(protocolHelp.open && protocolHelp.textContent?.includes(locale === "zh-CN" ? "接收方由服务地址决定" : "The service URL determines the recipient"), "Protocol help cannot be opened by keyboard or hides the recipient rule");
+    visible(".ai-settings-protocol-help p");
+    await enter(element(".ai-settings-protocol-help summary"));
     disclosure.scrollIntoView({ block: "nearest" });
     await settle();
     visible(".app-settings-card--ai .ai-data-disclosure");
@@ -164,6 +179,13 @@ async function run() {
     await enter(element(".assistant-back-button"));
     check(element<HTMLTextAreaElement>(".assistant-chat-input").value === "保留这条尚未发送的消息", "Settings navigation changed the draft");
     check(document.querySelector(".ai-data-disclosure") === null, "Returning to chat duplicated settings disclosure");
+    visible(".assistant-knowledge-button");
+    await enter(element(".assistant-knowledge-button"));
+    check(element(".assistant-panel-title").textContent === (locale === "zh-CN" ? "开服知识库" : "Game knowledge"), "Knowledge entry opened the wrong surface");
+    check(document.querySelector(".assistant-knowledge-surface .knowledge-settings") !== null
+      && document.querySelector(".app-settings-card--ai") === null, "Knowledge remains coupled to AI settings");
+    await enter(element(".assistant-back-button"));
+    check(element<HTMLTextAreaElement>(".assistant-chat-input").value === "保留这条尚未发送的消息", "Knowledge navigation changed the draft");
   }
   await render("zh-CN", { ...settings, provider: "ollama", baseUrl: "http://remote.example:11434/v1" });
   await enter(element(".assistant-settings-button"));

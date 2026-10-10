@@ -39,11 +39,11 @@ test("knowledge IPC preserves settings and exact cancellation identity without L
   assert.equal(calls.length, 5);
 });
 
-test("knowledge settings render real controls, cancel the bound task and retain old-index evidence", { timeout: 90000 }, async () => {
-  const report = await runBrowserFixture({ fixturePath: "knowledge-settings-browser.html", screenshotPath: process.env.LANGAME_KNOWLEDGE_SCREENSHOT });
+test("knowledge settings fold diagnostics, distinguish restricted sources and preserve update lifecycle", { timeout: 90000 }, async () => {
+  const report = await runBrowserFixture({ fixturePath: "knowledge-settings-browser.html", keyboard: true, screenshotPath: process.env.LANGAME_KNOWLEDGE_SCREENSHOT });
   assert.equal(report.status, "passed", JSON.stringify(report));
   assert.deepEqual(report.browser_errors, []);
-  assert.equal(report.checks, 12);
+  assert.equal(report.checks, 15);
   assert.equal(report.browser_exited, true);
   assert.equal(report.browser_processes_remaining, 0);
   assert.equal(report.scratch_removed, true);

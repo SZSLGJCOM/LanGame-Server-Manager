@@ -10,6 +10,13 @@ authority = "first_party_documentation_and_read_only_installed_package_review"
 description = "2026-09-30: Publisher news records Valheim 1.0 on 2026-09-09 and Patch 1.0.16 on 2026-09-25. Installed app 896660 reports build 25527701. The six-page packaged Valheim Dedicated Server Manual.pdf (SHA256 d19ecbe906e5b7bef064df43342a1c9e80c9f80d9e4daf0e6904b902b9732b8b) and current official guide still document the 16 existing launch-parameter families; no new configuration option was found. Save cadence/backups and access lists keep their separate owners. The older 0.221.12 lifecycle evidence does not validate 1.0 networking or readiness."
 
 [[sources]]
+id = "native_saved_world_rules_20261010"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: World.SaveWorldFWLData/LoadWorld; ZoneSystem.GlobalKeyAdd/GlobalKeyRemove; ServerOptionsGUI.ReadKeys; StreamingAssets/SoftRef/Bundles/c4210710: StartGui_ServerOptions.prefab"
+authority = "read_only_installed_valheim_1_0_world_metadata_and_serialized_ui_contract"
+description = "2026-10-10: Installed build 25527701, assembly SHA256 7cab9b49d31ec064591ca80402dd35c566e03b7297cfb7bf4696c38da4e24d8b, asset bundle SHA256 f3cc1e6260689671aa42ba07c45e9b09e4df9a11f5632c82980fa7f206144317. World metadata is a length-prefixed ZPackage using BinaryWriter UTF-8 strings; versions 32+ serialize m_startingGlobalKeys, which native rule changes update and the native menu reads. Version 41 supports committed worlds_local/<world>/_main.<number>.fwl2/.db2/.ok generations. LanGame reads bounded ordinary metadata files only, selects the latest committed generation, preserves unknown keys, and exposes no seeds or player history. The checked-in world-rules.json records the native preset and slider key matrices for showing saved values and selected startup presets. Missing metadata is distinct from a new world; neither is silently treated as an existing Normal save. No saved-world file write or live-player acceptance is claimed. The native CLI -setkey is enable-only, so already-enabled saved/preset keys are displayed as enabled with their unsupported individual-disable action unavailable. WorldModifierOption.Default parses but its empty KeySlider keys do not establish a verified standard-reset contract, so no unsupported normal/default launch choice is added."
+
+[[sources]]
 id = "steamcmd_anonymous_app_896660"
 kind = "documentation"
 path = "<validated-install-root>/steamapps/appmanifest_896660.acf"

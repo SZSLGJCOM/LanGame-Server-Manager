@@ -92,6 +92,49 @@ impl LibraryBaselineRecorder {
         )
         .await
     }
+
+    /// A pending marker proves ownership, not clean contents. Interrupted Steam
+    /// downloads can be retried in place, but only exact depot-verified files
+    /// become the next copy allowlist; operator additions remain untouched.
+    pub(in crate::commands) async fn finish_steam_acquisition<G: Send + 'static>(
+        self,
+        guard: G,
+        root: PathBuf,
+        steamcmd: PathBuf,
+        app_id: u32,
+        version: String,
+    ) -> Result<G, app_steamcmd::SteamCmdError> {
+        if self.fresh_payload_recorded.load(Ordering::Acquire) {
+            return self.finish(guard, root, false, false).await;
+        }
+        let descriptor = self.descriptor;
+        let module_id = descriptor.summary.id.clone();
+        run_baseline_worker(
+            &self.operation,
+            &self.installation,
+            &module_id,
+            move |cancellation| {
+                let verified = app_steamcmd::verify_installed_steam_package(
+                    &root,
+                    &steamcmd,
+                    app_id,
+                    &version,
+                    Some(cancellation),
+                )
+                .map_err(|error| error.to_string())?;
+                app_storage::record_verified_library_program_baseline(
+                    &root,
+                    &descriptor,
+                    verified.files,
+                    verified.directories,
+                    Some(cancellation),
+                )
+                .map_err(|error| error.to_string())?;
+                Ok(guard)
+            },
+        )
+        .await
+    }
 }
 
 struct CancelBaselineOnDrop(Arc<AtomicBool>);

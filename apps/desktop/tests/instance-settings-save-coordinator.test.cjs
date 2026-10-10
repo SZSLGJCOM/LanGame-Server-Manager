@@ -174,3 +174,54 @@ test("returning to settings cannot forget an earlier editor's still active write
   save.resolve("latest");
   await barrier;
 });
+
+test("a running-only game API does not become a prerequisite for starting its server", async () => {
+  const owner = coordinator();
+  let nativeCalls = 0, ordinaryCalls = 0;
+  owner.register("server-a", async () => { ordinaryCalls += 1; });
+  owner.register("server-a", async () => { nativeCalls += 1; throw new Error("API requires running server"); }, {}, { beforeStop: true });
+  await owner.flush("server-a");
+  assert.equal(ordinaryCalls, 1);
+  assert.equal(nativeCalls, 0);
+  await assert.rejects(owner.flushBeforeStop("server-a"), /API requires running server/);
+  await owner.flush("server-a");
+  assert.equal(nativeCalls, 1, "starting never resends a failed live mutation");
+});
+
+test("shutdown waits for live API persistence without flushing an unrelated invalid startup draft", async () => {
+  const owner = coordinator();
+  const save = deferred();
+  owner.register("server-a", async () => { throw new Error("invalid startup settings"); });
+  owner.register("server-a", () => save.promise, {}, { beforeStop: true });
+  let stopped = false;
+  const stopping = owner.flushBeforeStop("server-a").then(() => { stopped = true; });
+  await settle();
+  assert.equal(stopped, false);
+  save.resolve();
+  await stopping;
+  assert.equal(stopped, true);
+  await assert.rejects(owner.flush("server-a"), /invalid startup settings/);
+});
+
+test("reopening ordinary settings does not acknowledge a detached live API failure", async () => {
+  const owner = coordinator();
+  owner.register("server-a", async () => undefined, {}, { beforeStop: true })
+    .detach(Promise.reject(new Error("native result unknown")));
+  await settle();
+  owner.register("server-a", async () => undefined);
+  await owner.flush("server-a");
+  await assert.rejects(owner.flushBeforeStop("server-a"), /native result unknown/);
+  owner.register("server-a", async () => undefined, {}, { beforeStop: true });
+  await owner.flushBeforeStop("server-a");
+});
+
+test("save phases and native failures remain isolated between instances", async () => {
+  const owner = coordinator();
+  owner.register("server-a", async () => { throw new Error("native unavailable"); }, {}, { beforeStop: true });
+  let persisted = false;
+  owner.register("server-b", async () => { persisted = true; }, {}, { beforeStop: true });
+  await owner.flushBeforeStop("server-b");
+  assert.equal(persisted, true);
+  await owner.flush("server-a");
+  await assert.rejects(owner.flushBeforeStop("server-a"), /native unavailable/);
+});

@@ -1,4 +1,7 @@
 import type { TranslateFn } from "../../../i18n";
+import { ValheimWorldRulesPanel } from "../ValheimWorldRulesPanel";
+import { ValheimWorldRulesProvider } from "../ValheimWorldRulesContext";
+import { VALHEIM_MODIFIER_NAMES, VALHEIM_WORLD_KEYS } from "../valheim-world-rules";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
 import type { GuidedFieldCopy, GuidedSettingsField, GuidedSettingsSection } from "../settings-schema";
 
@@ -53,13 +56,13 @@ const VALHEIM_FIELD_COPY: Record<
     titleKey: "settings.schema.valheim.world_modifiers.title",
     fallbackTitle: "World Modifiers",
     descriptionKey: "settings.schema.valheim.world_modifiers.description",
-    fallbackDescription: "One modifier and value per line, for example combat hard or resources most. Applied after the selected preset."
+    fallbackDescription: "Choose combat difficulty, death penalty, resource rate, raid frequency and portal rules. These choices apply after the preset."
   },
   world_set_keys: {
     titleKey: "settings.schema.valheim.world_set_keys.title",
     fallbackTitle: "World Keys",
     descriptionKey: "settings.schema.valheim.world_set_keys.description",
-    fallbackDescription: "One world key per line: nobuildcost, playerevents, passivemobs, or nomap."
+    fallbackDescription: "Enable free building, player events, passive creatures or disable map at startup. Unchecked rules follow the preset or saved world."
   },
   save_interval_seconds: {
     titleKey: "settings.schema.valheim.save_interval_seconds.title",
@@ -101,7 +104,7 @@ const VALHEIM_FIELD_COPY: Record<
     titleKey: "settings.schema.valheim.server_password.title",
     fallbackTitle: "Join Password",
     descriptionKey: "settings.schema.valheim.server_password.description",
-    fallbackDescription: "Written into the dedicated server launch command. Change the placeholder before you share the room."
+    fallbackDescription: "Join password must be at least 5 characters and must not appear in the server name. Each new instance starts with its own generated password."
   },
   permitted_list: {
     titleKey: "settings.schema.valheim.permitted_list.title",
@@ -239,11 +242,11 @@ function buildValheimSections(t: TranslateFn): GuidedSettingsSection[] {
     },
     {
       id: "world",
-      title: t("valheim.settings.sections.world", undefined, "World & Saves"),
+      title: t("valheim.settings.sections.world", undefined, "World Rules"),
       description: t(
         "valheim.settings.sections.worldDescription",
         undefined,
-        "World rules and native save or rolling-backup cadence."
+        "Difficulty, gameplay and additional world rules."
       )
     },
     {
@@ -380,11 +383,31 @@ function getPublicServerLabel(value: unknown, t: TranslateFn): string | undefine
 
 export const valheimSettingsDefinition: SettingsModuleDefinition = {
   id: "valheim",
+  workspaceProvider: ValheimWorldRulesProvider,
+  fieldPresentationOverrides: Object.fromEntries(
+    ["world_preset", "world_modifiers", "world_set_keys"].map((key) => [key, {
+      state: "specialized" as const,
+      owner: "configuration" as const,
+      sectionId: "world",
+      rendererId: `valheim-${key}`,
+      aliases: key === "world_modifiers" ? VALHEIM_MODIFIER_NAMES : key === "world_set_keys" ? VALHEIM_WORLD_KEYS : [],
+      restartScope: "server" as const
+    }])
+  ),
+  specializedRenderers: Object.fromEntries(
+    ["world_preset", "world_modifiers", "world_set_keys"].map((fieldKey) => [`valheim-${fieldKey}`, {
+      kind: "module-addon" as const,
+      placement: "before-fields" as const,
+      sectionId: "world",
+      fieldKey,
+      Renderer: ValheimWorldRulesPanel
+    }])
+  ),
   getSections: buildValheimSections,
   buildFieldGroups: (sectionId, fields, _locale, t) => buildValheimFieldGroups(sectionId, fields, t),
   getFieldCopy: (key, t) => buildFieldCopy(key, t),
   resolveFieldEditorVariant: (key) =>
-    ACCESS_LIST_FIELDS.has(key) || key === "world_modifiers" || key === "world_set_keys"
+    ACCESS_LIST_FIELDS.has(key)
       ? "string-list"
       : undefined,
   getEnumOptionLabel: (fieldKey, value, _locale, t) => {

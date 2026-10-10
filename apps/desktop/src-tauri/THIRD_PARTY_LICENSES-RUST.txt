@@ -37,7 +37,7 @@ LanGame 项目许可不限制接收者依 MPL 获得的源码权利。
 
 Locked external crates / 锁定外部 crate: 648
 Reviewed missing-file rules / 缺失文件审计规则: 47
-Unique legal texts / 唯一法律文本: 383
+Unique legal texts / 唯一法律文本: 384
 
 PACKAGE INVENTORY / 软件包清单
 ================================================================================
@@ -4696,15 +4696,15 @@ VCS commit / 版本提交: 838a0223142a2137b530e020cb7231aba46f7946
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file serde_spanned-0.6.9/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: serde_spanned@1.1.1
+Package / 软件包: serde_spanned@1.1.2
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26
-Source archive / 源码归档: https://static.crates.io/crates/serde_spanned/serde_spanned-1.1.1.crate
+Archive SHA-256: 4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c
+Source archive / 源码归档: https://static.crates.io/crates/serde_spanned/serde_spanned-1.1.2.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: 9db8aad6eafbc62f6b9d1950117649cc41eaf695
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-1.1.1/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file serde_spanned-1.1.1/LICENSE-APACHE
+VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file serde_spanned-1.1.2/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file serde_spanned-1.1.2/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: serde_urlencoded@0.7.1
 Declared license / 声明许可证: MIT/Apache-2.0
@@ -5290,17 +5290,17 @@ Legal text / 法律文本: 0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c01359
 Legal text / 法律文本: b7f455413bfe5f9d7da501a4468d4c5f866a432c325947e98cc9535e8b26cd6d — checksum-verified crate file tauri-plugin-single-instance-2.5.2/LICENSE_MIT
 Legal text / 法律文本: eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef — checksum-verified crate file tauri-plugin-single-instance-2.5.2/LICENSE.spdx
 --------------------------------------------------------------------------------
-Package / 软件包: tauri-plugin-updater@2.13.1
+Package / 软件包: tauri-plugin-updater@2.13.2
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3cb0b2ea3e85ca287990d3859a29cc5cb18024240fd78f62e027fb7963670f18
-Source archive / 源码归档: https://static.crates.io/crates/tauri-plugin-updater/tauri-plugin-updater-2.13.1.crate
+Archive SHA-256: 8cb463cd1f26c9562a01718fe9adf6927795f764c3576e509f27cf567307ddef
+Source archive / 源码归档: https://static.crates.io/crates/tauri-plugin-updater/tauri-plugin-updater-2.13.2.crate
 Repository / 仓库: https://github.com/tauri-apps/plugins-workspace
-VCS commit / 版本提交: e51128438011755f9e7277bad29b8c0978cf281c
+VCS commit / 版本提交: 7eb8246d47ba4d15002280ecf028521540e0070d
 Authors metadata / 作者元数据: Tauri Programme within The Commons Conservancy
-Legal text / 法律文本: 0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9 — checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE_APACHE-2.0
-Legal text / 法律文本: 89ff9689dcf9dd53968785d05a26f7898bb169dbfcada8d032b3e68cf0d55607 — checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE_MIT
-Legal text / 法律文本: eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef — checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE.spdx
+Legal text / 法律文本: 0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9 — checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE_APACHE-2.0
+Legal text / 法律文本: 89ff9689dcf9dd53968785d05a26f7898bb169dbfcada8d032b3e68cf0d55607 — checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE_MIT
+Legal text / 法律文本: eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef — checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE.spdx
 --------------------------------------------------------------------------------
 Package / 软件包: tauri-plugin@2.7.1
 Declared license / 声明许可证: Apache-2.0 OR MIT
@@ -5558,15 +5558,15 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-0.8.2/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-0.8.2/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml@1.1.6+spec-1.1.0
+Package / 软件包: toml@1.1.7+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 920602543f0911ab71da12c50d59701da54c196d1a2bf5cb4b75667f137a406a
-Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.1.6%2Bspec-1.1.0.crate
+Archive SHA-256: 7874cd34dd99040fc24e30923aa64a60a81ff3ddfe2b8129ccc84ba24949deed
+Source archive / 源码归档: https://static.crates.io/crates/toml/toml-1.1.7%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: 572c005d80cca5f7bd163805c2f33ba0a5207b6d
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.1.6+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml-1.1.6+spec-1.1.0/LICENSE-APACHE
+VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml-1.1.7+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml-1.1.7+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: toml_datetime@0.6.3
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5579,15 +5579,15 @@ Authors metadata / 作者元数据: Alex Crichton <alex@alexcrichton.com>
 Legal text / 法律文本: 378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-MIT
 Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file toml_datetime-0.6.3/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml_datetime@1.1.1+spec-1.1.0
+Package / 软件包: toml_datetime@1.1.2+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7
-Source archive / 源码归档: https://static.crates.io/crates/toml_datetime/toml_datetime-1.1.1%2Bspec-1.1.0.crate
+Archive SHA-256: 2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053
+Source archive / 源码归档: https://static.crates.io/crates/toml_datetime/toml_datetime-1.1.2%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: 9db8aad6eafbc62f6b9d1950117649cc41eaf695
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-APACHE
+VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: toml_edit@0.19.15
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -5621,25 +5621,25 @@ VCS commit / 版本提交: 8e1d5a85c361ac012957441bb4788ae82f5dc9c8
 Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_edit-0.25.15+spec-1.1.0/LICENSE-MIT
 Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml_edit-0.25.15+spec-1.1.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: toml_parser@1.1.3+spec-1.1.0
+Package / 软件包: toml_parser@1.1.4+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56
-Source archive / 源码归档: https://static.crates.io/crates/toml_parser/toml_parser-1.1.3%2Bspec-1.1.0.crate
+Archive SHA-256: bed810ee007d8e7f9cf20b4774e7198142fa27186e0f805871da7f3c39eaf333
+Source archive / 源码归档: https://static.crates.io/crates/toml_parser/toml_parser-1.1.4%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: 4ec099fed591a172f82007cb2f9d605985bbecee
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_parser-1.1.3+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml_parser-1.1.3+spec-1.1.0/LICENSE-APACHE
+VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_parser-1.1.4+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_parser-1.1.4+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: toml_writer@1.1.2+spec-1.1.0
+Package / 软件包: toml_writer@1.1.3+spec-1.1.0
 Declared license / 声明许可证: MIT OR Apache-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2
-Source archive / 源码归档: https://static.crates.io/crates/toml_writer/toml_writer-1.1.2%2Bspec-1.1.0.crate
+Archive SHA-256: 06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770
+Source archive / 源码归档: https://static.crates.io/crates/toml_writer/toml_writer-1.1.3%2Bspec-1.1.0.crate
 Repository / 仓库: https://github.com/toml-rs/toml
-VCS commit / 版本提交: eb251609a333580bf005cae27df853bb63dffdbe
-Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_writer-1.1.2+spec-1.1.0/LICENSE-MIT
-Legal text / 法律文本: c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08 — checksum-verified crate file toml_writer-1.1.2+spec-1.1.0/LICENSE-APACHE
+VCS commit / 版本提交: f72038c2508112dfaaedb227a511f91bf9b2015c
+Legal text / 法律文本: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe — checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE
+Legal text / 法律文本: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6 — checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Package / 软件包: tower-http@0.6.11
 Declared license / 声明许可证: MIT
@@ -8274,7 +8274,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Text SHA-256 / 文本 SHA-256: 0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9
 Source / 来源: checksum-verified crate file simdutf8-0.1.5/LICENSE-Apache
 Source / 来源: checksum-verified crate file tauri-plugin-single-instance-2.5.2/LICENSE_APACHE-2.0
-Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE_APACHE-2.0
+Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE_APACHE-2.0
 --------------------------------------------------------------------------------
 
                                  Apache License
@@ -10450,6 +10450,215 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+Text SHA-256 / 文本 SHA-256: 249fdb6694467dd615b259f7ddde07be3f8ae5a72cecebb0e24f6629af4215fe
+Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml-1.1.7+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml_parser-1.1.4+spec-1.1.0/LICENSE-APACHE
+Source / 来源: checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-APACHE
+--------------------------------------------------------------------------------
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "{}"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright Individual contributors
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 24e5860bf589d8501643e6ea51ffb3df66db2867492b09033d486183efbfa970
 Source / 来源: checksum-verified crate file async-broadcast-0.7.2/LICENSE-MIT
@@ -18118,15 +18327,15 @@ DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6
 Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-MIT
-Source / 来源: checksum-verified crate file serde_spanned-1.1.1/LICENSE-MIT
+Source / 来源: checksum-verified crate file serde_spanned-1.1.2/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml-1.1.6+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml-1.1.7+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml_datetime-1.1.2+spec-1.1.0/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-MIT
 Source / 来源: checksum-verified crate file toml_edit-0.25.15+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_parser-1.1.3+spec-1.1.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file toml_writer-1.1.2+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml_parser-1.1.4+spec-1.1.0/LICENSE-MIT
+Source / 来源: checksum-verified crate file toml_writer-1.1.3+spec-1.1.0/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) Individual contributors
 
@@ -20597,7 +20806,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 89ff9689dcf9dd53968785d05a26f7898bb169dbfcada8d032b3e68cf0d55607
-Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE_MIT
+Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE_MIT
 --------------------------------------------------------------------------------
 MIT License
 
@@ -27366,16 +27575,11 @@ Source / 来源: checksum-verified crate file hex-0.4.3/LICENSE-APACHE
 Source / 来源: checksum-verified crate file jni-sys-0.3.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file jni-sys-0.4.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file serde_spanned-0.6.9/LICENSE-APACHE
-Source / 来源: checksum-verified crate file serde_spanned-1.1.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file stringprep-0.1.5/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml-0.8.2/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml-1.1.6+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_datetime-1.1.1+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.19.15/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.20.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file toml_edit-0.25.15+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_parser-1.1.3+spec-1.1.0/LICENSE-APACHE
-Source / 来源: checksum-verified crate file toml_writer-1.1.2+spec-1.1.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file unicode_categories-0.1.1/LICENSE-APACHE
 Source / 来源: repository-shared license from checksum-verified jni-sys@0.4.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
@@ -30823,7 +31027,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: eb8a6c84630461b352badcab1dbe5d0168c56d377358b2b8c86b51003272d5ef
 Source / 来源: checksum-verified crate file tauri-plugin-single-instance-2.5.2/LICENSE.spdx
-Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.1/LICENSE.spdx
+Source / 来源: checksum-verified crate file tauri-plugin-updater-2.13.2/LICENSE.spdx
 --------------------------------------------------------------------------------
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0

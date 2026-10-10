@@ -309,11 +309,20 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     </div>;
   }
 
-  const specializedRenderers = readOnly ? [] : listConfigurationSpecializedRenderers(
+  const activeSpecializedRenderers = readOnly ? [] : listConfigurationSpecializedRenderers(
     moduleDefinition,
     selectedSectionId
   );
+  const retainedRenderers = readOnly ? [] : Object.entries(moduleDefinition?.specializedRenderers ?? {})
+    .flatMap(([id, registration]) => registration.kind === "module-addon" && registration.keepMounted &&
+      registration.sectionId !== selectedSectionId
+      ? [{ id, ...registration }] : []);
+  const specializedRenderers = [...activeSpecializedRenderers, ...retainedRenderers];
+  const showInstanceSaveStatus = activeGuidedFields.length > 0 ||
+    activeNode.builtInEditor === "instance-network" ||
+    !activeSpecializedRenderers.some((renderer) => renderer.saveMode && renderer.saveMode !== "instance-settings");
   const WorkspaceToolbar = readOnly ? undefined : moduleDefinition?.workspaceToolbar;
+  const WorkspaceProvider = readOnly ? undefined : moduleDefinition?.workspaceProvider;
   const renderSpecializedRenderers = (placement: "before-fields" | "after-fields") => (
     settingsParseResult.value ? (
       <>
@@ -323,8 +332,12 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               id={registration.fieldKey
                 ? `${idPrefix}-${registration.fieldKey.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-input`
                 : undefined}
-              className="configuration-workspace__addon" tabIndex={registration.fieldKey ? -1 : undefined}>
-              <registration.Renderer sectionId={selectedSectionId}
+              className={registration.sectionId === selectedSectionId ? "configuration-workspace__addon" : "configuration-workspace__retained-addon"}
+              hidden={registration.sectionId !== selectedSectionId}
+              inert={registration.sectionId !== selectedSectionId}
+              style={registration.sectionId !== selectedSectionId ? { display: "none" } : undefined}
+              tabIndex={registration.fieldKey ? -1 : undefined}>
+              <registration.Renderer sectionId={registration.sectionId} active={registration.sectionId === selectedSectionId}
                 fieldKey={registration.fieldKey} details={props.details}
                 moduleDetails={localizedModuleDetails} settings={settingsParseResult.value!}
                 disabled={editorDisabled}
@@ -337,7 +350,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     ) : null
   );
 
-  return (
+  const workspace = (
     <section className={`configuration-workspace${WorkspaceToolbar ? " configuration-workspace--toolbar" : ""}`}>
       {WorkspaceToolbar && settingsParseResult.value ? <WorkspaceToolbar
         sectionId={selectedSectionId} details={props.details} moduleDetails={localizedModuleDetails}
@@ -422,7 +435,10 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
           </div>
         </main>
       </div>
-      {!readOnly ? <ConfigurationSaveStatus status={saveStatus} validationBlocked={validationBlocked} t={t} /> : null}
+      {!readOnly && showInstanceSaveStatus ? <ConfigurationSaveStatus status={saveStatus} validationBlocked={validationBlocked} t={t}
+        scopeLabel={activeSpecializedRenderers.some((renderer) => renderer.saveMode && renderer.saveMode !== "instance-settings")
+          ? t("settings.configuration.save.instanceScope", undefined, "Instance configuration") : undefined} /> : null}
     </section>
   );
+  return WorkspaceProvider ? <WorkspaceProvider key={props.details.summary.id} details={props.details}>{workspace}</WorkspaceProvider> : workspace;
 }

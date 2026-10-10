@@ -43,6 +43,7 @@ mod ownership;
 mod package_revision;
 mod program_update_check;
 mod retained_install_data;
+pub mod steam_depot;
 mod steam_install_retained;
 mod steamcmd_bootstrap_log;
 mod steamcmd_prepare;
@@ -102,6 +103,7 @@ pub use program_update_check::current_program_version;
 pub use retained_install_data::{
     RETAINED_INSTALL_DATA_MARKER, has_retained_install_data, mark_retained_install_data,
 };
+pub use steam_depot::{VerifiedSteamPackage, verify_installed_steam_package};
 pub use steamcmd_prepare::{
     SteamCmdPreparePhase, SteamCmdPrepareProgress, ensure_steamcmd_installed,
     ensure_steamcmd_installed_with_progress,

@@ -1,4 +1,11 @@
 import { version as desktopVersion } from "../package.json";
+import { MockDragonwildsWorldSettings } from "./api-mock/dragonwilds-world-settings";
+import { buildMockAstroneerSaveCatalog } from "./api-mock/astroneer-saves";
+import { buildMockValheimWorldRules } from "./api-mock/valheim-world-rules";
+import { MockSatisfactoryWorldSettings } from "./api-mock/satisfactory-world-settings";
+import type { AuthorizeSatisfactoryServerInput, CreateSatisfactoryWorldInput, LoadSatisfactorySaveInput,
+  SetupSatisfactoryServerInput, WriteSatisfactoryRoomInput, WriteSatisfactoryWorldRulesInput } from "./satisfactory-world-settings";
+import type { WriteDragonwildsWorldSettingsInput } from "./dragonwilds-world-settings";
 import type {
   AssistantConfirmOperationInput,
   AssistantProviderSettingsInput,
@@ -123,6 +130,8 @@ function clone<T>(value: T): T {
 }
 
 const mockInstanceDetailsStore = new Map<string, InstanceDetails>();
+const mockDragonwildsWorldSettings = new MockDragonwildsWorldSettings();
+const mockSatisfactoryWorldSettings = new MockSatisfactoryWorldSettings();
 const mockInstanceBackupsStore = new Map<string, InstanceBackupResult[]>();
 const mockLogDocumentStore = new Map<string, LogTailSnapshot>();
 const mockSuppressedRuntimeWindowInstances = new Set<string>();
@@ -1115,6 +1124,50 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       mockBootstrap.state.instances, mockInstancePrograms, mockBootstrap.state.settings.archives_root);
   }
   switch (command) {
+    case "read_astroneer_save_catalog":
+      return buildMockAstroneerSaveCatalog(ensureMockInstanceDetails(String(args?.instanceId ?? args?.instance_id ?? ""))) as T;
+    case "read_satisfactory_world_settings":
+      return mockSatisfactoryWorldSettings.read(ensureMockInstanceDetails(String(args?.instanceId ?? args?.instance_id ?? ""))) as T;
+    case "read_satisfactory_admin_password":
+      return mockSatisfactoryWorldSettings.readAdminPassword(ensureMockInstanceDetails(String(args?.instanceId ?? args?.instance_id ?? ""))) as T;
+    case "setup_satisfactory_server": {
+      const input = args?.input as SetupSatisfactoryServerInput;
+      return mockSatisfactoryWorldSettings.setup(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "authorize_satisfactory_server": {
+      const input = args?.input as AuthorizeSatisfactoryServerInput;
+      return mockSatisfactoryWorldSettings.authorize(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "write_satisfactory_room": {
+      const input = args?.input as WriteSatisfactoryRoomInput;
+      return mockSatisfactoryWorldSettings.room(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "write_satisfactory_world_rules": {
+      const input = args?.input as WriteSatisfactoryWorldRulesInput;
+      return mockSatisfactoryWorldSettings.writeRules(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "create_satisfactory_world": {
+      const input = args?.input as CreateSatisfactoryWorldInput;
+      return mockSatisfactoryWorldSettings.create(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "load_satisfactory_save": {
+      const input = args?.input as LoadSatisfactorySaveInput;
+      return mockSatisfactoryWorldSettings.load(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
+    case "read_valheim_world_rules": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
+      const worldName = String(args?.worldName ?? args?.world_name ?? "");
+      if (ensureMockInstanceDetails(instanceId).summary.module_id !== "valheim") throw new Error("Not a Valheim instance.");
+      return buildMockValheimWorldRules(instanceId, worldName) as T;
+    }
+    case "read_dragonwilds_world_settings": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
+      return mockDragonwildsWorldSettings.read(ensureMockInstanceDetails(instanceId)) as T;
+    }
+    case "write_dragonwilds_world_settings": {
+      const input = args?.input as WriteDragonwildsWorldSettingsInput;
+      return mockDragonwildsWorldSettings.write(ensureMockInstanceDetails(input.instance_id), input) as T;
+    }
     case "bootstrap": {
       const booted = clone(mockBootstrap);
       if (booted.state.snapshot.telemetry) {

@@ -446,6 +446,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "assistant.history.deleteConfirm": "确定删除“{title}”吗？",
   "assistant.history.cancel": "取消",
   "assistant.panel.settingsLabel": "AI 设置",
+  "assistant.panel.knowledgeLabel": "开服知识库",
   "assistant.panel.privacyLabel": "隐私与数据使用说明",
   "assistant.update.available": "发现新版本{version}",
   "assistant.update.downloading": "正在下载更新，{percent}%",

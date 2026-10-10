@@ -29,6 +29,38 @@ pub struct LibraryProgramAcquisition {
     bytes: Vec<u8>,
 }
 
+/// Start a first installation only in a genuinely empty directory. The caller
+/// holds the module and target lifecycle lease through installation; existing
+/// files, subdirectories and acquisition metadata are never adopted or replaced.
+pub fn begin_empty_library_program_acquisition(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+) -> Result<(), StorageError> {
+    // Resolve and reject links before creating a missing tail, then check the
+    // resulting directory again before recording its normalized ownership.
+    let root = normalize_path(root)?;
+    fs::create_dir_all(&root).map_err(|source| StorageError::CreatePath {
+        path: root.clone(),
+        source,
+    })?;
+    let root = normalize_path(&root)?;
+    let mut entries = fs::read_dir(&root).map_err(|source| StorageError::ReadDirectory {
+        path: root.clone(),
+        source,
+    })?;
+    if let Some(entry) = entries.next() {
+        entry.map_err(|source| StorageError::ReadDirectory {
+            path: root.clone(),
+            source,
+        })?;
+        return Err(invalid(
+            &root,
+            "a new program acquisition requires an empty installation directory",
+        ));
+    }
+    write_acquisition(&root, &root, &descriptor.summary.id)
+}
+
 /// This proves only that the manager allocated an empty or allowlist-filtered
 /// installation target. A retry must still complete official validation.
 pub fn library_program_acquisition_is_trusted(

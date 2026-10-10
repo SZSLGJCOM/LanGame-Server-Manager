@@ -1,22 +1,30 @@
-.knowledge-settings { display: grid; gap: 14px; min-width: 0; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--shell-line-strong); color: var(--shell-text); font-size: var(--text-body); }
+.knowledge-settings { display: grid; gap: 16px; min-width: 0; color: var(--shell-text); font-size: var(--text-body); }
 .knowledge-settings :is(h3, h4, p) { margin: 0; }
 .knowledge-settings-heading, .knowledge-settings-source, .knowledge-settings-progress { display: grid; gap: 6px; }
+.knowledge-settings-library-state, .knowledge-settings-source-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.knowledge-settings-model-state, .knowledge-settings-source-state { font-size: var(--text-secondary); color: var(--shell-muted); }
+.knowledge-settings-model-state.is-ready { color: var(--shell-text); }
+.knowledge-settings-warning, .knowledge-settings-progress.is-warning strong, .knowledge-settings-source-state.is-warning { color: var(--theme-warning-text); }
 .knowledge-settings-heading h3 { font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .knowledge-settings :is(p, span) { overflow-wrap: anywhere; }
-.knowledge-settings-muted, .knowledge-settings-heading p, .knowledge-settings-url { color: var(--shell-muted); }
+.knowledge-settings-muted, .knowledge-settings-url { color: var(--shell-muted); }
 .knowledge-settings-controls, .knowledge-settings-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .knowledge-settings-auto, .knowledge-settings-interval { display: flex; align-items: center; gap: 8px; }
 .knowledge-settings-game { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
 .knowledge-settings-game select { width: 100%; min-width: 0; }
 .knowledge-settings select { min-height: 34px; padding: 4px 8px; border: 1px solid var(--shell-line-strong); border-radius: 6px; color: var(--shell-text); background: var(--theme-control-surface); font: inherit; }
-.knowledge-settings :is(input, select, button, summary):focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 3px; }
+.knowledge-settings :is(input, select, button, summary, a):focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 3px; }
 .knowledge-settings input { accent-color: var(--shell-focus); }
 .knowledge-settings progress { width: 100%; accent-color: var(--shell-focus); }
-.knowledge-settings-error, .knowledge-settings-source-error { color: var(--theme-danger-text); }
+.knowledge-settings-error { color: var(--theme-danger-text); }
+.knowledge-settings-source-error { color: var(--theme-warning-text); }
 .knowledge-settings button:disabled { opacity: 0.55; cursor: not-allowed; }
-.knowledge-settings-error { display: grid; gap: 8px; }
-.knowledge-settings-error button { justify-self: start; }
-.knowledge-settings-sources summary { cursor: pointer; padding: 6px 0; }
+.knowledge-settings details { border-top: 1px solid var(--shell-line-strong); padding-top: 8px; }
+.knowledge-settings details summary { cursor: pointer; padding: 6px 0; font-weight: var(--font-weight-medium); }
+.knowledge-settings-detail-body { display: grid; gap: 10px; padding: 10px 0 4px; }
+.knowledge-settings-detail-body button { justify-self: start; }
+.knowledge-settings-diagnostics { display: grid; gap: 8px; color: var(--shell-muted); }
 .knowledge-settings-sources section { display: grid; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--shell-line-strong); }
 .knowledge-settings-sources h4 { font-size: inherit; font-weight: var(--font-weight-semibold); }
 .knowledge-settings-source { padding-left: 10px; border-left: 2px solid var(--shell-line-strong); }
+.knowledge-settings-url { text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
