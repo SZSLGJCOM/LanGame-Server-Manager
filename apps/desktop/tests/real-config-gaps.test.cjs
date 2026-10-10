@@ -628,7 +628,8 @@ test("Satisfactory anonymous dedicated package validate keeps INI materializatio
   assert.match(ledger, /id = "native_console_entry_build_24656085"/);
 
   assert.match(ledger, /steamcmd_anonymous_app_1690800/);
-  assert.match(ledger, /last_verified = "2026-09-08"/);
+  assert.match(ledger, /last_verified = "2026-10-10"/);
+  assert.match(ledger, /id = "production_world_service_acceptance_20261010"/);
   assert.match(ledger, /steam_public_build_23855705/);
   assert.match(ledger, /installed_dedicated_server_build_24656085/);
   assert.match(ledger, /native_profile_isolation/);

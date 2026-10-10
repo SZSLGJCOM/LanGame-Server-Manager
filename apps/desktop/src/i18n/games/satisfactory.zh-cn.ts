@@ -150,6 +150,8 @@ export const ZH_CN_SATISFACTORY_MESSAGES: MessageCatalog = {
   "satisfactory.settings.native.createWorld": "创建世界",
   "satisfactory.settings.native.fieldUnavailable": "无法读取此设置，请刷新配置。",
   "satisfactory.settings.native.currentValueUnavailable": "尚未读取当前值",
+  "satisfactory.settings.native.releaseOverride": "取消覆盖",
+  "satisfactory.settings.native.releaseOverrideHelp": "保留游戏当前设置，不再由实例配置覆盖此项。",
   "satisfactory.settings.native.currentValue": "当前运行值：{value}。",
   "satisfactory.settings.native.pendingValue": "游戏另有待重启生效的修改。",
   "satisfactory.settings.native.groups.world": "世界规则",

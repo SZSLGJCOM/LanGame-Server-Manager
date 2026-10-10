@@ -5,6 +5,7 @@ import schema from "../../../../modules/satisfactory/schema.json";
 import storageContract from "../../../../modules/satisfactory/config-fixtures/2026-09-30-native_options_missing_settings.json";
 import { I18nProvider } from "../../src/i18n";
 import { ConfigurationWorkspace } from "../../src/views/settings/ConfigurationWorkspace";
+import { SATISFACTORY_RULES, SATISFACTORY_STARTING_LOCATIONS, type SatisfactoryWorldSnapshot } from "../../src/satisfactory-world-settings";
 import { InstanceSettingsSaveProvider, useInstanceSettingsSaveCoordinator } from "../../src/views/settings/InstanceSettingsSaveContext";
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
@@ -24,8 +25,18 @@ addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
-Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string) => {
-  throw new Error(`Unexpected native command: ${command}`);
+Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: { instanceId?: string }) => {
+  if (command !== "read_satisfactory_world_settings") throw new Error(`Unexpected native command: ${command}`);
+  check(args.instanceId === instance.summary.id, "Native readback targets only this instance");
+  // A stopped server has no readable native option values. Reading its API
+  // state must not infer defaults or take ownership of missing INI overrides.
+  const snapshot: SatisfactoryWorldSnapshot = {
+    instance_id: instance.summary.id, connection_status: "stopped", revision: "", server_name: null,
+    active_session_name: "", auto_load_session_name: "", is_game_running: false, connected_players: 0,
+    creative_mode_enabled: false, advanced_game_settings: {}, server_options: {}, pending_server_options: {},
+    sessions: [], rule_definitions: [...SATISFACTORY_RULES], starting_locations: [...SATISFACTORY_STARTING_LOCATIONS]
+  };
+  return snapshot;
 } } });
 
 const moduleDetails: ModuleDetails = {
@@ -83,11 +94,24 @@ async function section(id: string) {
   }
   await act(async () => { element<HTMLButtonElement>(`[data-configuration-section-id="${id}"] > button`).click(); });
 }
-function control(key: string) { return element<HTMLSelectElement>(`[data-field-key="${key}"] select`); }
+function control(key: string) {
+  return element<HTMLInputElement | HTMLSelectElement>(`[data-field-key="${key}"] select, [data-field-key="${key}"] input[type="checkbox"]`);
+}
 async function change(key: string, value: string) {
-  const select = control(key);
-  check(!select.disabled && select.getClientRects().length > 0, `Editable native option ${key}`);
-  await act(async () => { select.value = value; select.dispatchEvent(new Event("change", { bubbles: true })); });
+  const input = control(key);
+  check(!input.disabled && input.getClientRects().length > 0, `Editable native option ${key}`);
+  await act(async () => {
+    if (value === "") {
+      const release = element<HTMLButtonElement>(`[data-satisfactory-release-override="${key}"]`);
+      check(!release.disabled && release.getClientRects().length > 0, `Explicit ${key} override can be released`);
+      release.click();
+    } else if (input instanceof HTMLSelectElement) {
+      input.value = value; input.dispatchEvent(new Event("change", { bubbles: true }));
+    } else {
+      if (value !== "true" && value !== "false") throw new Error(`Invalid boolean edit: ${value}`);
+      if (input.checked !== (value === "true")) input.click();
+    }
+  });
 }
 async function save() { await act(async () => { await flush(); }); }
 function absent() { return keys.every((key) => !Object.hasOwn(JSON.parse(saved), key)); }
@@ -102,6 +126,7 @@ async function verifyUnmanaged(label: string) {
   for (let index = 0; index < keys.length; index++) {
     await section(sections[index]);
     const select = control(keys[index]);
+    check(select instanceof HTMLSelectElement, `Unread ${keys[index]} retains all three ownership states`);
     check(select.value === "" && select.selectedOptions[0]?.textContent === label, `Unmanaged ${keys[index]} shows no inferred value`);
     check(select.options.length === (keys[index] === "network_quality" ? 5 : 3), `All explicit choices remain available for ${keys[index]}`);
     check(!fixture?.querySelector(`[data-field-key="${keys[index]}"] input[type="checkbox"]`), `Unmanaged ${keys[index]} is not presented as a binary fact`);
@@ -118,7 +143,7 @@ async function run() {
     check(keys.every((key) => !Object.hasOwn(JSON.parse(instance.settings_json), key)), "Actual storage create/read leaves native overrides absent");
   }
   for (const [locale, label] of [
-    ["en-US", "Keep native setting (current value not read)"], ["zh-CN", "保持原生设置（当前值未读取）"]
+    ["en-US", "Current value has not been read"], ["zh-CN", "尚未读取当前值"]
   ]) {
     localStorage.setItem("langame.locale", locale);
     saved = readbacks?.created.settings_json ?? JSON.stringify({ ...storageContract.settings, max_players: 8, future_setting: "retained" });
@@ -148,7 +173,9 @@ async function run() {
     await draw(`${locale}-managed-readback`);
     for (let index = 0; index < keys.length; index++) {
       await section(sections[index]);
-      check(control(keys[index]).value === (index === 1 ? "2" : "false"), `${locale}: explicit ${keys[index]} survives reopening`);
+      const input = control(keys[index]);
+      check(input instanceof HTMLSelectElement ? input.value === "2" : input.checked === false,
+        `${locale}: explicit ${keys[index]} survives reopening`);
       await change(keys[index], "");
     }
     await save();

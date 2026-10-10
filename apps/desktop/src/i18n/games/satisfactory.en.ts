@@ -150,6 +150,8 @@ export const EN_US_SATISFACTORY_MESSAGES: MessageCatalog = {
   "satisfactory.settings.native.createWorld": "Create world",
   "satisfactory.settings.native.fieldUnavailable": "The setting could not be loaded. Refresh the configuration.",
   "satisfactory.settings.native.currentValueUnavailable": "Current value has not been read",
+  "satisfactory.settings.native.releaseOverride": "Remove override",
+  "satisfactory.settings.native.releaseOverrideHelp": "Keep the game's current setting and stop overriding it from this instance configuration.",
   "satisfactory.settings.native.currentValue": "Currently running: {value}.",
   "satisfactory.settings.native.pendingValue": "The game also reports changes pending a restart.",
   "satisfactory.settings.native.groups.world": "World rules",
