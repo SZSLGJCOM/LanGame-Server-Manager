@@ -61,5 +61,14 @@ export function SatisfactoryNativeOptionField(props: ConfigurationSpecializedRen
     {label !== null && (hasOverride && value !== actual || pending && pending !== native) ?
       <p className="form-note" role="status">{t("satisfactory.settings.native.currentValue", { value: label })}
         {pending && pending !== native ? ` ${t("satisfactory.settings.native.pendingValue")}` : ""}</p> : null}
+    {hasOverride ? <div className="panel-head panel-head--compact">
+      <button type="button" className="ghost-button" disabled={props.disabled}
+        data-satisfactory-release-override={field.key}
+        aria-label={`${t("satisfactory.settings.native.releaseOverride")}: ${field.title}`}
+        onClick={() => props.onPatch({ [field.key]: undefined })}>
+        {t("satisfactory.settings.native.releaseOverride")}
+      </button>
+      <span className="form-note">{t("satisfactory.settings.native.releaseOverrideHelp")}</span>
+    </div> : null}
   </div>;
 }
