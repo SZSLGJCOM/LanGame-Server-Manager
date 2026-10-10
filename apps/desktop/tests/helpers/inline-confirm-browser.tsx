@@ -1,4 +1,5 @@
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { readInlinePreviewStatus } from "./inline-preview-readiness";
 import React, { act, StrictMode, type ComponentProps, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nProvider, translate } from "../../src/i18n";
@@ -360,7 +361,7 @@ async function previews() {
       </section>;
     })}
   </main>);
-  await settleUntil(() => [...document.querySelectorAll("iframe")].every((frame) => frame.contentDocument?.documentElement.dataset.preview === "passed"),
+  await settleUntil(() => [...document.querySelectorAll("iframe")].every((frame) => readInlinePreviewStatus(frame) === "passed"),
     "Theme and sidebar-width previews did not finish");
   checks++;
   check(document.documentElement.scrollWidth <= innerWidth, "Preview matrix overflows the desktop viewport");

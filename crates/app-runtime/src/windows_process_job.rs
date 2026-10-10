@@ -175,10 +175,10 @@ impl OwnedProcessJob {
         })?;
         // Keep verified handles between polls: accounting can reach zero before
         // those process objects are signaled, including an exited launcher's children.
-        self.capture_processes(&mut processes, deadline)?;
+        self.capture_processes(&mut processes, deadline, "inspection.capture")?;
         let mut running = self.active_process_count()? != 0;
-        for process in processes.values() {
-            ensure_before_deadline(deadline)?;
+        for (pid, process) in processes.iter() {
+            ensure_before_deadline(deadline, "inspection.wait_handle", Some(*pid))?;
             match unsafe { crate::WaitForSingleObject(process.as_raw(), 0) } {
                 crate::WAIT_OBJECT_0 => {}
                 crate::WAIT_TIMEOUT => running = true,
@@ -190,6 +190,10 @@ impl OwnedProcessJob {
 
     pub(super) fn terminate_and_wait(&self) -> io::Result<()> {
         let deadline = Instant::now() + Duration::from_secs(2);
+        self.terminate_and_wait_until(deadline)
+    }
+
+    pub(super) fn terminate_and_wait_until(&self, deadline: Instant) -> io::Result<()> {
         let mut processes = self.1.try_lock().map_err(|error| {
             io::Error::other(format!(
                 "managed process tree cleanup ownership is unavailable: {error}"
@@ -198,36 +202,52 @@ impl OwnedProcessJob {
         // Accounting can reach zero before process handles become signaled.
         // Retain verified handles across failure/retry, even after they disappear
         // from the Job's active PID list. Never wait on a reopened PID alone.
-        self.capture_processes(&mut processes, deadline)?;
+        if self.has_exited(&processes)? {
+            processes.clear();
+            return Ok(());
+        }
+        self.capture_processes(&mut processes, deadline, "cleanup.initial_capture")?;
         if self.active_process_count()? != 0 {
+            ensure_before_deadline(deadline, "cleanup.before_terminate", None)?;
             self.terminate()?;
         }
         loop {
-            ensure_before_deadline(deadline)?;
-            // A member may have spawned between the initial capture and
-            // termination. Re-query and terminate newly observed members too.
-            let added = self.capture_processes(&mut processes, deadline)?;
-            let active = self.active_process_count()?;
-            if added && active != 0 {
-                self.terminate()?;
-            }
-            let mut all_exited = true;
-            for process in processes.values() {
-                ensure_before_deadline(deadline)?;
-                match unsafe { crate::WaitForSingleObject(process.as_raw(), 0) } {
-                    crate::WAIT_OBJECT_0 => {}
-                    crate::WAIT_TIMEOUT => all_exited = false,
-                    _ => return Err(io::Error::last_os_error()),
-                }
-            }
-            if active == 0 && all_exited {
+            // A delayed worker must observe completed kernel state before
+            // rejecting its wait budget. Accounting alone is insufficient.
+            if self.has_exited(&processes)? {
                 processes.clear();
                 return Ok(());
+            }
+            ensure_before_deadline(deadline, "cleanup.wait_for_exit", None)?;
+            // A member may have spawned between the initial capture and
+            // termination. Re-query and terminate newly observed members too.
+            let added =
+                self.capture_processes(&mut processes, deadline, "cleanup.remaining_capture")?;
+            let active = self.active_process_count()?;
+            if added && active != 0 {
+                ensure_before_deadline(deadline, "cleanup.before_terminate", None)?;
+                self.terminate()?;
             }
             std::thread::sleep(
                 Duration::from_millis(10).min(deadline.saturating_duration_since(Instant::now())),
             );
         }
+    }
+
+    fn has_exited(&self, processes: &BTreeMap<u32, OwnedWindowsHandle>) -> io::Result<bool> {
+        if self.active_process_count()? != 0 {
+            return Ok(false);
+        }
+        // Every wait is non-blocking and the retained map is bounded at 4096.
+        // Finishing a wait never substitutes a PID reopen for its owned handle.
+        for process in processes.values() {
+            match unsafe { crate::WaitForSingleObject(process.as_raw(), 0) } {
+                crate::WAIT_OBJECT_0 => {}
+                crate::WAIT_TIMEOUT => return Ok(false),
+                _ => return Err(io::Error::last_os_error()),
+            }
+        }
+        Ok(true)
     }
 
     fn terminate(&self) -> io::Result<()> {
@@ -243,8 +263,9 @@ impl OwnedProcessJob {
         &self,
         processes: &mut BTreeMap<u32, OwnedWindowsHandle>,
         deadline: Instant,
+        phase: &'static str,
     ) -> io::Result<bool> {
-        ensure_before_deadline(deadline)?;
+        ensure_before_deadline(deadline, phase, None)?;
         let mut list = ProcessIdList {
             assigned: 0,
             count: 0,
@@ -276,9 +297,9 @@ impl OwnedProcessJob {
         }
         let mut added = false;
         for pid in &list.ids[..list.count as usize] {
-            ensure_before_deadline(deadline)?;
             let pid = u32::try_from(*pid)
                 .map_err(|_| io::Error::other("managed process tree returned an invalid PID"))?;
+            ensure_before_deadline(deadline, phase, Some(pid))?;
             if processes.contains_key(&pid) {
                 continue;
             }
@@ -317,11 +338,18 @@ impl OwnedProcessJob {
     }
 }
 
-fn ensure_before_deadline(deadline: Instant) -> io::Result<()> {
+fn ensure_before_deadline(
+    deadline: Instant,
+    phase: &'static str,
+    pid: Option<u32>,
+) -> io::Result<()> {
     if Instant::now() >= deadline {
+        let member = pid.map_or_else(String::new, |pid| format!(", member_pid={pid}"));
         Err(io::Error::new(
             io::ErrorKind::TimedOut,
-            "managed process tree operation did not complete within two seconds",
+            format!(
+                "managed process tree operation did not complete within two seconds (phase={phase}{member})"
+            ),
         ))
     } else {
         Ok(())
