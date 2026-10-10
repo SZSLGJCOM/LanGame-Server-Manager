@@ -1,6 +1,7 @@
 import type { TranslateFn } from "../../../i18n";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
 import type { GuidedFieldCopy, GuidedSettingsField, GuidedSettingsSection } from "../settings-schema";
+import { satisfactoryNativePresentation } from "./satisfactory-native-presentation";
 
 const SATISFACTORY_SECTIONS: GuidedSettingsSection[] = [
   {
@@ -18,6 +19,8 @@ const SATISFACTORY_SECTIONS: GuidedSettingsSection[] = [
     title: "World Rules",
     description: "World simulation and seasonal event rules."
   },
+  { id: "world_generation", parentId: "world", title: "New World", description: "Create a separate world with native generation rules." },
+  { id: "creative_rules", parentId: "world", title: "Creative Mode", description: "World rules and defaults for new players." },
   {
     id: "advanced",
     title: "Advanced",
@@ -202,6 +205,7 @@ function readNumber(value: unknown): number | null {
 
 export const satisfactorySettingsDefinition: SettingsModuleDefinition = {
   id: "satisfactory",
+  ...satisfactoryNativePresentation,
   getSections: buildSatisfactorySections,
   buildFieldGroups: (sectionId, fields, _locale, t) =>
     buildSatisfactoryFieldGroups(sectionId, fields, t),

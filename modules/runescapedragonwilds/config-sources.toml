@@ -1,5 +1,5 @@
 status = "best_effort_verified"
-last_verified = "2026-09-28"
+last_verified = "2026-10-09"
 notes = "Installed Steam build 24574222 was launched in an isolated copy on 2026-09-08 with fresh DedicatedServer.ini and no original saves. UE 5.6.1 loaded L_World, reached ReadyToJoin=1 and honored the explicit loopback game port. The independent LgsmPlayerQuery extension returned current complete empty rosters through the production bootstrap and native file-IPC reader. Existing configuration keys remain based on the official guide and earlier configuration-specific probes below; this player-query test does not claim a new acceptance run for every setting. Native A2S and moderation remain unavailable."
 
 [[sources]]
@@ -8,6 +8,20 @@ kind = "documentation"
 path = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
 authority = "first_party_documentation_and_read_only_installed_package_review"
 description = "2026-09-30: After the managed update, the installed app 4019830 manifest reports build 25501739 and Windows depot 4019831 manifest 8698681730846329652. The Shipping executable SHA256 is fc7754fe633f55f51abdae828626819d2c0ab243f233a4c33221935e56bfcb1c. The packaged DedicatedServer.ini SHA256 is 4c4ae402747c05f4fe89dcbf4d29b94aae0f08fa79f090e675a1c28179973577; its five keys remain OwnerId, ServerName, DefaultWorldName, AdminPassword and WorldPassword, matching the current Jagex guide. PlatformPolicy is still omitted from that file. Fresh string cross-references, PE exception-table lookup and disassembly of this executable independently confirm the PlatformPolicy key reference at preferred VA 0x14595817c, missing/empty-value assignment of zero at 0x1459581b5, and nonempty-name enum parsing. The current reflected enum remains Crossplay=0, PC=1, PlayStation=2, Xbox=3 and Nintendo=4, matching the existing schema. The separate build-25465077 source and acceptance fixture remain historical evidence; their binary offsets are not carried forward. No newly documented configuration keys or launch options were found in the guide or September 29 hotfix notes. The unresolved crash-dump field and player/world-management boundaries remain unchanged. This is read-only package and documentation evidence; no server or client was launched."
+
+[[sources]]
+id = "dragonwilds_world_rules_build_25501739"
+kind = "runtime_probe"
+path = "world-settings.json; RSDragonwilds/Saved/SaveGames/*.sav"
+authority = "official_steam_package_metadata_native_autosave_and_production_storage_api"
+description = "2026-10-09: Current 1.0 build 25501739, Shipping SHA256 fc7754fe633f55f51abdae828626819d2c0ab243f233a4c33221935e56bfcb1c. The canonical world-settings.json records 66 cooked difficulty definitions with native ranges, precision, defaults and permissions: 63 allow existing-world edits in Custom, FriendlyFire also allows other modes; two Never fields and creation-only NoBuildingStability cannot be submitted as edits. Native getters prefer saved overrides in every mode; Custom missing values fall back to Normal. The verified offline SPUD system-version-8 codec updates both CINF named float entries and the WorldSaveSettings persistence map, preserving unknown data and level chunks. A fresh isolated empty server accepted Custom and BuildingMaterialCostScale=1.5, automatically saved them, and the native golden round-tripped byte-identically. The production storage API then made a verified pre-change backup and wrote 2.0; a native restart logged the matching Applied custom setting and Load: Success. Backend and UI refuse running writes and stale revisions. This proves world-rule loading and persistence for this build, not multiplayer gameplay, graceful shutdown, arbitrary save formats or all later game builds."
+
+[[sources]]
+id = "dragonwilds_world_selection_build_25501739"
+kind = "install_probe"
+path = "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe: dedicated startup world selection"
+authority = "current_native_configuration_reflection_and_startup_consumer"
+description = "Build 25501739: DefaultWorldName is reflected at dedicated settings offset 0x98. Startup consumer 0x145bee850 matches it against metadata WorldName using ASCII-insensitive comparison, then at 0x145beec28 selects maximum CINF TimeOfSave; 0x145beecfd loads that saved world. Filesystem mtime and SPUD INFO Timestamp are not the selector. The manager reads bounded INFO metadata, matches the configured name and refuses ambiguous highest timestamps. No matching save is treated as a world that has not yet been created."
 
 [[sources]]
 id = "dragonwilds_patch_1_0_0_6"
@@ -201,3 +215,10 @@ description = "2026-09-30: 7 presentation entries reviewed in EN/ZH against the 
 source = "launch_args"
 key = "-log"
 reason = "Fixed first-party native console logging flag for the managed private-desktop launch profile; runtime control remains subject to real-server acceptance."
+
+[[sources]]
+id = "world_rules_presentation_autosave_20261010"
+kind = "documentation"
+path = "apps/desktop/src/views/settings/DragonwildsWorldSettingsContext.tsx; apps/desktop/src/views/settings/modules/runescapedragonwilds.ts"
+authority = "repository_behavior_and_browser_acceptance"
+description = "2026-10-10: Gameplay settings use nine peer sidebar categories based on purpose, rather than a shared World Rules parent. World owns mode and event frequencies; friendly fire belongs to Player rules. All 63 saved-world controls are individually searchable and appear exactly once. Ordinary rule edits debounce and automatically save; mode transitions preserve native order and Custom values. Saves participate in the existing start barrier, retain newer in-flight edits, preserve drafts on compare-and-swap failures and never blindly resend them. Range and step remain input constraints without duplicate prose. Browser acceptance substitutes only the native transport and verifies both languages at 1280 and 1024 px, including actual mouse slider interaction, readonly guards and unmount cleanup. The production saved-world codec and backup boundary are unchanged; this source does not expand the prior native or multiplayer acceptance scope."

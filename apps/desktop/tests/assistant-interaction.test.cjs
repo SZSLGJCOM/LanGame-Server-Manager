@@ -69,7 +69,7 @@ function componentHarness(name, overrides = {}) {
       panelTitle: "LAN", closeLabel: "Close LAN", issues: [], prompts: [], contextPayload: "context"
     }) },
     "../hooks/useAssistantPromptRotation": { useAssistantPromptRotation: (prompts = []) => prompts[0] ?? null },
-    "./AppAiSettingsCard": {},
+    "./AppAiSettingsCard": { AppAiSettingsCard: "AppAiSettingsCard" },
     "./AiDataDisclosure": { AiDataDisclosure: "AiDataDisclosure" },
     "./PrivacyNotice": { PrivacyNotice: "PrivacyNotice" },
     "./AppAiConnectionCheck": { AppAiConnectionCheck: "AppAiConnectionCheck" },
@@ -228,10 +228,42 @@ test("an unconfigured model disables sending and explains why on the send button
   findNode(tree, (node) => node.props?.className === "assistant-settings-button").props.onClick();
   tree = harness.render(props);
   assert.ok(findNode(tree, (node) => node.props?.className === "assistant-ai-settings-surface"));
+  assert.equal(findNode(tree, (node) => node.type === "KnowledgeSettingsCard"), null);
   assert.equal(findNode(tree, (node) => node.props?.className === "assistant-panel-title").props.children, "assistant.panel.settingsLabel");
   findNode(tree, (node) => node.props?.className === "assistant-back-button").props.onClick();
   tree = harness.render(props);
   assert.equal(findNode(tree, (node) => node.type === "textarea").props.value, props.draft);
+});
+
+test("knowledge opens independently of AI configuration and preserves the conversation draft", () => {
+  const harness = componentHarness("AssistantPanel");
+  const props = panelProps({ aiSettings: aiSettings.createDefaultAiSettings(),
+    assistantInput: { ...panelProps().assistantInput, activeView: "library", selectedModuleId: "enshrouded" } });
+  let tree = harness.render(props);
+  findNode(tree, (node) => node.props?.className === "assistant-history-button").props.onClick();
+  findNode(tree, (node) => node.props?.className === "assistant-knowledge-button").props.onClick();
+  tree = harness.render(props);
+  assert.ok(findNode(tree, (node) => node.props?.className === "assistant-knowledge-surface"));
+  assert.equal(findNode(tree, (node) => node.props?.className === "assistant-panel-title").props.children, "assistant.panel.knowledgeLabel");
+  assert.equal(findNode(tree, (node) => node.type === "AppAiSettingsCard"), null);
+  assert.equal(findNode(tree, (node) => node.type === "KnowledgeSettingsCard").props.preferredModuleId, "enshrouded");
+  findNode(tree, (node) => node.props?.className === "assistant-back-button").props.onClick();
+  tree = harness.render(props);
+  assert.equal(findNode(tree, (node) => node.type === "textarea").props.value, props.draft);
+  assert.equal(findNode(tree, (node) => node.props?.className === "assistant-history-button").props["aria-expanded"], false);
+});
+
+test("LAN groups new conversation, history and privacy on the left and configuration controls on the right", () => {
+  const tree = componentHarness("AssistantPanel").render(panelProps());
+  const left = findNode(tree, (node) => node.props?.className === "assistant-panel-identity");
+  const right = findNode(tree, (node) => node.props?.className === "assistant-panel-controls");
+  for (const className of ["assistant-new-button", "assistant-history-button", "assistant-privacy-button"]) {
+    assert.ok(findNode(left, (node) => node.props?.className === className));
+    assert.equal(findNode(right, (node) => node.props?.className === className), null);
+  }
+  for (const className of ["assistant-settings-button", "assistant-knowledge-button", "assistant-close-button"]) {
+    assert.ok(findNode(right, (node) => node.props?.className === className));
+  }
 });
 
 test("composer placeholder uses rotating suggestions instead of a carousel", () => {
@@ -471,6 +503,21 @@ test("assistant focus skips hidden subtrees and negative tabindex, and wraps fro
     assert.equal(expected.focused, true);
     first.focused = last.focused = false;
   }
+});
+
+test("assistant keyboard loop includes disclosure summaries while skipping closed contents", () => {
+  const summary = focusTarget();
+  const link = focusTarget();
+  const nestedSummary = focusTarget();
+  const closed = { querySelector: () => ({ contains: (element) => element === summary }), parentElement: null };
+  const nestedClosed = { querySelector: () => ({ contains: (element) => element === nestedSummary }),
+    parentElement: { closest: () => closed } };
+  for (const [element, details] of [[summary, closed], [link, closed], [nestedSummary, nestedClosed]]) {
+    element.closest = (selector) => selector === "details:not([open])" ? details : null;
+  }
+  assert.deepEqual(Array.from(focus.listAssistantFocusableElements(focusContainer([summary, link, nestedSummary]))), [summary]);
+  link.closest = () => null;
+  assert.deepEqual(Array.from(focus.listAssistantFocusableElements(focusContainer([summary, link]))), [summary, link]);
 });
 
 test("history Escape cancels deletion before closing history and does not close LAN", () => {

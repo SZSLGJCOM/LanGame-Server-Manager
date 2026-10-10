@@ -1,5 +1,5 @@
 status = "best_effort_verified"
-last_verified = "2026-07-13"
+last_verified = "2026-10-10"
 notes = "Steam public build 23662689 (updated 2026-06-10 UTC) matches the local validated package. Its generated config.json contains nine server settings. LanGame models all nine, including nullable AutoCreateWorldSeed and the developer-documented SleepThresholdMs control. The Windows package remains framework-dependent on .NET 8, and the exact-build smoke reached Server ready and accepted list/save/stop through managed stdin."
 
 [[sources]]
@@ -186,3 +186,10 @@ kind = "documentation"
 path = "Server.dll"
 authority = "read_only_installed_package_static_consumer_analysis"
 description = "2026-09-30: Build 25128761 static IL confirms EnableCheats is active. Server.dll Program.Main (06000001), offsets 015D through 0169, applies it to loaded worlds; StandaloneServerManager.GenerateNewWorld (06000008), offsets 005D through 0069, applies it to new worlds. CandideServer.dll BossServerService.OnReceive_BossSpawnCheat (060005F8), SimpleInventoryServerService.OnReceive_AddItemCheat (06000737), TimeServerService.OnReceive_Time (0600074A), and WeatherServerService.OnReceive_SetWeather (06000776) return immediately when GameConfig.CheatsEnabled is false. Removed the stale reserved-for-future-use claim and described the confirmed server-side effects. This establishes the configuration gate, without claiming that client command accessibility was exercised. Primary binary SHA256 8e11b02f594a1e08e9d1e8fc4ef663728193951b595eccd966425c5b1f2c8e69."
+
+[[sources]]
+id = "guided_choices_review_20261010"
+kind = "documentation"
+path = "modules/romestead/schema.json and apps/desktop/src/views/settings/RomesteadSleepThresholdField.tsx"
+authority = "existing_native_config_contract_and_actual_bilingual_browser_save_readback"
+description = "World size is an integer selector for native 0 small, 1 standard and 2 large. SleepThresholdMs remains one native field under Runtime/Performance: enabled thresholds accept the existing 1..16.5 ms range including fractional values; disabling writes -1 and remembers the last valid threshold within the editor. No extra persisted switches are introduced. Bilingual browser checks exercised selection, 13.875 -> -1 -> 13.875 across category changes, validation refusal, autosave/readback and archived read-only rendering. These checks do not update prior exact-build runtime acceptance."

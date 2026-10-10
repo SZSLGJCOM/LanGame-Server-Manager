@@ -233,6 +233,14 @@ use commands_dst_import::*;
 use commands_dst_import_validation::*;
 pub use commands_install_progress::cancel_installation_job;
 pub use commands_instance_isolation::read_instance_isolation;
+#[path = "commands_astroneer_saves.rs"]
+pub mod commands_astroneer_saves;
+#[path = "commands_dragonwilds_world.rs"]
+pub mod commands_dragonwilds_world;
+#[path = "commands_satisfactory_world.rs"]
+pub mod commands_satisfactory_world;
+#[path = "commands_valheim_world.rs"]
+pub mod commands_valheim_world;
 pub use commands_live_players::{
     execute_instance_player_action, read_instance_live_players, refresh_instance_live_players,
 };

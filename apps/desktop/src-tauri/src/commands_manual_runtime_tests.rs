@@ -17,6 +17,9 @@ mod app_exit_sessions_tests;
 mod creation_catalog_tests;
 #[path = "commands_install_launch_matrix_tests.rs"]
 mod install_launch_matrix_tests;
+#[cfg(windows)]
+#[path = "commands_native_download_reuse_tests.rs"]
+mod native_download_reuse_tests;
 #[path = "commands_native_lifecycle_tests.rs"]
 mod native_lifecycle_tests;
 #[path = "commands_uninstall_catalog_tests.rs"]

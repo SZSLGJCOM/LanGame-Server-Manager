@@ -1,5 +1,5 @@
 status = "best_effort_verified"
-last_verified = "2026-09-08"
+last_verified = "2026-10-10"
 notes = "The configuration inventory was originally verified against build 23473323. Native TCP player collection was additionally verified against the installed app 728470 build 24411584 on 2026-09-08 in an isolated package copy with a fresh Saved tree: DSListPlayers returned complete empty JSON and DSServerShutdown exited normally. ConsolePort is now managed instance network state and is disabled when console_password is empty. Online identity fields and inGame filtering are cross-checked against the AstroLauncher protocol implementation and synthetic fixtures; non-empty real-player collection was not exercised."
 
 [[sources]]
@@ -254,3 +254,10 @@ kind = "install_probe"
 path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe"
 authority = "read_only_official_package_static_analysis"
 description = "2026-09-30 read-only build 25119807 analysis; executable SHA256 0bd9df0459c305dee9f05a9b93a0ed2620b4889c6d9cc1463e23437ecbc1cc3c. RVAs use PE image base 0x140000000. AstroServerSettings config offset 0xc8 is tested at RVAs 0x180dc6a and 0x18895c0 before Unreal ServerTravel; true skips the map change. Offset 0x48 is copied at RVA 0x1904648 into the ExitSemaphore watcher, whose RVA 0x18f0130 path waits for no valid player controller before save/quit when enabled. Packaged DefaultAstroServerSettings.ini names EXITREQUEST. PlayerActivityTimeout at offset 0xb0 is read at RVA 0x18deaad; values <=0 skip the inactivity check, positive values are added to the activity timestamp and compared with world time. ResetInactivePlayerTimeout at RVA 0x18d7350 records that same world-time value; timeout handling at RVA 0x18d2600 disconnects with the inactivity-timeout reason. The administrative set-timeout command has a separate minimum that is not imposed on INI input. Static consumer evidence does not certify client gameplay or generalize the semaphore flag to every shutdown path."
+
+[[sources]]
+id = "native_custom_game_and_save_selection_25119807"
+kind = "install_probe"
+path = "Astro/Binaries/Win64/AstroServer-Win64-Shipping.exe and crates/app-storage/src/astroneer_saves.rs"
+authority = "read_only_native_player_rpc_savegame_flags_and_official_filename_contract"
+description = "Build 25119807 SHA256 0bd9df0459c305dee9f05a9b93a0ed2620b4889c6d9cc1463e23437ecbc1cc3c: ServerAdminNewCustomGame is a validated Owner/Admin player RPC taking configuration metadata; local cache reading requires a player object. CustomGameSettings and custom planet state carry SaveGame flags. DSNewGame takes only name and a Glitchwalkers flag; no verified host-callable Custom Game rule editor or offline codec is provided. Room startup-save selection enumerates ordinary nonempty descriptive-name$date.savegame files without opening save contents, preserves unmatched configured values, validates dates and path ownership, rejects links and bounds entries/slots. Existing Custom Game saves retain their rules. Creating/editing those rules remains in the game. Catalog reading neither loads a running world nor duplicates import, save, backup or player actions. The selected descriptive name reuses active_save_file_name and its existing INI materializer; no catalog or world-rule fields are added to instance JSON. Read failure and empty catalogs disable selection instead of silently replacing the saved value."

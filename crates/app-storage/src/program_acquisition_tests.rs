@@ -1,4 +1,102 @@
+use super::super::acquisition::begin_empty_library_program_acquisition;
 use super::*;
+
+#[test]
+fn first_download_acquisition_creates_missing_or_existing_empty_root() {
+    for existing in [false, true] {
+        let fixture = Fixture::new();
+        let root = fixture.target();
+        if existing {
+            fs::create_dir_all(&root).unwrap();
+        }
+        begin_empty_library_program_acquisition(&root, &fixture.descriptor).unwrap();
+        assert!(root.is_dir());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        let record: serde_json::Value =
+            serde_json::from_slice(&fs::read(root.join(ACQUISITION)).unwrap()).unwrap();
+        assert_eq!(record["module_id"], "fixture");
+        assert_eq!(
+            record["target"],
+            serde_json::json!(normalize_path(&root).unwrap())
+        );
+        assert!(library_program_acquisition_is_trusted(&root, &fixture.descriptor).unwrap());
+        assert!(!root.join(CLEAN_PACKAGE).exists());
+    }
+}
+
+#[test]
+fn first_download_acquisition_rejects_any_existing_file_or_directory() {
+    for (name, directory) in [
+        ("operator.txt", false),
+        ("empty-directory", true),
+        (".langame-clean-package.json", false),
+        (".langame-operator-directory", true),
+    ] {
+        let fixture = Fixture::new();
+        let root = fixture.target();
+        fs::create_dir_all(&root).unwrap();
+        if directory {
+            fs::create_dir(root.join(name)).unwrap();
+        } else {
+            put(&root, name, b"operator contents");
+        }
+        assert!(begin_empty_library_program_acquisition(&root, &fixture.descriptor).is_err());
+        assert!(!root.join(ACQUISITION).exists());
+        assert_eq!(fs::read_dir(&root).unwrap().count(), 1);
+        if directory {
+            assert!(root.join(name).is_dir());
+        } else {
+            assert_eq!(fs::read(root.join(name)).unwrap(), b"operator contents");
+        }
+    }
+}
+
+#[test]
+fn first_download_acquisition_does_not_replace_an_existing_marker() {
+    let fixture = Fixture::new();
+    let root = fixture.target();
+    begin_empty_library_program_acquisition(&root, &fixture.descriptor).unwrap();
+    let original = fs::read(root.join(ACQUISITION)).unwrap();
+    assert!(begin_empty_library_program_acquisition(&root, &fixture.descriptor).is_err());
+    assert_eq!(fs::read(root.join(ACQUISITION)).unwrap(), original);
+    assert!(library_program_acquisition_is_trusted(&root, &fixture.descriptor).unwrap());
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn first_download_acquisition_rejects_linked_root_and_ancestor_without_external_writes() {
+    for nested in [false, true] {
+        let fixture = Fixture::new();
+        let external = fixture.root.join("external");
+        let link = fixture.root.join("linked-root");
+        fs::create_dir_all(&external).unwrap();
+        #[cfg(windows)]
+        {
+            let output = std::process::Command::new("cmd")
+                .args(["/d", "/c", "mklink", "/J"])
+                .arg(&link)
+                .arg(&external)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "junction fixture: {output:?}");
+        }
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&external, &link).unwrap();
+        let root = if nested {
+            link.join("missing-child")
+        } else {
+            link.clone()
+        };
+        let result = begin_empty_library_program_acquisition(&root, &fixture.descriptor);
+        // Unlink the exact fixture before assertions and recursive teardown.
+        #[cfg(windows)]
+        fs::remove_dir(&link).unwrap();
+        #[cfg(unix)]
+        fs::remove_file(&link).unwrap();
+        assert!(result.is_err());
+        assert_eq!(fs::read_dir(&external).unwrap().count(), 0);
+    }
+}
 
 #[test]
 fn captured_acquisition_restores_after_whole_directory_publication_then_finalizes() {

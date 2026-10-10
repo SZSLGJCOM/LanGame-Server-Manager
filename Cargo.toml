@@ -16,7 +16,7 @@ resolver = "3"
 edition = "2024"
 license-file = "LICENSE"
 rust-version = "1.99.0"
-version = "0.0.4"
+version = "0.0.5"
 
 [workspace.dependencies]
 regex = "1.13.1"
@@ -28,6 +28,6 @@ tauri = { version = "2.12.1" }
 tauri-build = { version = "2.7.1" }
 thiserror = "2.0.21"
 tokio = { version = "1.53.2", features = ["io-util", "macros", "net", "process", "rt-multi-thread", "sync", "time"] }
-toml = "1.1.6"
+toml = "1.1.7"
 uuid = { version = "1.27.0", features = ["v4"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem"] }

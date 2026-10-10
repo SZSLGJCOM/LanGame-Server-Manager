@@ -6,6 +6,7 @@ interface ConfigurationSaveStatusProps {
   status: InstanceSettingsSaveStatus;
   validationBlocked: boolean;
   t: TranslateFn;
+  scopeLabel?: string;
 }
 
 export function ConfigurationSaveStatus(props: ConfigurationSaveStatusProps) {
@@ -20,5 +21,6 @@ export function ConfigurationSaveStatus(props: ConfigurationSaveStatusProps) {
   };
   const tone = state === "saved" ? "success" : state === "failed" || state === "conflict" ? "error"
     : state === "blocked" ? "warning" : "info";
-  return <ActivityNotice tone={tone}>{labels[state]}</ActivityNotice>;
+  const label = props.scopeLabel ? `${props.scopeLabel}: ${labels[state]}` : labels[state];
+  return <ActivityNotice tone={tone}>{label}</ActivityNotice>;
 }

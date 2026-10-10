@@ -1,4 +1,5 @@
 import type { SettingsModuleDefinition } from "../module-types";
+import { AstroneerSaveSelect } from "../AstroneerSaveSelect";
 import { createSurvivalDedicatedSettingsDefinition } from "./survival-dedicated";
 
 const ASTRONEER_FIELD_GROUPS = [
@@ -35,7 +36,22 @@ const astroneerBaseSettingsDefinition = createSurvivalDedicatedSettingsDefinitio
 
 export const astroneerSettingsDefinition: SettingsModuleDefinition = {
   id: "astroneer",
+  fieldPresentationOverrides: {
+    active_save_file_name: {
+      state: "specialized", owner: "configuration", sectionId: "room", rendererId: "astroneer-save-select"
+    }
+  },
+  specializedRenderers: {
+    "astroneer-save-select": { kind: "module-addon", sectionId: "room", keepMounted: true, Renderer: AstroneerSaveSelect }
+  },
   getSections: astroneerBaseSettingsDefinition.getSections,
   buildFieldGroups: astroneerBaseSettingsDefinition.buildFieldGroups,
-  getFieldCopy: astroneerBaseSettingsDefinition.getFieldCopy
+  getFieldCopy(key, t, locale) {
+    if (key === "active_save_file_name") return {
+      title: t("settings.schema.astroneer.active_save_file_name.title", undefined, "Startup Save"),
+      description: t("settings.schema.astroneer.active_save_file_name.description", undefined,
+        "Choose an existing save to use on the next start with automatic loading enabled. Custom Game rules stay with each save.")
+    };
+    return astroneerBaseSettingsDefinition.getFieldCopy?.(key, t, locale);
+  }
 };

@@ -177,6 +177,42 @@ fn dst_data_collection_opt_out_normalizes_the_cluster_to_offline_mode() {
 }
 
 #[test]
+fn valheim_password_minimum_is_enforced_before_save_and_start() {
+    let mut descriptor = super::test_descriptor(std::path::Path::new("."));
+    descriptor.summary.id = "valheim".to_owned();
+    descriptor.schema_json = Some(include_str!("../../../modules/valheim/schema.json").to_owned());
+
+    for (password, valid) in [
+        ("", false),
+        ("1234", false),
+        ("12345", true),
+        ("synthetic-long-password", true),
+    ] {
+        let result = crate::instances::normalize_complete_instance_settings(
+            Some(&descriptor),
+            Map::from_iter([("server_password".to_owned(), json!(password))]),
+            "valheim-password-validation",
+            "Valheim password validation",
+            "0.0.0.0",
+        );
+
+        if valid {
+            let settings = result.expect("a password of at least five characters must be accepted");
+            assert_eq!(
+                settings.get("server_password").and_then(Value::as_str),
+                Some(password)
+            );
+        } else if let Err(crate::StorageError::InvalidModuleSetting { field, message, .. }) = result
+        {
+            assert_eq!(field, "server_password");
+            assert_eq!(message, "must be at least 5 characters");
+        } else {
+            panic!("a short password must fail server_password minimum length validation");
+        }
+    }
+}
+
+#[test]
 fn valheim_world_rules_accept_only_documented_argument_shapes() {
     let schema: Value = serde_json::from_str(include_str!("../../../modules/valheim/schema.json"))
         .expect("Valheim schema");

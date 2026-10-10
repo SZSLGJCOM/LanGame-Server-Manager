@@ -65,7 +65,16 @@ pub use instance_archive_models::{
     InstanceArchiveList, InstanceArchivePurgeResult, InstanceArchiveRestoreResult,
     InstanceArchiveState, InstanceArchiveSummary, PendingInstanceDeletion,
 };
+mod astroneer_saves;
+mod dragonwilds_save;
+pub use astroneer_saves::read_astroneer_save_catalog;
+mod valheim_world;
+pub use valheim_world::read_valheim_world_rules;
+mod dragonwilds_world_settings;
 mod instance_file_patch;
+pub use dragonwilds_world_settings::{
+    read_dragonwilds_world_settings, write_dragonwilds_world_settings,
+};
 mod instance_isolation;
 pub use ark_cluster_backups::{
     ArkClusterBackupMember, ArkClusterBackupRestoreResult, ArkClusterBackupSummary,
@@ -125,10 +134,11 @@ mod program_detach;
 mod program_seed;
 pub use program_detach::detach_instance_program;
 pub use program_seed::{
-    CleanLibrarySeed, LibraryProgramAcquisition, library_program_acquisition_is_trusted,
-    library_program_is_pristine, prepare_clean_library_seed, prepare_clean_library_seed_at,
-    prepare_instance_program_seed_at, read_library_program_acquisition,
-    record_library_program_baseline, restore_library_program_acquisition,
+    CleanLibrarySeed, LibraryProgramAcquisition, begin_empty_library_program_acquisition,
+    library_program_acquisition_is_trusted, library_program_is_pristine,
+    prepare_clean_library_seed, prepare_clean_library_seed_at, prepare_instance_program_seed_at,
+    read_library_program_acquisition, record_library_program_baseline,
+    record_verified_library_program_baseline, restore_library_program_acquisition,
     retain_published_library_program_baseline, retain_verified_library_program_baseline,
 };
 mod program_install_records;

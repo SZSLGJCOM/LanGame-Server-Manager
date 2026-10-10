@@ -1,0 +1,150 @@
+{
+  "build_id": 25527701,
+  "assembly_sha256": "7cab9b49d31ec064591ca80402dd35c566e03b7297cfb7bf4696c38da4e24d8b",
+  "asset_bundle_sha256": "f3cc1e6260689671aa42ba07c45e9b09e4df9a11f5632c82980fa7f206144317",
+  "presets": {
+    "easy": [
+      "playerdamage 110",
+      "enemydamage 75",
+      "eventrate 150",
+      "enemyspeedsize 95"
+    ],
+    "immersive": [
+      "nomap",
+      "noportals",
+      "fire"
+    ],
+    "hardcore": [
+      "playerdamage 70",
+      "enemydamage 200",
+      "eventrate 60",
+      "deathskillsreset",
+      "deathdeleteitems",
+      "nomap",
+      "nobossportals",
+      "enemyspeedsize 120",
+      "enemyleveluprate 140"
+    ],
+    "hammer": [
+      "nobuildcost",
+      "passivemobs",
+      "eventrate 0"
+    ],
+    "hard": [
+      "playerdamage 85",
+      "enemydamage 150",
+      "eventrate 60",
+      "enemyspeedsize 110",
+      "enemyleveluprate 120"
+    ],
+    "normal": [],
+    "casual": [
+      "passivemobs",
+      "eventrate 0",
+      "resourcerate 150",
+      "playerdamage 125",
+      "enemydamage 50",
+      "deathkeepequip",
+      "skillreductionrate 15",
+      "teleportall",
+      "playerevents",
+      "enemyspeedsize 90"
+    ]
+  },
+  "modifiers": {
+    "deathpenalty": {
+      "casual": [
+        "deathkeepequip",
+        "skillreductionrate 15"
+      ],
+      "veryeasy": [
+        "skillreductionrate 15"
+      ],
+      "easy": [
+        "skillreductionrate 50"
+      ],
+      "normal": [],
+      "hard": [
+        "deathdeleteunequipped",
+        "skillreductionrate 150"
+      ],
+      "hardcore": [
+        "deathdeleteitems",
+        "deathskillsreset"
+      ]
+    },
+    "portals": {
+      "casual": [
+        "teleportall"
+      ],
+      "normal": [],
+      "hard": [
+        "nobossportals"
+      ],
+      "veryhard": [
+        "noportals"
+      ]
+    },
+    "resources": {
+      "muchless": [
+        "resourcerate 50"
+      ],
+      "less": [
+        "resourcerate 75"
+      ],
+      "normal": [],
+      "more": [
+        "resourcerate 150"
+      ],
+      "muchmore": [
+        "resourcerate 200"
+      ],
+      "most": [
+        "resourcerate 300"
+      ]
+    },
+    "raids": {
+      "none": [
+        "eventrate 0"
+      ],
+      "muchless": [
+        "eventrate 200"
+      ],
+      "less": [
+        "eventrate 150"
+      ],
+      "normal": [],
+      "more": [
+        "eventrate 60"
+      ],
+      "muchmore": [
+        "eventrate 30"
+      ]
+    },
+    "combat": {
+      "veryeasy": [
+        "playerdamage 125",
+        "enemydamage 50",
+        "enemyspeedsize 90"
+      ],
+      "easy": [
+        "playerdamage 110",
+        "enemydamage 75",
+        "enemyspeedsize 95"
+      ],
+      "normal": [],
+      "hard": [
+        "playerdamage 85",
+        "enemydamage 150",
+        "enemyspeedsize 110",
+        "enemyleveluprate 120"
+      ],
+      "veryhard": [
+        "playerdamage 70",
+        "enemydamage 200",
+        "enemyspeedsize 120",
+        "enemyleveluprate 140"
+      ]
+    }
+  }
+}

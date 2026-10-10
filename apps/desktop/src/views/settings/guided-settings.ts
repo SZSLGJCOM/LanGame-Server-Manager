@@ -881,7 +881,8 @@ export function validateGuidedSettingsObject(
 
     if (field.type === "string") {
       const text = typeof value === "string" ? value : String(value ?? "");
-      if (field.minLength !== undefined && text.length < field.minLength) {
+      const length = Array.from(text).length;
+      if (field.minLength !== undefined && length < field.minLength) {
         issues.push({
           fieldKey: field.key,
           reason: "minLength",
@@ -892,7 +893,7 @@ export function validateGuidedSettingsObject(
           ) ?? `${field.title} must be at least ${field.minLength} characters.`
         });
       }
-      if (field.maxLength !== undefined && text.length > field.maxLength) {
+      if (field.maxLength !== undefined && length > field.maxLength) {
         issues.push({
           fieldKey: field.key,
           reason: "maxLength",

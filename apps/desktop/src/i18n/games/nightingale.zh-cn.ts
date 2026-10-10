@@ -16,7 +16,7 @@ export const ZH_CN_NIGHTINGALE_MESSAGES: MessageCatalog = {
   "nightingale.settings.groups.access.title": "管理权限",
   "nightingale.settings.groups.access.description": "管理员密码与作弊命令权限。",
   "nightingale.settings.groups.advanced.title": "启动覆盖",
-  "nightingale.settings.groups.advanced.description": "仅为文档化 Nightingale 服务端旗标追加原始参数，例如 -statusPort。",
+  "nightingale.settings.groups.advanced.description": "仅在服务器版本需要时追加原始参数。HTTP 状态端点请在“网络”中使用已有开关启用，端口也由该页管理。",
   "settings.schema.nightingale.server_password.title": "服务器密码",
   "settings.schema.nightingale.server_password.description": "写入 ServerSettings.ini 的 Password。留空表示开放加入。",
   "settings.schema.nightingale.admin_password.title": "管理员密码",

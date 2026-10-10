@@ -11,7 +11,7 @@ LAN 的 `search_game_docs` 与 `read_game_doc` 使用同步到本机的上游正
 
 ### 使用与自动更新
 
-打开 LAN 助手设置中的文档知识库，可以查看各游戏的来源、正文数、索引段落数、最近检查、最近成功及错误。
+点击 LAN 助手顶部的“开服知识库”按钮，独立管理知识库，无需进入 AI 设置。页面显示缓存数量和检索状态；展开“来源与覆盖范围”或“更新详情”可查看各游戏的来源、覆盖缺口、索引段落数、更新时间及具体错误。
 后台由 LGSM 本机运行服务持有，关闭助手面板不会停止更新。默认每 24 小时检查一次，可设为 6–168 小时或关闭自动更新。
 选择游戏后可“更新此游戏”，也可显式“更新全部游戏”；两者都会立即检查来源，仍使用上游 ETag / Last-Modified 减少不必要下载。取消会等待正在进行的步骤安全收尾。
 第一次使用需要下载固定版本与 SHA-256 校验的本地多语向量模型；界面显示实际体积与下载进度。
@@ -104,6 +104,9 @@ Windows x64 构建需要稳定版 MSVC Build Tools 的 x64 零售 CRT。构建�
 LAN retrieves complete upstream document bodies cached locally from the reviewed
 `modules/<game>/knowledge-sources.toml` catalogs. All 32 modules have source policies;
 actual body availability, authority, scope gaps and update failures are reported separately.
+Open Game knowledge from the LAN header independently of AI settings. The page shows cached
+document counts and retrieval status; expand Sources and coverage or Update details for provenance,
+scope gaps, indexed chunks, timestamps and diagnostics.
 The runtime owns scheduled updates (24 hours by default, configurable from 6 to 168),
 manual checks, cancellation and persisted progress. Each source publishes an atomic snapshot;
 network failures retain its previous documents and vectors. Publisher policy restrictions retain

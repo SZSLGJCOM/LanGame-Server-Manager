@@ -338,6 +338,7 @@ const baseEnUs: MessageCatalog = {
   "assistant.history.deleteConfirm": "Delete “{title}”?",
   "assistant.history.cancel": "Cancel",
   "assistant.panel.settingsLabel": "AI settings",
+  "assistant.panel.knowledgeLabel": "Game knowledge",
   "assistant.panel.privacyLabel": "Privacy and data use",
   "assistant.update.available": "Update available{version}",
   "assistant.update.downloading": "Downloading update, {percent}%",

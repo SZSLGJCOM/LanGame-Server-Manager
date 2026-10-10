@@ -16,7 +16,7 @@ export const EN_US_NIGHTINGALE_MESSAGES: MessageCatalog = {
   "nightingale.settings.groups.access.title": "Administration",
   "nightingale.settings.groups.access.description": "Administrator password and cheat-command permissions.",
   "nightingale.settings.groups.advanced.title": "Launch Overrides",
-  "nightingale.settings.groups.advanced.description": "Append raw arguments only for documented Nightingale server flags such as -statusPort.",
+  "nightingale.settings.groups.advanced.description": "Append raw arguments only when a server version needs them. Use the HTTP status toggle in Network to enable the status endpoint; its port is managed there.",
   "settings.schema.nightingale.server_password.title": "Server Password",
   "settings.schema.nightingale.server_password.description": "Written to ServerSettings.ini as Password. Leave empty for an open server.",
   "settings.schema.nightingale.admin_password.title": "Admin Password",

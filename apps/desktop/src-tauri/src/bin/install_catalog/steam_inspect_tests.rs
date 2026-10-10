@@ -14,15 +14,16 @@ impl Fixture {
         Self { base, root }
     }
     fn inventory(&self) -> Inventory {
-        let mut expected = Inventory::default();
-        expected.files = BTreeMap::from([(
-            "x.bin".into(),
-            Entry {
-                size: 3,
-                sha1: "a9993e364706816aba3e25717850c26c9cd0d89d".into(),
-            },
-        )]);
-        expected
+        Inventory {
+            files: BTreeMap::from([(
+                "x.bin".into(),
+                Entry {
+                    size: 3,
+                    sha1: "a9993e364706816aba3e25717850c26c9cd0d89d".into(),
+                },
+            )]),
+            ..Default::default()
+        }
     }
     fn inspect(&self, expected: &Inventory, mode: Inspection) -> (bool, Vec<Value>) {
         let mut events = Vec::new();

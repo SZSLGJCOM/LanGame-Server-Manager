@@ -1,5 +1,5 @@
 status = "best_effort_verified"
-last_verified = "2026-09-08"
+last_verified = "2026-10-10"
 notes = "Installed Steam build 24656085 (CL 502094) was started and its HTTPS API exercised on 2026-09-08. -UserDir selects instance-owned INI files; process-scoped USERPROFILE, LOCALAPPDATA and APPDATA separately isolate the native server identity and saves. CreateNewGame requires bSkipOnboarding and GameModeSettings in NewGameData on this build. Claim, credentials and active-world selection remain game API state. Native save creation was verified without changing another server profile. The formal instance environment loaded and saved its world without changing the global server identities. SML 3.12.0 and FRM 1.5.3 loaded. The game HTTPS frm/getPlayer extension returned HTTP 404 bad_function, while the independently enabled FRM HTTP service returned HTTP 200 and a complete empty player array. Its native autostart and port options are persisted in the instance GameUserSettings.ini; client joins were not part of this probe."
 
 [[sources]]
@@ -71,7 +71,7 @@ id = "runtime_api"
 kind = "runtime_api"
 path = "Satisfactory HTTPS API"
 authority = "upstream_dedicated_server_api"
-description = "Post-claim HTTPS API surface tracked for future runtime/player adapter work."
+description = "The game owns claim, authorization, server identity and native world selection through its HTTPS API. LanGame's dedicated Configuration editors manage these values outside the generic INI/schema materializer; runtime/player actions retain their separate owners."
 
 
 [[sources]]
@@ -231,7 +231,7 @@ reason = "The managed -ReliablePort launch flag selects a single reliable TCP po
 [[exclusions]]
 source = "runtime_api"
 key = "claim/admin-auth/save-selection"
-reason = "Satisfactory still owns first claim, admin auth, and active save selection through its Server Manager/API after launch."
+reason = "Excluded from generic INI/schema materialization. These game-owned values are managed by the dedicated live API editor: initial setup and save selection under Room Settings, authorization and explicitly revealed saved credentials under Administration & Permissions. The historical materializer fixtures retain this classification; it is not a claim that API management is unavailable."
 
 [[sources]]
 id = "frm_player_api"
@@ -291,32 +291,32 @@ description = "Deterministic preservation case based on the integer-map format o
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.SpacePartsCostMultiplier"
-reason = "Space Elevator cost multiplier is a creation-only world parameter. A future create-world API workflow must own it; ordinary Configuration edits must not imply an existing save can be changed."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies this creation-only Space Elevator cost choice; it cannot edit an existing world's generation rules."
 
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.PartsCostMultiplier"
-reason = "Recipe cost multiplier is a creation-only world parameter owned by the create-world API workflow, not existing-server Configuration."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies this creation-only recipe cost choice, outside persisted instance settings."
 
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.EnergyCostMultiplier"
-reason = "Power cost multiplier is a creation-only world parameter owned by the create-world API workflow, not existing-server Configuration."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies this creation-only power cost choice, outside persisted instance settings."
 
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.NodeRandomization"
-reason = "Creation-only world parameter. Current US_GM_ResourceRandomization serializes 0 default, 1 random, 2 basic-rich, 3 advanced-rich, 4 fossil-rich. These belong to world creation, not existing-server Configuration."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies native choices 0 default, 1 random, 2 basic-rich, 3 advanced-rich and 4 fossil-rich when creating a separate world."
 
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.NodePuritySettings"
-reason = "Creation-only world parameter. Current US_GM_NodePurity serializes 0 default, 1 all-pure, 5 mostly-pure, 2 average, 6 mostly-impure, 3 all-impure, 4 random. UI order is not the serialized numeric order. These belong to world creation, not existing-server Configuration."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies native choices in UI order 0 default, 1 all-pure, 5 mostly-pure, 2 average, 6 mostly-impure, 3 all-impure and 4 random. These serialized values are creation-only."
 
 [[exclusions]]
 source = "official_1_2_world_creation_options"
 key = "FG.GameMode.NodeRandomizationSeed"
-reason = "World seed is supplied during world creation. Editing a running server configuration must not imply that it changes an existing world."
+reason = "Excluded from generic INI/schema materialization. The dedicated live API editor under World/New World supplies or generates the resource seed only when creating a separate world; it does not change an existing world's seed."
 
 [[exclusions]]
 source = "native_runtime_options_build_24656085"
@@ -367,3 +367,45 @@ source = "native_weather_option_build_24656085"
 key = "/Script/FactoryGame.FGGameUserSettings.mIntValues.FG.WeatherPreset"
 schema_key = "weather_preset"
 surface = "materializer"
+
+[[sources]]
+id = "native_world_api_build_24656085"
+kind = "runtime_probe"
+path = "FactoryDedicatedServer-Win64-Shipping.dll and isolated CL 502094 server"
+authority = "isolated_official_server_protocol_and_saved_world_readback"
+description = "2026-10-09 UTC direct native protocol probes used a fresh isolated profile, precreated AppData directories and independent ports. InitialAdmin login, claim, fixed server.GenerateAPIToken, room identity/password/autoload changes and CreateNewGame/LoadGame were accepted and read back. HTTPS uses the game_tcp port, not the reliable port. Create and load return 202 before world travel completes; the application uses bounded read-only state refresh instead of resending accepted requests. Native saves showed Energy 25 -> 0.25, Parts 125 -> 1.25, SpaceParts 1000 -> 10.0, resource distribution 2, purity 5 and seed 42. A separate six-GameMode-only creation retained creativeModeEnabled=false; creation AGS and subsequent world AGS changes read back separately. The world-rule workflow requests native saves before and after mutation and verifies resulting state; these snapshots are separate from recoverable LanGame backups. Production-service acceptance and the verified token body/header contract are recorded separately below. No multiplayer gameplay, achievements earned by clients or later-build acceptance is established."
+
+[[sources]]
+id = "native_world_rule_catalog_24656085"
+kind = "install_probe"
+path = "modules/satisfactory/world-settings.json"
+authority = "exact_shipped_iostore_asset_defaults_choices_and_current_api"
+description = "The canonical 18 definitions retain shipped asset hashes, defaults, scopes and native choices: six creation GameMode fields, four creation-progress fields, five current-world rules and three default-player rules. Percent selectors serialize integers such as 25/100/125, not floating multipliers. Node purity UI order is 0,1,5,2,6,3,4. StartingTier and GiveAllTiers share one UI selector. GiveItems and SetGamePhase are immediate actions outside Configuration; KeepInventory and CreatureHostilityMode are absent from the current dedicated-server API reply. Player-rule readback and saved defaults do not establish when real players receive changes. These API editors own game state outside instance JSON/schema properties; existing INI controls retain one editor with read-only API context."
+
+[[sources]]
+id = "native_configuration_ownership_review_20261010"
+kind = "documentation"
+path = "apps/desktop/src/views/settings/modules/satisfactory-native-presentation.ts and apps/desktop/src-tauri/src/commands_satisfactory_world.rs"
+authority = "implemented_configuration_categories_and_management_permission_boundary"
+description = "Room owns claim, native server name, join password, startup-session selection and confirmed save loading. Administration & Permissions owns management authorization and explicit saved-password retrieval; both the local command boundary and the LAN management token apply, without a separate LAN viewer role. Credentials use the system store and never enter instance JSON or generic snapshots. World/New World owns creation-only generation and starting-progress choices; World/Creative Mode owns five world and three default-player rules. Creative Mode is permanent for a save and disables achievements; already granted unlocks persist after switches turn off. Ordinary auto-pause, network-quality, weather and gameplay-data controls keep one INI override editor with read-only API state. Saving, backup policy, restart scheduling, network ports and individual player actions keep their existing workspace owners. Draft conflicts, HTTP 202 and uncertain transport results require state refresh and review before another mutation; no automatic mutation retry is introduced."
+
+[[sources]]
+id = "production_world_service_acceptance_20261010"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/satisfactory_world_native_tests.rs, satisfactory_world_service_tests.rs and satisfactory_world_credentials.rs"
+authority = "production_rust_service_against_isolated_official_server_and_native_save_readback"
+description = "2026-10-10: commands_satisfactory_world --include-ignored passed 22 tests, including the real native service case on build 24656085/CL 502094. The production endpoint resolver checked process birth, runtime-supervisor ownership and the owned TCP listener; requests used the real local HTTPS service. A fresh UUID profile completed generated-password claim and permanent API-token authorization, created a world with PartsCostMultiplier=125 and seed=42, applied NoPower=True with before/after native saves, changed server name/join password/startup session, loaded the rule-save version and read NoPower=True back, then created a second world while retaining the first world's before-change save. The retained report records native_service_verified=true and old_world_preserved=true. Only credential storage used an isolated memory boundary; the system credential store was not touched by this integration test. A separate explicit Windows-store smoke passed one test: it confirmed a unique UUID synthetic entry was absent, wrote and read a synthetic secret through the production credential adapter, deleted only that entry and confirmed it was absent again; existing entries and real administrator credentials were not used. Original profiles and user saves were not modified. This verifies the production service, native persistence and separate Windows credential boundary, not the GUI-to-server chain, real-player rule adoption, client achievements or later builds."
+
+[[sources]]
+id = "native_authentication_and_operation_budget_20261010"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/satisfactory_world_protocol.rs and satisfactory_world_api.rs"
+authority = "independent_native_handler_contract_negative_protocol_probes_and_regression_tests"
+description = "VerifyAuthenticationToken receives AuthenticationToken as the 128-hex fingerprint after the full token's dot, PrivilegeLevel=APIToken, and the complete token in the Bearer authorization header. Matching native requests returned 204; a full-token body or altered fingerprint returned 401, and a missing header returned 403. Production regression tests assert the separate body fingerprint and complete header token. HTTP success status alone is insufficient: native error bodies are rejected. A cold CreateNewGame returned an empty-body 202 after approximately 5.8 seconds, including a 5.734-second native map load. CreateNewGame, LoadGame and SaveGame therefore use the remaining bounded 45-second operation budget while short reads retain six-second limits. Accepted or uncertain mutations are not automatically retried."
+
+[[sources]]
+id = "native_settings_autosave_presentation_20261010"
+kind = "documentation"
+path = "apps/desktop/src/views/settings/SatisfactoryWorldSettingsContext.tsx; apps/desktop/src/views/settings/useSatisfactoryNativeAutosave.ts"
+authority = "repository_behavior_and_browser_acceptance"
+description = "2026-10-10: Existing room properties and current-world rules automatically save via a serialized native queue, coalescing edits without clearing newer drafts. INI controls present concrete configured/API-read values; reads do not add overrides or turn unknown native values into defaults. Running-only API saves use the stop barrier rather than a circular startup dependency. In-flight writes keep their real completion after editor disposal. Failures retain drafts and are not blindly resent; world creation, load, authorization and explicit password removal retain action controls. Both languages and 1280/1024 px browsers verify these behaviors using a substituted transport. This presentation source does not extend the separate build-24656085 production backend and credential-store acceptance into a complete GUI-to-native or multiplayer claim."

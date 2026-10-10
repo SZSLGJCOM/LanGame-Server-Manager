@@ -4,13 +4,22 @@ const FOCUSABLE_SELECTOR = [
   "input:not([disabled])",
   "select:not([disabled])",
   "textarea:not([disabled])",
+  "summary",
   '[tabindex]:not([tabindex="-1"])'
 ].join(",");
 
 export function listAssistantFocusableElements(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => element.tabIndex >= 0 && !element.closest('[hidden], [inert], [aria-hidden="true"]')
-  );
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
+    if (element.tabIndex < 0 || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
+    // Only a closed disclosure's own summary can receive focus. Its links and
+    // nested disclosures stay out of the dialog's keyboard loop until opened.
+    let closedDetails = element.closest<HTMLDetailsElement>("details:not([open])");
+    while (closedDetails) {
+      if (!closedDetails.querySelector(":scope > summary")?.contains(element)) return false;
+      closedDetails = closedDetails.parentElement?.closest<HTMLDetailsElement>("details:not([open])") ?? null;
+    }
+    return true;
+  });
 }
 
 export function focusAssistantPanel(panel: HTMLElement) {

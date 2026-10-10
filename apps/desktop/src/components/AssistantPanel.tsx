@@ -49,7 +49,7 @@ interface AssistantPanelProps {
   onSendMessage: (message: string) => void | Promise<void>;
 }
 
-type AssistantSurface = "chat" | "ai-settings" | "privacy";
+type AssistantSurface = "chat" | "ai-settings" | "knowledge" | "privacy";
 
 export function AssistantPanel(props: AssistantPanelProps) {
   const { t } = useI18n();
@@ -64,8 +64,9 @@ export function AssistantPanel(props: AssistantPanelProps) {
   const settingsOpen = surface === "ai-settings";
   const chatOpen = surface === "chat";
   const settingsLabel = t("assistant.panel.settingsLabel", undefined, "AI settings");
+  const knowledgeLabel = t("assistant.panel.knowledgeLabel", undefined, "Game knowledge");
   const privacyLabel = t("assistant.panel.privacyLabel", undefined, "Privacy and data use");
-  const surfaceLabel = settingsOpen ? settingsLabel : privacyLabel;
+  const surfaceLabel = settingsOpen ? settingsLabel : surface === "knowledge" ? knowledgeLabel : privacyLabel;
   const aiReady = getAiSettingsStatus(props.aiSettings).ready;
   const panelStyle = assistantPanelStyle(props.anchorRect);
   const panelClassName = panelStyle ? "assistant-panel assistant-panel--chat is-anchored" : "assistant-panel assistant-panel--chat";
@@ -266,8 +267,29 @@ export function AssistantPanel(props: AssistantPanelProps) {
             <button type="button" className="assistant-back-button" aria-label={t("assistant.panel.backToChat")} title={t("assistant.panel.backToChat")} onClick={() => showSurface("chat")}>
               <ShellIcon name="chevron-left" width={18} height={18} />
             </button>
-          ) : <div className="assistant-panel-avatar" aria-hidden="true">
-            <LanMark className="assistant-avatar-mark" />
+          ) : <div className="assistant-conversation-controls">
+            <button type="button" className="assistant-new-button" aria-label={t("assistant.history.new")} title={t("assistant.history.new")} disabled={props.execution.status === "running"} onClick={startConversation}>
+              <ShellIcon name="plus" width={18} height={18} />
+            </button>
+            <button
+              type="button"
+              className={historyOpen ? "assistant-history-button is-open" : "assistant-history-button"}
+              aria-expanded={historyOpen}
+              aria-label={t("assistant.history.tooltip")}
+              title={t("assistant.history.tooltip")}
+              onClick={() => setHistoryOpen((current) => !current)}
+            >
+              <ShellIcon name="history" width={18} height={18} />
+            </button>
+            <button
+              type="button"
+              className="assistant-privacy-button"
+              aria-label={privacyLabel}
+              title={privacyLabel}
+              onClick={() => showSurface("privacy")}
+            >
+              <ShellIcon name="shield" width={18} height={18} />
+            </button>
           </div>}
           {!chatOpen ? (
             <div className="assistant-panel-heading">
@@ -278,9 +300,6 @@ export function AssistantPanel(props: AssistantPanelProps) {
         <div className="assistant-panel-controls">
           {chatOpen ? (
             <>
-              <button type="button" className="assistant-new-button" aria-label={t("assistant.history.new")} title={t("assistant.history.new")} disabled={props.execution.status === "running"} onClick={startConversation}>
-                <ShellIcon name="plus" width={18} height={18} />
-              </button>
               <button
                 type="button"
                 className="assistant-settings-button"
@@ -292,22 +311,12 @@ export function AssistantPanel(props: AssistantPanelProps) {
               </button>
               <button
                 type="button"
-                className="assistant-privacy-button"
-                aria-label={privacyLabel}
-                title={privacyLabel}
-                onClick={() => showSurface("privacy")}
+                className="assistant-knowledge-button"
+                aria-label={knowledgeLabel}
+                title={knowledgeLabel}
+                onClick={() => showSurface("knowledge")}
               >
-                <ShellIcon name="shield" width={18} height={18} />
-              </button>
-              <button
-                type="button"
-                className={historyOpen ? "assistant-history-button is-open" : "assistant-history-button"}
-                aria-expanded={historyOpen}
-                aria-label={t("assistant.history.tooltip")}
-                title={t("assistant.history.tooltip")}
-                onClick={() => setHistoryOpen((current) => !current)}
-              >
-                <ShellIcon name="history" width={18} height={18} />
+                <ShellIcon name="database" width={18} height={18} />
               </button>
             </>
           ) : null}
@@ -337,6 +346,9 @@ export function AssistantPanel(props: AssistantPanelProps) {
             onClearSecret={props.onClearAiSecret}
             onSave={props.onSaveAiSettings}
           />
+        </div>
+      ) : surface === "knowledge" ? (
+        <div className="assistant-knowledge-surface" aria-label={knowledgeLabel}>
           <KnowledgeSettingsCard modules={props.assistantInput.bootstrap.state.modules}
             preferredModuleId={props.assistantInput.activeView === "library"
               ? props.assistantInput.selectedModuleId

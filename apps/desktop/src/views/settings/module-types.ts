@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails } from "../../types";
 import type {
@@ -16,6 +16,7 @@ import type {
 
 export interface ConfigurationSpecializedRendererProps {
   sectionId: GuidedSectionId;
+  active?: boolean;
   fieldKey?: string;
   details: InstanceDetails;
   moduleDetails: ModuleDetails;
@@ -28,6 +29,8 @@ export interface ConfigurationSpecializedRendererProps {
 export interface ConfigurationSpecializedRendererRegistration {
   kind: "module-addon";
   placement?: "before-fields" | "after-fields";
+  keepMounted?: boolean;
+  saveMode?: "instance-settings" | "native-settings" | "explicit";
   sectionId: GuidedSectionId;
   fieldKey?: string;
   Renderer: ComponentType<ConfigurationSpecializedRendererProps>;
@@ -62,8 +65,14 @@ export interface ConfigurationWorkspaceToolsProps extends ConfigurationSpecializ
   schema: import("./settings-schema").GuidedSettingsSchema;
 }
 
+export interface ConfigurationWorkspaceProviderProps {
+  children: ReactNode;
+  details: InstanceDetails;
+}
+
 export interface SettingsModuleDefinition {
   id: string;
+  workspaceProvider?: ComponentType<ConfigurationWorkspaceProviderProps>;
   workspaceToolbar?: ComponentType<ConfigurationWorkspaceToolsProps>;
   fieldPresentationOverrides?: Readonly<Record<string, ConfigurationFieldPresentationOverride>>;
   specializedRenderers?: Readonly<Record<string, SettingsModuleSpecializedRenderer>>;

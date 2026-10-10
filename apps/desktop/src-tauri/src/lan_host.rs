@@ -608,6 +608,115 @@ pub(crate) fn dispatch_command<'a>(
     args: Value,
 ) -> LanCommandFuture<'a> {
     match command {
+        "read_satisfactory_world_settings" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::read_satisfactory_world_settings(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "read_satisfactory_admin_password" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::read_satisfactory_admin_password(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "setup_satisfactory_server" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::setup_satisfactory_server(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "authorize_satisfactory_server" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::authorize_satisfactory_server(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "write_satisfactory_world_rules" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::write_satisfactory_world_rules(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "create_satisfactory_world" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::create_satisfactory_world(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "write_satisfactory_room" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::write_satisfactory_room(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "load_satisfactory_save" => boxed_command(|| async move {
+            to_json(
+                commands::commands_satisfactory_world::load_satisfactory_save(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "read_astroneer_save_catalog" => boxed_command(|| async move {
+            to_json(
+                commands::commands_astroneer_saves::read_astroneer_save_catalog(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "read_valheim_world_rules" => boxed_command(|| async move {
+            to_json(
+                commands::commands_valheim_world::read_valheim_world_rules(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "worldName", "world_name")?,
+                )
+                .await?,
+            )
+        }),
+        "read_dragonwilds_world_settings" => boxed_command(|| async move {
+            to_json(
+                commands::commands_dragonwilds_world::read_dragonwilds_world_settings(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "write_dragonwilds_world_settings" => boxed_command(|| async move {
+            to_json(
+                commands::commands_dragonwilds_world::write_dragonwilds_world_settings(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
         "read_ark_cluster" => boxed_command(|| async move {
             to_json(
                 commands::commands_ark_clusters::read_ark_cluster(

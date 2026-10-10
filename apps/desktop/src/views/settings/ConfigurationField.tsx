@@ -35,6 +35,8 @@ export interface ConfigurationFieldCopy {
 
 export interface ConfigurationFieldProps {
   className?: string;
+  /** Nested native controls use their structured editor's global search entry. */
+  indexed?: boolean;
   copy: ConfigurationFieldCopy;
   disabled?: boolean;
   readOnly?: boolean;
@@ -395,7 +397,7 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
   return (
     <div className={rootClassName} ref={help.anchorRef} {...help.interactionProps}
       tabIndex={props.readOnly ? -1 : undefined}
-      data-configuration-behavior={behavior} data-field-key={props.field.key}>
+      data-configuration-behavior={behavior} data-field-key={props.indexed === false ? undefined : props.field.key}>
       {props.field.icon && !usesToggleCard ? <img className="settings-field-icon" src={props.field.icon} alt="" aria-hidden="true" loading="lazy" /> : null}
       {!usesToggleCard ? <div className="configuration-field-heading">
         {props.field.presentation.resourceUrl ? (

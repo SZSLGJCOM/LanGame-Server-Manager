@@ -1,7 +1,11 @@
 import type { MessageCatalog } from "../../i18n-config";
 
 export const EN_US_ROMESTEAD_MESSAGES: MessageCatalog = {
-  "romestead.settings.validation.sleepThreshold": "Use -1 to disable sleeping, or a value from 1.0 to 16.5 milliseconds.",
+  "romestead.settings.validation.sleepThreshold": "Enter a threshold from 1 to 16.5 milliseconds, or turn off CPU sleep.",
+  "settings.schema.romestead.auto_create_world_size.option.0": "Small",
+  "settings.schema.romestead.auto_create_world_size.option.1": "Standard",
+  "settings.schema.romestead.auto_create_world_size.option.2": "Large",
+  "romestead.settings.sleep.threshold": "Sleep threshold (ms)",
   "romestead.settings.sections.room": "Server",
   "romestead.settings.sections.roomDescription": "Player capacity and core room limits written to config.json.",
   "romestead.settings.sections.world": "World",
@@ -10,6 +14,8 @@ export const EN_US_ROMESTEAD_MESSAGES: MessageCatalog = {
   "romestead.settings.sections.accessDescription": "Server command permissions.",
   "romestead.settings.sections.admin": "Admin",
   "romestead.settings.sections.adminDescription": "Operator-only switches from the Romestead config surface.",
+  "romestead.settings.sections.performance": "Performance",
+  "romestead.settings.sections.performanceDescription": "Low-load CPU use and server thread timing.",
   "romestead.settings.sections.advanced": "Advanced",
   "romestead.settings.sections.advancedDescription": "Raw launch arguments for version-specific server flags.",
   "romestead.settings.groups.identity.title": "Room Identity",
@@ -20,6 +26,8 @@ export const EN_US_ROMESTEAD_MESSAGES: MessageCatalog = {
   "romestead.settings.groups.access.description": "Optional password required before players can join.",
   "romestead.settings.groups.admin.title": "Admin Switches",
   "romestead.settings.groups.admin.description": "Reserved server-side control flags exposed by config.json.",
+  "romestead.settings.groups.performance.title": "CPU Sleep",
+  "romestead.settings.groups.performance.description": "Adjust the server thread's low-load sleep behavior.",
   "romestead.settings.groups.advanced.title": "Launch Overrides",
   "romestead.settings.groups.advanced.description": "Append raw arguments only when a specific Romestead server version needs them.",
   "settings.schema.romestead.auto_start_world_name.title": "World Name",
@@ -27,7 +35,7 @@ export const EN_US_ROMESTEAD_MESSAGES: MessageCatalog = {
   "settings.schema.romestead.auto_create_and_load_world.title": "Auto-create and Load World",
   "settings.schema.romestead.auto_create_and_load_world.description": "Creates the selected world if it does not exist, then loads it.",
   "settings.schema.romestead.auto_create_world_size.title": "New World Size",
-  "settings.schema.romestead.auto_create_world_size.description": "Used when creating a world: 0 small, 1 standard, 2 large.",
+  "settings.schema.romestead.auto_create_world_size.description": "Size used when creating a new world. Existing worlds keep their current size.",
   "settings.schema.romestead.password.title": "Join Password",
   "settings.schema.romestead.password.description": "Leave empty to allow joining without a password.",
   "settings.schema.romestead.max_players.title": "Max Players",
@@ -38,6 +46,6 @@ export const EN_US_ROMESTEAD_MESSAGES: MessageCatalog = {
   "settings.schema.romestead.extra_launch_args.description": "Optional raw arguments appended to the generated Romestead server launch command.",
   "settings.schema.romestead.auto_create_world_seed.title": "New World Seed",
   "settings.schema.romestead.auto_create_world_seed.description": "Seed used when creating a world. Leave empty for a random seed.",
-  "settings.schema.romestead.sleep_threshold_ms.title": "Server Thread Sleep Threshold (ms)",
-  "settings.schema.romestead.sleep_threshold_ms.description": "Controls low-load CPU sleeping. Values from 1.0 to 16.5 ms enable sleeping; -1 disables it to reduce timing jitter at higher CPU cost.",
+  "settings.schema.romestead.sleep_threshold_ms.title": "Low-load CPU Sleep",
+  "settings.schema.romestead.sleep_threshold_ms.description": "Let the server thread sleep under low load to reduce CPU use. Turning this off reduces timing jitter at higher CPU cost. The threshold can be set from 1 to 16.5 milliseconds.",
 };

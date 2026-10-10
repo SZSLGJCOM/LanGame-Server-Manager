@@ -28,8 +28,9 @@
     },
     "server_password": {
       "type": "string",
+      "minLength": 5,
       "title": "Join Password",
-      "description": "Passed to the dedicated server launch command. New instances receive a unique password that can be shared with invited players.",
+      "description": "Join password must be at least 5 characters and must not appear in the server name. New instances receive a unique password that can be shared with invited players.",
       "x-lsgm-default-source": "generated_secret",
       "x-lsgm-section": "room",
       "x-lsgm-order": 200,

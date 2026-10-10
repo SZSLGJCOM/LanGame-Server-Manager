@@ -27,7 +27,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "Satisfactory 1.1+ uses the in-game Server Manager for first claim, server name, administrator password, and save selection. LanGame launches the packaged console executable directly with the bootstrap's FactoryGame project argument so its standard handles belong to the managed console. The working directory, isolated user profile, 7777/8888 port pair, INI settings and backups retain their existing boundaries. Claim settings remain under the game's management and are not represented as editable INI values."
+host_notes = "LanGame launches the packaged console executable with the FactoryGame project argument in the managed console. The isolated user profile, 7777 game/API port and 8888 reliable port retain their boundaries. Room identity, initial claim, administrator authorization, save selection and world creation use the native HTTPS API after startup; they are not editable INI values. Native administration credentials stay in the operating-system credential store. Existing startup INI controls retain a single editor, with API values used only for readback context."
 
 [process.environment_template]
 USERPROFILE = "{{paths.data_dir}}/profile"

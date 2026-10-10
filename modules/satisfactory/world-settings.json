@@ -1,0 +1,392 @@
+{
+  "native_build": 24656085,
+  "native_changelist": 502094,
+  "settings": [
+    {
+      "key": "FG.GameMode.EnergyCostMultiplier",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "100",
+      "source_asset": "US_GM_EnergyCostMultiplier.uasset",
+      "source_sha256": "3eee1200a34b9107528cde95c6ee2acf63d57a0034c8d85d7c0181b5fb7040d9",
+      "options": [
+        {
+          "value": "25",
+          "label_key": "multiplier_25"
+        },
+        {
+          "value": "50",
+          "label_key": "multiplier_50"
+        },
+        {
+          "value": "75",
+          "label_key": "multiplier_75"
+        },
+        {
+          "value": "100",
+          "label_key": "multiplier_100"
+        },
+        {
+          "value": "200",
+          "label_key": "multiplier_200"
+        },
+        {
+          "value": "500",
+          "label_key": "multiplier_500"
+        }
+      ]
+    },
+    {
+      "key": "FG.GameMode.PartsCostMultiplier",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "100",
+      "source_asset": "US_GM_PartsCostMultiplier.uasset",
+      "source_sha256": "87b9a8e152918163d406000b45519845bfdcff3bbcd63d87edd7878972c225d0",
+      "options": [
+        {
+          "value": "25",
+          "label_key": "multiplier_25"
+        },
+        {
+          "value": "50",
+          "label_key": "multiplier_50"
+        },
+        {
+          "value": "75",
+          "label_key": "multiplier_75"
+        },
+        {
+          "value": "100",
+          "label_key": "multiplier_100"
+        },
+        {
+          "value": "125",
+          "label_key": "multiplier_125"
+        },
+        {
+          "value": "150",
+          "label_key": "multiplier_150"
+        },
+        {
+          "value": "175",
+          "label_key": "multiplier_175"
+        },
+        {
+          "value": "200",
+          "label_key": "multiplier_200"
+        }
+      ]
+    },
+    {
+      "key": "FG.GameMode.SpacePartsCostMultiplier",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "100",
+      "source_asset": "US_GM_SpacePartsCostMultiplier.uasset",
+      "source_sha256": "c895259b5025dce8f1325ce872bee5c7bd09eb223860a6867052999e0fca9b86",
+      "options": [
+        {
+          "value": "25",
+          "label_key": "multiplier_25"
+        },
+        {
+          "value": "50",
+          "label_key": "multiplier_50"
+        },
+        {
+          "value": "75",
+          "label_key": "multiplier_75"
+        },
+        {
+          "value": "100",
+          "label_key": "multiplier_100"
+        },
+        {
+          "value": "200",
+          "label_key": "multiplier_200"
+        },
+        {
+          "value": "500",
+          "label_key": "multiplier_500"
+        },
+        {
+          "value": "1000",
+          "label_key": "multiplier_1000"
+        },
+        {
+          "value": "2500",
+          "label_key": "multiplier_2500"
+        },
+        {
+          "value": "5000",
+          "label_key": "multiplier_5000"
+        },
+        {
+          "value": "10000",
+          "label_key": "multiplier_10000"
+        }
+      ]
+    },
+    {
+      "key": "FG.GameMode.NodePuritySettings",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "0",
+      "source_asset": "US_GM_NodePurity.uasset",
+      "source_sha256": "0d818a235cf36b9b6e8143d9c5cf5d31781f60d34cf6de9f16334fa6d3b79e42",
+      "options": [
+        {
+          "value": "0",
+          "label_key": "default"
+        },
+        {
+          "value": "1",
+          "label_key": "all_pure"
+        },
+        {
+          "value": "5",
+          "label_key": "mostly_pure"
+        },
+        {
+          "value": "2",
+          "label_key": "average"
+        },
+        {
+          "value": "6",
+          "label_key": "mostly_impure"
+        },
+        {
+          "value": "3",
+          "label_key": "all_impure"
+        },
+        {
+          "value": "4",
+          "label_key": "random"
+        }
+      ]
+    },
+    {
+      "key": "FG.GameMode.NodeRandomization",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "0",
+      "source_asset": "US_GM_ResourceRandomization.uasset",
+      "source_sha256": "cdad1f7f1b81830a508a8caf6e390a20a2f89ee8dcb2646d5037264e3017fd52",
+      "options": [
+        {
+          "value": "0",
+          "label_key": "default"
+        },
+        {
+          "value": "1",
+          "label_key": "random"
+        },
+        {
+          "value": "2",
+          "label_key": "basic_rich"
+        },
+        {
+          "value": "3",
+          "label_key": "advanced_rich"
+        },
+        {
+          "value": "4",
+          "label_key": "fossil_rich"
+        }
+      ]
+    },
+    {
+      "key": "FG.GameMode.NodeRandomizationSeed",
+      "scope": "creation",
+      "kind": "integer",
+      "default_value": "0",
+      "source_asset": "US_GM_WorldSeed.uasset",
+      "source_sha256": "1ace1eb5913ed86eea01e5989bb45b575b1088478b228563310bb37a5929bd03",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    {
+      "key": "FG.GameRules.NoPower",
+      "scope": "world",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_NoPower.uasset",
+      "source_sha256": "04a8e1a2380beeee511599e8bbfb0ea84240e22d6f6e7412d301629a53a8b189"
+    },
+    {
+      "key": "FG.GameRules.NoFuelCost",
+      "scope": "world",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_NoFuelCost.uasset",
+      "source_sha256": "7fd87fbf065c02a10a9870b02fb9aa7b1319062c17573925604913dc5271837a"
+    },
+    {
+      "key": "FG.GameRules.NoUnlockCost",
+      "scope": "world",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_NoUnlockCost.uasset",
+      "source_sha256": "386efa1522aef97e2a735036b4ba737cbdcdace6f175a9e62a1e913ac3af4745"
+    },
+    {
+      "key": "FG.GameRules.DisableArachnidCreatures",
+      "scope": "world",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_DisableArachnidCreatures.uasset",
+      "source_sha256": "6161c9fc59f26e46304fa4340e7a7c688ead83aeafbdd4e29af2ebc6d5244488"
+    },
+    {
+      "key": "FG.GameRules.UnlockInstantAltRecipes",
+      "scope": "world",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_InstantAltRecipe.uasset",
+      "source_sha256": "5ba116aef50913614ee7da0d6c230d9285b94d02b99fd06704171d5c501ac777"
+    },
+    {
+      "key": "FG.PlayerRules.NoBuildCost",
+      "scope": "player_defaults",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_NoBuildingCost.uasset",
+      "source_sha256": "794680c9c247532b98984132cbc1de6cbdcd9d66f1e9fe028738e489a1676f91"
+    },
+    {
+      "key": "FG.PlayerRules.GodMode",
+      "scope": "player_defaults",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_GodMode.uasset",
+      "source_sha256": "f5bbd75a676c2506dd200d14ba5a7530c4b1001fb2d79d9ab48a77431d87dbf8"
+    },
+    {
+      "key": "FG.PlayerRules.FlightMode",
+      "scope": "player_defaults",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_FlightMode.uasset",
+      "source_sha256": "b6d266eb52e8860b2246537f75352a287b62fcd51824ad0f990efea2e247030e"
+    },
+    {
+      "key": "FG.GameRules.GiveAllTiers",
+      "scope": "creation",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_GiveAllTiers.uasset",
+      "source_sha256": "f8149e88db5de1f78f8533c58a44eac2351a78a104659a184847dabfb4e4568b"
+    },
+    {
+      "key": "FG.GameRules.UnlockAllResearchSchematics",
+      "scope": "creation",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_GiveAllMamResearch.uasset",
+      "source_sha256": "e90392691d0f19a3e9a935c0231752b609ceaccc95a85ba5ad2165899427cf7d"
+    },
+    {
+      "key": "FG.GameRules.UnlockAllResourceSinkSchematics",
+      "scope": "creation",
+      "kind": "boolean",
+      "default_value": "False",
+      "source_asset": "US_GiveAllShopUnlocks.uasset",
+      "source_sha256": "acfc223c0c8ca3a86e7b62449950685e4346b8b6466b2a6b40225a23f4a00bae"
+    },
+    {
+      "key": "FG.GameRules.StartingTier",
+      "scope": "creation",
+      "kind": "select",
+      "default_value": "0",
+      "source_asset": "US_StartingTier.uasset",
+      "source_sha256": "259b10d49f9d0501e1de8998f941eb13ae5305cbaa320e97427bacca2951d50e",
+      "options": [
+        {
+          "value": "0",
+          "label_key": "tier_0"
+        },
+        {
+          "value": "1",
+          "label_key": "tier_1"
+        },
+        {
+          "value": "2",
+          "label_key": "tier_2"
+        },
+        {
+          "value": "3",
+          "label_key": "tier_3"
+        },
+        {
+          "value": "4",
+          "label_key": "tier_4"
+        },
+        {
+          "value": "5",
+          "label_key": "tier_5"
+        },
+        {
+          "value": "6",
+          "label_key": "tier_6"
+        },
+        {
+          "value": "7",
+          "label_key": "tier_7"
+        },
+        {
+          "value": "8",
+          "label_key": "tier_8"
+        },
+        {
+          "value": "9",
+          "label_key": "tier_9"
+        },
+        {
+          "value": "10",
+          "label_key": "tier_10"
+        }
+      ]
+    }
+  ],
+  "starting_locations": [
+    {
+      "value": "",
+      "label_key": "random"
+    },
+    {
+      "value": "Grass Fields",
+      "label_key": "grass_fields"
+    },
+    {
+      "value": "Rocky Desert",
+      "label_key": "rocky_desert"
+    },
+    {
+      "value": "Northern Forest",
+      "label_key": "northern_forest"
+    },
+    {
+      "value": "DuneDesert",
+      "label_key": "dune_desert"
+    }
+  ],
+  "excluded_settings": [
+    {
+      "key": "FG.GameRules.GiveItems",
+      "reason": "An immediate give-item command belongs to player tools, not server settings."
+    },
+    {
+      "key": "FG.GameRules.SetGamePhase",
+      "reason": "An immediate progression command with dynamically generated choices, not a reversible world rule."
+    },
+    {
+      "key": "FG.PlayerRules.KeepInventory",
+      "reason": "Not returned in the current native dedicated-server GetAdvancedGameSettings catalog."
+    },
+    {
+      "key": "FG.PlayerRules.CreatureHostilityMode",
+      "reason": "Not returned in the current native dedicated-server GetAdvancedGameSettings catalog."
+    }
+  ]
+}
