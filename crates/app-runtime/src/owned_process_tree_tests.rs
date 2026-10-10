@@ -253,6 +253,65 @@ impl Drop for LaunchFixture {
 }
 
 #[test]
+fn completed_tree_cleanup_deadline_confirms_already_exited_owned_handles() {
+    let mut fixture = LaunchFixture::new(ProcessHostSurface::ManagedTerminal);
+    assert_eq!(
+        fixture
+            .spawned
+            .as_mut()
+            .unwrap()
+            .child
+            .as_mut()
+            .unwrap()
+            .owned_process_tree_is_running()
+            .unwrap(),
+        Some(true),
+        "capture the owned root and descendants before they exit"
+    );
+    fs::write(fixture.root.join("exit-launcher"), b"exit").unwrap();
+    fs::write(fixture.root.join("release-leaves"), b"exit").unwrap();
+    assert!(fixture.handles[0].wait_for_exit(5000).unwrap());
+    assert!(fixture.leaves_stopped());
+    let spawned = fixture.spawned.as_mut().unwrap();
+    let RuntimeChild::Windows(child) = spawned.child.as_mut().unwrap() else {
+        panic!("native launch owner required");
+    };
+    let job = child.job.as_ref().unwrap();
+    assert!(wait_until(
+        || job.active_process_count().unwrap() == 0,
+        Duration::from_secs(5),
+    ));
+    // Model a worker resuming after its deadline without depending on scheduler
+    // timing. Completion is a kernel fact; an expired wait budget cannot undo it.
+    job.terminate_and_wait_until(Instant::now() - Duration::from_secs(1))
+        .unwrap();
+}
+
+#[test]
+fn live_tree_cleanup_deadline_preserves_every_owned_process() {
+    let mut fixture = LaunchFixture::new(ProcessHostSurface::ManagedTerminal);
+    let spawned = fixture.spawned.as_mut().unwrap();
+    let RuntimeChild::Windows(child) = spawned.child.as_mut().unwrap() else {
+        panic!("native launch owner required");
+    };
+    let error = child
+        .job
+        .as_ref()
+        .unwrap()
+        .terminate_and_wait_until(Instant::now() - Duration::from_secs(1))
+        .unwrap_err();
+    assert_eq!(error.kind(), std::io::ErrorKind::TimedOut);
+    assert!(error.to_string().contains("phase=cleanup.initial_capture"));
+    assert!(
+        fixture
+            .handles
+            .iter()
+            .all(|handle| handle.is_running().unwrap()),
+        "a timed-out unfinished operation retains its owner and never reports success"
+    );
+}
+
+#[test]
 fn stopping_handed_off_launch_reaps_siblings_without_stopping_another_launch() {
     let mut first = LaunchFixture::new(ProcessHostSurface::ManagedTerminal);
     let second = LaunchFixture::new(ProcessHostSurface::ManagedTerminal);

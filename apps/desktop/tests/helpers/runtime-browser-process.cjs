@@ -88,6 +88,37 @@ async function waitForFixtureReport({ session, url, result, exited, timeoutMs })
   ]), remaining, "Real ReactDOM reliability fixture");
 }
 
+async function prepareFixtureServer(server, fixturePath, compilationErrors) {
+  await server.listen();
+  const entryUrl = `/tests/helpers/${fixturePath}`;
+  const html = await fs.readFile(path.join(__dirname, fixturePath), "utf8");
+  const transformed = await server.transformIndexHtml(entryUrl, html);
+  const scripts = [...transformed.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi)];
+  assert.ok(scripts.length > 0, "Fixture HTML must declare its entry scripts");
+  const client = server.environments.client;
+  // This shape is checked against the locked Vite 8.3.3 implementation. Its
+  // public idle promise is one-shot, so it cannot certify subsequent warmups.
+  assert.ok(client._pendingRequests instanceof Map, "Vite request ownership changed");
+  for (const [, src] of scripts) {
+    const entry = new URL(src.replaceAll("&amp;", "&"), `http://fixture.local${entryUrl}`);
+    assert.equal(entry.origin, "http://fixture.local", "Fixture entry scripts must remain local");
+    const result = await client.transformRequest(entry.pathname + entry.search);
+    assert.ok(result && typeof result.code === "string", "Fixture entry did not transform");
+  }
+  for (;;) {
+    if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
+    const requests = [...client._pendingRequests.values()].map(({ request }) => request);
+    const optimizer = client.depsOptimizer;
+    const processing = optimizer?.metadata.depInfoList.flatMap((dependency) => dependency.processing ? [dependency.processing] : []) ?? [];
+    if (requests.length === 0 && !optimizer?.scanProcessing && processing.length === 0) break;
+    await Promise.all([...requests, ...processing, ...(optimizer?.scanProcessing ? [optimizer.scanProcessing] : [])]);
+    // Vite commits optimizer metadata on its own event-loop turn. Yield work,
+    // not a fixed delay, and recheck newly discovered transforms and bundles.
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+  if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
+}
+
 async function browserExecutable() {
   const explicit = process.env.LANGAME_RELIABILITY_BROWSER;
   const candidates = explicit ? [explicit] : [
@@ -374,7 +405,14 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   }, commandTimeoutMs);
   watchdog.unref();
   try {
-    const [{ createServer }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react")]);
+    const [{ createServer, createLogger }, { default: react }] = await Promise.all([import("vite"), import("@vitejs/plugin-react")]);
+    const compilationErrors = [];
+    const logger = createLogger("error");
+    const logError = logger.error.bind(logger);
+    logger.error = (message, options) => {
+      if (compilationErrors.length < 8) compilationErrors.push(String(message).slice(0, 1000));
+      logError(message, options);
+    };
     let receiveReport;
     let rejectReport;
     const result = new Promise((resolve, reject) => { receiveReport = resolve; rejectReport = reject; });
@@ -387,6 +425,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       appType: "mpa",
       optimizeDeps: { entries: [`tests/helpers/${fixturePath}`] },
       logLevel: "error",
+      customLogger: logger,
       define: { "import.meta.env.DEV": JSON.stringify(development) },
       resolve: { alias: { "@tauri-apps/api/event": path.join(__dirname, "runtime-browser-events.ts") } },
       server: { host: "127.0.0.1", port: 0, strictPort: true, hmr: false,
@@ -483,7 +522,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
         },
       }],
     });
-    await deadline(server.listen(), 15000, "Fixture server startup");
+    const preparationStartedAt = performance.now();
+    await deadline(prepareFixtureServer(server, fixturePath, compilationErrors), 15000, "Fixture server startup");
+    startup.fixture_preparation_ms = Math.round(performance.now() - preparationStartedAt);
     const address = server.httpServer.address();
     assert.ok(address && typeof address !== "string");
     const url = `http://127.0.0.1:${address.port}/tests/helpers/${fixturePath}?nonce=${nonce}`;
@@ -669,4 +710,4 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 }
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
-  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport };
+  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer };
