@@ -111,10 +111,12 @@ Start-Sleep -Seconds 30
         wait_until_previous_map_ready(
             &self.state,
             &self.storage,
-            &self.details,
+            StartupTarget {
+                instance: &self.details,
+                process_key: "map-scorched",
+            },
             &policy,
             &mut self.processes,
-            "map-scorched",
             "manual",
             &reservation,
         )

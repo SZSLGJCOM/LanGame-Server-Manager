@@ -273,7 +273,7 @@ async fn asa_mod_startup_bounds_a_stalled_endpoint_inspection() {
             Duration::ZERO,
             &reservation,
             || Ok(()),
-            || std::future::pending::<Result<StrictBindEvaluation, String>>(),
+            std::future::pending::<Result<StrictBindEvaluation, String>>,
         ),
     )
     .await
@@ -307,7 +307,7 @@ async fn asa_mod_startup_cancel_interrupts_a_stalled_inspection() {
         Duration::from_millis(500),
         &reservation,
         || Ok(()),
-        || std::future::pending::<Result<StrictBindEvaluation, String>>(),
+        std::future::pending::<Result<StrictBindEvaluation, String>>,
     ));
     std::future::poll_fn(|context| {
         assert!(std::future::Future::poll(wait.as_mut(), context).is_pending());
