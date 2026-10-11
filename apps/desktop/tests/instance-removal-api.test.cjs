@@ -6,6 +6,10 @@ const test = require("node:test");
 const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
 const { loadStorageManagementRequests } = require("./helpers/storage-management-requests.cjs");
 
+require.extensions[".ts"] = (module, filename) => {
+  module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+};
+
 test("archive and delete use distinct commands; archiving is host-only", async () => {
   const filename = path.join(__dirname, "../src/api.ts");
   const calls = [];
@@ -16,6 +20,7 @@ test("archive and delete use distinct commands; archiving is host-only", async (
     "@tauri-apps/api/core": { isTauri: () => host },
     "./locale-preference": {},
     "./storage-management-requests": loadStorageManagementRequests(),
+    "./ark-map-availability": require("../src/ark-map-availability.ts"),
     "./api-transport": { shouldUseLanApi: () => lan, invokeOrMock: async (command, args) => {
       calls.push(JSON.parse(JSON.stringify({ command, args })));
       return { instance_id: args.instanceId };

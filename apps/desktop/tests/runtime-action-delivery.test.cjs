@@ -98,10 +98,13 @@ test("partial runtime failures keep stop and surviving-process controls availabl
   assert.match(viewModelsSource, /instances\.filter\(\(instance\) => instanceHasRunningProcess\(instance\)\)/);
 });
 
-test("runtime command targets disable exited shards while keeping running shards selectable", () => {
+test("runtime history keeps exited shards selectable while their commands stay disabled", () => {
   assert.match(runtimeSurfaceSource, /disabled:\s*!runtimeProcessIsRunning\(process\)/);
-  assert.match(runtimeSurfaceSource, /<option[^>]*disabled=\{target\.disabled\}/);
+  assert.match(runtimeSurfaceSource, /runtimeConsoleTabs\.map\(\(tab\) => \(\s*<option key=\{tab\.value\} value=\{tab\.value\}>/);
+  assert.match(runtimeSurfaceSource, /const selectedTarget = runtimeTargets\.find\(\(target\) => target\.value === selectedTargetKey\) \?\? null/);
+  assert.doesNotMatch(runtimeSurfaceSource, /runtimeTargets\.find\(\(target\) => !target\.disabled\)/);
   assert.match(runtimeSurfaceSource, /const runtimeCommandEnabled = instanceRunning && !selectedTarget\?\.disabled/);
+  assert.match(runtimeSurfaceSource, /if \(readOnly \|\| !command \|\| commandPending \|\| !selectedTarget \|\| !runtimeCommandEnabled \|\| !props\.onSendRuntimeCommand\) \{\s*return;/);
 });
 
 test("mock runtime exposes partial and terminal error instances for browser acceptance", () => {

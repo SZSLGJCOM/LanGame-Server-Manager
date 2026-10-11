@@ -37,7 +37,7 @@ function fixture(transport) {
         if (id === "@tauri-apps/api/core") return { isTauri: () => transport === "tauri", invoke: dispatch };
         if (id === "./desktop-exit-lifecycle") return require("./helpers/desktop-exit-fixture.cjs")
           .loadDesktopExitModule({ isTauri: () => transport === "tauri", invoke: dispatch });
-        if (["./api-transport", "./locale-preference", "./i18n-config", "./storage-management-requests"].includes(id)) return load(id.slice(2));
+        if (["./api-transport", "./locale-preference", "./i18n-config", "./storage-management-requests", "./ark-map-availability", "./views/servers/mod-workbench-asa"].includes(id)) return load(id.slice(2));
         throw new Error(`Unexpected dependency: ${id}`);
       }
     }, { filename });

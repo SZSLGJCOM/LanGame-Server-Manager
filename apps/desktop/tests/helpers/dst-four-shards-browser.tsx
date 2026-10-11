@@ -86,7 +86,7 @@ async function mount(nextMode: typeof mode) {
   epoch += 1;
   await act(async () => { draw(); });
   await settle(() => Boolean(fixture.querySelector(nextMode === "configuration" ? ".configuration-workspace"
-    : nextMode === "mods" ? ".mw-sort-pill" : ".server-runtime-console-tabs")), "Workspace did not mount");
+    : nextMode === "mods" ? ".mw-sort-pill" : ".server-runtime-console-target-select")), "Workspace did not mount");
 }
 async function section(id: string) {
   for (let count = 0; count < 5; count++) {
@@ -208,12 +208,13 @@ async function run() {
       processes: shardKeys.map((shard, index) => ({ run_id: 101 + index, process_key: shard,
         display_name: shard, pid: 201 + index, status: "running", log_path: `fixture/${shard}/server_log.txt`, is_primary: index === 0 })) } };
   await mount("cmd");
-  const tabs = [...fixture.querySelectorAll<HTMLButtonElement>('.server-runtime-console-tabs [role="tab"]')];
-  check(tabs.length === 4, "CMD renders four process tabs");
-  for (let index = 1; index < tabs.length; index++) {
-    await click(tabs[index]);
+  const processSelector = element<HTMLSelectElement>(".server-runtime-console-target-select");
+  check(Array.from(processSelector.options, (option) => option.value).join(",") === shardKeys.join(","),
+    "CMD exposes all four process targets");
+  for (let index = 1; index < shardKeys.length; index++) {
+    await select(processSelector, shardKeys[index]);
     await settle(() => fixture.textContent?.includes(`Fixture ${shardKeys[index]} process log`) === true, "Selected shard log did not load");
-    check(tabs[index].getAttribute("aria-selected") === "true", `${shardKeys[index]} CMD tab selects its own process log`);
+    check(processSelector.value === shardKeys[index], `${shardKeys[index]} CMD selection reads its own process log`);
   }
   check([102, 103, 104].every((runId) => logReads.includes(runId)), "CMD reads each selected shard's own run ID");
   check(document.documentElement.scrollWidth <= innerWidth + 1, "Four-shard workspace fits the desktop viewport");

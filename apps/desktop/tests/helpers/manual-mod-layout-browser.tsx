@@ -232,12 +232,19 @@ function stageResult(): ManualModStageResult {
     target_path: "fixture://manual-mods/target", affected_root_names: ["FixtureMod"],
     items: [], copied_file_count: 3, copied_total_bytes: 4096 };
 }
-async function dropFiles() {
+function fileTransfer(): DataTransfer {
   const file = new File(["isolated fixture"], "example.zip");
   Object.defineProperty(file, "path", { value: "fixture://manual-mods/example.zip" });
   const dataTransfer = new DataTransfer();
+  // Synthetic browser events must provide the external file source's operation mask.
+  Object.defineProperty(dataTransfer, "effectAllowed", { value: "copyLink" });
   dataTransfer.items.add(file);
-  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer })); });
+  return dataTransfer;
+}
+async function dropFiles() {
+  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("drop", {
+    bubbles: true, cancelable: true, dataTransfer: fileTransfer()
+  })); });
 }
 async function inputReference() {
   await act(async () => {
@@ -277,7 +284,9 @@ async function run() {
 
   await render("sevendaystodie");
   layout("empty", false);
-  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", { bubbles: true, dataTransfer: new DataTransfer() })); });
+  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", {
+    bubbles: true, cancelable: true, dataTransfer: fileTransfer()
+  })); });
   check(element(".mw-dropzone").classList.contains("mw-dropzone--active"), "File drag enters the real drop target");
   layout("drag-active", false);
   await dropFiles();

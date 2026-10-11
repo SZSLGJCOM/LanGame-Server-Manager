@@ -38,7 +38,7 @@ function harness() {
       module, exports: module.exports,
       require(name) {
         if (name in dependencies) return dependencies[name];
-        assert.ok(["./storage-management-requests", "./i18n-config"].includes(name), `Unexpected dependency ${name}`);
+        assert.ok(["./storage-management-requests", "./i18n-config", "./ark-map-availability", "./views/servers/mod-workbench-asa"].includes(name), `Unexpected dependency ${name}`);
         return load(`${name.slice(2)}.ts`);
       }
     }, { filename });

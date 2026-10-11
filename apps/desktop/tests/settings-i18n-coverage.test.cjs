@@ -363,7 +363,7 @@ test("ARK Survival Evolved ActiveMods field is owned by the server-level mods wo
   assert.equal(zhFields.has("active_mod_ids"), false);
   assert.equal(enFields.has("active_mod_ids"), false);
 });
-test("ARK Survival Ascended map field stays free-form while exposing registered map suggestions", () => {
+test("ARK Survival Ascended map field stays free-form while exposing official map suggestions", () => {
   const schema = parseGuidedSettingsSchema(
     moduleDetailsFor("arksurvivalascended"),
     "en-US",
@@ -378,7 +378,7 @@ test("ARK Survival Ascended map field stays free-form while exposing registered 
   const zhMapField = new Map(zhSchema.fields.map((field) => [field.key, field])).get("map_name");
   const suggestionValues = (mapField?.suggestions ?? []).map((option) => option.value);
   const zhSuggestionLabels = new Map((zhMapField?.suggestions ?? []).map((option) => [option.value, option.label]));
-  const currentRegisteredMapValues = [
+  const officialMapValues = [
     "TheIsland_WP",
     "ScorchedEarth_WP",
     "TheCenter_WP",
@@ -388,33 +388,14 @@ test("ARK Survival Ascended map field stays free-form while exposing registered 
     "Ragnarok_WP",
     "Valguero_WP",
     "Genesis_WP",
-    "LostColony_WP",
-    "BobsMissions_WP",
-    "Svartalfheim_WP",
-    "Forglar_WP",
-    "Atlantis_WP",
-    "LostCity_WP",
-    "Appalachia_Official_WP",
-    "Amissa_WP",
-    "Vintal_WP",
-    "insaluna_WP",
-    "Temptress_WP",
-    "Reverence_WP",
-    "Nyrandil",
-    "Althemia",
-    "Thaloria_WP",
-    "TheVolcano_WP",
-    "EdenPremium_WP",
-    "Mythica_WP",
-    "M_ArkopolisWP",
-    "TaeniaStella"
+    "LostColony_WP"
   ];
 
   assert.equal(mapField?.control, "text");
   assert.equal(mapField?.enumOptions, undefined);
   assert.equal(zhMapField?.control, "text");
   assert.equal(zhMapField?.enumOptions, undefined);
-  assert.deepEqual(suggestionValues, currentRegisteredMapValues);
+  assert.deepEqual(suggestionValues, officialMapValues);
   assert.equal(zhSuggestionLabels.get("TheIsland_WP"), "孤岛 / The Island");
   assert.equal(zhSuggestionLabels.get("ScorchedEarth_WP"), "焦土飞升 / 焦土 / Scorched Earth");
   assert.equal(zhSuggestionLabels.get("TheCenter_WP"), "中心岛飞升 / 中心岛 / The Center");
