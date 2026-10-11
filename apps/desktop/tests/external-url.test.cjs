@@ -6,6 +6,10 @@ const vm = require("node:vm");
 const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
 const { loadStorageManagementRequests } = require("./helpers/storage-management-requests.cjs");
 
+require.extensions[".ts"] = (module, filename) => {
+  module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+};
+
 function loadApi(tauri) {
   const filename = path.join(__dirname, "..", "src", "api.ts");
   const module = { exports: {} };
@@ -25,6 +29,7 @@ function loadApi(tauri) {
       }
       if (name === "./locale-preference") return { readPreferredLocale: () => "en-US" };
       if (name === "./storage-management-requests") return loadStorageManagementRequests({ readPreferredLocale: () => "en-US" });
+      if (name === "./ark-map-availability") return require("../src/ark-map-availability.ts");
       if (name === "./api-transport") return { invokeOrMock: async (...args) => { invoked.push(args); } };
       throw new Error(`Unexpected import: ${name}`);
     }

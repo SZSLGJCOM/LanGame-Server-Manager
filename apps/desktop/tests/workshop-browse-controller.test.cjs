@@ -201,6 +201,7 @@ test("the public API batches large Mod libraries without exceeding the backend I
     require(id) {
       if (id === "./locale-preference") return { readPreferredLocale: () => "zh-CN" };
       if (id === "./storage-management-requests") return loadStorageManagementRequests({ readPreferredLocale: () => "zh-CN" });
+      if (id === "./ark-map-availability") return require("../src/ark-map-availability.ts");
       if (id === "@tauri-apps/api/core") return { isTauri: () => true };
       assert.equal(id, "./api-transport");
       return {

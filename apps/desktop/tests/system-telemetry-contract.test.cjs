@@ -24,6 +24,7 @@ function loadApi(value) {
     "@tauri-apps/api/core": { isTauri: () => true },
     "./locale-preference": {},
     "./storage-management-requests": loadStorageManagementRequests(),
+    "./ark-map-availability": require("../src/ark-map-availability.ts"),
     "./api-transport": { invokeOrMock: async (command, args) => {
       calls.push(JSON.parse(JSON.stringify({ command, args })));
       return value;

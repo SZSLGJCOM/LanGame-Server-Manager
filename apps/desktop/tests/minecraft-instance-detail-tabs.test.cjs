@@ -84,7 +84,7 @@ test("Minecraft no longer carries a parallel instance-detail implementation", ()
 
 test("Minecraft configuration uses the shared schema workspace", () => {
   assert.match(settingsRegistry, /minecraftSettingsDefinition/);
-  assert.match(configurationWorkspace, /parseGuidedSettingsSchema\(localizedModuleDetails, locale, t, \{ fieldIcons: configurationIcons\.icons \}\)/);
+  assert.match(configurationWorkspace, /parseGuidedSettingsSchema\(localizedModuleDetails, locale, t,\s*\{ fieldIcons: configurationIcons\.icons \}\)/);
   assert.match(configurationWorkspace, /resolveSettingsModuleDefinition\(moduleId\)/);
   assert.doesNotMatch(configurationWorkspace, /SettingsModal|onClose/);
 });

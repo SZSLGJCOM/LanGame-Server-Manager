@@ -66,6 +66,7 @@ test("single details and batched lookups dispatch the caller's locale even if gl
     exports, require(id) {
       if (id === "./locale-preference") return { readPreferredLocale: () => "en-US" };
       if (id === "./storage-management-requests") return loadStorageManagementRequests({ readPreferredLocale: () => "en-US" });
+      if (id === "./ark-map-availability") return require("../src/ark-map-availability.ts");
       if (id === "@tauri-apps/api/core") return { isTauri: () => true };
       assert.equal(id, "./api-transport");
       return { invokeOrMock: async (command, args) => {

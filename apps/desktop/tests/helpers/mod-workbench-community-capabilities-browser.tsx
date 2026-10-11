@@ -100,7 +100,15 @@ async function runCommunity(template: InstanceDetails, id: string) {
     check(!row.querySelector(".mw-entry-remove-button"), "File-only module does not label unsupported removal as an action");
   }
   await click(row.querySelector<HTMLButtonElement>(".mw-entry-row-select")!);
-  check(fixture.querySelector(".mw-detail-config-col")?.textContent?.includes(inventory.items[0].path), "Selected payload details show its actual instance path");
+  if (id === "arksurvivalascended") {
+    const configuration = fixture.querySelector(".mw-detail-config-col [data-asa-mod-config]");
+    check(configuration?.getAttribute("data-asa-mod-config") === inventory.items[0].inferred_id,
+      "ASA configuration belongs to the selected installed Mod");
+    const editor = configuration?.querySelector<HTMLTextAreaElement>(".asa-mod-config__input");
+    check(editor && !editor.disabled, "Selected ASA Mod exposes its real INI editor");
+  } else {
+    check(fixture.querySelector(".mw-detail-config-col")?.textContent?.includes(inventory.items[0].path), "Selected payload details show its actual instance path");
+  }
   await click(button("Open Mod folder"));
   check(opened.at(-1) === inventory.target_path, "Folder action opens this instance's target");
   check(document.documentElement.scrollWidth <= innerWidth + 1, "Workspace has no horizontal page overflow");

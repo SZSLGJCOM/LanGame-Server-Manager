@@ -19,7 +19,7 @@ function loadApi(invoke) {
         if (id === "@tauri-apps/api/core") return { isTauri: () => true, invoke };
         if (id === "./desktop-exit-lifecycle") return require("./helpers/desktop-exit-fixture.cjs")
           .loadDesktopExitModule({ isTauri: () => true, invoke });
-        if (["./api-transport", "./storage-management-requests", "./i18n-config"].includes(id)) return load(id.slice(2));
+        if (["./api-transport", "./storage-management-requests", "./i18n-config", "./ark-map-availability", "./views/servers/mod-workbench-asa"].includes(id)) return load(id.slice(2));
         if (id === "./locale-preference") return { readPreferredLocale: () => "en-US" };
         throw new Error(`Unexpected dependency: ${id}`);
       }

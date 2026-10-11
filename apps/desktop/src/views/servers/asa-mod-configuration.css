@@ -12,7 +12,7 @@
 .asa-mod-config__toolbar select { min-width: 0; flex: 1; width: auto; }
 .asa-mod-config__file-input { display: none; }
 .asa-mod-config__input-label { font-size: var(--text-body); }
-.asa-mod-config .asa-mod-config__input { min-height: 96px; width: 100%; resize: vertical; box-sizing: border-box; font-family: var(--font-mono, monospace); }
+.asa-mod-config .asa-mod-config__input { min-height: 96px; width: 100%; resize: vertical; box-sizing: border-box; font-family: var(--font-mono); }
 .asa-mod-config__field-note { grid-column: 1 / -1; color: var(--shell-muted); font-size: var(--text-secondary); }
 .asa-mod-config__preview { min-width: 0; overflow-x: auto; }
 .asa-mod-config__preview summary { width: fit-content; cursor: pointer; color: var(--shell-muted); font-size: var(--text-secondary); }
