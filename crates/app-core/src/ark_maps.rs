@@ -228,16 +228,15 @@ pub fn project_process(
     settings["server_name"] = Value::String(process.display_name);
     settings["_managed_ark_save_directory"] = Value::String(process.save_directory);
     settings["_managed_ark_native_log"] = Value::String(process.native_log_path);
-    if has_maps {
-        if settings
+    if has_maps
+        && settings
             .get("cluster_id")
             .and_then(Value::as_str)
             .unwrap_or_default()
             .trim()
             .is_empty()
-        {
-            settings["cluster_id"] = Value::String(format!("lgsm-{}", instance.summary.id));
-        }
+    {
+        settings["cluster_id"] = Value::String(format!("lgsm-{}", instance.summary.id));
     }
     if !settings
         .get("cluster_id")

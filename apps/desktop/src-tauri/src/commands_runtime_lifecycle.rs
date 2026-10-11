@@ -724,10 +724,12 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             && let Err(error) = asa_mod_startup::wait_until_previous_map_ready(
                 state,
                 storage,
-                &instance,
+                asa_mod_startup::StartupTarget {
+                    instance: &instance,
+                    process_key: &plan.process_key,
+                },
                 &module.runtime.bind_address,
                 &mut spawned_processes,
-                &plan.process_key,
                 source,
                 runtime_start_reservation,
             )

@@ -37,6 +37,11 @@ fn required_game_listener(
     Ok(vec![game])
 }
 
+pub(super) struct StartupTarget<'a> {
+    pub instance: &'a InstanceDetails,
+    pub process_key: &'a str,
+}
+
 /// ASA maps share one native Mods download cache. Native initialization finishes
 /// Mod installation/loading before opening the game listener, so do not start
 /// another cache writer until the preceding map owns that listener. This gate
@@ -44,13 +49,16 @@ fn required_game_listener(
 pub(super) async fn wait_until_previous_map_ready(
     state: &DesktopState,
     storage: &StorageBootstrap,
-    instance: &InstanceDetails,
+    target: StartupTarget<'_>,
     policy: &ModuleBindAddressSpec,
     processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
-    next_process_key: &str,
     source: &str,
     reservation: &RuntimeStartReservationLease,
 ) -> Result<(), String> {
+    let StartupTarget {
+        instance,
+        process_key: next_process_key,
+    } = target;
     let (previous, _) = processes
         .last()
         .ok_or("ASA Mod cache barrier has no preceding map")?;

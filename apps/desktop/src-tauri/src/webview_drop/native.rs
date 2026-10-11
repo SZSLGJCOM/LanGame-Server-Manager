@@ -271,10 +271,9 @@ fn attach_frame(
     let message = FrameWebMessageReceivedEventHandler::create(Box::new(move |sender, args| {
         if callback_active.get()
             && let (Some(sender), Some(args)) = (sender, args)
+            && let Err(error) = receive(&sender, &args, &callback_active)
         {
-            if let Err(error) = receive(&sender, &args, &callback_active) {
-                eprintln!("File-drop frame reply failed: {}", error.code().0);
-            }
+            eprintln!("File-drop frame reply failed: {}", error.code().0);
         }
         Ok(())
     }));
@@ -354,10 +353,9 @@ pub(crate) fn install(window: &tauri::WebviewWindow) -> Result<(), String> {
                 let handler = FrameCreatedEventHandler::create(Box::new(move |_, args| {
                     if callback_active.get()
                         && let Some(args) = args
+                        && let Err(error) = attach_frame(&args, &callback_active)
                     {
-                        if let Err(error) = attach_frame(&args, &callback_active) {
-                            eprintln!("Attach file-drop frame failed: {}", error.code().0);
-                        }
+                        eprintln!("Attach file-drop frame failed: {}", error.code().0);
                     }
                     Ok(())
                 }));
