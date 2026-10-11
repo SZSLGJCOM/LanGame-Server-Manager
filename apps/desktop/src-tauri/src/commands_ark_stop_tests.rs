@@ -203,22 +203,31 @@ async fn assert_map_stop(main_exits: bool, retry_after_primary_exit: bool, map_c
             .dispatch_command(&id, Some("main"), "release")
             .unwrap();
         first.wait_for_log_line("received:release").await;
-        tokio::time::timeout(Duration::from_secs(3), async {
-            while process_matches_identity(first.pid, &first.identity).unwrap() {
+        let reaped = tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                // Observe the retained child handle while it exits. Reopening
+                // its PID can fail during Windows process teardown.
+                let reaped = first
+                    .state
+                    .runtime_supervisor
+                    .lock()
+                    .unwrap()
+                    .reap_exited()
+                    .unwrap();
+                if !reaped.is_empty() {
+                    break reaped;
+                }
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
         .await
         .unwrap();
-        let reaped = first
-            .state
-            .runtime_supervisor
-            .lock()
-            .unwrap()
-            .reap_exited()
-            .unwrap();
         assert_eq!(reaped.len(), 1);
         assert_eq!(reaped[0].run_id, 1);
+        assert_eq!(reaped[0].pid, first.pid);
+        assert_eq!(reaped[0].session_id, first.active.session_id);
+        assert!(reaped[0].is_primary);
+        assert_eq!(reaped[0].exit_code, Some(0));
         mark_instance_process_stopped(&first.storage.paths, &id, 1, Some(0), false)
             .await
             .unwrap();
