@@ -17,7 +17,6 @@
   grid-template-columns: var(--configuration-sidebar-width) minmax(0, 1fr);
   overflow: hidden;
 }
-.configuration-workspace--toolbar { grid-template-rows: auto minmax(0, 1fr) auto; }
 .configuration-workspace__sidebar {
   min-width: 0;
   min-height: 0;

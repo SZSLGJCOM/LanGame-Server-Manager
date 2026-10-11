@@ -135,6 +135,8 @@ async function run() {
   await add(`00${X}`); assert(list("mod_ids_csv").includes(X), "Explicit add canonicalizes the numeric ID"); await remove(X);
   await click(button("Store"));
   const transfer = new DataTransfer(), archive = new File(["synthetic fixture"], "asa-pack.zip");
+  // A synthetic DataTransfer defaults to none; the external ZIP source permits copying.
+  Object.defineProperty(transfer, "effectAllowed", { value: "copy" });
   Object.defineProperty(archive, "path", { value: "C:\\Fixture\\asa-pack.zip" }); transfer.items.add(archive);
   const beforeImport = saves;
   await act(async () => element(".mw-dropzone").dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: transfer })));

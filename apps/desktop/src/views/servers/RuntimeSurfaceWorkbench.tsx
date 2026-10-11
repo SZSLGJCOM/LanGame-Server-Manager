@@ -1,9 +1,10 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { describeError } from "../../app-state";
 import { readInstanceLogDocument } from "../../api";
 import { createRuntimeLogRefresh } from "../../runtime-log-refresh";
+import { runtimeConsoleHistory } from "../../runtime-console-history";
 import { formatInstancePanelError, type InstancePanelLoadState } from "../../instance-panel-loader";
 import { selectLocaleText, useI18n, type TranslateFn } from "../../i18n";
 import {
@@ -69,7 +70,6 @@ interface RuntimeConsoleTab {
   value: string;
   processKey: string | null;
   label: string;
-  meta: string;
   runId: number | null;
   logPath: string;
   isPrimary: boolean;
@@ -140,10 +140,11 @@ function normalizeProcessKey(process: InstanceProcessRecord): string {
 
 function formatRuntimeProcessLabel(process: InstanceProcessRecord, t: TranslateFn, ark: boolean): string {
   const processKey = normalizeProcessKey(process);
-  const displayName = String(process.display_name ?? "").trim();
+  const nativeDisplayName = String(process.display_name ?? "");
+  const displayName = nativeDisplayName.trim();
   const key = processKey.toLowerCase();
 
-  if (ark && displayName) return displayName;
+  if (ark && displayName) return nativeDisplayName;
 
   if (key === "master") {
     return t("servers.runtimeSurface.processLabel.master", undefined, "Master / Surface");
@@ -179,15 +180,12 @@ function buildRuntimeConsoleTabs(
     }
 
     seen.add(value);
-    const pidLabel = process.pid ? `PID ${process.pid}` : t("servers.runtimeSurface.pidPending", undefined, "PID pending");
-    const status = String(process.status ?? "").trim();
     const logPath = String(process.log_path ?? "").trim();
 
     tabs.push({
       value,
       processKey: processKey || null,
       label: formatRuntimeProcessLabel(process, t, ark),
-      meta: [pidLabel, status].filter(Boolean).join(" / "),
       runId,
       logPath,
       isPrimary: Boolean(process.is_primary)
@@ -199,7 +197,6 @@ function buildRuntimeConsoleTabs(
       value: PRIMARY_RUNTIME_TARGET,
       processKey: null,
       label: t("servers.runtimeSurface.primaryProcess", undefined, "LanGameCMD"),
-      meta: t("servers.runtimeSurface.defaultRuntimeLog", undefined, "Default runtime log"),
       runId: fallbackRunId,
       logPath: fallbackLogPath,
       isPrimary: true
@@ -215,6 +212,7 @@ function buildRuntimeConsoleTabs(
 
 export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const { t, locale } = useI18n();
+  const targetTooltipId = useId();
   const ark = isArkModule(props.details.summary.module_id);
   const readOnly = Boolean(props.archive);
   const startupPending = !readOnly && props.startupPending;
@@ -243,6 +241,7 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   commandScopeRef.current = commandScope;
   const [suppressingWindows, setSuppressingWindows] = useState(false);
   const [consoleCopyState, setConsoleCopyState] = useState<RuntimeConsoleCopyState>("idle");
+  const [targetTooltipDismissed, setTargetTooltipDismissed] = useState(false);
   const observedLogPathsRef = useRef({ instanceId: props.details.summary.id, paths: new Set<string>() });
   const startupBoundaryRef = useRef<{
     source: RuntimeLogStartupBoundary | undefined;
@@ -302,18 +301,11 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     () => buildRuntimeCommandTargets(runtimeProcesses, instanceRunning, t, ark),
     [ark, instanceRunning, runtimeProcesses, t]
   );
-  const selectedTarget =
-    runtimeTargets.find((target) => target.value === runtimeTargetValue) ?? runtimeTargets[0] ?? null;
-
-  useEffect(() => {
-    if (!selectedTarget?.disabled) {
-      return;
-    }
-    const fallbackTarget = runtimeTargets.find((target) => !target.disabled);
-    if (fallbackTarget) {
-      setRuntimeTargetValue(fallbackTarget.value);
-    }
-  }, [runtimeTargets, selectedTarget]);
+  // Reading a stopped map's history must never reroute a command to another
+  // live map. Non-ARK primary consoles retain their default transport target.
+  const selectedTargetKey = !ark && selectedConsoleTab?.isPrimary
+    ? PRIMARY_RUNTIME_TARGET : selectedConsoleTab?.processKey ?? PRIMARY_RUNTIME_TARGET;
+  const selectedTarget = runtimeTargets.find((target) => target.value === selectedTargetKey) ?? null;
 
   useEffect(() => {
     if (!selectedConsoleTab) {
@@ -330,11 +322,17 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const arkLogScope = JSON.stringify([props.details.summary.id, selectedConsoleRunId]);
   const arkLogSource: RuntimeLogSource = arkLogSelection?.scope === arkLogScope ? arkLogSelection.source : "game";
   const selectedGameLog = ark && !readOnly && !startupPending && selectedConsoleRunId !== null && arkLogSource === "game";
-  const selectedLogReadScope = JSON.stringify([props.details.summary.id, selectedConsoleRunId, ark ? arkLogSource : null]);
+  const selectedLogReadScope = JSON.stringify([props.details.summary.id, selectedConsoleTab?.processKey, selectedConsoleRunId, ark ? arkLogSource : null]);
+  const historyScope = useMemo(() => ({ instanceId: props.details.summary.id, moduleId: props.details.summary.module_id,
+    processKey: selectedConsoleTab?.processKey ?? null, runId: selectedConsoleRunId, source: ark ? arkLogSource : "default" }),
+  [props.details.summary.id, props.details.summary.module_id, selectedConsoleTab?.processKey, selectedConsoleRunId, ark, arkLogSource]);
   useEffect(() => {
-    if (!ark || startupPending) return;
-    setLiveLogSnapshot(null);
-  }, [selectedLogReadScope, ark, startupPending]);
+    if (startupPending) return;
+    const cached = readOnly ? null : runtimeConsoleHistory.read(historyScope);
+    setProcessLogSnapshot(cached);
+    setProcessLogReadScope(cached ? selectedLogReadScope : "");
+    setLiveLogSnapshot(cached);
+  }, [selectedLogReadScope, historyScope, readOnly, startupPending]);
   const selectedProcessLog = processLogReadScope === selectedLogReadScope ? processLogSnapshot : null;
   const selectedProcessLogError = processLogError?.scope === selectedLogReadScope ? processLogError.message : null;
   const selectedConsoleIsPrimary = Boolean(selectedConsoleTab?.isPrimary);
@@ -414,6 +412,11 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     ? liveLogSnapshot ?? startupReadback
     : selectedLiveLog ?? selectedPolledLog;
   const runtimeLogLines = selectedLogSnapshot?.lines ?? [];
+  useEffect(() => {
+    if (!readOnly && !startupPending && processLogReadScope === selectedLogReadScope && selectedLogSnapshot) {
+      runtimeConsoleHistory.write(historyScope, selectedLogSnapshot);
+    }
+  }, [historyScope, selectedLogSnapshot, selectedLogReadScope, processLogReadScope, readOnly, startupPending]);
   const panelLoadState = !readOnly && props.panelLoadState?.instanceId === props.details.summary.id ? props.panelLoadState : null;
   const runtimeReadError = selectedLogSnapshot?.read_error || (!readOnly ? selectedProcessLogError : null);
   const runtimeReadIdentities = new Set(runtimeReadError ? [runtimeReadError] : []);
@@ -592,7 +595,10 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       if (disposed) return;
       // A restarted service or an event retention gap requires an authoritative
       // file read. Reuse the panel refresh and selected shard retry paths.
+      runtimeConsoleHistory.clearInstance(props.details.summary.id);
       setLiveLogSnapshot(null);
+      setProcessLogSnapshot(null);
+      setProcessLogReadScope("");
       setProcessLogRetryGeneration((generation) => generation + 1);
       props.onRetryReads?.();
     }).catch((error: unknown) => {
@@ -605,7 +611,7 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
         console.warn("Runtime event recovery subscription cleanup failed.", error);
       });
     };
-  }, [props.onRetryReads, readOnly]);
+  }, [props.details.summary.id, props.onRetryReads, readOnly]);
 
   useLayoutEffect(() => {
     const follow = consoleFollowRef.current;
@@ -702,11 +708,6 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     }
   }
 
-  function handleRuntimeConsoleTabSelect(tab: RuntimeConsoleTab) {
-    setRuntimeConsoleTabValue(tab.value);
-    setRuntimeTargetValue(tab.processKey ?? PRIMARY_RUNTIME_TARGET);
-  }
-
   function handleRuntimeTargetChange(value: string) {
     setRuntimeTargetValue(value);
 
@@ -781,9 +782,6 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
                 aria-label={runtimeHealthLabel}
                 title={runtimeHealthLabel}
               />
-              {ark || !selectedConsoleTab?.isPrimary ? (
-                <span>{selectedConsoleTab?.label ?? props.details.summary.name}</span>
-              ) : null}
             </div>
             <div className="server-runtime-terminal-actions">
               {ark && !readOnly && !startupPending && selectedConsoleRunId !== null ? (
@@ -801,20 +799,25 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
                   <option value="console">{selectLocaleText(locale, "控制台输出", "Console output")}</option>
                 </select>
               ) : null}
-              {runtimeTargets.length > 1 ? (
-                <select
-                  className="server-runtime-console-target-select"
-                  value={selectedTarget?.value ?? PRIMARY_RUNTIME_TARGET}
-                  onChange={(event) => handleRuntimeTargetChange(event.target.value)}
-                  disabled={!instanceRunning}
-                  aria-label={t("servers.runtimeSurface.commandTargetProcess", undefined, "Command target process")}
-                >
-                  {runtimeTargets.map((target) => (
-                    <option key={target.value} value={target.value} disabled={target.disabled}>
-                      {target.label}
-                    </option>
-                  ))}
-                </select>
+              {runtimeConsoleTabs.length > 1 ? (
+                <span className={`server-runtime-console-target-picker${targetTooltipDismissed ? " is-tooltip-dismissed" : ""}`}
+                  onMouseEnter={() => setTargetTooltipDismissed(false)} onFocus={() => setTargetTooltipDismissed(false)}
+                  onKeyDown={(event) => { if (event.key === "Escape") setTargetTooltipDismissed(true); }}>
+                  <select
+                    className="server-runtime-console-target-select"
+                    value={selectedConsoleTab?.value ?? PRIMARY_RUNTIME_TARGET}
+                    onChange={(event) => handleRuntimeTargetChange(event.target.value)}
+                    aria-label={t("servers.runtimeSurface.runtimeProcessLogs", undefined, "Runtime process logs")}
+                    aria-describedby={targetTooltipId}
+                  >
+                    {runtimeConsoleTabs.map((tab) => (
+                      <option key={tab.value} value={tab.value}>
+                        {tab.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span id={targetTooltipId} className="server-runtime-console-target-tooltip" role="tooltip">{selectedConsoleTab?.label}</span>
+                </span>
               ) : null}
               <button
                 type="button"
@@ -840,29 +843,6 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
               ) : null}
             </div>
           </div>
-          {runtimeConsoleTabs.length > 1 ? (
-            <div
-              className="server-runtime-console-tabs"
-              role="tablist"
-              aria-label={t("servers.runtimeSurface.runtimeProcessLogs", undefined, "Runtime process logs")}
-            >
-              {runtimeConsoleTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab.value === selectedConsoleTab?.value}
-                  className={tab.value === selectedConsoleTab?.value
-                    ? "server-runtime-console-tab is-active"
-                    : "server-runtime-console-tab"}
-                  onClick={() => handleRuntimeConsoleTabSelect(tab)}
-                >
-                  <span>{tab.label}</span>
-                  <small>{tab.meta}</small>
-                </button>
-              ))}
-            </div>
-          ) : null}
           <pre ref={runtimeConsoleRef} className="log-preview server-log-preview server-runtime-console server-runtime-console--primary"
             data-run-id={selectedConsoleRunId ?? undefined}
             data-process-key={selectedConsoleTab?.processKey ?? undefined}

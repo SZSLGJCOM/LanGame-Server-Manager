@@ -25,6 +25,52 @@ pub(super) async fn wait_for_instance_exit(
     .await
 }
 
+/// A map can finish shutdown while other maps still await their own command.
+/// Callers hold the instance mutation lock, retaining the original launch owner.
+pub(super) async fn wait_for_command_exit(
+    state: &DesktopState,
+    details: &InstanceDetails,
+    process_key: Option<&str>,
+    timeout: Duration,
+) -> Result<bool, String> {
+    if !app_core::ark_maps::is_ark(&details.summary.module_id) {
+        return wait_for_instance_exit(state, &details.summary.id, timeout).await;
+    }
+    let key = process_key.unwrap_or("main");
+    let run = details
+        .active_run
+        .as_ref()
+        .ok_or_else(|| String::from("ARK shutdown target has no active run"))?;
+    let (run_id, pid) = if run.processes.is_empty() && key == "main" {
+        (run.run_id, run.pid)
+    } else {
+        let process = run
+            .processes
+            .iter()
+            .find(|process| process.process_key == key && process.status == "running")
+            .ok_or_else(|| format!("ARK shutdown target `{key}` has no active process"))?;
+        (process.run_id, process.pid)
+    };
+    let pid = pid.ok_or_else(|| format!("ARK shutdown target `{key}` has no recorded PID"))?;
+    wait_until_exited(timeout, || {
+        let runtime = Arc::clone(&state.runtime_supervisor);
+        let instance_id = details.summary.id.clone();
+        let key = key.to_owned();
+        async move {
+            tokio::task::spawn_blocking(move || {
+                runtime
+                    .lock()
+                    .map_err(|_| String::from("runtime supervisor lock poisoned"))?
+                    .owned_process_tree_is_running(&instance_id, run_id, &key, pid)
+                    .map_err(|error| error.to_string())
+            })
+            .await
+            .map_err(|error| format!("shutdown process inspection task failed: {error}"))?
+        }
+    })
+    .await
+}
+
 async fn wait_until_exited<F>(
     timeout: Duration,
     mut inspect: impl FnMut() -> F,

@@ -20,6 +20,7 @@ use mod_download::{
 };
 #[path = "commands_mod_inventory.rs"]
 mod mod_inventory;
+pub(super) use mod_inventory::validate_root_chain as validate_mod_inventory_root_chain;
 #[path = "commands_mod_online.rs"]
 mod mod_online;
 #[cfg(test)]
@@ -1149,11 +1150,12 @@ pub(super) fn normalize_manual_mod_source_paths(
     let mut seen = HashSet::new();
     let mut normalized = Vec::new();
     for raw_path in source_paths {
-        let trimmed = raw_path.trim();
-        if trimmed.is_empty() {
+        if raw_path.trim().is_empty() {
             continue;
         }
-        let path = PathBuf::from(trimmed);
+        // Native dropped paths can end in legal Unicode whitespace. Preserve
+        // the selected filesystem identity instead of importing another path.
+        let path = PathBuf::from(raw_path);
         let key = path.to_string_lossy().to_lowercase();
         if seen.insert(key) {
             normalized.push(path);

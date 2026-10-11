@@ -1,6 +1,7 @@
 use super::*;
 #[path = "templates_materialize/ark_ini.rs"]
 mod ark_ini;
+pub(crate) use ark_ini::validate_asa_mod_configurations;
 pub(super) use ark_ini::write_rendered as write_rendered_preserving_ark_ini;
 #[cfg(test)]
 #[path = "templates_materialize/ark_ini_tests.rs"]

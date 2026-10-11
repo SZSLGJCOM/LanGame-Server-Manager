@@ -1269,6 +1269,26 @@ async fn update_instance_transaction(
         let has_active_run = load_active_instance_run(&mut *tx, &input.id)
             .await?
             .is_some();
+        if record.summary.module_id == "arksurvivalascended"
+            && persisted_settings
+                .get("asa_mod_configurations")
+                .filter(|value| !value.as_object().is_some_and(|map| map.is_empty()))
+                != incoming_settings
+                    .get("asa_mod_configurations")
+                    .filter(|value| !value.as_object().is_some_and(|map| map.is_empty()))
+            && (has_active_run
+                || record.summary.active_process_count > 0
+                || matches!(
+                    record.summary.status,
+                    InstanceStatus::Starting | InstanceStatus::Running | InstanceStatus::Stopping
+                ))
+        {
+            return Err(StorageError::InvalidModuleSetting {
+                module_id: record.summary.module_id.clone(),
+                field: "asa_mod_configurations".into(),
+                message: "Stop all maps before changing Mod configuration".into(),
+            });
+        }
         crate::settings_validation::validate_program_update_policy_change(
             &record.summary.module_id,
             &persisted_settings,
@@ -2507,10 +2527,7 @@ pub(crate) fn read_instance_settings_json(config_file_path: &Path) -> Result<Str
             path: config_file_path.to_path_buf(),
             source,
         })?;
-    let settings = document
-        .get("settings")
-        .cloned()
-        .unwrap_or_else(|| Value::Object(Map::new()));
+    let settings = crate::ark_maps::decode_document_settings(&document)?;
 
     Ok(serde_json::to_string_pretty(&settings)?)
 }

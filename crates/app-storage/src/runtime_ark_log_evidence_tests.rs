@@ -3,7 +3,7 @@ use app_core::ProcessIdentity;
 use std::fs;
 use std::io::Write;
 
-const READY: &str = "[2026.09.30-01.02.04:001][ 1]Server is advertising for join\n";
+const READY: &str = "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n";
 
 struct Fixture {
     root: std::path::PathBuf,
@@ -126,7 +126,7 @@ fn a_new_creation_token_cannot_inherit_an_earlier_runs_evidence() {
         .creation_time += 600_000_000;
     assert!(!fixture.observe());
     assert!(!fixture.entry().ready);
-    fixture.append("[2026.09.30-01.03.04:001][ 1]Server is advertising for join\n");
+    fixture.append("[2026.09.30-01.03.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n");
     assert!(fixture.observe());
 }
 
@@ -200,7 +200,7 @@ fn complete_native_lines_can_cross_poll_boundaries_but_unbounded_lines_are_skipp
     let mut next = fixture.process.clone();
     next.run_id += 1;
     let oversized = format!(
-        "[2026.09.30-01.02.04:001]{}advertising for join\n",
+        "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join.{}\n",
         "x".repeat(MAX_LINE_BYTES as usize)
     );
     fs::write(&fixture.path, oversized).unwrap();
@@ -327,4 +327,80 @@ fn an_older_group_cannot_prune_new_maps_after_a_concurrent_group_publication() {
     assert!(checkpoint.entries["map-new"].ready);
     assert!(!checkpoint.entries.contains_key("map-extra"));
     assert!(!observe(&old_extra_path, &old_extra, 1, &fixture.keys, false).unwrap());
+}
+
+#[test]
+fn asa_early_success_split_across_polls_does_not_cache_readiness() {
+    let fixture = Fixture::new();
+    fixture.append("[2026.09.30-01.02.04:001][ 1]Server has success");
+    assert!(!fixture.observe());
+    fixture.append("fully started!\n");
+    assert!(
+        !fixture.observe(),
+        "the early startup banner must not lock in readiness in the incremental scanner"
+    );
+    assert!(!fixture.entry().ready);
+    fixture.append(
+        "[2026.09.30-01.03.04:001][ 1]Server has completed startup and is now ADVERTISING FOR ",
+    );
+    assert!(
+        !fixture.observe(),
+        "an incomplete advertising line must remain pending"
+    );
+    fixture.append("JOIN. (7.13GB Mem)\n");
+    assert!(fixture.observe());
+    assert!(fixture.entry().ready);
+}
+
+#[test]
+fn asa_early_ready_checkpoint_is_rescanned_under_current_marker_semantics() {
+    for version in [None, Some(1)] {
+        let fixture = Fixture::new();
+        fixture.append("[2026.09.30-01.02.04:001][ 1]Server: \"advertising for join\" has successfully started!\n");
+        // Recreate older backends' ready=true from their former tail predicate.
+        assert!(observe(&fixture.path, &fixture.process, 1, &fixture.keys, true).unwrap());
+        let state_path = fixture.root.join(".ark-readiness.json");
+        let mut legacy: serde_json::Value =
+            serde_json::from_slice(&fs::read(&state_path).unwrap()).unwrap();
+        if let Some(version) = version {
+            legacy["ready_marker_version"] = serde_json::json!(version);
+        } else {
+            legacy
+                .as_object_mut()
+                .unwrap()
+                .remove("ready_marker_version");
+        }
+        fs::write(&state_path, serde_json::to_vec(&legacy).unwrap()).unwrap();
+        assert!(
+            !fixture.observe(),
+            "an older checkpoint may only establish a server-name substring: {version:?}"
+        );
+        assert!(!fixture.entry().ready);
+        assert_eq!(
+            load(&state_path).unwrap().0.ready_marker_version,
+            READY_MARKER_VERSION
+        );
+        fixture.append(READY);
+        assert!(fixture.observe());
+    }
+}
+
+#[test]
+fn asa_server_name_split_across_polls_cannot_supply_join_readiness() {
+    let fixture = Fixture::new();
+    for name in [
+        "advertising for join",
+        "Server has completed startup and is now advertising for join.",
+    ] {
+        let banner =
+            format!("[2026.09.30-01.02.04:001][ 1]Server: \"{name}\" has successfully started!\n");
+        let split = banner.find("for join").unwrap();
+        fixture.append(&banner[..split]);
+        assert!(!fixture.observe());
+        fixture.append(&banner[split..]);
+        assert!(
+            !fixture.observe(),
+            "the bounded incremental scanner must require the final message, not a server-name substring"
+        );
+    }
 }

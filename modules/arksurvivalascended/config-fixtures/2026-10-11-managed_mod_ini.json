@@ -1,0 +1,39 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-11",
+    "source_ids": ["managed_mod_ini"],
+    "build": "Synthetic managed configuration contract: per-Mod INI writes, repeated directives, conflict rejection, disabled ownership, deletion and rollback are covered by ark_mod_configuration storage tests. This fixture does not claim a native game download or gameplay result."
+  },
+  "coverage": { "editable": 0, "specialized": 1, "derived": 0, "generated": 0, "excluded": 0 },
+  "classifications": { "editable": [], "specialized": ["managed_mod_ini.asa_mod_configurations"], "derived": [], "generated": [], "excluded": [] },
+  "settings": {
+    "server_name": "LanGame Mod Configuration",
+    "max_players": 8,
+    "rcon_enabled": true,
+    "admin_password": "fixture-admin-password",
+    "server_game_log": false,
+    "server_game_log_include_tribe_logs": false,
+    "no_transfer_from_filtering": false,
+    "mod_ids_csv": "1254808",
+    "asa_mod_configurations": {
+      "1254808": { "game_user_settings_ini": "[BetterVariants]\nDebug=True\nDebugSpawns=False\n" }
+    }
+  },
+  "expected": {
+    "files": [
+      { "root": "config", "path": "GameUserSettings.ini", "format": "ini", "fragments": ["[BetterVariants]\nDebug=True\nDebugSpawns=False"] },
+      { "root": "install", "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini", "format": "ini", "fragments": ["[BetterVariants]\nDebug=True\nDebugSpawns=False"] }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "arguments": [
+        "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame Mod Configuration?RCONEnabled=true?RCONPort=27020",
+        "-port=7777", "-WinLiveMaxPlayers=8", "-NullRHI", "-Unattended", "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-ascended-server.log", "-mods=1254808"
+      ]
+    }
+  }
+}

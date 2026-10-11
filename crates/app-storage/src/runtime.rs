@@ -39,8 +39,6 @@ pub use windrose_health::{WindroseNativeStage, windrose_native_stage};
 mod returntomoria_health;
 use std::io::{Read, Seek, SeekFrom};
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
-#[cfg(windows)]
-use std::process::Command;
 use std::time::UNIX_EPOCH;
 
 const RUNTIME_HEALTH_SCAN_LINE_LIMIT: usize = 160;
@@ -884,7 +882,6 @@ fn analyze_runtime_health(
 
     let module_ready_markers: &[&str] = match module_id.as_str() {
         "necesse" => &["started server using port"],
-        "arksurvivalascended" => &["has successfully started", "advertising for join"],
         "humanitz" => &["loghzsuccess: display: success => session created!"],
         "sevendaystodie" => &["inf [steamworks.net] gameserver.init successful"],
         "satisfactory" => &["server startup time elapsed and saving/level loading is done"],
@@ -903,7 +900,7 @@ fn analyze_runtime_health(
             // These listeners precede world/session readiness in their native logs.
             if matches!(
                 module_id.as_str(),
-                "corekeeper" | "runescapedragonwilds" | "nightingale"
+                "corekeeper" | "runescapedragonwilds" | "nightingale" | "arksurvivalascended"
             ) {
                 return None;
             }
@@ -966,6 +963,7 @@ fn enshrouded_session_state(line: &str) -> Option<bool> {
 fn matches_native_ready_signal(module_id: &str, line: &str) -> bool {
     let line = line.trim();
     match module_id {
+        "arksurvivalascended" => ark_readiness::has_asa_ready_marker(&line.to_ascii_lowercase()),
         "corekeeper" => line
             .rsplit_once("timescale = ")
             .is_some_and(|(_, value)| value == "0"),
@@ -1170,14 +1168,27 @@ fn format_port_list(ports: &[u16]) -> String {
 }
 
 #[cfg(windows)]
-fn owned_udp_ports_for_pid(pid: u32) -> Result<HashSet<u16>, String> {
-    let output = Command::new("netstat")
-        .args(["-ano", "-p", "udp"])
-        .output()
+fn capture_netstat(arguments: &[&str]) -> Result<std::process::Output, String> {
+    // Health checks run repeatedly in a GUI process. Use the bounded, console-free
+    // utility host so Windows Terminal cannot open a window for every refresh.
+    let output = app_runtime::windows_system_directory()
+        .and_then(|directory| {
+            app_runtime::capture_windows_utility(
+                &directory.join("netstat.exe"),
+                arguments,
+                std::time::Duration::from_secs(15),
+            )
+        })
         .map_err(|error| format!("failed to run netstat: {error}"))?;
     if !output.status.success() {
         return Err(format!("netstat exited with status {}", output.status));
     }
+    Ok(output)
+}
+
+#[cfg(windows)]
+fn owned_udp_ports_for_pid(pid: u32) -> Result<HashSet<u16>, String> {
+    let output = capture_netstat(&["-ano", "-p", "udp"])?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     Ok(stdout

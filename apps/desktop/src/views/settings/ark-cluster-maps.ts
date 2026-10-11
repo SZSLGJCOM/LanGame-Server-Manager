@@ -3,6 +3,7 @@ import type { TranslateFn } from "../../i18n";
 import { ARK_WORKSPACE_EN } from "../../i18n/games/ark-workspace.en";
 import { isArkModule } from "../../ark-clusters";
 import type { ModulePortGroupDetails } from "../../types";
+import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, buildAsaModPlan, readAsaModMembership } from "../servers/mod-workbench-asa";
 
 export const ARK_ADDITIONAL_MAP_LIMIT = 15;
 export interface AdditionalArkMap {
@@ -11,7 +12,13 @@ export interface AdditionalArkMap {
   name: string;
   enabled: boolean;
 }
-export interface ArkMapSuggestion { value: string; label: string }
+export interface ArkMapSuggestion { value: string; label: string; modId?: string }
+export interface ArkMapAvailabilityView {
+  status: "loading" | "ready" | "failed";
+  choices: readonly ArkMapSuggestion[];
+  error?: Error | null;
+  refresh: () => void;
+}
 export type ArkMapValidationReason = "shape" | "limit" | "id" | "duplicate" | "map" | "name";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -38,8 +45,8 @@ export function validateAdditionalArkMaps(settings: Readonly<SettingsObject>): A
     if (ids.has(map.id)) return "duplicate";
     ids.add(map.id);
     if (!/^[A-Za-z0-9_]{1,128}$/.test(map.map_name)) return "map";
-    if (!map.name.trim() || map.name.trim() !== map.name || [...map.name].length > 80
-      || /[\u0000-\u001f\u007f-\u009f"?\u2028\u2029]/.test(map.name)) return "name";
+    if (!map.name.trim()
+      || /[\u0000-\u001f\u007f-\u009f?\u2028\u2029]/.test(map.name)) return "name";
   }
   return null;
 }
@@ -67,7 +74,8 @@ export function buildArkMapPortGroups(moduleId: string, settingsJson: string, ba
 }
 
 export function readArkMapSuggestions(schemaJson: string | null | undefined, locale: string): ArkMapSuggestion[] {
-  const schema: unknown = JSON.parse(schemaJson ?? "{}");
+  let schema: unknown;
+  try { schema = JSON.parse(schemaJson ?? "{}"); } catch { return []; }
   if (!isRecord(schema) || !isRecord(schema.properties) || !isRecord(schema.properties.map_name)) return [];
   const suggestions = schema.properties.map_name["x-lsgm-suggestions"];
   if (!Array.isArray(suggestions)) return [];
@@ -76,6 +84,40 @@ export function readArkMapSuggestions(schemaJson: string | null | undefined, loc
     const localized = locale === "zh-CN" ? suggestion["x-lsgm-label-zh-CN"] : suggestion.label;
     return [{ value: suggestion.value, label: typeof localized === "string" ? localized : suggestion.value }];
   });
+}
+
+/** Installed packages augment the edition's official catalog without inventing identifiers from display names. */
+export function mergeArkMapSuggestions(official: readonly ArkMapSuggestion[], installed: readonly ArkMapSuggestion[]): ArkMapSuggestion[] {
+  const choices = new Map(official.map((map) => [map.value, map]));
+  for (const map of installed) {
+    if (/^[A-Za-z0-9_]{1,128}$/.test(map.value) && !choices.has(map.value)) choices.set(map.value, map);
+  }
+  return [...choices.values()];
+}
+
+/** A deliberate map choice enables its discovered Mod in the same settings mutation. Other edits leave membership alone. */
+export function buildArkMapSelectionPatch(settings: Readonly<SettingsObject>, mapName: string,
+  choices: readonly ArkMapSuggestion[], mapPatch: Readonly<SettingsObject>): SettingsObject {
+  const id = choices.find((choice) => choice.value === mapName)?.modId;
+  if (!id) return { ...mapPatch };
+  const added = buildAsaModPlan(settings, [id], "add", [id]);
+  let next = added;
+  if (readAsaModMembership(added).passive.includes(id)) {
+    // The shared actions remove passive membership; keep the active list's existing order.
+    next = buildAsaModPlan(buildAsaModPlan(added, [id], "disable", [id]), [id], "add", [id]);
+    next.mod_ids_csv = added.mod_ids_csv;
+  }
+  const patch = { ...mapPatch };
+  for (const key of ASA_MEMBERSHIP_KEYS) {
+    if (JSON.stringify(next[key]) !== JSON.stringify(settings[key])) patch[key] = next[key];
+  }
+  return patch;
+}
+
+export function arkMapSelectionErrorMessage(cause: unknown, t: TranslateFn): string {
+  return cause instanceof AsaModControlError && cause.code === "raw-mod-flags"
+    ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING)
+    : arkMapsText(t, "enableMapFailed");
 }
 
 /** A new identity never reuses the directory of a removed map. */

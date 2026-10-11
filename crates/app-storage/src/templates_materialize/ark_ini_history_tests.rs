@@ -229,3 +229,152 @@ fn ark_ini_actual_template_keys_update_live_without_claiming_preserved_unknowns(
         }
     }
 }
+
+#[test]
+fn asa_native_user_settings_version_and_rcon_credentials_survive_utf16_materialization() {
+    let fixture = Fixture::new("arksurvivalascended");
+    let settings = json!({
+        "server_name":"ASA | Native", "admin_password":"fixture-admin-password",
+        "server_password":"fixture-server-password", "rcon_enabled":true, "max_players":4
+    });
+    let settings = settings.as_object().unwrap();
+    let ports = [
+        app_core::PortBinding {
+            name: "game".into(),
+            protocol: "udp".into(),
+            port: 7777,
+        },
+        app_core::PortBinding {
+            name: "query".into(),
+            protocol: "udp".into(),
+            port: 27015,
+        },
+        app_core::PortBinding {
+            name: "rcon".into(),
+            protocol: "tcp".into(),
+            port: 27021,
+        },
+    ];
+    let input = ModuleTemplateRenderInput {
+        config_dir: &fixture.config,
+        install_root: &fixture.install,
+        saves_dir: &fixture.saves,
+        instance_id: "asa-version-probe",
+        instance_name: "ASA version probe",
+        module_id: fixture.module_id,
+        bind_ip: "0.0.0.0",
+        autostart: false,
+        settings,
+        ports: &ports,
+    };
+    let context = ModuleSupportMaterializationContext {
+        storage_paths: &fixture.paths,
+        module_id: fixture.module_id,
+        install_root: &fixture.install,
+        shared_install_root: &fixture.install,
+        config_dir: &fixture.config,
+        saves_dir: &fixture.saves,
+        instance_id: input.instance_id,
+        instance_running: false,
+        settings,
+    };
+    let write = || {
+        write_pending_instance_configuration(
+            &Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../modules/arksurvivalascended/templates"),
+            &input,
+            &context,
+            &fixture.config.join("instance.json"),
+            InstanceConfigInput {
+                instance_id: input.instance_id,
+                instance_name: input.instance_name,
+                module_id: fixture.module_id,
+                bind_ip: input.bind_ip,
+                autostart: false,
+                settings: settings.clone(),
+                ports: &ports,
+            },
+            None,
+        )
+        .unwrap()
+        .commit();
+    };
+    let assert_native_settings = |path: &Path| {
+        let bytes = fs::read(path).unwrap();
+        let text = if let Some(body) = bytes.strip_prefix(&[0xff, 0xfe]) {
+            let (pairs, remainder) = body.as_chunks::<2>();
+            assert!(remainder.is_empty());
+            String::from_utf16(
+                &pairs
+                    .iter()
+                    .map(|pair| u16::from_le_bytes(*pair))
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap()
+        } else {
+            String::from_utf8(bytes).unwrap()
+        };
+        for (section, key, value) in [
+            (
+                "/script/shootergame.shootergameusersettings",
+                "Version",
+                "5",
+            ),
+            (
+                "serversettings",
+                "ServerAdminPassword",
+                "fixture-admin-password",
+            ),
+            (
+                "serversettings",
+                "ServerPassword",
+                "fixture-server-password",
+            ),
+            ("serversettings", "RCONPort", "27021"),
+            ("sessionsettings", "SessionName", "ASA | Native"),
+        ] {
+            let mut current_section = "";
+            let mut entries = Vec::new();
+            for line in text.lines() {
+                if let Some(header) = line
+                    .strip_prefix('[')
+                    .and_then(|line| line.strip_suffix(']'))
+                {
+                    current_section = header;
+                } else if current_section.eq_ignore_ascii_case(section)
+                    && line
+                        .split_once('=')
+                        .is_some_and(|(actual, _)| actual.eq_ignore_ascii_case(key))
+                {
+                    entries.push(line.to_owned());
+                }
+            }
+            assert_eq!(
+                entries,
+                [format!("{key}={value}")],
+                "{}: {section}.{key}",
+                path.display()
+            );
+        }
+        text
+    };
+    write();
+    let config_path = fixture.config.join("GameUserSettings.ini");
+    let live_path = fixture.live.join("GameUserSettings.ini");
+    assert_native_settings(&config_path);
+    let native = assert_native_settings(&live_path);
+    // Model only the game's documented UTF-16 writeback boundary. Native
+    // deletion on an invalid version still requires separate live acceptance.
+    let native = format!("{native}\n[Native.UserSettings]\nUnmanaged=keep\n").replace('\n', "\r\n");
+    let utf16 = [0xfeff_u16]
+        .into_iter()
+        .chain(native.encode_utf16())
+        .flat_map(u16::to_le_bytes)
+        .collect::<Vec<_>>();
+    fs::write(&live_path, utf16).unwrap();
+    write();
+    assert_native_settings(&config_path);
+    let native = assert_native_settings(&live_path);
+    assert!(native.contains("Unmanaged=keep"));
+    assert_eq!(&fs::read(&live_path).unwrap()[..2], &[0xff, 0xfe]);
+}

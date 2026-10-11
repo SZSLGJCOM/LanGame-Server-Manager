@@ -21,7 +21,13 @@ pub(super) async fn stop_run<L: StorageContextTaskLease>(
     shutdown: Option<&ModuleShutdownSpec>,
     source: InstanceShutdownSource,
 ) -> Result<Vec<app_core::StoppedProcess>, String> {
-    wait_for_pending_stdin(state, &details.summary.id, active_run.run_id).await?;
+    wait_for_pending_stdin(
+        state,
+        &details.summary.id,
+        active_run.run_id,
+        active_run.session_id.as_deref(),
+    )
+    .await?;
     request_instance_graceful_shutdown(state, storage, details, shutdown, source).await?;
     if details.summary.module_id == "dontstarve" {
         dst_lifecycle::finish_confirmed_stop(state, storage, &details.summary.id, active_run).await
@@ -42,6 +48,7 @@ async fn wait_for_pending_stdin(
     state: &DesktopState,
     instance_id: &str,
     run_id: i64,
+    session_id: Option<&str>,
 ) -> Result<(), String> {
     let deadline = tokio::time::Instant::now() + PENDING_STDIN_DRAIN_TIMEOUT;
     loop {
@@ -49,7 +56,7 @@ async fn wait_for_pending_stdin(
             .runtime_supervisor
             .lock()
             .map_err(|_| String::from("runtime supervisor lock poisoned"))?
-            .has_pending_command_dispatches(instance_id, run_id)
+            .has_pending_command_dispatches(instance_id, run_id, session_id)
             .map_err(|error| error.to_string())?;
         if !pending {
             return Ok(());

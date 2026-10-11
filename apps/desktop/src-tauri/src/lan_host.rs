@@ -1010,6 +1010,16 @@ pub(crate) fn dispatch_command<'a>(
                     .await?,
             )
         }),
+        "read_instance_ark_map_availability" => {
+            boxed_command(|| async move {
+                to_json(
+                    commands::commands_ark_map_availability::read_instance_ark_map_availability(
+                        arg(&args, "instanceId", "instance_id")?,
+                    )
+                    .await?,
+                )
+            })
+        }
         "resolve_manual_mod_references" => boxed_command(|| async move {
             to_json(
                 commands::resolve_manual_mod_references(

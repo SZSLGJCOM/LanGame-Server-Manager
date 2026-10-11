@@ -29,6 +29,7 @@ mod state;
 mod steam_workshop;
 mod steamcmd_preparation;
 mod text_decode;
+mod webview_drop;
 mod webview_recovery;
 
 use std::fs::{File, OpenOptions, TryLockError};
@@ -176,6 +177,8 @@ fn main() {
                     .get_webview_window("main")
                     .ok_or_else(|| std::io::Error::other("main window is missing"))?;
                 desktop_window::prepare(&main_window).map_err(std::io::Error::other)?;
+                #[cfg(windows)]
+                webview_drop::install(&main_window).map_err(std::io::Error::other)?;
                 main_window.show()?;
                 #[cfg(windows)]
                 {
@@ -224,6 +227,13 @@ fn main() {
             })
             .on_page_load(|webview, payload| {
                 if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                    #[cfg(windows)]
+                    if webview.label() == "main"
+                        && let Some(window) = webview.app_handle().get_webview_window("main")
+                        && let Err(error) = webview_drop::install(&window)
+                    {
+                        eprintln!("Restore dropped-file bridge after page load: {error}");
+                    }
                     webview_recovery::page_loaded(webview.app_handle(), webview.label(), 1);
                 }
             })
@@ -270,6 +280,7 @@ fn main() {
             commands::stage_manual_mod_files,
             commands::install_manual_mod_references,
             commands::read_manual_mod_inventory,
+            commands::commands_ark_map_availability::read_instance_ark_map_availability,
             commands::resolve_manual_mod_references,
             commands::commands_runtime_lifecycle::preview_instance_launch,
             commands::commands_runtime_lifecycle::start_instance_process,
@@ -375,7 +386,13 @@ fn main() {
             .build(tauri::generate_context!());
 
     match run_result {
-        Ok(app) => app.run(|handle, event| webview_recovery::handle_run_event(handle, &event)),
+        Ok(app) => app.run(|handle, event| {
+            #[cfg(windows)]
+            if matches!(event, tauri::RunEvent::Exit) {
+                webview_drop::detach_on_ui_thread();
+            }
+            webview_recovery::handle_run_event(handle, &event);
+        }),
         Err(error) => panic!("failed to run LanGame desktop shell: {error}"),
     }
     drop(instance_lease);
@@ -384,6 +401,10 @@ fn main() {
 fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     if window.label() != "main" {
         return;
+    }
+    #[cfg(windows)]
+    if matches!(event, tauri::WindowEvent::Destroyed) {
+        webview_drop::detach_on_ui_thread();
     }
     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
         let app_handle = window.app_handle();

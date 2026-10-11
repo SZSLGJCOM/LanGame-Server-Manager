@@ -59,6 +59,16 @@ fn utility_child_probe() {
     };
     std::fs::write(file, serde_json::to_vec(&(pid, identity)).unwrap()).unwrap();
     match mode.as_str() {
+        "no-window" => {
+            #[link(name = "kernel32")]
+            unsafe extern "system" {
+                fn GetConsoleWindow() -> *mut std::ffi::c_void;
+            }
+            // CREATE_NO_WINDOW promises no console window. An internal console
+            // process association can still exist on Windows without a window.
+            assert!(unsafe { GetConsoleWindow() }.is_null());
+            std::io::stdout().write_all(b"no-window").unwrap();
+        }
         "echo" => {
             let mut input = String::new();
             std::io::stdin().read_to_string(&mut input).unwrap();
@@ -156,6 +166,22 @@ fn managed_shell_ignores_poisoned_comspec_and_working_directory_executables() {
     )
     .unwrap();
     assert!(output.status.success(), "{output:?}");
+    fixture.assert_exited("root.json");
+}
+
+#[test]
+fn utility_capture_runs_without_a_console_window() {
+    let fixture = Fixture::new();
+    let output = fixture
+        .run("no-window", Duration::from_secs(10), OUTPUT_LIMIT)
+        .unwrap();
+    assert!(output.status.success(), "{output:?}");
+    assert!(
+        String::from_utf8(output.stdout)
+            .unwrap()
+            .contains("no-window")
+    );
+    assert!(output.stderr.is_empty());
     fixture.assert_exited("root.json");
 }
 

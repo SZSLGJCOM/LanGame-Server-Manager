@@ -93,6 +93,7 @@ import { InstanceSelectionCursor } from "./instance-panel-refresh";
 import { instancePanelReader, formatInstancePanelError, type InstancePanelLoadState, type InstancePanelPatch } from "./instance-panel-loader";
 import { completedInstallationJob } from "./installation-job";
 import { getLocalizedModuleDisplayName } from "./store-media";
+import { preventUnhandledDropNavigation } from "./desktop-file-drop";
 
 interface DesktopAppProps {
   theme: ThemeMode;
@@ -104,6 +105,8 @@ const DESKTOP_UPDATES_ENABLED = import.meta.env.VITE_LANGAME_DESKTOP_UPDATES_ENA
 
 export function App() {
   const [theme, setTheme] = useState<ThemeMode>(INITIAL_THEME);
+
+  useEffect(preventUnhandledDropNavigation, []);
 
   useEffect(() => {
     applyThemeToDocument(theme);

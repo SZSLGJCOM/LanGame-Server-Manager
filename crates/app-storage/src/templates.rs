@@ -7,6 +7,7 @@ pub(crate) use templates_materialize::ManagedConfigMergePlan;
 pub(crate) use templates_materialize::ManagedConfigMutation;
 #[cfg(test)]
 pub(crate) use templates_materialize::materialize_module_support_files;
+pub(crate) use templates_materialize::validate_asa_mod_configurations;
 pub(crate) use templates_materialize::{
     PreparedWorkshopConfiguration, prepare_workshop_configuration_in_worker,
     write_pending_instance_configuration, write_pending_instance_configuration_in_worker,
@@ -1922,7 +1923,7 @@ fn render_instance_config(input: InstanceConfigInput<'_>) -> Result<Vec<u8>, Sto
         .map(|duration| duration.as_millis())
         .unwrap_or(0);
 
-    let document = json!({
+    let mut document = json!({
         "instance_id": instance_id,
         "instance_name": instance_name,
         "module_id": module_id,
@@ -1931,6 +1932,9 @@ fn render_instance_config(input: InstanceConfigInput<'_>) -> Result<Vec<u8>, Sto
         "settings": settings,
         "ports": ports,
     });
+    if app_core::ark_maps::is_ark(module_id) {
+        document["ark_server_names_version"] = json!(crate::ark_maps::SERVER_NAMES_VERSION);
+    }
     Ok(serde_json::to_vec_pretty(&document)?)
 }
 

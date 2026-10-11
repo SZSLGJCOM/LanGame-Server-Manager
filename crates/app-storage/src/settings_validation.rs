@@ -27,6 +27,7 @@ mod workshop_collections;
 
 #[path = "settings_validation_ark.rs"]
 mod ark;
+pub(crate) use ark::ark_mod_rule_identity;
 
 #[cfg(test)]
 #[path = "settings_validation_ark_tests.rs"]

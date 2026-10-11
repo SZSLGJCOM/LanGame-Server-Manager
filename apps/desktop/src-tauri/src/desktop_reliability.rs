@@ -5,6 +5,7 @@ mod config;
 mod log_document;
 mod log_worker;
 mod native;
+mod native_drop;
 mod protocol;
 mod server;
 
@@ -33,6 +34,7 @@ struct Fixture {
     log_worker: Mutex<Option<LogWorker>>,
     browser_process_ids: Mutex<Vec<u32>>,
     window_visibility: Mutex<WindowVisibilityEvidence>,
+    native_drop_checks: std::sync::atomic::AtomicU32,
 }
 
 #[derive(Clone, Copy, Default, Serialize)]
@@ -136,6 +138,10 @@ impl Fixture {
             return Err("Hidden-window browser recovery evidence is incomplete".into());
         }
         if before.command_count != 3
+            || self
+                .native_drop_checks
+                .load(std::sync::atomic::Ordering::Acquire)
+                != 3
             || !before.server_alive
             || before.error.is_some()
             || before.native_failures != ["renderer_exited", "browser_exited"]
@@ -161,6 +167,7 @@ impl Fixture {
                 "server_exited": true, "output_worker_joined": true,
                 "profile_verified": true,
                 "window_visibility": visibility,
+                "native_drop": {"generations_verified":3,"file_and_directory_paths":true,"plain_text_and_uri":true,"installation_attempted":false},
                 "emitted_log_batches": lock(&self.output).batches,
             }),
         )?;
@@ -265,6 +272,12 @@ async fn execute(
             pids.push(pid);
         }
     }
+    if matches!(action, Action::SendCommand) {
+        native_drop::verify(app, &fixture.config.root).await?;
+        fixture
+            .native_drop_checks
+            .fetch_add(1, std::sync::atomic::Ordering::Release);
+    }
     let fixture = Arc::clone(fixture);
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || match action {
@@ -344,6 +357,7 @@ pub(crate) fn run_if_requested() -> bool {
 fn run(config_path: &Path) -> Result<(), String> {
     let config = Config::load(config_path)?;
     config.create_root()?;
+    native_drop::prepare(&config.root)?;
     // This entry is the first operation in main, before any runtime/reader
     // threads start. These changes affect this fixture process and its children
     // only; inherited WebView2 overrides must never redirect it to a real profile.
@@ -367,6 +381,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         log_worker: Mutex::new(None),
         browser_process_ids: Mutex::new(Vec::with_capacity(3)),
         window_visibility: Mutex::new(WindowVisibilityEvidence::default()),
+        native_drop_checks: std::sync::atomic::AtomicU32::new(0),
     });
     let mut context = tauri::generate_context!();
     context.config_mut().app.windows.clear();
@@ -381,6 +396,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         width: 1560.0,
         height: 900.0,
         focus: false,
+        drag_drop_enabled: false,
         ..Default::default()
     };
     let setup_fixture = Arc::clone(&fixture);
@@ -394,15 +410,21 @@ fn run(config_path: &Path) -> Result<(), String> {
         ])
         .on_page_load(|webview, payload| {
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                if let Some(window) = webview.app_handle().get_webview_window("main")
+                    && let Err(error) = crate::webview_drop::install(&window)
+                {
+                    eprintln!("Restore fixture dropped-file bridge: {error}");
+                }
                 webview_recovery::page_loaded(webview.app_handle(), webview.label(), 1);
             }
         })
         .setup(move |app| {
             // from_config resolves only relative data_directory values. The
             // explicit builder setter accepts this absolute, isolated profile.
-            tauri::WebviewWindowBuilder::from_config(app, &window)?
+            let webview = tauri::WebviewWindowBuilder::from_config(app, &window)?
                 .data_directory(setup_fixture.config.root.join("profile"))
                 .build()?;
+            crate::webview_drop::install(&webview).map_err(std::io::Error::other)?;
             webview_recovery::install(
                 app.handle(),
                 RecoveryConfig {
@@ -429,8 +451,12 @@ fn run(config_path: &Path) -> Result<(), String> {
         .map_err(|error| error.to_string())?;
     // run() exits the process directly; run_return lets the fixture join its
     // owners and preserve diagnostic evidence on failed or interrupted runs.
-    let exit_code =
-        application.run_return(|app, event| webview_recovery::handle_run_event(app, &event));
+    let exit_code = application.run_return(|app, event| {
+        if matches!(event, tauri::RunEvent::Exit) {
+            crate::webview_drop::detach_on_ui_thread();
+        }
+        webview_recovery::handle_run_event(app, &event);
+    });
     let stopped = fixture.stop();
     let complete = lock(&fixture.progress).stage == Stage::Finished;
     if exit_code != 0 || !complete || stopped.is_err() {

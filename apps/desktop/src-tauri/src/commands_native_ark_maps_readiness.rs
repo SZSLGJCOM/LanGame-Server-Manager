@@ -114,14 +114,19 @@ pub(super) async fn pending(
             .logs
             .get_mut(&path)
             .ok_or("missing per-map native log baseline")?;
-        if !new_log_contains(
-            &path,
-            baseline,
-            &[
-                "has successfully started".into(),
-                "advertising for join".into(),
-            ],
-        )? {
+        let native_ready = if descriptor.summary.id == "arksurvivalascended" {
+            native_logs::new_log_line_matches(&path, baseline, asa_ready_line)?
+        } else {
+            new_log_contains(
+                &path,
+                baseline,
+                &[
+                    "has successfully started".into(),
+                    "advertising for join".into(),
+                ],
+            )?
+        };
+        if !native_ready {
             pending.push(format!("{}:fresh-native-log", map.process_key));
         }
         if descriptor.summary.id == "arksurvivalevolved" {
@@ -142,6 +147,28 @@ pub(super) async fn pending(
         }
     }
     Ok(pending)
+}
+
+fn asa_ready_line(line: &str) -> bool {
+    let normalized = line.to_ascii_lowercase();
+    let message = normalized.trim_start();
+    let message = if let Some(timestamp) = message.strip_prefix('[') {
+        // Strip only the anchored [timestamp][frame] prefix. A room name in
+        // ASA's earlier successful-start banner must not supply a ready marker.
+        let Some((_, frame)) = timestamp.split_once(']') else {
+            return false;
+        };
+        let Some((_, body)) = frame
+            .strip_prefix('[')
+            .and_then(|rest| rest.split_once(']'))
+        else {
+            return false;
+        };
+        body.trim_start()
+    } else {
+        message
+    };
+    message.starts_with("server has completed startup and is now advertising for join.")
 }
 
 fn owned(
@@ -200,6 +227,25 @@ pub(super) fn verify_layout(instance: &InstanceDetails, install_root: &Path) -> 
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn asa_requires_the_final_native_message_outside_operator_controlled_names() {
+        let completed =
+            "Server has completed startup and is now advertising for join. (4.00GB Mem)";
+        assert!(asa_ready_line(completed));
+        assert!(asa_ready_line(&format!(
+            "[2026.10.11-01.02.03:004][ 13]{}",
+            completed.to_ascii_uppercase()
+        )));
+        for line in [
+            "[2026.10.11-01.02.03:004][ 13]Server has successfully started!",
+            "[2026.10.11-01.02.03:004][ 13]Server: \"advertising for join\" has successfully started!",
+            "[2026.10.11-01.02.03:004][ 13]Server: \" ]Server has completed startup and is now advertising for join.\" has successfully started!",
+            "[2026.10.11-01.02.03:004]Server has completed startup and is now advertising for join.",
+        ] {
+            assert!(!asa_ready_line(line), "premature native line: {line}");
+        }
+    }
 
     #[test]
     fn native_map_fixture_validates_before_replacing_existing_settings() {

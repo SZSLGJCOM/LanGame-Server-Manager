@@ -70,7 +70,7 @@ async function run() {
   let separateNativeSource = false;
   const processDocuments = new Map<number, LogTailSnapshot>();
   let nextResponse: Partial<InstanceRuntimeCommandResult> = {};
-  const dispatches: Array<{ instanceId: string; command: string; options?: RuntimeCommandDispatchOptions }> = [];
+  const dispatches: Array<{ instanceId: string; command: string; processKey?: string | null; options?: RuntimeCommandDispatchOptions }> = [];
   Object.assign(globalThis, { isTauri: true });
   mockIPC(async (command, args) => {
     if (command === "read_instance_log_document_from_storage") {
@@ -86,12 +86,14 @@ async function run() {
   });
   const props: ComponentProps<typeof RuntimeSurfaceWorkbench> = { details, runtime, moduleDetails,
     runtimeWindows: null, startupPending: false, launchHostSurface: "managed_terminal",
-    onRetryReads: () => {}, onSendRuntimeCommand: async (id, command, _processKey, options) => {
-      dispatches.push({ instanceId: id, command, options });
+    onRetryReads: () => {}, onSendRuntimeCommand: async (id, command, processKey, options) => {
+      dispatches.push({ instanceId: id, command, processKey, options });
       return { instance_id: id, process_key: "main", display_name: "Fixture", pid: 1, command,
         submitted_at_unix_ms: Date.now(), write_confirmation_pending: false, ...nextResponse };
     } };
-  const render = () => root.render(<StrictMode><I18nProvider><RuntimeSurfaceWorkbench {...props} /></I18nProvider></StrictMode>);
+  let showingRuntime = true;
+  const render = () => root.render(<StrictMode><I18nProvider>{showingRuntime
+    ? <RuntimeSurfaceWorkbench {...props} /> : <div>Other instance page</div>}</I18nProvider></StrictMode>);
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   await settleUntil(() => text().includes("BOOT_000"), "Initial snapshot is missing");
   checkAtBottom("Opening an instance must reveal its latest retained output");
@@ -250,6 +252,25 @@ async function run() {
     && !text().includes("MANAGED_ENTRYPOINT_ONLY"), "Primary console mixed its native source with managed launcher output");
   scenarios++;
 
+  showingRuntime = false;
+  await act(async () => { render(); });
+  check(!consoleNode() && bridge.active.size === 0, "Leaving the runtime page must unmount its subscriptions");
+  retained = snapshot("fixture/native-server.log", [...retained.lines, ...lines("WHILE_AWAY", 50)]);
+  props.runtime = { ...runtime, log_tail: snapshot(retained.source_path!, retained.lines.slice(-32)) };
+  holdRead = true;
+  releaseRead = undefined;
+  showingRuntime = true;
+  await act(async () => { render(); });
+  await settleUntil(() => Boolean(releaseRead), "Returning to runtime did not request the current document");
+  check(text().includes("NATIVE_INITIAL_000") && text().includes("CURRENT_NATIVE_SOURCE_EVENT"),
+    "Returning to runtime discarded retained history while the new document read was pending");
+  holdRead = false;
+  await act(async () => { releaseRead!(); });
+  await settleUntil(() => text().includes("WHILE_AWAY_049"), "Returning to runtime did not recover output written while away");
+  check(text().includes("NATIVE_INITIAL_000") && !text().includes("WRONG_MANAGED_SOURCE_EVENT"),
+    "Navigation recovery mixed sources or lost earlier retained output");
+  scenarios++;
+
   const submit = async (response: Partial<InstanceRuntimeCommandResult>, command: string) => {
     nextResponse = response;
     const input = fixture.querySelector<HTMLInputElement>(".server-runtime-console-command-input")!;
@@ -286,6 +307,7 @@ async function run() {
     "Rust command did not dispatch once and display its native response");
   const rustDispatch = dispatches[dispatches.length - 1];
   check(rustDispatch.instanceId === instance.id && rustDispatch.command === "global.status"
+    && rustDispatch.processKey === null
     && rustDispatch.options?.transport === "websocket_rcon" && rustDispatch.options.portName === "rcon"
     && rustDispatch.options.passwordSettingKey === "rcon_password",
     "Rust's real module declaration must select websocket_rcon with the rcon endpoint and password setting key");
@@ -308,7 +330,11 @@ async function run() {
   holdRead = true;
   releaseRead = undefined;
   await scrollTo(0);
-  await act(async () => { fixture.querySelectorAll<HTMLButtonElement>(".server-runtime-console-tab")[1].click(); });
+  await act(async () => {
+    const target = fixture.querySelector<HTMLSelectElement>(".server-runtime-console-target-select")!;
+    target.value = "caves";
+    target.dispatchEvent(new Event("change", { bubbles: true }));
+  });
   await settleUntil(() => Boolean(releaseRead), "Selected shard did not start its held read");
   check(!text().includes("History recovery failed in fixture"), "The previous process read error leaked into the selected shard before its first response");
   holdRead = false;

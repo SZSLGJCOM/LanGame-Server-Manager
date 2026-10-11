@@ -2,6 +2,7 @@ import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { readPreferredLocale } from "./locale-preference";
 import { invokeOrMock, shouldUseLanApi } from "./api-transport";
 import { storageManagementRequests } from "./storage-management-requests";
+import { parseInstanceArkMapAvailability } from "./ark-map-availability";
 import type { ArkClusterReport, ArkClusterOperationResult, OperateArkClusterInput } from "./ark-clusters";
 
 import type { ArkClusterBackupSummary, ArkClusterRestoreResult, ArkClusterRecoveryResult, PendingArkClusterRestore, CreateArkClusterBackupInput, RestoreArkClusterBackupInput } from "./ark-cluster-backups";
@@ -209,6 +210,10 @@ export const installManualModReferences = (instanceId: string, references: strin
   });
 export const readManualModInventory = (instanceId: string) =>
   invokeOrMock<ManualModInventoryResult>("read_manual_mod_inventory", { instanceId, instance_id: instanceId });
+export const readInstanceArkMapAvailability = async (instanceId: string) =>
+  parseInstanceArkMapAvailability(await invokeOrMock<unknown>("read_instance_ark_map_availability", {
+    instanceId, instance_id: instanceId
+  }), instanceId);
 export const resolveManualModReferences = (instanceId: string, references: string[]) =>
   invokeOrMock<ManualModReferenceResolveResult>("resolve_manual_mod_references", {
     instanceId,

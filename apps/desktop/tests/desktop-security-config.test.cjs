@@ -20,7 +20,8 @@ test("desktop webview has an explicit fail-closed content security policy", () =
   assert.match(csp["default-src"], /'self'/);
   assert.equal(csp["base-uri"], "'none'");
   assert.equal(csp["form-action"], "'none'");
-  assert.equal(csp["frame-src"], "'none'");
+  // The dropped-file bridge uses one local frame; remote frames stay blocked.
+  assert.equal(csp["frame-src"], "'self'");
   assert.equal(csp["object-src"], "'none'");
   assert.equal(csp["script-src"], "'self'");
   assert.equal(csp["worker-src"], "'self' blob:", "HLS decoding must be allowed to use its isolated worker");

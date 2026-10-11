@@ -3,6 +3,32 @@ use std::collections::HashMap;
 
 type Endpoints = HashMap<(u32, String), HashSet<u16>>;
 
+pub(super) const ASA_READY_MARKER: &str =
+    "server has completed startup and is now advertising for join.";
+
+pub(super) fn has_asa_ready_marker(normalized: &str) -> bool {
+    // The early banner includes the configured server name. Require ASA's
+    // complete final message at the message boundary, not arbitrary user text.
+    let mut message = normalized.trim_start();
+    if message.starts_with('[') {
+        if native_line_timestamp(message).is_none() {
+            return false;
+        }
+        message = message[25..].trim_start();
+        if let Some(frame) = message.strip_prefix('[') {
+            let Some((frame, rest)) = frame.split_once(']') else {
+                return false;
+            };
+            let frame = frame.trim();
+            if frame.is_empty() || !frame.bytes().all(|byte| byte.is_ascii_digit()) {
+                return false;
+            }
+            message = rest.trim_start();
+        }
+    }
+    message.starts_with(ASA_READY_MARKER)
+}
+
 #[path = "runtime_ark_log_evidence.rs"]
 mod log_evidence;
 
@@ -207,9 +233,7 @@ pub(super) fn native_line_is_current(process: &InstanceProcessState, line: &str)
 fn has_current_ready_line(process: &InstanceProcessState, lines: &[String]) -> bool {
     lines.iter().any(|line| {
         let normalized = line.to_ascii_lowercase();
-        (normalized.contains("has successfully started")
-            || normalized.contains("advertising for join"))
-            && native_line_is_current(process, line)
+        has_asa_ready_marker(&normalized) && native_line_is_current(process, line)
     })
 }
 
@@ -312,13 +336,7 @@ fn current_native_log(process: &InstanceProcessState, path: &Path) -> bool {
 fn observe_endpoints() -> Result<Endpoints, String> {
     // Inspect once for the whole group; querying netstat once per map would
     // multiply a polling operation by the cluster size.
-    let output = Command::new("netstat")
-        .args(["-ano"])
-        .output()
-        .map_err(|error| format!("failed to run netstat: {error}"))?;
-    if !output.status.success() {
-        return Err(format!("netstat exited with status {}", output.status));
-    }
+    let output = capture_netstat(&["-ano"])?;
     Ok(parse_endpoints(&String::from_utf8_lossy(&output.stdout)))
 }
 

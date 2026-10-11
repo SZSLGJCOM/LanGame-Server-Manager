@@ -2,6 +2,26 @@
   "type": "object",
   "title": "ARK: Survival Ascended Dedicated Server",
   "properties": {
+    "asa_mod_configurations": {
+      "type": "object",
+      "title": "Per-Mod INI Configuration",
+      "description": "INI fragments owned by each CurseForge Mod. Enabled Mods share these settings across this instance's maps.",
+      "default": {},
+      "maxProperties": 256,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "game_ini": { "type": "string", "maxLength": 65536 },
+          "game_user_settings_ini": { "type": "string", "maxLength": 65536 }
+        }
+      },
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 702,
+      "x-lsgm-source": "managed_mod_ini",
+      "x-lsgm-source-key": "asa_mod_configurations",
+      "x-lsgm-source-surface": "materializer"
+    },
     "additional_maps": {
       "type": "array",
       "title": "Additional Map Servers",
@@ -15,7 +35,7 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,31}$" },
           "map_name": { "type": "string", "pattern": "^[A-Za-z0-9_]{1,128}$" },
-          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "name": { "type": "string", "title": "Server Name", "description": "Complete server name displayed in the in-game server browser; used without an automatic prefix or map suffix.", "minLength": 1 },
           "enabled": { "type": "boolean" }
         }
       },
@@ -94,101 +114,6 @@
           "value": "LostColony_WP",
           "label": "Lost Colony",
           "x-lsgm-label-zh-CN": "失落殖民地 / Lost Colony"
-        },
-        {
-          "value": "BobsMissions_WP",
-          "label": "Club ARK",
-          "x-lsgm-label-zh-CN": "Club ARK"
-        },
-        {
-          "value": "Svartalfheim_WP",
-          "label": "Svartalfheim",
-          "x-lsgm-label-zh-CN": "斯瓦塔尔夫海姆 / Svartalfheim"
-        },
-        {
-          "value": "Forglar_WP",
-          "label": "Forglar",
-          "x-lsgm-label-zh-CN": "Forglar"
-        },
-        {
-          "value": "Atlantis_WP",
-          "label": "Atlantis",
-          "x-lsgm-label-zh-CN": "亚特兰蒂斯 / Atlantis"
-        },
-        {
-          "value": "LostCity_WP",
-          "label": "Lost City",
-          "x-lsgm-label-zh-CN": "失落之城 / Lost City"
-        },
-        {
-          "value": "Appalachia_Official_WP",
-          "label": "Appalachia",
-          "x-lsgm-label-zh-CN": "阿巴拉契亚 / Appalachia"
-        },
-        {
-          "value": "Amissa_WP",
-          "label": "Amissa",
-          "x-lsgm-label-zh-CN": "Amissa"
-        },
-        {
-          "value": "Vintal_WP",
-          "label": "Vintal",
-          "x-lsgm-label-zh-CN": "Vintal"
-        },
-        {
-          "value": "insaluna_WP",
-          "label": "Insaluna",
-          "x-lsgm-label-zh-CN": "Insaluna"
-        },
-        {
-          "value": "Temptress_WP",
-          "label": "Temptress Lagoon",
-          "x-lsgm-label-zh-CN": "诱惑泻湖 / Temptress Lagoon"
-        },
-        {
-          "value": "Reverence_WP",
-          "label": "Reverence",
-          "x-lsgm-label-zh-CN": "Reverence"
-        },
-        {
-          "value": "Nyrandil",
-          "label": "Nyrandil",
-          "x-lsgm-label-zh-CN": "Nyrandil"
-        },
-        {
-          "value": "Althemia",
-          "label": "Althemia",
-          "x-lsgm-label-zh-CN": "Althemia"
-        },
-        {
-          "value": "Thaloria_WP",
-          "label": "Thaloria",
-          "x-lsgm-label-zh-CN": "Thaloria"
-        },
-        {
-          "value": "TheVolcano_WP",
-          "label": "The Volcano",
-          "x-lsgm-label-zh-CN": "火山 / The Volcano"
-        },
-        {
-          "value": "EdenPremium_WP",
-          "label": "Eden Premium",
-          "x-lsgm-label-zh-CN": "Eden Premium"
-        },
-        {
-          "value": "Mythica_WP",
-          "label": "Mythica",
-          "x-lsgm-label-zh-CN": "Mythica"
-        },
-        {
-          "value": "M_ArkopolisWP",
-          "label": "Arkopolis",
-          "x-lsgm-label-zh-CN": "Arkopolis"
-        },
-        {
-          "value": "TaeniaStella",
-          "label": "Taenia Stella",
-          "x-lsgm-label-zh-CN": "Taenia Stella"
         }
       ],
       "x-lsgm-section": "room",

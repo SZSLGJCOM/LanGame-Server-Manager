@@ -322,6 +322,8 @@ test("an incomplete numeric draft survives locale changes and blocks autosave un
       useModuleConfigurationIcons: () => ({ icons: {}, missing: false, loading: false, retryAvailable: false })
     } : id === "./useInstancePortRegistration" ? {
       useInstancePortRegistration: () => ({ ports: [], defaultPorts: [], setPorts() {} })
+    } : id === "./useArkMapAvailability" ? {
+      useArkMapAvailability: () => undefined
     } : originalRequire(id);
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
   const props = {

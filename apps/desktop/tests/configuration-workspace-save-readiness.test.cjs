@@ -32,6 +32,8 @@ function captureSaveOptions(moduleDetails, settingsJson = "{}") {
     useModuleConfigurationIcons: () => ({ icons: {}, loading: false })
   } : id === "./useInstancePortRegistration" ? {
     useInstancePortRegistration: () => ({ ports: [], defaultPorts: [], setPorts() {} })
+  } : id === "./useArkMapAvailability" ? {
+    useArkMapAvailability: () => undefined
   } : load(id);
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
   loaded.exports.ConfigurationWorkspace({

@@ -129,6 +129,7 @@ test("full workspace excludes the generic copy of each structured ARK field", ()
         : key === "../../i18n" ? { ...originalRequire(key), useI18n: () => ({ locale: "en-US", t }) }
         : key === "./useAutoSaveInstanceSettings" ? { useAutoSaveInstanceSettings: () => ({ status: { state: "saved" }, retry() {} }) }
         : key === "./useInstancePortRegistration" ? { useInstancePortRegistration: () => ({ ports: [], defaultPorts: [], setPorts() {} }) }
+        : key === "./useArkMapAvailability" ? { useArkMapAvailability: () => undefined }
         : key === "./useModuleConfigurationIcons" ? { useModuleConfigurationIcons: () => ({ icons: {} }) } : originalRequire(key);
       loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
       const settings = Object.fromEntries(Object.entries(schema.properties).filter(([, p]) => p.default !== undefined).map(([key, p]) => [key, p.default]));
