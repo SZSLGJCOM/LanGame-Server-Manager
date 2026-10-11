@@ -5,6 +5,8 @@ use super::commands_stdin_dispatch::dispatch_managed_stdin_command;
 use super::*;
 use app_storage::{materialize_instance_configuration_for_start, update_instance_ports};
 
+#[path = "commands_asa_mod_startup.rs"]
+mod asa_mod_startup;
 #[path = "commands_dst_lifecycle.rs"]
 pub(super) mod dst_lifecycle;
 #[path = "commands_runtime_log_stream.rs"]
@@ -540,6 +542,8 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         )?;
     }
     ensure_launch_plans_ready(&launch_plans)?;
+    super::commands_ark_map_availability::ensure_asa_map_content(&instance, &module, &launch_plans)
+        .await?;
     let resource_limits = &launch_plans
         .first()
         .ok_or("Instance has no process launch plans")?
@@ -706,8 +710,41 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             }
         }
     }
+    let serialize_asa_mod_startup = asa_mod_startup::requires_barrier(
+        &module.summary.id,
+        launch_plans.len(),
+        launch_plans.iter().flat_map(|plan| &plan.launch_plan.args),
+    );
     for (index, plan) in launch_plans.iter().enumerate() {
         if failed_bind_message.is_some() {
+            break;
+        }
+        if index > 0
+            && serialize_asa_mod_startup
+            && let Err(error) = asa_mod_startup::wait_until_previous_map_ready(
+                state,
+                storage,
+                &instance,
+                &module.runtime.bind_address,
+                &mut spawned_processes,
+                &plan.process_key,
+                source,
+                runtime_start_reservation,
+            )
+            .await
+        {
+            let cleanup = stop_spawned_processes(&mut spawned_processes);
+            if !cleanup.has_survivors() {
+                return Err(failed_start_error_with_cleanup(error, &cleanup));
+            }
+            // Keep the reservation/resource group until the normal registration
+            // path saves every cleanup survivor and exposes its Stop control.
+            failed_bind_message = Some(failed_start_error_with_cleanup(error, &cleanup));
+            spawned_processes = std::mem::take(&mut spawned_processes)
+                .into_iter()
+                .zip(cleanup.statuses.iter())
+                .filter_map(|(process, status)| status.still_running.then_some(process))
+                .collect();
             break;
         }
         if index > 0 && startup_schedule.child_process_stagger_ms > 0 {
@@ -2201,9 +2238,10 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                     Some(false) => 0,
                     None => command.wait_after_ms,
                 };
-                let exited = shutdown_wait::wait_for_instance_exit(
+                let exited = shutdown_wait::wait_for_command_exit(
                     state,
-                    &details.summary.id,
+                    details,
+                    command.process_key.as_deref(),
                     Duration::from_millis(observation_ms),
                 )
                 .await?;
@@ -2212,16 +2250,22 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                         storage,
                         "warning",
                         "instance.shutdown.command_exit_confirmed",
-                        "Shutdown response failed, but the complete managed process tree exited; the command was not replayed.",
+                        "Shutdown response failed, but the command target's complete process tree exited; the command was not replayed.",
                         json!({
                             "source": source.as_str(),
                             "instance_id": details.summary.id,
                             "module_id": details.summary.module_id,
                             "transport": command.transport,
                             "command": normalized,
+                            "process_key": command.process_key,
                             "error": error,
                         }),
                     );
+                    if app_core::ark_maps::is_ark(&details.summary.module_id) {
+                        // Other maps still need their own command. Finalization
+                        // separately confirms the complete instance tree.
+                        continue;
+                    }
                     return Ok(());
                 }
                 if rcon_delivery_attempted == Some(true) {
@@ -2234,11 +2278,12 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                             "source": source.as_str(), "instance_id": details.summary.id,
                             "module_id": details.summary.module_id, "transport": command.transport,
                             "command": normalized, "command_may_have_been_sent": true,
-                            "owned_tree_exit_confirmed": false,
+                            "process_key": command.process_key,
+                            "owned_target_tree_exit_confirmed": false,
                         }),
                     );
                     return Err(format!(
-                        "Shutdown command `{normalized}` may have been sent, but the complete managed process tree did not exit during its grace period: {error}. Managed process ownership is retained; no fallback or forced stop was attempted."
+                        "Shutdown command `{normalized}` may have been sent, but its complete target process tree did not exit during its grace period: {error}. Managed process ownership is retained; no fallback or forced stop was attempted."
                     ));
                 }
                 let fallback_transport = command
@@ -2261,6 +2306,7 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                             "primary_transport": command.transport.as_str(),
                             "fallback_transport": fallback_transport,
                             "command": normalized.as_str(),
+                            "process_key": command.process_key,
                             "error": error.as_str(),
                         }),
                     );
@@ -2296,6 +2342,7 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                     "transport": transport_used.as_str(),
                     "primary_transport_error": primary_transport_error.as_deref(),
                     "command": normalized.as_str(),
+                    "process_key": command.process_key,
                 }),
             ),
             Err(error) => {
@@ -2311,13 +2358,15 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                         "transport": transport_used.as_str(),
                         "primary_transport_error": primary_transport_error.as_deref(),
                         "command": normalized.as_str(),
+                        "process_key": command.process_key,
                     }),
                 );
                 // The fallback may race the final pipe closure too. Spend only
                 // the existing final grace budget, without another delivery.
-                if shutdown_wait::wait_for_instance_exit(
+                if shutdown_wait::wait_for_command_exit(
                     state,
-                    &details.summary.id,
+                    details,
+                    command.process_key.as_deref(),
                     Duration::from_millis(shutdown.grace_period_ms),
                 )
                 .await?
@@ -2326,16 +2375,20 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                         storage,
                         "warning",
                         "instance.shutdown.command_exit_confirmed",
-                        "Shutdown transport reported an error, but the complete managed process tree exited during its grace period.",
+                        "Shutdown transport reported an error, but the command target's complete process tree exited during its grace period.",
                         json!({
                             "source": source.as_str(),
                             "instance_id": details.summary.id,
                             "module_id": details.summary.module_id,
                             "transport": transport_used,
                             "command": normalized,
+                            "process_key": command.process_key,
                             "error": error,
                         }),
                     );
+                    if app_core::ark_maps::is_ark(&details.summary.module_id) {
+                        continue;
+                    }
                     return Ok(());
                 }
                 return Err(format!(

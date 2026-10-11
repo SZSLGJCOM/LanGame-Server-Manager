@@ -74,13 +74,14 @@ pub fn parse_additional_maps(settings: &Value) -> Result<Vec<ArkMap>, String> {
             return Err("Map names must be native package identifiers with letters, digits or underscores (1–128 characters)".into());
         }
         if map.name.trim().is_empty()
-            || map.name.trim() != map.name
-            || map.name.chars().count() > 80
             || map.name.chars().any(|character| {
-                character.is_control() || matches!(character, '"' | '?' | '\u{2028}' | '\u{2029}')
+                character.is_control() || matches!(character, '?' | '\u{2028}' | '\u{2029}')
             })
         {
-            return Err("Map display names must be 1–80 characters without quotes, URL delimiters or control characters".into());
+            return Err(
+                "Map server names must be nonempty without URL delimiters or control characters"
+                    .into(),
+            );
         }
         maps.push(map);
     }
@@ -178,7 +179,11 @@ pub fn processes(instance: &InstanceDetails) -> Result<Vec<ArkMapProcess>, Strin
         .join("logs");
     let mut processes = vec![ArkMapProcess {
         process_key: "main".into(),
-        display_name: map_name.into(),
+        display_name: settings
+            .get("server_name")
+            .and_then(Value::as_str)
+            .unwrap_or(&instance.summary.name)
+            .into(),
         map_name: map_name.into(),
         save_directory: instance.summary.id.clone(),
         native_log_path: native_log_path(&instance.summary.module_id, &logs, "main")?
@@ -219,16 +224,11 @@ pub fn project_process(
     let mut settings: Value =
         serde_json::from_str(&instance.settings_json).map_err(|error| error.to_string())?;
     let has_maps = !parse_additional_maps(&settings)?.is_empty();
-    let base_name = settings
-        .get("server_name")
-        .and_then(Value::as_str)
-        .unwrap_or(&instance.summary.name)
-        .to_owned();
     settings["map_name"] = Value::String(process.map_name);
+    settings["server_name"] = Value::String(process.display_name);
     settings["_managed_ark_save_directory"] = Value::String(process.save_directory);
     settings["_managed_ark_native_log"] = Value::String(process.native_log_path);
     if has_maps {
-        settings["server_name"] = Value::String(format!("{base_name} | {}", process.display_name));
         if settings
             .get("cluster_id")
             .and_then(Value::as_str)

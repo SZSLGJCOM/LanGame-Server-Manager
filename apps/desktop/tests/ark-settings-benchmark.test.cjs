@@ -87,7 +87,7 @@ test("ASE and ASA retain gameplay domains while shared administration and runtim
 test("ARK configuration remains reachable while save policies belong to Maintenance", () => {
   const expectations = {
     arksurvivalevolved: { schema: 374, configuration: 368, guided: 367, structured: 18, maintenance: ["auto_save_period_minutes", "max_num_of_save_backups"] },
-    arksurvivalascended: { schema: 274, configuration: 269, guided: 268, structured: 16, maintenance: ["auto_save_period_minutes"] }
+    arksurvivalascended: { schema: 275, configuration: 269, guided: 268, structured: 16, maintenance: ["auto_save_period_minutes"] }
   };
 
   for (const [moduleId, expected] of Object.entries(expectations)) {
@@ -169,6 +169,12 @@ test("ARK edition-specific mod fields are isolated and have one operational owne
   assert.deepEqual(
     { owner: presentation("arksurvivalascended", "mod_ids_csv").owner,
       state: presentation("arksurvivalascended", "mod_ids_csv").state },
+    { owner: "mods", state: "specialized" }
+  );
+  assert.equal(asaProperties.asa_mod_configurations.type, "object");
+  assert.deepEqual(
+    { owner: presentation("arksurvivalascended", "asa_mod_configurations").owner,
+      state: presentation("arksurvivalascended", "asa_mod_configurations").state },
     { owner: "mods", state: "specialized" }
   );
   assert.deepEqual(

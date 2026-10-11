@@ -554,11 +554,51 @@ fn project_zomboid_dictionary_failure_overrides_startup_progress() {
 }
 
 #[test]
+fn asa_waits_for_join_advertising_after_early_startup_and_listener_signals() {
+    let early = "Server: \"Isolated ASA world\" has successfully started!";
+    for progress in [
+        "Full Startup: 18.58 seconds",
+        "RCON listening on port 27020",
+        "Server ready",
+        "Server: \"advertising for join\" has successfully started!",
+        "Server: \"Server has completed startup and is now advertising for join.\" has successfully started!",
+    ] {
+        let health = analyze_runtime_health(
+            "arksurvivalascended",
+            &InstanceStatus::Running,
+            &log_snapshot(&[early, progress]),
+            None,
+            &[],
+        );
+        assert_eq!(health.status, "starting", "premature signal: {progress}");
+        assert_eq!(health.reason.code, "starting_tasks");
+        assert_eq!(health.matched_line, None);
+    }
+
+    let completed = "Server has completed startup and is now advertising for join.";
+    let health = analyze_runtime_health(
+        "arksurvivalascended",
+        &InstanceStatus::Running,
+        &log_snapshot(&[early, "Full Startup: 18.58 seconds", completed]),
+        None,
+        &[],
+    );
+    assert_eq!(health.status, "ready");
+    assert_eq!(health.matched_line.as_deref(), Some(completed));
+}
+
+#[test]
 fn module_startup_signals_end_starting_without_hiding_fatal_errors() {
     for (module_id, line) in [
         ("necesse", "Started server using port 14159 with 8 slots"),
-        ("arksurvivalascended", "Server has successfully started!"),
-        ("arksurvivalascended", "Server is advertising for join"),
+        (
+            "arksurvivalascended",
+            "Server has completed startup and is now advertising for join.",
+        ),
+        (
+            "arksurvivalascended",
+            "[2026.10.11-03.45.40:098][235]Server has completed startup and is now advertising for join. (10.31GB Mem)",
+        ),
     ]
     .into_iter()
     .chain(NATIVE_READY_SIGNALS)

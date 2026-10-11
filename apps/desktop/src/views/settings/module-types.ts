@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails } from "../../types";
+import type { ArkMapAvailabilityView } from "./ark-cluster-maps";
 import type {
   ConfigurationFieldPresentationOverride,
   ConfigurationSpecializedRendererContract,
@@ -20,6 +21,7 @@ export interface ConfigurationSpecializedRendererProps {
   fieldKey?: string;
   details: InstanceDetails;
   moduleDetails: ModuleDetails;
+  arkMapAvailability?: ArkMapAvailabilityView;
   settings: SettingsObject;
   disabled: boolean;
   onPatch: (patch: Readonly<SettingsObject>) => void;
@@ -61,10 +63,6 @@ export interface SettingsModuleSettingsContext {
   t: TranslateFn;
 }
 
-export interface ConfigurationWorkspaceToolsProps extends ConfigurationSpecializedRendererProps {
-  schema: import("./settings-schema").GuidedSettingsSchema;
-}
-
 export interface ConfigurationWorkspaceProviderProps {
   children: ReactNode;
   details: InstanceDetails;
@@ -73,7 +71,6 @@ export interface ConfigurationWorkspaceProviderProps {
 export interface SettingsModuleDefinition {
   id: string;
   workspaceProvider?: ComponentType<ConfigurationWorkspaceProviderProps>;
-  workspaceToolbar?: ComponentType<ConfigurationWorkspaceToolsProps>;
   fieldPresentationOverrides?: Readonly<Record<string, ConfigurationFieldPresentationOverride>>;
   specializedRenderers?: Readonly<Record<string, SettingsModuleSpecializedRenderer>>;
   sections?: GuidedSettingsSection[];

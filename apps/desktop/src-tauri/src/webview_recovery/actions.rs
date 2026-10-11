@@ -217,6 +217,13 @@ async fn create_window(recovery: &Arc<Recovery>, app: &tauri::AppHandle) -> Resu
                     .visible(false)
                     .on_page_load(move |webview, payload| {
                         if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                            if let Some(window) = webview.app_handle().get_webview_window("main")
+                                && let Err(error) = crate::webview_drop::install(&window)
+                            {
+                                eprintln!(
+                                    "Attach dropped-file bridge after view recreation: {error}"
+                                );
+                            }
                             super::page_loaded(webview.app_handle(), webview.label(), generation);
                         }
                     })

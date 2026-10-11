@@ -1792,6 +1792,11 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         items
       } as T;
     }
+    case "read_instance_ark_map_availability": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
+      const details = ensureMockInstanceDetails(instanceId);
+      return { instance_id: instanceId, module_id: details.summary.module_id, maps: [] } as T;
+    }
     case "read_manual_mod_inventory": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       const details = ensureMockInstanceDetails(instanceId);

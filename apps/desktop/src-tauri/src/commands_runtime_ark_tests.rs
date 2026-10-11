@@ -61,7 +61,11 @@ fn descriptor(edition: &str) -> ModuleDescriptor {
 #[test]
 fn ark_map_launches_share_program_and_keep_owned_identity_and_distinct_native_paths() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
-        let instance = instance(edition);
+        let mut instance = instance(edition);
+        let mut map_settings: Value = serde_json::from_str(&instance.settings_json).unwrap();
+        map_settings["server_name"] = json!("Primary community | 孤岛");
+        map_settings["additional_maps"][0]["name"] = json!("Another community | 焦土");
+        instance.settings_json = map_settings.to_string();
         let settings = AppSettings::default();
         let module = map_module_details_with_install_state(
             &settings,
@@ -73,7 +77,22 @@ fn ark_map_launches_share_program_and_keep_owned_identity_and_distinct_native_pa
         assert_eq!(plans.len(), 2, "Disabled maps must not launch");
         assert_eq!(plans[0].process_key, "main");
         assert_eq!(plans[1].process_key, "map-scorched");
-        assert_eq!(plans[1].display_name, "Scorched Earth");
+        assert_eq!(plans[0].display_name, "Primary community | 孤岛");
+        assert_eq!(plans[1].display_name, "Another community | 焦土");
+        for (plan, name) in plans
+            .iter()
+            .zip(["Primary community | 孤岛", "Another community | 焦土"])
+        {
+            assert_eq!(
+                plan.launch_plan.args[0]
+                    .split('?')
+                    .filter(|part| part.starts_with("SessionName="))
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+                [format!("SessionName={name}")],
+                "{edition}: each URL must contain exactly its complete configured name"
+            );
+        }
         assert_eq!(
             plans[0].launch_plan.executable_path,
             plans[1].launch_plan.executable_path
@@ -117,6 +136,33 @@ fn ark_map_launches_share_program_and_keep_owned_identity_and_distinct_native_pa
             .unwrap();
         assert_ne!(main_log, extra_log);
         assert!(extra_log.ends_with("map-scorched.log"));
+
+        map_settings["server_name"] = json!("Renamed primary | 新孤岛");
+        instance.settings_json = map_settings.to_string();
+        let renamed =
+            build_launch_plans(&settings, &module, &instance, Some("C:/fixture/program")).unwrap();
+        assert_eq!(renamed[0].display_name, "Renamed primary | 新孤岛");
+        assert_eq!(
+            renamed[0].launch_plan.args[0]
+                .split('?')
+                .filter(|part| part.starts_with("SessionName="))
+                .map(str::to_owned)
+                .collect::<Vec<_>>(),
+            [String::from("SessionName=Renamed primary | 新孤岛")]
+        );
+        assert_eq!(renamed[1].display_name, plans[1].display_name);
+        assert_eq!(renamed[1].launch_plan.args, plans[1].launch_plan.args);
+        for (before, after) in plans.iter().zip(&renamed) {
+            assert_eq!(after.process_key, before.process_key);
+            assert_eq!(
+                after.launch_plan.instance_id,
+                before.launch_plan.instance_id
+            );
+            assert_eq!(
+                after.launch_plan.executable_path,
+                before.launch_plan.executable_path
+            );
+        }
     }
 }
 

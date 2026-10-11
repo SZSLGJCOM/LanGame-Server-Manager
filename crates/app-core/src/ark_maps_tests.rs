@@ -60,6 +60,50 @@ fn defaults(module_id: &str) -> Vec<PortBinding> {
 }
 
 #[test]
+fn every_map_uses_its_complete_server_name_without_a_shared_prefix() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let mut instance = fixture(edition);
+        let mut settings: Value = serde_json::from_str(&instance.settings_json).unwrap();
+        settings["server_name"] = json!("Independent primary server");
+        settings["additional_maps"][0]["name"] = json!("Another community | 焦土");
+        instance.settings_json = settings.to_string();
+
+        for (key, expected) in [
+            ("main", "Independent primary server"),
+            ("map-desert", "Another community | 焦土"),
+        ] {
+            let projected = project_process(&instance, Some(key)).unwrap();
+            let projected_settings: Value = serde_json::from_str(&projected.settings_json).unwrap();
+            assert_eq!(projected_settings["server_name"], expected);
+            assert_eq!(projected.summary.id, instance.summary.id);
+        }
+        let plans = processes(&instance).unwrap();
+        assert_eq!(plans[0].display_name, "Independent primary server");
+        assert_eq!(plans[1].display_name, "Another community | 焦土");
+        assert_eq!(plans[0].save_directory, instance.summary.id);
+        assert_eq!(plans[1].save_directory, "ark-owned-map-desert");
+
+        settings["server_name"] = json!("Renamed primary only");
+        instance.settings_json = settings.to_string();
+        let extra = project_process(&instance, Some("map-desert")).unwrap();
+        let extra_settings: Value = serde_json::from_str(&extra.settings_json).unwrap();
+        assert_eq!(extra_settings["server_name"], "Another community | 焦土");
+    }
+}
+
+#[test]
+fn complete_server_names_keep_lengths_previously_allowed_by_the_primary_name() {
+    let mut instance = fixture("arksurvivalascended");
+    let complete_name = format!("{} | {}", "界".repeat(100), "焦土");
+    let mut settings: Value = serde_json::from_str(&instance.settings_json).unwrap();
+    settings["additional_maps"][0]["name"] = json!(complete_name);
+    instance.settings_json = settings.to_string();
+    let extra = project_process(&instance, Some("map-desert")).unwrap();
+    let projected: Value = serde_json::from_str(&extra.settings_json).unwrap();
+    assert_eq!(projected["server_name"], complete_name);
+}
+
+#[test]
 fn maps_have_stable_world_log_and_transport_identity_without_changing_ownership() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
         let instance = fixture(edition);
@@ -81,7 +125,7 @@ fn maps_have_stable_world_log_and_transport_identity_without_changing_ownership(
         );
         let settings: Value = serde_json::from_str(&extra.settings_json).unwrap();
         assert_eq!(settings["map_name"], "ScorchedEarth_P");
-        assert_eq!(settings["server_name"], "ARK Room | 焦土");
+        assert_eq!(settings["server_name"], "焦土");
         assert_eq!(settings["cluster_id"], "lgsm-ark-owned");
         assert_eq!(
             Path::new(settings["cluster_directory"].as_str().unwrap()),
@@ -152,6 +196,90 @@ fn pauses_keep_reserved_ports_and_resume_identity() {
         serde_json::to_value(removed).unwrap(),
         serde_json::to_value(defaults).unwrap()
     );
+}
+
+#[test]
+fn maximum_enabled_maps_have_distinct_processes_and_owned_native_ports() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let additions = (0..MAX_ADDITIONAL_MAPS)
+            .map(|index| {
+                json!({"id":format!("limit-{index}"), "name":format!("Limit map {index}"),
+                    "map_name":if edition == "arksurvivalascended" {"ScorchedEarth_WP"} else {"ScorchedEarth_P"},
+                    "enabled":true})
+            })
+            .collect::<Vec<_>>();
+        let settings = json!({"additional_maps": additions});
+        assert_eq!(
+            parse_additional_maps(&settings).unwrap().len(),
+            MAX_ADDITIONAL_MAPS
+        );
+        let mut native_ports = defaults(edition);
+        // Both module catalogs declare all four roles, including ASA's peer.
+        if edition == "arksurvivalascended" {
+            native_ports.insert(
+                1,
+                PortBinding {
+                    name: "peer".into(),
+                    port: 7778,
+                    protocol: "udp".into(),
+                },
+            );
+        }
+        let mut instance = fixture(edition);
+        instance.settings_json = settings.to_string();
+        instance.ports =
+            requested_ports(edition, &settings, &native_ports, &native_ports, &[]).unwrap();
+        instance.summary.port_count = instance.ports.len();
+        let expected_process_count = MAX_ADDITIONAL_MAPS + 1;
+        assert_eq!(instance.ports.len(), expected_process_count * 4);
+        let plans = processes(&instance).unwrap();
+        assert_eq!(plans.len(), expected_process_count);
+        assert_eq!(
+            plans
+                .iter()
+                .map(|plan| &plan.process_key)
+                .collect::<HashSet<_>>()
+                .len(),
+            expected_process_count
+        );
+        let mut projected_endpoints = HashSet::new();
+        for plan in &plans {
+            let projected = project_process(&instance, Some(&plan.process_key)).unwrap();
+            assert_eq!(projected.ports.len(), 4);
+            for (role, protocol) in [
+                ("game", "udp"),
+                ("peer", "udp"),
+                ("query", "udp"),
+                ("rcon", "tcp"),
+            ] {
+                let binding = projected
+                    .ports
+                    .iter()
+                    .find(|port| port.name == role)
+                    .unwrap();
+                let owned_name = if plan.process_key == "main" {
+                    role.to_owned()
+                } else {
+                    format!("{}-{role}", plan.process_key)
+                };
+                let registered = instance
+                    .ports
+                    .iter()
+                    .find(|port| port.name == owned_name)
+                    .unwrap();
+                assert_eq!(binding.protocol, registered.protocol);
+                assert_eq!(binding.protocol, protocol);
+                assert_eq!(binding.port, registered.port);
+                assert_ne!(binding.port, 0);
+                assert!(
+                    projected_endpoints.insert((binding.protocol.clone(), binding.port)),
+                    "{edition}: {} must own an independent {role} endpoint",
+                    plan.process_key
+                );
+            }
+        }
+        assert_eq!(projected_endpoints.len(), expected_process_count * 4);
+    }
 }
 
 #[test]

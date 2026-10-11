@@ -72,6 +72,18 @@ async function removeScratch(scratch) {
   await fs.rm(target, { recursive: true, force: false, maxRetries: 10, retryDelay: 200 });
 }
 
+async function readHostEvidence(root, exit) {
+  const success = exit.code === 0 && !exit.signal && !exit.error;
+  const leaf = success ? "report.json" : "failure.json";
+  try {
+    const evidence = JSON.parse(await fs.readFile(path.join(root, leaf), "utf8"));
+    return { report: success ? evidence : null, failure: success ? null : evidence, readError: null };
+  } catch (error) {
+    if (success) throw error;
+    return { report: null, failure: null, readError: `Cannot read native failure evidence: ${String(error)}` };
+  }
+}
+
 async function run(executable, output) {
   assert.equal(process.platform, "win32", "The native desktop fixture requires Windows/WebView2");
   assert.ok(path.isAbsolute(executable) && path.isAbsolute(output), "Use absolute executable and output paths");
@@ -82,7 +94,7 @@ async function run(executable, output) {
   const scratch = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-desktop-"));
   const observed = new Map();
   let server, child, exited, monitor, monitorError, stopMonitor = false;
-  let hostReport, failure, stderr = "", treeExited = false;
+  let hostReport, hostFailure, hostExit, hostFailureReadError, failure, stderr = "", treeExited = false;
   const cleanupErrors = [];
   const watchdog = setTimeout(() => {
     console.error(`Desktop acceptance exceeded its 240-second command deadline; retained scratch: ${scratch}`);
@@ -137,12 +149,27 @@ async function run(executable, output) {
       }
     })().catch((error) => { monitorError = error; });
     const exit = await deadline(exited, 195000, "Native desktop acceptance");
-    hostReport = JSON.parse(await fs.readFile(path.join(config.root, "report.json"), "utf8"));
-    assert.equal(exit.code, 0, `Host exit: ${JSON.stringify(exit)}; report: ${JSON.stringify(hostReport)}`);
+    hostExit = exit;
+    const evidence = await readHostEvidence(config.root, exit);
+    hostReport = evidence.report;
+    hostFailure = evidence.failure;
+    hostFailureReadError = evidence.readError;
+    if (exit.code !== 0 || exit.signal || exit.error) {
+      throw new Error([
+        `Native desktop host failed: ${JSON.stringify(exit)}`,
+        hostFailure?.error ? `Fixture cause: ${String(hostFailure.error).slice(0, 4096)}` : hostFailureReadError,
+        stderr ? `Host output: ${stderr.slice(-4096)}` : null,
+      ].filter(Boolean).join("\n"));
+    }
     assert.equal(hostReport.passed, true, JSON.stringify(hostReport));
     assert.equal(hostReport.server_exited, true);
     assert.equal(hostReport.output_worker_joined, true);
     assert.equal(hostReport.profile_verified, true);
+    assert.ok(hostReport.native_drop, "Host did not provide native drop acceptance evidence");
+    assert.equal(hostReport.native_drop.generations_verified, 3);
+    assert.equal(hostReport.native_drop.file_and_directory_paths, true);
+    assert.equal(hostReport.native_drop.plain_text_and_uri, true);
+    assert.equal(hostReport.native_drop.installation_attempted, false);
     for (const key of ["close_hid_window", "browser_recovery_preserved_hidden", "reopened_after_browser_recovery"]) {
       assert.equal(hostReport.window_visibility[key], true, `window_visibility.${key}`);
     }
@@ -200,6 +227,9 @@ async function run(executable, output) {
     status: !failure && !cleanupErrors.length && treeExited ? "passed" : "failed",
     executable_sha256: createHash("sha256").update(await fs.readFile(executable)).digest("hex"),
     host: hostReport, host_output: stderr,
+    host_exit: hostExit ?? null, host_failure: hostFailure ?? null,
+    host_failure_read_error: hostFailureReadError ?? null,
+    native_drop: hostReport?.native_drop ?? null,
     processes_observed: observed.size, processes_remaining: treeExited ? 0 : null,
     observed_processes: [...observed].map(([pid, created]) => ({ pid, created })),
     failures: [failure, ...cleanupErrors].filter(Boolean).map(String),
@@ -217,7 +247,7 @@ async function run(executable, output) {
   assert.equal(report.status, "passed", report.failures.join("; "));
 }
 
-module.exports = { recordTree };
+module.exports = { recordTree, readHostEvidence };
 if (require.main === module) {
   const args = process.argv.slice(2);
   if (args.length !== 4 || args[0] !== "--executable" || args[2] !== "--output") {

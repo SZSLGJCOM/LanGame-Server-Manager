@@ -1,0 +1,77 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-11",
+    "source_ids": ["ascended_native_user_settings_version"],
+    "build": "Windows ASA build 25814268 comparison on 2026-10-11 with the installed production desktop/runtime: unversioned settings lost both passwords and RCON listeners; two corrected two-map starts and normal SaveWorld/DoExit stops retained Version=5 and matching passwords, exposed each map's owned RCON listener, returned complete empty ListPlayers rosters, and confirmed all four map-cycle saves. Both stop receipts retained -1/-1 with stopped history and no crash flags. The last map's shared INI RCONPort was corrected by next-start materialization and each map's URL. Native INI encoding observed here was UTF-8 without a BOM; UTF-16 materialization coverage is synthetic. Original protected files/settings were unchanged and the continuous observer recorded no visible consoles."
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 1
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": ["ascended_native_user_settings_version./Script/ShooterGame.ShooterGameUserSettings.Version"]
+  },
+  "settings": {
+    "server_name": "LanGame ASA Native Settings",
+    "max_players": 8,
+    "rcon_enabled": true,
+    "admin_password": "fixture-admin-password",
+    "server_password": "fixture-server-password"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "config",
+        "path": "GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+          "SessionName=LanGame ASA Native Settings",
+          "MaxPlayers=8",
+          "RCONPort=27020",
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      },
+      {
+        "root": "install",
+        "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+        "format": "ini",
+        "fragments": [
+          "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+          "SessionName=LanGame ASA Native Settings",
+          "MaxPlayers=8",
+          "RCONPort=27020",
+          "ServerAdminPassword=fixture-admin-password",
+          "ServerPassword=fixture-server-password"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "arguments": [
+        "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame ASA Native Settings?RCONEnabled=true?RCONPort=27020",
+        "-port=7777",
+        "-WinLiveMaxPlayers=8",
+        "-NullRHI",
+        "-Unattended",
+        "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+        "-servergamelog",
+        "-servergamelogincludetribelogs",
+        "-ServerRCONOutputTribeLogs",
+        "-NoTransferFromFiltering"
+      ]
+    }
+  }
+}

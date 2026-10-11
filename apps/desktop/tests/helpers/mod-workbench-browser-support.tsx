@@ -1,17 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { updateInstance } from "../../src/api";
 import { ActivityNoticeTarget } from "../../src/components/ActivityNotice";
 import { I18nProvider } from "../../src/i18n";
 import { ModWorkbench } from "../../src/views/servers/ModWorkbench";
-import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
+import { InstanceSettingsSaveProvider, useInstanceSettingsSaveCoordinator } from "../../src/views/settings/InstanceSettingsSaveContext";
+import type { InstanceSettingsSaveCoordinator } from "../../src/views/settings/instance-settings-save-coordinator";
 import type { InstanceDetails, ManualModInventoryResult, ModuleDetails, SteamWorkshopBrowseKind,
   SteamWorkshopLookupItem, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
 import "../../src/views/servers/workbench.css";
 
-interface HostProps { details: InstanceDetails; moduleDetails: ModuleDetails; epoch: number; onSaved: () => void }
+interface HostProps { details: InstanceDetails; moduleDetails: ModuleDetails; epoch: number; onSaved: () => void;
+  onCoordinator?: (coordinator: InstanceSettingsSaveCoordinator) => void }
 function Workspace(props: HostProps) {
   const [noticeTarget, setNoticeTarget] = useState<HTMLDivElement | null>(null);
+  const coordinator = useInstanceSettingsSaveCoordinator();
+  useEffect(() => { props.onCoordinator?.(coordinator); }, [coordinator, props.onCoordinator]);
   return <ActivityNoticeTarget.Provider value={{ element: noticeTarget, dismissLabel: "Close" }}>
     <div style={{ flex: 1, minHeight: 0 }}>
       <ModWorkbench key={`${props.epoch}:${props.details.summary.id}`} details={props.details} moduleDetails={props.moduleDetails}

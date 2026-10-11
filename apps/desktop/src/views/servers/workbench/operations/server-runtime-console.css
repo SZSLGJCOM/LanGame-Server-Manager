@@ -130,8 +130,10 @@
 
 .server-runtime-console-source-select,
 .server-runtime-console-target-select {
+  width: 132px;
   min-width: 132px;
-  max-width: 180px;
+  max-width: 132px;
+  flex: 0 0 132px;
   height: 26px;
   padding: 0 26px 0 9px;
   border: 1px solid var(--shell-line);
@@ -140,6 +142,46 @@
   color: var(--shell-text);
   font: inherit;
   text-transform: none;
+}
+
+.server-runtime-console-target-picker {
+  position: relative;
+  display: inline-flex;
+  width: 160px;
+  flex: 0 0 160px;
+}
+
+.server-runtime-console-target-select {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  flex-basis: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.server-runtime-console-target-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 6px);
+  right: 0;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 8px 10px;
+  border: 1px solid var(--shell-line);
+  border-radius: 6px;
+  background: var(--theme-control-surface);
+  color: var(--shell-text);
+  line-height: var(--leading-body);
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.server-runtime-console-target-picker:not(.is-tooltip-dismissed):is(:hover, :focus-within) .server-runtime-console-target-tooltip {
+  display: block;
 }
 
 .server-runtime-console-source-select:disabled,
@@ -155,8 +197,7 @@
 
 .server-runtime-console-source-select:focus-visible,
 .server-runtime-console-target-select:focus-visible,
-.server-runtime-console-copy-button:focus-visible,
-.server-runtime-console-tab:focus-visible {
+.server-runtime-console-copy-button:focus-visible {
   outline: 2px solid var(--shell-focus);
   outline-offset: 2px;
 }
@@ -204,60 +245,6 @@
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-}
-
-.server-runtime-console-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--shell-line);
-  background: var(--theme-card-muted);
-}
-
-.server-runtime-console-tab {
-  display: grid;
-  gap: 2px;
-  min-width: 132px;
-  min-height: 42px;
-  padding: 7px 10px;
-  border: 1px solid var(--shell-line);
-  border-radius: 8px;
-  background: var(--theme-control-surface);
-  color: var(--shell-text);
-  text-align: left;
-  cursor: pointer;
-}
-
-.server-runtime-console-tab:hover {
-  border-color: var(--theme-card-active-border);
-  background: var(--theme-control-hover);
-}
-
-.server-runtime-console-tab.is-active {
-  border-color: var(--theme-card-active-border);
-  background: var(--theme-card-active-bg);
-  color: var(--theme-card-active-text);
-}
-
-.server-runtime-console-tab span,
-.server-runtime-console-tab small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.server-runtime-console-tab span {
-  font-size: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
-  line-height: var(--leading-heading);
-}
-
-.server-runtime-console-tab small {
-  font-family: var(--font-mono);
-  font-size: var(--text-meta);
-  color: var(--shell-muted);
 }
 
 .server-log-preview.server-runtime-console--primary {

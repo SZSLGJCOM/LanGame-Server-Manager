@@ -3,6 +3,19 @@ last_verified = "2026-09-08"
 notes = "SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
 
 [[sources]]
+id = "managed_mod_ini"
+kind = "documentation"
+authority = "langame_managed_configuration"
+path = "crates/app-storage/src/templates_materialize/ark_mod_configuration.rs"
+description = "Per-Mod explicit INI fragments for the two native WindowsServer INI files. Requires section headers; validates conflicts and fixed destinations; preserves disabled Mod configurations without materializing them."
+
+[[items]]
+source = "managed_mod_ini"
+key = "asa_mod_configurations"
+schema_key = "asa_mod_configurations"
+surface = "materializer"
+
+[[sources]]
 id = "map_processes"
 kind = "documentation"
 authority = "langame_managed_runtime"
@@ -82,6 +95,18 @@ path = "ShooterGame/Saved/Config/WindowsServer/Game.ini"
 authority = "ark_official_community_wiki_server_configuration"
 description = "Advanced ARK gameplay overrides under [/script/shootergame.shootergamemode], including stats, breeding, engrams, spawns, loot, crafting, and breeding class filters."
 url = "https://ark.wiki.gg/wiki/Server_configuration"
+
+[[sources]]
+id = "ascended_native_user_settings_version"
+kind = "runtime_probe"
+path = "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini"
+authority = "installed_ark_survival_ascended_dedicated_server"
+description = "On 2026-10-11, an isolated Windows ASA build 25814268 comparison used the installed production desktop and runtime. Without the user-settings Version, materialization ownership recorded both password keys before process creation, but the game recreated its native INI with Version=5 and omitted both passwords; configured RCON listeners were absent despite complete enable/port startup URL options and final join advertisements. With fixed Version=5 under [/Script/ShooterGame.ShooterGameUserSettings], two consecutive two-map starts retained both passwords and exposed each map's owned RCON listener; the production Source RCON transport returned complete empty ListPlayers rosters. Both normal SaveWorld/DoExit stops saved both worlds and closed both processes, confirming four map-cycle saves. Both stop receipts retained -1/-1 exit codes, with stopped history and no crash flags. After exit the shared native INI retained version and passwords but carried the last map's RCONPort; the next startup materialized the primary port and supplied each map's independent port in its URL. The observed native INI remained UTF-8 without a BOM; UTF-16 coverage is a separate synthetic materialization test. The existing instance's 41 protected files and settings digest were unchanged, and the continuous window observer recorded no visible consoles."
+
+[[exclusions]]
+source = "ascended_native_user_settings_version"
+key = "/Script/ShooterGame.ShooterGameUserSettings.Version"
+reason = "Fixed native file-format version 5 retained configured passwords and RCON on the verified ASA build 25814268 starts; it is not an operator-configurable gameplay setting."
 
 [[sources]]
 id = "asa_server_patch_notes_v92_36"

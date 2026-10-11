@@ -470,6 +470,7 @@ DERIVED_TOKEN_PORT_COVERAGE: dict[tuple[str, str], set[str]] = {
 }
 
 MATERIALIZATION_RUST_FUNCTION_COVERAGE = {
+    "arksurvivalascended": (("read_asa_mod_configurations", ()),),
     "satisfactory": (("plan_user_settings", ()),),
     "rimworld": (("render_rimworld_password_json", ()), ("rimworld_native_setting_specs", ())),
     "necesse": (("render_necesse_server_settings", ()),),

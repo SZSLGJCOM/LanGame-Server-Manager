@@ -69,13 +69,29 @@ The choice takes effect the next time LGSM's runtime service starts, including w
 
 ### ARK SE and ASA configuration
 
-Open **Cluster Transfers → Cluster maps** to add maps to one ARK instance. Each enabled map runs as its own native process with a separate LanGameCMD tab, registered ports, native log and world save, using the same installation, configuration and Mods. A blank Cluster ID is filled automatically when adding maps; the default transfer directory is shared within this instance. Stop the instance before adding, pausing or removing maps. Pausing or removing a map keeps its saved world; use a new map entry when changing its package. Start and Stop operate on all enabled maps, and ordinary world backups cover the complete native Saved tree, including retained map worlds.
+ASA Mod settings live in **My Mods → select a Mod → Configuration**. Parameters backed by an explicit author definition appear as form controls; the initial catalog covers Better Variants (`1254808`) `Debug` and `DebugSpawns`, with links to its author documentation. Opening the form does not write suggested defaults. ASA does not provide DST's universal `configuration_options` contract, so downloaded assets and descriptions are not executed or treated as configuration schemas.
+
+For other parameters, choose `Game.ini` or `GameUserSettings.ini` exactly as the author specifies, then paste or import an INI fragment containing its `[section]` and `key=value` lines. Both files can be configured for one Mod. Import and preview leave saved settings unchanged until Save. The editor preserves repeated rows; missing sections, server-managed keys and conflicts with another enabled Mod are rejected. The three supported native crafting, stack and engram rule arrays merge by class identity. File selection and successful writing alone do not establish that the game or Mod recognizes a parameter.
+
+Mod configurations are saved per instance and shared by its cluster maps. Stop every map before saving. Only enabled or passively loaded Mods contribute their fragments to native files; disabling or removing a Mod retains its saved options and removes its managed entries. Re-enabling restores them. Unrelated native content is preserved, and configuration files and ownership records use the existing rollback transaction. Each file is limited to 64 KiB of UTF-8 text, with 256 Mod configurations and 1 MiB total per instance. INI import accepts UTF-8 and explicitly marked UTF-16.
+
+ASA reports ready after its current map processes advertise for join. The earlier successful-start banner and open ports can precede completed world initialization; they do not end the starting health state.
+
+Stopping saves every live map before sending exit commands. If a map closes RCON during exit, LanGame confirms that map's complete owned process tree has exited, then continues with the remaining maps. Success still requires every instance process tree to exit. A retry after partial exit uses the same launch session to stop surviving maps; a lost reply does not replay the command or authorize a forced stop.
+
+Open **Cluster Transfers → Cluster maps** to add maps to one ARK instance. Each enabled map runs as its own native process with separate LanGameCMD output, registered ports, native log and world save, using the same installation, configuration and Mods. Use the fixed-width selector at the console's upper right to switch maps; its tooltip shows the full server name. A blank Cluster ID is filled automatically when adding maps; the default transfer directory is shared within this instance. Stop the instance before adding, pausing or removing maps. Pausing or removing a map keeps its saved world; use a new map entry when changing its package. Start and Stop operate on all enabled maps, and ordinary world backups cover the complete native Saved tree, including retained map worlds.
+
+Enter the complete **Server name** for each map, including the primary map. The primary name is the same setting shown in **Room**; additional map names are independent. Launch uses each name directly, without adding a shared prefix or map suffix. Older configurations retain their previously effective full names when read, and the next normal configuration write saves the current name format. Renaming does not change map identities, ports or saved worlds.
+
+Returning to **Runtime** restores the console's recent history and reads the latest 400 lines from its owned log. Session history is isolated by instance, map, run and log source; a new run or service recovery cannot reuse another stream's output. Stopped maps remain selectable for reading, with commands disabled for that map.
 
 Both editions retain LGSM's shared Room, Network, Administration, and Runtime categories. Attribute tables, player/creature experience curves, engram points, and native rule editors live in their gameplay categories. Switch to native text when needed; edits retain unknown Mod properties and unedited native values. Invalid numeric values, indexes, or tuple syntax block saving. Level CSV imports append new indexes without replacing existing curves. Class-name suggestions are a shared reference; availability still depends on the edition, map, and installed Mods.
 
-The configuration toolbar imports `Game.ini` and `GameUserSettings.ini` with a preview, up to two files of 2 MiB each. Recognized entries populate their controls; unknown sections and repeated entries go into native overrides. Registered network parameters and the operational `ActiveMods` list remain managed by their existing workspaces. **Copy from instance** accepts another instance of the same edition and selected gameplay categories. Missing source overrides clear their target counterparts. Gameplay presets can be exported and imported without names, passwords, paths, network settings, cluster settings, or Mod installation lists.
-
 Saving or regenerating ARK INI files preserves unmanaged entries and comments. Explicit native overrides take precedence; removing a previously managed override removes its native entry while retaining unrelated Mod settings. Pending edits made while the server runs are materialized when it next starts. These writes and their ownership records use the same conflict detection and rollback transaction.
+
+Keep the fixed `Version=5` entry under `[/Script/ShooterGame.ShooterGameUserSettings]` in `GameUserSettings.ini`. This is the native file-format version. Without it, the game can recreate the file, dropping administrator and join passwords and leaving RCON unavailable. Two consecutive two-map start/save/stop cycles on Windows ASA build 25814268 verified password retention and each map's RCON listener. The native INI remained UTF-8 without a BOM in this acceptance; UTF-16 compatibility is covered separately by synthetic materialization tests.
+
+Maps share this native INI, so the last map to exit may write its own `RCONPort` back into the file. Each map's registered port remains independent. Before the next start, LanGame materializes the managed configuration and supplies each map's correct RCON port in its startup URL.
 
 Maps in one cluster need the same ARK edition, **Cluster ID**, and **Shared Cluster Directory**. An empty directory retains the instance's own cluster storage; matching IDs alone do not share uploaded data. Changing a path does not move existing uploads. Absolute local directories and UNC shares are supported. ASE and ASA must use separate transfer roots.
 
@@ -159,6 +175,10 @@ The server catalog contains 32 games; Mod support depends on each module's actua
 | No LanGame server Mod workspace | 6 | Nightingale, Return to Moria, Romestead, RuneScape: Dragonwilds, SCUM, The Forest |
 
 The 14 file-based games in the Thunderstore and local-import groups expose instance inventory and **Open Mod folder**, but currently have no generic enable/disable or removal action. Importing a package does not install its required loader or prove that the game loaded it. Thunderstore links require runtime and dependency verification; Minecraft accepts matching local JAR files, while automatic Modrinth installation is blocked without an instance loader/version contract. ASA manages its CurseForge ID list separately. Non-Steam sources do not use **My collections**. A missing LanGame workflow does not imply that the game has no external mod ecosystem.
+
+ASA's **Manifest mode** accepts numeric CurseForge project IDs separated by commas, semicolons or newlines. **Merge and enable** keeps existing active and passive settings and saves the added IDs for ASA to download and load on the next server start. Saving the list does not confirm a download or a successful load. Invalid entries block the whole update; custom `-mods` or `-passivemods` flags must be resolved before using managed Mod controls.
+
+For supported reference providers, the desktop drop target accepts browser links, selected links and selected IDs. Local files and directories remain available for every declared manual-import workflow. Windows uses the browser's normal drag events and a bounded WebView2 object-to-path bridge for files and directories; changing the window's native drop interception must preserve both paths. Running instances reject Mod changes.
 
 The manifest's `supports_collections` flag does not control the current UI. LanGame expands collections into verified server packages for the ten Steam workflows above; a false flag must not be interpreted as disabling that app-managed capability.
 
@@ -346,6 +366,10 @@ CPU 百分比以整台主机的 CPU 配额为基准，不是单个逻辑处理�
 
 Thunderstore 与本地导入两组共 14 款文件型游戏支持查看实例库存、打开 Mod 目录，目前没有通用的启用、停用或移除操作。导入文件不会安装所需加载器，也不代表游戏已成功加载。Thunderstore 链接需通过运行环境和依赖验证；Minecraft 支持导入匹配的本地 JAR，实例加载器及版本尚未形成可靠绑定，因此阻止自动 Modrinth 安装。ASA 单独管理 CurseForge ID 清单。非 Steam 来源不使用「我的合集」。LanGame 尚未接入不代表游戏不存在外部 Mod 生态。
 
+ASA 的「清单模式」支持粘贴数字 CurseForge 项目 ID，以逗号、分号或换行分隔。「合并并启用」保留已有启用与被动加载配置，保存新增 ID，由 ASA 在下次开服时下载并加载；保存清单不代表下载或加载成功。存在无效条目时整批不写入；自定义 `-mods`、`-passivemods` 参数需先处理冲突，才能使用受管 Mod 控件。
+
+支持链接解析的来源可以拖入网页链接、选中的链接或 ID；声明了手动导入的游戏仍可拖入本地文件和文件夹。Windows 使用浏览器拖放事件，并通过有界 WebView2 对象路径桥读取文件和文件夹位置；调整窗口的原生拖放接管时须同时保留这两种入口。实例运行时拒绝 Mod 修改。
+
 Manifest 的 `supports_collections` 字段目前不是界面能力开关。上述 10 个 Steam 工作流由 LanGame 将合集展开为经过核验的服务端包，字段为 false 不代表应用不能管理该游戏的合集。
 
 ASA 的「我的 Mod」同时列出普通启用和被动加载的 ID。停用会从两份加载清单移出，并保留原来的加载方式供重新启用；尚未下载的 ID 也不会因停用而消失。移除会清除实例归属并隐藏保留的缓存文件，显式重新添加 ID 或再次导入对应文件可恢复。文件导入只恢复本次实际写入的项目，不会自动启用。自定义启动参数中含 `-mods` 或 `-passivemods` 时，需先移除这些参数再使用管理操作，避免界面停用后仍被原始参数加载。两种加载清单都会把多个 ID 规范为单个逗号分隔参数。
@@ -386,13 +410,33 @@ Conan 和 Barotrauma 支持加载名称以工坊 ID 开头的手动导入包。�
 
 ### ARK SE 与 ASA 配置
 
-在「集群传输 → 集群地图」中为同一实例添加地图。每张启用的地图运行独立原生进程，拥有独立 LanGameCMD 标签、登记端口、原生日志和世界存档，共用一套服务端程序、配置和模组。添加地图时会自动填写空白的集群 ID；默认传输目录供实例内所有地图共用。新增、暂停或移除地图前需停止实例。暂停或移除地图会保留存档；更换地图包时应新增地图条目。启动和停止作用于所有启用地图，普通世界备份覆盖整个原生 Saved 树，包含已保留的地图世界。
+ASA 的 Mod 设置位于「我的 Mod → 选中 Mod → 配置」。有作者明确参数定义的选项显示为表单；首批收录 Better Variants（`1254808`）的 `Debug`、`DebugSpawns`，面板附作者资料链接。打开面板不会自动写入建议默认值。ASA 没有饥荒统一的 `configuration_options` 契约，不会执行下载内容或把网页描述直接当作配置定义。
+
+其他参数按作者说明选择 `Game.ini` 或 `GameUserSettings.ini`，粘贴或导入包含 `[节名]` 和 `参数=值` 的 INI 片段。同一 Mod 可以分别配置两个文件；导入和预览不会改变已保存设置，点击保存后才写入。重复行保持顺序；缺少节名、覆盖服务器托管参数或与其他启用 Mod 冲突时会拒绝保存。已支持的原生制作配方、堆叠和印痕数组按类名合并。选中文件并成功写入，本身不代表游戏或 Mod 识别该参数。
+
+每个实例分别保存 Mod 配置，集群内各地图共用。保存前需停止全部地图；仅启用或被动加载的 Mod 将配置写入原生文件。停用或移除保留已保存选项，同时撤下其托管条目；重新启用时恢复。无关原生内容保留，配置文件和归属记录沿用同一回滚事务。每个文件最多 64 KiB UTF-8 文本，每实例最多 256 份 Mod 配置、合计 1 MiB。导入支持 UTF-8 和带 BOM 的 UTF-16。
+
+ASA 的当前地图进程开始对外广播后才显示就绪。更早的“启动成功”日志和端口监听可能先于世界初始化完成，健康状态此时仍保持启动中。
+
+停止时先保存所有运行中的地图，再逐张发送退出命令。地图退出期间若关闭 RCON，LGSM 会确认这张地图拥有的完整进程树已经退出，再继续停止其余地图；整个实例的所有进程树退出后才报告成功。部分地图退出后重试停止，仍按同一次启动的会话识别剩余地图。丢失回包不会触发命令重放或强制结束进程。
+
+在「集群传输 → 集群地图」中为同一实例添加地图。每张启用的地图运行独立原生进程，拥有独立 LanGameCMD 输出、登记端口、原生日志和世界存档，共用一套服务端程序、配置和模组。通过控制台右上角的固定宽度下拉选择地图，气泡显示完整服务器名称。添加地图时会自动填写空白的集群 ID；默认传输目录供实例内所有地图共用。新增、暂停或移除地图前需停止实例。暂停或移除地图会保留存档；更换地图包时应新增地图条目。启动和停止作用于所有启用地图，普通世界备份覆盖整个原生 Saved 树，包含已保留的地图世界。
+
+ASA 的默认地图选项仅列随服务器提供的官方地图。Mod 地图从当前实例已安装的服务端包读取作者声明的 `Preview/entry_map.txt`，同时核验插件的 CurseForge 项目 ID 和服务端载荷；不会从项目标题或文件夹名称猜地图名。选择已安装的 Mod 地图时，在同一次配置修改中启用对应 Mod。Club ARK 虽由官方发布，也需要安装其 Mod，因此不作为无需下载的默认地图。旧配置的地图值会保留；缺少内容时显示提示，不会自动换图或删除存档。作者未声明入口的地图仍可手动填写原生地图名，但填写名称本身不会下载内容。
+
+启用 Mod 的 ASA 多地图实例共用原生下载缓存。启动下一张地图前，LanGame 等待上一张地图完成 Mod 初始化并拥有自己的游戏端口，避免多个进程同时解压或清理同一下载文件。等待支持取消、进程退出和有界超时；整个实例仍需通过完整端口与原生广播检查才显示就绪。未启用 Mod 的多地图实例保留原有启动方式。
+
+返回「运行」页时恢复控制台近期历史，并从对应日志重新读取最新 400 行。会话内历史按实例、地图、运行批次和日志来源隔离；新一轮开服或服务恢复不会复用其他输出流。已停服地图仍可通过下拉查看日志，该地图的命令输入保持禁用。
+
+每张地图（包括主地图）填写完整的「服务器名称」。主地图与「房间配置」使用同一个名称，附加地图各自独立；启动时直接使用所填名称，不添加统一前缀或地图后缀。读取旧配置时保留原来实际使用的完整名称，下次正常写入配置时保存为新的名称格式。改名不会改变地图标识、端口或世界存档。
 
 两代 ARK 继续使用 LGSM 的房间、网络、管理权限、运行与高级分类。属性表、玩家与生物经验曲线、印痕点数及原生规则编辑器位于对应玩法分类。可以切换原生文本；编辑会保留未知 Mod 属性和未修改的原生值。无效数值、索引或括号语法会阻止保存。等级 CSV 只追加新索引，不替换已有曲线。类名建议是共享参考，实际可用内容仍取决于版本、地图及已安装模组。
 
-配置工具栏支持预览导入 `Game.ini`、`GameUserSettings.ini`，最多两个文件，每个不超过 2 MiB。已识别条目填入对应控件，未知分组及重复条目保留到原生覆盖；已登记网络参数和用于模组启用的 `ActiveMods` 清单继续由原工作区管理。「从其他实例复制」只接受同一 ARK 版本，可按玩法分类选择；来源未设置的覆盖值会从目标清除。玩法预设支持导出和导入，不包含名称、密码、路径、网络、集群或模组安装清单。
-
 保存和重新生成 ARK INI 时会保留未托管条目及注释。显式原生覆盖优先；删除先前托管的覆盖值会删除对应原生条目，同时保留无关 Mod 设置。运行期间保存的修改在下次启动时物化。文件与所有权记录使用同一冲突检测和回滚事务。
+
+请保留 `GameUserSettings.ini` 中 `[/Script/ShooterGame.ShooterGameUserSettings]` 节的固定 `Version=5`。这是原生文件格式版本；缺失时，游戏可能重新生成文件，丢失管理密码和加入密码，导致 RCON 不可用。Windows ASA build 25814268 同一双地图实例连续两轮启动、保存和停服，已验证密码保持及每张地图的 RCON 监听。本次原生 INI 保持 UTF-8 无 BOM；UTF-16 兼容性另由合成物化测试覆盖。
+
+地图共用这份原生 INI，最后退出的地图可能把自己的 `RCONPort` 写回文件。每张地图登记的端口仍独立保存；下次启动前，LanGame 重新物化受管配置，并在各地图启动 URL 中传入对应的 RCON 端口。
 
 同一集群的地图需要相同的 ARK 版本、「集群 ID」和「共享集群目录」。目录留空仍使用本实例的集群存储，仅填写相同 ID 不会共享上传数据。修改目录不搬移已有上传数据，支持绝对本地目录和 UNC 共享路径。ASE 与 ASA 必须使用不同传输根目录。
 

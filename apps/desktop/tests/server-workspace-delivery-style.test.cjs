@@ -822,7 +822,11 @@ test("player, access, and mod styles have one explicit owner", () => {
 test("runtime console primary title is branded as LanGameCMD", () => {
   assert.match(runtimeSurfaceWorkbench, /"servers\.runtimeSurface\.managedConsole", undefined, "LanGameCMD"/);
   assert.match(runtimeSurfaceWorkbench, /"servers\.runtimeSurface\.primaryProcess", undefined, "LanGameCMD"/);
-  assert.match(runtimeSurfaceWorkbench, /!selectedConsoleTab\?\.isPrimary/);
+  const titleMarkup = runtimeSurfaceWorkbench.split('<div className="server-runtime-console-title">')[1].split("</div>")[0];
+  assert.doesNotMatch(titleMarkup, /selectedConsoleTab|props\.details\.summary\.name/);
+  assert.doesNotMatch(runtimeSurfaceWorkbench, /server-runtime-console-tab(?:s|["\s])/);
+  assert.equal([...runtimeSurfaceWorkbench.matchAll(/className="server-runtime-console-target-select"/g)].length, 1);
+  assert.match(runtimeSurfaceWorkbench, /server-runtime-console-target-tooltip[\s\S]*?role="tooltip"/);
 
   assert.match(zhExtraMessages, /"servers\.runtimeSurface\.managedConsole":\s*"LanGameCMD"/);
   assert.match(zhExtraMessages, /"servers\.runtimeSurface\.primaryProcess":\s*"LanGameCMD"/);

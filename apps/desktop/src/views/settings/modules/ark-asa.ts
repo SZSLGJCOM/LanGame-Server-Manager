@@ -9,7 +9,6 @@ import {
 import { ARK_ASA_FOUNDATION_GROUPS } from "./ark-asa-groups-foundation";
 import { ARK_ASA_RULE_GROUPS } from "./ark-asa-groups-rules";
 import { arkComplexEditors } from "../ark-complex-editors";
-import { ArkConfigurationTransfer } from "../ArkConfigurationTransfer";
 
 const ARK_ASA_GROUPS = {
   ...ARK_ASA_FOUNDATION_GROUPS,
@@ -44,7 +43,6 @@ export function buildArkAsaFieldGroups(
 export const arkSurvivalAscendedSettingsDefinition: SettingsModuleDefinition = {
   id: "arksurvivalascended",
   ...arkComplexEditors("arksurvivalascended"),
-  workspaceToolbar: ArkConfigurationTransfer,
   getSections: buildArkAsaSections,
   buildFieldGroups: (sectionId, fields, _locale, t) => buildArkAsaFieldGroups(sectionId, fields, t),
   getFieldCopy: (key, t) => buildArkAsaFieldCopy(key, t)

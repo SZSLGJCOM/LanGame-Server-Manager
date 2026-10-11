@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "commands_ark_stop_tests.rs"]
+mod ark_stop_tests;
+
 struct Fixture {
     root: PathBuf,
     state: DesktopState,

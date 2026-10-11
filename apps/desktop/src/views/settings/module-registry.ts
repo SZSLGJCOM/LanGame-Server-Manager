@@ -230,13 +230,13 @@ const arkSurvivalEvolvedPresentation = withWorkspaceRenderedField(
   "mod-workbench-workshop-ids",
   "mods"
 );
-const arkSurvivalAscendedPresentation = withWorkspaceRenderedField(
-  arkSurvivalAscendedSettingsDefinition,
-  "mod_ids_csv",
+const arkSurvivalAscendedPresentation = ["mod_ids_csv", "asa_mod_configurations"].reduce<SettingsModuleDefinition>((definition, field) => withWorkspaceRenderedField(
+  definition,
+  field,
   "mods",
   "mod-workbench-asa-mod-ids",
   "mods"
-);
+), arkSurvivalAscendedSettingsDefinition);
 const barotraumaPresentation = withWorkspaceRenderedField(
   barotraumaSettingsDefinition, "mod_workshop_ids", "runtime", "mod-workbench-workshop-ids", "mods"
 );

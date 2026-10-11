@@ -9,6 +9,9 @@ use ownership::{GAME_MODE, NativeKey, canonical_key, key_family, owned_keys};
 mod history;
 pub(super) use history::capture_previous_ownership;
 use history::{Snapshot, Target};
+#[path = "ark_mod_configuration.rs"]
+mod mod_configuration;
+pub(crate) use mod_configuration::validate as validate_asa_mod_configurations;
 
 #[derive(Clone, Copy, Default)]
 enum Encoding {
@@ -266,7 +269,7 @@ fn merge(
     existing
 }
 
-fn extra_document(settings: &Map<String, Value>, game_ini: bool) -> Result<Document, String> {
+fn raw_extra_document(settings: &Map<String, Value>, game_ini: bool) -> Result<Document, String> {
     let (field, section) = if game_ini {
         ("game_ini_extra", GAME_MODE)
     } else {
@@ -279,13 +282,19 @@ fn extra_document(settings: &Map<String, Value>, game_ini: bool) -> Result<Docum
     Document::parse(&format!("[{section}]\n{raw}"))
 }
 
+fn extra_document(settings: &Map<String, Value>, game_ini: bool) -> Result<Document, String> {
+    let mut document = raw_extra_document(settings, game_ini)?;
+    mod_configuration::append(settings, game_ini, &mut document)?;
+    Ok(document)
+}
+
 fn prepare_rendered(
     rendered: &str,
     settings: &Map<String, Value>,
     game_ini: bool,
 ) -> Result<Document, String> {
     let mut document = Document::parse(rendered)?;
-    let extra = extra_document(settings, game_ini)?;
+    let extra = raw_extra_document(settings, game_ini)?;
     let keys = extra.keys();
     // Raw extra is an explicit final override. Replace the entire repeated sequence
     // for its exact native key, retaining every row supplied in that sequence.
@@ -294,13 +303,9 @@ fn prepare_rendered(
             assignment(line).is_none_or(|key| !keys.contains(&(section.name.clone(), key)))
         });
     }
-    Ok(merge(
-        document,
-        extra,
-        &HashSet::new(),
-        &HashSet::new(),
-        false,
-    ))
+    let mut document = merge(document, extra, &HashSet::new(), &HashSet::new(), false);
+    mod_configuration::append(settings, game_ini, &mut document)?;
+    Ok(document)
 }
 
 fn read_document(

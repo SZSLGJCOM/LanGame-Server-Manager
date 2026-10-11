@@ -101,7 +101,7 @@ fn pending_stdin_observation_reclaims_returned_writers_and_rejects_another_run()
     supervisor.insert_running(running_summary(), None, vec![process]);
     assert!(
         !supervisor
-            .has_pending_command_dispatches("stdin-cancellation", 1)
+            .has_pending_command_dispatches("stdin-cancellation", 1, None)
             .unwrap()
     );
     let lease = supervisor
@@ -109,11 +109,11 @@ fn pending_stdin_observation_reclaims_returned_writers_and_rejects_another_run()
         .unwrap();
     assert!(
         supervisor
-            .has_pending_command_dispatches("stdin-cancellation", 1)
+            .has_pending_command_dispatches("stdin-cancellation", 1, None)
             .unwrap()
     );
     assert!(matches!(
-        supervisor.has_pending_command_dispatches("stdin-cancellation", 2),
+        supervisor.has_pending_command_dispatches("stdin-cancellation", 2, None),
         Err(RuntimeProcessError::TrackedInstanceRunChanged {
             expected_run_id: 2,
             ..
@@ -124,7 +124,7 @@ fn pending_stdin_observation_reclaims_returned_writers_and_rejects_another_run()
     assert_eq!(lease.return_stdin(), "stdin-cancellation");
     assert!(
         !supervisor
-            .has_pending_command_dispatches("stdin-cancellation", 1)
+            .has_pending_command_dispatches("stdin-cancellation", 1, None)
             .unwrap()
     );
     let next = supervisor
@@ -133,9 +133,55 @@ fn pending_stdin_observation_reclaims_returned_writers_and_rejects_another_run()
     supervisor.finish_command_dispatch(next);
     assert!(
         !supervisor
-            .has_pending_command_dispatches("absent-instance", 1)
+            .has_pending_command_dispatches("absent-instance", 1, None)
             .unwrap()
     );
+}
+
+#[test]
+fn pending_stdin_session_survives_primary_exit_and_rejects_another_session() {
+    let (primary, primary_cleanup) = stdin_process();
+    let (mut extra, extra_cleanup) = stdin_process();
+    extra.run_id = 2;
+    extra.process_key = "extra".into();
+    extra.is_primary = false;
+    let mut summary = running_summary();
+    summary.active_process_count = 2;
+    let mut supervisor = RuntimeSupervisor::default();
+    supervisor.insert_running(summary, Some("launch-session".into()), vec![primary, extra]);
+    let lease = supervisor
+        .begin_command_dispatch("stdin-cancellation", Some("extra"))
+        .unwrap();
+    primary_cleanup.0.terminate().unwrap();
+    assert!(primary_cleanup.0.wait_for_exit(3000).unwrap());
+    assert_eq!(supervisor.reap_exited().unwrap().len(), 1);
+    assert!(extra_cleanup.0.is_running().unwrap());
+    assert!(
+        supervisor
+            .has_pending_command_dispatches("stdin-cancellation", 1, Some("launch-session"))
+            .unwrap(),
+        "reaping the original primary does not replace the launch session"
+    );
+    for expected_session in [Some("other-session"), None] {
+        assert!(matches!(
+            supervisor.has_pending_command_dispatches("stdin-cancellation", 1, expected_session),
+            Err(RuntimeProcessError::TrackedInstanceRunChanged {
+                expected_run_id: 1,
+                ..
+            })
+        ));
+    }
+    assert_eq!(lease.return_stdin(), "stdin-cancellation");
+    assert!(
+        !supervisor
+            .has_pending_command_dispatches("stdin-cancellation", 1, Some("launch-session"))
+            .unwrap(),
+        "the same session must reclaim the remaining map's returned writer"
+    );
+    let next = supervisor
+        .begin_command_dispatch("stdin-cancellation", Some("extra"))
+        .unwrap();
+    supervisor.finish_command_dispatch(next);
 }
 
 #[test]

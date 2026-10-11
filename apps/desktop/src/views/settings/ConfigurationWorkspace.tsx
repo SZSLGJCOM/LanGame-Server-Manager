@@ -50,6 +50,9 @@ import { useInstancePortRegistration } from "./useInstancePortRegistration";
 import { useModuleConfigurationIcons } from "./useModuleConfigurationIcons";
 import type { InstanceArchiveDetails } from "../../storage-management-types";
 import { buildSavedConfigurationSchema } from "./saved-configuration-schema";
+import { useArkMapAvailability } from "./useArkMapAvailability";
+import { ArkMapAvailabilityNotice, ArkMapUnavailableWarning } from "./ArkMapAvailabilityNotice";
+import { arkMapSelectionErrorMessage, buildArkMapSelectionPatch } from "./ark-cluster-maps";
 
 export {
   focusConfigurationControl,
@@ -119,6 +122,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
       summary: { ...props.moduleDetails.summary, name }
     };
   }, [locale, props.moduleDetails]);
+  const arkMapAvailability = useArkMapAvailability(props.details, localizedModuleDetails, locale, t, !readOnly);
   const moduleContext = useMemo(() => ({ locale, t }), [locale, t]);
   const [bindIp, setBindIp] = useState(props.details.summary.bind_ip);
   const [settingsJson, setSettingsJson] = useState(() => {
@@ -129,6 +133,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     return serializeSettingsObject(moduleDefinition.initializeSettings(parsed.value, moduleContext));
   });
   const [requestedSectionId, setRequestedSectionId] = useState<string | null>(null);
+  const [mapSelectionError, setMapSelectionError] = useState<string | null>(null);
   const [requestedFocusId, setRequestedFocusId] = useState<string | null>(null);
   const [networkValidationBlocked, setNetworkValidationBlocked] = useState(false);
   const { ports, defaultPorts, setPorts } = useInstancePortRegistration(
@@ -136,10 +141,12 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     localizedModuleDetails
   );
 
-  const moduleSchema = useMemo(
-    () => parseGuidedSettingsSchema(localizedModuleDetails, locale, t, { fieldIcons: configurationIcons.icons }),
-    [configurationIcons.icons, locale, localizedModuleDetails, t]
-  );
+  const parsedModuleSchema = useMemo(() => parseGuidedSettingsSchema(localizedModuleDetails, locale, t,
+    { fieldIcons: configurationIcons.icons }), [configurationIcons.icons, locale, localizedModuleDetails, t]);
+  const moduleSchema = useMemo(() => arkMapAvailability ? { ...parsedModuleSchema,
+    fields: parsedModuleSchema.fields.map((field) => field.key === "map_name"
+      ? { ...field, suggestions: [...arkMapAvailability.choices] } : field)
+  } : parsedModuleSchema, [arkMapAvailability?.choices, parsedModuleSchema]);
   const settingsParseResult = useMemo(
     () => parseSettingsObject(settingsJson, t),
     [settingsJson, t]
@@ -231,6 +238,10 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   </details> : null;
 
   useLayoutEffect(() => {
+    setMapSelectionError(null);
+  }, [props.details.summary.id, props.details.settings_json, locale]);
+
+  useLayoutEffect(() => {
     if (requestedFocusId && focusConfigurationControl(requestedFocusId)) {
       setRequestedFocusId(null);
     }
@@ -250,6 +261,14 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   }
 
   function handleFieldChange(field: Parameters<typeof writeGuidedFieldValue>[1], value: unknown) {
+    if (field.key === "map_name" && arkMapAvailability && settingsParseResult.value) {
+      try {
+        const patch = buildArkMapSelectionPatch(settingsParseResult.value, String(value), arkMapAvailability.choices, { map_name: value });
+        commitSettings((current) => applyPatch(current, patch));
+        setMapSelectionError(null);
+      } catch (cause) { setMapSelectionError(arkMapSelectionErrorMessage(cause, t)); }
+      return;
+    }
     commitSettings((current) => {
       const written = writeGuidedFieldValue(current, field, value);
       return applyPatch(current, { [field.key]: written[field.key] });
@@ -321,7 +340,6 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   const showInstanceSaveStatus = activeGuidedFields.length > 0 ||
     activeNode.builtInEditor === "instance-network" ||
     !activeSpecializedRenderers.some((renderer) => renderer.saveMode && renderer.saveMode !== "instance-settings");
-  const WorkspaceToolbar = readOnly ? undefined : moduleDefinition?.workspaceToolbar;
   const WorkspaceProvider = readOnly ? undefined : moduleDefinition?.workspaceProvider;
   const renderSpecializedRenderers = (placement: "before-fields" | "after-fields") => (
     settingsParseResult.value ? (
@@ -340,6 +358,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               <registration.Renderer sectionId={registration.sectionId} active={registration.sectionId === selectedSectionId}
                 fieldKey={registration.fieldKey} details={props.details}
                 moduleDetails={localizedModuleDetails} settings={settingsParseResult.value!}
+                arkMapAvailability={arkMapAvailability}
                 disabled={editorDisabled}
                 onNavigateField={navigateValidationField}
                 onPatch={(patch) => commitSettings((current) => applyPatch(current, patch))} />
@@ -351,11 +370,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
   );
 
   const workspace = (
-    <section className={`configuration-workspace${WorkspaceToolbar ? " configuration-workspace--toolbar" : ""}`}>
-      {WorkspaceToolbar && settingsParseResult.value ? <WorkspaceToolbar
-        sectionId={selectedSectionId} details={props.details} moduleDetails={localizedModuleDetails}
-        settings={settingsParseResult.value} schema={schema} disabled={editorDisabled}
-        onPatch={(patch) => commitSettings((current) => applyPatch(current, patch))} /> : null}
+    <section className="configuration-workspace">
       <div className="configuration-workspace__body" data-navigation-open={navigationOpen || undefined}
         onKeyDown={(event) => {
           if (event.key === "Escape" && !event.nativeEvent.isComposing && navigationOpen) {
@@ -413,6 +428,12 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
               </div>
             </div> : null}
             {renderSpecializedRenderers("before-fields")}
+            {arkMapAvailability && selectedSectionId === "room" ? <>
+              <ArkMapAvailabilityNotice availability={arkMapAvailability} />
+              <ArkMapUnavailableWarning availability={arkMapAvailability}
+                map={String(settingsParseResult.value?.map_name ?? schema.fields.find((field) => field.key === "map_name")?.defaultValue ?? "")} />
+              {mapSelectionError ? <ActivityNotice tone="error">{mapSelectionError}</ActivityNotice> : null}
+            </> : null}
             {activeGuidedFields.length > 0 ? (
               <GuidedSettingsForm schema={schema} settings={settingsParseResult.value ?? {}}
                 moduleDetails={localizedModuleDetails} selectedSectionId={selectedSectionId}

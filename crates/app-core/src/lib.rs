@@ -12,6 +12,7 @@ mod download_integrity;
 pub use download_integrity::DownloadIntegritySpec;
 pub mod ark_cluster;
 pub mod ark_maps;
+pub mod ark_mods;
 pub mod astroneer_saves;
 pub mod dragonwilds_world;
 pub mod dst_shards;

@@ -1,4 +1,4 @@
-use super::native_line_is_current;
+use super::{has_asa_ready_marker, native_line_is_current};
 use crate::atomic_file::compare_and_swap_optional_file_atomically;
 use crate::managed_console_log::owned_fs::{FileIdentity, identity, reject_links};
 use app_core::InstanceProcessState;
@@ -14,10 +14,14 @@ const MAX_LINE_BYTES: u64 = 16 * 1024;
 const CHECK_BYTES: u64 = 64;
 const MAX_MAPS: usize = 16;
 const CAS_ATTEMPTS: usize = 3;
+const READY_MARKER_VERSION: u8 = 2;
+const READY_PREFIX_BYTES: usize = 128;
 
 #[derive(Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Checkpoint {
+    #[serde(default)]
+    ready_marker_version: u8,
     group_run_id: i64,
     entries: BTreeMap<String, Entry>,
 }
@@ -60,7 +64,7 @@ impl Entry {
     fn valid(&self) -> bool {
         self.head.len() <= CHECK_BYTES as usize
             && self.anchor.len() <= CHECK_BYTES as usize
-            && self.partial.prefix.len() <= 25
+            && self.partial.prefix.len() <= READY_PREFIX_BYTES
             && self.partial.suffix.len() <= 32
             && self.partial.length <= MAX_LINE_BYTES + 1
             && self.offset <= self.observed_length
@@ -222,7 +226,13 @@ fn load(path: &Path) -> io::Result<(Checkpoint, Option<Vec<u8>>)> {
     let file = match File::open(path) {
         Ok(file) => file,
         Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            return Ok((Checkpoint::default(), None));
+            return Ok((
+                Checkpoint {
+                    ready_marker_version: READY_MARKER_VERSION,
+                    ..Checkpoint::default()
+                },
+                None,
+            ));
         }
         Err(error) => return Err(error),
     };
@@ -239,8 +249,9 @@ fn load(path: &Path) -> io::Result<(Checkpoint, Option<Vec<u8>>)> {
             "ARK readiness evidence grew beyond its limit",
         ));
     }
-    let checkpoint: Checkpoint = serde_json::from_slice(&bytes).map_err(io::Error::other)?;
+    let mut checkpoint: Checkpoint = serde_json::from_slice(&bytes).map_err(io::Error::other)?;
     if checkpoint.group_run_id < 0
+        || checkpoint.ready_marker_version > READY_MARKER_VERSION
         || (checkpoint.group_run_id == 0 && !checkpoint.entries.is_empty())
         || checkpoint.entries.len() > MAX_MAPS
         || checkpoint.entries.values().any(|entry| !entry.valid())
@@ -248,6 +259,12 @@ fn load(path: &Path) -> io::Result<(Checkpoint, Option<Vec<u8>>)> {
         return Err(io::Error::other(
             "ARK readiness evidence has invalid bounded state",
         ));
+    }
+    if checkpoint.ready_marker_version != READY_MARKER_VERSION {
+        // Old readiness may have latched ASA's early banner or a server name.
+        // Rebuild only derived cursors and retain the group's generation guard.
+        checkpoint.entries.clear();
+        checkpoint.ready_marker_version = READY_MARKER_VERSION;
     }
     Ok((checkpoint, Some(bytes)))
 }
@@ -308,16 +325,14 @@ fn scan_fragment(
         .min(MAX_LINE_BYTES + 1);
     partial.skip |= partial.length > MAX_LINE_BYTES;
     if !partial.skip {
-        let needed = 25 - partial.prefix.len();
+        let needed = READY_PREFIX_BYTES - partial.prefix.len();
         partial
             .prefix
             .extend_from_slice(&fragment[..needed.min(fragment.len())]);
-        let mut combined = std::mem::take(&mut partial.suffix);
-        combined.extend_from_slice(fragment);
-        let text = String::from_utf8_lossy(&combined).to_ascii_lowercase();
-        partial.marker |=
-            text.contains("has successfully started") || text.contains("advertising for join");
-        partial.suffix = combined[combined.len().saturating_sub(32)..].to_vec();
+        // The native timestamp/frame and final message fit this bounded prefix.
+        // Searching later fragments could mistake a server name for readiness.
+        let text = String::from_utf8_lossy(&partial.prefix).to_ascii_lowercase();
+        partial.marker = has_asa_ready_marker(&text);
     }
     if complete {
         if !partial.skip

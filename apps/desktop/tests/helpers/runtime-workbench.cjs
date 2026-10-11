@@ -37,6 +37,7 @@ function mountWorkbench(registration, options = {}) {
       useEffect: (effect) => effects.push(effect),
       useLayoutEffect: (effect) => effects.push(effect),
       useMemo: (read) => read(),
+      useId: () => "runtime-tooltip",
       useRef: (current) => ({ current }),
       useState: (initial) => {
         const index = states.length;

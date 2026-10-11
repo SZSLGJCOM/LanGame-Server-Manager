@@ -1,5 +1,3 @@
-import { isTauri } from "@tauri-apps/api/core";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { startTransition, type DragEvent, type PointerEvent, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   downloadSteamWorkshopItems,
@@ -18,6 +16,7 @@ import {
 } from "../../api";
 import { describeError, isActiveJobStatus } from "../../app-state";
 import { formatDesktopError } from "../../desktop-error-message";
+import { DesktopFileDropError, droppedFilePaths, modDropEffect } from "../../desktop-file-drop";
 import type { InstanceArchiveDetails } from "../../storage-management-types";
 import { ShellIcon } from "../../components/ShellIcon";
 import { ActivityNotice } from "../../components/ActivityNotice";
@@ -50,6 +49,8 @@ import { composeWorkshopLookups, rememberWorkshopPresentation, type WorkshopPres
 import { DstWorkshopConfiguration } from "./DstWorkshopConfiguration";
 import { ProjectZomboidMapOrderEditor, validateProjectZomboidMapOrder } from "./ProjectZomboidMapOrderEditor";
 import { WorkshopManifestPanel } from "./WorkshopManifestPanel";
+import { AsaModManifestPanel } from "./AsaModManifestPanel";
+import { AsaModConfiguration } from "./AsaModConfiguration";
 import { WorkshopCollectionLibrary } from "./WorkshopCollectionLibrary";
 import { WorkshopCollectionRemovalDialog } from "./WorkshopCollectionRemovalDialog";
 import { useWorkshopCollectionRemoval } from "./useWorkshopCollectionRemoval";
@@ -139,27 +140,6 @@ export interface ModWorkbenchProps {
   jobs?: BackgroundJob[];
   launchPlan: LaunchPlan | null;
   onSaveSettings?: (input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions) => Promise<InstanceDetails | undefined>;
-}
-
-function pointHitsElement(element: HTMLElement | null, position: { x: number; y: number }): boolean {
-  if (!element) {
-    return false;
-  }
-  const scale = window.devicePixelRatio || 1;
-  const x = position.x / scale;
-  const y = position.y / scale;
-  const rect = element.getBoundingClientRect();
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-}
-
-function pathsFromDomDrop(event: DragEvent<HTMLElement>): string[] {
-  return Array.from(event.dataTransfer.files)
-    .map((file) => {
-      const tauriPath = (file as File & { path?: string }).path;
-      return typeof tauriPath === "string" ? tauriPath : "";
-    })
-    .map((path) => path.trim())
-    .filter(Boolean);
 }
 
 function referencesFromDomDrop(event: DragEvent<HTMLElement>): string[] {
@@ -270,7 +250,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [activeDetailSource, setActiveDetailSource] = useState<"enabled" | "inventory">("enabled");
   const [draggedEnabledRow, setDraggedEnabledRow] = useState<ModEnabledRow | null>(null);
   const [enabledDropTargetKey, setEnabledDropTargetKey] = useState<string | null>(null);
-  const manualDropZoneRef = useRef<HTMLDivElement | null>(null);
+  const manualDropRequest = useRef<AbortController | null>(null);
   const browsePaneRef = useRef<HTMLDivElement | null>(null);
   const [manualDropActive, setManualDropActive] = useState(false);
   const [manualStageState, setManualStageState] = useState<"idle" | "running" | "success" | "error">("idle");
@@ -647,7 +627,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }, [readOnly, manualStaging, props.details.summary.id, scanNonce, t]);
 
   const handleStageManualModPaths = useCallback(async (paths: string[]) => {
-    const cleanPaths = Array.from(new Set(paths.map((path) => path.trim()).filter(Boolean)));
+    const cleanPaths = Array.from(new Set(paths.filter((path) => path.trim().length > 0)));
     if (readOnly || !manualStaging) {
       return;
     }
@@ -693,52 +673,24 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     }
   }, [manualStaging, moduleId, props.details.summary.id, runModMutation, t]);
 
-  useEffect(() => {
-    if (readOnly || !manualStaging || props.moduleDetails?.workshop?.provider === "steam" || !isTauri()) {
-      return;
-    }
+  useEffect(() => () => manualDropRequest.current?.abort(), [props.details.summary.id, moduleId, activeWorkbenchView, manifestMode]);
 
-    let disposed = false;
-    let unlisten: (() => void) | null = null;
-    getCurrentWebview().onDragDropEvent((event) => {
-      if (disposed) {
-        return;
-      }
-      if (event.payload.type === "enter" || event.payload.type === "over") {
-        setManualDropActive(pointHitsElement(manualDropZoneRef.current, event.payload.position));
-        return;
-      }
-      if (event.payload.type === "leave") {
-        setManualDropActive(false);
-        return;
-      }
-      if (event.payload.type === "drop") {
-        const hitsDropZone = pointHitsElement(manualDropZoneRef.current, event.payload.position);
-        setManualDropActive(false);
-        if (hitsDropZone) {
-          void handleStageManualModPaths(event.payload.paths);
-        }
-      }
-    }).then((cleanup) => {
-      if (disposed) {
-        cleanup();
-      } else {
-        unlisten = cleanup;
-      }
-    }).catch((error) => {
-      setManualStageError(t(
-        "servers.mods.manualStageFailed",
-        { message: describeError(error) },
-        "Mod file installation failed: {message}"
-      ));
+  async function handleManualFileDrop(transfer: DataTransfer) {
+    manualDropRequest.current?.abort();
+    const request = new AbortController();
+    manualDropRequest.current = request;
+    try {
+      const paths = await droppedFilePaths(transfer, request.signal);
+      if (!request.signal.aborted) await handleStageManualModPaths(paths);
+    } catch (error) {
+      if (request.signal.aborted) return;
+      setManualStageError(t(error instanceof DesktopFileDropError && error.code === "too_many"
+        ? "servers.mods.manualDropTooMany" : "servers.mods.manualDropUnavailable"));
       setManualStageState("error");
-    });
-
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
-  }, [readOnly, handleStageManualModPaths, manualStaging, props.moduleDetails?.workshop?.provider, t]);
+    } finally {
+      if (manualDropRequest.current === request) manualDropRequest.current = null;
+    }
+  }
 
   async function readWritableInstanceState(): Promise<{
     details: InstanceDetails;
@@ -789,6 +741,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       .some((key) => changedSettingKeys(nextSettings, latestState.settings, [key]).length > 0)) {
       throw new Error(dirtyKeys.includes("steam_workshop_collections")
         ? t("servers.mods.collections.conflict", undefined, "The instance's collections changed elsewhere. Reload and retry.")
+        : dirtyKeys.includes("asa_mod_configurations")
+          ? t("servers.mods.configurationConflict", undefined, "Mod configuration changed elsewhere. Reload the saved settings before applying your draft.")
         : t("projectzomboid.mods.maps.conflict", undefined, "Map order changed elsewhere. Reload the saved order before applying your changes."));
     }
     const mergedSettings = mergeSettingPatch(latestState.settings, nextSettings, dirtyKeys);
@@ -1880,6 +1834,25 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       );
     }
 
+    const asaConfigId = canonicalAsaModId(resolvedDetailSource === "enabled"
+      ? selectedRow?.id ?? "" : inventoryItem?.inferred_id ?? "");
+    if (moduleId === "arksurvivalascended" && asaConfigId) {
+      return <div className="mw-selected-config-panel"><AsaModConfiguration
+        key={props.details.summary.id} instanceId={props.details.summary.id} modId={asaConfigId} settings={settings}
+        disabled={modMutationsDisabled} readOnly={readOnly}
+        installed={manualInventoryItems.some((item) => item.inferred_id === asaConfigId && item.file_count > 0)}
+        onSave={async (next, expected) => {
+          let saved = next;
+          await runModMutation("configuration", async () => { saved = await persistSettings(next, expected); });
+          return saved;
+        }}
+        onReload={async () => {
+          let fresh = settings;
+          await runModMutation("configuration", async () => { fresh = (await readWritableInstanceState()).settings; });
+          return fresh;
+        }}
+      /></div>;
+    }
     if (resolvedDetailSource === "inventory") {
       return (
         <div className="mw-selected-config-panel">
@@ -1904,7 +1877,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     const selectedId = selectedRow.id;
     const emptyConfigMessage = selectedEntry.kind === "steam-item" || selectedEntry.kind === "steam-collection"
       ? t("servers.mods.configPanel.downloadOnly", undefined, "This entry controls downloads or collection membership. Select an enabled mod row to edit per-mod settings.")
-      : t("servers.mods.configPanel.noEditor", undefined, "This mod does not expose an editable configuration panel here yet.");
+      : t("servers.mods.configPanel.noEditor", undefined, "The manager does not yet provide a configuration panel for this mod. See the configuration instructions provided by the mod author.");
 
     return moduleId === "dontstarve" && selectedId && selectedEntry.kind !== "steam-collection"
       ? <div className="mw-selected-config-panel">{renderDstConfiguration(selectedId)}</div>
@@ -2068,7 +2041,16 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 <ShellIcon name="folder" className="mw-btn-icon" />{t("servers.mods.openFolder", undefined, "Open Mod folder")}
               </button> : null}
             </div>
-            <div className="mw-detail-panel">{manifestMode && expectedAppId ? <WorkshopManifestPanel
+            <div className="mw-detail-panel">{manifestMode && moduleId === "arksurvivalascended" ? <AsaModManifestPanel
+              key={props.details.summary.id} instanceId={props.details.summary.id}
+              currentIds={asaMembership.active} initialText={manifestDraft} onDraftChange={setManifestDraft}
+              disabled={modMutationsDisabled} readOnly={readOnly}
+              blockedNote={asaRawFlagsActive ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING) : undefined}
+              onApply={async (ids) => {
+                await runModMutation("enablement", () => applyAsaModAction(ids, "add"));
+                return true;
+              }}
+            /> : manifestMode && expectedAppId ? <WorkshopManifestPanel
               key={props.details.summary.id} instanceId={props.details.summary.id} appId={expectedAppId}
               initialText={manifestDraft} onDraftChange={setManifestDraft}
               currentIds={uniqueEntries([...workshopIds, ...(moduleId === "dontstarve" ? enabledRows.map((row) => row.id) : [])])} disabled={modMutationsDisabled}
@@ -2361,13 +2343,20 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 type="button"
                 role="tab"
                 disabled={readOnly && tab.id === "store"}
-                aria-selected={activeWorkbenchView === tab.id}
-                className={activeWorkbenchView === tab.id ? "mw-sort-pill mw-sort-pill--active" : "mw-sort-pill"}
-                onClick={() => setActiveWorkbenchView(tab.id)}
+                aria-selected={activeWorkbenchView === tab.id && !manifestMode}
+                className={activeWorkbenchView === tab.id && !manifestMode ? "mw-sort-pill mw-sort-pill--active" : "mw-sort-pill"}
+                onClick={() => { setActiveWorkbenchView(tab.id); setManifestMode(false); }}
               >
                 {t(tab.labelKey, undefined, tab.fallback)}
               </button>
             ))}
+            {moduleId === "arksurvivalascended" ? <button
+              type="button" role="tab"
+              aria-selected={activeWorkbenchView === "config" && manifestMode}
+              className={activeWorkbenchView === "config" && manifestMode ? "mw-sort-pill mw-sort-pill--active" : "mw-sort-pill"}
+              disabled={mutationBusy || readOnly}
+              onClick={() => { setActiveWorkbenchView("config"); setManifestMode(true); }}
+            >{t("servers.mods.manifest.mode")}</button> : null}
           </div>
           {activeWorkbenchView === "store" && manualSourceInstallNote
             ? <ManualModInstallHelp key={moduleId} note={manualSourceInstallNote} /> : null}
@@ -2378,6 +2367,13 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderCommunitySourcePane() {
+    const updateDropFeedback = (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      const effect = modMutationsDisabled ? "none" : modDropEffect(event.dataTransfer, canUseManualReferences);
+      event.dataTransfer.dropEffect = effect;
+      setManualDropActive(event.type !== "drop" && effect !== "none");
+      return effect;
+    };
     const dropZoneClassName = [
       "mw-dropzone",
       manualDropActive ? "mw-dropzone--active" : "",
@@ -2388,34 +2384,22 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       <div className={manualStaging ? "mw-manual-pane mw-manual-pane--has-dropzone" : "mw-manual-pane"}>
         {manualStaging ? (
           <div
-            ref={manualDropZoneRef}
             className={dropZoneClassName}
-            aria-disabled={modEnablementDisabled}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              if (modMutationsDisabled) {
-                return;
-              }
-              setManualDropActive(true);
-            }}
-            onDragOver={(event) => {
-              event.preventDefault();
-              if (modMutationsDisabled) {
-                event.dataTransfer.dropEffect = "none";
-                return;
-              }
-              event.dataTransfer.dropEffect = "copy";
-              setManualDropActive(true);
-            }}
+            aria-disabled={modMutationsDisabled}
+            onDragEnter={updateDropFeedback}
+            onDragOver={updateDropFeedback}
             onDragLeave={(event) => {
               if (event.currentTarget === event.target) {
                 setManualDropActive(false);
               }
             }}
             onDrop={(event) => {
-              event.preventDefault();
-              setManualDropActive(false);
-              if (modMutationsDisabled) {
+              if (updateDropFeedback(event) === "none") {
+                return;
+              }
+              // Files take precedence over incidental browser-provided file URL/text formats.
+              if (event.dataTransfer.files.length || Array.from(event.dataTransfer.items).some((item) => item.kind === "file")) {
+                void handleManualFileDrop(event.dataTransfer);
                 return;
               }
               const references = referencesFromDomDrop(event);
@@ -2423,9 +2407,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 void handleEnableManualReferences(references);
                 return;
               }
-              const paths = pathsFromDomDrop(event);
-              if (paths.length > 0 || !canUseManualReferences) {
-                void handleStageManualModPaths(paths);
+              if (!canUseManualReferences) {
+                void handleStageManualModPaths([]);
                 return;
               }
               void handleEnableManualReferences([]);

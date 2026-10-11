@@ -1,6 +1,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { recordTree } = require("../scripts/verify_desktop_reliability.cjs");
+const { recordTree, readHostEvidence } = require("../scripts/verify_desktop_reliability.cjs");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
 
 const processRow = (ProcessId, ParentProcessId, Created) => ({ ProcessId, ParentProcessId, Created });
 
@@ -21,4 +24,24 @@ test("an observed parent cannot claim a process born before it", () => {
   const observed = new Map([[42, "100"]]);
   recordTree([processRow(50, 42, "90")], 42, observed);
   assert.equal(observed.has(50), false);
+});
+
+test("failed native host reads its actual cause without requiring a success report", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-desktop-readback-"));
+  try {
+    const cause = { error: "Native drop [Files/drop-result] page exception: fixture failure", browser_process_ids: [1], server_pid: 2 };
+    await fs.writeFile(path.join(root, "failure.json"), JSON.stringify(cause), { flag: "wx" });
+    const result = await readHostEvidence(root, { code: 1, signal: null });
+    assert.deepEqual(result, { report: null, failure: cause, readError: null });
+    const missing = await readHostEvidence(root, { code: null, signal: "SIGTERM" });
+    assert.deepEqual(missing.failure, cause);
+    await fs.unlink(path.join(root, "failure.json"));
+    const killed = await readHostEvidence(root, { code: null, signal: "SIGTERM" });
+    assert.equal(killed.report, null);
+    assert.equal(killed.failure, null);
+    assert.match(killed.readError, /failure\.json/);
+  } finally {
+    assert.equal(path.dirname(root), path.resolve(os.tmpdir()));
+    await fs.rm(root, { recursive: true, force: false });
+  }
 });

@@ -218,6 +218,34 @@ impl RuntimeSupervisor {
             .map_err(|source| RuntimeProcessError::WaitTrackedProcess { pid, source })
     }
 
+    /// Inspect one exact launch's complete owned tree without reaping it.
+    /// `None` means its run/PID has no owner that can prove descendant exit.
+    pub fn owned_process_tree_is_running(
+        &mut self,
+        instance_id: &str,
+        run_id: i64,
+        process_key: &str,
+        pid: u32,
+    ) -> Result<Option<bool>, RuntimeProcessError> {
+        let child = self.instances.get_mut(instance_id).and_then(|instance| {
+            instance.processes.iter_mut().find_map(|process| {
+                if process.run_id != run_id
+                    || process.pid != pid
+                    || !process.process_key.eq_ignore_ascii_case(process_key)
+                {
+                    return None;
+                }
+                process.child.as_mut()
+            })
+        });
+        let Some(child) = child else {
+            return Ok(None);
+        };
+        child
+            .owned_process_tree_is_running()
+            .map_err(|source| RuntimeProcessError::WaitTrackedProcess { pid, source })
+    }
+
     /// Inspect the complete owned trees without reaping or terminating them.
     /// `None` means ownership cannot prove that every descendant has exited.
     pub fn instance_process_tree_is_running(
@@ -518,19 +546,25 @@ impl RuntimeSupervisor {
         instance.stdin_dispatches.begin(instance_id, process)
     }
 
-    /// Reclaim returned stdin only from the current instance owner. Stop callers
-    /// can wait for an earlier accepted writer without replaying its command.
+    /// Reclaim returned stdin only from the current instance owner. A launch
+    /// session remains stable when reaping promotes another map to primary.
     pub fn has_pending_command_dispatches(
         &mut self,
         instance_id: &str,
         expected_run_id: i64,
+        expected_session_id: Option<&str>,
     ) -> Result<bool, RuntimeProcessError> {
         let Some(instance) = self.instances.get_mut(instance_id) else {
             return Ok(false);
         };
-        if select_primary_managed_process(&instance.processes).map(|process| process.run_id)
-            != Some(expected_run_id)
-        {
+        let matches_owner = match expected_session_id {
+            Some(session_id) => instance.session_id.as_deref() == Some(session_id),
+            None => {
+                select_primary_managed_process(&instance.processes).map(|process| process.run_id)
+                    == Some(expected_run_id)
+            }
+        };
+        if !matches_owner {
             return Err(RuntimeProcessError::TrackedInstanceRunChanged {
                 instance_id: instance_id.to_owned(),
                 expected_run_id,

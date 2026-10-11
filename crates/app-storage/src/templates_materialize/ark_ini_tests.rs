@@ -303,6 +303,8 @@ fn ark_ini_invalid_native_file_rolls_back_rendered_configuration() {
 mod encoding_tests;
 #[path = "ark_ini_history_tests.rs"]
 mod history_tests;
+#[path = "ark_mod_configuration_tests.rs"]
+mod mod_configuration_tests;
 
 #[test]
 fn ark_ini_prefixed_rules_canonicalize_native_assignment_spacing() {

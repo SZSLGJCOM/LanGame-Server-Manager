@@ -1,5 +1,20 @@
 use super::*;
 
+#[cfg(windows)]
+#[test]
+fn native_endpoint_observation_preserves_owned_udp_and_tcp_listeners() {
+    let udp = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let tcp = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let pid = std::process::id();
+    let udp_port = udp.local_addr().unwrap().port();
+    let tcp_port = tcp.local_addr().unwrap().port();
+    let endpoints = observe_endpoints().unwrap();
+    assert!(endpoints[&(pid, String::from("udp"))].contains(&udp_port));
+    assert!(endpoints[&(pid, String::from("tcp"))].contains(&tcp_port));
+    assert!(owned_udp_ports_for_pid(pid).unwrap().contains(&udp_port));
+    assert!(!owned_udp_ports_for_pid(0).unwrap().contains(&udp_port));
+}
+
 struct Fixture {
     root: PathBuf,
     instance: InstanceDetails,
@@ -7,17 +22,33 @@ struct Fixture {
 
 impl Fixture {
     fn new(module_id: &str) -> Self {
+        Self::with_additional_maps(
+            module_id,
+            vec![
+                json!({"id":"desert","name":"Desert","map_name":"ScorchedEarth_P","enabled":true}),
+            ],
+        )
+    }
+    fn with_additional_maps(module_id: &str, additional_maps: Vec<Value>) -> Self {
         let root = std::env::temp_dir().join(format!("lg-ark-readiness-{}", Uuid::new_v4()));
         fs::create_dir_all(root.join("config")).unwrap();
         fs::create_dir_all(root.join("logs")).unwrap();
-        let processes = ["main", "map-desert"]
-            .into_iter()
+        let process_keys = std::iter::once(String::from("main"))
+            .chain(
+                additional_maps
+                    .iter()
+                    .map(|map| format!("map-{}", map["id"].as_str().unwrap())),
+            )
+            .collect::<Vec<_>>();
+        let process_count = process_keys.len();
+        let processes = process_keys
+            .iter()
             .enumerate()
             .map(|(index, key)| InstanceProcessState {
                 run_id: index as i64 + 1,
                 session_id: Some("same-session".into()),
-                process_key: key.into(),
-                display_name: key.into(),
+                process_key: key.clone(),
+                display_name: key.clone(),
                 pid: Some(100 + index as u32),
                 process_identity: Some(ProcessIdentity {
                     creation_time: 134_352_037_230_000_000,
@@ -32,16 +63,23 @@ impl Fixture {
                 is_primary: index == 0,
             })
             .collect::<Vec<_>>();
+        let settings = json!({"additional_maps":additional_maps,"rcon_enabled":false});
+        let defaults = serde_json::from_value::<Vec<app_core::PortBinding>>(json!([
+            {"name":"game","protocol":"udp","port":7777},
+            {"name":"query","protocol":"udp","port":27015},
+            {"name":"rcon","protocol":"tcp","port":27020}
+        ]))
+        .unwrap();
+        let ports =
+            app_core::ark_maps::requested_ports(module_id, &settings, &defaults, &defaults, &[])
+                .unwrap();
         let instance: InstanceDetails = serde_json::from_value(json!({
             "summary": {"id":"owned", "name":"ARK cluster", "module_id":module_id,
-                "status":"Running", "active_process_count":2, "bind_ip":"127.0.0.1", "port_count":6, "autostart":false},
+                "status":"Running", "active_process_count":process_count, "bind_ip":"127.0.0.1", "port_count":ports.len(), "autostart":false},
             "config_file_path":root.join("config/instance.json"), "saves_path":root.join("runtime/ShooterGame/Saved"),
             "auto_backup_on_stop":false, "backup_retention_count":2,
-            "settings_json":json!({"additional_maps":[{"id":"desert","name":"Desert","map_name":"ScorchedEarth_P","enabled":true}],"rcon_enabled":false}).to_string(),
-            "ports":[{"name":"game","protocol":"udp","port":7777},{"name":"query","protocol":"udp","port":27015},
-                {"name":"rcon","protocol":"tcp","port":27020},{"name":"map-desert-game","protocol":"udp","port":7787},
-                {"name":"map-desert-query","protocol":"udp","port":27025},{"name":"map-desert-rcon","protocol":"tcp","port":27030}],
-            "active_run":{"run_id":1,"session_id":"same-session","pid":100,"log_path":null,"process_count":2,"processes":processes}
+            "settings_json":settings.to_string(), "ports":ports,
+            "active_run":{"run_id":1,"session_id":"same-session","pid":100,"log_path":null,"process_count":process_count,"processes":processes}
         })).unwrap();
         for map in app_core::ark_maps::processes(&instance).unwrap() {
             fs::write(map.native_log_path, "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join.\n").unwrap();
@@ -112,9 +150,57 @@ fn asa_primary_readiness_does_not_hide_a_loading_or_failed_secondary_map() {
 }
 
 #[test]
+fn asa_last_map_at_the_supported_limit_requires_its_own_port_and_fatal_free_log() {
+    let additions = (0..app_core::ark_maps::MAX_ADDITIONAL_MAPS)
+        .map(|index| {
+            json!({"id":format!("limit-{index}"), "name":format!("Limit map {index}"),
+                "map_name":"ScorchedEarth_WP", "enabled":true})
+        })
+        .collect();
+    let fixture = Fixture::with_additional_maps("arksurvivalascended", additions);
+    let maps = app_core::ark_maps::processes(&fixture.instance).unwrap();
+    assert_eq!(maps.len(), app_core::ark_maps::MAX_ADDITIONAL_MAPS + 1);
+    let active = fixture.instance.active_run.as_ref().unwrap();
+    let endpoints = maps
+        .iter()
+        .map(|map| {
+            let process = active
+                .processes
+                .iter()
+                .find(|process| process.process_key == map.process_key)
+                .unwrap();
+            let projected =
+                app_core::ark_maps::project_process(&fixture.instance, Some(&map.process_key))
+                    .unwrap();
+            let game = projected
+                .ports
+                .iter()
+                .find(|port| port.name == "game")
+                .unwrap();
+            format!("UDP 127.0.0.1:{} *:* {}", game.port, process.pid.unwrap())
+        })
+        .collect::<Vec<_>>();
+    let ready_endpoints = endpoints.join("\n");
+    assert_eq!(fixture.health(&ready_endpoints).status, "ready");
+    let last = maps.last().unwrap();
+    let missing_last = fixture.health(&endpoints[..endpoints.len() - 1].join("\n"));
+    assert_eq!(missing_last.status, "starting");
+    assert!(missing_last.summary.contains(&last.display_name));
+    fs::write(
+        &last.native_log_path,
+        "[2026.09.30-01.02.05:000][ 1]FATAL: last map failed\n",
+    )
+    .unwrap();
+    let failed = fixture.health(&ready_endpoints);
+    assert_eq!(failed.status, "error");
+    assert_eq!(failed.reason.code, "fatal_log_pattern");
+    assert!(failed.summary.contains(&last.display_name));
+}
+
+#[test]
 fn stale_asa_ready_line_cannot_be_reused_after_restart() {
     let fixture = Fixture::new("arksurvivalascended");
-    fs::write(fixture.extra_log(), "[2026.09.30-01.01.59:999][ 1]Server is advertising for join\n[2026.09.30-01.02.04:001][ 1]Loading assets\n").unwrap();
+    fs::write(fixture.extra_log(), "[2026.09.30-01.01.59:999][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n[2026.09.30-01.02.04:001][ 1]Loading assets\n").unwrap();
     assert_eq!(fixture.health(READY_ENDPOINTS).status, "starting");
 }
 
@@ -134,7 +220,7 @@ fn asa_native_readiness_uses_process_creation_before_delayed_database_registrati
     restarted.process_identity.as_mut().unwrap().creation_time += 10_000_000;
     fs::write(
         fixture.extra_log(),
-        "[2026.09.30-01.02.02:999][ 1]Server is advertising for join\n",
+        "[2026.09.30-01.02.02:999][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n",
     )
     .unwrap();
     assert_eq!(
@@ -205,7 +291,9 @@ fn native_utc_timestamp_obeys_gregorian_dates_and_millisecond_boundaries() {
 #[test]
 fn asa_startup_marker_survives_the_recent_log_window() {
     let mut fixture = Fixture::new("arksurvivalascended");
-    let mut text = String::from("[2026.09.30-01.02.04:001][ 1]Server is advertising for join\n");
+    let mut text = String::from(
+        "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n",
+    );
     for index in 0..300 {
         text.push_str(&format!(
             "[2026.09.30-01.02.05:000][ 1]Map update {index}\n"
@@ -243,7 +331,7 @@ fn asa_map_health_eventually_reaches_a_ready_marker_beyond_prefix_and_tail() {
     let fixture = Fixture::new("arksurvivalascended");
     let loading = "[2026.09.30-01.02.03:500][ 1]Loading synthetic Mod assets and native packages\n";
     let mut text = loading.repeat(30_000);
-    text.push_str("[2026.09.30-01.02.04:001][ 1]Server is advertising for join\n");
+    text.push_str("[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n");
     text.push_str(&loading.repeat(300));
     fs::write(fixture.extra_log(), text).unwrap();
     assert_eq!(fixture.health(READY_ENDPOINTS).status, "starting");
@@ -264,13 +352,13 @@ fn asa_map_health_eventually_reaches_a_ready_marker_beyond_prefix_and_tail() {
 fn prior_native_failure_does_not_override_the_current_map_run() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
         let fixture = Fixture::new(edition);
-        fs::write(fixture.extra_log(), "[2026.09.30-01.01.59:999][ 1]FATAL: previous map run failed\n[2026.09.30-01.02.04:001][ 1]Server is advertising for join\n").unwrap();
+        fs::write(fixture.extra_log(), "[2026.09.30-01.01.59:999][ 1]FATAL: previous map run failed\n[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n").unwrap();
         assert_eq!(
             fixture.health(READY_ENDPOINTS).status,
             "ready",
             "{edition}: stale failure must not apply to the next process"
         );
-        fs::write(fixture.extra_log(), "[2026.09.30-01.02.04:001][ 1]Server is advertising for join\n[2026.09.30-01.02.05:000][ 1]FATAL: current map run failed\n").unwrap();
+        fs::write(fixture.extra_log(), "[2026.09.30-01.02.04:001][ 1]Server has completed startup and is now advertising for join. (7.13GB Mem)\n[2026.09.30-01.02.05:000][ 1]FATAL: current map run failed\n").unwrap();
         assert_eq!(
             fixture.health(READY_ENDPOINTS).status,
             "error",
@@ -336,5 +424,61 @@ fn native_log_age_is_bound_to_the_registered_process_creation_token() {
             )
             .unwrap();
         assert_eq!(current_native_log(&process, &path), expected);
+    }
+}
+
+#[test]
+fn asa_early_success_and_owned_ports_wait_for_each_join_advertisement() {
+    let mut fixture = Fixture::new("arksurvivalascended");
+    let mut settings: Value = serde_json::from_str(&fixture.instance.settings_json).unwrap();
+    settings["rcon_enabled"] = json!(true);
+    fixture.instance.settings_json = settings.to_string();
+    let maps = app_core::ark_maps::processes(&fixture.instance).unwrap();
+    let early = "[2026.09.30-01.02.04:001][ 1]Server has successfully started!\n\
+        [2026.09.30-01.02.04:002][ 1]Full Startup: 14.74 seconds\n";
+    for map in &maps {
+        fs::write(&map.native_log_path, early).unwrap();
+    }
+    let listening = format!(
+        "{READY_ENDPOINTS}TCP 127.0.0.1:27020 0.0.0.0:0 LISTENING 100\nTCP 127.0.0.1:27030 0.0.0.0:0 LISTENING 101\n"
+    );
+    assert_eq!(
+        fixture.health(&listening).status,
+        "starting",
+        "ASA can own every listener while fresh-world startup is still incomplete"
+    );
+    let advertised = "[2026.09.30-01.03.04:001][ 1]Server has completed startup and is now ADVERTISING FOR JOIN.\n";
+    fs::write(&maps[0].native_log_path, format!("{early}{advertised}")).unwrap();
+    assert_eq!(
+        fixture.health(&listening).status,
+        "starting",
+        "one advertised map cannot substitute for another initializing map"
+    );
+    fs::write(&maps[1].native_log_path, format!("{early}{advertised}")).unwrap();
+    assert_eq!(fixture.health(&listening).status, "ready");
+}
+
+#[test]
+fn asa_server_name_cannot_supply_join_readiness_in_an_early_banner() {
+    let fixture = Fixture::new("arksurvivalascended");
+    let maps = app_core::ark_maps::processes(&fixture.instance).unwrap();
+    for name in [
+        "advertising for join",
+        "Server has completed startup and is now advertising for join.",
+    ] {
+        for map in &maps {
+            fs::write(
+                &map.native_log_path,
+                format!(
+                    "[2026.09.30-01.02.04:001][ 1]Server: \"{name}\" has successfully started!\n"
+                ),
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            fixture.health(READY_ENDPOINTS).status,
+            "starting",
+            "a valid server name is not the final startup message: {name}"
+        );
     }
 }

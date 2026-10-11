@@ -79,7 +79,7 @@ fn reject_reparse(path: &Path, metadata: &fs::Metadata) -> Result<(), String> {
     Ok(())
 }
 
-pub(super) fn validate_root_chain(path: &Path) -> Result<(), String> {
+pub(in crate::commands) fn validate_root_chain(path: &Path) -> Result<(), String> {
     for ancestor in path.ancestors().filter(|path| !path.as_os_str().is_empty()) {
         match fs::symlink_metadata(ancestor) {
             Ok(metadata) => reject_reparse(ancestor, &metadata)?,

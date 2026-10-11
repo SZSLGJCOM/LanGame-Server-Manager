@@ -1,4 +1,7 @@
 .ark-map-editor > .ark-editor__hint { margin: 0 0 12px; }
+.ark-map-editor__title-help { cursor: help; border-radius: 4px; }
+.ark-map-editor__title-help:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 4px; }
+.ark-map-editor__game-port { white-space: nowrap; }
 .ark-map-editor__table { min-width: 680px; font-size: var(--text-body); }
 .ark-map-editor__table th:first-child { width: 22%; }
 .ark-map-editor__table td:nth-child(2) { width: 25%; }

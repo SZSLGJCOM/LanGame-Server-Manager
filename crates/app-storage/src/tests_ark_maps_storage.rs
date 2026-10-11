@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "tests_ark_game_logs.rs"]
 mod game_logs;
+#[path = "tests_asa_mod_configuration.rs"]
+mod mod_configuration;
 
 struct MapFixture {
     descriptor: app_modules::ModuleDescriptor,
@@ -140,6 +142,94 @@ impl MapFixture {
 impl Drop for MapFixture {
     fn drop(&mut self) {
         cleanup_root(&self.root);
+    }
+}
+
+#[tokio::test]
+async fn ark_complete_map_names_survive_storage_readback_and_restart_materialization() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let mut fixture = MapFixture::new(edition).await;
+        fixture.add_two_maps().await;
+        let ports = serde_json::to_value(&fixture.details.ports).unwrap();
+        let saves_path = fixture.details.saves_path.clone();
+        let map_paths = app_core::ark_maps::processes(&fixture.details)
+            .unwrap()
+            .into_iter()
+            .map(|map| (map.process_key, map.save_directory, map.native_log_path))
+            .collect::<Vec<_>>();
+        let config_path = PathBuf::from(&fixture.created.config_file_path);
+        let live_ini = instance_private_runtime_root(&fixture.created)
+            .join("ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini");
+        let mut settings = fixture.settings();
+        settings["additional_maps"][0]["name"] = json!("Another community | 焦土");
+        settings["additional_maps"][1]["name"] = json!("Third community | 中心");
+        for main_name in ["Primary community | 孤岛", "Renamed primary | 新孤岛"] {
+            settings["server_name"] = json!(main_name);
+            fixture.save(&settings).await;
+            fixture.details = read_instance_details(&fixture.paths, &fixture.created.summary.id)
+                .await
+                .unwrap();
+            let before_restart = fixture.settings();
+            materialize_instance_configuration_for_start(
+                &fixture.paths,
+                &fixture.created.summary.id,
+            )
+            .await
+            .unwrap();
+            fixture.details = read_instance_details(&fixture.paths, &fixture.created.summary.id)
+                .await
+                .unwrap();
+            assert_eq!(fixture.settings(), before_restart);
+            assert_eq!(fixture.settings()["server_name"], main_name);
+            assert_eq!(
+                fixture.settings()["additional_maps"][0]["name"],
+                "Another community | 焦土"
+            );
+            assert_eq!(
+                fixture.settings()["additional_maps"][1]["name"],
+                "Third community | 中心"
+            );
+            assert_eq!(serde_json::to_value(&fixture.details.ports).unwrap(), ports);
+            assert_eq!(fixture.details.saves_path, saves_path);
+            let processes = app_core::ark_maps::processes(&fixture.details).unwrap();
+            assert_eq!(
+                processes
+                    .iter()
+                    .map(|map| (
+                        map.process_key.clone(),
+                        map.save_directory.clone(),
+                        map.native_log_path.clone()
+                    ))
+                    .collect::<Vec<_>>(),
+                map_paths,
+                "{edition}: renaming must preserve every map's native ownership"
+            );
+            for (map, expected) in processes.iter().zip([
+                main_name,
+                "Another community | 焦土",
+                "Third community | 中心",
+            ]) {
+                assert_eq!(map.display_name, expected);
+                let projected =
+                    app_core::ark_maps::project_process(&fixture.details, Some(&map.process_key))
+                        .unwrap();
+                let projected_settings: Value =
+                    serde_json::from_str(&projected.settings_json).unwrap();
+                assert_eq!(projected_settings["server_name"], expected);
+            }
+            let document: Value = serde_json::from_slice(&fs::read(&config_path).unwrap()).unwrap();
+            assert_eq!(document["ark_server_names_version"], 1);
+            // The installed package has one shared INI; native launch URLs
+            // supply each additional map's independent SessionName.
+            let ini = fs::read_to_string(&live_ini).unwrap();
+            assert_eq!(
+                ini.lines()
+                    .filter(|line| line.starts_with("SessionName="))
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+                [format!("SessionName={main_name}")]
+            );
+        }
     }
 }
 

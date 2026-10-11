@@ -20,6 +20,16 @@ pub(super) fn validate_ark_settings(
     };
     app_core::ark_maps::parse_additional_maps(&Value::Object(settings.clone()))
         .map_err(|error| invalid("additional_maps", error))?;
+    if settings.contains_key("asa_mod_configurations") {
+        if module_id != "arksurvivalascended" {
+            return Err(invalid(
+                "asa_mod_configurations",
+                "Per-Mod INI configuration requires ARK Survival Ascended".into(),
+            ));
+        }
+        crate::templates::validate_asa_mod_configurations(settings)
+            .map_err(|error| invalid("asa_mod_configurations", error))?;
+    }
     if let Some(properties) = schema.get("properties").and_then(Value::as_object) {
         for (field, definition) in properties {
             let Some(raw) = settings.get(field).and_then(Value::as_str) else {
@@ -95,6 +105,38 @@ pub(super) fn validate_ark_settings(
     )
     .map_err(|error| invalid(error.field, error.message.to_owned()))?;
     Ok(())
+}
+
+pub(crate) fn ark_mod_rule_identity(line: &str, identity_key: &str) -> Result<String, String> {
+    let (_, raw) = line
+        .split_once('=')
+        .ok_or("Native rule requires key=value")?;
+    let rule = parse_tuple(raw.trim())?;
+    validate_numeric_properties(&rule)?;
+    let NativeValue::Group(entries) = rule else {
+        return Err("Native rule requires a tuple".into());
+    };
+    let mut identity = None;
+    for (name, value) in entries {
+        if !name.is_some_and(|name| name.eq_ignore_ascii_case(identity_key)) {
+            continue;
+        }
+        let NativeValue::Scalar(raw) = value else {
+            return Err(format!("{identity_key} must be a class name"));
+        };
+        let value = if raw.starts_with('"') {
+            serde_json::from_str::<String>(raw)
+                .map_err(|_| format!("Invalid quoted {identity_key}"))?
+        } else {
+            raw.to_owned()
+        };
+        if value.trim().is_empty() || identity.replace(value.to_ascii_lowercase()).is_some() {
+            return Err(format!(
+                "Native rule requires exactly one nonempty {identity_key}"
+            ));
+        }
+    }
+    identity.ok_or_else(|| format!("Native rule requires {identity_key}"))
 }
 
 fn validate_indexed(
