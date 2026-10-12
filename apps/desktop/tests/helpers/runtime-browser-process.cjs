@@ -6,6 +6,7 @@ const { spawn, execFile, execFileSync } = require("node:child_process");
 const { promisify } = require("node:util");
 const { randomUUID } = require("node:crypto");
 const { after } = require("node:test");
+const { pollBrowserEndpoint } = require("./runtime-browser-endpoint.cjs");
 
 const execFileAsync = promisify(execFile);
 const desktopRoot = path.resolve(__dirname, "../..");
@@ -87,11 +88,19 @@ async function deadline(promise, milliseconds, label) {
   }
 }
 
-async function waitForBrowserEndpoint(endpointReady, exited, timeoutMs = defaultBrowserStartupTimeoutMs) {
-  return deadline(Promise.race([
-    endpointReady,
-    exited.then((exit) => { throw new Error(`Browser exited during startup: ${JSON.stringify(exit)}`); }),
-  ]), timeoutMs, "Browser DevTools startup");
+async function waitForBrowserEndpoint(endpointReady, exited, timeoutMs = defaultBrowserStartupTimeoutMs, portFile) {
+  const polling = new AbortController();
+  const candidates = [endpointReady,
+    exited.then((exit) => { throw new Error(`Browser exited during startup: ${JSON.stringify(exit)}`); })];
+  if (portFile) candidates.push(pollBrowserEndpoint(portFile.profileDirectory, {
+    deadlineMs: performance.now() + timeoutMs, signal: polling.signal,
+    onObservation: portFile.onObservation,
+  }).then((endpoint) => { portFile.onEndpoint(endpoint); return endpoint; }));
+  try {
+    return await deadline(Promise.race(candidates), timeoutMs, "Browser DevTools startup");
+  } finally {
+    polling.abort();
+  }
 }
 
 async function waitForFixtureReport({ session, url, result, exited, timeoutMs }) {
@@ -393,7 +402,8 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let browserStartedAt;
   let startupResourceStart;
   let terminationError = null;
-  const startup = { timeout_ms: browserStartupTimeoutMs, endpoint_ready_ms: null, viewport_ready_ms: null,
+  const startup = { timeout_ms: browserStartupTimeoutMs, endpoint_ready_ms: null, endpoint_source: null,
+    devtools_port_file: null, viewport_ready_ms: null,
     fixture_requested_ms: null, exit: null, browser_product: null, host_resources: null };
   function finishStartupObservation() {
     if (startupResourceStart && !startup.host_resources) {
@@ -568,6 +578,14 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     const url = `http://127.0.0.1:${address.port}/tests/helpers/${fixturePath}?nonce=${nonce}`;
     let receiveEndpoint;
     const endpointReady = new Promise((resolve) => { receiveEndpoint = resolve; });
+    function publishEndpoint(value, source) {
+      if (endpoint) return;
+      endpoint = value;
+      startup.endpoint_source = source;
+      startup.endpoint_ready_ms = Math.round(performance.now() - browserStartedAt);
+      if (!viewport || startup.viewport_ready_ms !== null) finishStartupObservation();
+      receiveEndpoint(endpoint);
+    }
     startupResourceStart = sampleHostResources();
     browserStartedAt = performance.now();
     child = spawn(executable, [
@@ -591,14 +609,14 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     });
     child.stderr.on("data", (data) => {
       stderr = (stderr + data.toString()).slice(-outputLimit);
-      endpoint ??= stderr.match(/DevTools listening on (ws:\/\/127\.0\.0\.1:\d+\/devtools\/browser\/[\w-]+)/)?.[1];
-      if (endpoint) {
-        startup.endpoint_ready_ms ??= Math.round(performance.now() - browserStartedAt);
-        if (!viewport || startup.viewport_ready_ms !== null) finishStartupObservation();
-        receiveEndpoint(endpoint);
-      }
+      const value = stderr.match(/DevTools listening on (ws:\/\/127\.0\.0\.1:\d+\/devtools\/browser\/[\w-]+)/)?.[1];
+      if (value) publishEndpoint(value, "stderr");
     });
-    await waitForBrowserEndpoint(endpointReady, exited, browserStartupTimeoutMs);
+    await waitForBrowserEndpoint(endpointReady, exited, browserStartupTimeoutMs, {
+      profileDirectory: path.join(scratch, "profile"),
+      onObservation: (observation) => { startup.devtools_port_file = observation; },
+      onEndpoint: (value) => publishEndpoint(value, "port-file"),
+    });
     if (viewport) {
       // A CDP-created blank target needs no HTTP request before emulation is set.
       const target = await browserCommand(endpoint, "Target.createTarget", { url: "about:blank" });
@@ -683,6 +701,14 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
             forced_colors: matchMedia('(forced-colors: active)').matches,
             fixture_text: document.getElementById('fixture')?.textContent?.slice(0, 1000) ?? null,
             scripts: [...document.scripts].slice(0, 8).map(script => script.src && new URL(script.src).pathname),
+            script_resources: performance.getEntriesByType('resource')
+              .filter(resource => resource.initiatorType === 'script' || resource.initiatorType === 'link')
+              .slice(-24).map(resource => {
+                const url = new URL(resource.name);
+                return { path: url.pathname.slice(0, 500), status: resource.responseStatus ?? null,
+                  duration_ms: Math.round(resource.duration),
+                  version: url.searchParams.get('v')?.match(/^[a-f0-9]{8,64}$/i)?.[0] ?? null };
+              }),
             resource_count: performance.getEntriesByType('resource').length })`,
           returnByValue: true,
         });
