@@ -7,7 +7,10 @@
     "beforeDevCommand": "cmd /c npm run dev",
     "devUrl": "http://127.0.0.1:43170",
     "beforeBuildCommand": "cmd /c npm run build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "windows": {
+      "staticVCRuntime": true
+    }
   },
   "app": {
     "security": {

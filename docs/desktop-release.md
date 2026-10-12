@@ -72,6 +72,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
 
 Build the offline companion from the same source version with `-OfflineInstaller`, a separate new `-OutputRoot`, the same signing key, and the same `-EnableGitHubUpdates` setting. This flag changes WebView2 delivery and export names, not the installed application's update channel. An update-enabled offline installation subsequently updates through the small package. Managed builds use `-BuildManaged -SignUpdates` (or `-EnableGitHubUpdates`) and retain a separate immutable configuration receipt for each package; the wrapper can reuse its compilation cache. Do not reuse a receipt for a different bundle configuration or repackage a released target directory outside its managed session.
 
+`build.windows.staticVCRuntime=true` in `tauri.conf.json` is the release CRT policy. The release entry copies this explicit boolean into the captured merge configuration and temporarily clears Tauri's deprecated `STATIC_VCRUNTIME` environment override, restoring the caller's environment on success or failure. New managed receipts bind their CRT setting to that hashed configuration; this records the build input, not proof of the binary's imports.
+
 The managed build entry checks static-runtime evidence in the build receipt and reads the exported main executable's PE imports; the portable entry checks both `langame-desktop.exe` and `install_catalog.exe`. Before publication, also check both executables from the actual NSIS payload or installation, since the managed receipt exports only the main executable:
 
 ```powershell
