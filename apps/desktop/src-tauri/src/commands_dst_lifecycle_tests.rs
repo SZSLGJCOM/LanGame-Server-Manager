@@ -124,6 +124,7 @@ impl Fixture {
                 r#"
 param([string]$Shard)
 while ($null -ne ($line = [Console]::In.ReadLine())) {{
+    if ($line -eq '[LGSM-DST-FIXTURE-EXIT]') {{ exit 0 }}
     [Console]::WriteLine($line)
     [Console]::Out.Flush()
     if ($line -match '\[LGSM-DST-READY:([a-f0-9]+)\]') {{
@@ -300,6 +301,37 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {{
         )
         .await
         .expect("bounded save confirmation")
+    }
+
+    async fn finish_readiness_fixture(&mut self) {
+        // Readiness assertions are complete. End the synthetic stdin loop;
+        // Drop still verifies the original owner and its complete process tree.
+        for (_, spawned) in &self.processes {
+            let mut console = spawned.startup_console().unwrap();
+            tokio::task::spawn_blocking(move || console.write_line("[LGSM-DST-FIXTURE-EXIT]"))
+                .await
+                .unwrap()
+                .unwrap();
+        }
+        tokio::time::timeout(Duration::from_secs(5), async {
+            for (_, spawned) in &mut self.processes {
+                loop {
+                    if let Some(status) = spawned
+                        .child
+                        .as_mut()
+                        .expect("readiness fixture retains its original child")
+                        .try_wait()
+                        .unwrap()
+                    {
+                        assert_eq!(status.code(), Some(0));
+                        break;
+                    }
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+            }
+        })
+        .await
+        .expect("synthetic readiness fixture must exit");
     }
 }
 
@@ -531,6 +563,7 @@ async fn dst_lifecycle_stop_preserves_inspection_failure_without_exact_owned_han
         assert!(checked.get(), "{variant}");
         assert!(error.contains("os error 5"), "{variant}: {error}");
     }
+    fixture.shutdown().await.unwrap();
 }
 
 #[tokio::test]
@@ -540,6 +573,7 @@ async fn dst_lifecycle_workshop_timeout_blocks_later_ready() {
     assert!(error.contains("DownloadServerMods timed out"), "{error}");
     assert!(error.contains("Master"), "{error}");
     assert!(error.contains("master.log"), "{error}");
+    fixture.finish_readiness_fixture().await;
 }
 
 #[tokio::test]
@@ -549,12 +583,14 @@ async fn dst_lifecycle_failed_mod_blocks_later_ready_with_its_error() {
     assert!(error.contains("workshop-2039181790"), "{error}");
     assert!(error.contains("missing dependency"), "{error}");
     assert!(error.contains("Master"), "{error}");
+    fixture.finish_readiness_fixture().await;
 }
 
 #[tokio::test]
 async fn dst_lifecycle_ignores_failed_mod_from_another_probe() {
     let mut fixture = Fixture::new("old-failed-mod").await;
     fixture.ready().await.unwrap();
+    fixture.finish_readiness_fixture().await;
 }
 
 #[tokio::test]
