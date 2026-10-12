@@ -30,6 +30,8 @@ jobs:
     outputs:
       full: ${{ steps.scope.outputs.full }}
       frontend_full: ${{ steps.scope.outputs.frontend_full }}
+      frontend_changed: ${{ steps.scope.outputs.frontend_changed }}
+      frontend_files: ${{ steps.scope.outputs.frontend_files }}
       rust_full: ${{ steps.scope.outputs.rust_full }}
       native_full: ${{ steps.scope.outputs.native_full }}
     steps:
@@ -104,9 +106,9 @@ jobs:
       - run: python -B scripts/verify_project.py --component frontend-tests --tier quick
 
   frontend-browser:
-    name: Browser regression (${{ matrix.shard }}/2)
+    name: Desktop UI regression (${{ matrix.shard }}/2)
     needs: scope
-    if: needs.scope.outputs.frontend_full == 'true'
+    if: needs.scope.outputs.frontend_changed == 'true'
     runs-on: windows-latest
     timeout-minutes: 35
     strategy:
@@ -118,7 +120,10 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-frontend
-      - run: python -B scripts/verify_project.py --component frontend-browser --shard-index ${{ matrix.shard }} --shard-count 2
+      - name: Verify selected desktop UI behavior
+        env:
+          BROWSER_FILES_JSON: ${{ needs.scope.outputs.frontend_files }}
+        run: python -B scripts/verify_project.py --component frontend-browser --tier ${{ needs.scope.outputs.frontend_full == 'true' && 'full' || 'quick' }} --browser-files-json "$env:BROWSER_FILES_JSON" --shard-index ${{ matrix.shard }} --shard-count 2
 
   rust:
     name: Rust checks and selected regression

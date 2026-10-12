@@ -1,8 +1,45 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const childProcess = require("node:child_process");
+const fs = require("node:fs/promises");
+const os = require("node:os");
+const path = require("node:path");
 const { setImmediate: nextTurn } = require("node:timers/promises");
-const { hostResourceUsage, runBrowserFixture, browserTimeBudgets, waitForBrowserEndpoint } = require("./helpers/runtime-browser-process.cjs");
+const { hostResourceUsage, runBrowserFixture, browserTimeBudgets, waitForBrowserEndpoint,
+  fixtureCacheDirectory, removeFixtureCache } = require("./helpers/runtime-browser-process.cjs");
+
+test("the worker reuses only the same fixture's compiled dependency cache", async (t) => {
+  t.after(removeFixtureCache);
+  const options = { fixturePath: "runtime-browser.html" };
+  const directory = await fixtureCacheDirectory(options);
+  await fs.mkdir(directory);
+  await fs.writeFile(path.join(directory, "compiled-marker"), "retained");
+  assert.equal(await fixtureCacheDirectory(options), directory);
+  assert.equal(await fs.readFile(path.join(await fixtureCacheDirectory(options), "compiled-marker"), "utf8"), "retained");
+  const others = await Promise.all([
+    fixtureCacheDirectory({ fixturePath: "hover-help-browser.html" }),
+    fixtureCacheDirectory({ ...options, development: false }),
+    fixtureCacheDirectory({ ...options, reactTransform: false }),
+  ]);
+  assert.equal(new Set([directory, ...others]).size, 4, "Different fixtures and compilation modes cannot share an optimizer cache");
+  assert.equal(path.dirname(path.dirname(directory)), path.resolve(os.tmpdir()));
+});
+
+test("a cache cleanup failure remains visible and retains its owned directory for cleanup", async (t) => {
+  t.after(async () => { t.mock.restoreAll(); await removeFixtureCache(); });
+  const options = { fixturePath: "runtime-browser.html" };
+  const directory = await fixtureCacheDirectory(options);
+  const root = path.dirname(directory);
+  const failure = Object.assign(new Error("Owned cache could not be removed"), { code: "EACCES" });
+  const remove = fs.rm;
+  t.mock.method(fs, "rm", async (target, ...args) => {
+    if (target === root) throw failure;
+    return remove(target, ...args);
+  });
+  await assert.rejects(removeFixtureCache(), (error) => error === failure);
+  assert.equal(await fixtureCacheDirectory(options), directory, "Failed cleanup must not abandon ownership");
+  assert.equal((await fs.stat(root)).isDirectory(), true);
+});
 
 test("startup phase limits do not extend the shared command watchdog or fixture budget", () => {
   const defaults = browserTimeBudgets();
