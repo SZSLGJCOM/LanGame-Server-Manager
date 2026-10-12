@@ -78,14 +78,16 @@ def stages(full_workspace: bool = False, include_web: bool = True) -> tuple[Stag
             ), "node", browser_required=True),
     )
     if full_workspace:
-        required = tuple(dict.fromkeys(selector for stage in selected[:3] for selector in stage.required))
+        required = tuple(dict.fromkeys(selector for stage in (selected[0], selected[2]) for selector in stage.required))
         packages = tuple(argument for package in PARALLEL_PACKAGES for argument in ("-p", package))
-        exclusions = tuple(argument for package in PARALLEL_PACKAGES for argument in ("--exclude", package))
-        # Pure/core suites need no process-wide serialization. Keep Windows process,
-        # environment and retained-data fixtures isolated until their owners can run concurrently.
+        exclusions = tuple(argument for package in (*PARALLEL_PACKAGES, "app-storage") for argument in ("--exclude", package))
+        # Storage fixtures own separate roots; bound I/O concurrency to two tests.
+        # Process and desktop suites retain their process-wide isolation.
         return (
             Stage("core", ("test", *packages, "--all-features", "--locked", "--",
                            "--test-threads=4", "--show-output"), ROOT, ()),
+            Stage("storage", ("test", "-p", "app-storage", "--all-features", "--locked", "--",
+                              "--test-threads=2", "--show-output"), ROOT, selected[1].required),
             Stage("workspace", ("test", "--workspace", *exclusions, "--all-features", "--locked", "--",
                                 "--test-threads=1", "--show-output"), ROOT, required, metrics_required=True),
             *((selected[-1],) if include_web else ()),

@@ -62,7 +62,7 @@ fn normalize(path: &Path, directory: bool) -> Result<PathBuf, StorageError> {
     // The canonical result is still needed for drive/UNC aliases and case spelling.
     let mut cursor = path.to_owned();
     let mut missing = Vec::new();
-    let existing = loop {
+    let (existing, existing_metadata) = loop {
         match fs::symlink_metadata(&cursor) {
             Ok(metadata) => {
                 if !metadata.is_dir() && (directory || cursor != path || !metadata.is_file()) {
@@ -71,7 +71,7 @@ fn normalize(path: &Path, directory: bool) -> Result<PathBuf, StorageError> {
                         "the instance directory path points to a file",
                     ));
                 }
-                break cursor.clone();
+                break (cursor.clone(), metadata);
             }
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
                 missing.push(
@@ -93,10 +93,14 @@ fn normalize(path: &Path, directory: bool) -> Result<PathBuf, StorageError> {
         }
     };
     for ancestor in existing.ancestors() {
-        let metadata = fs::symlink_metadata(ancestor).map_err(|source| StorageError::ReadPath {
-            path: ancestor.to_owned(),
-            source,
-        })?;
+        let metadata = if ancestor == existing {
+            existing_metadata.clone()
+        } else {
+            fs::symlink_metadata(ancestor).map_err(|source| StorageError::ReadPath {
+                path: ancestor.to_owned(),
+                source,
+            })?
+        };
         if metadata.file_type().is_symlink()
             || crate::private_runtime::metadata_is_reparse_point(&metadata)
         {

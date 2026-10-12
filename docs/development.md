@@ -73,9 +73,11 @@ python -B scripts/verify_project.py --tier quick
 
 快速反馈以 5–10 分钟为优化目标；冷缓存、依赖和测试规模会影响耗时。此目标不是超时放宽或跳过失败的理由。CI 保存 Rust 依赖及其编译产物，前端只构建一次并传给 Rust；Clippy 已执行编译与类型检查，不再在同一工作流重复 `cargo check`。
 
-前端 `*-browser.test.cjs` 属于真实浏览器层，两个既有命名例外集中在共享入口。其他测试以 4 个文件为并发上限；浏览器在每个进程内串行，CI 分两个互不重叠的分片。新增真实浏览器测试遵循命名约定。Rust 的 `app-core`、`app-modules`、`app-knowledge` 用 4 个测试线程；涉及 Windows 进程、全局环境、存储和外部边界的其余套件保留串行，避免把资源争用当成产品缺陷。
+前端 `*-browser.test.cjs` 属于真实浏览器层，两个既有命名例外集中在共享入口。其他测试以 4 个文件为并发上限；浏览器在每个进程内串行，CI 分两个互不重叠的分片。新增真实浏览器测试遵循命名约定。Rust 的 `app-core`、`app-modules`、`app-knowledge` 用 4 个测试线程；完整 `app-storage` 套件使用 2 个线程，保持各自的临时目录、数据库、端口及按路径归属的故障注入，原有全局写入锁继续生效。涉及 Windows 进程、全局环境及外部边界的其他套件保留串行。每个 package 的单元测试和 doctest 仍只执行一次。
 
-实例路径检查为所有实例派生实际运行、存档及原生配置归属，并在写入前重新验证冲突；准备外部包前后的检查分别读取当前记录与文件系统。完整路径诊断只为正在查看报告的实例生成，不为其他实例计算无人读取的诊断。Windows 祖先路径的符号链接和 reparse 属性使用同一次 metadata 读取，仍检查全部祖先。比较性能时保留同一测试范围与线程数，分别报告编译、测试执行和缓存耗时。
+实例路径检查为所有实例派生实际运行、存档及原生配置归属，并在写入前重新验证冲突；准备外部包前后的检查分别读取当前记录与文件系统。完整路径诊断只为正在查看报告的实例生成，不为其他实例计算无人读取的诊断。Windows 祖先路径的符号链接和 reparse 属性使用同一次 metadata 读取，仍检查全部祖先。比较算法改动时固定测试范围与线程数；调整测试并发时使用同一源码、同一范围单独测量，分别报告编译、测试执行和缓存耗时。
+
+模块发现每次枚举目录并读取当前 manifest 和 schema。原始 manifest 内容完全相同时，在进程内有界复用已成功校验的解析结果；不用时间戳或 TTL 判断文件是否改变，不缓存文件读取错误，schema 每次重新读取。返回的 descriptor 独立于保留的解析结果。实例程序模式与路径由一次同步校验共同返回，后续操作阶段仍重新检查文件与注册归属。
 
 Windows 桌面使用 Tauri 和 WebView2 呈现 React 界面。CI 的 `Desktop UI regression` 在独立 Edge/Chrome 中挂载生产组件，通过模拟 IPC 或受控 HTTP 服务检查 DOM、交互、焦点、布局和订阅清理；它不启动完整 Tauri 应用，也不证明真实数据库写入或游戏进程启停。`Verify native Tauri and WebView2 recovery` 才运行原生宿主及其 WebView2 恢复检查；真实安装、升级和关键开服仍按发行验收执行。相同测试 worker 可复用同一夹具的 Vite 编译缓存，每个场景仍拥有独立浏览器配置、服务和界面状态，worker 结束后回收其缓存。
 
@@ -167,7 +169,11 @@ Run focused tests, then `python -B scripts/verify_project.py --tier quick`. Loca
 
 The existing `npm --prefix apps/desktop run verify` entry runs quick frontend checks and current secret/publication boundaries. `verify:release` adds all browser tests and publication history. Both reuse the shared rules and exclude Rust/native acceptance. CI frontend jobs leave publication checks to the independent policy job.
 
-Instance path checks derive runtime, save and native configuration ownership for every instance and revalidate conflicts before writes. Checks before and after external package preparation independently read current records and filesystem state. Full path diagnostics are produced only for the instance whose report is requested. Windows ancestor checks reuse one metadata observation for symlink and reparse attributes while still checking every ancestor. Compare performance with the same test scope and thread count, reporting compilation, test execution and cache costs separately.
+The complete Rust tier runs core/modules/knowledge with four test threads and the full `app-storage` package with two. Storage fixtures retain separate directories, databases and ports, with path-owned fault injection and the existing global write locks. Other Windows process, environment and external-boundary suites remain serial. Each package's unit tests and doctests still run once.
+
+Instance path checks derive runtime, save and native configuration ownership for every instance and revalidate conflicts before writes. Checks before and after external package preparation independently read current records and filesystem state. Full path diagnostics are produced only for the instance whose report is requested. Windows ancestor checks reuse one metadata observation for symlink and reparse attributes while still checking every ancestor. Compare algorithm changes with a fixed test scope and thread count. Measure concurrency changes separately on the same source and test scope, reporting compilation, test execution and cache costs separately.
+
+Module discovery enumerates directories and reads the current manifest and schema on every call. A bounded process-local store reuses successfully validated parsing results only when the complete original manifest content is identical; timestamps and TTLs do not determine freshness. File-read errors are not retained, schemas are read anew, and returned descriptors are independent of retained parsing results. Instance program mode and path come from one synchronous validation pass; subsequent operation phases still recheck files and registered ownership.
 
 The Windows desktop renders React through Tauri and WebView2. CI's `Desktop UI regression` mounts production components in isolated Edge/Chrome sessions with mock IPC or controlled HTTP services to check DOM behavior, focus, layout and subscription cleanup. It does not start the complete Tauri app or verify real database writes and game processes. `Verify native Tauri and WebView2 recovery` runs the native host and WebView2 recovery checks; actual installation, upgrade and hosting flows remain release acceptance requirements. A worker can reuse the Vite compilation cache for the same fixture while every scenario retains its own browser profile, server and UI state; the worker removes its cache on completion.
 

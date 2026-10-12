@@ -241,20 +241,49 @@ class RuntimeReliabilityRunnerTests(unittest.TestCase):
     def test_ci_preserves_full_workspace_tests_and_every_required_group(self):
         scoped = stages()
         full = stages(full_workspace=True)
-        self.assertEqual(len(full), 3)
-        core, stateful, web = full
+        self.assertEqual(len(full), 4)
+        core, storage, stateful, web = full
         self.assertIn("--workspace", stateful.command)
         parallel_packages = [core.command[index + 1] for index, arg in enumerate(core.command) if arg == "-p"]
+        storage_packages = [storage.command[index + 1] for index, arg in enumerate(storage.command) if arg == "-p"]
         excluded_packages = [stateful.command[index + 1] for index, arg in enumerate(stateful.command) if arg == "--exclude"]
-        self.assertEqual(parallel_packages, excluded_packages, "Every workspace package must run exactly once")
+        self.assertEqual(parallel_packages + storage_packages, excluded_packages,
+                         "Every workspace package must run exactly once")
         self.assertEqual(set(parallel_packages), {"app-core", "app-modules", "app-knowledge"})
+        self.assertEqual(storage_packages, ["app-storage"])
+        self.assertEqual(len(excluded_packages), len(set(excluded_packages)))
         self.assertIn("--test-threads=4", core.command)
+        self.assertEqual(storage.command, ("test", "-p", "app-storage", "--all-features", "--locked", "--",
+                                          "--test-threads=2", "--show-output"),
+                         "Storage runs the complete package, including doctests, without filters")
         self.assertIn("--test-threads=1", stateful.command)
         self.assertNotIn("--ignored", stateful.command)
-        self.assertEqual(set(stateful.required), {selector for stage in scoped[:3] for selector in stage.required})
+        self.assertEqual(storage.required, scoped[1].required)
+        self.assertEqual(set(stateful.required), {selector for stage in (scoped[0], scoped[2]) for selector in stage.required})
+        self.assertEqual(set(storage.required) | set(stateful.required),
+                         {selector for stage in scoped[:3] for selector in stage.required})
+        self.assertFalse(storage.metrics_required)
+        self.assertTrue(stateful.metrics_required)
         self.assertEqual(web, scoped[-1])
         self.assertEqual(stages(full_workspace=True, include_web=False), full[:-1],
                          "Shared full verification gives frontend checks a single owner")
+
+    def test_failed_full_storage_stage_prevents_workspace_execution(self):
+        completed = []
+
+        def complete(stage, *_args):
+            completed.append(stage.name)
+            return {"name": stage.name, "status": "failed" if stage.name == "storage" else "passed"}
+
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "report"
+            with patch.object(reliability, "windows_runtime_supported", return_value=True), \
+                 patch.object(reliability, "run_stage", side_effect=complete):
+                self.assertEqual(main(["--full-workspace", "--rust-only", "--output", str(output)]), 1)
+            report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(completed, ["core", "storage"])
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["stages"][-1], {"name": "storage", "status": "failed"})
 
     def test_frontend_distribution_is_external_absolute_and_has_an_entrypoint(self):
         with tempfile.TemporaryDirectory() as temporary:
