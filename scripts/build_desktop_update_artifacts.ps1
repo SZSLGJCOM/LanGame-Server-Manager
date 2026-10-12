@@ -89,6 +89,12 @@ function Get-Fingerprint {
 $outputRootAbs = Resolve-ExternalDirectory -Path $OutputRoot
 $configBytes = [System.IO.File]::ReadAllBytes($configPath)
 $config = [System.Text.Encoding]::UTF8.GetString($configBytes).TrimStart([char]0xfeff) | ConvertFrom-Json
+if ($null -eq $config.PSObject.Properties['build'] -or $config.build -isnot [pscustomobject] -or
+    $null -eq $config.build.PSObject.Properties['windows'] -or $config.build.windows -isnot [pscustomobject] -or
+    $null -eq $config.build.windows.PSObject.Properties['staticVCRuntime'] -or
+    $config.build.windows.staticVCRuntime -isnot [bool] -or -not $config.build.windows.staticVCRuntime) {
+    throw 'Release builds require explicit build.windows.staticVCRuntime=true in tauri.conf.json.'
+}
 $hasher = [System.Security.Cryptography.SHA256]::Create()
 try { $configSha256 = ([BitConverter]::ToString($hasher.ComputeHash($configBytes))).Replace('-', '').ToLowerInvariant() }
 finally { $hasher.Dispose() }
@@ -138,7 +144,10 @@ $mergeConfig = @{
         windows = @{ webviewInstallMode = $webviewInstallMode }
     }
     plugins = @{ updater = @{ endpoints = $updateFeeds } }
-    build = @{ beforeBuildCommand = 'cmd /c "set VITE_LANGAME_DESKTOP_UPDATES_ENABLED=' + $updatesValue + '&& npm run build"' }
+    build = @{
+        beforeBuildCommand = 'cmd /c "set VITE_LANGAME_DESKTOP_UPDATES_ENABLED=' + $updatesValue + '&& npm run build"'
+        windows = @{ staticVCRuntime = $config.build.windows.staticVCRuntime }
+    }
 }
 
 # Portable builds never bypass the workstation's snapshot and resource policy.
@@ -219,7 +228,8 @@ if ($BuildManaged) {
     $buildArguments += '--locked'
     $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')
     try {
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', 'true', 'Process')
+        # Tauri's deprecated environment override takes precedence over the captured configuration.
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $null, 'Process')
         & powershell.exe @buildArguments
         if ($LASTEXITCODE -ne 0) { throw "Managed desktop build failed with exit code $LASTEXITCODE. No installer was exported." }
     }
@@ -291,7 +301,7 @@ if ($BuildPortable) {
         $signaturePath = "$payloadPath.sig"
         $beforePayload = Get-Fingerprint -Path $payloadPath
         $beforeSignature = Get-Fingerprint -Path $signaturePath
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', 'true', 'Process')
+        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $null, 'Process')
         & cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis --config $mergeConfigPath -- --locked
         if ($LASTEXITCODE -ne 0) { throw 'cargo tauri build failed.' }
         $afterPayload = Get-Fingerprint -Path $payloadPath

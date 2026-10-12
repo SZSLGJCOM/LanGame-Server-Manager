@@ -71,6 +71,7 @@ function createFixture(t) {
   const configPath = path.join(tauriRoot, "tauri.conf.json");
   fs.writeFileSync(configPath, JSON.stringify({
     productName: "LanGame Server Manager", version: "0.1.0",
+    build: { windows: { staticVCRuntime: true } },
     bundle: { windows: { webviewInstallMode: { type: "embedBootstrapper", silent: true } } },
     plugins: { updater: { pubkey: fixturePublicKey, endpoints: [] } },
   }));
@@ -123,6 +124,7 @@ test("desktop updater artifacts and plugin are configured", () => {
   const mainSource = fs.readFileSync(mainPath, "utf8");
 
   assert.equal(config.bundle.createUpdaterArtifacts, false, "ordinary local installers require no release signing key");
+  assert.equal(config.build.windows.staticVCRuntime, true);
   assert.equal(config.plugins.updater.windows.installMode, "passive");
   assert.equal(config.plugins.updater.requireSignedVersion, true, "mirrors cannot relabel an older signed installer as a newer release");
   assert.deepEqual(config.plugins.updater.endpoints, [], "pre-release builds must not contact an update feed");
@@ -342,6 +344,17 @@ test("managed installer builds require the workstation entry and do not silently
   assert.equal(fs.existsSync(fixture.outputRoot), false);
 });
 
+for (const value of [undefined, null, false, "true", 1]) {
+  test(`release preparation rejects an unproven static CRT configuration: ${JSON.stringify(value)}`, (t) => {
+    const fixture = createFixture(t);
+    const config = readJson(fixture.configPath);
+    config.build.windows.staticVCRuntime = value;
+    fs.writeFileSync(fixture.configPath, JSON.stringify(config));
+    expectFailure(runPreparation(fixture), /explicit build.windows.staticVCRuntime=true/);
+    assert.equal(fs.existsSync(fixture.outputRoot), false);
+  });
+}
+
 test("managed local installer builds reach the snapshot bundler with updates disabled and no key", (t) => {
   const fixture = createFixture(t);
   const managedScripts = path.join(fixture.tempRoot, "scripts");
@@ -364,7 +377,8 @@ exit 42
   assert.equal(invocation.snapshot, true);
   assert.equal(invocation.bundle, "LanGameServerManager");
   assert.equal(invocation.updates, false);
-  assert.equal(invocation.staticVcruntime, "true");
+  assert.equal(invocation.staticVcruntime, null);
+  assert.equal(config.build.windows.staticVCRuntime, true);
   assert.ok(invocation.artifacts.includes(`release/bundle/nsis/${artifactName}`));
   assert.ok(!invocation.artifacts.includes(".sig"));
   assert.equal(config.bundle.createUpdaterArtifacts, false);
@@ -384,9 +398,9 @@ test("managed GitHub builds fail before writing output when no update signing ke
 });
 
 for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline } of [
-  { name: "accepts the matching build configuration", runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');" },
+  { name: "accepts the matching build configuration", runtimeReceipt: "staticVcruntime=$buildConfig.build.windows.staticVCRuntime;" },
   { name: "rejects a changed build configuration", changedConfig: true,
-    runtimeReceipt: "staticVcruntime=($env:STATIC_VCRUNTIME -ceq 'true');", rejection: /receipt configuration does not match/ },
+    runtimeReceipt: "staticVcruntime=$buildConfig.build.windows.staticVCRuntime;", rejection: /receipt configuration does not match/ },
   { name: "rejects dynamic VC runtime linkage", runtimeReceipt: "staticVcruntime=$false;", rejection: /static Visual C\+\+ runtime/ },
   { name: "rejects a missing VC runtime receipt", runtimeReceipt: "", rejection: /staticVcruntime|static Visual C\+\+ runtime/ },
   { name: "rejects an untyped VC runtime receipt", runtimeReceipt: "staticVcruntime='true';", rejection: /static Visual C\+\+ runtime/ },
@@ -417,6 +431,7 @@ $repo = Join-Path (Split-Path -Parent $PSScriptRoot) 'repository'
 Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1')
 $payload = Join-Path (Split-Path -Parent $PSScriptRoot) 'artifacts/${artifactName}'
 $configHash = (Get-FileHash -LiteralPath $BundleConfigPath -Algorithm SHA256).Hash.ToLowerInvariant()
+$buildConfig = Get-Content -LiteralPath $BundleConfigPath -Raw | ConvertFrom-Json
 ${changedConfig ? "$configHash = '0' * 64" : ""}
 @{
   receipt=@{project=$Project;${runtimeReceipt}sourceIdentitySha256=('a' * 64);artifacts=@(@{
@@ -452,8 +467,8 @@ exit 0
   });
 }
 
-for (const previousValue of [null, "caller-value"]) {
-  test(`managed build failure restores ${previousValue === null ? "absent" : "existing"} runtime environment`, (t) => {
+for (const previousValue of [null, "false", "caller-value"]) {
+  test(`managed build failure restores ${JSON.stringify(previousValue)} runtime environment`, (t) => {
     const fixture = createFixture(t);
     const managedScripts = path.join(fixture.tempRoot, "scripts");
     fs.mkdirSync(managedScripts);
@@ -465,7 +480,7 @@ exit 42
     const caller = path.join(fixture.repositoryRoot, "invoke-release-fixture.ps1");
     fs.writeFileSync(caller, `
 $ErrorActionPreference = 'Stop'
-[Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', ${previousValue === null ? "$null" : "'caller-value'"}, 'Process')
+[Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', ${previousValue === null ? "$null" : `'${previousValue}'`}, 'Process')
 $failure = $null
 try { & (Join-Path $PSScriptRoot 'scripts/build_desktop_update_artifacts.ps1') -BuildManaged -OutputRoot (Join-Path (Split-Path -Parent $PSScriptRoot) 'output') }
 catch { $failure = $_.Exception.Message }
@@ -480,6 +495,6 @@ catch { $failure = $_.Exception.Message }
     const restored = readJson(path.join(fixture.repositoryRoot, "restored-environment.json"));
     assert.match(restored.failure, /Managed desktop build failed with exit code 42/);
     assert.equal(restored.value, previousValue);
-    assert.equal(fs.readFileSync(path.join(fixture.outputRoot, "runtime-environment.txt"), "utf8"), "true");
+    assert.equal(fs.readFileSync(path.join(fixture.outputRoot, "runtime-environment.txt"), "utf8"), "");
   });
 }
