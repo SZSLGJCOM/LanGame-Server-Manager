@@ -14,7 +14,8 @@ use crate::player_access_normalization::normalize_module_player_access_settings_
 #[cfg(test)]
 use crate::private_runtime::PRIVATE_RUNTIME_MARKER;
 use crate::private_runtime::{
-    is_reparse_point, path_starts_with, prepare_private_runtime_projection,
+    is_reparse_point, metadata_is_reparse_point, path_starts_with,
+    prepare_private_runtime_projection,
 };
 #[cfg(test)]
 use crate::private_runtime_refresh::PackageTree;
@@ -1138,18 +1139,6 @@ fn cleanup_owned_instance_directory(
         path: instance_root.to_path_buf(),
         source,
     })
-}
-
-#[cfg(windows)]
-fn metadata_is_reparse_point(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-
-    metadata.file_attributes() & 0x400 != 0
-}
-
-#[cfg(not(windows))]
-fn metadata_is_reparse_point(_metadata: &fs::Metadata) -> bool {
-    false
 }
 
 pub async fn update_instance(

@@ -75,6 +75,8 @@ python -B scripts/verify_project.py --tier quick
 
 前端 `*-browser.test.cjs` 属于真实浏览器层，两个既有命名例外集中在共享入口。其他测试以 4 个文件为并发上限；浏览器在每个进程内串行，CI 分两个互不重叠的分片。新增真实浏览器测试遵循命名约定。Rust 的 `app-core`、`app-modules`、`app-knowledge` 用 4 个测试线程；涉及 Windows 进程、全局环境、存储和外部边界的其余套件保留串行，避免把资源争用当成产品缺陷。
 
+实例路径检查为所有实例派生实际运行、存档及原生配置归属，并在写入前重新验证冲突；准备外部包前后的检查分别读取当前记录与文件系统。完整路径诊断只为正在查看报告的实例生成，不为其他实例计算无人读取的诊断。Windows 祖先路径的符号链接和 reparse 属性使用同一次 metadata 读取，仍检查全部祖先。比较性能时保留同一测试范围与线程数，分别报告编译、测试执行和缓存耗时。
+
 Windows 桌面使用 Tauri 和 WebView2 呈现 React 界面。CI 的 `Desktop UI regression` 在独立 Edge/Chrome 中挂载生产组件，通过模拟 IPC 或受控 HTTP 服务检查 DOM、交互、焦点、布局和订阅清理；它不启动完整 Tauri 应用，也不证明真实数据库写入或游戏进程启停。`Verify native Tauri and WebView2 recovery` 才运行原生宿主及其 WebView2 恢复检查；真实安装、升级和关键开服仍按发行验收执行。相同测试 worker 可复用同一夹具的 Vite 编译缓存，每个场景仍拥有独立浏览器配置、服务和界面状态，worker 结束后回收其缓存。
 
 只执行某层时仍使用同一入口：
@@ -164,6 +166,8 @@ Keep domain logic in the owning crate and interface adapters small. Bound asynch
 Run focused tests, then `python -B scripts/verify_project.py --tier quick`. Local and CI commands share this entry point. Quick checks include frontend unit/contracts, type/build checks, Rust workspace Clippy/compilation, core tests and retained-data regressions. The `full` tier adds all browser and Rust tests, complete publication-history checks, synthetic Windows processes and native Tauri/WebView2 recovery; use a new external `--output` directory.
 
 The existing `npm --prefix apps/desktop run verify` entry runs quick frontend checks and current secret/publication boundaries. `verify:release` adds all browser tests and publication history. Both reuse the shared rules and exclude Rust/native acceptance. CI frontend jobs leave publication checks to the independent policy job.
+
+Instance path checks derive runtime, save and native configuration ownership for every instance and revalidate conflicts before writes. Checks before and after external package preparation independently read current records and filesystem state. Full path diagnostics are produced only for the instance whose report is requested. Windows ancestor checks reuse one metadata observation for symlink and reparse attributes while still checking every ancestor. Compare performance with the same test scope and thread count, reporting compilation, test execution and cache costs separately.
 
 The Windows desktop renders React through Tauri and WebView2. CI's `Desktop UI regression` mounts production components in isolated Edge/Chrome sessions with mock IPC or controlled HTTP services to check DOM behavior, focus, layout and subscription cleanup. It does not start the complete Tauri app or verify real database writes and game processes. `Verify native Tauri and WebView2 recovery` runs the native host and WebView2 recovery checks; actual installation, upgrade and hosting flows remain release acceptance requirements. A worker can reuse the Vite compilation cache for the same fixture while every scenario retains its own browser profile, server and UI state; the worker removes its cache on completion.
 

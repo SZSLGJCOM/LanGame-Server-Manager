@@ -97,7 +97,8 @@ fn normalize(path: &Path, directory: bool) -> Result<PathBuf, StorageError> {
             path: ancestor.to_owned(),
             source,
         })?;
-        if metadata.file_type().is_symlink() || crate::private_runtime::is_reparse_point(ancestor)?
+        if metadata.file_type().is_symlink()
+            || crate::private_runtime::metadata_is_reparse_point(&metadata)
         {
             return Err(invalid(
                 path,

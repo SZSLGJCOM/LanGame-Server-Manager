@@ -189,11 +189,8 @@ async fn verify_module(
     })?;
     let storage = bootstrap_storage()?;
     initialize_database(&storage.paths).await?;
-    sync_modules(
-        &storage.paths,
-        &discover_modules(&storage.paths.modules_root)?,
-    )
-    .await?;
+    // Both real creation commands below refresh the complete catalog.
+    sync_modules(&storage.paths, std::slice::from_ref(descriptor)).await?;
     let install = descriptor
         .install
         .as_ref()
