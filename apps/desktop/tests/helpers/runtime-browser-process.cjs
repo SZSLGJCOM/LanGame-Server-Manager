@@ -125,7 +125,7 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   const scripts = [...transformed.matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi)];
   assert.ok(scripts.length > 0, "Fixture HTML must declare its entry scripts");
   const client = server.environments.client;
-  // This shape is checked against the locked Vite 8.3.3 implementation. Its
+  // This shape is checked against the locked Vite 8.3.4 implementation. Its
   // public idle promise is one-shot, so it cannot certify subsequent warmups.
   assert.ok(client._pendingRequests instanceof Map, "Vite request ownership changed");
   for (const [, src] of scripts) {
@@ -707,6 +707,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
                 const url = new URL(resource.name);
                 return { path: url.pathname.slice(0, 500), status: resource.responseStatus ?? null,
                   duration_ms: Math.round(resource.duration),
+                  start_ms: Math.round(resource.startTime), fetch_ms: Math.round(resource.fetchStart),
+                  request_ms: Math.round(resource.requestStart), response_ms: Math.round(resource.responseStart),
+                  end_ms: Math.round(resource.responseEnd), transfer_bytes: resource.transferSize,
                   version: url.searchParams.get('v')?.match(/^[a-f0-9]{8,64}$/i)?.[0] ?? null };
               }),
             resource_count: performance.getEntriesByType('resource').length })`,
