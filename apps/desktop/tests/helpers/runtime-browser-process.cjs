@@ -252,31 +252,39 @@ function alive(pid) {
   }
 }
 
-async function waitForBrowserProcesses(pids) {
-  const expires = Date.now() + 3000;
+function remainingCleanupTime(cleanupDeadlineMs) {
+  assert.ok(Number.isFinite(cleanupDeadlineMs), "Browser cleanup requires its shared command deadline");
+  const remaining = Math.ceil(cleanupDeadlineMs - performance.now());
+  assert.ok(remaining > 0, "Owned browser cleanup exhausted its shared command time budget");
+  return remaining;
+}
+
+async function waitForBrowserProcesses(pids, cleanupDeadlineMs) {
   while (pids.some(alive)) {
-    assert.ok(Date.now() < expires, "Owned browser descendants did not exit within 3000 ms");
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    const remaining = remainingCleanupTime(cleanupDeadlineMs);
+    await new Promise((resolve) => setTimeout(resolve, Math.min(25, remaining)));
   }
 }
 
-async function closeBrowser(child, exited, endpoint) {
+async function closeBrowser(child, exited, endpoint, cleanupDeadlineMs) {
   if (child.exitCode !== null || child.signalCode !== null || !child.pid) return null;
   if (endpoint) {
-    const socket = new WebSocket(endpoint);
+    let socket;
     try {
+      const connectionTimeoutMs = Math.min(2000, remainingCleanupTime(cleanupDeadlineMs));
+      socket = new WebSocket(endpoint);
       await deadline(new Promise((resolve, reject) => {
         socket.addEventListener("error", () => reject(new Error("Browser.close connection failed")));
         socket.addEventListener("open", () => {
           socket.send(JSON.stringify({ id: 1, method: "Browser.close" }));
           resolve();
         }, { once: true });
-      }), 2000, "Browser.close connection");
-      await deadline(exited, 3000, "Browser.close");
+      }), connectionTimeoutMs, "Browser.close connection");
+      await deadline(exited, Math.min(3000, remainingCleanupTime(cleanupDeadlineMs)), "Browser.close");
     } catch {
       // The fallback below terminates only this still-running process and its tree.
     } finally {
-      socket.close();
+      socket?.close();
     }
   }
   let terminationError = null;
@@ -284,6 +292,8 @@ async function closeBrowser(child, exited, endpoint) {
     try {
       if (process.platform === "win32") {
         await execFileAsync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], {
+          // Preserve the one owned termination attempt even if the observation
+          // budget is exhausted. The unchanged command watchdog remains final.
           windowsHide: true, timeout: 5000, maxBuffer: outputLimit,
         });
       } else {
@@ -294,7 +304,10 @@ async function closeBrowser(child, exited, endpoint) {
     }
   }
   try {
-    await deadline(exited, 5000, "Owned browser process exit");
+    // taskkill requests asynchronous Windows termination. Keep observing the
+    // original ChildProcess exit callback within the existing command ceiling;
+    // neither taskkill success nor a PID health check proves that handle exited.
+    await deadline(exited, remainingCleanupTime(cleanupDeadlineMs), "Owned browser process exit");
   } catch (error) {
     throw terminationError ? new AggregateError([terminationError, error],
       `Browser termination and exit observation failed: ${terminationError}; ${error}`) : error;
@@ -302,12 +315,12 @@ async function closeBrowser(child, exited, endpoint) {
   return terminationError;
 }
 
-async function confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError) {
+async function confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, cleanupDeadlineMs) {
   try {
     if (!child?.pid) return true;
     if (processSnapshotKnown) {
       assert.ok(processIds.includes(child.pid), "The process snapshot must include the owned browser root");
-      await waitForBrowserProcesses(processIds);
+      await waitForBrowserProcesses(processIds, cleanupDeadlineMs);
       if (child.exitCode !== null || child.signalCode !== null) return true;
     }
   } catch (error) {
@@ -390,6 +403,11 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   }
   // This is a hard bound even if a library retains an open handle after an error.
   // Normal failures run the asynchronous cleanup below before this last resort.
+  const commandDeadlineMs = performance.now() + commandTimeoutMs;
+  // The browser root and its observed descendants share the command's remaining
+  // budget. Reserve the existing server-close limit and one second for scratch
+  // removal; the hard watchdog still bounds every phase to the same total time.
+  const browserCleanupDeadlineMs = commandDeadlineMs - 6000;
   const watchdog = setTimeout(() => {
     console.error(`Browser reliability exceeded its ${commandTimeoutMs / 1000}-second command deadline`);
     if (child?.pid && child.exitCode === null && child.signalCode === null) {
@@ -678,11 +696,11 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     }
     if (viewportSession) viewportSession.close();
     if (child) {
-      try { terminationError = await closeBrowser(child, exited, endpoint); }
+      try { terminationError = await closeBrowser(child, exited, endpoint, browserCleanupDeadlineMs); }
       catch (error) { cleanupErrors.push(error); }
     }
     try {
-      treeExited = await confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError);
+      treeExited = await confirmBrowserExit(child, processIds, processSnapshotKnown, terminationError, browserCleanupDeadlineMs);
     } catch (error) { cleanupErrors.push(error); }
     if (server) {
       try { await deadline(server.close(), 5000, "Fixture server shutdown"); } catch (error) { cleanupErrors.push(error); }
