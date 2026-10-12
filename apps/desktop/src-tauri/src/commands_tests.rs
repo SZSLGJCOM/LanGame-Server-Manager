@@ -682,7 +682,7 @@ pub(super) async fn register_smoke_stdin_capture_process(
     fs::write(
         &script_path,
         format!(
-            "$line = [Console]::In.ReadLine()\nSet-Content -LiteralPath '{escaped_pending_path}' -Value $line -ErrorAction Stop\n[System.IO.File]::Move('{escaped_pending_path}', '{escaped_capture_path}')\nStart-Sleep -Seconds 20\n"
+            "$line = [Console]::In.ReadLine()\nif ($line -eq '[LGSM-STDIN-CAPTURE-EXIT]') {{ exit 0 }}\nSet-Content -LiteralPath '{escaped_pending_path}' -Value $line -ErrorAction Stop\n[System.IO.File]::Move('{escaped_pending_path}', '{escaped_capture_path}')\nStart-Sleep -Seconds 20\n"
         ),
     )?;
 
