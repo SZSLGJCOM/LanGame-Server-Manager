@@ -254,6 +254,37 @@ async fn managed_save_disable_and_shutdown_prevent_due_writes() {
         .unwrap();
     assert!(!capture.exists());
     assert!(worker.schedules.is_empty());
+
+    // The no-write assertions are complete. This fixture-only command exits
+    // without creating a capture; Drop still reaps the original owned tree.
+    state
+        .runtime_supervisor
+        .lock()
+        .unwrap()
+        .dispatch_command(
+            &fixture.details.summary.id,
+            Some("main"),
+            "[LGSM-STDIN-CAPTURE-EXIT]",
+        )
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if state
+                .runtime_supervisor
+                .lock()
+                .unwrap()
+                .instance_process_tree_is_running(&fixture.details.summary.id)
+                .unwrap()
+                == Some(false)
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("synthetic no-write capture must exit after all assertions");
+    assert!(!capture.exists());
 }
 
 #[tokio::test]

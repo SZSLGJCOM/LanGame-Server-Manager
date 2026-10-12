@@ -171,6 +171,7 @@ async fn exercise_file_probe(fixture: &mut FileProbeFixture, storage: &mut Stora
         &script,
         r#"
 while ($null -ne ($line = [Console]::In.ReadLine())) {
+    if ($line -eq '[LGSM-MOD-PROBE-EXIT]') { exit 0 }
     if ($line -notmatch "local nonce='([a-f0-9]{32})'") { exit 70 }
     $nonce = $Matches[1]
     [IO.File]::WriteAllText((Join-Path $PSScriptRoot 'probe-ready'), $nonce)
@@ -346,4 +347,30 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
             assert_eq!(receipt.status, AssistantTaskStatus::Completed);
         }
     }
+
+    // Both file-race assertions are complete. Release the synthetic stdin loop;
+    // Drop still checks the original owner and reaps its complete process tree.
+    state
+        .runtime_supervisor
+        .lock()
+        .unwrap()
+        .dispatch_command(&details.summary.id, Some("master"), "[LGSM-MOD-PROBE-EXIT]")
+        .unwrap();
+    tokio::time::timeout(Duration::from_secs(5), async {
+        loop {
+            if state
+                .runtime_supervisor
+                .lock()
+                .unwrap()
+                .instance_process_tree_is_running(&details.summary.id)
+                .unwrap()
+                == Some(false)
+            {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("synthetic Mod probe must exit after all assertions");
 }
