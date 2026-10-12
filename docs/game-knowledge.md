@@ -45,7 +45,8 @@ RimWorld Together 是社区 Mod。来源类别不会因抓取成功而升级。
 本地模型为 IBM `granite-embedding-97m-multilingual-r2` 官方 INT8 ONNX 导出，模型、分词器和配置合计
 123,550,766 字节（约 124 MB），384 维；使用发布方的 CLS 池化与 L2 归一化，不添加 E5 前缀。
 每段最多 512 token，超长正文按原始 UTF-8 偏移继续分段，不能静默截断。CPU 推理由随应用内嵌的
-ONNX Runtime 1.30.0 执行，最多两个计算线程、单次前向计算，不需要 Python、显卡或另装推理服务。
+ONNX Runtime 1.31.0 执行，最多两个计算线程、单次前向计算，不需要 Python、显卡或另装推理服务。
+应用显式关闭推理运行时遥测，不依赖上游发行包的默认设置。
 模型首次下载后可离线检索。切换模型会改变索引版本；下次更新时重新计算向量，旧模型向量不会混入检索。
 旧模型缓存不会自动删除。
 
@@ -120,7 +121,8 @@ serialized output budgets, and never silently replace missing evidence with writ
 The local model is IBM Granite Embedding 97M Multilingual R2's official INT8 ONNX export:
 123,550,766 download bytes, 384 dimensions, CLS pooling, L2 normalization and no prefix.
 Passages are split losslessly at a 512-token budget. The executable includes the verified
-ONNX Runtime 1.30.0 CPU libraries and retail CRT, so users need no Python or inference service.
+ONNX Runtime 1.31.0 CPU libraries and retail CRT, so users need no Python or inference service.
+The application explicitly disables runtime telemetry independently of upstream package defaults.
 An index-version change rebuilds vectors on the next sync and prevents old/new model mixing;
 existing model caches are preserved. Windows x64 builds require stable MSVC Build Tools.
 Publisher `use=reference` permits local indexing with brief excerpts and links, but disables full-document reads.

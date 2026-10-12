@@ -11,7 +11,11 @@ test("desktop registers the pinned single-instance plugin before application sta
   const cargoToml = fs.readFileSync(cargoTomlPath, "utf8");
   const mainSource = fs.readFileSync(mainPath, "utf8");
 
-  assert.match(cargoToml, /^tauri-plugin-single-instance = "=2\.5\.2"$/mu);
+  const pinnedVersion = cargoToml.match(/^tauri-plugin-single-instance = "=(\d+\.\d+\.\d+)"$/mu)?.[1];
+  assert.ok(pinnedVersion, "single-instance behavior must use an exact reviewed release");
+  const cargoLock = fs.readFileSync(path.join(root, "Cargo.lock"), "utf8");
+  const lockedVersion = cargoLock.match(/\[\[package\]\]\r?\nname = "tauri-plugin-single-instance"\r?\nversion = "([^"]+)"/u)?.[1];
+  assert.equal(lockedVersion, pinnedVersion, "the reviewed single-instance release must match the lockfile");
 
   const pluginRegistration = mainSource.indexOf(
     ".plugin(tauri_plugin_single_instance::init("

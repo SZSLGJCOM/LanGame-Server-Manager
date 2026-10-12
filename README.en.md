@@ -111,7 +111,7 @@ cargo run --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --bin langa
 Build a local installer (network update checks are disabled by default; no release signing key is required):
 
 ```powershell
-cargo install tauri-cli --version "=2.12.1" --locked
+cargo install tauri-cli --version "=2.12.2" --locked
 Push-Location apps/desktop
 try {
     cargo tauri build -- --locked

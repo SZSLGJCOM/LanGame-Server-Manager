@@ -82,7 +82,7 @@ interface Hooks {
   reject: (call: PreviewCall, message: string) => Promise<void>;
   last: (command: string) => PreviewCall;
   calls: PreviewCall[];
-  moduleCalls: { moduleId?: string; module_id?: string; includePreservedProgramCounts?: boolean; include_preserved_program_counts?: boolean }[];
+  moduleCalls: { moduleId?: string; includePreservedProgramCounts?: boolean }[];
   configuration: (id: string) => InstanceArchiveDetails;
   setManualReads: (value: boolean) => void;
   setManualModuleReads: (value: boolean) => void;
@@ -179,8 +179,8 @@ export async function runArchivePreviewAssertions(hooks: Hooks) {
   check(!element(preview("a")).querySelector("[contenteditable=true]")
     && [...element(preview("a")).querySelectorAll<HTMLButtonElement>('button[type="submit"]')].every((button) => button.disabled)
     && hooks.saves() === savedBefore && hooks.starts() === startedBefore, "Read-only preview exposes no Save or Start action and submits no write callback");
-  check(hooks.moduleCalls.some((args) => args.moduleId === "minecraft" && args.module_id === "minecraft"
-    && args.includePreservedProgramCounts === false && args.include_preserved_program_counts === false),
+  check(hooks.moduleCalls.some((args) => args.moduleId === "minecraft"
+    && args.includePreservedProgramCounts === false),
     "Preview reads the archive's own module definition without preserved-program inventory counts");
   if (hooks.originalModuleId !== "minecraft") check(hooks.moduleCalls.at(-1)?.moduleId !== hooks.originalModuleId,
     "Archive preview does not reuse the previously selected normal instance's module");

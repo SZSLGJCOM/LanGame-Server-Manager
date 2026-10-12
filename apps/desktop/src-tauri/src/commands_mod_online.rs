@@ -319,7 +319,12 @@ pub(super) fn reject_loader_archive(path: &Path) -> Result<(), String> {
         let entry = archive
             .by_index(index)
             .map_err(|error| format!("cannot inspect Thunderstore archive entry: {error}"))?;
-        let name = entry.name().replace('\\', "/").to_ascii_lowercase();
+        let name = crate::archive_entry::name(&entry)
+            .map_err(|error| {
+                format!("invalid Thunderstore archive entry name at index {index}: {error}")
+            })?
+            .replace('\\', "/")
+            .to_ascii_lowercase();
         if name.ends_with("/doorstop_config.ini")
             || name == "doorstop_config.ini"
             || name.ends_with("/winhttp.dll")

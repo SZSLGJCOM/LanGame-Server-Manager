@@ -163,38 +163,48 @@ pub async fn read_instance_details(
         let record = fetch_instance_record(&pool, instance_id).await?;
         let ports = load_instance_ports(&pool, instance_id).await?;
         let active_run = load_active_instance_run(&pool, instance_id).await?;
-        let config_file_path = record.config_dir.join("instance.json");
-        let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
-        let mut settings = parse_settings_object(&read_instance_settings_json(&config_file_path)?)?;
-        normalize_module_player_access_settings_strict(&record.summary.module_id, &mut settings)?;
-        crate::templates::dst_world_settings::project(descriptor.as_ref(), &mut settings)?;
-        let install_root = effective_instance_install_root(&record)?;
-        if let Some(snapshot) =
-            MoriaPermissionsSnapshot::read(&record.summary.module_id, &install_root)?
-        {
-            snapshot.project(&mut settings);
-        }
-        let settings_json = serde_json::to_string_pretty(&Value::Object(settings))?;
-        let backup_uses_declared_saves_path = module_declares_saves_path(descriptor.as_ref());
-        let saves_path = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
-
-        Ok(InstanceDetails {
-            summary: record.summary,
-            config_file_path: config_file_path.to_string_lossy().into_owned(),
-            saves_path: saves_path.to_string_lossy().into_owned(),
-            backup_uses_declared_saves_path,
-            auto_backup_on_stop: record.auto_backup_on_stop,
-            backup_retention_count: record.backup_retention_count,
-            settings_json,
-            ports,
-            active_run,
-        })
+        Ok::<_, StorageError>((record, ports, active_run))
     }
     .await;
     // Dropping a pool does not wait for SQLite's worker to release Windows file handles.
-    // Close on both success and error before callers can remove or replace the database.
+    // Close on both success and error before reading configuration or returning.
     pool.close().await;
-    result
+    let (record, ports, active_run) = result?;
+    project_instance_details(paths, record, ports, active_run)
+}
+
+pub(crate) fn project_instance_details(
+    paths: &StoragePaths,
+    record: StoredInstanceRecord,
+    ports: Vec<PortBinding>,
+    active_run: Option<ActiveInstanceRun>,
+) -> Result<InstanceDetails, StorageError> {
+    let config_file_path = record.config_dir.join("instance.json");
+    let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
+    let mut settings = parse_settings_object(&read_instance_settings_json(&config_file_path)?)?;
+    normalize_module_player_access_settings_strict(&record.summary.module_id, &mut settings)?;
+    crate::templates::dst_world_settings::project(descriptor.as_ref(), &mut settings)?;
+    let install_root = effective_instance_install_root(&record)?;
+    if let Some(snapshot) =
+        MoriaPermissionsSnapshot::read(&record.summary.module_id, &install_root)?
+    {
+        snapshot.project(&mut settings);
+    }
+    let settings_json = serde_json::to_string_pretty(&Value::Object(settings))?;
+    let backup_uses_declared_saves_path = module_declares_saves_path(descriptor.as_ref());
+    let saves_path = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
+
+    Ok(InstanceDetails {
+        summary: record.summary,
+        config_file_path: config_file_path.to_string_lossy().into_owned(),
+        saves_path: saves_path.to_string_lossy().into_owned(),
+        backup_uses_declared_saves_path,
+        auto_backup_on_stop: record.auto_backup_on_stop,
+        backup_retention_count: record.backup_retention_count,
+        settings_json,
+        ports,
+        active_run,
+    })
 }
 
 pub async fn create_instance(

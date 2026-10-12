@@ -113,14 +113,13 @@ npm --prefix apps/desktop run verify:configuration-workspace
 npm --prefix apps/desktop run verify:configuration-regressions
 ~~~
 
-If Rust behavior changes, also run:
+Before submitting module or backend behavior changes, run the shared complete gate:
 
 ~~~powershell
-cargo check --workspace --all-targets --all-features --locked
-cargo test --workspace --all-features --locked
+python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-module-candidate'
 ~~~
 
-Run the broader `npm --prefix apps/desktop run verify` gate before submission. A real dedicated-server smoke run is required when the claim depends on installation, process, network, save, update, or administration behavior that deterministic fixtures cannot prove. Publish only the sanitized result and evidence classification; never publish the server package, credentials, private logs, or player data.
+See [Development](development.md#change-and-verification) for focused components and managed-workstation wrappers. `npm --prefix apps/desktop run verify` covers quick frontend checks and current publication boundaries; `verify:release` adds browser tests and publication history. Neither npm entry includes Rust or native desktop acceptance. A real dedicated-server smoke run is required when the claim depends on installation, process, network, save, update, or administration behavior that deterministic fixtures cannot prove. Publish only the sanitized result and evidence classification; never publish the server package, credentials, private logs, or player data.
 
 ### Review checklist
 
@@ -243,14 +242,13 @@ npm --prefix apps/desktop run verify:configuration-workspace
 npm --prefix apps/desktop run verify:configuration-regressions
 ~~~
 
-Rust 行为发生变化时，还应执行：
+提交模块或后端行为变更前，执行共享完整门禁：
 
 ~~~powershell
-cargo check --workspace --all-targets --all-features --locked
-cargo test --workspace --all-features --locked
+python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-module-candidate'
 ~~~
 
-提交前执行完整的 `npm --prefix apps/desktop run verify` 门禁。如果支持结论依赖安装、进程、网络、存档、更新或管理行为，且确定性夹具无法证明，则必须执行真实专用服务器烟测。公开内容仅限已脱敏结果和证据分类，不得公开服务器程序包、凭据、私有日志或玩家数据。
+相关组件的单独验证与托管工作站封装见[开发指南](development.md#改动与验证)。`npm --prefix apps/desktop run verify` 覆盖前端快速检查和当前公开边界；`verify:release` 再加入浏览器测试与完整公开历史。两个 npm 入口均不包含 Rust 或原生桌面验收。如果支持结论依赖安装、进程、网络、存档、更新或管理行为，且确定性夹具无法证明，则必须执行真实专用服务器烟测。公开内容仅限已脱敏结果和证据分类，不得公开服务器程序包、凭据、私有日志或玩家数据。
 
 ### 评审清单
 

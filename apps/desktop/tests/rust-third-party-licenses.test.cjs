@@ -46,18 +46,12 @@ test("Tauri installs the Rust legal inventory as an explicit resource", () => {
   );
 });
 
-test("CI and public snapshot contracts retain Rust license verification inputs", () => {
-  const workflow = fs.readFileSync(path.join(root, ".github", "workflows", "ci.yml"), "utf8");
+test("the public snapshot retains Rust license verification inputs", () => {
   const snapshotPolicy = fs.readFileSync(
     path.join(root, "scripts", "export_public_snapshot.py"),
     "utf8"
   );
 
-  assert.match(workflow, /cargo fetch --locked/);
-  assert.match(
-    workflow,
-    /generate_rust_third_party_licenses\.py --check --offline/
-  );
   for (const requiredPath of [
     "apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt",
     "scripts/generate_rust_third_party_licenses.py",

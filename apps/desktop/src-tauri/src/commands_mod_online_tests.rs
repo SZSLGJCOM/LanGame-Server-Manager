@@ -108,6 +108,7 @@ fn online_mod_loader_archives_are_rejected_before_plugin_extraction() {
     let fixture = Fixture::new();
     for (name, allowed) in [
         ("plugins/plugin.dll", true),
+        ("plugins/插件.dll", true),
         ("BepInExPack/BepInEx/core/BepInEx.dll", false),
     ] {
         let path = fixture
@@ -121,5 +122,37 @@ fn online_mod_loader_archives_are_rejected_before_plugin_extraction() {
         archive.write_all(b"MZpayload").unwrap();
         archive.finish().unwrap();
         assert_eq!(reject_loader_archive(&path).is_ok(), allowed);
+    }
+}
+
+#[test]
+fn online_mod_archive_honors_declared_filename_encoding() {
+    let fixture = Fixture::new();
+    let path = fixture.0.join("invalid-name.zip");
+    let file = fs::File::create(&path).unwrap();
+    let mut archive = zip::ZipWriter::new(file);
+    archive
+        .start_file("plugin.dll", zip::write::SimpleFileOptions::default())
+        .unwrap();
+    archive.write_all(b"MZpayload").unwrap();
+    archive.finish().unwrap();
+    let original = fs::read(&path).unwrap();
+    for declares_utf8 in [false, true] {
+        let mut bytes = original.clone();
+        // The same byte is valid CP437, but invalid when both headers declare UTF-8.
+        for (signature, flags_offset, name_offset) in
+            [(b"PK\x03\x04", 6, 30), (b"PK\x01\x02", 8, 46)]
+        {
+            let offset = bytes
+                .windows(4)
+                .position(|value| value == signature)
+                .unwrap();
+            if declares_utf8 {
+                bytes[offset + flags_offset + 1] |= 0x08;
+            }
+            bytes[offset + name_offset] = 0xff;
+        }
+        fs::write(&path, bytes).unwrap();
+        assert_eq!(reject_loader_archive(&path).is_err(), declares_utf8);
     }
 }

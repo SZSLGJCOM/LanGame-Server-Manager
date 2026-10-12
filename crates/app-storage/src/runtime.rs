@@ -87,13 +87,69 @@ pub async fn read_instance_runtime_overview(
     paths: &StoragePaths,
     instance_id: &str,
 ) -> Result<InstanceRuntimeOverview, StorageError> {
+    let data = read_instance_runtime_data(paths, instance_id).await?;
+    build_instance_runtime_overview(paths, data, None).await
+}
+
+pub async fn read_instance_details_and_runtime_overview(
+    paths: &StoragePaths,
+    instance_id: &str,
+) -> Result<(InstanceDetails, InstanceRuntimeOverview), StorageError> {
+    let data = read_instance_runtime_data(paths, instance_id).await?;
+    let details = data.details(paths)?;
+    let ark_health_instance =
+        app_core::ark_maps::is_ark(&details.summary.module_id).then(|| details.clone());
+    let overview = build_instance_runtime_overview(paths, data, ark_health_instance).await?;
+    Ok((details, overview))
+}
+
+struct InstanceRuntimeData {
+    record: StoredInstanceRecord,
+    active_run: Option<ActiveInstanceRun>,
+    recent_runs: Vec<InstanceRunRecord>,
+    ports: Vec<PortBinding>,
+}
+
+impl InstanceRuntimeData {
+    fn details(&self, paths: &StoragePaths) -> Result<InstanceDetails, StorageError> {
+        crate::instances::project_instance_details(
+            paths,
+            self.record.clone(),
+            self.ports.clone(),
+            self.active_run.clone(),
+        )
+    }
+}
+
+async fn read_instance_runtime_data(
+    paths: &StoragePaths,
+    instance_id: &str,
+) -> Result<InstanceRuntimeData, StorageError> {
     let pool = connect_pool(paths).await?;
+    let result = async {
+        Ok(InstanceRuntimeData {
+            record: fetch_instance_record(&pool, instance_id).await?,
+            active_run: load_active_instance_run(&pool, instance_id).await?,
+            recent_runs: load_recent_instance_runs(&pool, instance_id, 8).await?,
+            ports: load_instance_ports(&pool, instance_id).await?,
+        })
+    }
+    .await;
+    pool.close().await;
+    result
+}
 
-    let record = fetch_instance_record(&pool, instance_id).await?;
-
-    let active_run = load_active_instance_run(&pool, instance_id).await?;
-    let recent_runs = load_recent_instance_runs(&pool, instance_id, 8).await?;
-    let ports = load_instance_ports(&pool, instance_id).await?;
+async fn build_instance_runtime_overview(
+    paths: &StoragePaths,
+    data: InstanceRuntimeData,
+    ark_health_instance: Option<InstanceDetails>,
+) -> Result<InstanceRuntimeOverview, StorageError> {
+    let InstanceRuntimeData {
+        record,
+        active_run,
+        recent_runs,
+        ports,
+    } = data;
     let player_query = load_module_descriptor(paths, &record.summary.module_id)
         .ok()
         .flatten()
@@ -111,7 +167,15 @@ pub async fn read_instance_runtime_overview(
         None
     };
     let ark_health_instance = if app_core::ark_maps::is_ark(&module_id) {
-        Some(crate::instances::read_instance_details(paths, instance_id).await?)
+        Some(match ark_health_instance {
+            Some(details) => details,
+            None => crate::instances::project_instance_details(
+                paths,
+                record.clone(),
+                ports.clone(),
+                active_run.clone(),
+            )?,
+        })
     } else {
         None
     };
@@ -165,8 +229,6 @@ pub async fn read_instance_runtime_overview(
         &record.saves_dir,
         active_run.as_ref(),
     );
-
-    pool.close().await;
 
     let players = if let Some((_, summary)) = query_restriction {
         app_core::RuntimePlayerSnapshot {

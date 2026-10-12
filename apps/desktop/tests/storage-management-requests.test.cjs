@@ -108,7 +108,7 @@ test("archive and deletion APIs share the mutation gate with archive management"
   await assert.rejects(h.api.deleteInstance("two"), /storage operation is in progress/);
   await assert.rejects(h.storage.restoreInstanceArchive("three"), /storage operation is in progress/);
   await settle(); assert.deepEqual(h.commands(), ["archive_instance_record"]);
-  assert.equal(h.calls[0].args.instance_id, "one");
+  assert.equal(h.calls[0].args.instanceId, "one");
   h.calls[0].resolve({ archived: true }); await archive;
   const deletion = h.api.deleteInstance("two");
   const listing = h.storage.listInstanceArchives();
@@ -269,9 +269,7 @@ test("configuration details can load during inventory refresh without requesting
   assert.deepEqual(h.commands(), ["list_instance_archives", "read_module_details"]);
   const request = h.calls[1];
   assert.equal(request.args.moduleId, "minecraft");
-  assert.equal(request.args.module_id, "minecraft");
   assert.equal(request.args.includePreservedProgramCounts, false);
-  assert.equal(request.args.include_preserved_program_counts, false);
   const nativeDetails = { summary: { id: "minecraft", instance_program_count: 0, archived_program_count: 0 },
     schema_json: '{"properties":{"server_name":{"type":"string"}}}',
     install: { install_root: "synthetic-server" }, process: { executable: "java" },
@@ -302,7 +300,6 @@ test("installation status refresh completes during archive mutation without requ
   await settle();
   assert.deepEqual(h.commands(), ["archive_instance_record", "refresh_modules"]);
   assert.equal(h.calls[1].args.includePreservedProgramCounts, false);
-  assert.equal(h.calls[1].args.include_preserved_program_counts, false);
   const native = [{ id: "minecraft", install_state: "Installed", instance_program_count: 0, archived_program_count: 0 }];
   h.calls[1].resolve(native);
   const modules = await read;
@@ -377,7 +374,6 @@ test("library detail reads continue to request and retain preserved program coun
   const read = h.api.readModuleDetails("minecraft");
   await settle();
   assert.equal(h.calls[0].args.includePreservedProgramCounts, true);
-  assert.equal(h.calls[0].args.include_preserved_program_counts, true);
   const details = { summary: { id: "minecraft", instance_program_count: 2, archived_program_count: 3 } };
   h.calls[0].resolve(details);
   assert.equal(await read, details);

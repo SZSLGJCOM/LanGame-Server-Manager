@@ -1089,7 +1089,16 @@ fn inspect_manual_mod_archive(
                 error
             )
         })?;
-        let entry_name = entry.name().to_string();
+        let entry_name = crate::archive_entry::name(&entry)
+            .map_err(|error| {
+                format!(
+                    "invalid entry name at index {} from {}: {}",
+                    index,
+                    archive_path.display(),
+                    error
+                )
+            })?
+            .into_owned();
         let Some(enclosed_name) = entry.enclosed_name() else {
             return Err(format!(
                 "refusing to extract unsafe archive entry `{}`",
