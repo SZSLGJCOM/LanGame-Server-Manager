@@ -306,7 +306,11 @@ async function run() {
   await settleUntil(() => fixture.querySelector(".shell-topnav-badge")?.textContent === "3", "App must finish bootstrap");
   installNativeBoundary();
   await act(async () => {
-    await Promise.all([import("../../src/views/LibraryView"), import("../../src/views/ServerWorkspaceView")]);
+    await Promise.all([
+      import("../../src/views/LibraryView"),
+      import("../../src/views/library/LibraryDetailPage"),
+      import("../../src/views/ServerWorkspaceView")
+    ]);
   });
   await assertLibraryInstalled("minecraft", "before-delete");
   await navigate("servers");
