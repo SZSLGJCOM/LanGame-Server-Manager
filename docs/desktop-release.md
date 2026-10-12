@@ -6,7 +6,7 @@ The supported release target is Windows x86_64 with a stable `major.minor.patch`
 
 ## Automated pre-release regression
 
-Run the shared complete tier against the exact release candidate before packaging, or dispatch the GitHub `CI` workflow with `tier: full`. The daily regression invokes the same checks; it is not an independent certification of a later commit.
+Use a successful complete-tier result for the exact release candidate before packaging. An automatic push run that already selected and passed the full frontend, Rust and native checks provides that result; retain its run URL and acceptance artifacts instead of dispatching the same checks again. Otherwise run the shared complete tier locally or dispatch the GitHub `CI` workflow with `tier: full`. Reuse requires the same clean source revision, locked dependencies and verification rules; a partial run or later source change does not qualify. The daily regression invokes the same checks; it is not an independent certification of a later commit.
 
 ```powershell
 python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-release-candidate'
@@ -158,6 +158,8 @@ A build distributed while checks were disabled needs one manual installation of 
 References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/), [Windows code signing](https://v2.tauri.app/distribute/sign/windows/), [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
 
 ## 简体中文操作摘要
+
+打包前使用精确候选提交的完整验证结果。自动 push 已选中并通过全部前端、Rust 和原生检查时，保留该轮地址及验收产物，无须为同一候选再次手动跑完整回归；部分检查、未提交的源码变化或后续提交不能复用此结论。构建脚本不会再执行全套测试，实际安装包的签名、安装、升级及存档保留验收仍独立完成。
 
 默认执行脚本只在仓库外生成本地计划与合并配置，不构建、不联网、不上传、不创建 Release、不公开源码。默认不需要更新私钥、不开启更新源。`-SignUpdates` 生成更新签名；`-EnableGitHubUpdates` 同时启用 GitHub 更新源并要求匹配的签名私钥。`-BuildPortable` 用于普通 Windows 构建机，受管环境应遵循其指定构建入口。
 

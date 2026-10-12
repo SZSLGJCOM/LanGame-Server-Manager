@@ -2753,13 +2753,13 @@ pub(crate) fn effective_instance_install_root(
             ));
         }
     };
-    if crate::program_runtime::instance_program_mode(instance_root)? != expected_mode {
+    let (mode, root) = crate::program_runtime::resolve_instance_program(instance_root)?;
+    if mode != expected_mode {
         return Err(crate::program_runtime::invalid(
             instance_root,
             "program files and registered ownership disagree; recover the installation before use",
         ));
     }
-    let root = crate::program_runtime::resolve_instance_runtime_root(instance_root)?;
     let registered = record.program_install_root.as_ref().ok_or_else(|| {
         crate::program_runtime::invalid(
             instance_root,

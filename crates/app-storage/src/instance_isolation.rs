@@ -5,7 +5,6 @@ use serde::Serialize;
 use sqlx::SqliteConnection;
 
 use crate::instances::validate_managed_instance_root;
-use crate::program_runtime::{InstanceProgramMode, instance_program_mode};
 use crate::save_paths::effective_instance_saves_dir;
 use crate::storage_db::{connect_pool, load_instance_isolation_records};
 use crate::{StorageError, StoragePaths, StoredInstanceRecord};
@@ -207,17 +206,15 @@ fn project_layout(
         .to_owned();
     let mut issues = Vec::new();
     let (mode, runtime) = match crate::instances::effective_instance_install_root(&record) {
-        Ok(runtime) => (
-            if matches!(
-                instance_program_mode(&root),
-                Ok(InstanceProgramMode::Shared)
-            ) {
+        Ok(runtime) => {
+            // The effective-root resolver already checked the registered mode.
+            let mode = if record.runtime_mode == "shared" {
                 "shared"
             } else {
                 "private"
-            },
-            runtime,
-        ),
+            };
+            (mode, runtime)
+        }
         Err(error) => {
             issues.push(error.to_string());
             ("damaged", root.join("runtime"))

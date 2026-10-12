@@ -238,7 +238,8 @@ fn inspect_tree(root: &Path, limit: usize) -> Result<Vec<TreeEntry>, StorageErro
                     path: path.clone(),
                     source,
                 })?;
-            if metadata.file_type().is_symlink() || crate::private_runtime::is_reparse_point(&path)?
+            if metadata.file_type().is_symlink()
+                || crate::private_runtime::metadata_is_reparse_point(&metadata)
             {
                 return Err(StorageError::UnsafeManagedPath {
                     path,

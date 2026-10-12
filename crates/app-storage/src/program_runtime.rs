@@ -77,34 +77,40 @@ struct SharedProgramBinding {
 }
 
 pub fn instance_program_mode(instance_root: &Path) -> Result<InstanceProgramMode, StorageError> {
-    if instance_uses_exclusive_program(instance_root)? {
-        return Ok(InstanceProgramMode::Independent);
-    }
-    match fs::symlink_metadata(instance_root.join("runtime").join(SHARED_RUNTIME_BINDING)) {
-        Ok(_) => {
-            resolve_shared_program(instance_root)?;
-            Ok(InstanceProgramMode::Shared)
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-            resolve_instance_private_runtime_root(instance_root)?;
-            Ok(InstanceProgramMode::Independent)
-        }
-        Err(source) => Err(StorageError::ReadPath {
-            path: instance_root.join("runtime").join(SHARED_RUNTIME_BINDING),
-            source,
-        }),
-    }
+    resolve_instance_program(instance_root).map(|(mode, _)| mode)
 }
 
 /// An instance owns its directory even when its executable comes from a shared
 /// library. A damaged private runtime never falls back to that library.
 pub fn resolve_instance_runtime_root(instance_root: &Path) -> Result<PathBuf, StorageError> {
-    if instance_uses_exclusive_program(instance_root)? {
-        return resolve_exclusive_program_reference(&instance_root.join("runtime"));
+    resolve_instance_program(instance_root).map(|(_, root)| root)
+}
+
+/// Return mode and path from one validation pass instead of rereading the same
+/// ownership files to derive each result separately.
+pub(crate) fn resolve_instance_program(
+    instance_root: &Path,
+) -> Result<(InstanceProgramMode, PathBuf), StorageError> {
+    let runtime = instance_root.join("runtime");
+    if binding_exists(&runtime.join(EXCLUSIVE_RUNTIME_BINDING))? {
+        return Ok((
+            InstanceProgramMode::Independent,
+            resolve_exclusive_program_reference(&runtime)?,
+        ));
     }
-    match instance_program_mode(instance_root)? {
-        InstanceProgramMode::Shared => resolve_shared_program(instance_root),
-        InstanceProgramMode::Independent => resolve_instance_private_runtime_root(instance_root),
+    match fs::symlink_metadata(runtime.join(SHARED_RUNTIME_BINDING)) {
+        Ok(_) => Ok((
+            InstanceProgramMode::Shared,
+            resolve_shared_program(instance_root)?,
+        )),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok((
+            InstanceProgramMode::Independent,
+            resolve_instance_private_runtime_root(instance_root)?,
+        )),
+        Err(source) => Err(StorageError::ReadPath {
+            path: runtime.join(SHARED_RUNTIME_BINDING),
+            source,
+        }),
     }
 }
 

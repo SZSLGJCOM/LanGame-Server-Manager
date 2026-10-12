@@ -398,7 +398,7 @@ pub(in crate::commands) async fn prepare_fake_registered_program(
         fs::create_dir_all(path.parent().ok_or("fixture program parent is missing")?)?;
         fs::write(path, b"synthetic program fixture, never executed")?;
     }
-    record_fake_program_baseline(&paths.settings(), &descriptor.summary.id)?;
+    app_storage::record_library_program_baseline(&root, descriptor, true, None)?;
     sync_game_installs(
         paths,
         &[GameInstallSyncRecord {
@@ -508,21 +508,21 @@ fn prepare_fake_terraria_install(settings: &AppSettings) -> Result<(), Box<dyn s
         .install
         .as_ref()
         .ok_or("Terraria fixture install contract is missing")?;
-    let executable = Path::new(&settings.games_root)
-        .join(&install.shared_game_dir)
-        .join(
-            install
-                .verification_path
-                .as_deref()
-                .ok_or("Terraria fixture verification path is missing")?,
-        );
+    let install_root = Path::new(&settings.games_root).join(&install.shared_game_dir);
+    let executable = install_root.join(
+        install
+            .verification_path
+            .as_deref()
+            .ok_or("Terraria fixture verification path is missing")?,
+    );
     fs::create_dir_all(
         executable
             .parent()
             .ok_or("Terraria fixture program parent is missing")?,
     )?;
     fs::write(executable, "fake Terraria dedicated server executable")?;
-    record_fake_program_baseline(settings, "terraria")
+    app_storage::record_library_program_baseline(&install_root, descriptor, true, None)?;
+    Ok(())
 }
 
 fn prepare_fake_project_zomboid_install(

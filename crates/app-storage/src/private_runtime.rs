@@ -47,7 +47,10 @@ pub fn resolve_instance_private_runtime_root(
             "instance runtime is missing a valid private marker; refusing to use the shared installation",
         ),
     };
-    if !metadata.is_dir() || metadata.file_type().is_symlink() || is_reparse_point(&runtime_root)? {
+    if !metadata.is_dir()
+        || metadata.file_type().is_symlink()
+        || metadata_is_reparse_point(&metadata)
+    {
         return Err(invalid());
     }
     let marker = runtime_root.join(PRIVATE_RUNTIME_MARKER);
@@ -63,7 +66,7 @@ pub fn resolve_instance_private_runtime_root(
     };
     if !marker_metadata.is_file()
         || marker_metadata.file_type().is_symlink()
-        || is_reparse_point(&marker)?
+        || metadata_is_reparse_point(&marker_metadata)
     {
         return Err(invalid());
     }

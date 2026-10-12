@@ -96,7 +96,7 @@ pub(crate) fn plain_directory(path: &Path) -> Result<bool, StorageError> {
     };
     if !metadata.is_dir()
         || metadata.file_type().is_symlink()
-        || crate::private_runtime::is_reparse_point(path)?
+        || crate::private_runtime::metadata_is_reparse_point(&metadata)
     {
         return Err(StorageError::UnsafeManagedPath {
             path: path.to_owned(),
@@ -293,7 +293,7 @@ fn tree_entries(root: &Path, expected: &str) -> Result<Vec<TreeEntry>, StorageEr
             source,
         })?;
         if metadata.file_type().is_symlink()
-            || crate::private_runtime::is_reparse_point(&path)?
+            || crate::private_runtime::metadata_is_reparse_point(&metadata)
             || (!metadata.is_dir() && !metadata.is_file())
         {
             return Err(invalid(
