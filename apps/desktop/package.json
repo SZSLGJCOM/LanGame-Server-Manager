@@ -24,7 +24,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 43170 --strictPort",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --test-concurrency=4",
+    "test": "python -B ../../scripts/verify_project.py --component frontend-tests --tier quick",
+    "test:full": "python -B ../../scripts/verify_project.py --component frontend-tests --tier full",
     "desktop": "cargo run --manifest-path src-tauri/Cargo.toml --bin langame-desktop",
     "test:assistant": "node --test tests/assistant-conversations.test.cjs",
     "smoke:ai-secret": "cargo test --manifest-path src-tauri/Cargo.toml assistant::tests::secret_roundtrip_file_backend_smoke -- --exact --nocapture",
@@ -59,29 +60,29 @@
     "verify:no-tracked-secrets": "python -B ../../scripts/verify_no_tracked_secrets.py",
     "verify:open-source-boundary": "python -B ../../scripts/verify_open_source_boundary.py",
     "verify:open-source-history": "python -B ../../scripts/verify_open_source_history.py",
-    "verify": "npm run verify:no-tracked-secrets && npm run verify:open-source-boundary && npm run audit:i18n && npm run verify:i18n && npm run verify:dedicated-settings && npm run verify:config-provenance && npm run verify:game-knowledge && npm run verify:module-settings && npm run verify:config-acceptance && npm run verify:library-media && npm test && npm run build",
-    "verify:release": "npm run verify && npm run verify:open-source-history",
+    "verify": "python -B ../../scripts/verify_project.py --component frontend --tier quick",
+    "verify:release": "python -B ../../scripts/verify_project.py --component frontend --tier full",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",
-    "@tauri-apps/api": "^2.12.1",
+    "@tauri-apps/api": "^2.12.3",
     "hls.js": "^1.7.3",
-    "motion": "^14.0.0",
+    "motion": "^14.1.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "0.186.1"
   },
   "devDependencies": {
     "@typescript/typescript6": "6.0.2",
-    "@tauri-apps/cli": "2.12.1",
+    "@tauri-apps/cli": "2.12.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
-    "vite": "^8.3.3"
+    "vite": "^8.3.4"
   },
   "allowScripts": {
     "fsevents@2.3.3": false

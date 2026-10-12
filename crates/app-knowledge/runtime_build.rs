@@ -8,12 +8,12 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-const ARCHIVE_URL: &str = "https://github.com/microsoft/onnxruntime/releases/download/v1.30.0/onnxruntime-win-x64-1.30.0.zip";
-const ARCHIVE_BYTES: u64 = 82_645_522;
-const ARCHIVE_SHA256: &str = "c6ba983baf5681af108599675d2a89c2d145512d02de28aed0bff177cd0ba949";
-const PREFIX: &str = "onnxruntime-win-x64-1.30.0/";
+const ARCHIVE_URL: &str = "https://github.com/microsoft/onnxruntime/releases/download/v1.31.0/onnxruntime-win-x64-1.31.0.zip";
+const ARCHIVE_BYTES: u64 = 82_887_349;
+const ARCHIVE_SHA256: &str = "3958d8a44984160692c1b4ffd0de3cb48f8c39f9d34bb31e433db06e30b82195";
+const PREFIX: &str = "onnxruntime-win-x64-1.31.0/";
 const ORT_FILES: &[(&str, &str, u64)] = &[
-    ("lib/onnxruntime.dll", "onnxruntime.dll", 16_462_648),
+    ("lib/onnxruntime.dll", "onnxruntime.dll", 17_253_176),
     (
         "lib/onnxruntime_providers_shared.dll",
         "onnxruntime_providers_shared.dll",
@@ -149,7 +149,7 @@ pub fn prepare() -> Result<()> {
     )?);
     entries.sort_by(|a, b| a.name.cmp(&b.name));
     let manifest = Manifest {
-        onnx_runtime: "1.30.0",
+        onnx_runtime: "1.31.0",
         target: "x86_64-pc-windows-msvc",
         crt_version: redist.version,
         files: entries,
@@ -210,7 +210,7 @@ fn verified_archive(out: &Path) -> Result<Vec<u8>> {
         println!("cargo:rerun-if-changed={}", path.display());
         return check_archive(bounded_read(&path, ARCHIVE_BYTES)?);
     }
-    let path = out.join("onnxruntime-win-x64-1.30.0.zip");
+    let path = out.join("onnxruntime-win-x64-1.31.0.zip");
     if path.exists() {
         return check_archive(bounded_read(&path, ARCHIVE_BYTES)?);
     }

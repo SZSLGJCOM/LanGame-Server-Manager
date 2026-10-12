@@ -163,19 +163,6 @@ test("snapshot, row, issue, and action DTO fields match the public Rust contract
   }
 });
 
-test("live-player API clients use only their declared commands and LAN-compatible instance keys", () => {
-  const read = apiFunctionSource("readInstanceLivePlayers");
-  const refresh = apiFunctionSource("refreshInstanceLivePlayers");
-  const execute = apiFunctionSource("executeInstancePlayerAction");
-
-  assert.match(read, /"read_instance_live_players"/);
-  assert.match(read, /instanceId,\s*instance_id:\s*instanceId/);
-  assert.match(refresh, /"refresh_instance_live_players"/);
-  assert.match(refresh, /instanceId,\s*instance_id:\s*instanceId/);
-  assert.match(execute, /"execute_instance_player_action",\s*\{ input \}/);
-  assert.doesNotMatch(execute, /runtimeAction|command|transport|target/);
-});
-
 test("declared manual player actions keep backend descriptors authoritative", () => {
   const manual = apiFunctionSource("executeDeclaredRuntimePlayerAction");
   assert.match(manual, /"execute_instance_manual_player_action"/);

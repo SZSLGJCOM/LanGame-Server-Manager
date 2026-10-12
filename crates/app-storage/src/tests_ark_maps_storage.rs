@@ -146,6 +146,46 @@ impl Drop for MapFixture {
 }
 
 #[tokio::test]
+async fn ark_combined_runtime_read_preserves_map_details_and_configuration_errors() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let mut fixture = MapFixture::new(edition).await;
+        fixture.add_two_maps().await;
+        let expected = read_instance_runtime_overview(&fixture.paths, &fixture.created.summary.id)
+            .await
+            .unwrap();
+        let (details, overview) =
+            read_instance_details_and_runtime_overview(&fixture.paths, &fixture.created.summary.id)
+                .await
+                .unwrap();
+        assert_eq!(
+            serde_json::to_value(details).unwrap(),
+            serde_json::to_value(&fixture.details).unwrap()
+        );
+        assert_eq!(
+            serde_json::to_value(overview).unwrap(),
+            serde_json::to_value(expected).unwrap()
+        );
+        #[cfg(windows)]
+        super::instance_details_tests::assert_database_closed(&fixture.paths);
+
+        fs::write(&fixture.created.config_file_path, "{invalid configuration").unwrap();
+        let error = read_instance_runtime_overview(&fixture.paths, &fixture.created.summary.id)
+            .await
+            .unwrap_err();
+        assert!(matches!(error, StorageError::InvalidConfigJson { .. }));
+        #[cfg(windows)]
+        super::instance_details_tests::assert_database_closed(&fixture.paths);
+        let error =
+            read_instance_details_and_runtime_overview(&fixture.paths, &fixture.created.summary.id)
+                .await
+                .unwrap_err();
+        assert!(matches!(error, StorageError::InvalidConfigJson { .. }));
+        #[cfg(windows)]
+        super::instance_details_tests::assert_database_closed(&fixture.paths);
+    }
+}
+
+#[tokio::test]
 async fn ark_complete_map_names_survive_storage_readback_and_restart_materialization() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
         let mut fixture = MapFixture::new(edition).await;

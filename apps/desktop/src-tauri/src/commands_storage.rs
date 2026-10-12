@@ -566,14 +566,12 @@ pub async fn read_instance_runtime_overview_from_storage(
         .await
         .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
-    let instance = read_instance_details(&storage.paths, &instance_id)
-        .await
-        .map_err(|error| error.to_string())?;
+    let (instance, mut overview) =
+        app_storage::read_instance_details_and_runtime_overview(&storage.paths, &instance_id)
+            .await
+            .map_err(|error| error.to_string())?;
     let runtime_by_module = load_module_runtime_capability_map(&storage.paths.modules_root)
         .map_err(|message| logged_error_message(&storage, message))?;
-    let mut overview = read_instance_runtime_overview(&storage.paths, &instance_id)
-        .await
-        .map_err(|error| error.to_string())?;
     crate::runtime_astroneer_health::apply(&state, &storage.paths, &instance, &mut overview.health)
         .await;
     if let Some(pending_log) = pending_start_console_log_snapshot(&state, &instance_id, 32) {

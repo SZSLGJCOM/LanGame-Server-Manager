@@ -1,0 +1,203 @@
+import argparse
+import contextlib
+import io
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+from scripts.verify_project import DESKTOP, ROOT, Runner, frontend_tests, full_scopes, main, needs_full, validate_frontend_output
+
+
+class VerificationSelectionTests(unittest.TestCase):
+    def test_risky_boundaries_run_full_before_release(self):
+        for path in ("crates/app-storage/src/backups.rs", "crates/app-runtime/src/lib.rs",
+                     "crates/app-steamcmd/src/lib.rs", "apps/desktop/src-tauri/src/commands.rs",
+                     "modules/palworld/schema.json", "migrations/0001.sql", "Cargo.lock",
+                     "apps/desktop/package-lock.json", "scripts/verify_project.py",
+                     "apps/desktop/tests/helpers/runtime-browser-process.cjs"):
+            with self.subTest(path=path):
+                self.assertTrue(needs_full([path]))
+        self.assertFalse(needs_full(["README.md", "docs/development.md"]))
+
+    def test_frontend_changes_do_not_force_rust_or_native_regression(self):
+        for path in ("apps/desktop/src/styles/shell.css", "apps/desktop/src/desktop-exit-lifecycle.ts",
+                     "apps/desktop/src/runtime-log-stream.ts", "apps/desktop/src/storage-management-requests.ts",
+                     "apps/desktop/src/views/servers/BackupTable.tsx", "apps/desktop/src/hooks/useInstanceArchives.ts",
+                     "apps/desktop/tests/runtime-reliability-browser.test.cjs",
+                     "apps/desktop/tests/knowledge-settings.test.cjs", "apps/desktop/tsconfig.json"):
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (True, False, False))
+
+    def test_unit_and_scanner_changes_do_not_select_unrelated_slow_suites(self):
+        for path in ("apps/desktop/tests/runtime-browser-process.test.cjs",
+                     "apps/desktop/tests/unsupported-games-removal.test.cjs",
+                     "scripts/tests/test_verify_game_knowledge.py", ".github/ISSUE_TEMPLATE/bug_report.yml"):
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (False, False, False))
+        for path in ("apps/desktop/tests/helpers/runtime-browser-process.cjs",
+                     "apps/desktop/tests/fixtures/dontstarve-world-lua.json"):
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (True, False, False))
+
+    def test_rust_internal_changes_only_select_the_relevant_boundary(self):
+        for crate in ("app-knowledge", "app-modules"):
+            with self.subTest(crate=crate):
+                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, False, False))
+        for crate in ("app-network", "app-steamcmd", "app-new-component"):
+            with self.subTest(crate=crate):
+                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, False))
+        for crate in ("app-storage", "app-runtime", "app-platform-win"):
+            with self.subTest(crate=crate):
+                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, True))
+        for path in ("scripts/verify_project.py", "Cargo.lock", "apps/desktop/package-lock.json",
+                     ".github/actions/setup-frontend/action.yml", "crates/app-core/src/lib.rs",
+                     "apps/desktop/src-tauri/src/commands.rs", "crates/app-knowledge/Cargo.toml",
+                     "crates/app-modules/Cargo.toml", "crates/app-new-component/Cargo.toml",
+                     "crates/app-knowledge/build.rs", "crates/app-knowledge/runtime_build.rs"):
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (True, True, True))
+        self.assertEqual(full_scopes(["apps/desktop/src/api-transport.ts"]), (True, True, False))
+        self.assertEqual(full_scopes(["modules/palworld/schema.json"]), (True, True, False))
+        self.assertEqual(full_scopes(["apps/desktop/tests/helpers/desktop-reliability.tsx"]), (True, False, True))
+        self.assertEqual(full_scopes(["scripts/tests/test_desktop_installer_guard.ps1"]), (False, False, True))
+
+    def test_browser_partition_is_complete_disjoint_and_preserves_runner_unit_tests(self):
+        quick, browser = set(frontend_tests(False)), set(frontend_tests(True))
+        actual = {str(path.relative_to(DESKTOP)) for path in (DESKTOP / "tests").glob("*.test.cjs")}
+        self.assertEqual(quick | browser, actual)
+        self.assertFalse(quick & browser)
+        self.assertIn(str(Path("tests/desktop-main-pages-browser.test.cjs")), browser)
+        self.assertIn(str(Path("tests/knowledge-settings.test.cjs")), browser)
+        self.assertIn(str(Path("tests/runtime-browser-navigation.test.cjs")), browser)
+        self.assertIn(str(Path("tests/runtime-browser-process.test.cjs")), quick)
+        self.assertIn(str(Path("tests/browser-fixture-preparation.test.cjs")), quick)
+        self.assertIn(str(Path("tests/lan-runtime-token.test.cjs")), quick)
+        shards = [set(frontend_tests(True)[index::2]) for index in range(2)]
+        self.assertEqual(shards[0] | shards[1], browser)
+        self.assertFalse(shards[0] & shards[1])
+
+    def test_missing_or_unresolvable_base_selects_full(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            output = Path(directory) / "output"
+            self.assertEqual(main(["--component", "scope", "--github-output", str(output)]), 0)
+            self.assertIn("full=true\n", output.read_text())
+            with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 128, "", "unknown")):
+                self.assertEqual(main(["--component", "scope", "--base", "unknown", "--github-output", str(output)]), 0)
+            self.assertEqual(output.read_text().splitlines().count("full=true"), 2)
+
+    def test_manual_quick_is_explicit_without_a_diff_base(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            output = Path(directory) / "output"
+            self.assertEqual(main(["--component", "scope", "--event", "workflow_dispatch", "--tier", "quick",
+                                   "--github-output", str(output)]), 0)
+            self.assertEqual(output.read_text().splitlines(),
+                             ["full=false", "frontend_full=false", "rust_full=false", "native_full=false"])
+
+    def test_explicit_full_and_schedule_select_every_slow_layer(self):
+        for arguments in (["--tier", "full"], ["--event", "schedule"]):
+            with self.subTest(arguments=arguments), tempfile.TemporaryDirectory() as directory, \
+                    contextlib.redirect_stdout(io.StringIO()):
+                output = Path(directory) / "output"
+                self.assertEqual(main(["--component", "scope", "--base", "unused",
+                                       "--github-output", str(output), *arguments]), 0)
+                self.assertEqual(output.read_text().splitlines(),
+                                 ["full=true", "frontend_full=true", "rust_full=true", "native_full=true"])
+
+    def test_changed_paths_keep_unicode_and_embedded_newlines(self):
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+            output = Path(directory) / "output"
+            changed = "apps/desktop/src/测试\nview.tsx\0README.md\0"
+            with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed, "")) as run:
+                self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
+            self.assertIn("-z", run.call_args.args[0])
+            self.assertEqual(output.read_text().splitlines(),
+                             ["full=true", "frontend_full=true", "rust_full=false", "native_full=false"])
+
+    def test_local_frontend_entry_preserves_publication_checks_without_python_suite(self):
+        for tier in ("quick", "full"):
+            with self.subTest(tier=tier), patch.object(Runner, "python") as python, \
+                    patch.object(Runner, "frontend_build"), patch.object(Runner, "frontend_suite"):
+                self.assertEqual(main(["--component", "frontend", "--tier", tier]), 0)
+                expected = [("scripts/verify_no_tracked_secrets.py",), ("scripts/verify_open_source_boundary.py",)]
+                if tier == "full":
+                    expected.append(("scripts/verify_open_source_history.py",))
+                self.assertEqual([call.args for call in python.call_args_list], expected)
+
+    def test_ci_frontend_components_do_not_repeat_the_policy_job(self):
+        for component in ("frontend-build", "frontend-tests", "frontend-browser"):
+            with self.subTest(component=component), patch.object(Runner, "publication") as publication, \
+                    patch.object(Runner, "frontend_build"), patch.object(Runner, "frontend_suite"):
+                self.assertEqual(main(["--component", component, "--tier", "full"]), 0)
+                publication.assert_not_called()
+
+    def test_all_checks_reuse_publication_rules_once(self):
+        with patch.object(Runner, "publication") as publication, patch.object(Runner, "python"), \
+                patch.object(Runner, "frontend_build"), patch.object(Runner, "frontend_suite"), \
+                patch.object(Runner, "rust"):
+            self.assertEqual(main(["--tier", "quick"]), 0)
+            publication.assert_called_once_with()
+
+    def test_failed_check_stops_the_runner(self):
+        runner = Runner(argparse.Namespace(plan=False, frontend_dist=None))
+        with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 7)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(subprocess.CalledProcessError) as raised:
+                runner.run(["test-command"])
+        self.assertEqual(raised.exception.returncode, 7)
+
+    def test_managed_cargo_arguments_are_data_and_use_snapshots(self):
+        runner = Runner(argparse.Namespace(plan=False, frontend_dist=None, cargo_wrapper=Path("wrapper path.ps1")))
+        with patch.object(runner, "run") as run:
+            runner.cargo("clippy", "--locked", "--", "-D", "warnings")
+        self.assertIn("-SourceSnapshot", run.call_args.args[0][-1])
+        self.assertNotIn("wrapper path.ps1", run.call_args.args[0][-1])
+        self.assertEqual(runner.environment["LGSM_VERIFY_CARGO_COMMAND"], "clippy")
+
+    def test_managed_formatting_uses_the_live_worktree_without_a_snapshot(self):
+        runner = Runner(argparse.Namespace(plan=False, frontend_dist=None, cargo_wrapper=Path("wrapper.ps1")))
+        with patch.object(runner, "run") as run:
+            runner.cargo("fmt", "--all", "--", "--check")
+        self.assertNotIn("-SourceSnapshot", run.call_args.args[0][-1])
+        self.assertEqual(runner.environment["LGSM_VERIFY_CARGO_COMMAND"], "fmt")
+
+    def test_frontend_output_never_empties_existing_data_or_repository_ancestors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            retained = Path(directory) / "saved-data.txt"
+            retained.write_text("retained", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "new directory"):
+                validate_frontend_output(Path(directory))
+            self.assertEqual(retained.read_text(), "retained")
+            new = Path(directory) / "new-build"
+            self.assertEqual(validate_frontend_output(new), new.resolve())
+            self.assertFalse(new.exists())
+        for path in (ROOT, ROOT / "dist", ROOT.parent, Path(ROOT.anchor)):
+            with self.subTest(path=path), self.assertRaises(ValueError):
+                validate_frontend_output(path)
+
+    def test_portable_license_verification_fetches_locked_sources_before_offline_read(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, cargo_wrapper=None, tier="quick"))
+        calls = []
+        with patch.object(runner, "cargo", side_effect=lambda *args: calls.append(("cargo", *args))), \
+                patch.object(runner, "python", side_effect=lambda *args: calls.append(("python", *args))):
+            runner.rust()
+        fetch = calls.index(("cargo", "fetch", "--locked"))
+        license_check = calls.index(("python", "scripts/generate_rust_third_party_licenses.py", "--check", "--offline"))
+        self.assertLess(fetch, license_check)
+
+    def test_managed_license_verification_does_not_request_an_unsupported_fetch(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, cargo_wrapper=Path("wrapper.ps1"), tier="quick"))
+        with patch.object(runner, "cargo") as cargo, patch.object(runner, "python") as python:
+            runner.rust()
+        self.assertFalse(any(call.args[0] == "fetch" for call in cargo.call_args_list))
+        python.assert_called_once_with("scripts/generate_rust_third_party_licenses.py", "--check")
+
+    def test_managed_native_check_needs_a_receipted_executable(self):
+        runner = Runner(argparse.Namespace(frontend_dist=None, native_executable=None, cargo_wrapper=Path("wrapper.ps1")))
+        with self.assertRaisesRegex(ValueError, "build receipt"):
+            runner.native()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app_updates;
+mod archive_entry;
 mod assistant;
 mod assistant_sessions;
 mod astroneer_console;

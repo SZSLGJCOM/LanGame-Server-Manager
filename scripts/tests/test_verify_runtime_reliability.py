@@ -241,11 +241,20 @@ class RuntimeReliabilityRunnerTests(unittest.TestCase):
     def test_ci_preserves_full_workspace_tests_and_every_required_group(self):
         scoped = stages()
         full = stages(full_workspace=True)
-        self.assertEqual(len(full), 2)
-        self.assertIn("--workspace", full[0].command)
-        self.assertNotIn("--ignored", full[0].command)
-        self.assertEqual(set(full[0].required), {selector for stage in scoped[:3] for selector in stage.required})
-        self.assertEqual(full[1], scoped[-1])
+        self.assertEqual(len(full), 3)
+        core, stateful, web = full
+        self.assertIn("--workspace", stateful.command)
+        parallel_packages = [core.command[index + 1] for index, arg in enumerate(core.command) if arg == "-p"]
+        excluded_packages = [stateful.command[index + 1] for index, arg in enumerate(stateful.command) if arg == "--exclude"]
+        self.assertEqual(parallel_packages, excluded_packages, "Every workspace package must run exactly once")
+        self.assertEqual(set(parallel_packages), {"app-core", "app-modules", "app-knowledge"})
+        self.assertIn("--test-threads=4", core.command)
+        self.assertIn("--test-threads=1", stateful.command)
+        self.assertNotIn("--ignored", stateful.command)
+        self.assertEqual(set(stateful.required), {selector for stage in scoped[:3] for selector in stage.required})
+        self.assertEqual(web, scoped[-1])
+        self.assertEqual(stages(full_workspace=True, include_web=False), full[:-1],
+                         "Shared full verification gives frontend checks a single owner")
 
     def test_frontend_distribution_is_external_absolute_and_has_an_entrypoint(self):
         with tempfile.TemporaryDirectory() as temporary:

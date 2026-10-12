@@ -47,7 +47,7 @@ function booted(telemetry) {
 const cold = { observed_at_unix_ms: null, cpu: "unavailable", cpu_cores: "unavailable",
   memory: "unavailable", disk_capacity: "unavailable", disk_io: "unavailable", network: "unavailable" };
 
-test("an explicit telemetry request rejects an old backend snapshot with a stable error code", async () => {
+test("an explicit telemetry request rejects missing metadata with a stable error code", async () => {
   for (const metadata of [undefined, null]) {
     const api = loadApi(booted(metadata));
     await assert.rejects(api.bootstrapApp({ includeSystemSnapshot: true }), (error) => {
@@ -55,7 +55,7 @@ test("an explicit telemetry request rejects an old backend snapshot with a stabl
       return true;
     });
     assert.deepEqual(api.calls, [{ command: "bootstrap", args: {
-      includeSystemSnapshot: true, include_system_snapshot: true
+      includeSystemSnapshot: true
     } }]);
   }
 });
@@ -64,7 +64,7 @@ test("lightweight startup can still load inventory before a telemetry request", 
   const value = booted();
   const api = loadApi(value);
   assert.equal(await api.bootstrapApp(), value);
-  assert.deepEqual(api.calls[0].args, { includeSystemSnapshot: false, include_system_snapshot: false });
+  assert.deepEqual(api.calls[0].args, { includeSystemSnapshot: false });
 });
 
 test("new-backend cold, warming, unavailable and measured samples retain their quality unchanged", async () => {

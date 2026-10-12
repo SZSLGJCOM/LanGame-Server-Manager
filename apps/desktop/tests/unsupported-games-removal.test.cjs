@@ -118,24 +118,15 @@ function walkFiles(root) {
 
 test("unsupported games are absent from active support surfaces", () => {
   const violations = [];
+  const gamePatterns = unsupportedGames.map(gameTokenPattern);
 
-  for (const gameId of unsupportedGames) {
-    const gamePattern = gameTokenPattern(gameId);
-    for (const root of activeSupportRoots) {
-      const absoluteRoot = path.join(repoRoot, root);
-      for (const filePath of walkFiles(absoluteRoot)) {
-        const relativePath = path.relative(repoRoot, filePath).replaceAll(path.sep, "/");
-        if (gamePattern.test(relativePath)) {
-          violations.push(relativePath);
-          continue;
-        }
-
-        if (!shouldScanFileContents(filePath)) {
-          continue;
-        }
-
-        const contents = fs.readFileSync(filePath, "utf8");
-        if (gamePattern.test(contents)) {
+  for (const root of activeSupportRoots) {
+    const absoluteRoot = path.join(repoRoot, root);
+    for (const filePath of walkFiles(absoluteRoot)) {
+      const relativePath = path.relative(repoRoot, filePath).replaceAll(path.sep, "/");
+      const contents = shouldScanFileContents(filePath) ? fs.readFileSync(filePath, "utf8") : "";
+      for (const gamePattern of gamePatterns) {
+        if (gamePattern.test(relativePath) || gamePattern.test(contents)) {
           violations.push(relativePath);
         }
       }

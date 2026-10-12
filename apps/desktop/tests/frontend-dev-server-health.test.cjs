@@ -241,6 +241,7 @@ test("frontend restart terminates only the matching Vite listener", async () => 
     { stdio: "ignore" },
   );
   const viteExit = new Promise((resolve) => viteProcess.once("exit", resolve));
+  let exitDeadline;
 
   try {
     await waitForHttp(baseUrl);
@@ -252,9 +253,12 @@ test("frontend restart terminates only the matching Vite listener", async () => 
       `${result.stdout}\n${result.stderr}\nProcess error: ${result.error?.message ?? "none"}\nSignal: ${result.signal ?? "none"}`);
     await Promise.race([
       viteExit,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Vite fixture was not stopped")), 3000)),
+      new Promise((_, reject) => {
+        exitDeadline = setTimeout(() => reject(new Error("Vite fixture was not stopped")), 3000);
+      }),
     ]);
   } finally {
+    clearTimeout(exitDeadline);
     if (viteProcess.exitCode === null) { viteProcess.kill("SIGKILL"); }
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }

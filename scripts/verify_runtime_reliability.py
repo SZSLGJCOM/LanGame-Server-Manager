@@ -20,6 +20,7 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 LOG_PROGRESS_INTERVAL_SECONDS = 10
 LOG_PROGRESS_MAX_BYTES = 64 * 1024
+PARALLEL_PACKAGES = ("app-core", "app-modules", "app-knowledge")
 
 
 @dataclass(frozen=True)
@@ -38,7 +39,7 @@ def rust_arguments(package: str, target: tuple[str, ...], filters: tuple[str, ..
             *filters, "--test-threads=1", "--show-output")
 
 
-def stages(full_workspace: bool = False) -> tuple[Stage, ...]:
+def stages(full_workspace: bool = False, include_web: bool = True) -> tuple[Stage, ...]:
     selected = (
         Stage("processes", rust_arguments("app-runtime", ("--lib",), (
             "runtime_reliability", "owned_process_tree", "stdin_write", "stdin_dispatch",
@@ -78,9 +79,18 @@ def stages(full_workspace: bool = False) -> tuple[Stage, ...]:
     )
     if full_workspace:
         required = tuple(dict.fromkeys(selector for stage in selected[:3] for selector in stage.required))
-        return (Stage("workspace", ("test", "--workspace", "--all-features", "--locked", "--", "--test-threads=1", "--show-output"),
-                      ROOT, required, metrics_required=True), selected[-1])
-    return selected
+        packages = tuple(argument for package in PARALLEL_PACKAGES for argument in ("-p", package))
+        exclusions = tuple(argument for package in PARALLEL_PACKAGES for argument in ("--exclude", package))
+        # Pure/core suites need no process-wide serialization. Keep Windows process,
+        # environment and retained-data fixtures isolated until their owners can run concurrently.
+        return (
+            Stage("core", ("test", *packages, "--all-features", "--locked", "--",
+                           "--test-threads=4", "--show-output"), ROOT, ()),
+            Stage("workspace", ("test", "--workspace", *exclusions, "--all-features", "--locked", "--",
+                                "--test-threads=1", "--show-output"), ROOT, required, metrics_required=True),
+            *((selected[-1],) if include_web else ()),
+        )
+    return selected if include_web else selected[:-1]
 
 
 def command_for(stage: Stage, cargo_wrapper: Path | None, node_wrapper: Path | None,
@@ -344,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", action="store_true", help="Print the selected checks without executing")
     parser.add_argument("--full-workspace", action="store_true", help="Run the full Rust baseline plus the Web checks (CI)")
+    parser.add_argument("--rust-only", action="store_true", help="Run Rust only when the shared frontend tier owns Web checks")
     parser.add_argument("--output", type=Path, help="New evidence directory outside the repository")
     parser.add_argument("--cycles", type=int, default=24, help="Isolated process lifecycle cycles (4..256)")
     parser.add_argument("--cargo-wrapper", type=Path, help="Managed workstation invoke-codex-cargo.ps1")
@@ -360,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, ValueError) as error:
             parser.error(str(error))
     if args.plan:
-        for stage in stages(args.full_workspace):
+        for stage in stages(args.full_workspace, not args.rust_only):
             print(f"{stage.name}: {'cargo' if stage.kind == 'rust' else 'node'} {' '.join(stage.command)}")
         return 0
     if not windows_runtime_supported():
@@ -379,7 +390,8 @@ def main(argv: list[str] | None = None) -> int:
     report = {
         "format": "langame-runtime-reliability-v1", "status": "running",
         "started_at": datetime.now(timezone.utc).isoformat(), "cycles": args.cycles,
-        "scope": "synthetic Windows processes, temporary storage, loopback peers and frontend component lifecycles",
+        "scope": "synthetic Windows processes, temporary storage and loopback peers" +
+                 ("" if args.rust_only else ", and frontend component lifecycles"),
         "stages": [],
     }
     if args.frontend_dist is not None:
@@ -389,7 +401,7 @@ def main(argv: list[str] | None = None) -> int:
     report.update(git_head=head.stdout.strip(), working_tree_dirty=bool(status.stdout.strip()))
     write_report(output, report)
     try:
-        for stage in stages(args.full_workspace):
+        for stage in stages(args.full_workspace, not args.rust_only):
             result = run_stage(stage, output, args.cycles, args.cargo_wrapper, args.node_wrapper,
                                args.frontend_dist)
             report["stages"].append(result)

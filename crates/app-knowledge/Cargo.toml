@@ -32,4 +32,4 @@ reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
 sha2 = "=0.11.0"
-zip = { version = "=8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "=9.0.2", default-features = false, features = ["deflate"] }

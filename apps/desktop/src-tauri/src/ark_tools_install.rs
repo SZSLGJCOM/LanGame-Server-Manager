@@ -292,7 +292,11 @@ fn unpack(profile: &Profile, bytes: &[u8]) -> Result<BTreeMap<String, Vec<u8>>, 
     let mut names = std::collections::HashSet::new();
     for index in 0..zip.len() {
         let mut entry = zip.by_index(index).map_err(|e| e.to_string())?;
-        let name = entry.name().to_string();
+        let name = crate::archive_entry::name(&entry)
+            .map_err(|error| {
+                format!("Invalid ARK dependency entry name at index {index}: {error}")
+            })?
+            .into_owned();
         // Validate even ignored entries; never follow archive-supplied paths.
         if !files::safe_relative(name.trim_end_matches('/'))
             || entry.is_symlink()

@@ -1959,7 +1959,15 @@ pub(super) fn manual_mod_archive_bounds_actual_output_when_size_is_forged() {
     )
     .expect_err("actual output must not exceed the declared entry size");
 
-    assert!(error.contains("exceeded its declared or cumulative extraction limit"));
+    // zip rejects forged entry sizes before the application's cumulative limit.
+    assert!(
+        error.starts_with("failed to extract archive entry payload.dll: "),
+        "{error}"
+    );
+    assert!(
+        error.contains("larger than its declared uncompressed size"),
+        "{error}"
+    );
     assert!(!target.exists());
     assert!(manual_mod_transaction_directories(&root).is_empty());
     let _ = fs::remove_dir_all(&root);

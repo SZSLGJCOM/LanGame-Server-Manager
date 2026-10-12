@@ -32,8 +32,8 @@ test("archive and delete use distinct commands; archiving is host-only", async (
   await exports.archiveInstance("archive-target");
   await exports.deleteInstance("delete-target");
   assert.deepEqual(calls, [
-    { command: "archive_instance_record", args: { instanceId: "archive-target", instance_id: "archive-target" } },
-    { command: "delete_instance_record", args: { instanceId: "delete-target", instance_id: "delete-target" } }
+    { command: "archive_instance_record", args: { instanceId: "archive-target" } },
+    { command: "delete_instance_record", args: { instanceId: "delete-target" } }
   ]);
   host = false;
   lan = true;

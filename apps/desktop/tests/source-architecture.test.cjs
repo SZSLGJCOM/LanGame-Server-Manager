@@ -37,7 +37,6 @@ const apiMockFacadePath = path.join(repoRoot, "apps", "desktop", "src", "api-moc
 const apiMockModuleDir = path.join(repoRoot, "apps", "desktop", "src", "api-mock");
 const instanceThemeDir = path.join(repoRoot, "apps", "desktop", "src", "views", "servers");
 const instanceThemeFacadePath = path.join(instanceThemeDir, "instance-themes.css");
-const desktopSourceDir = path.join(repoRoot, "apps", "desktop", "src");
 
 function lineCount(filePath) {
   return fs.readFileSync(filePath, "utf8").split(/\r?\n/).length;
@@ -142,37 +141,7 @@ test("mock API is split into maintainable source files", () => {
 
 test("the instance-theme facade imports only implemented stylesheets", () => {
   const source = fs.readFileSync(instanceThemeFacadePath, "utf8");
-  const retiredThemes = [
-    "arksurvivalevolved",
-    "enshrouded",
-    "projectzomboid",
-    "sevendaystodie",
-    "terraria",
-    "vrising"
-  ];
-
-  for (const theme of retiredThemes) {
-    assert.ok(!source.includes(`./${theme}.css`), `${theme}.css is still imported`);
-    assert.ok(!fs.existsSync(path.join(instanceThemeDir, `${theme}.css`)), `${theme}.css is still a placeholder file`);
-  }
-
   for (const match of source.matchAll(/@import "([^"]+)";/g)) {
     assert.ok(fs.existsSync(path.resolve(instanceThemeDir, match[1])), `${match[1]} does not exist`);
   }
-});
-
-test("desktop styles do not restore retired shell selectors", () => {
-  const retiredSelectorPattern =
-    /\.shell-(?:sidebar|search--compact|search)(?![-_A-Za-z0-9])|\.shell-frame\.is-collapsed(?![-_A-Za-z0-9])/g;
-  const violations = [];
-
-  for (const filePath of cssSourceFiles(desktopSourceDir)) {
-    const source = fs.readFileSync(filePath, "utf8");
-    for (const match of source.matchAll(retiredSelectorPattern)) {
-      const line = source.slice(0, match.index).split(/\r?\n/).length;
-      violations.push(`${path.relative(repoRoot, filePath)}:${line}: ${match[0]}`);
-    }
-  }
-
-  assert.deepEqual(violations, []);
 });

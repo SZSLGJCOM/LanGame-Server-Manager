@@ -76,7 +76,6 @@ for (const transport of ["tauri", "lan"]) {
     await api.searchSteamWorkshopItems(322330, "地图", "recent", 2, "zh-CN", "collection");
     const args = calls.at(-1).args;
     assert.equal(args.browseKind, "collection");
-    assert.equal(args.browse_kind, "collection");
     assert.equal(args.query, "地图");
     assert.equal(args.sort, "recent");
     assert.equal(args.page, 2);
