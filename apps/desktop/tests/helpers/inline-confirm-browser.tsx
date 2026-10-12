@@ -54,6 +54,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
 
 type FixtureCleanup = { browser_errors: string[]; native_dialogs: number; unmounted_fixtures: number };
 type FixtureWindow = Window & { __reliabilityFixtureCleanup?: () => Promise<FixtureCleanup> };
+type PreviewWindow = FixtureWindow & { __inlinePreviewReady?: Promise<void>; __startInlinePreview?: () => void };
 let cleanup: Promise<FixtureCleanup> | undefined;
 Object.assign(window, { __reliabilityFixtureCleanup: () => cleanup ??= (async () => {
   const children: FixtureCleanup[] = [];
@@ -325,7 +326,6 @@ async function checkRenameAction() {
 }
 
 async function preview() {
-  await act(prepareBrowserLocaleCatalogs);
   document.body.style.margin = "0";
   await render(<div style={{ padding: 16 }}><LibraryHarness /></div>);
   await settleInventory();
@@ -351,18 +351,40 @@ async function preview() {
 
 async function previews() {
   const variants = ["dark-510", "dark-300", "light-510", "light-300"];
-  await render(<main style={{ display: "grid", gridTemplateColumns: "510px 300px", gap: "16px 24px", padding: 24 }}>
-    {variants.map((variant) => {
+  const bootstraps = variants.map(() => deferred());
+  const rendered = render(<main style={{ display: "grid", gridTemplateColumns: "510px 300px", gap: "16px 24px", padding: 24 }}>
+    {variants.map((variant, index) => {
       const [theme, width] = variant.split("-");
       return <section key={variant} style={{ width: Number(width) }}>
         <h2 style={{ fontSize: 14, margin: "0 0 8px" }}>{theme} · {width} px</h2>
         <iframe title={variant} src={`./inline-confirm-browser.html?preview=1&theme=${theme}`}
+          onLoad={({ currentTarget }) => {
+            const child = currentTarget.contentWindow as PreviewWindow | null;
+            if (!child?.__inlinePreviewReady || !child.__startInlinePreview) {
+              bootstraps[index].reject(new Error(`${variant}: preview bootstrap did not load`));
+              return;
+            }
+            child.__inlinePreviewReady.then(bootstraps[index].resolve, bootstraps[index].reject);
+          }}
           style={{ display: "block", width: "100%", height: 350, border: "1px solid var(--border)" }} />
       </section>;
     })}
   </main>);
-  await settleUntil(() => [...document.querySelectorAll("iframe")].every((frame) => readInlinePreviewStatus(frame) === "passed"),
-    "Theme and sidebar-width previews did not finish");
+  // Loading four documents belongs to the overall fixture budget. Each ready
+  // child then owns focus and the original business deadline until it finishes.
+  await Promise.all([rendered, ...bootstraps.map((bootstrap) => bootstrap.promise)]);
+  const frames = [...fixture.querySelectorAll("iframe")];
+  check(frames.length === variants.length, "Every theme and sidebar-width preview must mount");
+  for (const frame of frames) {
+    const child = frame.contentWindow as PreviewWindow;
+    check(child.__startInlinePreview, `${frame.title}: preview runner is unavailable`);
+    child.__startInlinePreview();
+    await settleUntil(() => {
+      const status = readInlinePreviewStatus(frame);
+      check(status === undefined || status === "passed", `${frame.title}: ${status}`);
+      return status === "passed";
+    }, "Theme and sidebar-width previews did not finish");
+  }
   checks++;
   check(document.documentElement.scrollWidth <= innerWidth, "Preview matrix overflows the desktop viewport");
   checks++;
@@ -382,7 +404,11 @@ async function run() {
 }
 
 if (parameters.has("preview")) {
-  void preview().catch((error) => { document.documentElement.dataset.preview = String(error); });
+  const ready = Promise.resolve(act(prepareBrowserLocaleCatalogs));
+  const failed = (error: unknown) => { document.documentElement.dataset.preview = String(error); };
+  Object.assign(window, { __inlinePreviewReady: ready,
+    __startInlinePreview: () => { void preview().catch(failed); } });
+  void ready.catch(failed);
 } else {
   let watchdog: ReturnType<typeof setTimeout>;
   void Promise.race([run(), new Promise<never>((_, reject) => {
