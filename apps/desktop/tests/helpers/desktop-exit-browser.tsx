@@ -91,6 +91,10 @@ async function run() {
   check(mounts === 0 && !document.querySelector(".shell-frame"), "Work started before native exit status was known");
   resolveInitialStatus!({ requested: false });
   await until(() => Boolean(document.querySelector(".shell-topnav")), "Normal desktop did not load");
+  // The shell appears during bootstrap, before React has committed its passive
+  // effects. Exercise exit only after the actual desktop work is running.
+  await until(() => !document.querySelector(".storage-initialization-page")
+    && activeChildren === 1 && intervals.size > 0, "Desktop bootstrap and polling were not ready");
   check(activeChildren === 1 && intervals.size > 0, "Desktop polling was not active");
   cases.push("initial-admission");
 
