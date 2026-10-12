@@ -75,7 +75,7 @@ pub(crate) async fn read_instance_isolation_from_executor(
     let storage = storage.clone();
     let instance_id = instance_id.to_owned();
     tokio::task::spawn_blocking(move || {
-        let layouts = project_layouts(&storage, records)?;
+        let layouts = project_layouts(&storage, records, Some(&instance_id))?;
         let target = layouts
             .iter()
             .find(|layout| layout.id == instance_id)
@@ -119,7 +119,9 @@ pub(crate) async fn ensure_instance_paths_available(
     config_dir: &Path,
     saves_dir: &Path,
 ) -> Result<(), StorageError> {
-    let records = load_instance_isolation_records(connection).await?;
+    let mut records = load_instance_isolation_records(connection).await?;
+    // Candidate ownership is checked from the incoming paths below.
+    records.retain(|record| record.summary.id != instance_id);
     let restoring = archive_reservations::read(connection, instance_id).await?;
     let storage = storage.clone();
     let instance_id = instance_id.to_owned();
@@ -128,7 +130,7 @@ pub(crate) async fn ensure_instance_paths_available(
     let runtime = install_root.to_owned();
     let native_config = native::configuration_paths(module_id, install_root, instance_id.as_str());
     tokio::task::spawn_blocking(move || {
-        let mut layouts = project_layouts(&storage, records)?;
+        let mut layouts = project_layouts(&storage, records, None)?;
         layouts.extend(restoring);
         let root = config
             .parent()
@@ -177,6 +179,7 @@ pub(crate) async fn ensure_instance_paths_available(
 fn project_layouts(
     storage: &StoragePaths,
     records: Vec<StoredInstanceRecord>,
+    inspected_instance_id: Option<&str>,
 ) -> Result<Vec<Layout>, StorageError> {
     let descriptors = discover_modules(&storage.modules_root)?;
     Ok(records
@@ -185,7 +188,8 @@ fn project_layouts(
             let descriptor = descriptors
                 .iter()
                 .find(|descriptor| descriptor.summary.id == record.summary.module_id);
-            project_layout(storage, record, descriptor)
+            let inspect_paths = inspected_instance_id == Some(record.summary.id.as_str());
+            project_layout(storage, record, descriptor, inspect_paths)
         })
         .collect())
 }
@@ -194,6 +198,7 @@ fn project_layout(
     storage: &StoragePaths,
     record: StoredInstanceRecord,
     descriptor: Option<&ModuleDescriptor>,
+    inspect_paths: bool,
 ) -> Layout {
     let root = record
         .config_dir
@@ -225,29 +230,33 @@ fn project_layout(
             record.saves_dir.clone()
         }
     };
-    if let Err(error) = validate_managed_instance_root(&root, &storage.instances_root) {
-        issues.push(error.to_string());
-    }
-    for path in [&root, &record.config_dir, &saves, &runtime] {
-        if let Err(error) = normalize_path(path) {
-            issues.push(error.to_string());
-        }
-    }
     let native_config =
         native::configuration_paths(&record.summary.module_id, &runtime, &record.summary.id);
-    for path in &native_config {
-        if let Err(error) = normalize_resource_path(path) {
+    // Only the inspected instance exposes diagnostics. Conflict checks below
+    // still normalize every peer's ownership claims against the candidate.
+    if inspect_paths {
+        if let Err(error) = validate_managed_instance_root(&root, &storage.instances_root) {
             issues.push(error.to_string());
         }
-    }
-    if let Err(error) = crate::instance_archive_roots::ensure_paths_outside_archive_root(
-        storage,
-        [&root, &record.config_dir, &saves, &runtime]
-            .into_iter()
-            .chain(native_config.iter())
-            .map(PathBuf::as_path),
-    ) {
-        issues.push(error.to_string());
+        for path in [&root, &record.config_dir, &saves, &runtime] {
+            if let Err(error) = normalize_path(path) {
+                issues.push(error.to_string());
+            }
+        }
+        for path in &native_config {
+            if let Err(error) = normalize_resource_path(path) {
+                issues.push(error.to_string());
+            }
+        }
+        if let Err(error) = crate::instance_archive_roots::ensure_paths_outside_archive_root(
+            storage,
+            [&root, &record.config_dir, &saves, &runtime]
+                .into_iter()
+                .chain(native_config.iter())
+                .map(PathBuf::as_path),
+        ) {
+            issues.push(error.to_string());
+        }
     }
     Layout {
         id: record.summary.id,

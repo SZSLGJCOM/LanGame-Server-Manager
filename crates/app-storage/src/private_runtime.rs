@@ -312,18 +312,28 @@ fn create_directory(path: &Path) -> Result<(), StorageError> {
 
 #[cfg(windows)]
 pub(crate) fn is_reparse_point(path: &Path) -> Result<bool, StorageError> {
-    use std::os::windows::fs::MetadataExt;
-
     let metadata = fs::symlink_metadata(path).map_err(|source| StorageError::ReadPath {
         path: path.to_path_buf(),
         source,
     })?;
-    Ok(metadata.file_attributes() & 0x400 != 0)
+    Ok(metadata_is_reparse_point(&metadata))
 }
 
 #[cfg(not(windows))]
 pub(crate) fn is_reparse_point(_path: &Path) -> Result<bool, StorageError> {
     Ok(false)
+}
+
+#[cfg(windows)]
+pub(crate) fn metadata_is_reparse_point(metadata: &fs::Metadata) -> bool {
+    use std::os::windows::fs::MetadataExt;
+
+    metadata.file_attributes() & 0x400 != 0
+}
+
+#[cfg(not(windows))]
+pub(crate) fn metadata_is_reparse_point(_metadata: &fs::Metadata) -> bool {
+    false
 }
 
 #[cfg(test)]

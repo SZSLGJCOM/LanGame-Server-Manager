@@ -560,3 +560,71 @@ async fn peer_save_cannot_claim_another_instances_configuration_directory() {
     assert_eq!(fs::read(&first.config_file_path).unwrap(), before);
     assert_eq!(fs::read(&second.config_file_path).unwrap(), peer_before);
 }
+
+#[tokio::test]
+async fn damaged_peer_paths_reject_save_and_start_without_changing_either_world() {
+    let fixture = Fixture::new().await;
+    let descriptor = fixture
+        .module("fixture", "{{paths.config_dir}}/world")
+        .await;
+    let first = fixture.create(&descriptor, "One").await;
+    let second = fixture.create(&descriptor, "Two").await;
+    let first = read_instance_details(&fixture.storage, &first.summary.id)
+        .await
+        .unwrap();
+    let second = read_instance_details(&fixture.storage, &second.summary.id)
+        .await
+        .unwrap();
+    let mut retained = Vec::new();
+    for details in [&first, &second] {
+        let world = Path::new(&details.saves_path).join("world.sentinel");
+        fs::create_dir_all(world.parent().unwrap()).unwrap();
+        fs::write(&world, details.summary.id.as_bytes()).unwrap();
+        for path in [PathBuf::from(&details.config_file_path), world] {
+            retained.push((path.clone(), fs::read(path).unwrap()));
+        }
+    }
+    let damaged = Path::new(&second.config_file_path)
+        .parent()
+        .unwrap()
+        .join("../config");
+    let pool = connect_pool(&fixture.storage).await.unwrap();
+    sqlx::query("UPDATE instances SET config_path = ?1 WHERE id = ?2")
+        .bind(damaged.to_string_lossy().into_owned())
+        .bind(&second.summary.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+
+    let report = read_instance_isolation(&fixture.storage, &first.summary.id)
+        .await
+        .unwrap();
+    assert!(
+        report
+            .issues
+            .iter()
+            .any(|issue| issue.contains("parent traversal"))
+    );
+    for error in [
+        update_instance(&fixture.storage, update_input(&first))
+            .await
+            .unwrap_err(),
+        materialize_instance_configuration_for_start(&fixture.storage, &first.summary.id)
+            .await
+            .unwrap_err(),
+    ] {
+        assert!(
+            matches!(error, StorageError::InvalidInstancePath { .. }),
+            "{error}"
+        );
+    }
+    for (path, bytes) in retained {
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            bytes,
+            "{} changed",
+            path.display()
+        );
+    }
+}
