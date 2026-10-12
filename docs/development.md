@@ -67,6 +67,7 @@ python -B scripts/verify_project.py --tier quick
 | 层级 | 检查内容 | 执行时机 |
 | --- | --- | --- |
 | 快速反馈 | Python 工具测试与当前源码公开边界；前端单元和契约、翻译与模块一致性、类型与构建；Rust 格式、全工作区 Clippy/编译、核心单测及备份/迁移/实例创建/数据库句柄释放回归 | 本地相关检查后、每次 push/PR |
+| 界面相关回归 | 8 个关键浏览器文件及受影响的完整功能组，保留文件中的全部用例 | 已知局部界面或其测试变更的 push/PR |
 | 完整回归 | 快速层规则、完整公开历史与导出计划、全部前端浏览器用例、完整 Rust 工作区、Windows 合成进程生命周期、Tauri/WebView2 恢复 | 重要边界变更的 push/PR、每日定时、手动发行前检查 |
 | 安装发行验收 | 实际签名安装包、安装/升级/卸载、旧版更新、存档与配置保留、关键开服流程 | 发布前在获准的隔离 Windows 环境 |
 
@@ -74,11 +75,14 @@ python -B scripts/verify_project.py --tier quick
 
 前端 `*-browser.test.cjs` 属于真实浏览器层，两个既有命名例外集中在共享入口。其他测试以 4 个文件为并发上限；浏览器在每个进程内串行，CI 分两个互不重叠的分片。新增真实浏览器测试遵循命名约定。Rust 的 `app-core`、`app-modules`、`app-knowledge` 用 4 个测试线程；涉及 Windows 进程、全局环境、存储和外部边界的其余套件保留串行，避免把资源争用当成产品缺陷。
 
+Windows 桌面使用 Tauri 和 WebView2 呈现 React 界面。CI 的 `Desktop UI regression` 在独立 Edge/Chrome 中挂载生产组件，通过模拟 IPC 或受控 HTTP 服务检查 DOM、交互、焦点、布局和订阅清理；它不启动完整 Tauri 应用，也不证明真实数据库写入或游戏进程启停。`Verify native Tauri and WebView2 recovery` 才运行原生宿主及其 WebView2 恢复检查；真实安装、升级和关键开服仍按发行验收执行。相同测试 worker 可复用同一夹具的 Vite 编译缓存，每个场景仍拥有独立浏览器配置、服务和界面状态，worker 结束后回收其缓存。
+
 只执行某层时仍使用同一入口：
 
 ```powershell
 python -B scripts/verify_project.py --component frontend-tests --tier quick
 python -B scripts/verify_project.py --component frontend-browser
+python -B scripts/verify_project.py --component frontend-browser --base HEAD~1
 python -B scripts/verify_project.py --component rust --tier quick
 python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-candidate'
 ```
@@ -89,7 +93,9 @@ python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGam
 
 工作区 Cargo 封装可通过 `--cargo-wrapper` 显式传入，Node 资源封装用 `--node-wrapper`。用 `--frontend-output` 指定尚不存在的仓库外构建目录，或以 `--frontend-dist` 复用当前候选版本的已验证前端产物；托管原生验收必须用 `--native-executable` 指向构建回执中的专用 `desktop-reliability` 可执行文件，入口不会猜测共享缓存路径。托管主机应先按本机规则构建前端，再选择 `--component rust` / `native`；公共源码命令不绑定任何工作站路径。
 
-CI 的风险路径在共享入口统一定义，浏览器、Rust 和原生桌面三层独立选择。界面、样式、前端配置、浏览器测试及其共享夹具变更进入浏览器层；普通前端单测或源码扫描测试变更保留快速层。`app-knowledge` 与 `app-modules` 的内部变更保留快速层，因为该层已运行它们的全部测试，并编译检查所有消费者；`app-core` 及其余 Rust crate、未知新 crate、Tauri/IPC、根目录游戏模块和迁移变更进入 Rust 完整层。仅 Rust 内部算法变更不会连带运行全部浏览器测试。Tauri、共享领域契约、存储、运行时、Windows 平台或原生验收夹具变更还运行 Tauri/WebView2 验收。Tauri、共享领域契约、游戏模块和迁移变更保守加入浏览器层；共享依赖、构建与检查入口变更进入全部三层，包括各 crate 的 `Cargo.toml`、`build.rs` 和 ONNX/CRT 运行库构建输入。其他 Python 工具改动运行工具测试与完整公开边界检查。无法解析 push/PR 基线时执行全部三层；手动选择 `quick` 则尊重显式范围。提交前仍应先运行相关行为测试，不能仅依赖自动分类。每日完整回归和手动发行前检查运行同一套命令，不维护另一份测试清单。可在 GitHub 的 CI 工作流手动选择 `full`；这只验证代码，不创建或发布安装包。
+CI 的风险路径在共享入口统一定义，浏览器、Rust 和原生桌面三层独立选择。已核实消费者的局部界面变更运行关键集合和相关完整功能组；关键集合覆盖创建实例、配置控件与恢复、维护保存、实例导航、退出、订阅清理和生产通信。功能组复用现有测试文件，不减少文件内的断言或视口。共享壳、公共 API、全局样式、前端依赖、公共浏览器运行器以及未知归属保留全部浏览器测试。私有夹具通过实际引用定位所属测试；不能确定归属时回退全量。普通前端单测或源码扫描测试变更保留快速层。`frontend-browser` 不带选择参数仍运行完整集合；`--base <commit>` 使用与 CI 相同的规则选择该提交到 `HEAD` 的相关集合，基线无效时回退全量；显式 `--tier full` 始终全量。
+
+`app-knowledge` 与 `app-modules` 的内部变更保留快速层，因为该层已运行它们的全部测试，并编译检查所有消费者；`app-core` 及其余 Rust crate、未知新 crate、Tauri/IPC、根目录游戏模块和迁移变更进入 Rust 完整层。仅 Rust 内部算法变更不会连带运行全部浏览器测试。Tauri、共享领域契约、存储、运行时、Windows 平台或原生验收夹具变更还运行 Tauri/WebView2 验收。Tauri、共享领域契约、游戏模块和迁移变更保守加入全部浏览器测试；共享依赖、构建与检查入口变更进入全部三层，包括各 crate 的 `Cargo.toml`、`build.rs` 和 ONNX/CRT 运行库构建输入。其他 Python 工具改动运行工具测试与完整公开边界检查。无法解析 push/PR 基线时执行全部三层；手动选择 `quick` 则尊重显式范围。提交前仍应先运行相关行为测试，不能仅依赖自动分类。每日完整回归和手动发行前检查运行同一套命令，不维护另一份测试清单。可在 GitHub 的 CI 工作流手动选择 `full`；这只验证代码，不创建或发布安装包。
 
 模拟进程、浏览器组件与真实游戏验收是不同证据；报告实际执行的范围、环境和结果。需要游戏包、外部服务或真实凭据的可选验收应在获准的隔离环境中执行。
 
@@ -159,7 +165,11 @@ Run focused tests, then `python -B scripts/verify_project.py --tier quick`. Loca
 
 The existing `npm --prefix apps/desktop run verify` entry runs quick frontend checks and current secret/publication boundaries. `verify:release` adds all browser tests and publication history. Both reuse the shared rules and exclude Rust/native acceptance. CI frontend jobs leave publication checks to the independent policy job.
 
-CI selects browser, Rust and native desktop regression independently. UI, frontend configuration, browser tests and shared fixtures select the browser layer; ordinary unit/scanner tests retain quick feedback. Internal changes in `app-knowledge` and `app-modules` retain quick checks, which already run their complete tests and compile-check all consumers. `app-core`, the other Rust crates, unknown new crates, Tauri/IPC, root game modules and migrations select complete Rust tests without automatically selecting browser or native tests. Tauri, shared domain contracts, storage, runtime, Windows integration and native fixtures also select native Tauri/WebView2 acceptance. Tauri, shared contracts, modules and migrations select browser regression conservatively; shared dependency/build/verification entries select all three layers, including crate manifests, `build.rs` files and ONNX/CRT runtime build inputs. Other Python-tool changes select tool tests and complete publication checks. Missing push/PR baselines select all layers, while an explicit manual `quick` selection is honored. The daily schedule and manual pre-release run use the same complete rules.
+The Windows desktop renders React through Tauri and WebView2. CI's `Desktop UI regression` mounts production components in isolated Edge/Chrome sessions with mock IPC or controlled HTTP services to check DOM behavior, focus, layout and subscription cleanup. It does not start the complete Tauri app or verify real database writes and game processes. `Verify native Tauri and WebView2 recovery` runs the native host and WebView2 recovery checks; actual installation, upgrade and hosting flows remain release acceptance requirements. A worker can reuse the Vite compilation cache for the same fixture while every scenario retains its own browser profile, server and UI state; the worker removes its cache on completion.
+
+CI selects browser, Rust and native desktop regression independently. Local UI changes with verified consumers select eight critical browser files plus the affected complete behavioral families. The critical set covers creation, configuration and recovery, maintenance saves, navigation, exit, subscription cleanup and production transport. Selection retains every case and viewport in each chosen file. Shared shell/API/style/dependency changes, common browser infrastructure and unknown ownership retain all browser tests. Private fixtures select their actual consumers, falling back to all tests when ownership is unclear. Ordinary unit/scanner changes retain quick feedback. `--component frontend-browser` without a selection still runs every browser file; adding `--base <commit>` uses the same selection rules as CI for that commit through `HEAD`, falling back to the complete suite for an invalid base. An explicit `--tier full` always runs the complete suite.
+
+Internal changes in `app-knowledge` and `app-modules` retain quick checks, which already run their complete tests and compile-check all consumers. `app-core`, the other Rust crates, unknown new crates, Tauri/IPC, root game modules and migrations select complete Rust tests without automatically selecting browser or native tests. Tauri, shared domain contracts, storage, runtime, Windows integration and native fixtures also select native Tauri/WebView2 acceptance. Tauri, shared contracts, modules and migrations select complete browser regression; shared dependency/build/verification entries select all three layers, including crate manifests, `build.rs` files and ONNX/CRT runtime build inputs. Other Python-tool changes select tool tests and complete publication checks. Missing push/PR baselines select all layers, while an explicit manual `quick` selection is honored. The daily schedule and manual pre-release run use the same complete rules.
 
 Rust dependency caching and a shared frontend artifact avoid repeated preparation. The 5–10 minute quick-feedback target must be measured on CI, not assumed. Use `--plan`, `--component`, `--cargo-wrapper`, `--node-wrapper`, `--frontend-output`, `--frontend-dist` and `--native-executable` as described above for focused or managed execution. Preserve existing assertions and failure handling. Real signed installation, upgrade and retained-data acceptance remain separate release requirements; optional NSIS guard checks require `--nsis-root`. Report synthetic, browser and native-game evidence separately. Opt-in tests requiring game packages, external services or credentials need an authorized isolated environment.
 

@@ -5,6 +5,7 @@ const path = require("node:path");
 const { spawn, execFile, execFileSync } = require("node:child_process");
 const { promisify } = require("node:util");
 const { randomUUID } = require("node:crypto");
+const { after } = require("node:test");
 
 const execFileAsync = promisify(execFile);
 const desktopRoot = path.resolve(__dirname, "../..");
@@ -12,6 +13,25 @@ const outputLimit = 64 * 1024;
 // Hosted Windows cold Chrome took 5219 ms before publishing DevTools. This is
 // an environment startup allowance, not a product SLA or extra fixture time.
 const defaultBrowserStartupTimeoutMs = 15000;
+let fixtureCacheRoot;
+
+async function fixtureCacheDirectory({ fixturePath, development = true, reactTransform = true }) {
+  assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
+  // Only compiled dependencies survive between this worker's scenarios. Each
+  // invocation still owns a fresh server, browser profile and mounted React tree.
+  fixtureCacheRoot ??= fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-cache-"));
+  return path.join(await fixtureCacheRoot,
+    `${fixturePath}-${development ? "dev" : "production"}-${reactTransform ? "react" : "raw"}`);
+}
+
+async function removeFixtureCache() {
+  if (fixtureCacheRoot) {
+    await removeScratch(await fixtureCacheRoot);
+    fixtureCacheRoot = undefined;
+  }
+}
+
+after(removeFixtureCache);
 
 function browserTimeBudgets({ fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
   assert.ok(Number.isSafeInteger(fixtureTimeoutMs) && fixtureTimeoutMs > 0 && fixtureTimeoutMs <= 240000,
@@ -439,7 +459,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     server = await createServer({
       configFile: false,
       root: desktopRoot,
-      cacheDir: path.join(scratch, "vite-cache"),
+      cacheDir: await fixtureCacheDirectory({ fixturePath, development, reactTransform }),
       appType: "mpa",
       optimizeDeps: { entries: [`tests/helpers/${fixturePath}`] },
       logLevel: "error",
@@ -728,4 +748,5 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 }
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
-  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer };
+  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer,
+  fixtureCacheDirectory, removeFixtureCache };

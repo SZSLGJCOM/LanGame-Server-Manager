@@ -1,16 +1,73 @@
 import argparse
 import contextlib
 import io
+import json
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.verify_project import DESKTOP, ROOT, Runner, frontend_tests, full_scopes, main, needs_full, validate_frontend_output
+from scripts.verify_project import (DESKTOP, ROOT, QUICK_BROWSER_FILES, Runner, browser_repository_files,
+                                    frontend_selection, frontend_tests, full_scopes, main, needs_full,
+                                    parse_browser_files, validate_frontend_output)
 
 
 class VerificationSelectionTests(unittest.TestCase):
+    def test_daily_browser_selection_contains_critical_flows_and_related_features(self):
+        from scripts.verify_project import QUICK_BROWSER_FILES, frontend_selection
+        selected = set(frontend_selection(["apps/desktop/src/views/system/SystemCoreDial.tsx"]))
+        self.assertTrue(set(QUICK_BROWSER_FILES) <= selected)
+        self.assertIn("apps/desktop/tests/system-resources-browser.test.cjs", selected)
+        self.assertIn("apps/desktop/tests/instance-retirement-browser.test.cjs", selected)
+        self.assertIn("apps/desktop/tests/app-update-browser.test.cjs", selected)
+        self.assertNotIn("apps/desktop/tests/asa-mod-controls-browser.test.cjs", selected)
+        self.assertEqual(full_scopes(["apps/desktop/src/views/system/SystemCoreDial.tsx"]), (False, False, False))
+
+    def test_browser_selection_preserves_cross_feature_configuration_consumers(self):
+        selected = frontend_selection(["apps/desktop/src/views/settings/modules/dontstarve-shards.ts"])
+        # Guided schemas also feed player access, mod editors and field-help navigation.
+        self.assertEqual(selected, browser_repository_files())
+
+    def test_workbenches_reused_by_archives_keep_read_only_acceptance(self):
+        for component in ("ModWorkbench", "PlayerCenterWorkbench", "RuntimeSurfaceWorkbench"):
+            with self.subTest(component=component):
+                selected = frontend_selection([f"apps/desktop/src/views/servers/{component}.tsx"])
+                self.assertIn("apps/desktop/tests/server-archives-browser.test.cjs", selected)
+        selected = frontend_selection(["apps/desktop/src/views/servers/RuntimeSurfaceWorkbench.tsx"])
+        for name in ("ark-cluster-maps", "dst-four-shards", "instance-retirement", "desktop-layout"):
+            self.assertIn(f"apps/desktop/tests/{name}-browser.test.cjs", selected)
+
+    def test_library_changes_keep_full_coverage_for_shared_installation_consumers(self):
+        for path in ("apps/desktop/src/views/library/LibraryServerActions.tsx", "apps/desktop/src/views/LibraryView.tsx"):
+            with self.subTest(path=path):
+                self.assertEqual(frontend_selection([path]), browser_repository_files())
+
+    def test_unknown_or_shared_frontend_changes_fall_back_to_every_browser(self):
+        from scripts.verify_project import frontend_selection
+        complete = [f"apps/desktop/{Path(path).as_posix()}" for path in frontend_tests(True)]
+        for path in ("apps/desktop/src/views/new-feature/Page.tsx", "apps/desktop/src/App.tsx",
+                     "apps/desktop/src/api-transport.ts", "apps/desktop/src/app.css",
+                     "apps/desktop/index.html", "apps/desktop/public/new-font.woff2",
+                     "apps/desktop/new-bundler.config.ts",
+                     "apps/desktop/src/components/InlineConfirmAction.tsx",
+                     "apps/desktop/tests/helpers/runtime-browser-process.cjs"):
+            with self.subTest(path=path):
+                self.assertEqual(frontend_selection([path]), complete)
+
+    def test_browser_test_and_private_fixture_select_the_same_feature(self):
+        from scripts.verify_project import QUICK_BROWSER_FILES, frontend_selection
+        expected = frontend_selection(["apps/desktop/tests/app-update-browser.test.cjs"])
+        for suffix in ("html", "tsx"):
+            self.assertEqual(frontend_selection([f"apps/desktop/tests/helpers/app-update-browser.{suffix}"]), expected)
+        self.assertTrue(set(QUICK_BROWSER_FILES) <= set(expected))
+        self.assertIn("apps/desktop/tests/program-update-policy-browser.test.cjs", expected)
+        self.assertNotIn("apps/desktop/tests/asa-mod-controls-browser.test.cjs", expected)
+
+    def test_non_browser_changes_do_not_create_a_browser_run(self):
+        from scripts.verify_project import frontend_selection
+        self.assertEqual(frontend_selection(["README.md", "apps/desktop/tests/runtime-browser-process.test.cjs"]), [])
+
     def test_risky_boundaries_run_full_before_release(self):
         for path in ("crates/app-storage/src/backups.rs", "crates/app-runtime/src/lib.rs",
                      "crates/app-steamcmd/src/lib.rs", "apps/desktop/src-tauri/src/commands.rs",
@@ -24,11 +81,15 @@ class VerificationSelectionTests(unittest.TestCase):
     def test_frontend_changes_do_not_force_rust_or_native_regression(self):
         for path in ("apps/desktop/src/styles/shell.css", "apps/desktop/src/desktop-exit-lifecycle.ts",
                      "apps/desktop/src/runtime-log-stream.ts", "apps/desktop/src/storage-management-requests.ts",
-                     "apps/desktop/src/views/servers/BackupTable.tsx", "apps/desktop/src/hooks/useInstanceArchives.ts",
-                     "apps/desktop/tests/runtime-reliability-browser.test.cjs",
-                     "apps/desktop/tests/knowledge-settings.test.cjs", "apps/desktop/tsconfig.json"):
+                     "apps/desktop/src/hooks/useInstanceArchives.ts", "apps/desktop/tsconfig.json"):
             with self.subTest(path=path):
                 self.assertEqual(full_scopes([path]), (True, False, False))
+        for path in ("apps/desktop/src/views/servers/BackupTable.tsx",
+                     "apps/desktop/tests/runtime-reliability-browser.test.cjs",
+                     "apps/desktop/tests/knowledge-settings.test.cjs"):
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (False, False, False))
+                self.assertTrue(frontend_selection([path]))
 
     def test_unit_and_scanner_changes_do_not_select_unrelated_slow_suites(self):
         for path in ("apps/desktop/tests/runtime-browser-process.test.cjs",
@@ -93,7 +154,8 @@ class VerificationSelectionTests(unittest.TestCase):
             self.assertEqual(main(["--component", "scope", "--event", "workflow_dispatch", "--tier", "quick",
                                    "--github-output", str(output)]), 0)
             self.assertEqual(output.read_text().splitlines(),
-                             ["full=false", "frontend_full=false", "rust_full=false", "native_full=false"])
+                             ["full=false", "frontend_full=false", "rust_full=false", "native_full=false",
+                              "frontend_changed=false", "frontend_files=[]"])
 
     def test_explicit_full_and_schedule_select_every_slow_layer(self):
         for arguments in (["--tier", "full"], ["--event", "schedule"]):
@@ -102,8 +164,10 @@ class VerificationSelectionTests(unittest.TestCase):
                 output = Path(directory) / "output"
                 self.assertEqual(main(["--component", "scope", "--base", "unused",
                                        "--github-output", str(output), *arguments]), 0)
-                self.assertEqual(output.read_text().splitlines(),
-                                 ["full=true", "frontend_full=true", "rust_full=true", "native_full=true"])
+                lines = output.read_text().splitlines()
+                self.assertEqual(lines[:5], ["full=true", "frontend_full=true", "rust_full=true",
+                                            "native_full=true", "frontend_changed=true"])
+                self.assertEqual(json.loads(lines[5].removeprefix("frontend_files=")), browser_repository_files())
 
     def test_changed_paths_keep_unicode_and_embedded_newlines(self):
         with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
@@ -112,8 +176,74 @@ class VerificationSelectionTests(unittest.TestCase):
             with patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed, "")) as run:
                 self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
             self.assertIn("-z", run.call_args.args[0])
-            self.assertEqual(output.read_text().splitlines(),
-                             ["full=true", "frontend_full=true", "rust_full=false", "native_full=false"])
+            lines = output.read_text().splitlines()
+            self.assertEqual(lines[:5], ["full=true", "frontend_full=true", "rust_full=false",
+                                        "native_full=false", "frontend_changed=true"])
+            self.assertEqual(json.loads(lines[5].removeprefix("frontend_files=")), browser_repository_files())
+
+    def test_scope_emits_a_data_only_selection_for_local_ui_changes(self):
+        changed = "apps/desktop/src/views/system/SystemCoreDial.tsx"
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()), \
+                patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], 0, changed + "\0", "")):
+            output = Path(directory) / "scope"
+            self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values["frontend_full"], "false")
+            self.assertEqual(values["frontend_changed"], "true")
+            self.assertEqual(json.loads(values["frontend_files"]), frontend_selection([changed]))
+
+    def test_browser_json_rejects_invalid_empty_duplicate_and_non_suite_paths(self):
+        valid = QUICK_BROWSER_FILES[0]
+        for value in ("not json", "null", "{}", "[]", '[1]', json.dumps([valid, valid]),
+                      json.dumps(["apps/desktop/tests/missing-browser.test.cjs"]),
+                      json.dumps(["apps/desktop/tests/runtime-browser-process.test.cjs"]),
+                      json.dumps(["../tests/instance-create-browser.test.cjs"]),
+                      json.dumps(["C:/external.test.cjs"]), json.dumps(["$(Write-Output injected)"])):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                parse_browser_files(value, full=False)
+        with self.assertRaisesRegex(ValueError, "complete browser suite"):
+            parse_browser_files(json.dumps([valid]), full=True)
+        self.assertEqual(parse_browser_files(json.dumps(list(reversed(browser_repository_files()))), full=True),
+                         browser_repository_files())
+
+    def test_selected_browser_shards_execute_each_selected_file_exactly_once(self):
+        selected = frontend_selection(["apps/desktop/src/views/system/SystemCoreDial.tsx"])
+        seen = []
+        for index in range(1, 4):
+            with patch.object(Runner, "node") as node, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--component", "frontend-browser", "--browser-files-json", json.dumps(selected),
+                                       "--shard-index", str(index), "--shard-count", "3"]), 0)
+                seen.extend(f"apps/desktop/{Path(path).as_posix()}" for call in node.call_args_list for path in call.args[2:])
+        self.assertEqual(sorted(seen), selected)
+        self.assertEqual(len(seen), len(set(seen)))
+        with patch.object(Runner, "node") as node, contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--component", "frontend-browser", "--browser-files-json", json.dumps([selected[0]]),
+                                   "--shard-index", "2", "--shard-count", "2"]), 0)
+            node.assert_not_called()
+
+    def test_local_browser_base_uses_the_scope_selection_and_safe_fallback(self):
+        for changed, code, expected in (("apps/desktop/src/views/system/SystemCoreDial.tsx", 0,
+                                        frontend_selection(["apps/desktop/src/views/system/SystemCoreDial.tsx"])),
+                                       ("README.md", 0, []), ("", 128, browser_repository_files())):
+            with self.subTest(changed=changed, code=code), patch.object(Runner, "node") as node, \
+                    patch("scripts.verify_project.subprocess.run", return_value=subprocess.CompletedProcess([], code, changed + "\0", "")), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--component", "frontend-browser", "--base", "base"]), 0)
+                actual = [f"apps/desktop/{Path(path).as_posix()}" for call in node.call_args_list for path in call.args[2:]]
+                self.assertEqual(actual, expected)
+
+    def test_full_browser_and_legacy_entry_always_run_the_complete_suite(self):
+        for arguments in ([], ["--tier", "full", "--base", "base"]):
+            with self.subTest(arguments=arguments), patch.object(Runner, "node") as node, \
+                    patch("scripts.verify_project.subprocess.run") as diff, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--component", "frontend-browser", *arguments]), 0)
+                actual = [f"apps/desktop/{Path(path).as_posix()}" for call in node.call_args_list for path in call.args[2:]]
+                self.assertEqual(actual, browser_repository_files())
+                diff.assert_not_called()
+        for arguments in (["--base", "base"], ["--tier", "full"]):
+            with self.subTest(arguments=arguments), self.assertRaises(SystemExit), \
+                    contextlib.redirect_stderr(io.StringIO()):
+                main(["--component", "frontend-browser", "--browser-files-json", json.dumps([QUICK_BROWSER_FILES[0]]), *arguments])
 
     def test_local_frontend_entry_preserves_publication_checks_without_python_suite(self):
         for tier in ("quick", "full"):
@@ -134,10 +264,11 @@ class VerificationSelectionTests(unittest.TestCase):
 
     def test_all_checks_reuse_publication_rules_once(self):
         with patch.object(Runner, "publication") as publication, patch.object(Runner, "python"), \
-                patch.object(Runner, "frontend_build"), patch.object(Runner, "frontend_suite"), \
+                patch.object(Runner, "frontend_build"), patch.object(Runner, "frontend_suite") as suite, \
                 patch.object(Runner, "rust"):
             self.assertEqual(main(["--tier", "quick"]), 0)
             publication.assert_called_once_with()
+            suite.assert_called_once_with(False)
 
     def test_failed_check_stops_the_runner(self):
         runner = Runner(argparse.Namespace(plan=False, frontend_dist=None))
