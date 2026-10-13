@@ -206,7 +206,13 @@ async function dstNavigation(locale: LocaleCode) {
     check(path, `${locale}.${id}: category must exist in the real configuration model`);
     for (const ancestor of path.slice(0, -1)) {
       const toggle = document.querySelector<HTMLElement>(`[data-configuration-section-id="${ancestor.id}"] > button[aria-expanded="false"]`);
-      if (toggle) { await act(async () => { toggle.scrollIntoView({ block: "center" }); }); await point(toggle, "click"); await outside(); }
+      if (toggle) {
+        await act(async () => { toggle.scrollIntoView({ block: "center" }); });
+        await point(toggle, "click");
+        await outside();
+        // A readable parent bubble can cover the child's pointer target during exit.
+        await closed(`${locale}.${ancestor.id}: expanded category help must close before hovering its child`);
+      }
     }
     const target = element(`[data-configuration-section-id="${id}"] > :is(.configuration-section-navigation__button,.configuration-section-navigation__group-label)`);
     await act(async () => { target.scrollIntoView({ block: "center" }); });
