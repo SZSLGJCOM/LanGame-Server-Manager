@@ -43,7 +43,7 @@ test("reliability real ReactDOM StrictMode lifecycle releases subscriptions and 
     "late_registration", "late_events", "bounded_dom_tail", "unmount_baseline", "service_generation_readback",
   ]);
   assert.equal(report.browser_exited, true);
-  assert.equal(report.browser_startup.timeout_ms, 15000);
+  assert.equal(report.browser_startup.timeout_ms, process.platform === "win32" ? 30000 : 15000);
   assert.ok(Number.isFinite(report.browser_startup.endpoint_ready_ms));
   assert.equal(report.browser_startup.viewport_ready_ms, null);
   assert.equal(report.browser_startup.browser_product, report.browser_product);
