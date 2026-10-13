@@ -60,10 +60,28 @@ const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => r
 async function click(selector: string) {
   await act(async () => { element<HTMLButtonElement>(selector).click(); await frame(); });
 }
-async function chooseTab(id: ServerDetailTab) {
+const workspaceSelectors: Partial<Record<ServerDetailTab, string>> = {
+  settings: ".configuration-workspace:not([hidden])",
+  mods: ".mw-workbench",
+  players: ".player-access-workbench",
+  maintenance: ".maintenance-workspace:not([hidden])",
+  gm: ".gmt-workbench"
+};
+async function waitForWorkspace(id: ServerDetailTab) {
+  const selector = workspaceSelectors[id];
+  if (selector) await settleUntil(() => Boolean(fixture.querySelector(selector)), `${id} workspace did not load`);
+}
+async function workspaceRequests(): Promise<string[]> {
+  let requests: string[] = [];
+  await act(async () => { requests = await fetch("/__workspace_requests").then((response) => response.json()); });
+  return requests;
+}
+async function chooseTab(id: ServerDetailTab, expectLoadFailure = false) {
   check(!tab(id).disabled, `${id} must be enabled before user selection`);
-  await act(async () => { tab(id).click(); await frame(); });
+  await act(async () => { tab(id).focus(); tab(id).click(); await frame(); });
   assertTab(id, "User selection");
+  if (!expectLoadFailure) await waitForWorkspace(id);
+  check(document.activeElement === tab(id), "Workspace loading must not move focus away from the selected tab");
 }
 function unexpectedWrite(command: string): never {
   unexpectedWrites.push(command);
@@ -195,7 +213,30 @@ async function run() {
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); await frame(); });
   await settleUntil(() => Boolean(fixture.querySelector(".server-detail-tabs")), "Normal detail tabs did not mount");
   check(fixture.querySelectorAll('.server-detail-tabs [role="tab"]').length === 6, "All six normal tabs must exist");
+  const resources = await workspaceRequests();
+  for (const workspace of ["ConfigurationWorkspace", "ModWorkbench", "PlayerCenterWorkbench", "GMToolsWorkbench", "ServerMaintenanceWorkspace"]) {
+    check(!resources.some((url) => new URL(url).pathname.endsWith(`/${workspace}.tsx`)), `${workspace} must not load before its tab is opened`);
+  }
   // Run the known loading regression first so pre-fix execution fails at the target behavior.
+  await chooseTab("mods", true);
+  await settleUntil(() => Boolean(fixture.querySelector('[role="tabpanel"] [role="alert"] button')), "Failed module must expose a local retry");
+  check(Boolean(fixture.querySelector(".server-list-card")), "A failed tab must preserve the server list");
+  await chooseTab("runtime");
+  await chooseTab("mods", true);
+  await click('[role="tabpanel"] [role="alert"] button');
+  await waitForWorkspace("mods");
+  check(!fixture.querySelector('[role="tabpanel"] [role="alert"]'), "Retry must replace the error with the requested workspace");
+  const recoveredRequests = await workspaceRequests();
+  check(recoveredRequests.some((entry) => {
+    const url = new URL(entry);
+    return url.pathname.endsWith("/ModWorkbench.tsx") && url.searchParams.has("module-retry");
+  }), "Recovery must use a fresh module entry");
+  await chooseTab("maintenance");
+  const retainedMaintenance = element(".maintenance-workspace");
+  await chooseTab("runtime");
+  check(fixture.contains(retainedMaintenance), "Leaving maintenance must retain the owner of pending saves and their results");
+  await chooseTab("maintenance");
+  check(element(".maintenance-workspace") === retainedMaintenance, "Reopening maintenance must preserve its mounted state");
   await chooseTab("mods");
   await switchNormal(b, "mods");
   for (const id of normalTabs) {
@@ -256,7 +297,7 @@ async function run() {
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   // Leave the selected archive and tab strip visible for the caller's screenshot.
   await act(async () => { window.scrollTo(0, 0); await frame(); });
-  return { status: "passed", checks, normal_tabs: normalTabs, archive_tabs: archiveTabs, browser_errors: errors,
+  return { status: "passed", checks, deferred_loading_verified: true, normal_tabs: normalTabs, archive_tabs: archiveTabs, browser_errors: errors,
     unexpected_writes: unexpectedWrites, observed_commands: [...new Set(observedCommands)] };
 }
 

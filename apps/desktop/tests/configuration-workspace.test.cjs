@@ -218,13 +218,8 @@ test("archives mount the same instance workspaces with saved data and read-only 
   assert.match(workspaceSource, /if \(readOnly \|\| !parsed\.value \|\| !moduleDefinition\?\.initializeSettings\)/);
 });
 
-test("mounts one embedded ConfigurationWorkspace directly in the detail region", () => {
+test("mounts one embedded ConfigurationWorkspace in the detail region", () => {
   const block = settingsMountBlock(serversViewSource);
-  assertMatches(
-    serversViewSource,
-    /import\s*\{[^}]*\bConfigurationWorkspace\b[^}]*\}\s*from\s*["']\.\/settings\/ConfigurationWorkspace["']/,
-    "ServersView must import ConfigurationWorkspace directly"
-  );
   assertMatches(block, /<ConfigurationWorkspace\b/, "Configuration tab must mount ConfigurationWorkspace");
   for (const prop of [
     "details",

@@ -14,6 +14,7 @@ const routerSource = fs.readFileSync(
   path.join(desktopRoot, "src", "views", "AppViewRouter.tsx"),
   "utf8"
 );
+const loadingStateSource = fs.readFileSync(path.join(desktopRoot, "src", "views", "ViewLoadingState.tsx"), "utf8");
 const appSource = fs.readFileSync(path.join(desktopRoot, "src", "App.tsx"), "utf8");
 const shellSource = fs.readFileSync(
   path.join(desktopRoot, "src", "components", "AppShell.tsx"),
@@ -72,6 +73,15 @@ test("a failed route stays local, exposes retry, and renders the recovered compo
     } },
     "../i18n": { useI18n: () => ({ t: (_key, _values, fallback) => fallback }) }
   };
+  const loadingExports = {};
+  vm.runInNewContext(transpileTypeScript(loadingStateSource, "ViewLoadingState.tsx"), {
+    exports: loadingExports,
+    require: (name) => {
+      assert.ok(Object.hasOwn(dependencies, name), `Unexpected loading-state dependency: ${name}`);
+      return dependencies[name];
+    }
+  });
+  dependencies["./ViewLoadingState"] = loadingExports;
   vm.runInNewContext(transpileTypeScript(routerSource, "AppViewRouter.tsx"), {
     exports,
     require: (name) => {

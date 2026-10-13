@@ -2,6 +2,9 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
+const { loadCatalog, loadEffectiveCatalogs } = require("../scripts/i18n-catalog-loader.cjs");
+
+const effectiveCatalogs = loadEffectiveCatalogs();
 
 const gamesDir = path.resolve(__dirname, "..", "src", "i18n", "games");
 const settingsModulesDir = path.resolve(__dirname, "..", "src", "views", "settings", "modules");
@@ -52,59 +55,11 @@ function readCatalogSource(moduleId, locale) {
 }
 
 function extractCatalog(moduleId, locale) {
-  const source = readCatalogSource(moduleId, locale);
-  return extractEntriesFromSource(source);
-}
-
-function extractGeneratedSchemaCatalog(locale) {
-  const chunkPattern = new RegExp(`^schema-generated\\.${locale}\\.chunk-\\d+\\.ts$`);
-  const source = fs.readdirSync(gamesDir)
-    .filter((fileName) => chunkPattern.test(fileName))
-    .sort()
-    .map((fileName) => fs.readFileSync(path.join(gamesDir, fileName), "utf8"))
-    .join("\n");
-  return extractEntriesFromSource(source);
+  return loadCatalog(`src/i18n/games/${moduleId}.${locale}.ts`);
 }
 
 function extractEffectiveGameCatalog(locale) {
-  const catalog = extractGeneratedSchemaCatalog(locale);
-  const indexName = locale === "en" ? "en-us.ts" : "zh-cn.ts";
-  const indexSource = fs.readFileSync(path.join(gamesDir, indexName), "utf8");
-  const importPattern = /from\s+["']\.\/([^"']+)["'];/g;
-  let match;
-
-  while ((match = importPattern.exec(indexSource)) !== null) {
-    const importStem = match[1];
-    if (importStem === `schema-generated.${locale}`) {
-      continue;
-    }
-
-    const source = fs.readdirSync(gamesDir)
-      .filter((fileName) => fileName === `${importStem}.ts` || (
-        fileName.startsWith(`${importStem}.part`) && fileName.endsWith(".ts")
-      ))
-      .sort()
-      .map((fileName) => fs.readFileSync(path.join(gamesDir, fileName), "utf8"))
-      .join("\n");
-
-    for (const [key, value] of extractEntriesFromSource(source)) {
-      catalog.set(key, value);
-    }
-  }
-
-  return catalog;
-}
-
-function extractEntriesFromSource(source) {
-  const entries = new Map();
-  const pattern = /"([^"]+)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
-  let match;
-
-  while ((match = pattern.exec(source)) !== null) {
-    entries.set(match[1], JSON.parse(`"${match[2]}"`));
-  }
-
-  return entries;
+  return locale === "en" ? effectiveCatalogs.englishGames : effectiveCatalogs.chineseGames;
 }
 
 function hasHanText(value) {
@@ -187,9 +142,9 @@ test("effective zh-CN game catalog is complete without silent English fallback",
   assert.deepEqual(failures, []);
 });
 
-test("generated zh-CN schema copy is complete and free of mechanical placeholders", () => {
-  const english = extractGeneratedSchemaCatalog("en");
-  const chinese = extractGeneratedSchemaCatalog("zh-cn");
+test("effective zh-CN schema copy is complete and free of mechanical placeholders", () => {
+  const english = extractEffectiveGameCatalog("en");
+  const chinese = extractEffectiveGameCatalog("zh-cn");
   const failures = [];
 
   assert.deepEqual([...chinese.keys()].sort(), [...english.keys()].sort());
@@ -217,8 +172,8 @@ test("generated zh-CN schema copy is complete and free of mechanical placeholder
   );
 });
 
-test("generated en-US Soulmask descriptions do not leak native Chinese source copy", () => {
-  const english = extractGeneratedSchemaCatalog("en");
+test("effective en-US Soulmask descriptions do not leak native Chinese source copy", () => {
+  const english = extractEffectiveGameCatalog("en");
   const soulmaskDescriptions = [...english]
     .filter(([key]) => key.startsWith("settings.schema.soulmask.") && key.endsWith(".description"));
   const failures = soulmaskDescriptions.filter(([, value]) => /Native description:|[\u3400-\u9fff]/u.test(value));
@@ -231,11 +186,9 @@ test("generated en-US Soulmask descriptions do not leak native Chinese source co
 });
 
 test("zh-CN assistant messages use LAN branding without implementation-facing copy", () => {
-  const coreSource = fs.readFileSync(path.join(srcDir, "i18n-messages-zh-core.ts"), "utf8");
-  const uiSource = fs.readFileSync(path.join(srcDir, "i18n-messages-zh-ui.ts"), "utf8");
-  const core = extractEntriesFromSource(coreSource);
-  const ui = extractEntriesFromSource(uiSource);
-  const merged = new Map([...core.entries(), ...ui.entries()]);
+  const core = loadCatalog("src/i18n-messages-zh-core.ts", "ZH_CN_CORE_MESSAGES");
+  const ui = loadCatalog("src/i18n-messages-zh-ui.ts", "ZH_CN_UI_MESSAGES");
+  const merged = effectiveCatalogs.chinese;
   const keys = [
     "assistant.settings.saved",
     "assistant.settings.keyStoredSuffix",

@@ -1,5 +1,7 @@
 import type { RuntimeCommandDispatchOptions } from "../../types";
 import type { TranslateFn } from "../../i18n";
+import { GM_TOOL_MODULES } from "./gm-tool-capability";
+export { moduleHasGmTools } from "./gm-tool-capability";
 import {
   DST_GM_ITEM_OPTIONS,
   searchDstGmItemOptions,
@@ -134,7 +136,7 @@ const ARK_DEFAULT_ITEM_BLUEPRINT =
 
 const CATALOGS: GmToolCatalog[] = [
   {
-    moduleIds: ["arksurvivalascended", "arksurvivalevolved"],
+    moduleIds: GM_TOOL_MODULES.ark,
     title: "ARK GM Tools",
     description: "Spawn creatures, give player rewards, and control common world GM actions.",
     tools: [
@@ -231,7 +233,7 @@ const CATALOGS: GmToolCatalog[] = [
     ]
   },
   {
-    moduleIds: ["dontstarve"],
+    moduleIds: GM_TOOL_MODULES.dontstarve,
     title: "DST GM Tools",
     description: "Give items to inventory or spawn entities near players, revive players, and change season or weather.",
     tools: [
@@ -438,10 +440,6 @@ const BUILDERS: Record<string, GmCommandBuilder> = {
     return commandResult([`TheWorld:PushEvent("ms_forceprecipitation", ${enabled.value})`], "master", DST_STDIN_OPTIONS);
   }
 };
-
-export function moduleHasGmTools(moduleId?: string | null): boolean {
-  return findGmToolCatalog(moduleId) !== null;
-}
 
 export function getArkGmCreatureOptions(): ArkGmCreatureOption[] {
   return ARK_GM_CREATURE_OPTIONS;

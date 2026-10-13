@@ -1,27 +1,10 @@
 const fs = require("fs");
 const path = require("path");
-const { collectLocaleCatalogFiles } = require("./catalog-file-discovery.cjs");
+const { loadEffectiveCatalogs } = require("./i18n-catalog-loader.cjs");
 const { collectTranslationReferences } = require("./i18n-source-references.cjs");
 
 const DESKTOP_ROOT = path.resolve(__dirname, "..");
 const WORKSPACE_ROOT = path.resolve(DESKTOP_ROOT, "../..");
-const GAME_CATALOG_DIRECTORY = "src/i18n/games";
-
-const ENGLISH_CATALOG_FILES = [
-  "src/i18n-messages.ts",
-  "src/i18n-messages-en-extra.ts",
-  ...collectLocaleCatalogFiles(DESKTOP_ROOT, GAME_CATALOG_DIRECTORY, "en")
-];
-
-const EXPLICIT_CHINESE_CATALOG_FILES = [
-  "src/i18n-messages-zh-core.ts",
-  "src/i18n-messages-zh-ui.ts",
-  "src/i18n-messages-zh-extra.ts",
-  "src/i18n-messages-zh-settings.ts",
-  "src/i18n-messages-zh-schema.ts",
-  ...collectLocaleCatalogFiles(DESKTOP_ROOT, GAME_CATALOG_DIRECTORY, "zh-cn")
-];
-
 const TEXT_SOURCE_EXTENSIONS = new Set([
   ".cjs",
   ".json",
@@ -42,31 +25,6 @@ function readDesktopFile(relativePath) {
 
 function readWorkspaceFile(relativePath) {
   return fs.readFileSync(path.join(WORKSPACE_ROOT, relativePath), "utf8");
-}
-
-function extractCatalogKeys(relativePath) {
-  const source = readDesktopFile(relativePath);
-  const keys = new Set();
-  const keyPattern = /["']([A-Za-z0-9_.-]+(?:\.[A-Za-z0-9_.-]+)+)["']\s*:/g;
-  let match;
-
-  while ((match = keyPattern.exec(source)) !== null) {
-    keys.add(match[1]);
-  }
-
-  return keys;
-}
-
-function collectCatalogKeys(files) {
-  const keys = new Set();
-
-  for (const file of files) {
-    for (const key of extractCatalogKeys(file)) {
-      keys.add(key);
-    }
-  }
-
-  return keys;
 }
 
 function walk(root, relativeDirectory, options = {}) {
@@ -260,8 +218,9 @@ function printTop(title, entries, formatter, limit = 20) {
   }
 }
 
-const englishKeys = collectCatalogKeys(ENGLISH_CATALOG_FILES);
-const explicitChineseKeys = collectCatalogKeys(EXPLICIT_CHINESE_CATALOG_FILES);
+const { english, chinese } = loadEffectiveCatalogs();
+const englishKeys = new Set(english.keys());
+const explicitChineseKeys = new Set(chinese.keys());
 const translationCalls = collectSourceTranslationReferences();
 const missingChineseKeys = [...englishKeys].filter((key) => !explicitChineseKeys.has(key)).sort();
 const missingEnglishKeys = [...translationCalls.keys()].filter((key) => !englishKeys.has(key)).sort();

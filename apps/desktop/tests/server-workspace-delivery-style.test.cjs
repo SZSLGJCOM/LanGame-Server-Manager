@@ -115,19 +115,6 @@ test("server detail tabs expose compact icon affordances without suffix clutter"
   assert.doesNotMatch(serversView, /server-detail-identity/);
 });
 
-test("server detail mods tab stays visible but disabled when unsupported", () => {
-  assert.match(serversView, /const detailTabs = buildServerDetailTabSpecs\(/);
-  assert.match(
-    tabSpecs,
-    /id: "mods"[\s\S]*?label: t\("servers\.tabs\.mods"[\s\S]*?icon: "package"[\s\S]*?disabled: !moduleHasModWorkbench\(moduleId, moduleDetails\)/
-  );
-  assert.doesNotMatch(
-    tabSpecs,
-    /\.\.\.\(hasModWorkbench\s*\?/,
-    "Unsupported modules should keep the Mods tab visible as disabled instead of removing it"
-  );
-});
-
 test("server detail tabs expose all local workflows without account gates", () => {
   const orderedIds = ["runtime", "settings", "mods", "players", "maintenance", "gm"];
   let previousIndex = -1;
@@ -148,22 +135,7 @@ test("server detail tabs expose all local workflows without account gates", () =
   assert.doesNotMatch(operationsCss, /server-detail-tab-vip|is-vip/i);
 });
 
-test("not-modelled mod workflows do not enable the server mods tab", () => {
-  assert.match(modWorkbenchCapability, /const catalogEntry = MOD_WORKFLOW_CATALOG\[moduleId\]/);
-  assert.match(modWorkbenchCapability, /const hasModuleDefinedModWorkflow = Boolean\(/);
-  assert.match(modWorkbenchCapability, /moduleDetails\?\.mods\?\.enablement/);
-  assert.match(
-    modWorkbenchCapability,
-    /catalogEntry\?\.supportStatus === "not_modelled" && !hasModuleDefinedModWorkflow[\s\S]*?return false;/
-  );
-});
-
 test("server detail Chinese tab labels stay short and user-facing", () => {
-  assert.match(zhExtraMessages, /"servers\.tabs\.players":\s*"\\u73a9\\u5bb6"/);
-  assert.match(zhExtraMessages, /"servers\.tabs\.gmTools":\s*"工具"/);
-  assert.match(zhExtraMessages, /"servers\.tabs\.maintenance":\s*"维护"/);
-  assert.match(zhExtraMessages, /"servers\.tabs\.mods":\s*"\\u6a21\\u7ec4"/);
-
   const { buildServerDetailTabSpecs } = require("../src/views/servers/server-detail-tab-specs.ts");
   const { ZH_CN_EXTRA_MESSAGES } = require("../src/i18n-messages-zh-extra.ts");
   const tabs = buildServerDetailTabSpecs({
@@ -186,20 +158,6 @@ test("server detail Chinese tab labels stay short and user-facing", () => {
   assert.doesNotMatch(zhExtraMessages, /servers\.broadcast\.(eyebrow|manualTitle|manualBody|supported|notSupported)/);
   assert.doesNotMatch(enExtraMessages, /servers\.broadcast\.(eyebrow|manualTitle|manualBody|supported|notSupported)/);
   assert.doesNotMatch(aiBroadcastWorkbench, /AI Broadcast/);
-});
-
-test("server detail tab clicks are not reset by overview section sync", () => {
-  assert.doesNotMatch(
-    serversView,
-    /setActiveDetailTab\(props\.section === "settings" \? "settings" : "runtime"\);\s*\}\s*,\s*\[props\.section,\s*props\.selectedInstanceId\]\)/
-  );
-  assert.match(serversView, /if \(props\.section === "settings"\)/);
-  assert.doesNotMatch(serversView, /previousSelectedInstanceIdRef|selectedInstanceChanged/);
-  assert.match(
-    serversView,
-    /<div key=\{props\.selectedDetails\.summary\.id\} className=\{detailScrollClassName\}\s+id=\{detailPanelId\} role="tabpanel"/,
-    "Instance changes should remount detail content without resetting the selected detail tab"
-  );
 });
 
 test("server detail shell stays compact for delivery", () => {

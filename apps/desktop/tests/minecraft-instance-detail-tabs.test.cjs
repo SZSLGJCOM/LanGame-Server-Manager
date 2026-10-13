@@ -58,7 +58,7 @@ test("Minecraft instance tabs use the same shared workbenches as other games", (
   }
 
   const maintenanceProps = importedComponentProps(serversView, serversViewPath,
-    "ServersView", "ServerMaintenanceWorkspace", "./servers/ServerMaintenanceWorkspace");
+    "ServersView", "ServerMaintenanceWorkspace", "./servers/DeferredServerWorkspaces");
   for (const [key, expression] of Object.entries({ active: 'activeDetailTab==="maintenance"',
     details: "props.selectedDetails", moduleDetails: "props.selectedModuleDetails",
     aiSettings: "props.aiSettings", assistantCanRun: "props.assistantCanRun", runtime: "props.runtime" })) {
