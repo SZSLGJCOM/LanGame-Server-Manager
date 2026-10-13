@@ -3,6 +3,8 @@
 
 use std::path::Path;
 
+use ort::environment::Environment;
+
 use crate::{KnowledgeError, Result};
 
 #[cfg(all(windows, target_arch = "x86_64"))]
@@ -49,12 +51,14 @@ mod windows {
     static OWNER: Mutex<Option<RuntimeOwner>> = Mutex::new(None);
 
     struct RuntimeOwner {
+        // ORT permits one environment per process. Sessions receive a clone of
+        // this owned handle; it must be released before the native library guards.
+        initialized: std::result::Result<Environment, String>,
         // Preserve loader references before releasing the file/directory guards.
         _libraries: Vec<NativeLibrary>,
         _system_locks: Vec<File>,
         _installation: RuntimeInstallation,
         bundle_id: &'static str,
-        initialized: std::result::Result<(), String>,
     }
 
     struct RuntimeInstallation {
@@ -79,7 +83,7 @@ mod windows {
         KnowledgeError::Model(format!("Bundled ONNX Runtime: {error}"))
     }
 
-    pub(super) fn initialize(model_dir: &Path) -> Result<()> {
+    pub(super) fn initialize(model_dir: &Path) -> Result<Environment> {
         if !model_dir.is_absolute() {
             return Err(runtime_error("model directory must be absolute"));
         }
@@ -123,11 +127,10 @@ mod windows {
             if !ort::set_api(api) {
                 return Err("ORT API was initialized outside the verified runtime owner".to_owned());
             }
-            if !ort::init().with_telemetry(false).commit() {
-                return Err("ORT was configured outside the verified runtime owner".to_owned());
-            }
-            ort::environment::Environment::current().map_err(|error| error.to_string())?;
-            Ok(())
+            ort::init()
+                .with_telemetry(false)
+                .build()
+                .map_err(|error| error.to_string())
         })();
         owner
             .as_mut()
@@ -472,7 +475,7 @@ mod windows {
     }
 }
 
-pub(crate) fn initialize(model_dir: &Path) -> Result<()> {
+pub(crate) fn initialize(model_dir: &Path) -> Result<Environment> {
     #[cfg(all(windows, target_arch = "x86_64"))]
     {
         windows::initialize(model_dir)

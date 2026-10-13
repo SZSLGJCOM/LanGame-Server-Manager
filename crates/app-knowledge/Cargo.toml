@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 app-network = { path = "../app-network" }
-ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "alternative-backend", "api-28"] }
+ort = { version = "=2.0.0-rc.14", default-features = false, features = ["std", "alternative-backend", "api-28"] }
 dom_query = "=0.28.0"
 http = "1.5.0"
 hyper-util = { version = "0.1.21", features = ["client-proxy", "client-proxy-system"] }
@@ -16,7 +16,7 @@ quick-xml = "0.42.0"
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sha2 = "0.11.0"
+sha2.workspace = true
 tokenizers = { version = "=0.23.2", default-features = false, features = ["fancy-regex"] }
 sqlx.workspace = true
 thiserror.workspace = true
@@ -31,5 +31,5 @@ windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_Securit
 reqwest = { workspace = true, features = ["blocking"] }
 serde.workspace = true
 serde_json.workspace = true
-sha2 = "=0.11.0"
+sha2.workspace = true
 zip = { version = "=9.0.2", default-features = false, features = ["deflate"] }
