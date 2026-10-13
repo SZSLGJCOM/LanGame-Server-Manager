@@ -1,7 +1,7 @@
 import type { TranslateFn } from "../../i18n";
 import type { ModuleDetails } from "../../types";
 import type { ServerDetailTabSpec } from "./ServerDetailTabs";
-import { moduleHasGmTools } from "./gm-tools";
+import { moduleHasGmTools } from "./gm-tool-capability";
 import { moduleHasModWorkbench } from "./mod-workbench-capability";
 
 export function buildServerDetailTabSpecs(input: {

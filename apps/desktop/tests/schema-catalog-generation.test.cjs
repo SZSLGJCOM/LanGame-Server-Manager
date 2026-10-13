@@ -1,6 +1,27 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { addGeneratedSettingsEntry, mergeModuleCatalog, parseGeneratedChunk } = require("../scripts/generate_i18n_schema_catalogs.cjs");
+const { addGeneratedSettingsEntry, mergeModuleCatalog, parseGeneratedChunk, omitOverriddenMessages } = require("../scripts/generate_i18n_schema_catalogs.cjs");
+
+test("generated fallbacks omit only keys overridden later in the runtime locale", () => {
+  const earlier = { shared: "Earlier catalog", earlierOnly: "Earlier help" };
+  const generated = { shared: "Schema help", authored: "Generated help", missing: "Fallback", blank: "Fallback" };
+  const authored = { authored: "Authored help", blank: "" };
+  const source = `
+    import { EARLIER } from "./earlier";
+    import { GENERATED } from "./generated";
+    import { COPY as AUTHORED } from "./authored";
+    export const MESSAGES = { ...EARLIER, ...GENERATED, ...AUTHORED };
+  `;
+  const fallback = omitOverriddenMessages(generated, source, "GENERATED", (file, name) => {
+    assert.equal(file, "./authored");
+    assert.equal(name, "COPY");
+    return authored;
+  });
+  assert.deepEqual(fallback, { shared: "Schema help", missing: "Fallback" });
+  assert.deepEqual({ ...earlier, ...fallback, ...authored }, { ...earlier, ...generated, ...authored });
+  assert.throws(() => omitOverriddenMessages(generated, "export const MESSAGES = {};", "GENERATED", () => authored),
+    /Missing generated catalog spread/);
+});
 
 test("scoped schema generation removes withdrawn help and preserves other modules", () => {
   const catalog = mergeModuleCatalog({

@@ -16,6 +16,7 @@ function readSource(...segments) {
 }
 
 const serversView = readSource("views", "ServersView.tsx");
+const deferredWorkspaces = readSource("views", "servers", "DeferredServerWorkspaces.tsx");
 const playerCenter = readSource("views", "servers", "PlayerCenterWorkbench.tsx");
 const useLivePlayers = readSource("views", "servers", "player-center", "use-live-players.ts");
 const onlinePlayers = readSource("views", "servers", "player-center", "OnlinePlayersView.tsx");
@@ -41,7 +42,8 @@ function translate(catalog, key, params = {}) {
 }
 
 test("server detail mounts the online-first Player Center and removes the mixed workbench", () => {
-  assert.match(serversView, /import \{ PlayerCenterWorkbench \} from "\.\/servers\/PlayerCenterWorkbench"/);
+  assert.match(serversView, /import\s*\{[^}]*\bPlayerCenterWorkbench\b[^}]*\}\s*from "\.\/servers\/DeferredServerWorkspaces"/);
+  assert.match(deferredWorkspaces, /export const PlayerCenterWorkbench = deferWorkspace\(\s*\(\) => import\("\.\/PlayerCenterWorkbench"\)\.then\(\(module\) => module\.PlayerCenterWorkbench\)/);
   assert.match(serversView, /activeDetailTab === "players"[\s\S]*?<PlayerCenterWorkbench/);
   assert.equal(fs.existsSync(path.join(desktopRoot, "src", "views", "servers", "PlayerAccessWorkbench.tsx")), false);
   assert.doesNotMatch(serversView, /PlayerManagementWorkbench/);

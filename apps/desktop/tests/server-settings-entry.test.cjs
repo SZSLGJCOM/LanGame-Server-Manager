@@ -270,7 +270,6 @@ test("instance settings entry is embedded in the detail tabs", () => {
   const serverDetailTabs = readSource("apps", "desktop", "src", "views", "servers", "ServerDetailTabs.tsx");
   const tabSpecs = readSource("apps", "desktop", "src", "views", "servers", "server-detail-tab-specs.ts");
 
-  assert.match(serversView, /import \{ ConfigurationWorkspace \} from "\.\/settings\/ConfigurationWorkspace";/);
   assert.match(serverDetailTabs, /type ServerDetailTab = "runtime" \| "players" \| "settings"/);
   assert.match(serversView, /const detailTabs = buildServerDetailTabSpecs\(/);
   assert.match(tabSpecs, /id: "settings"[\s\S]*?label: t\("servers\.tabs\.settings"/);
@@ -1117,11 +1116,9 @@ test("files and backups share the maintenance tab without a diagnostic card", ()
 });
 
 test("maintenance tab owns native save and managed backup policy editing", () => {
-  const serversView = readSource("apps", "desktop", "src", "views", "ServersView.tsx");
   const maintenance = readSource("apps", "desktop", "src", "views", "servers", "ServerMaintenanceWorkspace.tsx");
   const policyEditor = readSource("apps", "desktop", "src", "views", "servers", "SavePolicyEditor.tsx");
 
-  assert.match(serversView, /import \{ ServerMaintenanceWorkspace \}/);
   assert.match(maintenance, /import \{ SavePolicyEditor \}/);
   assert.match(policyEditor, /server-backup-policy-editor/);
   assert.match(policyEditor, /auto_backup_on_stop/);

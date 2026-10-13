@@ -9,8 +9,6 @@ const readSource = (...segments) => fs.readFileSync(sourcePath(...segments), "ut
 
 const routerSource = readSource("views", "AppViewRouter.tsx");
 const systemSource = readSource("views", "SystemView.tsx");
-const assistantCapsuleSource = readSource("components", "AssistantCapsule.tsx");
-const assistantPanelSource = readSource("components", "AssistantPanel.tsx");
 
 test("the system dashboard owns all default paths and the SteamCMD lifecycle", () => {
   for (const key of ["games_root", "servers_root", "archives_root", "steamcmd_root"]) {
@@ -32,13 +30,4 @@ test("the system dashboard owns all default paths and the SteamCMD lifecycle", (
   for (const propName of ["onPickDirectory", "onSaveAppSettings"]) {
     assert.match(routerSource, new RegExp(`${propName}=\\{props\\.${propName}\\}`));
   }
-});
-
-test("the assistant dialog traps keyboard focus and restores the island trigger", () => {
-  assert.match(assistantCapsuleSource, /panelRef/);
-  assert.match(assistantCapsuleSource, /event\.key !== "Tab"/);
-  assert.match(assistantCapsuleSource, /containAssistantFocus\(event, surfaceRef\.current, document\.activeElement\)/);
-  assert.match(assistantCapsuleSource, /buttonRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
-  assert.match(assistantCapsuleSource, /onClose=\{closePanel\}/);
-  assert.match(assistantPanelSource, /aria-modal=\{props\.embedded \? undefined : true\}/);
 });

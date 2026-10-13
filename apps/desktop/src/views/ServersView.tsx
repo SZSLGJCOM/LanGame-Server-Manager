@@ -47,15 +47,13 @@ import {
 } from "../server-primary-action";
 import { RuntimeSurfaceWorkbench } from "./servers/RuntimeSurfaceWorkbench";
 import { collectRuntimeLogPaths, type RuntimeLogStartupBoundary } from "../runtime-log-stream";
-import { ModWorkbench } from "./servers/ModWorkbench";
-import { ServerMaintenanceWorkspace } from "./servers/ServerMaintenanceWorkspace";
+import {
+  ConfigurationWorkspace, GMToolsWorkbench, ModWorkbench, PlayerCenterWorkbench, ServerMaintenanceWorkspace
+} from "./servers/DeferredServerWorkspaces";
 import { InstanceUnavailablePanel } from "./servers/InstanceUnavailablePanel";
-import { GMToolsWorkbench } from "./servers/GMToolsWorkbench";
 import type { InstancePanelLoadState } from "../instance-panel-loader";
-import { PlayerCenterWorkbench } from "./servers/PlayerCenterWorkbench";
 import { ServerDetailTabs, type ServerDetailTab, type ServerDetailTabSpec } from "./servers/ServerDetailTabs";
 import { buildServerDetailTabSpecs } from "./servers/server-detail-tab-specs";
-import { ConfigurationWorkspace } from "./settings/ConfigurationWorkspace";
 import { useConfigurationFieldHelp } from "./settings/ConfigurationFieldHelp";
 import { useInstanceSettingsSaveCoordinator } from "./settings/InstanceSettingsSaveContext";
 import { InstanceSettingsDraftInvalidError } from "./settings/instance-settings-save-queue";

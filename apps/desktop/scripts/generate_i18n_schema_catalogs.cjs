@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { transpileTypeScript } = require("./typescript_source_tools.cjs");
+const { parseSource, transpileTypeScript } = require("./typescript_source_tools.cjs");
+const ts = require("@typescript/typescript6");
 
 const DESKTOP_ROOT = path.resolve(__dirname, "..");
 const WORKSPACE_ROOT = path.resolve(DESKTOP_ROOT, "../..");
@@ -1041,7 +1042,7 @@ function formatCatalogIndex(exportName, chunks) {
   return `import type { MessageCatalog } from "../../i18n-config";\n` +
     importBlock +
     `\n// Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.\n` +
-    `// Hand-authored game catalogs are spread after this catalog and may override any entry here.\n` +
+    `// Contains only fallback keys not overridden by the locale's hand-authored catalogs.\n` +
     `export const ${exportName}: MessageCatalog = {\n${body}};\n`;
 }
 
@@ -1114,6 +1115,44 @@ function parseGeneratedChunk(source) {
   return catalog;
 }
 
+function omitOverriddenMessages(catalog, indexSource, generatedName, loadCatalog) {
+  const syntax = parseSource(indexSource, "catalog.ts");
+  const imports = new Map();
+  for (const statement of syntax.statements) {
+    if (!ts.isImportDeclaration(statement)) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings || !ts.isNamedImports(bindings)) continue;
+    for (const binding of bindings.elements) {
+      imports.set(binding.name.text, [statement.moduleSpecifier.text, (binding.propertyName ?? binding.name).text]);
+    }
+  }
+  for (const statement of syntax.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      const initializer = declaration.initializer;
+      if (!initializer || !ts.isObjectLiteralExpression(initializer)) continue;
+      const generatedIndex = initializer.properties.findIndex((property) =>
+        ts.isSpreadAssignment(property) && ts.isIdentifier(property.expression) && property.expression.text === generatedName);
+      if (generatedIndex < 0) continue;
+      const overriddenKeys = new Set();
+      // Follow the runtime spread order: earlier catalogs do not override this fallback.
+      for (const property of initializer.properties.slice(generatedIndex + 1)) {
+        const imported = ts.isSpreadAssignment(property) && ts.isIdentifier(property.expression)
+          ? imports.get(property.expression.text) : undefined;
+        if (!imported) throw new Error("Catalog overrides must be named imports after the generated spread.");
+        for (const key of Object.keys(loadCatalog(...imported))) overriddenKeys.add(key);
+      }
+      return Object.fromEntries(Object.entries(catalog).filter(([key]) => !overriddenKeys.has(key)));
+    }
+  }
+  throw new Error(`Missing generated catalog spread: ${generatedName}`);
+}
+
+function schemaFallbacks(catalog, locale, generatedName) {
+  return omitOverriddenMessages(catalog, read(path.join(OUTPUT_DIR, `${locale}.ts`)), generatedName,
+    (file, exportName) => require(path.join(OUTPUT_DIR, `${file}.ts`))[exportName]);
+}
+
 function main() {
   let enCatalog = {};
   let zhCatalog = {};
@@ -1144,6 +1183,9 @@ function main() {
     zhCatalog = mergeModuleCatalog(readGeneratedCatalog("schema-generated.zh-cn"), zhCatalog, [...requestedModules]);
   }
 
+  enCatalog = schemaFallbacks(enCatalog, "en-us", "EN_US_SCHEMA_GENERATED_MESSAGES");
+  zhCatalog = schemaFallbacks(zhCatalog, "zh-cn", "ZH_CN_SCHEMA_GENERATED_MESSAGES");
+
   writeCatalog("schema-generated.en.ts", "EN_US_SCHEMA_GENERATED_MESSAGES", enCatalog);
   writeCatalog("schema-generated.zh-cn.ts", "ZH_CN_SCHEMA_GENERATED_MESSAGES", zhCatalog);
   console.log(
@@ -1152,4 +1194,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { addGeneratedSettingsEntry, mergeModuleCatalog, parseGeneratedChunk };
+module.exports = { addGeneratedSettingsEntry, mergeModuleCatalog, parseGeneratedChunk, omitOverriddenMessages };

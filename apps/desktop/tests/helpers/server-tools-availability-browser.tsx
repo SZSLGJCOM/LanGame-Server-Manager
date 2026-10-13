@@ -217,6 +217,7 @@ async function run() {
     await focus(tab("gm"));
     await nativeKey("Enter");
     check(selectedTab() === tab("gm"), `${moduleId} tools must be keyboard operable`);
+    await settleUntil(() => Boolean(fixture.querySelector(".gmt-workbench form")), `${moduleId} tools did not finish loading`);
     check(Boolean(fixture.querySelector(".gmt-workbench .gmt-nav-btn"))
       && Boolean(fixture.querySelector(".gmt-workbench form")), `${moduleId} must mount its real tools and form`);
     await selectModule("valheim");

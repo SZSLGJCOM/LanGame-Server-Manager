@@ -3,9 +3,10 @@ const path = require("path");
 const { isLanguageNeutralMessage } = require("./i18n-language-neutral.cjs");
 const { collectTranslationReferences, extractMessagePlaceholders } = require("./i18n-source-references.cjs");
 const {
-  collectCatalogFilesBySuffix,
-  collectLocaleCatalogFiles
+  collectCatalogFilesBySuffix
 } = require("./catalog-file-discovery.cjs");
+
+const { loadEffectiveCatalogs } = require("./i18n-catalog-loader.cjs");
 
 const ROOT = path.resolve(__dirname, "..");
 const WORKSPACE_ROOT = path.resolve(ROOT, "../..");
@@ -13,24 +14,6 @@ const GAME_CATALOG_DIRECTORY = "src/i18n/games";
 
 const ENGLISH_GAME_CATALOG_FILES = collectCatalogFilesBySuffix(ROOT, GAME_CATALOG_DIRECTORY, ".en.ts");
 const CHINESE_GAME_CATALOG_FILES = collectCatalogFilesBySuffix(ROOT, GAME_CATALOG_DIRECTORY, ".zh-cn.ts");
-const ENGLISH_LOCALE_CATALOG_FILES = collectLocaleCatalogFiles(ROOT, GAME_CATALOG_DIRECTORY, "en");
-const CHINESE_LOCALE_CATALOG_FILES = collectLocaleCatalogFiles(ROOT, GAME_CATALOG_DIRECTORY, "zh-cn");
-
-const ENGLISH_CATALOG_FILES = [
-  "src/i18n-messages.ts",
-  "src/i18n-messages-en-extra.ts",
-  ...ENGLISH_LOCALE_CATALOG_FILES
-];
-
-const EXPLICIT_CHINESE_CATALOG_FILES = [
-  "src/i18n-messages-zh-core.ts",
-  "src/i18n-messages-zh-ui.ts",
-  "src/i18n-messages-zh-extra.ts",
-  "src/i18n-messages-zh-settings.ts",
-  "src/i18n-messages-zh-schema.ts",
-  ...CHINESE_LOCALE_CATALOG_FILES
-];
-
 function readWorkspaceFile(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), "utf8");
 }
@@ -39,96 +22,8 @@ function readRepoFile(relativePath) {
   return fs.readFileSync(path.join(WORKSPACE_ROOT, relativePath), "utf8");
 }
 
-function extractCatalogKeys(relativePath) {
-  const source = readWorkspaceFile(relativePath);
-  const keys = new Set();
-  const keyPattern = /["']([A-Za-z0-9_.-]+(?:\.[A-Za-z0-9_.-]+)+)["']\s*:/g;
-  let match;
-
-  while ((match = keyPattern.exec(source)) !== null) {
-    keys.add(match[1]);
-  }
-
-  return keys;
-}
-
-function extractCatalogEntries(relativePath) {
-  const source = readWorkspaceFile(relativePath);
-  const entries = new Map();
-  const entryPattern = /"([^"]+)"\s*:\s*"((?:\\.|[^"\\])*)"/g;
-  let match;
-
-  while ((match = entryPattern.exec(source)) !== null) {
-    entries.set(match[1], JSON.parse(`"${match[2]}"`));
-  }
-
-  return entries;
-}
-
-function buildEffectiveGameCatalog(indexFile, locale) {
-  const catalog = new Map();
-  const generatedPattern = new RegExp(`^schema-generated\\.${locale}\\.chunk-\\d+\\.ts$`);
-  const gameDirectory = path.join(ROOT, GAME_CATALOG_DIRECTORY);
-  const directoryEntries = fs.readdirSync(gameDirectory).sort();
-
-  for (const fileName of directoryEntries.filter((fileName) => generatedPattern.test(fileName))) {
-    const relativePath = `${GAME_CATALOG_DIRECTORY}/${fileName}`;
-    for (const [key, value] of extractCatalogEntries(relativePath)) {
-      catalog.set(key, value);
-    }
-  }
-
-  const indexSource = readWorkspaceFile(indexFile);
-  const importPattern = /from\s+["']\.\/([^"']+)["'];/g;
-  let match;
-
-  while ((match = importPattern.exec(indexSource)) !== null) {
-    const importStem = match[1];
-    if (importStem === `schema-generated.${locale}`) {
-      continue;
-    }
-
-    const importedFiles = directoryEntries
-      .filter((fileName) => fileName === `${importStem}.ts` || (
-        fileName.startsWith(`${importStem}.part`) && fileName.endsWith(".ts")
-      ))
-      .sort();
-
-    for (const fileName of importedFiles) {
-      const relativePath = `${GAME_CATALOG_DIRECTORY}/${fileName}`;
-      for (const [key, value] of extractCatalogEntries(relativePath)) {
-        catalog.set(key, value);
-      }
-    }
-  }
-
-  return catalog;
-}
-
-function mergeCatalogs(...catalogs) {
-  const merged = new Map();
-  for (const catalog of catalogs) {
-    for (const [key, value] of catalog) {
-      merged.set(key, value);
-    }
-  }
-  return merged;
-}
-
 function extractPlaceholders(value) {
   return extractMessagePlaceholders(value);
-}
-
-function collectCatalogKeys(files) {
-  const keys = new Set();
-
-  for (const file of files) {
-    for (const key of extractCatalogKeys(file)) {
-      keys.add(key);
-    }
-  }
-
-  return keys;
 }
 
 function collectSourceFiles(directory) {
@@ -249,8 +144,14 @@ function printMissing(title, entries) {
   }
 }
 
-const englishKeys = collectCatalogKeys(ENGLISH_CATALOG_FILES);
-const explicitChineseKeys = collectCatalogKeys(EXPLICIT_CHINESE_CATALOG_FILES);
+const {
+  english: effectiveEnglishCatalog,
+  chinese: effectiveChineseCatalog,
+  englishGames: effectiveEnglishGameCatalog,
+  chineseGames: effectiveChineseGameCatalog
+} = loadEffectiveCatalogs();
+const englishKeys = new Set(effectiveEnglishCatalog.keys());
+const explicitChineseKeys = new Set(effectiveChineseCatalog.keys());
 const translationCalls = collectSourceTranslationReferences();
 const schemaTranslationKeys = collectModuleSchemaTranslationKeys();
 
@@ -279,22 +180,6 @@ const missingEnglishGameCatalogImports = collectMissingGameCatalogImports(
 const missingChineseGameCatalogImports = collectMissingGameCatalogImports(
   "src/i18n/games/zh-cn.ts",
   CHINESE_GAME_CATALOG_FILES
-);
-
-const effectiveEnglishGameCatalog = buildEffectiveGameCatalog("src/i18n/games/en-us.ts", "en");
-const effectiveChineseGameCatalog = buildEffectiveGameCatalog("src/i18n/games/zh-cn.ts", "zh-cn");
-const effectiveEnglishCatalog = mergeCatalogs(
-  extractCatalogEntries("src/i18n-messages.ts"),
-  effectiveEnglishGameCatalog,
-  extractCatalogEntries("src/i18n-messages-en-extra.ts")
-);
-const effectiveChineseCatalog = mergeCatalogs(
-  extractCatalogEntries("src/i18n-messages-zh-core.ts"),
-  extractCatalogEntries("src/i18n-messages-zh-ui.ts"),
-  effectiveChineseGameCatalog,
-  extractCatalogEntries("src/i18n-messages-zh-extra.ts"),
-  extractCatalogEntries("src/i18n-messages-zh-settings.ts"),
-  extractCatalogEntries("src/i18n-messages-zh-schema.ts")
 );
 
 const missingEffectiveChineseGameMessages = [...effectiveEnglishGameCatalog.keys()]
