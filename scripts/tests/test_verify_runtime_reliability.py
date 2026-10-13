@@ -1,4 +1,6 @@
 import json
+import argparse
+import base64
 import io
 import os
 import subprocess
@@ -384,6 +386,287 @@ class RuntimeReliabilityRunnerTests(unittest.TestCase):
             report = json.loads((output / "report.json").read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "failed")
             self.assertIn("finished_at", report)
+
+
+class RuntimeReliabilityShardingTests(unittest.TestCase):
+    def artifact(self, name="langame-desktop", kind="bin", *, test=True, doctest=False):
+        return json.dumps({"reason": "compiler-artifact", "package_id": "path+file:///snapshot#langame-desktop@0.1.0",
+                           "profile": {"test": test}, "executable": f"C:/target/{name}.exe" if test else None,
+                           "target": {"name": name, "kind": [kind], "doctest": doctest}})
+
+    def build_output(self, *artifacts):
+        return "\n".join(["[OPC] Source snapshot captured: fixture input abc123", *artifacts,
+                          '{"reason":"build-finished","success":true}', "[OPC] Completed"])
+
+    def test_groups_partition_full_packages_and_retain_quick_baseline(self):
+        selected = ["app-runtime", "langame-desktop"]
+        core = reliability.grouped_stages("core", selected)[0]
+        storage = reliability.grouped_stages("storage", selected)[0]
+        services = reliability.grouped_stages("services", selected)[0]
+        self.assertEqual(core, stages(True, False, selected)[0])
+        self.assertEqual(storage, stages(True, False, selected)[1])
+        self.assertIn("backups", storage.command)
+        self.assertEqual(services.command[:3], ("test", "-p", "app-runtime"))
+        self.assertNotIn("langame-desktop", services.command)
+        self.assertTrue(services.metrics_required)
+        self.assertEqual(services.required, stages()[0].required)
+        self.assertIn("--test-threads=1", services.command)
+        self.assertEqual(reliability.grouped_stages("services", []), ())
+        self.assertFalse(reliability.grouped_stages("services", ["app-network"])[0].metrics_required)
+        full = reliability.grouped_stages("services", None)[0]
+        actual = {full.command[i + 1] for i, arg in enumerate(full.command) if arg == "-p"}
+        expected = set(reliability.rust_workspace()) - {*reliability.PARALLEL_PACKAGES, "app-storage", "langame-desktop"}
+        self.assertEqual(actual, expected)
+
+    def test_cargo_json_discovers_every_target_amid_source_snapshot_logs(self):
+        output = self.build_output(self.artifact(), self.artifact("install_catalog"),
+                                   self.artifact("integration", "test"), self.artifact("desktop_lib", "lib", doctest=True))
+        targets, doctests = reliability.desktop_targets(output)
+        self.assertEqual(targets, [("--bin", "install_catalog"), ("--bin", "langame-desktop"),
+                                   ("--lib",), ("--test", "integration")])
+        self.assertTrue(doctests)
+        stage = Stage("compile", ("test", "-p", "langame-desktop", "--no-run", "--message-format=json"), ROOT, ())
+        with patch.object(reliability.shutil, "which", return_value="pwsh"):
+            _, env = command_for(stage, Path("fixture-wrapper.ps1"), None)
+        self.assertEqual(json.loads(env["LGSM_RELIABILITY_CARGO_ARGUMENTS"]), list(stage.command[1:]))
+        self.assertIn("--message-format=json", env["LGSM_RELIABILITY_CARGO_ARGUMENTS"])
+
+    def test_failed_or_incomplete_cargo_inventory_cannot_pass(self):
+        success = self.build_output(self.artifact())
+        for output in ("[OPC] build done", self.build_output(), success.replace('"success":true', '"success":false'),
+                       success.replace('"bin"', '"bench"'), success + "\n{broken-json}"):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                reliability.desktop_targets(output)
+
+    def test_library_doctests_detected_even_when_library_unit_tests_disabled(self):
+        output = self.build_output(self.artifact(), self.artifact("desktop_lib", "lib", test=False, doctest=True))
+        self.assertTrue(reliability.desktop_targets(output)[1])
+
+    def test_listing_requires_complete_summary_including_empty_targets(self):
+        self.assertEqual(reliability.listed_tests("0 tests, 0 benchmarks\n"), [])
+        self.assertEqual(reliability.listed_tests("fixture::one: test\n1 test, 0 benchmarks\n"), ["fixture::one"])
+        for output in ("", "fixture::one: test\n", "fixture::one: test\n2 tests, 0 benchmarks\n",
+                       "fixture::one: test\nfixture::one: test\n2 tests, 0 benchmarks\n",
+                       "fixture::one: benchmark\n0 tests, 1 benchmark\n"):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                reliability.listed_tests(output)
+
+    def test_partition_is_repeatable_balanced_and_has_no_missing_or_duplicate_tests(self):
+        inventory = {("--bin", "langame-desktop"): [f"group::test_{i:04}" for i in range(2085)],
+                     ("--bin", "install_catalog"): ["test_one", "test_two"], ("--test", "empty"): []}
+        partitions = [reliability.desktop_partition(inventory, i, 4) for i in range(1, 5)]
+        flattened = [[(target, name) for target, names in shard.items() for name in names] for shard in partitions]
+        all_tests = [item for shard in flattened for item in shard]
+        self.assertEqual(set(all_tests), {(target, name) for target, names in inventory.items() for name in names})
+        self.assertEqual(len(all_tests), len(set(all_tests)))
+        self.assertLessEqual(max(map(len, flattened)) - min(map(len, flattened)), 1)
+        reversed_inventory = {target: list(reversed(names)) for target, names in reversed(list(inventory.items()))}
+        self.assertEqual(partitions[2], reliability.desktop_partition(reversed_inventory, 3, 4))
+        for index, count in ((0, 4), (5, 4), (1, 5), (2, 1)):
+            with self.assertRaises(ValueError):
+                reliability.desktop_partition(inventory, index, count)
+
+    def test_exact_batches_respect_windows_utf16_budget_without_name_loss(self):
+        names = [f"fixture::游戏_{i:03}" + "x" * 150 for i in range(311)]
+        batches = reliability.desktop_batches(("--bin", "langame-desktop"), names, limit=2000)
+        actual = []
+        self.assertGreater(len(batches), 1)
+        for command in batches:
+            self.assertLessEqual(len(subprocess.list2cmdline(["cargo", *command]).encode("utf-16-le")) // 2, 2000)
+            self.assertIn("--test-threads=1", command)
+            self.assertIn("--exact", command)
+            actual.extend(command[command.index("--format=pretty") + 1:])
+        self.assertEqual(actual, names)
+        with self.assertRaises(ValueError):
+            reliability.desktop_batches(("--lib",), ["x" * 24000])
+
+    def test_exact_batch_requires_selected_names_and_exact_outer_summary_count(self):
+        stage = Stage("batch", (), ROOT, (), exact_tests=("fixture::one", "fixture::panic"))
+        success = ("test fixture::one ... ok\ntest fixture::panic - should panic ... ok\n"
+                   "\nsuccesses:\n    fixture::one\n    fixture::panic\n\n"
+                   "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n")
+        self.assertEqual(inspect_result(stage, success, 0)["status"], "passed")
+        for output in (success.replace("fixture::panic", "fixture::different"),
+                       success.replace("2 passed", "1 passed"), success.replace("2 passed", "3 passed"),
+                       success.replace("0 ignored", "1 ignored"),
+                       success.replace("    fixture::one\n", ""),
+                       success.replace("    fixture::one\n", "    fixture::one\n    fixture::one\n")):
+            with self.subTest(output=output):
+                self.assertEqual(inspect_result(stage, output, 0)["status"], "failed")
+        self.assertEqual(inspect_result(stage, success, 101)["status"], "failed")
+
+    def test_child_process_names_and_summaries_do_not_inflate_exact_outer_batch(self):
+        stage = Stage("batch", (), ROOT, (), exact_tests=("fixture::one", "fixture::two"))
+        success = ("test fixture::one ... ok\ntest fixture::two ... ok\n"
+                   "---- fixture::one stdout ----\n"
+                   "test fixture::one ... ok\n"
+                   "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n"
+                   "test fixture::nested_child ... ok\n"
+                   "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n"
+                   "\nsuccesses:\n    fixture::one\n    fixture::two\n\n"
+                   "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n")
+        result = inspect_result(stage, success, 0)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["passed"], 2)
+        self.assertEqual(inspect_result(stage, success, 101)["status"], "failed")
+
+    def test_interrupted_parent_progress_uses_final_outer_success_list(self):
+        parent = "runtime_service::client::ctrl_c_tests::detached_service_first_managed_game_receives_ctrl_c"
+        child = "runtime_service::client::ctrl_c_tests::console_inheritance_process_fixture"
+        stage = Stage("batch", (), ROOT, (), exact_tests=(parent, "fixture::other"))
+        output = (f"test {parent} ... warning: `--logfile` is deprecated\nrunning 1 test\n"
+                  f"test {child} ... ok\nsuccesses:\n    {child}\n\n"
+                  "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2168 filtered out\n"
+                  "\nok\ntest fixture::other ... ok\n\nsuccesses:\n"
+                  "---- fixture::other stdout ----\nchild diagnostics\n"
+                  f"\nsuccesses:\n    fixture::other\n    {parent}\n\n"
+                  "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n")
+        result = inspect_result(stage, output, 0)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["passed"], 2)
+        self.assertEqual(inspect_result(stage, output.replace(f"    {parent}\n", f"    {child}\n"), 0)["status"], "failed")
+
+    def test_managed_batches_fit_json_base64_guard_payload_for_ascii_and_unicode(self):
+        for suffix in ("long_test_name_" * 15, "游戏𓃠" * 80):
+            names = [f"fixture::test_{index:04}_{suffix}" for index in range(311)]
+            batches = reliability.desktop_batches(("--bin", "langame-desktop"), names, managed=True)
+            actual = []
+            for command in batches:
+                # Match Start-CodexCargoDirectChild's payload fields, including
+                # wrapper-added Cargo paths and resource metadata.
+                path = "D:/managed/" + "directory/" * 60
+                payload = {"executable": path + "cargo.exe",
+                           "arguments": [*command, "--manifest-path", path + "Cargo.toml", "--target-dir", path + "target"],
+                           "workingDirectory": path, "memoryLimitBytes": 17179869184,
+                           "hostReserveBytes": 4294967296, "maximumActiveProcesses": 128, "timeoutSeconds": 0,
+                           "ownerProcessId": 12345, "ownerStartTimeUtcTicks": 639011234567890000,
+                           "jobName": "Local\\CodexCargoFixture"}
+                for escaped in (False, True):
+                    encoded = base64.b64encode(json.dumps(payload, ensure_ascii=escaped).encode("utf-8")).decode("ascii")
+                    guard = ["C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe", "-NoLogo", "-NoProfile",
+                             "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+                             path + "invoke-cargo-resource-guard.ps1", "-CommandPayload", encoded]
+                    self.assertLess(len(subprocess.list2cmdline(guard).encode("utf-16-le")) // 2, 32767)
+                actual.extend(command[command.index("--format=pretty") + 1:])
+            self.assertEqual(actual, names)
+            self.assertGreater(len(batches), 1)
+
+    def test_only_doctest_stage_accepts_a_real_empty_summary(self):
+        empty = "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\n"
+        stage = Stage("docs", (), ROOT, (), allow_empty=True)
+        self.assertEqual(inspect_result(stage, empty, 0)["status"], "passed")
+        self.assertEqual(inspect_result(stage, "", 0)["status"], "failed")
+        self.assertEqual(inspect_result(stage, empty, 1)["status"], "failed")
+        self.assertEqual(inspect_result(Stage("batch", (), ROOT, ()), empty, 0)["status"], "failed")
+
+    def fake_capture(self, stage, *_args):
+        if stage.name == "desktop-build":
+            output = self.build_output(self.artifact(), self.artifact("install_catalog"),
+                                       self.artifact("desktop_lib", "lib", test=False, doctest=True))
+        elif stage.name.endswith("-1"):
+            output = "0 tests, 0 benchmarks\n"
+        else:
+            output = ("fixture::ignored: test\n1 test, 0 benchmarks\n" if "ignored" in stage.name else
+                      "fixture::first: test\nfixture::second: test\nfixture::ignored: test\n3 tests, 0 benchmarks\n")
+        return output, {"name": stage.name, "status": "passed", "exit_code": 0, "log": f"{stage.name}.log"}
+
+    def test_prepare_shards_omit_ignored_tests_and_own_doctests_once(self):
+        args = argparse.Namespace(cycles=4, cargo_wrapper=None, node_wrapper=None, frontend_dist=None,
+                                  shard_index=1, shard_count=4)
+        baseline = list(stages())
+        baseline[2] = Stage("desktop", (), ROOT, ("fixture::first", "fixture::second"))
+        executed = []
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(reliability, "capture_stage", side_effect=self.fake_capture), \
+             patch.object(reliability, "stages", return_value=tuple(baseline)):
+            for index in range(1, 5):
+                args.shard_index = index
+                report = {"stages": []}
+                checks = reliability.prepare_desktop(args, None, Path(temporary), report)
+                executed.extend(checks)
+                self.assertEqual(report["desktop_partition"]["doctests"], index == 1)
+                self.assertEqual(report["desktop_partition"]["targets"][1]["ignored"], ["fixture::ignored"])
+                self.assertFalse(any(stage.required for stage in checks), "Whole-suite requirements do not apply per shard")
+        self.assertEqual(sorted(name for stage in executed for name in stage.exact_tests),
+                         ["fixture::first", "fixture::second"])
+        self.assertEqual(sum(stage.name == "desktop-doctests" for stage in executed), 1)
+
+    def test_unselected_groups_are_explicit_success_without_cargo(self):
+        for group in ("desktop", "services"):
+            with self.subTest(group=group), tempfile.TemporaryDirectory() as temporary, \
+                 patch.object(reliability, "windows_runtime_supported", return_value=True), \
+                 patch.object(reliability, "capture_stage") as capture, \
+                 patch.object(reliability, "run_stage") as run:
+                output = Path(temporary) / "report"
+                code = main(["--full-workspace", "--rust-only", "--group", group,
+                             "--rust-packages-json", "[]", "--output", str(output)])
+                report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+            self.assertEqual(code, 0)
+            self.assertIn("empty_reason", report)
+            capture.assert_not_called()
+            run.assert_not_called()
+
+    def test_failed_build_stops_before_enumeration_and_tests_and_keeps_evidence(self):
+        failed = ("compilation failed", {"status": "failed", "exit_code": 101, "log": "desktop-build.log"})
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(reliability, "windows_runtime_supported", return_value=True), \
+             patch.object(reliability, "capture_stage", return_value=failed) as capture, \
+             patch.object(reliability, "run_stage") as run:
+            output = Path(temporary) / "report"
+            code = main(["--full-workspace", "--rust-only", "--group", "desktop", "--output", str(output)])
+            report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(code, 1)
+        self.assertEqual(report["stages"], [failed[1]])
+        capture.assert_called_once()
+        run.assert_not_called()
+
+    def test_failed_desktop_batch_stops_subsequent_batches_and_doctests(self):
+        checks = tuple(Stage(f"batch-{i}", (), ROOT, ()) for i in range(3))
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(reliability, "windows_runtime_supported", return_value=True), \
+             patch.object(reliability, "prepare_desktop", return_value=checks), \
+             patch.object(reliability, "run_stage", return_value={"status": "failed"}) as run:
+            code = main(["--full-workspace", "--rust-only", "--group", "desktop", "--output",
+                         str(Path(temporary) / "report")])
+        self.assertEqual(code, 1)
+        run.assert_called_once()
+
+    def test_missing_or_ignored_required_behavior_prevents_any_batch_execution(self):
+        args = argparse.Namespace(cycles=4, cargo_wrapper=None, node_wrapper=None, frontend_dist=None,
+                                  shard_index=1, shard_count=4)
+        for required in ("fixture::missing", "fixture::ignored"):
+            baseline = list(stages())
+            baseline[2] = Stage("desktop", (), ROOT, (required,))
+            with self.subTest(required=required), tempfile.TemporaryDirectory() as temporary, \
+                 patch.object(reliability, "capture_stage", side_effect=self.fake_capture), \
+                 patch.object(reliability, "stages", return_value=tuple(baseline)), \
+                 self.assertRaisesRegex(ValueError, "missing required test groups"):
+                reliability.prepare_desktop(args, None, Path(temporary), {"stages": []})
+
+    def test_failed_listing_propagates_before_execution(self):
+        def capture(stage, *args):
+            if stage.name == "desktop-list-1":
+                return "listing failed", {"status": "failed", "exit_code": 101, "log": "desktop-list-1.log"}
+            return self.fake_capture(stage, *args)
+
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(reliability, "windows_runtime_supported", return_value=True), \
+             patch.object(reliability, "capture_stage", side_effect=capture) as calls, \
+             patch.object(reliability, "run_stage") as run:
+            output = Path(temporary) / "report"
+            code = main(["--full-workspace", "--rust-only", "--group", "desktop", "--output", str(output)])
+            report = json.loads((output / "report.json").read_text(encoding="utf-8"))
+        self.assertEqual(code, 1)
+        self.assertEqual(calls.call_count, 2)
+        self.assertEqual(report["stages"][-1]["exit_code"], 101)
+        run.assert_not_called()
+
+    def test_invalid_group_and_shard_combinations_rejected_without_execution(self):
+        for args in (["--group", "core"], ["--shard-count", "4"],
+                     ["--full-workspace", "--rust-only", "--group", "desktop", "--shard-index", "5"]):
+            with self.subTest(args=args), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
+                main([*args, "--plan"])
+            self.assertEqual(raised.exception.code, 2)
 
 
 if __name__ == "__main__":

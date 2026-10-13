@@ -11,11 +11,19 @@ test("Rust security workflow uses pinned tooling and scans dependency changes", 
 
   assert.match(
     workflow,
-    /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/u
+    /uses: actions\/checkout@[a-f0-9]{40}\b/u
   );
   assert.match(
     workflow,
-    /cargo install cargo-audit --version 0\.22\.2 --locked/u
+    /^\s*CARGO_AUDIT_VERSION: "\d+\.\d+\.\d+"\s*$/mu
+  );
+  assert.match(
+    workflow,
+    /cargo install cargo-audit --version "\$CARGO_AUDIT_VERSION" --locked --root "\$RUNNER_TEMP\/lgsm-rustsec"/u
+  );
+  assert.match(
+    workflow,
+    /test "\$\("\$RUNNER_TEMP\/lgsm-rustsec\/bin\/cargo-audit" --version\)" = "cargo-audit \$CARGO_AUDIT_VERSION"/u
   );
   assert.match(
     workflow,
@@ -28,4 +36,16 @@ test("Rust security workflow uses pinned tooling and scans dependency changes", 
   assert.match(workflow, /^\s*- Cargo\.lock\s*$/mu);
   assert.match(workflow, /^\s*contents: read\s*$/mu);
   assert.match(workflow, /^\s*persist-credentials: false\s*$/mu);
+});
+
+test("RustSec tooling cache is versioned and only master may publish it", () => {
+  const workflow = fs.readFileSync(workflowPath, "utf8");
+  assert.match(workflow, /uses: actions\/cache\/restore@[a-f0-9]{40}\b/u);
+  assert.match(workflow, /uses: actions\/cache\/save@[a-f0-9]{40}\b/u);
+  assert.match(workflow, /key: rustsec-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ env\.CARGO_AUDIT_VERSION \}\}-\$\{\{ hashFiles\('rust-toolchain\.toml'\) \}\}/u);
+  const saveStep = workflow.split(/\n\s+- name:/u).find((step) => step.includes("uses: actions/cache/save@"));
+  assert.ok(saveStep, "the cache publication step must be present");
+  assert.match(saveStep, /^\s*if: github\.ref == 'refs\/heads\/master' && steps\.scanner-cache\.outputs\.cache-hit != 'true'\s*$/mu);
+  assert.match(saveStep, /path: \$\{\{ runner\.temp \}\}\/lgsm-rustsec/u);
+  assert.match(saveStep, /key: \$\{\{ steps\.scanner-cache\.outputs\.cache-primary-key \}\}/u);
 });

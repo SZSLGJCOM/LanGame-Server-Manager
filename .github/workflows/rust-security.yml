@@ -29,6 +29,8 @@ jobs:
     name: RustSec advisory scan
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      CARGO_AUDIT_VERSION: "0.22.2"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,8 +47,25 @@ jobs:
           fi
           rustup toolchain install "${toolchain}" --profile minimal
 
+      - name: Restore the pinned RustSec scanner
+        id: scanner-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/lgsm-rustsec
+          key: rustsec-${{ runner.os }}-${{ runner.arch }}-${{ env.CARGO_AUDIT_VERSION }}-${{ hashFiles('rust-toolchain.toml') }}
+
       - name: Install the pinned RustSec scanner
-        run: cargo install cargo-audit --version 0.22.2 --locked
+        run: |
+          cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked --root "$RUNNER_TEMP/lgsm-rustsec"
+          test "$("$RUNNER_TEMP/lgsm-rustsec/bin/cargo-audit" --version)" = "cargo-audit $CARGO_AUDIT_VERSION"
+          echo "$RUNNER_TEMP/lgsm-rustsec/bin" >> "$GITHUB_PATH"
+
+      - name: Save the verified scanner from master
+        if: github.ref == 'refs/heads/master' && steps.scanner-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/lgsm-rustsec
+          key: ${{ steps.scanner-cache.outputs.cache-primary-key }}
 
       - name: Audit locked Rust dependencies
         # GTK3 remains a target-specific Tauri dependency without a patched 0.18 release.
