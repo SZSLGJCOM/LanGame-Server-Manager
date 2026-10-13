@@ -151,7 +151,8 @@ test("a cache cleanup failure remains visible and retains its owned directory fo
 
 test("startup phase limits do not extend the shared command watchdog or fixture budget", () => {
   const defaults = browserTimeBudgets();
-  assert.deepEqual(defaults, { fixtureTimeoutMs: 45000, browserStartupTimeoutMs: 15000, commandTimeoutMs: 80000 });
+  assert.deepEqual(defaults, { fixtureTimeoutMs: 45000,
+    browserStartupTimeoutMs: process.platform === "win32" ? 30000 : 15000, commandTimeoutMs: 80000 });
   for (const browserStartupTimeoutMs of [1000, 15000, 20000, 30000]) {
     const budgets = browserTimeBudgets({ browserStartupTimeoutMs });
     assert.equal(budgets.commandTimeoutMs, defaults.commandTimeoutMs);
@@ -161,12 +162,13 @@ test("startup phase limits do not extend the shared command watchdog or fixture 
   assert.equal(browserTimeBudgets({ fixtureTimeoutMs: 1000 }).commandTimeoutMs, 36000);
 });
 
-test("cold browser endpoint readiness can exceed five seconds within its separate startup budget", async (t) => {
+test("cold browser readiness is allowed within its platform startup budget", async (t) => {
   t.mock.timers.enable({ apis: ["setTimeout"] });
   let ready;
   const pending = waitForBrowserEndpoint(new Promise((resolve) => { ready = resolve; }), new Promise(() => {}));
   const completed = assert.doesNotReject(pending);
-  t.mock.timers.tick(5219); // Observed hosted Windows cold-start sample.
+  // Exercise Windows readiness beyond the former 15-second startup ceiling.
+  t.mock.timers.tick(process.platform === "win32" ? 16000 : 5219);
   ready("ws://controlled.invalid/devtools");
   await completed;
   assert.equal(await pending, "ws://controlled.invalid/devtools");

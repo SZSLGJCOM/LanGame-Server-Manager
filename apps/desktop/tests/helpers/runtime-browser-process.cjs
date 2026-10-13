@@ -12,9 +12,10 @@ const { pollBrowserEndpoint } = require("./runtime-browser-endpoint.cjs");
 const execFileAsync = promisify(execFile);
 const desktopRoot = path.resolve(__dirname, "../..");
 const outputLimit = 64 * 1024;
-// Hosted Windows cold Chrome took 5219 ms before publishing DevTools. This is
-// an environment startup allowance, not a product SLA or extra fixture time.
-const defaultBrowserStartupTimeoutMs = 15000;
+// Hosted Windows first launches took 5–10 seconds and one reached the 15-second
+// limit before DevTools was ready; later launches stayed below two seconds.
+// Allow cold startup within the unchanged command ceiling and fixture budget.
+const defaultBrowserStartupTimeoutMs = process.platform === "win32" ? 30000 : 15000;
 let fixtureCacheRoot;
 
 function fixtureUsesBundledDev({ development = true, reactTransform = true, fixtureMiddleware, bundleWithMiddleware = false }) {
