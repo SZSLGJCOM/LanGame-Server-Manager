@@ -30,7 +30,7 @@ reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha1 = "0.11.0"
-sha2 = "0.11.0"
+sha2.workspace = true
 socket2 = "0.6.5"
 subtle = "2.6.1"
 tauri = { workspace = true, features = ["image-png", "tray-icon"] }

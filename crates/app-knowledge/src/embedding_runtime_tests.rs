@@ -271,11 +271,20 @@ fn native_loader_child() {
             assert!(error.to_string().contains("conflicting already-loaded"));
         }
     } else if mode == "reuse" {
-        initialize(&root).unwrap();
+        let environment = initialize(&root).unwrap();
+        let environment_address = ort::AsPointer::ptr(&environment) as usize;
+        drop(environment);
         let second = root.join("no-second-extraction");
         std::thread::scope(|scope| {
             for _ in 0..4 {
-                scope.spawn(|| initialize(&second).unwrap());
+                scope.spawn(|| {
+                    let environment = initialize(&second).unwrap();
+                    assert_eq!(
+                        ort::AsPointer::ptr(&environment) as usize,
+                        environment_address
+                    );
+                    ort::session::Session::builder(&environment).unwrap();
+                });
             }
         });
         assert!(!second.exists());

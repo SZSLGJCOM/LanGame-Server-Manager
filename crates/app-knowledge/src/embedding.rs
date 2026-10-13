@@ -73,10 +73,10 @@ impl Embedder {
             ));
         }
         let weights = download::read_verified(model_dir, &download::FILES[0])?;
-        crate::embedding_runtime::initialize(model_dir)?;
+        let environment = crate::embedding_runtime::initialize(model_dir)?;
         // The graph is loaded from the owned verified buffer, never a mutable
         // file or external tensor path. Only the bundled CPU backend is enabled.
-        let session = Session::builder()
+        let session = Session::builder(&environment)
             .map_err(model_error)?
             .with_intra_threads(INFERENCE_THREADS)
             .map_err(model_error)?
