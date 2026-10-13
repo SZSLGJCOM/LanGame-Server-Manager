@@ -6,6 +6,7 @@ const { spawn, execFile, execFileSync } = require("node:child_process");
 const { promisify } = require("node:util");
 const { randomUUID } = require("node:crypto");
 const { after } = require("node:test");
+const { preProcessFile } = require("@typescript/typescript6");
 const { pollBrowserEndpoint } = require("./runtime-browser-endpoint.cjs");
 
 const execFileAsync = promisify(execFile);
@@ -155,8 +156,7 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   const modules = [];
   const visited = new Set();
   function enqueue(module) {
-    // CSS watch-only files have no transformable module identity in Vite.
-    if (module.type === "asset" || visited.has(module)) return;
+    if (visited.has(module)) return;
     visited.add(module);
     modules.push(module);
   }
@@ -165,17 +165,25 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
     assert.ok(module, `Fixture entry is missing from the module graph: ${url}`);
     enqueue(module);
   }
-  // Vite preTransformRequests follows static imports only. Its graph also
-  // records lazy imports; prepare those without executing browser modules.
+  // Vite's graph also includes plugin watch files, which are not importable.
+  // Follow actual ESM imports in transformed code, including lazy imports.
   for (let index = 0; index < modules.length;) {
     const wave = modules.slice(index, index + 4);
     index += wave.length;
     const dependencies = await Promise.all(wave.map(async (module) => {
-      if (!module.transformResult) {
-        const result = await client.transformRequest(module.url);
-        assert.ok(result && typeof result.code === "string", `Fixture module did not transform: ${module.url}`);
+      const result = module.transformResult ?? await client.transformRequest(module.url);
+      assert.ok(result && typeof result.code === "string", `Fixture module did not transform: ${module.url}`);
+      if (module.type === "css") return [];
+      const imports = preProcessFile(result.code, true, false).importedFiles;
+      const dependencies = [];
+      for (const { fileName } of imports) {
+        const url = new URL(fileName, new URL(module.url, "http://fixture.local"));
+        if (url.origin !== "http://fixture.local") continue;
+        const dependency = await client.moduleGraph.getModuleByUrl(decodeURI(url.pathname) + url.search);
+        assert.ok(dependency, `Fixture import is missing from the module graph: ${url.pathname}${url.search}`);
+        dependencies.push(dependency);
       }
-      return module.importedModules;
+      return dependencies;
     }));
     for (const imports of dependencies) for (const module of imports) enqueue(module);
   }
