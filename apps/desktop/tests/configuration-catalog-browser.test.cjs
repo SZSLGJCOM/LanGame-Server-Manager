@@ -13,7 +13,7 @@ function fixtureMode(mode) {
 
 test("Core Keeper preserves existing 32-character passwords through input, save and reload", { timeout: 90000 }, async () => {
   const report = await runBrowserFixture({
-    fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true,
+    fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true, bundleWithMiddleware: true,
     fixtureMiddleware: fixtureMode("corekeeper-password"),
     screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
       ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, "corekeeper-password-1560x900.png")
@@ -32,7 +32,7 @@ test("Core Keeper preserves existing 32-character passwords through input, save 
 for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
   test(`all game configuration categories render at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({
-      fixturePath: "configuration-catalog-browser.html", viewport, fixtureCleanup: true,
+      fixturePath: "configuration-catalog-browser.html", viewport, fixtureCleanup: true, bundleWithMiddleware: true,
       fixtureMiddleware: fixtureMode("catalog"),
       screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
         ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, `configuration-${viewport.width}x${viewport.height}.png`)
@@ -53,7 +53,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
 for (const section of ["campaign", "network"]) {
   test(`Barotrauma ${section} renders and fractional respawn values survive saving`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({
-      fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true,
+      fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true, bundleWithMiddleware: true,
       fixtureMiddleware: fixtureMode(`barotrauma-${section}`),
       screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
         ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, `barotrauma-${section}-1560x900.png`)
@@ -73,7 +73,7 @@ for (const section of ["campaign", "network"]) {
 for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
   test(`Conan verified settings render and survive saving at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({
-      fixturePath: "configuration-catalog-browser.html", viewport, fixtureCleanup: true,
+      fixturePath: "configuration-catalog-browser.html", viewport, fixtureCleanup: true, bundleWithMiddleware: true,
       fixtureMiddleware: fixtureMode("conan-semantics"),
       screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
         ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, `conan-semantics-${viewport.width}x${viewport.height}.png`)
