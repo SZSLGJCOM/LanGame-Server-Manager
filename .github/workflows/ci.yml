@@ -160,7 +160,6 @@ jobs:
       matrix: ${{ fromJSON(needs.scope.outputs.rust_matrix) }}
     env:
       CARGO_TERM_COLOR: always
-      CARGO_LOG: ${{ matrix.group == 'desktop' && 'cargo::compiler::fingerprint=info' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -175,6 +174,7 @@ jobs:
           save-cache: ${{ matrix.cache_writer }}
       - name: Run the selected isolated Rust group
         env:
+          CARGO_LOG: ${{ matrix.group == 'desktop' && 'cargo::compiler::fingerprint=info' || '' }}
           RUST_PACKAGES_JSON: ${{ needs.scope.outputs.rust_packages }}
         run: python -B scripts/verify_project.py --component rust-tests --rust-packages-json "$env:RUST_PACKAGES_JSON" --rust-group ${{ matrix.group }} --shard-index ${{ matrix.shard }} --shard-count ${{ matrix.count }} --output "${{ runner.temp }}/verification"
       - name: Retain test group evidence

@@ -35,7 +35,7 @@ pub(super) fn run(config: Config, path: &std::path::Path, start: bool) -> Result
     let result_writer = Arc::clone(&result);
     let complete = Arc::new(AtomicBool::new(false));
     let completed = Arc::clone(&complete);
-    let mut context = tauri::generate_context!();
+    let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
     let app = tauri::Builder::default()
         .manage(client)

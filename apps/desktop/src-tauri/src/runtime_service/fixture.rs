@@ -273,7 +273,7 @@ fn run_owned_children(config: &Config, path: &Path) -> Result<(), String> {
 fn run_service(config: Config) -> Result<(), String> {
     config.initialize_environment()?;
     let endpoint = super::security::Endpoint::isolated(&config.nonce).map_err(|e| e.to_string())?;
-    let mut context = tauri::generate_context!();
+    let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
     let ready = config.root.join("service-ready.json");
     let app = tauri::Builder::default()
