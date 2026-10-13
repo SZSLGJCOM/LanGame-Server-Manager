@@ -104,8 +104,8 @@ const state = (id: string, value: string) => `${workspace(id)}[data-archive-conf
 
 export async function selectArchiveSettings(hooks: Pick<Hooks, "click" | "waitFor">, id: string) {
   await hooks.click(`${workspace(id)} .server-detail-tab[id$="-settings"]`);
-  await hooks.waitFor(`${workspace(id)} [data-archive-workspace-tab="settings"]`);
-  await hooks.waitFor(preview(id));
+  // Raw disclosure exists after code loads, including while module data is pending.
+  await hooks.waitFor(`${preview(id)} .configuration-workspace__raw`);
 }
 
 export async function selectArchivePreviewSection(hooks: Pick<Hooks, "fixture" | "click" | "waitFor">, id: string, sectionId: string) {

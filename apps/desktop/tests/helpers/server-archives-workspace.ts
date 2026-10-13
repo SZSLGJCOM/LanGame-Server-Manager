@@ -19,6 +19,12 @@ interface Hooks {
 const workspace = (id: string) => `.archived-instance-workspace[data-archive-id="${id}"]`;
 const tab = (id: string, key: string) => `${workspace(id)} .server-detail-tab[id$="-${key}"]`;
 const content = (id: string, key: string) => `${workspace(id)} [data-archive-workspace-tab="${key}"]`;
+const workspaceSelectors = {
+  runtime: ".server-runtime-console-card",
+  players: ".player-access-workbench",
+  maintenance: ".maintenance-workspace",
+  mods: ".mw-workbench"
+};
 
 export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
   const { fixture, check, phases } = hooks;
@@ -32,8 +38,9 @@ export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
       key: node.id.split("-").at(-1), label: node.querySelector(".server-detail-tab-label")?.textContent,
       icon: node.querySelector(".server-detail-tab-icon")?.innerHTML }));
   }
-  async function selectTab(id: string, key: string) {
-    await hooks.click(tab(id, key)); await hooks.waitFor(content(id, key));
+  async function selectTab(id: string, key: keyof typeof workspaceSelectors) {
+    await hooks.click(tab(id, key));
+    await hooks.waitFor(`${content(id, key)} ${workspaceSelectors[key]}`);
     check(element(tab(id, key)).getAttribute("aria-selected") === "true", `Archived ${key} tab owns its selected state`);
     check(element(tab(id, key)).getAttribute("aria-controls") === element(content(id, key)).id
       && element(content(id, key)).getAttribute("aria-labelledby") === element(tab(id, key)).id,
