@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 #[tokio::test(flavor = "current_thread")]
@@ -80,22 +82,24 @@ async fn creation_from_a_private_source_completes_while_an_unrelated_archive_cat
         .truncate(false)
         .read(true)
         .write(true)
-        .open(lock_path)?;
+        .open(&lock_path)?;
     catalog.try_lock()?;
     assert!(
-        app_storage::read_archived_program_sources(&storage.paths)
-            .await
-            .is_err(),
+        matches!(
+            app_storage::read_archived_program_sources(&storage.paths).await,
+            Err(app_storage::StorageError::InstanceSettingsLocked { path }) if path == lock_path
+        ),
         "the test must hold the real archive catalog lock"
     );
-    let created = tokio::time::timeout(
-        Duration::from_secs(10),
-        CREATION_INSTALL_FORBIDDEN.scope(
+    // Archive admission uses try_lock_shared and fails immediately on contention.
+    // Successful creation while this lease stays held proves independence; a
+    // wall-clock limit on database and file I/O would test runner load instead.
+    let created = CREATION_INSTALL_FORBIDDEN
+        .scope(
             true,
             create_instance_record_inner(app.state::<DesktopState>(), input()),
-        ),
-    )
-    .await??;
+        )
+        .await?;
     let program = app_storage::read_instance_program_install(&storage.paths, &created.summary.id)
         .await?
         .unwrap()
@@ -107,9 +111,10 @@ async fn creation_from_a_private_source_completes_while_an_unrelated_archive_cat
         original
     );
     assert!(
-        app_storage::read_archived_program_sources(&storage.paths)
-            .await
-            .is_err(),
+        matches!(
+            app_storage::read_archived_program_sources(&storage.paths).await,
+            Err(app_storage::StorageError::InstanceSettingsLocked { path }) if path == lock_path
+        ),
         "creation must finish before the unrelated catalog lease is released"
     );
     assert!(!storage.paths.steamcmd_root.join("steamcmd.exe").exists());
