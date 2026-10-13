@@ -1,4 +1,4 @@
-import { readSavedLibraryStory, saveLibraryStory } from "../../src/views/library/library-story-cache";
+import { readSavedLibraryStory, saveLibraryStory, type SavedLibraryStory } from "../../src/views/library/library-story-cache";
 
 const nonce = new URLSearchParams(location.search).get("nonce");
 const phaseKey = `story-persistence:${nonce}`;
@@ -13,6 +13,60 @@ addEventListener("unhandledrejection", (event) => errors.push(String(event.reaso
 function check(value: unknown, message: string): asserts value {
   if (!value) throw new Error(message);
   checks++;
+}
+
+async function prepareStorage(): Promise<void> {
+  // A fresh browser profile may initialize storage beyond the optional cache's
+  // operation budget. Establish healthy storage before testing persistence;
+  // the production cache still creates its own database and schema.
+  const name = `story-fixture:${nonce}`;
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open(name);
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Storage preparation blocked"));
+    request.onsuccess = () => { request.result.close(); resolve(); };
+  });
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error("Storage preparation cleanup blocked"));
+    request.onsuccess = () => resolve();
+  });
+}
+
+async function checkStorageTimeout(saved: SavedLibraryStory) {
+  const database = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open("langame-steam-story-cache", 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+  // Keep a real transaction ahead of the cache operations until their existing
+  // deadlines settle them. No wall-clock sleep or replacement cache is needed.
+  const transaction = database.transaction("stories", "readwrite");
+  const store = transaction.objectStore("stories");
+  let release = false;
+  function hold() { store.get(saved.key).onsuccess = () => { if (!release) hold(); }; }
+  const completed = new Promise<void>((resolve, reject) => {
+    transaction.oncomplete = () => resolve();
+    transaction.onabort = () => reject(transaction.error);
+  });
+  hold();
+  let saveMs = 0;
+  let readMs = 0;
+  try {
+    const started = performance.now();
+    await saveLibraryStory(saved.key, "<p>This timed-out write must not commit</p>");
+    saveMs = Math.round(performance.now() - started);
+    const readStarted = performance.now();
+    check(await readSavedLibraryStory(saved.key) === null, "Busy storage did not degrade to a cache miss");
+    readMs = Math.round(performance.now() - readStarted);
+  } finally {
+    release = true;
+    try { await completed; } finally { database.close(); }
+  }
+  const retained = await readSavedLibraryStory(saved.key);
+  check(retained?.html === saved.html && retained.savedAt === saved.savedAt, "A timed-out write changed the saved description");
+  return { save_ms: saveMs, read_ms: readMs };
 }
 
 async function storedRows(): Promise<{ key: string; html: string; savedAt: number }[]> {
@@ -32,6 +86,7 @@ async function storedRows(): Promise<{ key: string; html: string; savedAt: numbe
 async function run() {
   const key = "story:zh-CN:901100";
   if (!sessionStorage.getItem(phaseKey)) {
+    await prepareStorage();
     await saveLibraryStory(key, '<p onclick="globalThis.unsafe=true">跨重载简介</p><script>globalThis.unsafe=true</script>');
     check((await readSavedLibraryStory(key))?.html.includes("跨重载简介"), "Initial save failed");
     sessionStorage.setItem(phaseKey, "saved");
@@ -40,12 +95,14 @@ async function run() {
   }
   sessionStorage.removeItem(phaseKey);
   const saved = await readSavedLibraryStory(key);
-  check(saved?.html.includes("跨重载简介"), "Snapshot did not survive a complete page reload");
+  check(saved !== null && saved.html.includes("跨重载简介"), "Snapshot did not survive a complete page reload");
   check(!saved.html.includes("script") && !saved.html.includes("onclick"), "Unsafe saved HTML survived");
   check(!("unsafe" in globalThis), "Saved content executed code");
   check(await readSavedLibraryStory("story:en-US:901100") === null, "Cache crossed languages");
   check(await readSavedLibraryStory("story:zh-CN:901101") === null, "Cache crossed games");
   scenarios.push("reload-and-isolation");
+  const storageTimeouts = await checkStorageTimeout(saved);
+  scenarios.push("storage-timeout");
 
   now = saved.savedAt + 30 * 24 * 60 * 60 * 1000 + 1;
   check(await readSavedLibraryStory(key) === null, "Expired description was returned");
@@ -92,7 +149,7 @@ async function run() {
   }
   scenarios.push("storage-denied");
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
-  return { status: "passed", checks, scenarios, bytes, browser_errors: errors };
+  return { status: "passed", checks, scenarios, bytes, storage_timeouts: storageTimeouts, browser_errors: errors };
 }
 
 void run().catch((error: unknown) => ({ status: "failed", checks, scenarios,

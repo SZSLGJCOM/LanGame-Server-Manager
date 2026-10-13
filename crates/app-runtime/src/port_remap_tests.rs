@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use std::collections::BTreeMap;
 
@@ -246,12 +248,11 @@ fn dst_islands_and_volcano_report_exhaustion_after_the_bounded_native_range() {
 
 #[test]
 fn live_external_udp_owner_causes_atomic_group_remap() {
-    let occupied = (0..64)
-        .find_map(|_| {
-            let socket = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
-            (socket.local_addr().unwrap().port() < 65000).then_some(socket)
-        })
-        .expect("reserve an ephemeral UDP port with remapping headroom");
+    // Request the range needed by this fixture directly. Binding port zero can
+    // repeatedly return ports near u16::MAX, leaving no room for a derived pair.
+    let occupied = (49_152..65_000)
+        .find_map(|port| std::net::UdpSocket::bind((std::net::Ipv4Addr::LOCALHOST, port)).ok())
+        .expect("reserve a UDP port with remapping headroom");
     let peer = occupied.local_addr().unwrap().port();
     let ports = [
         binding("game", "udp", peer - 1),
