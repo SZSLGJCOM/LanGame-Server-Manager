@@ -297,7 +297,7 @@ async fn assistant_confirm_task_inner(
 ) -> Result<AssistantExecuteOperationOutput, String> {
     let _storage_operation =
         state.begin_storage_context_operation("assistant repair confirmation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let mut before = match pending.expected_instance.as_ref() {
         Some(expected) => {
             let current = read_instance_details(&storage.paths, &expected.summary.id)

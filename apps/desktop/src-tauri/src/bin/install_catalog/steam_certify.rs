@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 use app_core::{AppSettings, InstallState, ModuleDetails};
 use app_modules::ModuleDescriptor;
 use app_steamcmd::{
-    InstallCancellation, RETAINED_INSTALL_DATA_MARKER, acquire_game_install_lifecycle,
-    install_or_update_module_at_with_progress_and_cancellation,
+    InstallCancellation, InstallLockContext, RETAINED_INSTALL_DATA_MARKER,
+    acquire_game_install_lifecycle, install_or_update_module_at_with_progress_and_cancellation,
     probe_module_install_state_with_override,
 };
 use app_storage::{
@@ -123,10 +123,12 @@ async fn registered_root(paths: &StoragePaths, root: &Path) -> Result<String, St
 }
 
 pub(super) async fn run(
+    lock_context: &InstallLockContext,
     paths: &StoragePaths,
     settings: &AppSettings,
     descriptor: &ModuleDescriptor,
 ) -> Result<(), String> {
+    let lock_context = lock_context.clone();
     let paths = paths.clone();
     let settings = settings.clone();
     let descriptor = descriptor.clone();
@@ -134,7 +136,7 @@ pub(super) async fn run(
     // Dropping the command waiter does not abort the admitted mutation. The
     // owned worker retains the lease through validation, baseline and DB commit.
     let worker = tokio::spawn(async move {
-        let result = certify_owned(&paths, &settings, &descriptor).await;
+        let result = certify_owned(&lock_context, &paths, &settings, &descriptor).await;
         if let Err(Err(reason)) = sender.send(result) {
             emit(
                 json!({"event":"certification_failed", "module_id":descriptor.summary.id,
@@ -150,6 +152,7 @@ pub(super) async fn run(
 }
 
 async fn certify_owned(
+    lock_context: &InstallLockContext,
     paths: &StoragePaths,
     settings: &AppSettings,
     descriptor: &ModuleDescriptor,
@@ -157,9 +160,10 @@ async fn certify_owned(
     let (root, app_id) =
         existing_steam_root(settings, descriptor).map_err(|error| error.to_string())?;
     let module_id = &descriptor.summary.id;
-    let guard = acquire_game_install_lifecycle(module_id, std::slice::from_ref(&root))
-        .await
-        .map_err(|error| error.to_string())?;
+    let guard =
+        acquire_game_install_lifecycle(lock_context, module_id, std::slice::from_ref(&root))
+            .await
+            .map_err(|error| error.to_string())?;
     require_empty_instance_catalog(paths).await?;
     ensure_target_unused(paths, module_id, &root)
         .await

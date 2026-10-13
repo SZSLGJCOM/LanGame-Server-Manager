@@ -22,7 +22,7 @@ pub async fn inspect_module_programs(
     input: ModuleProgramsInput,
 ) -> Result<app_storage::ModuleProgramInventory, String> {
     let operation = state.begin_storage_context_operation("program inventory")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let worker_operation = operation.clone();
     spawn_storage_context_task(&operation, async move {
         initialize_database(&storage.paths)
@@ -52,7 +52,7 @@ pub async fn inspect_instance_removal(
     input: InstanceRemovalInput,
 ) -> Result<app_storage::InstanceRemovalPlan, String> {
     let operation = state.begin_storage_context_operation("instance removal preview")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     spawn_storage_context_task(&operation, async move {
         initialize_database(&storage.paths)
             .await

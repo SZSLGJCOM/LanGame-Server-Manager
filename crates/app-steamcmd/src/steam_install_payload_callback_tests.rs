@@ -10,8 +10,12 @@ where
     C: FnMut(PathBuf) -> Fut,
     Fut: std::future::Future<Output = Result<(), SteamCmdError>>,
 {
-    let guard =
-        acquire_game_install_lifecycle(&fixture.module.summary.id, &[target.to_owned()]).await?;
+    let guard = acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        &fixture.module.summary.id,
+        &[target.to_owned()],
+    )
+    .await?;
     let last_phase = std::sync::Mutex::new(None);
     install_or_update_module_at_with_callbacks(
         &fixture.settings,

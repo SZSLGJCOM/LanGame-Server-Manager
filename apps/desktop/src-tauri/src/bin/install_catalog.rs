@@ -14,9 +14,9 @@ use std::path::{Component, Path, PathBuf};
 use app_core::{InstallState, ModuleDetails};
 use app_modules::{ModuleDescriptor, discover_modules};
 use app_steamcmd::{
-    GameInstallLifecycleGuard, InstallCancellation, acquire_game_install_lifecycle,
-    install_or_update_module_at_with_progress_and_cancellation, probe_module_install_state,
-    steamcmd_status,
+    GameInstallLifecycleGuard, InstallCancellation, InstallLockContext,
+    acquire_game_install_lifecycle, install_or_update_module_at_with_progress_and_cancellation,
+    probe_module_install_state, steamcmd_status,
 };
 use app_storage::{
     GameInstallSyncRecord, ProgramInstallScope, StoragePaths,
@@ -283,7 +283,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn run_catalog() -> Result<(), Box<dyn Error>> {
     let options = parse_options(std::env::args().skip(1))?;
     let installing = options.module.is_some() && options.inspection.is_none();
-    let defaults = StoragePaths::resolve_existing_default()?.unwrap_or_default();
+    let user_paths = StoragePaths::default();
+    let lock_context = InstallLockContext::new(user_paths.app_data_root.clone());
+    let defaults = StoragePaths::resolve_existing_at_user_root(&user_paths.app_data_root)?
+        .unwrap_or(user_paths);
     let mut settings = if defaults.settings_path.is_file() {
         serde_json::from_slice(&std::fs::read(&defaults.settings_path)?)?
     } else {
@@ -370,14 +373,17 @@ async fn run_catalog() -> Result<(), Box<dyn Error>> {
             continue;
         }
         if options.certify {
-            if let Err(reason) = steam_certify::run(&paths, &settings, &descriptor).await {
+            if let Err(reason) =
+                steam_certify::run(&lock_context, &paths, &settings, &descriptor).await
+            {
                 emit(json!({"event":"certification_failed", "module_id":id, "reason":reason}));
                 failures.push(id.clone());
             }
             continue;
         }
         let root = PathBuf::from(&before.install_root);
-        let guard = acquire_game_install_lifecycle(id, std::slice::from_ref(&root)).await?;
+        let guard =
+            acquire_game_install_lifecycle(&lock_context, id, std::slice::from_ref(&root)).await?;
         if let Err(error) = ensure_target_unused(&paths, id, &root).await {
             emit(json!({"event":"blocked", "module_id":id, "reason":error.to_string()}));
             failures.push(id.clone());

@@ -10,7 +10,7 @@ pub async fn remove_instance_workshop_collection(
     retain_collection: Option<bool>,
 ) -> Result<InstanceDetails, String> {
     let operation = state.begin_storage_context_operation("Workshop collection removal")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

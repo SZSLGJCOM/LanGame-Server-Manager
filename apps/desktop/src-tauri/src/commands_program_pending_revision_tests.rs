@@ -357,6 +357,7 @@ async fn pending_revision_repair_does_not_swallow_foreign_ownership_with_missing
     let foreign_files = snapshot(&foreign_root)?;
     let original_files = snapshot(&fixture.original)?;
     let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &fixture.state.install_locks,
         &fixture.descriptor.summary.id,
         &[foreign_root.clone(), fixture.repair.clone()],
     )

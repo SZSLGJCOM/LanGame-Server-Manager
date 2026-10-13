@@ -21,6 +21,7 @@ async fn expired_stdin_confirmation_window_returns_pending_success() {
     });
 
     let receipt = await_runtime_stdin_writer_confirmation(
+        None,
         "stdin-confirmation-pending",
         target,
         writer,
@@ -55,6 +56,7 @@ async fn pending_stdin_writer_late_failure_is_safely_audited() {
     });
 
     let receipt = await_runtime_stdin_writer_confirmation(
+        Some(DesktopState::from_storage(&storage).storage_source()),
         "stdin-late-failure",
         target,
         writer,
@@ -100,6 +102,7 @@ async fn cancelled_confirmation_wait_keeps_writer_observed_and_audits_late_failu
         Err(RuntimeStdinWriterFailure::Write)
     });
     let confirmation = await_runtime_stdin_writer_confirmation(
+        Some(DesktopState::from_storage(&storage).storage_source()),
         "stdin-cancelled-confirmation",
         target,
         writer,

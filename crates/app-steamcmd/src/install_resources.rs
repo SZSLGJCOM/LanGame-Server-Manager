@@ -3,16 +3,20 @@ use std::fs;
 use std::io;
 use std::path::{Component, Path, PathBuf};
 
-use super::install_operation::{InstallCoordinator, InstallOperationGuard, LockMode};
+use super::install_operation::{
+    InstallCoordinator, InstallLockContext, InstallOperationGuard, LockMode,
+};
 use super::{InstallDeadline, SteamCmdError};
 
 pub(crate) struct ResourceLocks {
+    context: InstallLockContext,
     roots: Vec<PathBuf>,
     _locks: Vec<InstallOperationGuard>,
 }
 
 impl ResourceLocks {
     pub(crate) async fn acquire(
+        context: &InstallLockContext,
         module_ids: &[&str],
         roots: &[PathBuf],
         deadline: InstallDeadline,
@@ -71,7 +75,7 @@ impl ResourceLocks {
         // Stable ordering is shared across processes. Siblings share ancestor
         // intents; mutating a parent conflicts with its entire subtree.
         for (key, mode) in resources {
-            let coordinator = InstallCoordinator::for_resource(&key)
+            let coordinator = InstallCoordinator::for_resource(context, &key)
                 .map_err(|error| super::install_acquire_error(error, deadline))?;
             locks.push(
                 coordinator
@@ -81,9 +85,14 @@ impl ResourceLocks {
             );
         }
         Ok(Self {
+            context: context.clone(),
             roots,
             _locks: locks,
         })
+    }
+
+    pub(crate) fn context(&self) -> &InstallLockContext {
+        &self.context
     }
 
     pub(crate) fn ensure_root(&self, root: &Path) -> Result<(), SteamCmdError> {

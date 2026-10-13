@@ -32,7 +32,7 @@ pub async fn scan_storage_usage(
     let lease = state.storage_management.acquire()?;
     let cancellation = operation.cancellation_token();
     lease.register_scan(input.scan_id.clone(), cancellation.clone())?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     spawn_storage_context_task(&operation, async move {
         let _lease = lease;
         initialize_database(&storage.paths)
@@ -100,7 +100,12 @@ where
         );
         ensure_not_running(state, id)?;
     }
-    let install = super::commands_storage_lifecycle::acquire_recovery(&storage.paths, &ids).await?;
+    let install = super::commands_storage_lifecycle::acquire_recovery(
+        &state.install_locks,
+        &storage.paths,
+        &ids,
+    )
+    .await?;
     let paths = storage.paths.clone();
     spawn_storage_context_task(operation, async move {
         let _guards = (lease, locks, install);
@@ -136,7 +141,7 @@ pub async fn list_instance_archives(
     state: tauri::State<'_, DesktopState>,
 ) -> Result<InstanceArchiveList, String> {
     let operation = state.begin_storage_context_operation("instance archive listing")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -160,7 +165,7 @@ pub async fn read_instance_archive_details(
     validate_id(&input.archive_id)?;
     let operation = state.begin_storage_context_operation("instance archive details preview")?;
     let lease = state.storage_management.acquire()?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     spawn_storage_context_task(&operation, async move {
         let _lease = lease;
         app_storage::read_instance_archive_details(&storage.paths, &input.archive_id)
@@ -214,7 +219,7 @@ where
     let state = app.state::<DesktopState>();
     let operation = state.begin_storage_context_operation("instance archive restoration")?;
     let lease = state.storage_management.acquire()?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -223,6 +228,7 @@ where
         .map_err(|error| error.to_string())?;
     let instance = archive_instance_lock(&state, &resources).await?;
     let install = super::commands_storage_lifecycle::acquire_archive(
+        &state.install_locks,
         &storage.paths,
         &input.archive_id,
         &resources,
@@ -268,7 +274,7 @@ pub async fn purge_instance_archive(
     validate_id(&input.archive_id)?;
     let operation = state.begin_storage_context_operation("instance archive permanent cleanup")?;
     let lease = state.storage_management.acquire()?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -278,6 +284,7 @@ pub async fn purge_instance_archive(
             .map_err(|error| error.to_string())?;
     let instance = archive_instance_lock(&state, &resources).await?;
     let install = super::commands_storage_lifecycle::acquire_archive_cleanup(
+        &state.install_locks,
         &storage.paths,
         &input.archive_id,
         &resources,

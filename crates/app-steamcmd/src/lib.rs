@@ -66,6 +66,9 @@ pub use dst_workshop_cache::{
 use executable_resolution::{normalized_relative_path, resolve_probe_process_executable};
 use http_download::{DownloadIntegrity, fetch_json, http_client};
 pub use install_cancellation::InstallCancellation;
+pub use install_operation::InstallLockContext;
+#[cfg(test)]
+use install_operation::test_install_lock_context;
 use install_operation::{InstallAcquireError, InstallDeadline, InstallDeadlineElapsed};
 use install_process::{
     AbortOnDropTask, run_command_capture, run_powershell, spawn_managed_command,
@@ -473,6 +476,7 @@ pub enum SteamCmdError {
 pub struct GameInstallLifecycleGuard(ResourceLocks, std::collections::BTreeSet<String>);
 
 pub async fn acquire_game_install_lifecycle(
+    lock_context: &InstallLockContext,
     module_id: &str,
     program_roots: &[PathBuf],
 ) -> Result<GameInstallLifecycleGuard, SteamCmdError> {
@@ -480,16 +484,17 @@ pub async fn acquire_game_install_lifecycle(
         "game server install lifecycle change",
         GAME_INSTALL_LIFECYCLE_TIMEOUT,
     );
-    acquire_game_lifecycle(module_id, program_roots, deadline).await
+    acquire_game_lifecycle(lock_context, module_id, program_roots, deadline).await
 }
 
 async fn acquire_game_lifecycle(
+    lock_context: &InstallLockContext,
     module_id: &str,
     roots: &[PathBuf],
     deadline: InstallDeadline,
 ) -> Result<GameInstallLifecycleGuard, SteamCmdError> {
     Ok(GameInstallLifecycleGuard(
-        ResourceLocks::acquire(&[module_id], roots, deadline).await?,
+        ResourceLocks::acquire(lock_context, &[module_id], roots, deadline).await?,
         std::iter::once(module_id.to_owned()).collect(),
     ))
 }
@@ -497,6 +502,7 @@ async fn acquire_game_lifecycle(
 /// Acquire a recovery operation's complete resource union in one order. This
 /// avoids self-deadlock when different modules reference overlapping save roots.
 pub async fn acquire_game_install_lifecycles(
+    lock_context: &InstallLockContext,
     resources: &[(String, Vec<PathBuf>)],
 ) -> Result<GameInstallLifecycleGuard, SteamCmdError> {
     let modules: Vec<&str> = resources
@@ -512,7 +518,7 @@ pub async fn acquire_game_install_lifecycles(
         GAME_INSTALL_LIFECYCLE_TIMEOUT,
     );
     Ok(GameInstallLifecycleGuard(
-        ResourceLocks::acquire(&modules, &roots, deadline).await?,
+        ResourceLocks::acquire(lock_context, &modules, &roots, deadline).await?,
         modules.into_iter().map(str::to_owned).collect(),
     ))
 }
@@ -548,7 +554,7 @@ impl GameInstallLifecycleGuard {
         for root in &roots {
             self.0.ensure_disjoint(root)?;
         }
-        acquire_steamcmd_roots(settings, &roots, deadline).await
+        acquire_steamcmd_roots(self.0.context(), settings, &roots, deadline).await
     }
 
     /// Removes a directory already detached from its published install path.
@@ -585,9 +591,11 @@ impl GameInstallLifecycleGuard {
 pub struct SteamCmdLifecycleGuard(ResourceLocks);
 
 pub async fn acquire_steamcmd_lifecycle(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
 ) -> Result<SteamCmdLifecycleGuard, SteamCmdError> {
     acquire_steamcmd_operation(
+        lock_context,
         settings,
         InstallDeadline::new("SteamCMD lifecycle change", GAME_INSTALL_LIFECYCLE_TIMEOUT),
     )
@@ -595,10 +603,17 @@ pub async fn acquire_steamcmd_lifecycle(
 }
 
 async fn acquire_steamcmd_operation(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     deadline: InstallDeadline,
 ) -> Result<SteamCmdLifecycleGuard, SteamCmdError> {
-    acquire_steamcmd_roots(settings, &steamcmd_resource_roots(settings), deadline).await
+    acquire_steamcmd_roots(
+        lock_context,
+        settings,
+        &steamcmd_resource_roots(settings),
+        deadline,
+    )
+    .await
 }
 
 fn steamcmd_resource_roots(settings: &AppSettings) -> [PathBuf; 2] {
@@ -609,11 +624,13 @@ fn steamcmd_resource_roots(settings: &AppSettings) -> [PathBuf; 2] {
 }
 
 async fn acquire_steamcmd_roots(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     roots: &[PathBuf],
     deadline: InstallDeadline,
 ) -> Result<SteamCmdLifecycleGuard, SteamCmdError> {
-    let guard = SteamCmdLifecycleGuard(ResourceLocks::acquire(&[], roots, deadline).await?);
+    let guard =
+        SteamCmdLifecycleGuard(ResourceLocks::acquire(lock_context, &[], roots, deadline).await?);
     // Discovery may change while queued; never use a newly selected runtime
     // outside the roots actually covered by this lease.
     guard.ensure_settings(settings)?;
@@ -660,10 +677,11 @@ fn validate_staged_game_install_removal_path(
 }
 
 pub async fn remove_managed_steamcmd(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
 ) -> Result<SteamCmdStatus, SteamCmdError> {
     let deadline = InstallDeadline::new("SteamCMD uninstall", STEAMCMD_UNINSTALL_TIMEOUT);
-    let operation = acquire_steamcmd_operation(settings, deadline).await?;
+    let operation = acquire_steamcmd_operation(lock_context, settings, deadline).await?;
     let root = configured_steamcmd_root(settings);
     if !root.exists() {
         return Ok(steamcmd_status(settings));
@@ -985,7 +1003,15 @@ fn probe_steam_app_manifest(install_root: &Path, app_id: u32) -> Option<SteamApp
         bytes_to_stage,
         bytes_staged,
         downloading_path_exists,
-    );
+    ) && steam_depot::manifest::parse_acf_app_state(text.as_bytes(), app_id)
+        .and_then(|app| {
+            module_install::shared_dependencies::unfinished_shared_depots(
+                install_root,
+                &app,
+                || Ok(()),
+            )
+        })
+        .is_ok_and(|unfinished| unfinished.is_empty());
 
     Some(SteamAppManifestProbe {
         path: path.to_string_lossy().into_owned(),
@@ -1151,11 +1177,12 @@ fn parse_quoted_key_value_line(line: &str) -> Option<(String, String)> {
 }
 
 pub async fn install_or_update_module(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     module: &ModuleDetails,
     validate: bool,
 ) -> Result<ModuleInstallResult, SteamCmdError> {
-    install_or_update_module_with_progress(settings, module, validate, |_| {}).await
+    install_or_update_module_with_progress(lock_context, settings, module, validate, |_| {}).await
 }
 
 /// The caller retains the lifecycle lease across dependency checks, downloading

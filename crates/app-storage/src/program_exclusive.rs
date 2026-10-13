@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -180,10 +179,15 @@ pub(crate) fn unused_library_is_fresh(
     let Some(package) = crate::program_seed::read_package_inventory(root, module_id)? else {
         return Ok(false);
     };
-    let mut untrusted = BTreeSet::new();
-    crate::program_adoption::retain_unlisted_paths(root, &package, &mut untrusted, cancellation)?;
-    untrusted.retain(|path| !path.eq_ignore_ascii_case(".langame-initial-package.json"));
-    Ok(untrusted.is_empty())
+    crate::program_seed::only_package_files(
+        root,
+        &package.files,
+        &[
+            ".langame-clean-package.json",
+            ".langame-initial-package.json",
+        ],
+        cancellation,
+    )
 }
 
 pub(crate) fn library_was_exclusively_used(root: &Path) -> Result<bool, StorageError> {

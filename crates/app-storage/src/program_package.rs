@@ -24,7 +24,7 @@ mod steam_metadata;
 
 #[path = "program_package_reuse.rs"]
 mod reuse;
-pub(crate) use reuse::retired_library_is_clean;
+pub(crate) use reuse::{only_package_files, retired_library_is_clean};
 
 pub(super) const CLEAN_PACKAGE: &str = ".langame-clean-package.json";
 const INITIAL_PACKAGE: &str = ".langame-initial-package.json";

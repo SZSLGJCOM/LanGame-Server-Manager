@@ -232,7 +232,10 @@ pub use runtime::{
 };
 pub use runtime_log_diagnostics::runtime_fatal_log_lines;
 pub use save_paths::{InstanceSavePathContext, plan_instance_saves_dir};
-pub use settings::{bootstrap_storage, bootstrap_storage_with_paths, save_app_settings};
+pub use settings::{
+    bootstrap_storage, bootstrap_storage_at_user_root, bootstrap_storage_with_paths,
+    save_app_settings, save_app_settings_with_paths,
+};
 pub use storage_db::{
     initialize_database, read_game_install_last_verified_unix_ms, resolve_module_install_root,
     sync_game_installs, sync_modules,
@@ -288,7 +291,12 @@ impl StoragePaths {
 
     /// Inspect an existing location without choosing a disk or creating files.
     pub fn resolve_existing_default() -> Result<Option<Self>, StorageError> {
-        storage_location::existing_paths(&default_app_data_root())
+        Self::resolve_existing_at_user_root(&default_app_data_root())
+    }
+
+    /// Inspect an anchored user location without choosing a disk or creating files.
+    pub fn resolve_existing_at_user_root(user_root: &Path) -> Result<Option<Self>, StorageError> {
+        storage_location::existing_paths(user_root)
     }
 
     /// Select a first-use LanGame directory with the same validation as automatic selection.

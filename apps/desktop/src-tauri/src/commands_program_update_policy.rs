@@ -21,6 +21,7 @@ pub(super) async fn acquire_policy_change(
     )
     .map_err(|error| error.to_string())?;
     let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         &current.summary.module_id,
         std::slice::from_ref(&root),
     )

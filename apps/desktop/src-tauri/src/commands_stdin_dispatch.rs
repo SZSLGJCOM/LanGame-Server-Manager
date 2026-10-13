@@ -146,11 +146,19 @@ pub(super) async fn dispatch_managed_stdin_command_with_budget(
             (false, false) => Err(RuntimeStdinWriterFailure::WriteAndLeaseRestore),
         }
     });
-    await_runtime_stdin_writer_with_budget(instance_id, target, writer, budget).await
+    await_runtime_stdin_writer_with_budget(
+        Some(state.storage_source()),
+        instance_id,
+        target,
+        writer,
+        budget,
+    )
+    .await
 }
 
 #[cfg(test)]
 pub(super) async fn await_runtime_stdin_writer_confirmation(
+    storage_source: Option<crate::state::StorageSource>,
     instance_id: &str,
     target: app_runtime::RuntimeCommandDispatchTarget,
     writer: tauri::async_runtime::JoinHandle<
@@ -159,6 +167,7 @@ pub(super) async fn await_runtime_stdin_writer_confirmation(
     confirmation_window: Duration,
 ) -> Result<RuntimeStdinDispatchReceipt, String> {
     await_runtime_stdin_writer_with_budget(
+        storage_source,
         instance_id,
         target,
         writer,
@@ -172,6 +181,7 @@ pub(super) async fn await_runtime_stdin_writer_confirmation(
 }
 
 async fn await_runtime_stdin_writer_with_budget(
+    storage_source: Option<crate::state::StorageSource>,
     instance_id: &str,
     target: app_runtime::RuntimeCommandDispatchTarget,
     writer: tauri::async_runtime::JoinHandle<
@@ -181,8 +191,13 @@ async fn await_runtime_stdin_writer_with_budget(
 ) -> Result<RuntimeStdinDispatchReceipt, String> {
     // Transfer ownership before the first await so caller cancellation cannot orphan lease
     // restoration or the sanitized late-failure audit.
-    let completion =
-        observe_runtime_stdin_writer(instance_id, target.clone(), writer, budget.completion);
+    let completion = observe_runtime_stdin_writer(
+        storage_source.clone(),
+        instance_id,
+        target.clone(),
+        writer,
+        budget.completion,
+    );
     if let Some(submission_tracker) = budget.submission_tracker {
         submission_tracker.mark_submitted();
     }
@@ -196,7 +211,12 @@ async fn await_runtime_stdin_writer_with_budget(
     match tokio::time::timeout(confirmation_budget, completion).await {
         Ok(Ok(completion)) => completion,
         Ok(Err(_)) => {
-            audit_runtime_stdin_writer_failure(instance_id, &target, "observer_task");
+            audit_runtime_stdin_writer_failure(
+                storage_source.as_ref(),
+                instance_id,
+                &target,
+                "observer_task",
+            );
             Err(String::from("runtime command writer observer failed"))
         }
         Err(_) => Ok(pending_stdin_dispatch(target)),
@@ -204,6 +224,7 @@ async fn await_runtime_stdin_writer_with_budget(
 }
 
 fn observe_runtime_stdin_writer(
+    storage_source: Option<crate::state::StorageSource>,
     instance_id: &str,
     target: app_runtime::RuntimeCommandDispatchTarget,
     writer: tauri::async_runtime::JoinHandle<
@@ -214,7 +235,12 @@ fn observe_runtime_stdin_writer(
     let (completion_tx, completion_rx) = tokio::sync::oneshot::channel();
     let observer_instance_id = instance_id.to_owned();
     tauri::async_runtime::spawn(async move {
-        let completion = complete_runtime_stdin_writer(&observer_instance_id, target, writer.await);
+        let completion = complete_runtime_stdin_writer(
+            storage_source.as_ref(),
+            &observer_instance_id,
+            target,
+            writer.await,
+        );
         if let Some(observer) = observer {
             observer.record(&completion);
         }
@@ -233,6 +259,7 @@ fn pending_stdin_dispatch(
 }
 
 fn complete_runtime_stdin_writer(
+    storage_source: Option<&crate::state::StorageSource>,
     instance_id: &str,
     target: app_runtime::RuntimeCommandDispatchTarget,
     completion: tauri::Result<
@@ -245,7 +272,12 @@ fn complete_runtime_stdin_writer(
             confirmation: RuntimeStdinDispatchConfirmation::Confirmed,
         }),
         Ok(Err(failure)) => {
-            audit_runtime_stdin_writer_failure(instance_id, &target, failure.audit_name());
+            audit_runtime_stdin_writer_failure(
+                storage_source,
+                instance_id,
+                &target,
+                failure.audit_name(),
+            );
             if failure.write_succeeded() {
                 Ok(RuntimeStdinDispatchReceipt {
                     target,
@@ -256,18 +288,22 @@ fn complete_runtime_stdin_writer(
             }
         }
         Err(_) => {
-            audit_runtime_stdin_writer_failure(instance_id, &target, "writer_task");
+            audit_runtime_stdin_writer_failure(storage_source, instance_id, &target, "writer_task");
             Err(String::from("runtime command writer task failed"))
         }
     }
 }
 
 fn audit_runtime_stdin_writer_failure(
+    storage_source: Option<&crate::state::StorageSource>,
     instance_id: &str,
     target: &app_runtime::RuntimeCommandDispatchTarget,
     failure_kind: &str,
 ) {
-    let Ok(storage) = bootstrap_storage() else {
+    let Some(storage_source) = storage_source else {
+        return;
+    };
+    let Ok(storage) = storage_source.bootstrap_storage() else {
         return;
     };
     let safe_reference = |value: &str| {
@@ -331,6 +367,60 @@ mod completion_tests {
     use super::*;
 
     #[tokio::test]
+    async fn late_writer_failure_retains_its_log_context_after_the_waiter_is_dropped() {
+        let root =
+            std::env::temp_dir().join(format!("lg-stdin-audit-{}", uuid::Uuid::new_v4().simple()));
+        let paths = app_storage::StoragePaths {
+            app_data_root: root.clone(),
+            settings_path: root.join("settings.json"),
+            database_path: root.join("db/lgs.db"),
+            logs_root: root.join("logs"),
+            steamcmd_root: root.join("steamcmd"),
+            games_root: root.join("games"),
+            instances_root: root.join("instances"),
+            archives_root: root.join("instances/.trash"),
+            ..app_storage::StoragePaths::default()
+        };
+        let storage = app_storage::bootstrap_storage_with_paths(paths).unwrap();
+        let state = DesktopState::from_storage(&storage);
+        let observer = RuntimeStdinWriteCompletion::default();
+        let (release, ready) = tokio::sync::oneshot::channel();
+        let writer = tauri::async_runtime::spawn(async move {
+            ready.await.unwrap();
+            Err(RuntimeStdinWriterFailure::Write)
+        });
+        let completion = observe_runtime_stdin_writer(
+            Some(state.storage_source()),
+            "retained-audit",
+            app_runtime::RuntimeCommandDispatchTarget {
+                process_key: "main".into(),
+                display_name: "fixture".into(),
+                pid: 42,
+            },
+            writer,
+            Some(observer.clone()),
+        );
+        drop(completion);
+        drop(state);
+        release.send(()).unwrap();
+        let result = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if let Some(result) = observer.result().unwrap() {
+                    break result;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("late writer failure must still complete and audit");
+        assert_eq!(result.unwrap_err(), "runtime stdin write failed");
+        let log = fs::read_to_string(storage.paths.app_log_path()).unwrap();
+        assert!(log.contains("instance.runtime_command.stdin_write_failed"));
+        assert!(log.contains("retained-audit"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
     async fn managed_save_observes_writer_completion_after_confirmation_timeout() {
         let completion = RuntimeStdinWriteCompletion::default();
         let (release, ready) = tokio::sync::oneshot::channel();
@@ -345,6 +435,7 @@ mod completion_tests {
             Ok(completed_target)
         });
         let receipt = await_runtime_stdin_writer_with_budget(
+            None,
             "periodic-save-fixture",
             target,
             writer,

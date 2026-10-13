@@ -1,12 +1,12 @@
 use super::*;
 
-pub(super) async fn monitored_storage_paths(settings: &AppSettings) -> Result<Vec<String>, String> {
-    let storage = bootstrap_storage()
-        .map_err(|error| format!("read storage paths for telemetry: {error}"))?;
+pub(super) async fn monitored_storage_paths(
+    storage: &StorageBootstrap,
+) -> Result<Vec<String>, String> {
     let instance_paths = app_storage::read_instance_storage_paths(&storage.paths)
         .await
         .map_err(|error| format!("read instance paths for telemetry: {error}"))?;
-    let mut paths = configured_storage_paths(settings, &storage.paths);
+    let mut paths = configured_storage_paths(&storage.settings, &storage.paths);
     paths.extend(
         instance_paths
             .into_iter()

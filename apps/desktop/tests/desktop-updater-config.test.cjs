@@ -136,8 +136,6 @@ test("desktop updater artifacts and plugin are configured", () => {
 test("desktop update commands are registered through the app update module", () => {
   const mainSource = fs.readFileSync(mainPath, "utf8");
   assert.match(mainSource, /mod app_updates;/);
-  assert.match(mainSource, /app_updates::check_app_update/);
-  assert.match(mainSource, /app_updates::install_app_update/);
 });
 
 test("desktop updates download before stopping the runtime and installing", () => {

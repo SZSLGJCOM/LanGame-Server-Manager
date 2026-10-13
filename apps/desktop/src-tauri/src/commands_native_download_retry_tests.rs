@@ -56,8 +56,12 @@ async fn native_valheim_interrupted_download_retry_reuse() -> TestResult {
     // already acquired files as the partial payload left by that attempt.
     let state = app.state::<DesktopState>();
     let initial_operation = state.begin_storage_context_operation("first empty Valheim install")?;
-    let initial_guard =
-        app_steamcmd::acquire_game_install_lifecycle(MODULE, std::slice::from_ref(&source)).await?;
+    let initial_guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
+        MODULE,
+        std::slice::from_ref(&source),
+    )
+    .await?;
     let initial_module = map_module_details_with_install_state(
         &storage.settings,
         descriptor,
@@ -106,8 +110,12 @@ async fn native_valheim_interrupted_download_retry_reuse() -> TestResult {
     let operation = app
         .state::<DesktopState>()
         .begin_storage_context_operation("interrupted Valheim completion")?;
-    let guard =
-        app_steamcmd::acquire_game_install_lifecycle(MODULE, std::slice::from_ref(&source)).await?;
+    let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
+        MODULE,
+        std::slice::from_ref(&source),
+    )
+    .await?;
     let module = map_module_details_with_install_state(
         &storage.settings,
         descriptor,

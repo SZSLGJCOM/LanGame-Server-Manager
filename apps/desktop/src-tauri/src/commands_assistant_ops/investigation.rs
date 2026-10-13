@@ -495,7 +495,11 @@ fn read_assistant_investigation_tool<'a>(
                         "Supply between 1 and 20 numeric Workshop item IDs from the configured mod list.",
                     ));
                 }
-                let mut installation = read_steam_workshop_installation_status(
+                let operation =
+                    state.begin_storage_context_operation("assistant Workshop inspection")?;
+                let mut installation = read_steam_workshop_installation_status_with_storage(
+                    storage,
+                    &operation,
                     instance.summary.id.clone(),
                     ids.clone(),
                 )
@@ -505,7 +509,9 @@ fn read_assistant_investigation_tool<'a>(
                     .retain(|item| ids.contains(&item.item_id));
                 let local_mods = if instance.summary.module_id == "projectzomboid" {
                     Some(
-                        read_project_zomboid_workshop_mods_snapshot(
+                        read_project_zomboid_workshop_mods_snapshot_with_storage(
+                            storage,
+                            &operation,
                             instance.summary.id.clone(),
                             ids,
                         )

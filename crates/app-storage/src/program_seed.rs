@@ -20,9 +20,9 @@ mod package;
 #[cfg(test)]
 use package::{CLEAN_PACKAGE, MAX_MANIFEST_BYTES};
 pub(crate) use package::{
-    CleanCopyInventory, read_clean_package_copy_inventory, read_clean_package_inventory,
-    read_package_inventory, require_initial_package_tree, retired_library_is_clean,
-    write_clean_package_copy_inventory,
+    CleanCopyInventory, only_package_files, read_clean_package_copy_inventory,
+    read_clean_package_inventory, read_package_inventory, require_initial_package_tree,
+    retired_library_is_clean, write_clean_package_copy_inventory,
 };
 use package::{
     CleanPackage, checked_relative, excluded, package_exclusions, read_manifest, validate_manifest,

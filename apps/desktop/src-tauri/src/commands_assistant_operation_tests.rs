@@ -1648,8 +1648,10 @@ async fn assistant_execute_operation_inner_installs_site_mod_with_local_source_p
             .to_ascii_lowercase()
     );
 
-    let inventory =
-        command_result(read_manual_mod_inventory_inner(provisioning.summary.id.clone()).await)?;
+    let inventory = command_result(
+        read_manual_mod_inventory(app.state::<DesktopState>(), provisioning.summary.id.clone())
+            .await,
+    )?;
     assert_eq!(inventory.module_id, "minecraft");
     assert!(
         inventory

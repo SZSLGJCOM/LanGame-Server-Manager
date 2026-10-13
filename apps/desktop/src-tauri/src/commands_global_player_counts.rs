@@ -44,7 +44,9 @@ pub(super) async fn collect_global_player_counts<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     instances: &[InstanceSummary],
 ) -> Result<GlobalPlayerCountSnapshot, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let state = app.state::<DesktopState>();
+    let _operation = state.begin_storage_context_operation("global player count")?;
+    let storage = state.bootstrap_storage()?;
     let runtime_by_module = load_module_runtime_capability_map(&storage.paths.modules_root)?;
     let mut snapshot = GlobalPlayerCountSnapshot::default();
     let mut jobs = VecDeque::new();

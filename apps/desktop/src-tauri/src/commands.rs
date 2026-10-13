@@ -53,11 +53,8 @@ use app_steamcmd::{
     probe_module_install_state_with_override, remove_managed_steamcmd,
     steamcmd_status as read_steamcmd_status,
 };
-#[cfg(test)]
-use app_storage::create_instance;
 use app_storage::{
     ActiveInstanceRunEntry, GameInstallSyncRecord, StartedInstanceProcess, StorageBootstrap,
-    bootstrap_storage,
     create_instance_auto_stop_backup as create_instance_auto_stop_backup_snapshot,
     create_instance_backup as create_instance_backup_snapshot,
     delete_instance_backup as delete_instance_backup_snapshot, initialize_database,
@@ -70,10 +67,11 @@ use app_storage::{
     read_instance_details, read_instance_log_document, read_instance_runtime_overview,
     read_log_path_snapshot, rename_instance_backup as rename_instance_backup_snapshot,
     resolve_module_install_root, restore_instance_backup as restore_instance_backup_snapshot,
-    save_app_settings, sync_game_installs, sync_modules, update_instance,
-    update_instance_if_current,
+    sync_game_installs, sync_modules, update_instance, update_instance_if_current,
     upsert_instance_broadcast_policy as upsert_instance_broadcast_policy_snapshot,
 };
+#[cfg(test)]
+use app_storage::{bootstrap_storage, create_instance, save_app_settings};
 use serde::de::Error as DeError;
 use serde::{Deserialize, Serialize, de::Deserializer};
 use serde_json::{Value, json};
@@ -642,7 +640,7 @@ pub fn spawn_runtime_heartbeat(app_handle: tauri::AppHandle) {
             }
 
             if let Err(error) = reconcile_runtime_state(&state).await
-                && let Ok(storage) = bootstrap_storage()
+                && let Ok(storage) = state.bootstrap_storage()
             {
                 append_desktop_app_log(
                     &storage,
@@ -655,7 +653,7 @@ pub fn spawn_runtime_heartbeat(app_handle: tauri::AppHandle) {
                 );
             }
             if let Err(error) = commands_autostart::spawn_pending_autostart(&app_handle)
-                && let Ok(storage) = bootstrap_storage()
+                && let Ok(storage) = state.bootstrap_storage()
             {
                 append_desktop_app_log(
                     &storage,
@@ -1002,7 +1000,7 @@ pub async fn refresh_modules(
         .map_err(|_| String::from("desktop state lock poisoned"))?
         .modules
         .clone();
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let modules =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let include_counts = include_preserved_program_counts.unwrap_or(true);
@@ -1058,10 +1056,12 @@ fn merge_module_refresh(
 
 #[tauri::command]
 pub async fn read_module_details(
+    state: tauri::State<'_, DesktopState>,
     module_id: String,
     include_preserved_program_counts: Option<bool>,
 ) -> Result<ModuleDetails, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let _operation = state.begin_storage_context_operation("module details read")?;
+    let storage = state.bootstrap_storage()?;
     let descriptors =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &module_id)?;
@@ -1108,10 +1108,22 @@ pub async fn search_steam_workshop_items(
 
 #[tauri::command]
 pub async fn read_steam_workshop_installation_status(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
     ids: Vec<String>,
 ) -> Result<SteamWorkshopInstallationSnapshot, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let operation = state.begin_storage_context_operation("Workshop installation inspection")?;
+    let storage = state.bootstrap_storage()?;
+    read_steam_workshop_installation_status_with_storage(&storage, &operation, instance_id, ids)
+        .await
+}
+
+async fn read_steam_workshop_installation_status_with_storage(
+    storage: &StorageBootstrap,
+    operation: &StorageContextOperationGuard,
+    instance_id: String,
+    ids: Vec<String>,
+) -> Result<SteamWorkshopInstallationSnapshot, String> {
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -1161,9 +1173,10 @@ pub async fn read_steam_workshop_installation_status(
     } else {
         Vec::new()
     };
-    tokio::task::spawn_blocking(move || {
+    let settings = storage.settings.clone();
+    spawn_blocking_storage_context_task(operation, move || {
         app_steamcmd::inspect_workshop_items_with_dst_ugc_roots(
-            &storage.settings,
+            &settings,
             consumer_app_id,
             &install_root,
             &dst_ugc_roots,
@@ -1184,7 +1197,7 @@ pub async fn read_dontstarve_mod_configuration_specs(
 ) -> Result<Vec<DstModConfigurationSpec>, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("Don't Starve Mod configuration read")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -1221,10 +1234,22 @@ pub async fn read_dontstarve_mod_configuration_specs(
 
 #[tauri::command]
 pub async fn read_project_zomboid_workshop_mods_snapshot(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
     ids: Vec<String>,
 ) -> Result<ProjectZomboidWorkshopModsSnapshot, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let operation = state.begin_storage_context_operation("Project Zomboid Mod inspection")?;
+    let storage = state.bootstrap_storage()?;
+    read_project_zomboid_workshop_mods_snapshot_with_storage(&storage, &operation, instance_id, ids)
+        .await
+}
+
+async fn read_project_zomboid_workshop_mods_snapshot_with_storage(
+    storage: &StorageBootstrap,
+    operation: &StorageContextOperationGuard,
+    instance_id: String,
+    ids: Vec<String>,
+) -> Result<ProjectZomboidWorkshopModsSnapshot, String> {
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -1251,7 +1276,7 @@ pub async fn read_project_zomboid_workshop_mods_snapshot(
         .unwrap_or(108600);
     let steamcmd_root = storage.paths.steamcmd_root.clone();
 
-    tokio::task::spawn_blocking(move || {
+    spawn_blocking_storage_context_task(operation, move || {
         read_local_project_zomboid_workshop_mods_snapshot(
             &install_root,
             &steamcmd_root,
@@ -1400,8 +1425,11 @@ pub fn open_local_path(path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn probe_steamcmd_status() -> Result<SteamCmdStatus, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+pub fn probe_steamcmd_status(
+    state: tauri::State<'_, DesktopState>,
+) -> Result<SteamCmdStatus, String> {
+    let _operation = state.begin_storage_context_operation("SteamCMD status read")?;
+    let storage = state.bootstrap_storage()?;
     Ok(read_steamcmd_status(&storage.settings))
 }
 
@@ -1410,10 +1438,11 @@ pub async fn uninstall_steamcmd(
     state: tauri::State<'_, DesktopState>,
 ) -> Result<SteamCmdStatus, String> {
     let storage_context_operation = state.begin_storage_context_operation("SteamCMD removal")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let settings = storage.settings.clone();
+    let install_locks = state.install_locks.clone();
     spawn_storage_context_task(&storage_context_operation, async move {
-        remove_managed_steamcmd(&settings).await
+        remove_managed_steamcmd(&install_locks, &settings).await
     })
     .await
     .map_err(|error| format!("SteamCMD removal task failed: {error}"))?
@@ -1434,7 +1463,7 @@ pub async fn update_app_settings(
     state: tauri::State<'_, DesktopState>,
     input: AppPathSettingsInput,
 ) -> Result<app_core::AppSettings, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let next_settings = normalize_app_path_settings(&storage.settings, &input);
     let runtime_roots_will_change = runtime_roots_changed(&storage.settings, &next_settings);
     let any_path_changed = app_paths_changed(&storage.settings, &next_settings);
@@ -1485,17 +1514,19 @@ pub async fn update_app_settings(
         app_storage::guard_archive_root_settings_update(&storage.paths, &next_settings)
             .await
             .map_err(|error| error.to_string())?;
-    let saved = save_app_settings(next_settings).map_err(|error| {
-        let message = error.to_string();
-        append_desktop_app_log(
-            &storage,
-            "error",
-            "settings.paths.update.failed",
-            &message,
-            json!({}),
-        );
-        logged_error_message(&storage, message)
-    })?;
+    let saved = app_storage::save_app_settings_with_paths(next_settings, &storage.paths).map_err(
+        |error| {
+            let message = error.to_string();
+            append_desktop_app_log(
+                &storage,
+                "error",
+                "settings.paths.update.failed",
+                &message,
+                json!({}),
+            );
+            logged_error_message(&storage, message)
+        },
+    )?;
 
     if let Err(message) = clear_assistant_pending_operations() {
         append_desktop_app_log(
@@ -1796,17 +1827,23 @@ pub async fn install_manual_mod_references(
 
 #[tauri::command]
 pub async fn read_manual_mod_inventory(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<ManualModInventoryResult, String> {
-    read_manual_mod_inventory_inner(instance_id).await
+    let operation = state.begin_storage_context_operation("Mod inventory read")?;
+    let storage = state.bootstrap_storage()?;
+    read_manual_mod_inventory_inner(&storage, &operation, instance_id).await
 }
 
 #[tauri::command]
 pub async fn resolve_manual_mod_references(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
     references: Vec<String>,
 ) -> Result<ManualModReferenceResolveResult, String> {
-    resolve_manual_mod_references_inner(instance_id, references).await
+    let _operation = state.begin_storage_context_operation("Mod reference resolution")?;
+    let storage = state.bootstrap_storage()?;
+    resolve_manual_mod_references_inner(&storage, instance_id, references).await
 }
 #[cfg(windows)]
 fn apply_no_window(command: &mut ProcessCommand) {

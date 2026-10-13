@@ -35,8 +35,7 @@ impl Fixture {
     }
 
     fn app(&self) -> tauri::App<tauri::test::MockRuntime> {
-        let state = DesktopState::default();
-        state.app_state.write().expect("state").settings = self.storage.settings.clone();
+        let state = DesktopState::from_storage(&self.storage);
         tauri::test::mock_builder()
             .manage(state)
             .build(tauri::test::mock_context(tauri::test::noop_assets()))

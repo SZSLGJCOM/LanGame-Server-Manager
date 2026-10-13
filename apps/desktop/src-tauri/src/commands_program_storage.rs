@@ -62,10 +62,13 @@ pub(super) async fn acquire_library_program_mutation(
         module_id,
     )
     .await?;
-    let install =
-        app_steamcmd::acquire_game_install_lifecycle(module_id, &[install_root.to_owned()])
-            .await
-            .map_err(|error| steamcmd_error_message(&error))?;
+    let install = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
+        module_id,
+        &[install_root.to_owned()],
+    )
+    .await
+    .map_err(|error| steamcmd_error_message(&error))?;
     app_storage::ensure_library_program_target_available(&storage.paths, install_root)
         .await
         .map_err(|error| error.to_string())?;
@@ -195,6 +198,7 @@ pub(super) struct ModProgramMutation {
 }
 
 pub(super) async fn prepare_instance_mod_program(
+    install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
     operation: &StorageContextOperationGuard,
     instance_id: &str,
@@ -209,6 +213,7 @@ pub(super) async fn prepare_instance_mod_program(
     // private runtime. Reserve both before changing its program binding.
     let private_root = instance_root(&instance)?.join("runtime");
     let install_guard = app_steamcmd::acquire_game_install_lifecycle(
+        install_locks,
         &instance.summary.module_id,
         &[root.clone(), private_root],
     )
@@ -288,7 +293,7 @@ async fn update_instance_program_inner(
     validate: bool,
     _operation: StorageContextOperationGuard,
 ) -> Result<ModuleInstallResult, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -313,6 +318,7 @@ async fn update_instance_program_inner(
     } else {
         let instance = state.acquire_instance_mutation(&instance_id).await;
         let install = app_steamcmd::acquire_game_install_lifecycle(
+            &state.install_locks,
             &before.summary.module_id,
             std::slice::from_ref(&expected_root),
         )

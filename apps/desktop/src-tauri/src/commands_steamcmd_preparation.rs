@@ -10,8 +10,9 @@ pub async fn ensure_steamcmd_ready(
         state.begin_storage_context_operation("SteamCMD installation")?;
     let mut preparation = state.steamcmd_preparation.begin(operation_id)?;
     let cancellation = preparation.cancellation()?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let result = app_steamcmd::ensure_steamcmd_installed_with_progress_and_cancellation(
+        &state.install_locks,
         &storage.settings,
         &cancellation,
         |progress| {

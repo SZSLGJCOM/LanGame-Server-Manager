@@ -12,6 +12,7 @@ async fn installed_astroneer_creation_completes_while_asa_owns_steamcmd()
     fs::create_dir_all(&storage.paths.steamcmd_root)?;
     fs::write(storage.paths.steamcmd_root.join("steamcmd.exe"), b"fixture")?;
     let asa = app_steamcmd::acquire_game_install_lifecycle(
+        &app_steamcmd::InstallLockContext::new(storage.paths.app_data_root.clone()),
         "arksurvivalascended",
         &[storage.paths.games_root.join("arksurvivalascended")],
     )

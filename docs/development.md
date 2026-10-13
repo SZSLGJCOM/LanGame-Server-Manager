@@ -24,9 +24,17 @@ Windows 正式运行时，React 页面与 hooks 通过 `api.ts` / `api-transport
 
 `app-core` 定义共享领域数据，`app-modules` 读取游戏清单与 schema；`app-storage` 负责 SQLite、实例配置、存档与备份；`app-runtime` 和 `app-platform-win` 负责进程生命周期及 Windows 能力；`app-steamcmd`、`app-network`、`app-knowledge` 分别承载安装、网络策略和知识检索。Tauri commands 编排这些模块。更新安装先下载并验证包，再停止后台服务及游戏进程，最后运行安装器。
 
-修改 IPC 时同步核对前端参数、桌面本地命令、runtime service 与 LAN 分发，避免在多处手工登记时漂移。客户端顶层命令参数使用 Tauri 的 camelCase，不重复发送 snake_case 别名；嵌套 `input` 遵循对应 Rust Serde 数据类型的命名，不能递归改名。桌面进程归属和仅限命名管道访问是不同边界，命令登记不能混合这两种含义。
+产品命令在 `apps/desktop/src-tauri/src/command_registry.rs` 统一声明 Tauri 注册、执行进程、LAN 访问权限和完成策略。参数解码仍由各传输适配层负责；runtime service 的内部控制消息不进入产品命令表。修改 IPC 时同步核对前端参数和实际适配器，契约检查核对登记与适配器的双向覆盖。客户端顶层命令参数使用 Tauri 的 camelCase，不重复发送 snake_case 别名；嵌套 `input` 遵循对应 Rust Serde 数据类型的命名，不能递归改名。桌面进程归属和仅限命名管道访问是不同边界，命令登记不能混合这两种含义。
 
 存储就绪缓存保存数据库文件身份。运行概览与实例详情共用一次局部数据库读取，数据库阶段在成功及错误路径都显式关闭连接，再读取配置、分析日志和查询玩家。保留数据库替换检测、前置就绪检查、事务和恢复语义；连接创建次数减少不能替代实际耗时测量。
+
+生产运行期命令通过 `DesktopState::bootstrap_storage` 或调用方捕获的存储上下文访问数据，不再从进程环境重新定位数据根。运行时固定初始用户定位根，由其中保存的数据位置指向选中的数据目录；定位根与数据目录不能互换。每次重新进入存储时仍校验已保存的位置并读取当前设置，不能缓存解析后的路径来跳过数据目录、设置或数据库缺失检查。
+
+路径更新与在途操作由存储上下文租约协调。后台文件工作捕获本次 `StorageBootstrap` 或 `StoragePaths`，通过已有任务 helper 携带租约，直至实际完成；实例锁与安装锁也由执行工作的任务持有，不能随等待方取消而提前释放。需要延后重新读取存储位置的后台任务捕获 `StorageSource`，保留相同用户定位根。授权、预览确认、实例变更前置条件及关闭流程的专用租约仍保持各自职责。
+
+跨进程安装锁使用 `DesktopState` 持有的 `InstallLockContext`，显式传入安装、Mod、启动和移除链路；锁上下文固定在用户定位根，不能从选中的数据目录推导另一套锁根。用户目录环境变量全部缺失时，安装锁与存储模块使用同一默认定位根，不再单独回退到临时目录。测试夹具仍有进程全局环境和 Windows 进程依赖，桌面测试继续串行；环境变化回归放在独立子进程中，不能据此提高整个桌面套件的并发。
+
+服务器列表与运行概览直接加载；配置、Mod、玩家、GM 工具和维护工作区首次访问时加载代码，共用已有的可恢复模块加载机制。维护工作区访问后保留挂载，由 `active` 控制后台读取，实例切换时重置；这用于保留在途操作与存档结果。新增重型目录或功能时检查实际构建依赖，避免能力判断等轻量入口再次静态引入整个工作区。
 
 ### 构建与运行
 
@@ -134,6 +142,8 @@ python -B scripts/verify_library_media.py
 
 生成目标为 `docs/game-config-source-ledger.md`、`docs/game-config-source-ledger.csv` 与 `docs/game-config-acceptance/*.md`。Tauri 生成的 `apps/desktop/src-tauri/gen/schemas/` 不提交；权限变更应修改 `capabilities/default.json` 或 `tauri.conf.json`。
 
+游戏翻译的生成目录只保留手写词典未覆盖的 fallback。修改 schema、设置模块或手写词典的键后，运行 `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs`；单个游戏可追加 `--module <module-id>`。生成器按真实词典合并顺序判断覆盖，不删除前置词典之后仍生效的生成项。校验工具加载实际导出，检查动态词条、最终文案、占位符及中英文覆盖，不以源码字符串扫描代替运行结果。
+
 ### 数据与公开边界
 
 涉及持久化格式的变更须保留有效数据，先备份，再验证转换、完整性与实际启动；不得删除数据或修改迁移校验和绕过失败。测试使用隔离数据，生成物、日志和本机运行数据不进入提交。
@@ -160,9 +170,17 @@ On Windows, React views and hooks call Tauri through `api.ts` / `api-transport.t
 
 `app-core` defines shared domain data and `app-modules` reads game manifests and schemas. `app-storage` owns SQLite, instance configuration, saves and backups; `app-runtime` and `app-platform-win` own process lifecycle and Windows integration. `app-steamcmd`, `app-network` and `app-knowledge` provide installation, network policy and knowledge retrieval. Tauri commands coordinate these components. Updates download and verify the package before stopping the runtime service and game processes and invoking the installer.
 
-For IPC changes, check frontend arguments, desktop-local commands, runtime-service routing and LAN dispatch together to prevent manual registrations from drifting. Clients use Tauri camelCase for top-level arguments without sending duplicate snake_case aliases. Nested `input` follows its Rust Serde type; do not rename fields recursively. Desktop-process ownership and named-pipe-only authorization are separate command boundaries.
+Product commands declare Tauri registration, execution ownership, LAN access and completion policy in `apps/desktop/src-tauri/src/command_registry.rs`. Transport adapters retain argument decoding; internal runtime-service control messages stay outside the product registry. For IPC changes, check frontend arguments and the actual adapters together; contract checks verify registration coverage in both directions. Clients use Tauri camelCase for top-level arguments without sending duplicate snake_case aliases. Nested `input` follows its Rust Serde type; do not rename fields recursively. Desktop-process ownership and named-pipe-only authorization are separate command boundaries.
 
 Storage readiness caches database file identity. The combined runtime overview and instance-details read uses one operation-local database connection, explicitly closed on success and error before configuration reads, log analysis and player queries. Preserve database-replacement detection, readiness checks before reconciliation, transactions and recovery semantics. Fewer connection creations do not establish a measured latency improvement.
+
+Production runtime commands access data through `DesktopState::bootstrap_storage` or the caller's captured storage context, without locating the data root again from process environment. The runtime fixes its initial user locator root, whose saved location points to the selected data directory; these roots are not interchangeable. Each new storage entry still validates the saved location and reads current settings. Caching resolved paths must not bypass missing-directory, settings or database checks.
+
+Storage-context leases coordinate path changes and ongoing operations. Background filesystem work captures the current `StorageBootstrap` or `StoragePaths` and carries its lease through the existing task helpers until the work finishes. The executing task also owns its instance and installation locks, so cancelling the waiter cannot release them early. Background work that must resolve the saved location later captures `StorageSource`, preserving the same user locator root. Authorization, preview confirmation, instance mutation preconditions and dedicated shutdown leases retain their separate responsibilities.
+
+Cross-process installation locking uses the `InstallLockContext` owned by `DesktopState`, passed explicitly through installation, Mod, startup and removal flows. Its lock context stays anchored to the user locator root; deriving another lock root from the selected data directory is invalid. When all user-directory environment variables are absent, installation locks use the storage module's default locator root instead of a separate temporary-directory fallback. Fixtures still depend on process-global environment and Windows processes, so desktop tests remain serial. Environment-change regressions run in isolated child processes and do not justify increasing concurrency for the entire desktop suite.
+
+The server list and runtime overview load directly. Configuration, Mod, player, GM and maintenance workspaces load on first use through the existing recoverable module loader. Maintenance stays mounted after its first visit, uses `active` to suspend background reads, and resets when the selected instance changes, preserving ongoing operations and save results. Check actual build dependencies when adding large catalogs or features; lightweight capability checks must not pull an entire workspace into the initial load.
 
 ### Build and run
 
@@ -199,5 +217,7 @@ Production changes to Tauri, shared contracts, game modules and migrations retai
 Rust dependency caching and a shared frontend artifact avoid repeated preparation. Measure the 5–10 minute quick-feedback target using actual GitHub runs of the corresponding commit; passing local checks does not establish that the target has been reached. Use `--plan`, `--component`, `--cargo-wrapper`, `--node-wrapper`, `--frontend-output`, `--frontend-dist` and `--native-executable` as described above for focused or managed execution. Preserve existing assertions and failure handling. Real signed installation, upgrade and retained-data acceptance remain separate release requirements; optional NSIS guard checks require `--nsis-root`. Report synthetic, browser and native-game evidence separately. Opt-in tests requiring game packages, external services or credentials need an authorized isolated environment.
 
 Follow [Game Integration Validation](game-integration-validation.md#english) for module changes. Maintain `config-sources.toml` and sanitized fixtures, then use the [generation and check commands](#模块与生成文件); do not edit generated ledgers or acceptance Markdown directly. Tauri's generated schemas are ignored output; edit the source capability or Tauri configuration instead.
+
+Generated game translations retain only fallback keys not overridden by hand-authored catalogs. After changing schema, settings modules or authored message keys, run `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs`; `--module <module-id>` limits schema regeneration to one game. Generation respects runtime spread order. Verification loads actual exports, including computed messages, to check effective values, placeholders and language coverage.
 
 Preserve retained data during schema changes and verify backups, conversion, integrity and actual startup. Never bypass validation by deleting data or rewriting migration checksums. Keep credentials, private addresses, player data, runtime output, proprietary binaries and unlicensed media out of commits. Preserve third-party notices and use the [private security reporting process](../SECURITY.md#english). Run the [publication-boundary checks](#数据与公开边界); history checks require a complete clone. Source checks do not replace installation, upgrade, uninstall or data-retention acceptance.

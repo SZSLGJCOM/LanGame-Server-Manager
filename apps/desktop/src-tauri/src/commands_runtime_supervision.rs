@@ -67,6 +67,7 @@ pub(super) fn default_bind_address_candidates() -> Vec<BindAddressCandidate> {
 
 #[tauri::command]
 pub async fn log_frontend_event(
+    state: tauri::State<'_, DesktopState>,
     level: String,
     action: String,
     message: String,
@@ -76,9 +77,11 @@ pub async fn log_frontend_event(
     let permit = SLOTS
         .try_acquire()
         .map_err(|_| String::from("Diagnostic log writer is busy"))?;
-    tauri::async_runtime::spawn_blocking(move || {
+    let operation = state.begin_storage_context_operation("frontend diagnostic logging")?;
+    let source = state.storage_source();
+    spawn_blocking_storage_context_task(&operation, move || {
         let _permit = permit;
-        let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+        let storage = source.bootstrap_storage()?;
         write_desktop_app_log(
             &storage,
             &level,
@@ -100,7 +103,7 @@ pub(super) fn reconcile_runtime_state<'a>(
     Box::pin(async move {
         let _storage_context_operation =
             state.begin_storage_context_operation("runtime state reconciliation")?;
-        let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+        let storage = state.bootstrap_storage()?;
 
         let reconciliation = Arc::clone(&state.runtime_reconciliation);
         let admission = reconciliation.acquire().await;

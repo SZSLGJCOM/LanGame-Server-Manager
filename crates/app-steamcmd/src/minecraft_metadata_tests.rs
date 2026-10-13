@@ -300,9 +300,13 @@ async fn current_program_check_verifies_remote_release_without_changing_shared_f
         b"retained inventory",
     )
     .unwrap();
-    let guard = crate::acquire_game_install_lifecycle("minecraft", std::slice::from_ref(&root))
-        .await
-        .unwrap();
+    let guard = crate::acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        "minecraft",
+        std::slice::from_ref(&root),
+    )
+    .await
+    .unwrap();
     let token = crate::InstallCancellation::new();
     for expected in [Some(VERSION.to_owned()), None] {
         assert_eq!(
@@ -400,9 +404,13 @@ async fn current_program_check_rejects_untrusted_remote_metadata_before_touching
     let root = fixture.root.join("games/minecraft");
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(root.join("server.jar"), b"retained jar").unwrap();
-    let guard = crate::acquire_game_install_lifecycle("minecraft", std::slice::from_ref(&root))
-        .await
-        .unwrap();
+    let guard = crate::acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        "minecraft",
+        std::slice::from_ref(&root),
+    )
+    .await
+    .unwrap();
     let error = crate::current_program_version(
         &fixture.settings,
         &fixture.module,

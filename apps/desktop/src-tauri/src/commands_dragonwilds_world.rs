@@ -9,7 +9,7 @@ pub async fn read_dragonwilds_world_settings(
     instance_id: String,
 ) -> Result<DragonwildsWorldSettingsSnapshot, String> {
     let _operation = state.begin_storage_context_operation("Dragonwilds world settings read")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -25,7 +25,7 @@ pub async fn write_dragonwilds_world_settings(
     input: WriteDragonwildsWorldSettingsInput,
 ) -> Result<DragonwildsWorldSettingsSnapshot, String> {
     let operation = state.begin_storage_context_operation("Dragonwilds world settings write")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

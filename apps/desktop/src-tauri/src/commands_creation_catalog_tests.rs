@@ -249,6 +249,7 @@ async fn verify_module(
         .is_some();
     if has_mod_target {
         let target = crate::commands::commands_mods::resolve_manual_mod_target(
+            &storage,
             first.summary.id.clone(),
             true,
         )

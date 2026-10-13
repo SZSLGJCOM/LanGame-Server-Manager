@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 
 const MOD_FILE: &str = "data/ugc/Master/content/322330/123/modmain.lua";

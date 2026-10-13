@@ -86,15 +86,25 @@ async fn exclusive_mod_mutation_blocks_archive_admission_and_rejects_frozen_sour
         fs::canonicalize(&first.effective_install_root)?,
         fs::canonicalize(&second.effective_install_root)?
     );
-    let state = DesktopState::default();
+    let state = DesktopState::from_storage(&storage);
     let operation = state.begin_storage_context_operation("exclusive Mod mutation regression")?;
     let instance_lock = state.acquire_instance_mutation(first_id).await;
-    let program_guard =
-        prepare_instance_mod_program(&storage, &operation, first_id, instance_lock).await?;
+    let program_guard = prepare_instance_mod_program(
+        &state.install_locks,
+        &storage,
+        &operation,
+        first_id,
+        instance_lock,
+    )
+    .await?;
     let unrelated_roots = [root.0.join("other-game")];
     let unrelated = tokio::time::timeout(
         Duration::from_secs(5),
-        app_steamcmd::acquire_game_install_lifecycle("other-game", &unrelated_roots),
+        app_steamcmd::acquire_game_install_lifecycle(
+            &state.install_locks,
+            "other-game",
+            &unrelated_roots,
+        ),
     )
     .await
     .expect("an unrelated game must not wait for the Mod operation")?;
@@ -107,6 +117,7 @@ async fn exclusive_mod_mutation_blocks_archive_admission_and_rejects_frozen_sour
         let _instance = state.acquire_instance_mutation(second_id).await;
         reached_install_lock.store(true, Ordering::SeqCst);
         let _install = app_steamcmd::acquire_game_install_lifecycle(
+            &state.install_locks,
             "astroneer",
             &[PathBuf::from(&second.effective_install_root)],
         )
@@ -133,11 +144,18 @@ async fn exclusive_mod_mutation_blocks_archive_admission_and_rejects_frozen_sour
         .unwrap();
     assert_eq!(entry.program_storage, "reconstructable");
     let instance_lock = state.acquire_instance_mutation(first_id).await;
-    let error =
-        match prepare_instance_mod_program(&storage, &operation, first_id, instance_lock).await {
-            Ok(_) => panic!("a data archive must freeze its exclusive installation source"),
-            Err(error) => error,
-        };
+    let error = match prepare_instance_mod_program(
+        &state.install_locks,
+        &storage,
+        &operation,
+        first_id,
+        instance_lock,
+    )
+    .await
+    {
+        Ok(_) => panic!("a data archive must freeze its exclusive installation source"),
+        Err(error) => error,
+    };
     assert!(error.contains(&archived.archive_id), "{error}");
     assert_eq!(
         fs::read(library.join("AstroServer.exe"))?,
@@ -145,8 +163,14 @@ async fn exclusive_mod_mutation_blocks_archive_admission_and_rejects_frozen_sour
     );
     app_storage::restore_instance_archive(&storage.paths, &archived.archive_id).await?;
     let instance_lock = state.acquire_instance_mutation(first_id).await;
-    let _program_guard =
-        prepare_instance_mod_program(&storage, &operation, first_id, instance_lock).await?;
+    let _program_guard = prepare_instance_mod_program(
+        &state.install_locks,
+        &storage,
+        &operation,
+        first_id,
+        instance_lock,
+    )
+    .await?;
     Ok(())
 }
 
@@ -192,10 +216,11 @@ async fn existing_program_is_verified_only_at_storage_admission_and_dirty_source
     )
     .await?;
     fs::write(original.join(".langame-clean-package.json"), b"{broken")?;
-    let state = DesktopState::default();
+    let state = DesktopState::from_storage(&storage);
     let operation =
         state.begin_storage_context_operation("deferred official package verification")?;
     let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         &descriptor.summary.id,
         std::slice::from_ref(&original),
     )
@@ -405,9 +430,10 @@ async fn creation_preparation_preserves_an_incomplete_local_program_for_repair()
         }],
     )
     .await?;
-    let state = DesktopState::default();
+    let state = DesktopState::from_storage(&storage);
     let operation = state.begin_storage_context_operation("failed clean acquisition fixture")?;
     let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         &descriptor.summary.id,
         std::slice::from_ref(&original),
     )
@@ -549,7 +575,7 @@ async fn shared_program_pending_start_blocks_update_but_detached_instance_does_n
         2
     );
 
-    let state = DesktopState::default();
+    let state = DesktopState::from_storage(&storage);
     let reservation = match state.try_reserve_runtime_start(first_id, "manual")? {
         crate::state::RuntimeStartReservationAttempt::Reserved(lease) => lease,
         other => panic!("expected start reservation, got {other:?}"),
@@ -626,8 +652,14 @@ async fn shared_program_pending_start_blocks_update_but_detached_instance_does_n
 
     let operation = state.begin_storage_context_operation("program detach regression")?;
     let instance_lock = state.acquire_instance_mutation(first_id).await;
-    let instance_lock =
-        prepare_instance_mod_program(&storage, &operation, first_id, instance_lock).await?;
+    let instance_lock = prepare_instance_mod_program(
+        &state.install_locks,
+        &storage,
+        &operation,
+        first_id,
+        instance_lock,
+    )
+    .await?;
     instance_lock.install.ensure_scope("minecraft", &library)?;
     instance_lock
         .install

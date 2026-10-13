@@ -26,7 +26,7 @@ async fn prepare(
     state: &tauri::State<'_, DesktopState>,
     instance_id: &str,
 ) -> Result<Prepared, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

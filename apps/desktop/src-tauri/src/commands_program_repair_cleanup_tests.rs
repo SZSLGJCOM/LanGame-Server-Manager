@@ -259,6 +259,7 @@ async fn repaired_instance_deletion_retains_a_healthy_library_for_repeated_and_e
         );
     }
     let retirement = crate::commands::commands_storage_lifecycle::acquire_retirement(
+        &fixture.state.install_locks,
         &fixture.storage.paths,
         first_id,
     )

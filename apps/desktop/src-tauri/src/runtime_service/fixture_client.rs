@@ -202,7 +202,10 @@ async fn start_game(app: &tauri::AppHandle, config: &Config) -> Result<Value, St
 
 async fn prepare_synthetic_install(config: &Config) -> Result<(), String> {
     config.verify()?;
-    let storage = app_storage::bootstrap_storage().map_err(|e| e.to_string())?;
+    let user_root = app_storage::StoragePaths::default().app_data_root;
+    let storage =
+        app_storage::bootstrap_storage_at_user_root(&user_root).map_err(|e| e.to_string())?;
+    let lock_context = app_steamcmd::InstallLockContext::new(user_root);
     if !storage.paths.app_data_root.starts_with(&config.root) {
         return Err("Synthetic install registration escaped fixture storage".into());
     }
@@ -212,6 +215,7 @@ async fn prepare_synthetic_install(config: &Config) -> Result<(), String> {
     )?;
     let program_root = storage.paths.games_root.join("necesse");
     let _install_guard = app_steamcmd::acquire_game_install_lifecycle(
+        &lock_context,
         "necesse",
         std::slice::from_ref(&program_root),
     )

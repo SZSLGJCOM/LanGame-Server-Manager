@@ -61,6 +61,7 @@ impl Fixture {
         let cancellation = InstallCancellation::new();
         let mut prepared_dependency = false;
         let result = install_or_update_module_with_progress_and_cancellation(
+            crate::test_install_lock_context(),
             &self.settings,
             &self.module,
             validate,
@@ -105,7 +106,9 @@ async fn steamcmd_dependency_uninstall_blocks_fresh_install_without_recreating_e
     crate::steamcmd_readiness::record_verified(&managed_steamcmd_status(&fixture.settings))
         .unwrap();
     assert!(managed_steamcmd_status(&fixture.settings).ready);
-    remove_managed_steamcmd(&fixture.settings).await.unwrap();
+    remove_managed_steamcmd(crate::test_install_lock_context(), &fixture.settings)
+        .await
+        .unwrap();
     assert!(!root.exists());
 
     fixture.reject_install(false).await;

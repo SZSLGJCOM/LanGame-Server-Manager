@@ -21,16 +21,47 @@ pub(crate) use existing_acceptance_client::{
     ExistingClient, STOP_ERROR_CATEGORIES, STOP_ERROR_PREFIX, redact_backend_stop_error,
 };
 
-pub(crate) fn log_service_event(level: &str, action: &str, message: &str) {
+pub(crate) fn log_service_event<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    level: &str,
+    action: &str,
+    message: &str,
+) {
+    use tauri::Manager;
+    let path = if let Some(state) = app.try_state::<crate::state::DesktopState>() {
+        state
+            .storage_source()
+            .resolve_paths()
+            .map(|paths| paths.app_log_path())
+    } else {
+        app.try_state::<crate::state::StorageSource>()
+            .ok_or_else(|| String::from("Runtime client storage context is unavailable"))
+            .and_then(|source| source.resolve_paths())
+            .map(|paths| paths.app_log_path())
+    };
+    log_service_event_at(
+        path.as_deref().map_err(String::as_str),
+        level,
+        action,
+        message,
+    );
+}
+
+fn log_service_event_at(
+    path: Result<&std::path::Path, &str>,
+    level: &str,
+    action: &str,
+    message: &str,
+) {
     let entry = serde_json::json!({
         "ts_unix_ms": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
             .map(|duration| duration.as_millis() as u64).unwrap_or_default(),
         "level": level, "action": action, "message": message,
         "context": { "pid": std::process::id() },
     });
-    let persisted = app_storage::StoragePaths::resolve_default()
-        .map_err(std::io::Error::other)
-        .and_then(|paths| crate::desktop_app_log::append(&paths.app_log_path(), &entry));
+    let persisted = path
+        .map_err(|error| std::io::Error::other(error.to_owned()))
+        .and_then(|path| crate::desktop_app_log::append(path, &entry));
     if let Err(error) = persisted {
         use std::io::Write;
         let _ = writeln!(
@@ -66,8 +97,12 @@ pub(crate) fn run_if_requested() -> bool {
     true
 }
 
-pub(crate) fn setup(app: &mut tauri::App) -> Result<(), String> {
+pub(crate) fn setup(
+    app: &mut tauri::App,
+    storage_source: crate::state::StorageSource,
+) -> Result<(), String> {
     use tauri::Manager;
+    app.manage(storage_source);
     app.manage(client::connect_or_start()?);
     client::relay_events(app.handle().clone());
     Ok(())
@@ -81,20 +116,6 @@ pub(crate) fn interface_is_closing<R: tauri::Runtime>(app: &tauri::AppHandle<R>)
     use tauri::Manager;
     app.try_state::<client::Client>()
         .is_none_or(|client| client.is_closing())
-}
-
-pub(crate) fn is_local_command(command: &str) -> bool {
-    matches!(
-        command,
-        "set_tray_locale"
-            | "app_exit_status"
-            | "check_app_update"
-            | "install_app_update"
-            | "register_media_cache_source"
-            | "pick_directory_path"
-            | "open_external_url"
-            | "open_local_path"
-    )
 }
 
 fn exit_grace(app: &tauri::AppHandle) -> std::time::Duration {
@@ -144,12 +165,14 @@ pub(crate) fn request_stop_and_exit(app: tauri::AppHandle) {
         // A recreated WebView reads the same latched intent through app_exit_status.
         if let Err(error) = app.emit("app-exit-requested", exit_status(&app)) {
             log_service_event(
+                &app,
                 "warning",
                 "app.exit.notification_failed",
                 &error.to_string(),
             );
         }
         log_service_event(
+            &app,
             "info",
             "app.exit.requested",
             &format!(
@@ -190,6 +213,7 @@ fn retain_local_exit_owner(app: &tauri::AppHandle, deadline_tick_ms: u64, error:
     });
     hide_exiting_interface(app);
     log_service_event(
+        app,
         "error",
         "app.exit.handoff_failed",
         &format!(

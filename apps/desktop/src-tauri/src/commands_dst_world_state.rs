@@ -100,21 +100,14 @@ pub async fn preview_dontstarve_world_start(
     instance_id: String,
 ) -> Result<DstWorldStartPreview, String> {
     let operation = state.begin_storage_context_operation("DST world start preview")?;
-    let settings = state
-        .app_state
-        .read()
-        .map_err(|_| "desktop state lock poisoned")?
-        .settings
-        .clone();
+    let storage_source = state.storage_source();
     let permit = acquire_dst_world_preview_permit().await?;
     let instance_lock = state.acquire_instance_mutation(&instance_id).await;
     let runtime = tokio::runtime::Handle::current();
     spawn_blocking_storage_context_task(&operation, move || {
         // Keep both leases alive if the caller is cancelled while its worker runs.
         let (_permit, _instance_lock) = (permit, instance_lock);
-        let paths = app_storage::StoragePaths::resolve_default()
-            .map_err(|error| error.to_string())?
-            .with_app_settings(&settings);
+        let paths = storage_source.bootstrap_storage()?.paths;
         let details = runtime
             .block_on(app_storage::read_instance_details(&paths, &instance_id))
             .map_err(|error| error.to_string())?;

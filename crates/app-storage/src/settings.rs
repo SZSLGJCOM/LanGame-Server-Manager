@@ -58,7 +58,8 @@ pub fn save_app_settings(settings: AppSettings) -> Result<AppSettings, StorageEr
     save_app_settings_with_paths(settings, &defaults)
 }
 
-pub(crate) fn save_app_settings_with_paths(
+/// Save settings within an already resolved application-data context.
+pub fn save_app_settings_with_paths(
     settings: AppSettings,
     defaults: &StoragePaths,
 ) -> Result<AppSettings, StorageError> {
@@ -85,6 +86,11 @@ pub(crate) fn save_app_settings_with_paths(
 
 pub fn bootstrap_storage() -> Result<StorageBootstrap, StorageError> {
     bootstrap_storage_with_paths(StoragePaths::resolve_default()?)
+}
+
+/// Resolve a captured user-data root, including its saved location and missing-data checks.
+pub fn bootstrap_storage_at_user_root(user_root: &Path) -> Result<StorageBootstrap, StorageError> {
+    bootstrap_storage_with_paths(crate::storage_location::resolve_user_paths(user_root)?)
 }
 
 pub fn bootstrap_storage_with_paths(

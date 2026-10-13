@@ -3,6 +3,9 @@ use super::steamcmd_stream::{sleep_with_deadline, steamcmd_output_is_retryable_f
 use super::*;
 use app_core::InstallPhase;
 
+#[path = "steam_install_dependencies.rs"]
+pub(super) mod shared_dependencies;
+
 /// Observers for installation progress and a verified, isolated payload before
 /// retained operator data is merged. In-place installations never invoke the
 /// payload callback. It may persist package metadata, but must not move the tree.
@@ -12,6 +15,7 @@ pub struct ModuleInstallCallbacks<P, C> {
 }
 
 pub async fn install_or_update_module_with_progress<F>(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     module: &ModuleDetails,
     validate: bool,
@@ -21,6 +25,7 @@ where
     F: FnMut(InstallProgressUpdate),
 {
     install_or_update_module_with_progress_and_cancellation(
+        lock_context,
         settings,
         module,
         validate,
@@ -31,6 +36,7 @@ where
 }
 
 pub async fn install_or_update_module_with_progress_and_cancellation<F>(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     module: &ModuleDetails,
     validate: bool,
@@ -58,7 +64,8 @@ where
                         module_id: module.summary.id.clone(),
                     })?;
             let root = PathBuf::from(&settings.games_root).join(&install.shared_game_dir);
-            let _operation = acquire_game_lifecycle(&module.summary.id, &[root], deadline).await?;
+            let _operation =
+                acquire_game_lifecycle(lock_context, &module.summary.id, &[root], deadline).await?;
             install_module(
                 settings,
                 module,
@@ -449,14 +456,29 @@ where
                 });
             }
 
-            let _ = fs::remove_file(&script_path);
-
-            let excerpt = last_excerpt;
             if !command_succeeded {
+                let _ = fs::remove_file(&script_path);
                 return Err(SteamCmdError::SteamCmdCommandFailed {
-                    output_excerpt: excerpt,
+                    output_excerpt: last_excerpt,
                 });
             }
+            // Steam can report the main app installed while shared runtimes
+            // remain pending. Complete those before inventory or publication.
+            let completion = shared_dependencies::complete_shared_dependencies(
+                shared_dependencies::SharedDependencyCompletion {
+                    steamcmd: &steamcmd,
+                    module,
+                    app_id: steam_app_id,
+                    root: &acquisition_root,
+                    script: &script_path,
+                    deadline,
+                },
+                &mut on_progress,
+                last_excerpt,
+            )
+            .await;
+            let _ = fs::remove_file(&script_path);
+            let excerpt = completion?;
             deadline.check_cancelled()?;
             if let Some(retained) = retained.as_mut() {
                 let (stage_settings, stage_module) =

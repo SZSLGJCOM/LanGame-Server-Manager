@@ -30,7 +30,7 @@ pub async fn list_ark_cluster_backups(
     input: ListArkClusterBackupsInput,
 ) -> Result<Vec<ArkClusterBackupSummary>, String> {
     let _operation = state.begin_storage_context_operation("ARK cluster snapshot listing")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -45,7 +45,7 @@ pub async fn create_ark_cluster_backup(
     input: CreateArkClusterBackupInput,
 ) -> Result<ArkClusterBackupSummary, String> {
     let operation = state.begin_storage_context_operation("ARK cluster snapshot creation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -72,7 +72,7 @@ pub async fn restore_ark_cluster_backup(
     input: RestoreArkClusterBackupInput,
 ) -> Result<ArkClusterBackupRestoreResult, String> {
     let operation = state.begin_storage_context_operation("ARK cluster restoration")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -101,7 +101,7 @@ pub async fn read_pending_ark_cluster_restore(
 ) -> Result<Option<PendingArkClusterRestore>, String> {
     let _operation =
         state.begin_storage_context_operation("ARK cluster pending restore inspection")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -117,7 +117,7 @@ pub async fn recover_ark_cluster_restore(
 ) -> Result<ArkClusterRecoveryResult, String> {
     let operation =
         state.begin_storage_context_operation("ARK cluster interrupted restore recovery")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

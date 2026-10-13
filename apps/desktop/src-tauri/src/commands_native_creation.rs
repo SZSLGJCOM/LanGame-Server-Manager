@@ -441,7 +441,7 @@ async fn prepare_official_library(
         && install.download_url_windows.is_none()
         && descriptor.summary.steam_app_id.is_some_and(|id| id > 0)
     {
-        app_steamcmd::ensure_steamcmd_installed(&storage.settings).await?;
+        app_steamcmd::ensure_steamcmd_installed(&state.install_locks, &storage.settings).await?;
     }
     let result = Box::pin(install_module_game(state, descriptor.summary.id.clone())).await?;
     // Only successful installer completion establishes that its children have

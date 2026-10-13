@@ -35,8 +35,8 @@ impl Fixture {
     }
 
     async fn for_module(module_id: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        // Lifecycle lock paths read process-wide app-data environment variables.
-        // Keep those stable while another command fixture changes its roots.
+        // Runtime discovery still uses process-wide environment inputs shared
+        // with other desktop command fixtures.
         let serial = crate::commands::tests::command_smoke_lock().lock().await;
         let root = std::env::temp_dir().join(format!("lgr-{}", uuid::Uuid::new_v4().simple()));
         let manifest_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -98,11 +98,12 @@ impl Fixture {
             }],
         )
         .await?;
+        let state = DesktopState::from_storage(&storage);
         Ok(Self {
             root,
             storage,
             descriptor,
-            state: DesktopState::default(),
+            state,
             original,
             repair,
             _serial: serial,
@@ -166,6 +167,7 @@ impl Fixture {
         &self,
     ) -> Result<app_steamcmd::GameInstallLifecycleGuard, app_steamcmd::SteamCmdError> {
         app_steamcmd::acquire_game_install_lifecycle(
+            &self.state.install_locks,
             &self.descriptor.summary.id,
             &[self.original.clone(), self.repair.clone()],
         )
@@ -405,6 +407,7 @@ async fn failed_or_cancelled_repair_preserves_pending_data_and_retries_into_a_fr
             uuid::Uuid::new_v4()
         ));
         let guard = app_steamcmd::acquire_game_install_lifecycle(
+            &fixture.state.install_locks,
             &fixture.descriptor.summary.id,
             &[
                 fixture.original.clone(),

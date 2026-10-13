@@ -33,6 +33,7 @@ pub async fn read_instance_live_players(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<RuntimeLivePlayerSnapshot, String> {
+    let _operation = state.begin_storage_context_operation("live-player capability")?;
     let (_, details, descriptor) = load_live_player_context(&state, &instance_id)
         .await
         .map_err(|_| String::from("Unable to read the live-player capability."))?;
@@ -65,24 +66,25 @@ pub async fn refresh_instance_live_players(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<RuntimeLivePlayerSnapshot, String> {
-    let (_, details, descriptor) = load_live_player_context(&state, &instance_id)
+    let _operation = state.begin_storage_context_operation("live-player refresh")?;
+    let (storage, details, descriptor) = load_live_player_context(&state, &instance_id)
         .await
         .map_err(|_| String::from("Unable to refresh the live-player capability."))?;
     let capability_id = new_request_id();
     let Some(player_list) = descriptor.runtime.player_list.as_ref() else {
         let snapshot = unsupported_snapshot(&instance_id, capability_id);
-        audit_live_player_refresh(&instance_id, &snapshot);
+        audit_live_player_refresh(&storage, &instance_id, &snapshot);
         return Ok(snapshot);
     };
     let source = player_list.source;
     if details.active_run.is_none() {
         let snapshot = stopped_snapshot(&instance_id, capability_id, source);
-        audit_live_player_refresh(&instance_id, &snapshot);
+        audit_live_player_refresh(&storage, &instance_id, &snapshot);
         return Ok(snapshot);
     }
     let Some(key) = build_cache_key(&details, &descriptor) else {
         let snapshot = stopped_snapshot(&instance_id, capability_id, source);
-        audit_live_player_refresh(&instance_id, &snapshot);
+        audit_live_player_refresh(&storage, &instance_id, &snapshot);
         return Ok(snapshot);
     };
 
@@ -93,7 +95,7 @@ pub async fn refresh_instance_live_players(
             refresh_live_players_uncached(&state, &instance_id, &key, requested_at).await
         })
         .await;
-    audit_live_player_refresh(&instance_id, &snapshot);
+    audit_live_player_refresh(&storage, &instance_id, &snapshot);
     Ok(snapshot)
 }
 
@@ -101,6 +103,7 @@ pub(super) async fn read_or_refresh_live_players_for_count(
     state: &tauri::State<'_, DesktopState>,
     instance_id: &str,
 ) -> Result<RuntimeLivePlayerSnapshot, String> {
+    let _operation = state.begin_storage_context_operation("live-player count")?;
     let (_, details, descriptor) = load_live_player_context(state, instance_id).await?;
     let Some(list) = descriptor.runtime.player_list.as_ref() else {
         return Ok(unsupported_snapshot(instance_id, new_request_id()));
@@ -120,7 +123,7 @@ pub(super) async fn read_or_refresh_live_players_for_count(
     // collector acquires the same mutation. Validate after joining so a cached
     // roster cannot outlive a changed run, process identity, or disabled RCON.
     let _mutation = state.acquire_instance_mutation(instance_id).await;
-    let (_, details, descriptor) = load_persisted_live_player_context(instance_id).await?;
+    let (_, details, descriptor) = load_persisted_live_player_context(state, instance_id).await?;
     if let Err(failure) =
         collection::validate_cached_collection_context(state, &details, &descriptor, &key)
     {
@@ -143,12 +146,14 @@ pub async fn execute_instance_player_action(
     state: tauri::State<'_, DesktopState>,
     input: ExecuteInstancePlayerActionInput,
 ) -> Result<ExecuteInstancePlayerActionResult, String> {
+    let _storage_context_operation = state.begin_storage_context_operation("player action")?;
     let audit_instance_id = input.instance_id.clone();
     let audit_snapshot_id = input.snapshot_id.clone();
     let audit_player_key = input.player_key.clone();
     let audit_action_id = input.action_id.clone();
     let result = execute_instance_player_action_inner(&state, input).await;
     audit_live_player_action(
+        &state,
         &audit_instance_id,
         &audit_snapshot_id,
         &audit_player_key,
@@ -162,7 +167,6 @@ async fn execute_instance_player_action_inner(
     state: &tauri::State<'_, DesktopState>,
     input: ExecuteInstancePlayerActionInput,
 ) -> Result<ExecuteInstancePlayerActionResult, String> {
-    let _storage_context_operation = state.begin_storage_context_operation("player action")?;
     let instance_id = input.instance_id.trim();
     let snapshot_id = input.snapshot_id.trim();
     let player_key = input.player_key.trim();
@@ -181,7 +185,7 @@ async fn execute_instance_player_action_inner(
         .await
         .map_err(|_| String::from("Unable to validate the current server run."))?;
     let _mutation = state.acquire_instance_mutation(instance_id).await;
-    let (storage, details, descriptor) = load_persisted_live_player_context(instance_id)
+    let (storage, details, descriptor) = load_persisted_live_player_context(state, instance_id)
         .await
         .map_err(|_| String::from("Unable to load the current player-action contract."))?;
     let player_list = descriptor
@@ -301,13 +305,15 @@ async fn load_live_player_context(
     instance_id: &str,
 ) -> Result<(StorageBootstrap, InstanceDetails, ModuleDescriptor), String> {
     reconcile_runtime_state(state).await?;
-    load_persisted_live_player_context(instance_id).await
+    load_persisted_live_player_context(state, instance_id).await
 }
 
 pub(super) async fn load_persisted_live_player_context(
+    state: &DesktopState,
     instance_id: &str,
 ) -> Result<(StorageBootstrap, InstanceDetails, ModuleDescriptor), String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let _operation = state.begin_storage_context_operation("live-player context")?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -320,12 +326,13 @@ pub(super) async fn load_persisted_live_player_context(
     Ok((storage, details, descriptor))
 }
 
-fn audit_live_player_refresh(instance_id: &str, snapshot: &RuntimeLivePlayerSnapshot) {
-    let Ok(storage) = bootstrap_storage() else {
-        return;
-    };
+fn audit_live_player_refresh(
+    storage: &StorageBootstrap,
+    instance_id: &str,
+    snapshot: &RuntimeLivePlayerSnapshot,
+) {
     append_desktop_app_log(
-        &storage,
+        storage,
         if snapshot.status == app_core::RuntimeLivePlayerStatus::Ready {
             "info"
         } else {
@@ -347,13 +354,14 @@ fn audit_live_player_refresh(instance_id: &str, snapshot: &RuntimeLivePlayerSnap
 }
 
 fn audit_live_player_action(
+    state: &DesktopState,
     instance_id: &str,
     snapshot_id: &str,
     player_key: &str,
     action_id: &str,
     result: Result<(), &str>,
 ) {
-    let Ok(storage) = bootstrap_storage() else {
+    let Ok(storage) = state.bootstrap_storage() else {
         return;
     };
     let (level, outcome) = match result {

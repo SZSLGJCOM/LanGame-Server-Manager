@@ -42,13 +42,15 @@ async fn unavailable_storage_paths_reject_every_knowledge_file_operation() {
 }
 
 #[tokio::test]
-async fn default_test_coordinator_requires_explicit_isolated_paths() {
-    let owner = KnowledgeCoordinator::default();
+async fn default_test_desktop_requires_explicit_knowledge_paths() {
+    let owner = DesktopState::default().knowledge;
 
     assert!(owner.paths.is_err());
     assert_eq!(
         owner.library().await.err().as_deref(),
-        Some("Knowledge storage requires explicit test paths")
+        Some(
+            "Knowledge storage initialization failed: Knowledge storage requires explicit test paths"
+        )
     );
     assert!(owner.library.try_lock().unwrap().is_none());
 }

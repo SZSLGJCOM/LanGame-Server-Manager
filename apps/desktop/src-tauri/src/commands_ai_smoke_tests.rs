@@ -726,8 +726,11 @@ async fn stored_openai_compatible_ai_diagnoses_runtime_log_smoke()
     let _env_guard = ProgramDataEnvGuard::set(&run_root.join("programdata"));
     let _settings = isolated_smoke_app_settings(&run_root)?;
 
+    let app = tauri::test::mock_builder()
+        .manage(DesktopState::from_storage(&bootstrap_storage()?))
+        .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let output = command_result(
-            assistant_run(AssistantRunInput {
+            assistant_run(app.state::<DesktopState>(), AssistantRunInput {
                 settings: ai_settings,
                 prompt_label: String::from("AI Log Diagnosis Smoke"),
                 prompt: String::from(
@@ -2527,7 +2530,9 @@ async fn stored_openai_compatible_ai_installs_modrinth_mod_smoke()
             .contains("Installed jars require a compatible Forge")
     );
 
-    let inventory = command_result(read_manual_mod_inventory_inner(provisioning.summary.id).await)?;
+    let inventory = command_result(
+        read_manual_mod_inventory(app.state::<DesktopState>(), provisioning.summary.id).await,
+    )?;
     assert_eq!(inventory.module_id, "minecraft");
     assert!(
         inventory
@@ -2768,7 +2773,9 @@ async fn stored_openai_compatible_ai_installs_nexus_local_7dtd_mod_smoke()
         output.source_paths
     );
 
-    let inventory = command_result(read_manual_mod_inventory_inner(provisioning.summary.id).await)?;
+    let inventory = command_result(
+        read_manual_mod_inventory(app.state::<DesktopState>(), provisioning.summary.id).await,
+    )?;
     assert_eq!(inventory.module_id, "sevendaystodie");
     assert!(
         inventory

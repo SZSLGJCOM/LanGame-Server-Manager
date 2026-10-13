@@ -158,17 +158,21 @@ async fn live_direct_install_cache_reuse_and_cancel() {
         let mut bytes = 0;
         let mut last_phase = None;
         let mut last_print = started;
-        let status = crate::ensure_steamcmd_installed_with_progress(&settings, |progress| {
-            bytes = bytes.max(progress.downloaded_bytes.unwrap_or(0));
-            if last_phase != Some(progress.phase) || last_print.elapsed().as_secs() >= 1 {
-                println!(
-                    "LIVE_PROGRESS {}",
-                    serde_json::to_string(&progress).unwrap()
-                );
-                last_phase = Some(progress.phase);
-                last_print = std::time::Instant::now();
-            }
-        })
+        let status = crate::ensure_steamcmd_installed_with_progress(
+            crate::test_install_lock_context(),
+            &settings,
+            |progress| {
+                bytes = bytes.max(progress.downloaded_bytes.unwrap_or(0));
+                if last_phase != Some(progress.phase) || last_print.elapsed().as_secs() >= 1 {
+                    println!(
+                        "LIVE_PROGRESS {}",
+                        serde_json::to_string(&progress).unwrap()
+                    );
+                    last_phase = Some(progress.phase);
+                    last_print = std::time::Instant::now();
+                }
+            },
+        )
         .await
         .expect("native API verification must succeed");
         assert!(status.ready && crate::managed_steamcmd_status(&settings).ready);
@@ -220,11 +224,15 @@ async fn live_direct_install_cache_reuse_and_cancel() {
     damaged[128..147].copy_from_slice(b"-overridepackageurl");
     std::fs::write(root.join("steamcmd.exe"), damaged).unwrap();
     let mut repaired = false;
-    let status = crate::ensure_steamcmd_installed_with_progress(&settings, |progress| {
-        repaired |= progress
-            .detail
-            .contains("Repairing the SteamCMD bootstrapper");
-    })
+    let status = crate::ensure_steamcmd_installed_with_progress(
+        crate::test_install_lock_context(),
+        &settings,
+        |progress| {
+            repaired |= progress
+                .detail
+                .contains("Repairing the SteamCMD bootstrapper");
+        },
+    )
     .await
     .unwrap();
     assert!(repaired && status.ready);
@@ -238,6 +246,7 @@ async fn live_direct_install_cache_reuse_and_cancel() {
     let token = crate::InstallCancellation::new();
     let mut cancelled_at = None;
     let result = crate::ensure_steamcmd_installed_with_progress_and_cancellation(
+        crate::test_install_lock_context(),
         &settings,
         &token,
         |progress| {

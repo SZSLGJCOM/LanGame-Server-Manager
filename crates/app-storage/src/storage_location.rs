@@ -25,7 +25,11 @@ struct StorageLocation {
 
 pub(crate) fn resolve_default_paths() -> Result<StoragePaths, StorageError> {
     let user_root = crate::default_app_data_root();
-    resolve_paths(&user_root, || {
+    resolve_user_paths(&user_root)
+}
+
+pub(crate) fn resolve_user_paths(user_root: &Path) -> Result<StoragePaths, StorageError> {
+    resolve_paths(user_root, || {
         #[cfg(windows)]
         {
             crate::storage_volumes::available_volumes().map(|volumes| {
