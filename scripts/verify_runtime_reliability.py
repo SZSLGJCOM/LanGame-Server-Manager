@@ -16,11 +16,16 @@ import sys
 import threading
 import time
 
+if __package__:
+    from .verify_scope import PARALLEL_PACKAGES, parse_rust_packages, rust_workspace
+else:
+    from verify_scope import PARALLEL_PACKAGES, parse_rust_packages, rust_workspace
 
 ROOT = Path(__file__).resolve().parents[1]
 LOG_PROGRESS_INTERVAL_SECONDS = 10
 LOG_PROGRESS_MAX_BYTES = 64 * 1024
-PARALLEL_PACKAGES = ("app-core", "app-modules", "app-knowledge")
+QUICK_STORAGE_FILTERS = ("backups", "migration", "instance_creation", "instance_file_patch",
+                         "instance_details_tests", "combined_runtime_read")
 
 
 @dataclass(frozen=True)
@@ -32,6 +37,8 @@ class Stage:
     kind: str = "rust"
     metrics_required: bool = False
     browser_required: bool = False
+    exact_tests: tuple[str, ...] = ()
+    allow_empty: bool = False
 
 
 def rust_arguments(package: str, target: tuple[str, ...], filters: tuple[str, ...]) -> tuple[str, ...]:
@@ -39,7 +46,8 @@ def rust_arguments(package: str, target: tuple[str, ...], filters: tuple[str, ..
             *filters, "--test-threads=1", "--show-output")
 
 
-def stages(full_workspace: bool = False, include_web: bool = True) -> tuple[Stage, ...]:
+def stages(full_workspace: bool = False, include_web: bool = True,
+           packages: list[str] | None = None) -> tuple[Stage, ...]:
     selected = (
         Stage("processes", rust_arguments("app-runtime", ("--lib",), (
             "runtime_reliability", "owned_process_tree", "stdin_write", "stdin_dispatch",
@@ -78,21 +86,179 @@ def stages(full_workspace: bool = False, include_web: bool = True) -> tuple[Stag
             ), "node", browser_required=True),
     )
     if full_workspace:
-        required = tuple(dict.fromkeys(selector for stage in (selected[0], selected[2]) for selector in stage.required))
-        packages = tuple(argument for package in PARALLEL_PACKAGES for argument in ("-p", package))
+        evidence = [stage for package, stage in (("app-runtime", selected[0]), ("langame-desktop", selected[2]))
+                    if packages is None or package in packages]
+        required = tuple(dict.fromkeys(selector for stage in evidence for selector in stage.required))
+        core = tuple(argument for package in PARALLEL_PACKAGES for argument in ("-p", package))
         exclusions = tuple(argument for package in (*PARALLEL_PACKAGES, "app-storage") for argument in ("--exclude", package))
+        stateful = None if packages is None else sorted(set(packages) - {*PARALLEL_PACKAGES, "app-storage"})
+        workspace = (("--workspace", *exclusions) if stateful is None else
+                     tuple(argument for package in stateful for argument in ("-p", package)))
+        storage_full = packages is None or "app-storage" in packages
+        storage = (("--all-features", "--locked", "--", "--test-threads=2", "--show-output") if storage_full else
+                   ("--lib", "--all-features", "--locked", "--", *QUICK_STORAGE_FILTERS,
+                    "--test-threads=1", "--show-output"))
         # Storage fixtures own separate roots; bound I/O concurrency to two tests.
         # Process and desktop suites retain their process-wide isolation.
         return (
-            Stage("core", ("test", *packages, "--all-features", "--locked", "--",
+            Stage("core", ("test", *core, "--all-features", "--locked", "--",
                            "--test-threads=4", "--show-output"), ROOT, ()),
-            Stage("storage", ("test", "-p", "app-storage", "--all-features", "--locked", "--",
-                              "--test-threads=2", "--show-output"), ROOT, selected[1].required),
-            Stage("workspace", ("test", "--workspace", *exclusions, "--all-features", "--locked", "--",
-                                "--test-threads=1", "--show-output"), ROOT, required, metrics_required=True),
+            Stage("storage", ("test", "-p", "app-storage", *storage), ROOT, selected[1].required if storage_full else ()),
+            *((Stage("workspace", ("test", *workspace, "--all-features", "--locked", "--",
+                                   "--test-threads=1", "--show-output"), ROOT, required,
+                      metrics_required=packages is None or "app-runtime" in packages),) if workspace else ()),
             *((selected[-1],) if include_web else ()),
         )
     return selected if include_web else selected[:-1]
+
+
+def grouped_stages(group: str, packages: list[str] | None) -> tuple[Stage, ...]:
+    if group in ("core", "storage"):
+        return tuple(stage for stage in stages(True, False, packages) if stage.name == group)
+    if group == "desktop":
+        return ()  # Enumerated after compilation, before any test is executed.
+    selected = sorted(set(rust_workspace() if packages is None else packages)
+                      - {*PARALLEL_PACKAGES, "app-storage", "langame-desktop"})
+    if not selected:
+        return ()
+    process_evidence = stages()[0]
+    runtime = "app-runtime" in selected
+    arguments = tuple(argument for package in selected for argument in ("-p", package))
+    return (Stage("services", ("test", *arguments, "--all-features", "--locked", "--",
+                              "--test-threads=1", "--show-output"), ROOT,
+                  process_evidence.required if runtime else (), metrics_required=runtime),)
+
+
+def desktop_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
+    """Cargo JSON is interleaved with build diagnostics and managed-wrapper logs."""
+    targets = set()
+    doctests = False
+    finished = False
+    for line in output.splitlines():
+        if not line.startswith("{"):
+            continue
+        message = json.loads(line)
+        if message.get("reason") == "build-finished":
+            finished = message.get("success") is True
+        if (message.get("reason") != "compiler-artifact" or
+                not re.search(r"(?:^|[# ])langame-desktop(?:@| )", message.get("package_id", ""))):
+            continue
+        target = message["target"]
+        kind = target["kind"]
+        if "lib" in kind and target.get("doctest", True):
+            doctests = True
+        if not message.get("profile", {}).get("test") or not message.get("executable"):
+            continue
+        selector = {"lib": ("--lib",), "bin": ("--bin", target["name"]),
+                    "test": ("--test", target["name"]), "example": ("--example", target["name"])}
+        if len(kind) != 1 or kind[0] not in selector:
+            raise ValueError(f"Unsupported desktop test target: {target['name']} ({kind})")
+        targets.add(selector[kind[0]])
+    if not finished or not targets:
+        raise ValueError("Cargo did not report a successful desktop test build with executable targets")
+    return sorted(targets), doctests
+
+
+def listed_tests(output: str) -> list[str]:
+    names = re.findall(r"^(\S+): test\s*$", output, re.MULTILINE)
+    summaries = re.findall(r"^(\d+) tests?, (\d+) benchmarks?\s*$", output, re.MULTILINE)
+    if (summaries != [(str(len(names)), "0")] or len(names) != len(set(names))
+            or re.search(r"^\S+: benchmark\s*$", output, re.MULTILINE)):
+        raise ValueError("Desktop inventory is incomplete, duplicated or contains unsupported benchmarks")
+    return sorted(names)
+
+
+def desktop_partition(inventory: dict[tuple[str, ...], list[str]], index: int, count: int
+                      ) -> dict[tuple[str, ...], list[str]]:
+    if not 1 <= index <= count <= 4:
+        raise ValueError("Desktop shard requires 1 <= index <= count <= 4")
+    # Round-robin sorted names spreads each large test family across independent
+    # runners while keeping every process serial and every assignment repeatable.
+    ordered = sorted((target, name) for target, names in inventory.items() for name in names)
+    selected: dict[tuple[str, ...], list[str]] = {}
+    for target, name in ordered[index - 1::count]:
+        selected.setdefault(target, []).append(name)
+    return selected
+
+
+def desktop_batches(target: tuple[str, ...], names: list[str], limit: int = 24000,
+                    *, managed: bool = False) -> list[tuple[str, ...]]:
+    prefix = ("test", "-p", "langame-desktop", *target, "--all-features", "--locked", "--",
+              "--exact", "--test-threads=1", "--show-output", "--format=pretty")
+    batches = []
+    batch: list[str] = []
+
+    def command_size(arguments: tuple[str, ...]) -> int:
+        native = len(subprocess.list2cmdline(["cargo", *arguments]).encode("utf-16-le")) // 2
+        if not managed:
+            return native
+        # The managed guard encodes JSON as UTF-8/Base64. ASCII escaping bounds
+        # Unicode expansion too; 16 KiB JSON leaves >10 KiB for its other fields,
+        # paths and PowerShell arguments within the 32767-character limit.
+        encoded = len(json.dumps(arguments, ensure_ascii=True).encode("utf-8"))
+        return max(native, encoded)
+
+    if managed:
+        limit = min(limit, 16000)
+    for name in names:
+        # Leave headroom below CreateProcess's 32767 UTF-16-unit command limit.
+        length = command_size((*prefix, *batch, name))
+        if batch and length > limit:
+            batches.append(tuple(batch))
+            batch = []
+        if command_size((*prefix, name)) > limit:
+            raise ValueError(f"Desktop test name exceeds the command length budget: {name}")
+        batch.append(name)
+    if batch:
+        batches.append(tuple(batch))
+    return [(*prefix, *batch) for batch in batches]
+
+
+def prepare_desktop(args, packages: list[str] | None, output: Path, report: dict) -> tuple[Stage, ...]:
+    if packages is not None and "langame-desktop" not in packages:
+        report["empty_reason"] = "langame-desktop is outside the selected complete packages"
+        return ()
+
+    def capture(name: str, command: tuple[str, ...]) -> str:
+        text, result = capture_stage(Stage(name, command, ROOT, ()), output, args.cycles,
+                                     args.cargo_wrapper, args.node_wrapper, args.frontend_dist)
+        report["stages"].append(result)
+        write_report(output, report)
+        if result["exit_code"] != 0:
+            raise ValueError(f"{name} failed; see {result['log']}")
+        return text
+
+    prefix = ("test", "-p", "langame-desktop", "--all-features", "--locked")
+    targets, doctests = desktop_targets(capture("desktop-build", (*prefix, "--no-run", "--message-format=json")))
+    inventory, ignored = {}, {}
+    for number, target in enumerate(targets, 1):
+        # Pretty listing adds a count footer, including for truly empty targets.
+        listing = (*prefix, *target, "--", "--list", "--format=pretty")
+        names = listed_tests(capture(f"desktop-list-{number}", listing))
+        skipped = listed_tests(capture(f"desktop-ignored-{number}", (*listing, "--ignored")))
+        if not set(skipped) <= set(names):
+            raise ValueError("Ignored desktop tests are absent from the complete inventory")
+        inventory[target] = sorted(set(names) - set(skipped))
+        ignored[target] = skipped
+    missing = [selector for selector in stages()[2].required
+               if not any(selector in name for names in inventory.values() for name in names)]
+    if missing:
+        raise ValueError(f"Desktop inventory is missing required test groups: {missing}")
+    selected = desktop_partition(inventory, args.shard_index, args.shard_count)
+    report["desktop_partition"] = {
+        "index": args.shard_index, "count": args.shard_count, "doctests": doctests and args.shard_index == 1,
+        "targets": [{"target": list(target), "tests": inventory[target], "ignored": ignored[target],
+                     "selected": selected.get(target, [])} for target in targets],
+    }
+    checks = []
+    for target, names in selected.items():
+        for command in desktop_batches(target, names, managed=args.cargo_wrapper is not None):
+            exact = command[command.index("--format=pretty") + 1:]
+            checks.append(Stage(f"desktop-batch-{len(checks) + 1}", command, ROOT, (), exact_tests=exact))
+    if doctests and args.shard_index == 1:
+        checks.append(Stage("desktop-doctests", (*prefix, "--doc", "--", "--test-threads=1", "--show-output"),
+                            ROOT, (), allow_empty=True))
+    return tuple(checks)
 
 
 def command_for(stage: Stage, cargo_wrapper: Path | None, node_wrapper: Path | None,
@@ -155,10 +321,19 @@ def resource_evidence_errors(metrics: list, cycles: int | None) -> list[str]:
 
 
 def inspect_result(stage: Stage, output: str, returncode: int, cycles: int | None = None) -> dict:
+    summaries = []
     if stage.kind == "rust":
-        summaries = re.findall(r"test result: \w+\. (\d+) passed; (\d+) failed; (\d+) ignored", output)
+        summary_matches = list(re.finditer(r"test result: \w+\. (\d+) passed; (\d+) failed; (\d+) ignored", output))
+        summaries = [match.groups() for match in summary_matches]
+        names = re.findall(r"^test (\S+)(?: - should panic)? \.\.\. ok\s*$", output, re.MULTILINE)
+        if stage.exact_tests:
+            # Child stdout can interrupt the parent's progress line and contain
+            # its own summaries. --show-output ends with the outer success list.
+            summaries = summaries[-1:]
+            before_summary = output[:summary_matches[-1].start()] if summary_matches else ""
+            successes = re.search(r"(?:^|\n)successes:\r?\n((?: {4}\S+\r?\n)+)\s*\Z", before_summary)
+            names = successes[1].split() if successes else []
         passed, failed, skipped = (sum(int(row[i]) for row in summaries) for i in range(3))
-        names = re.findall(r"^test (\S+) \.\.\. ok\s*$", output, re.MULTILINE)
     else:
         def total(label: str) -> int:
             matches = re.findall(rf"^# {label} (\d+)\s*$", output, re.MULTILINE)
@@ -169,6 +344,8 @@ def inspect_result(stage: Stage, output: str, returncode: int, cycles: int | Non
     missing = [selector for selector in stage.required if not any(selector in name for name in names)]
     metrics = []
     evidence_errors = []
+    if stage.exact_tests and (sorted(stage.exact_tests) != sorted(names) or passed != len(stage.exact_tests) or skipped):
+        evidence_errors.append("Completed tests do not match the exact shard batch")
     for line in output.splitlines():
         if line.startswith("RELIABILITY_METRICS "):
             try:
@@ -186,7 +363,8 @@ def inspect_result(stage: Stage, output: str, returncode: int, cycles: int | Non
     if stage.browser_required:
         evidence_errors.extend(browser_evidence_errors(browser_reports))
     return {
-        "status": "passed" if returncode == 0 and passed > 0 and failed == 0 and not missing and not evidence_errors else "failed",
+        "status": "passed" if returncode == 0 and (passed > 0 or stage.allow_empty and bool(summaries))
+                  and failed == 0 and not missing and not evidence_errors else "failed",
         "exit_code": returncode, "passed": passed, "failed": failed, "skipped": skipped,
         "missing_test_groups": missing, "metrics": metrics, "evidence_errors": evidence_errors,
         "browser_reports": browser_reports,
@@ -269,9 +447,9 @@ class _StageLogProgress:
             raise OSError(f"Stage log observation failed: {self.error}") from self.error
 
 
-def run_stage(stage: Stage, output_dir: Path, cycles: int,
-              cargo_wrapper: Path | None = None, node_wrapper: Path | None = None,
-              frontend_dist: Path | None = None) -> dict:
+def capture_stage(stage: Stage, output_dir: Path, cycles: int,
+                  cargo_wrapper: Path | None = None, node_wrapper: Path | None = None,
+                  frontend_dist: Path | None = None) -> tuple[str, dict]:
     command, environment = command_for(stage, cargo_wrapper, node_wrapper, frontend_dist)
     environment["LANGAME_RELIABILITY_CYCLES"] = str(cycles)
     log = output_dir / f"{stage.name}.log"
@@ -287,8 +465,17 @@ def run_stage(stage: Stage, output_dir: Path, cycles: int,
                     **({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}))
             finally:
                 destination.flush()
-    result = inspect_result(stage, log.read_text(encoding="utf-8", errors="replace"), completed.returncode, cycles)
-    result.update(name=stage.name, elapsed_seconds=round(time.monotonic() - started, 3), log=log.name)
+    return log.read_text(encoding="utf-8", errors="replace"), {
+        "name": stage.name, "status": "passed" if completed.returncode == 0 else "failed",
+        "exit_code": completed.returncode, "elapsed_seconds": round(time.monotonic() - started, 3), "log": log.name,
+    }
+
+
+def run_stage(stage: Stage, output_dir: Path, cycles: int,
+              cargo_wrapper: Path | None = None, node_wrapper: Path | None = None,
+              frontend_dist: Path | None = None) -> dict:
+    text, execution = capture_stage(stage, output_dir, cycles, cargo_wrapper, node_wrapper, frontend_dist)
+    result = {**execution, **inspect_result(stage, text, execution["exit_code"], cycles)}
     print(f"[reliability] {stage.name}: {result['status']}; "
           f"{result['passed']} passed, {result['failed']} failed, {result['skipped']} skipped", flush=True)
     for metrics in result["metrics"]:
@@ -357,6 +544,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan", action="store_true", help="Print the selected checks without executing")
     parser.add_argument("--full-workspace", action="store_true", help="Run the full Rust baseline plus the Web checks (CI)")
     parser.add_argument("--rust-only", action="store_true", help="Run Rust only when the shared frontend tier owns Web checks")
+    parser.add_argument("--rust-packages-json", help="Complete affected packages, retaining the quick baseline")
+    parser.add_argument("--group", choices=("core", "storage", "services", "desktop"),
+                        help="One independently runnable Rust group; requires --full-workspace --rust-only")
+    parser.add_argument("--shard-index", type=int, default=1, help="Desktop shard index (1-based)")
+    parser.add_argument("--shard-count", type=int, default=1, help="Independent desktop runners (1..4)")
     parser.add_argument("--output", type=Path, help="New evidence directory outside the repository")
     parser.add_argument("--cycles", type=int, default=24, help="Isolated process lifecycle cycles (4..256)")
     parser.add_argument("--cargo-wrapper", type=Path, help="Managed workstation invoke-codex-cargo.ps1")
@@ -364,6 +556,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--frontend-dist", type=Path,
                         help="Existing absolute frontend distribution outside the repository for Rust asset embedding")
     args = parser.parse_args(argv)
+    try:
+        packages = parse_rust_packages(args.rust_packages_json) if args.rust_packages_json is not None else None
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    if packages is not None and not args.full_workspace:
+        parser.error("--rust-packages-json requires --full-workspace")
+    if args.group and not (args.full_workspace and args.rust_only):
+        parser.error("--group requires --full-workspace --rust-only")
+    if not 1 <= args.shard_index <= args.shard_count <= 4:
+        parser.error("Shards require 1 <= --shard-index <= --shard-count <= 4")
+    if args.group != "desktop" and (args.shard_index != 1 or args.shard_count != 1):
+        parser.error("Shards require --group desktop")
     if not 4 <= args.cycles <= 256:
         parser.error("--cycles must be between 4 and 256")
     if args.frontend_dist is not None:
@@ -373,7 +577,15 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, ValueError) as error:
             parser.error(str(error))
     if args.plan:
-        for stage in stages(args.full_workspace, not args.rust_only):
+        planned = (grouped_stages(args.group, packages) if args.group else
+                   stages(args.full_workspace, not args.rust_only, packages))
+        if args.group == "desktop" and (packages is None or "langame-desktop" in packages):
+            print("desktop-build: cargo test -p langame-desktop --all-features --locked --no-run --message-format=json")
+            print(f"desktop: enumerate targets; exact serial batches for shard {args.shard_index}/{args.shard_count}; "
+                  "library doctests on shard 1")
+        elif not planned:
+            print(f"{args.group}: empty; no complete packages selected for this group")
+        for stage in planned:
             print(f"{stage.name}: {'cargo' if stage.kind == 'rust' else 'node'} {' '.join(stage.command)}")
         return 0
     if not windows_runtime_supported():
@@ -396,6 +608,10 @@ def main(argv: list[str] | None = None) -> int:
                  ("" if args.rust_only else ", and frontend component lifecycles"),
         "stages": [],
     }
+    if packages is not None:
+        report["selected_complete_packages"] = packages
+    if args.group:
+        report.update(group=args.group, shard_index=args.shard_index, shard_count=args.shard_count)
     if args.frontend_dist is not None:
         report["frontend_dist"] = str(args.frontend_dist)
     head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
@@ -403,7 +619,15 @@ def main(argv: list[str] | None = None) -> int:
     report.update(git_head=head.stdout.strip(), working_tree_dirty=bool(status.stdout.strip()))
     write_report(output, report)
     try:
-        for stage in stages(args.full_workspace, not args.rust_only):
+        if args.group == "desktop":
+            checks = prepare_desktop(args, packages, output, report)
+        else:
+            checks = (grouped_stages(args.group, packages) if args.group else
+                      stages(args.full_workspace, not args.rust_only, packages))
+        if not checks:
+            report.setdefault("empty_reason", "No tests assigned to this group or shard")
+            print(f"[reliability] empty: {report['empty_reason']}", flush=True)
+        for stage in checks:
             result = run_stage(stage, output, args.cycles, args.cargo_wrapper, args.node_wrapper,
                                args.frontend_dist)
             report["stages"].append(result)

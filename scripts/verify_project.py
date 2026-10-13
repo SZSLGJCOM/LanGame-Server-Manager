@@ -12,185 +12,30 @@ import sys
 import time
 
 if __package__:
-    from .verify_runtime_reliability import PARALLEL_PACKAGES, tauri_frontend_config, validate_frontend_dist
+    from .verify_runtime_reliability import QUICK_STORAGE_FILTERS, tauri_frontend_config, validate_frontend_dist
+    from .verify_scope import (DESKTOP, ROOT, PARALLEL_PACKAGES, browser_repository_files,
+                               changed_paths, frontend_selection, frontend_tests, full_scopes,
+                               parse_browser_files, parse_rust_packages, publication_full, rust_selection, rust_workspace)
 else:
-    from verify_runtime_reliability import PARALLEL_PACKAGES, tauri_frontend_config, validate_frontend_dist
-
-ROOT = Path(__file__).resolve().parents[1]
-DESKTOP = ROOT / "apps/desktop"
-# These predate the *-browser.test.cjs convention. Runner unit tests remain quick.
-BROWSER_EXCEPTIONS = {"knowledge-settings.test.cjs", "runtime-browser-navigation.test.cjs"}
-FULL_RUST_PACKAGES = {"app-core", "app-network", "app-platform-win", "app-runtime", "app-steamcmd", "app-storage"}
-KNOWN_RUST_PACKAGES = FULL_RUST_PACKAGES | set(PARALLEL_PACKAGES)
-RUST_RISK_PREFIXES = tuple(f"crates/{package}/" for package in sorted(FULL_RUST_PACKAGES)) + (
-    "apps/desktop/src-tauri/", "modules/", "migrations/",
-    ".cargo/", "apps/desktop/src/api",
-)
-FRONTEND_FULL_PREFIXES = (
-    "apps/desktop/src-tauri/", "apps/desktop/scripts/",
-    "crates/app-core/", "modules/", "migrations/",
-)
-NATIVE_RISK_PREFIXES = (
-    "apps/desktop/src-tauri/", "crates/app-runtime/", "crates/app-platform-win/",
-    "crates/app-core/", "crates/app-storage/", ".cargo/",
-    "apps/desktop/tests/helpers/desktop-reliability.",
-)
-NATIVE_RISK_FILES = {"apps/desktop/scripts/verify_desktop_reliability.cjs",
-                     "apps/desktop/tests/desktop-reliability-driver.test.cjs",
-                     "scripts/tests/test_desktop_installer_guard.ps1"}
-SHARED_RISK_FILES = {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "apps/desktop/package.json",
-                     "apps/desktop/package-lock.json", "scripts/verify_project.py",
-                     "scripts/verify_runtime_reliability.py", "scripts/build_desktop_update_artifacts.ps1",
-                     "crates/app-knowledge/runtime_build.rs", ".github/workflows/ci.yml"}
-
-QUICK_BROWSER_FILES = tuple(f"apps/desktop/tests/{name}-browser.test.cjs" for name in (
-    "instance-create", "server-detail-navigation", "restored-configuration", "configuration-controls",
-    "maintenance-world-save", "desktop-exit", "runtime-reliability", "lan-transport",
-))
-# Existing behavioral families, not one rule per test. Overlapping families are intentional.
-BROWSER_GROUPS = {
-    "configuration": ("configuration-", "restored-", "dragonwilds-", "dst-", "enshrouded-", "moria-",
-                      "romestead-", "satisfactory-", "scum-", "valheim-", "ark-", "asa-"),
-    "mods": ("mod-", "manual-mod-", "workshop-", "asa-", "ark-", "dst-", "moria-", "server-archives-"),
-    "players": ("player-", "manual-player-", "seven-days-", "enshrouded-", "moria-", "system-player-", "server-archives-"),
-    "maintenance": ("maintenance-", "server-archives-", "server-inline-", "instance-retirement-",
-                    "program-cleanup-", "program-storage-", "scum-", "ark-cluster-", "moria-", "gm-tool-"),
-    "runtime": ("runtime-", "desktop-exit-", "instance-unavailable-", "server-card-", "server-tools-",
-                "operation-notices-", "activity-notices-", "server-archives-", "ark-cluster-maps-", "dst-four-shards-",
-                "instance-retirement-", "desktop-layout-"),
-    "updates": ("app-update-", "program-update-", "library-updates-", "steamcmd-dependency-"),
-    "system": ("system-", "desktop-main-pages-", "desktop-layout-", "instance-retirement-", "app-update-"),
-    "library": ("library-", "instance-create-", "instance-inventory-", "steamcmd-dependency-",
-                "desktop-main-pages-", "desktop-layout-"),
-    "assistant": ("assistant-", "knowledge-", "privacy-disclosure-"),
-}
-# These subtrees have bounded consumers. Shared settings infrastructure, shell,
-# API contracts, hooks and unclassified sources deliberately retain full coverage.
-FRONTEND_FEATURE_PATHS = {
-    "views/system/": ("system",), "views/SystemView.tsx": ("system",), "views/SystemView.css": ("system",),
-    "views/servers/player-center/": ("players",), "views/servers/PlayerCenterWorkbench.tsx": ("players",),
-    "views/servers/ModWorkbench.tsx": ("mods",),
-    "views/servers/RuntimeSurfaceWorkbench.tsx": ("runtime",),
-    "views/servers/BackupTable.tsx": ("maintenance",),
-    "views/servers/ImmediateWorldSave.tsx": ("maintenance",),
-    "views/servers/useInstanceArchives.ts": ("maintenance",),
-    "views/servers/ProgramUpdatePolicyEditor.tsx": ("updates", "maintenance"),
-    "views/servers/program-update-policy.ts": ("updates", "maintenance"),
-}
+    from verify_runtime_reliability import QUICK_STORAGE_FILTERS, tauri_frontend_config, validate_frontend_dist
+    from verify_scope import (DESKTOP, ROOT, PARALLEL_PACKAGES, browser_repository_files,
+                              changed_paths, frontend_selection, frontend_tests, full_scopes,
+                              parse_browser_files, parse_rust_packages, publication_full, rust_selection, rust_workspace)
 
 
-def is_browser_test(path: Path) -> bool:
-    return path.name.endswith("-browser.test.cjs") or path.name in BROWSER_EXCEPTIONS
-
-
-def shared_risk(paths: list[str]) -> bool:
-    return any(path in SHARED_RISK_FILES or path.startswith(".github/actions/")
-               or path.startswith("crates/") and Path(path).name in ("Cargo.toml", "build.rs") for path in paths)
-
-
-def full_scopes(paths: list[str]) -> tuple[bool, bool, bool]:
-    shared = shared_risk(paths)
-    # Quick already runs every test in app-knowledge and app-modules. New crates
-    # remain conservative until their execution and integration boundaries are known.
-    rust = shared or any(path.startswith(RUST_RISK_PREFIXES)
-                         or path.startswith("crates/") and path.split("/")[1] not in KNOWN_RUST_PACKAGES
-                         for path in paths)
-    frontend = frontend_selection(paths) == browser_repository_files()
-    native = shared or any(path in NATIVE_RISK_FILES or path.startswith(NATIVE_RISK_PREFIXES) for path in paths)
-    return frontend, rust, native
-
-
-def needs_full(paths: list[str]) -> bool:
-    return any(full_scopes(paths))
-
-
-def frontend_tests(browser: bool) -> list[str]:
-    return [str(path.relative_to(DESKTOP)) for path in sorted((DESKTOP / "tests").glob("*.test.cjs"))
-            if is_browser_test(path) == browser]
-
-
-def browser_repository_files() -> list[str]:
-    return [f"apps/desktop/{Path(path).as_posix()}" for path in frontend_tests(True)]
-
-
-def private_fixture_owners(path: str, suite: list[str]) -> list[str]:
-    fixture = ROOT / path
-    if fixture.suffix not in (".html", ".tsx") or not fixture.is_file():
-        return []
-    html = fixture.with_suffix(".html")
-    if not html.is_file():
-        return []
-    if fixture.suffix == ".tsx":
-        # A module imported by another fixture is shared, even if it has its own HTML.
-        for peer in fixture.parent.iterdir():
-            if peer.is_file() and peer.stem != fixture.stem and peer.suffix in (".ts", ".tsx", ".html", ".cjs"):
-                if fixture.stem in peer.read_text(encoding="utf-8"):
-                    return []
-    return [test for test in suite if html.name in (ROOT / test).read_text(encoding="utf-8")]
-
-
-def frontend_selection(paths: list[str]) -> list[str]:
-    suite = browser_repository_files()
-    if shared_risk(paths):
-        return suite
-    selected: set[str] = set()
-    groups: set[str] = set()
-    for path in paths:
-        if path.startswith(FRONTEND_FULL_PREFIXES) or (
-                path.startswith("apps/desktop/") and Path(path).name.startswith(("vite.config", "tsconfig"))):
-            return suite
-        if path.startswith("apps/desktop/src/"):
-            relative = path.removeprefix("apps/desktop/src/")
-            matched = [group for prefix, owners in FRONTEND_FEATURE_PATHS.items()
-                       if prefix.endswith("/") and relative.startswith(prefix) for group in owners]
-            matched += list(FRONTEND_FEATURE_PATHS.get(relative, ()))
-            if not matched:
-                return suite
-            groups.update(matched)
-        elif path.startswith("apps/desktop/tests/helpers/"):
-            owners = private_fixture_owners(path, suite)
-            if not owners:
-                return suite
-            selected.update(owners)
-        elif path.startswith("apps/desktop/tests/fixtures/"):
-            return suite
-        elif Path(path).parent.as_posix() == "apps/desktop/tests" and is_browser_test(Path(path)):
-            if path not in suite:
-                return suite
-            selected.add(path)
-        elif path.startswith("apps/desktop/") and not (
-                Path(path).suffix == ".md" or path.startswith("apps/desktop/tests/") and path.endswith(".test.cjs")):
-            # HTML entry points, public assets and new frontend infrastructure
-            # must not silently disappear from checks merely because they moved.
-            return suite
-    for path in selected:
-        groups.update(group for group, prefixes in BROWSER_GROUPS.items() if Path(path).name.startswith(prefixes))
-    if selected or groups:
-        selected.update(QUICK_BROWSER_FILES)
-        prefixes = tuple(prefix for group in groups for prefix in BROWSER_GROUPS[group])
-        selected.update(path for path in suite if Path(path).name.startswith(prefixes))
-    return [path for path in suite if path in selected]
-
-
-def parse_browser_files(value: str, *, full: bool) -> list[str]:
-    try:
-        files = json.loads(value)
-    except json.JSONDecodeError as error:
-        raise ValueError("--browser-files-json must be a JSON list of browser test paths") from error
-    suite = browser_repository_files()
-    if (not isinstance(files, list) or not files or any(not isinstance(path, str) or path not in suite for path in files)
-            or len(files) != len(set(files))):
-        raise ValueError("--browser-files-json requires unique existing browser test paths relative to the repository")
-    if full and set(files) != set(suite):
-        raise ValueError("The full tier requires the complete browser suite")
-    return [path for path in suite if path in files]
-
-
-def changed_paths(base: str) -> list[str] | None:
-    diff = subprocess.run(["git", "diff", "--name-only", "--no-renames", "-z", base, "HEAD"],
-                          cwd=ROOT, capture_output=True, text=True, check=False)
-    return [path for path in diff.stdout.split("\0") if path] if diff.returncode == 0 else None
-
+def rust_test_matrix(packages: list[str]) -> dict:
+    """Isolate slow suites by runner without sharing process-global test state."""
+    desktop = "langame-desktop" in packages
+    rows = [{"group": group, "shard": 1, "count": 1} for group in ("core", "storage")]
+    if set(packages) - {*PARALLEL_PACKAGES, "app-storage", "langame-desktop"}:
+        rows.append({"group": "services", "shard": 1, "count": 1})
+    if desktop:
+        rows.extend({"group": "desktop", "shard": index, "count": 4} for index in range(1, 5))
+    for row in rows:
+        # Desktop compiles all application dependencies. A quick core-only run
+        # must not permanently occupy the immutable key with a partial cache.
+        row["cache_writer"] = row["group"] == "desktop" and row["shard"] == 1
+    return {"include": rows}
 
 def validate_frontend_output(path: Path) -> Path:
     output = path.expanduser().resolve()
@@ -306,7 +151,7 @@ class Runner:
             self.node("--test", f"--test-concurrency={1 if browser else 4}", *files[offset:offset + 80],
                       browser=browser, cwd=DESKTOP)
 
-    def rust(self) -> None:
+    def rust_checks(self) -> None:
         self.cargo("fmt", "--all", "--", "--check")
         # Clippy performs the workspace compile/type check as well as linting.
         self.cargo("clippy", "--workspace", "--all-targets", "--all-features", "--locked", "--", "-D", "warnings")
@@ -317,21 +162,33 @@ class Runner:
         else:
             self.cargo("fetch", "--locked")
             self.python("scripts/generate_rust_third_party_licenses.py", "--check", "--offline")
-        if self.args.tier == "quick":
+
+    def rust_tests(self) -> None:
+        selected = getattr(self.args, "rust_packages", None)
+        group = getattr(self.args, "rust_group", None)
+        if self.args.tier == "quick" and not selected and not group:
             packages = tuple(arg for package in PARALLEL_PACKAGES for arg in ("-p", package))
             self.cargo("test", *packages, "--all-features", "--locked", "--", "--test-threads=4")
             # Keep retained-data regressions in ordinary feedback, even without a risky diff.
             self.cargo("test", "-p", "app-storage", "--lib", "--all-features", "--locked", "--",
-                       "backups", "migration", "instance_creation", "instance_file_patch",
-                       "instance_details_tests", "combined_runtime_read", "--test-threads=1")
+                       *QUICK_STORAGE_FILTERS, "--test-threads=1")
         else:
             arguments = ["scripts/verify_runtime_reliability.py", "--full-workspace", "--rust-only",
                          "--output", str(self.args.output / "runtime")]
+            if selected is not None and self.args.tier != "full":
+                arguments += ["--rust-packages-json", json.dumps(selected)]
+            if group:
+                arguments += ["--group", group, "--shard-index", str(self.args.shard_index),
+                              "--shard-count", str(self.args.shard_count)]
             for name in ("cargo_wrapper", "node_wrapper", "frontend_dist"):
                 value = getattr(self.args, name)
                 if value:
                     arguments += ["--" + name.replace("_", "-"), str(value)]
             self.python(*arguments)
+
+    def rust(self) -> None:
+        self.rust_checks()
+        self.rust_tests()
 
     def native(self) -> None:
         if self.args.native_executable:
@@ -355,7 +212,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tier", choices=("quick", "full"), default="quick")
     parser.add_argument("--component", choices=("all", "policy", "frontend", "frontend-build",
-                        "frontend-tests", "frontend-browser", "rust", "native", "scope"), default="all")
+                        "frontend-tests", "frontend-browser", "rust", "rust-checks", "rust-tests",
+                        "native", "scope"), default="all")
     parser.add_argument("--plan", action="store_true")
     parser.add_argument("--base", help="Commit to compare for CI risk selection")
     parser.add_argument("--event", help="CI event; manual dispatch honors an explicitly selected quick tier")
@@ -370,14 +228,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--shard-index", type=int, default=1)
     parser.add_argument("--shard-count", type=int, default=1)
     parser.add_argument("--browser-files-json", help="JSON list of repository-relative browser tests selected by scope")
+    parser.add_argument("--rust-packages-json", help="Complete selected packages in addition to the quick baseline")
+    parser.add_argument("--rust-group", choices=("core", "storage", "services", "desktop"),
+                        help="Run one isolated CI group using the same local verification rules")
     args = parser.parse_args(argv)
     if not 1 <= args.shard_index <= args.shard_count <= 8:
         parser.error("Require 1 <= shard-index <= shard-count <= 8")
+    if args.rust_group and args.component != "rust-tests":
+        parser.error("--rust-group requires --component rust-tests")
+    if args.rust_group and args.rust_group != "desktop" and args.shard_count != 1:
+        parser.error("Only the desktop Rust group supports sharding")
+    if args.rust_group == "desktop" and args.shard_count > 4:
+        parser.error("The desktop Rust group supports at most four shards")
+    if args.rust_group and args.rust_packages_json is None and not args.base and args.tier == "quick":
+        args.rust_packages_json = "[]"
     if args.base and args.browser_files_json is not None:
         parser.error("--base and --browser-files-json cannot be combined")
+    if args.rust_packages_json is not None and (args.base or args.tier == "full"):
+        parser.error("--rust-packages-json cannot be combined with --base or the complete full tier")
     try:
         args.browser_files = (parse_browser_files(args.browser_files_json, full=args.tier == "full")
                               if args.browser_files_json is not None else None)
+        args.rust_packages = parse_rust_packages(args.rust_packages_json) if args.rust_packages_json is not None else None
     except ValueError as error:
         parser.error(str(error))
     if args.component == "scope":
@@ -391,22 +263,32 @@ def main(argv: list[str] | None = None) -> int:
             full = paths is None
             paths = paths or []
             frontend_full, rust_full, native_full = (True, True, True) if full else full_scopes(paths)
-        full = frontend_full or rust_full or native_full or any(path.startswith("scripts/") for path in paths)
+        policy_full = full or publication_full(paths)
+        full = frontend_full or rust_full or native_full or policy_full
         frontend_files = browser_repository_files() if frontend_full else frontend_selection(paths)
+        rust_packages = (sorted(rust_workspace()) if rust_full and not paths else rust_selection(paths))
         frontend_changed = bool(frontend_files)
         print(f"[verify] frontend_full={frontend_full}; rust_full={rust_full}; native_full={native_full}; "
-              f"frontend_changed={frontend_changed}; {len(frontend_files)} browser files; {len(paths)} changed paths")
+              f"frontend_changed={frontend_changed}; {len(frontend_files)} browser files; {len(paths)} changed paths; "
+              f"complete Rust packages={','.join(rust_packages) or 'quick baseline'}")
         if args.github_output:
             with args.github_output.open("a", encoding="utf-8") as destination:
                 for name, value in (("full", full), ("frontend_full", frontend_full), ("rust_full", rust_full),
                                     ("native_full", native_full), ("frontend_changed", frontend_changed)):
                     destination.write(f"{name}={str(value).lower()}\n")
                 destination.write(f"frontend_files={json.dumps(frontend_files, separators=(',', ':'))}\n")
+                destination.write(f"rust_packages={json.dumps(rust_packages, separators=(',', ':'))}\n")
+                destination.write(f"policy_full={str(policy_full).lower()}\n")
+                destination.write(f"rust_matrix={json.dumps(rust_test_matrix(rust_packages), separators=(',', ':'))}\n")
         return 0
     if args.component == "frontend-browser" and args.base and args.tier != "full":
         paths = changed_paths(args.base)
         args.browser_files = browser_repository_files() if paths is None else frontend_selection(paths)
-    requires_output = args.component == "native" or (args.tier == "full" and args.component in ("all", "rust"))
+    if args.component in ("all", "rust", "rust-tests") and args.base and args.tier != "full":
+        paths = changed_paths(args.base)
+        args.rust_packages = sorted(rust_workspace()) if paths is None else rust_selection(paths)
+    requires_output = args.component == "native" or (
+        (args.tier == "full" or args.rust_packages or args.rust_group) and args.component in ("all", "rust", "rust-tests"))
     if requires_output and not args.output:
         parser.error("--output is required for full Rust/native checks")
     if args.output:
@@ -440,6 +322,10 @@ def main(argv: list[str] | None = None) -> int:
             runner.frontend_suite(True)
         if args.component in ("all", "rust"):
             runner.rust()
+        if args.component == "rust-checks":
+            runner.rust_checks()
+        if args.component == "rust-tests":
+            runner.rust_tests()
         if args.component == "native" or (args.component == "all" and args.tier == "full"):
             runner.native()
     except (OSError, ValueError, subprocess.CalledProcessError) as error:

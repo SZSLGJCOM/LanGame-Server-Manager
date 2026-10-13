@@ -1,0 +1,31 @@
+name: Set up Rust verification
+description: Restore the pinned Rust toolchain and shared compiled dependencies.
+inputs:
+  cache-key:
+    description: Compilation mode sharing the dependency cache
+    default: rust
+  save-cache:
+    description: Whether this job owns the shared cache write
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.14"
+    - name: Install the pinned Rust components
+      shell: pwsh
+      run: |
+        $match = Select-String -Path rust-toolchain.toml -Pattern '^channel\s*=\s*"([^"]+)"$'
+        if ($null -eq $match) { throw "rust-toolchain.toml does not declare a channel" }
+        $toolchain = $match.Matches[0].Groups[1].Value
+        rustup toolchain install $toolchain --profile minimal --component rustfmt,clippy
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - name: Restore compiled Rust dependencies
+      uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      with:
+        # Tests retain the former rust job's key; Clippy and native builds keep
+        # their distinct artifacts instead of racing an immutable partial cache.
+        shared-key: ${{ inputs.cache-key }}
+        save-if: ${{ github.ref == 'refs/heads/master' && inputs.save-cache == 'true' }}
+        cache-bin: false

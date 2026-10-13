@@ -8,14 +8,13 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts.verify_project import (DESKTOP, ROOT, QUICK_BROWSER_FILES, Runner, browser_repository_files,
-                                    frontend_selection, frontend_tests, full_scopes, main, needs_full,
-                                    parse_browser_files, validate_frontend_output)
+from scripts.verify_project import Runner, main, rust_test_matrix, validate_frontend_output
+from scripts.verify_scope import (DESKTOP, ROOT, QUICK_BROWSER_FILES, browser_repository_files,
+                                  frontend_selection, frontend_tests, full_scopes, needs_full, parse_browser_files)
 
 
 class VerificationSelectionTests(unittest.TestCase):
     def test_daily_browser_selection_contains_critical_flows_and_related_features(self):
-        from scripts.verify_project import QUICK_BROWSER_FILES, frontend_selection
         selected = set(frontend_selection(["apps/desktop/src/views/system/SystemCoreDial.tsx"]))
         self.assertTrue(set(QUICK_BROWSER_FILES) <= selected)
         self.assertIn("apps/desktop/tests/system-resources-browser.test.cjs", selected)
@@ -44,7 +43,6 @@ class VerificationSelectionTests(unittest.TestCase):
                 self.assertEqual(frontend_selection([path]), browser_repository_files())
 
     def test_unknown_or_shared_frontend_changes_fall_back_to_every_browser(self):
-        from scripts.verify_project import frontend_selection
         complete = [f"apps/desktop/{Path(path).as_posix()}" for path in frontend_tests(True)]
         for path in ("apps/desktop/src/views/new-feature/Page.tsx", "apps/desktop/src/App.tsx",
                      "apps/desktop/src/api-transport.ts", "apps/desktop/src/app.css",
@@ -56,7 +54,6 @@ class VerificationSelectionTests(unittest.TestCase):
                 self.assertEqual(frontend_selection([path]), complete)
 
     def test_browser_test_and_private_fixture_select_the_same_feature(self):
-        from scripts.verify_project import QUICK_BROWSER_FILES, frontend_selection
         expected = frontend_selection(["apps/desktop/tests/app-update-browser.test.cjs"])
         for suffix in ("html", "tsx"):
             self.assertEqual(frontend_selection([f"apps/desktop/tests/helpers/app-update-browser.{suffix}"]), expected)
@@ -65,7 +62,6 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertNotIn("apps/desktop/tests/asa-mod-controls-browser.test.cjs", expected)
 
     def test_non_browser_changes_do_not_create_a_browser_run(self):
-        from scripts.verify_project import frontend_selection
         self.assertEqual(frontend_selection(["README.md", "apps/desktop/tests/runtime-browser-process.test.cjs"]), [])
 
     def test_risky_boundaries_run_full_before_release(self):
@@ -105,7 +101,7 @@ class VerificationSelectionTests(unittest.TestCase):
     def test_rust_internal_changes_only_select_the_relevant_boundary(self):
         for crate in ("app-knowledge", "app-modules"):
             with self.subTest(crate=crate):
-                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, False, False))
+                self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, False))
         for crate in ("app-network", "app-steamcmd", "app-new-component"):
             with self.subTest(crate=crate):
                 self.assertEqual(full_scopes([f"crates/{crate}/src/lib.rs"]), (False, True, False))
@@ -153,9 +149,44 @@ class VerificationSelectionTests(unittest.TestCase):
             output = Path(directory) / "output"
             self.assertEqual(main(["--component", "scope", "--event", "workflow_dispatch", "--tier", "quick",
                                    "--github-output", str(output)]), 0)
-            self.assertEqual(output.read_text().splitlines(),
+            self.assertEqual(output.read_text().splitlines()[:7],
                              ["full=false", "frontend_full=false", "rust_full=false", "native_full=false",
-                              "frontend_changed=false", "frontend_files=[]"])
+                              "frontend_changed=false", "frontend_files=[]", "rust_packages=[]"])
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values["policy_full"], "false")
+            self.assertEqual(json.loads(values["rust_matrix"]), rust_test_matrix([]))
+
+    def test_rust_matrix_preserves_baseline_and_isolates_all_selected_packages(self):
+        quick = rust_test_matrix([])["include"]
+        self.assertEqual([row["group"] for row in quick], ["core", "storage"])
+        self.assertEqual(sum(row["cache_writer"] for row in quick), 0)
+        full = rust_test_matrix(["app-core", "app-storage", "app-runtime", "langame-desktop"])["include"]
+        self.assertEqual([row["group"] for row in full[:3]], ["core", "storage", "services"])
+        self.assertEqual([row["shard"] for row in full[3:]], [1, 2, 3, 4])
+        self.assertTrue(all(row["count"] == 4 for row in full[3:]))
+        self.assertEqual([row["group"] for row in full if row["cache_writer"]], ["desktop"])
+
+    def test_full_behavior_scope_does_not_force_publication_history(self):
+        changed = "apps/desktop/src-tauri/src/commands.rs"
+        with tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()), \
+                patch("scripts.verify_project.changed_paths", return_value=[changed]):
+            output = Path(directory) / "scope"
+            self.assertEqual(main(["--component", "scope", "--base", "base", "--github-output", str(output)]), 0)
+            values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+            self.assertEqual(values["rust_full"], "true")
+            self.assertEqual(values["native_full"], "true")
+            self.assertEqual(values["policy_full"], "false")
+
+    def test_rust_group_forwards_selection_and_shard_to_shared_runner(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(Runner, "python") as python:
+            self.assertEqual(main(["--component", "rust-tests", "--rust-group", "desktop",
+                                   "--rust-packages-json", '["langame-desktop"]',
+                                   "--shard-index", "2", "--shard-count", "4", "--output", directory]), 0)
+            arguments = python.call_args.args
+            self.assertEqual(arguments[arguments.index("--group") + 1], "desktop")
+            self.assertEqual(arguments[arguments.index("--shard-index") + 1], "2")
+            self.assertEqual(arguments[arguments.index("--shard-count") + 1], "4")
+            self.assertEqual(json.loads(arguments[arguments.index("--rust-packages-json") + 1]), ["langame-desktop"])
 
     def test_explicit_full_and_schedule_select_every_slow_layer(self):
         for arguments in (["--tier", "full"], ["--event", "schedule"]):
