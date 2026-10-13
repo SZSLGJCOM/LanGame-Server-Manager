@@ -174,7 +174,7 @@ async function run() {
   checks++;
 
   await click(fixture.querySelector('[role="tab"][id$="-maintenance"]'));
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 100)); });
+  await settleUntil(() => !!fixture.querySelector(".server-file-backup-row"), "Maintenance must show backup rows");
   const row = fixture.querySelector<HTMLElement>(".server-file-backup-row")!;
   check(row, "Maintenance must show backup rows");
   row.scrollIntoView({ block: "center" });

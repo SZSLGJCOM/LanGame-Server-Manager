@@ -125,6 +125,7 @@ async function run() {
     await act(async () => { render(); });
     await settleUntil(() => !!fixture.querySelector('[role="tab"][id$="-maintenance"]'), "server navigation");
     await click(select<HTMLButtonElement>('[role="tab"][id$="-maintenance"]'));
+    await settleUntil(() => !!fixture.querySelector(".maintenance-workspace:not([hidden])"), "maintenance workspace");
     await click(button("ARK 集群"));
     check(!select<HTMLElement>('[data-maintenance-section="cluster"]').hidden, "Cluster maintenance category did not open");
   }
