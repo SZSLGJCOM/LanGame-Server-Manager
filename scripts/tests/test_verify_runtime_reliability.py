@@ -619,12 +619,14 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
             commands = [call.args[0].command for call in capture.call_args_list]
             if wrapper is None:
                 self.assertEqual(commands[0], ("metadata", "--no-deps", "--all-features", "--locked", "--format-version", "1"))
-                self.assertFalse(any("--no-run" in command for command in commands))
+                self.assertEqual(commands[1], ("test", "-p", "langame-desktop", "--all-features", "--locked",
+                                               "--bin", "install_catalog", "--bin", "langame-desktop", "--no-run"))
                 command, _ = command_for(capture.call_args_list[0].args[0], None, None)
                 self.assertEqual(command, ["cargo", *commands[0]])
             else:
                 self.assertTrue(all(command[0] == "test" for command in commands))
                 self.assertIn("--no-run", commands[0])
+            self.assertEqual(sum("--no-run" in command for command in commands), 1)
 
     def test_prepare_shards_omit_ignored_tests_and_own_doctests_once(self):
         args = argparse.Namespace(cycles=4, cargo_wrapper=None, node_wrapper=None, frontend_dist=None,
@@ -664,16 +666,19 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
 
     def test_failed_build_stops_before_enumeration_and_tests_and_keeps_evidence(self):
         failed = ("compilation failed", {"status": "failed", "exit_code": 101, "log": "desktop-build.log"})
+        def capture_result(stage, *args):
+            return failed if stage.name == "desktop-build" else self.fake_capture(stage, *args)
+
         with tempfile.TemporaryDirectory() as temporary, \
              patch.object(reliability, "windows_runtime_supported", return_value=True), \
-             patch.object(reliability, "capture_stage", return_value=failed) as capture, \
+             patch.object(reliability, "capture_stage", side_effect=capture_result) as capture, \
              patch.object(reliability, "run_stage") as run:
             output = Path(temporary) / "report"
             code = main(["--full-workspace", "--rust-only", "--group", "desktop", "--output", str(output)])
             report = json.loads((output / "report.json").read_text(encoding="utf-8"))
         self.assertEqual(code, 1)
-        self.assertEqual(report["stages"], [failed[1]])
-        capture.assert_called_once()
+        self.assertEqual(report["stages"][-1], failed[1])
+        self.assertEqual([call.args[0].name for call in capture.call_args_list], ["desktop-metadata", "desktop-build"])
         run.assert_not_called()
 
     def test_failed_desktop_batch_stops_subsequent_batches_and_doctests(self):
@@ -713,7 +718,8 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
             code = main(["--full-workspace", "--rust-only", "--group", "desktop", "--output", str(output)])
             report = json.loads((output / "report.json").read_text(encoding="utf-8"))
         self.assertEqual(code, 1)
-        self.assertEqual(calls.call_count, 2)
+        self.assertEqual([call.args[0].name for call in calls.call_args_list],
+                         ["desktop-metadata", "desktop-build", "desktop-list-1"])
         self.assertEqual(report["stages"][-1]["exit_code"], 101)
         run.assert_not_called()
 
