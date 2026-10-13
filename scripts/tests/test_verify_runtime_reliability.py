@@ -398,6 +398,40 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
         return "\n".join(["[OPC] Source snapshot captured: fixture input abc123", *artifacts,
                           '{"reason":"build-finished","success":true}', "[OPC] Completed"])
 
+    def metadata(self):
+        package = {"name": "langame-desktop", "id": "path+file:///desktop#langame-desktop@0.1.0",
+                   "features": {"default": [], "desktop-reliability": []}, "targets": [
+                       {"name": "langame-desktop", "kind": ["bin"], "test": True, "doctest": False},
+                       {"name": "install_catalog", "kind": ["bin"], "test": True, "doctest": False},
+                       {"name": "desktop_lib", "kind": ["lib"], "test": False, "doctest": True}]}
+        return {"version": 1, "packages": [package], "workspace_members": [package["id"]]}
+
+    def test_metadata_selects_enabled_workspace_targets_and_retains_library_doctests(self):
+        metadata = self.metadata()
+        package = metadata["packages"][0]
+        package["targets"].extend([
+            {"name": "integration", "kind": ["test"], "test": True, "doctest": False,
+             "required-features": ["desktop-reliability"]},
+            {"name": "tested_example", "kind": ["example"], "test": True, "doctest": False},
+            {"name": "disabled_example", "kind": ["example"], "test": False, "doctest": False},
+            {"name": "unavailable", "kind": ["bin"], "test": True, "doctest": False,
+             "required-features": ["not-defined"]},
+        ])
+        targets, doctests = reliability.desktop_metadata_targets("warning: fixture\n" + json.dumps(metadata))
+        self.assertEqual(targets, [("--bin", "install_catalog"), ("--bin", "langame-desktop"),
+                                   ("--example", "tested_example"), ("--test", "integration")])
+        self.assertTrue(doctests)
+
+    def test_metadata_rejects_missing_or_nonworkspace_desktop_and_unsupported_test_targets(self):
+        missing = self.metadata()
+        missing["workspace_members"] = []
+        unsupported = self.metadata()
+        unsupported["packages"][0]["targets"][0]["kind"] = ["bench"]
+        for output in ("", json.dumps(missing), json.dumps(unsupported),
+                       json.dumps(self.metadata()) + "\n" + json.dumps(self.metadata())):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                reliability.desktop_metadata_targets(output)
+
     def test_groups_partition_full_packages_and_retain_quick_baseline(self):
         selected = ["app-runtime", "langame-desktop"]
         core = reliability.grouped_stages("core", selected)[0]
@@ -560,7 +594,9 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
         self.assertEqual(inspect_result(Stage("batch", (), ROOT, ()), empty, 0)["status"], "failed")
 
     def fake_capture(self, stage, *_args):
-        if stage.name == "desktop-build":
+        if stage.name == "desktop-metadata":
+            output = json.dumps(self.metadata())
+        elif stage.name == "desktop-build":
             output = self.build_output(self.artifact(), self.artifact("install_catalog"),
                                        self.artifact("desktop_lib", "lib", test=False, doctest=True))
         elif stage.name.endswith("-1"):
@@ -569,6 +605,26 @@ class RuntimeReliabilityShardingTests(unittest.TestCase):
             output = ("fixture::ignored: test\n1 test, 0 benchmarks\n" if "ignored" in stage.name else
                       "fixture::first: test\nfixture::second: test\nfixture::ignored: test\n3 tests, 0 benchmarks\n")
         return output, {"name": stage.name, "status": "passed", "exit_code": 0, "log": f"{stage.name}.log"}
+
+    def test_portable_discovery_uses_metadata_and_managed_discovery_keeps_supported_test_command(self):
+        baseline = list(stages())
+        baseline[2] = Stage("desktop", (), ROOT, ("fixture::first", "fixture::second"))
+        for wrapper in (None, Path("managed.ps1")):
+            args = argparse.Namespace(cycles=4, cargo_wrapper=wrapper, node_wrapper=None, frontend_dist=None,
+                                      shard_index=1, shard_count=4)
+            with self.subTest(wrapper=wrapper), tempfile.TemporaryDirectory() as temporary, \
+                 patch.object(reliability, "capture_stage", side_effect=self.fake_capture) as capture, \
+                 patch.object(reliability, "stages", return_value=tuple(baseline)):
+                reliability.prepare_desktop(args, None, Path(temporary), {"stages": []})
+            commands = [call.args[0].command for call in capture.call_args_list]
+            if wrapper is None:
+                self.assertEqual(commands[0], ("metadata", "--no-deps", "--all-features", "--locked", "--format-version", "1"))
+                self.assertFalse(any("--no-run" in command for command in commands))
+                command, _ = command_for(capture.call_args_list[0].args[0], None, None)
+                self.assertEqual(command, ["cargo", *commands[0]])
+            else:
+                self.assertTrue(all(command[0] == "test" for command in commands))
+                self.assertIn("--no-run", commands[0])
 
     def test_prepare_shards_omit_ignored_tests_and_own_doctests_once(self):
         args = argparse.Namespace(cycles=4, cargo_wrapper=None, node_wrapper=None, frontend_dist=None,

@@ -129,6 +129,40 @@ def grouped_stages(group: str, packages: list[str] | None) -> tuple[Stage, ...]:
                   process_evidence.required if runtime else (), metrics_required=runtime),)
 
 
+def desktop_target_selector(target: dict) -> tuple[str, ...]:
+    kind = target["kind"]
+    selector = {"lib": ("--lib",), "bin": ("--bin", target["name"]),
+                "test": ("--test", target["name"]), "example": ("--example", target["name"])}
+    if len(kind) != 1 or kind[0] not in selector:
+        raise ValueError(f"Unsupported desktop test target: {target['name']} ({kind})")
+    return selector[kind[0]]
+
+
+def desktop_metadata_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
+    messages = [json.loads(line) for line in output.splitlines() if line.startswith("{")]
+    metadata = [message for message in messages if "packages" in message and "workspace_members" in message]
+    if len(metadata) != 1:
+        raise ValueError("Cargo did not report one workspace metadata document")
+    packages = [package for package in metadata[0]["packages"] if package["name"] == "langame-desktop"
+                and package["id"] in metadata[0]["workspace_members"]]
+    if len(packages) != 1:
+        raise ValueError("Cargo metadata does not identify the desktop workspace package")
+    package = packages[0]
+    targets, doctests = set(), False
+    for target in package["targets"]:
+        # --all-features enables every declared feature, but Cargo still skips
+        # targets requiring a feature that the package does not provide.
+        if not set(target.get("required-features", [])) <= set(package["features"]):
+            continue
+        if "lib" in target["kind"] and target["doctest"]:
+            doctests = True
+        if target["test"]:
+            targets.add(desktop_target_selector(target))
+    if not targets:
+        raise ValueError("Cargo metadata has no enabled desktop test targets")
+    return sorted(targets), doctests
+
+
 def desktop_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
     """Cargo JSON is interleaved with build diagnostics and managed-wrapper logs."""
     targets = set()
@@ -149,11 +183,7 @@ def desktop_targets(output: str) -> tuple[list[tuple[str, ...]], bool]:
             doctests = True
         if not message.get("profile", {}).get("test") or not message.get("executable"):
             continue
-        selector = {"lib": ("--lib",), "bin": ("--bin", target["name"]),
-                    "test": ("--test", target["name"]), "example": ("--example", target["name"])}
-        if len(kind) != 1 or kind[0] not in selector:
-            raise ValueError(f"Unsupported desktop test target: {target['name']} ({kind})")
-        targets.add(selector[kind[0]])
+        targets.add(desktop_target_selector(target))
     if not finished or not targets:
         raise ValueError("Cargo did not report a successful desktop test build with executable targets")
     return sorted(targets), doctests
@@ -229,7 +259,13 @@ def prepare_desktop(args, packages: list[str] | None, output: Path, report: dict
         return text
 
     prefix = ("test", "-p", "langame-desktop", "--all-features", "--locked")
-    targets, doctests = desktop_targets(capture("desktop-build", (*prefix, "--no-run", "--message-format=json")))
+    if args.cargo_wrapper is None:
+        targets, doctests = desktop_metadata_targets(capture("desktop-metadata", (
+            "metadata", "--no-deps", "--all-features", "--locked", "--format-version", "1")))
+    else:
+        # The managed workstation wrapper admits Cargo test, but not metadata.
+        # Keep its supported discovery path; CI avoids the redundant prebuild.
+        targets, doctests = desktop_targets(capture("desktop-build", (*prefix, "--no-run", "--message-format=json")))
     inventory, ignored = {}, {}
     for number, target in enumerate(targets, 1):
         # Pretty listing adds a count footer, including for truly empty targets.
@@ -580,7 +616,8 @@ def main(argv: list[str] | None = None) -> int:
         planned = (grouped_stages(args.group, packages) if args.group else
                    stages(args.full_workspace, not args.rust_only, packages))
         if args.group == "desktop" and (packages is None or "langame-desktop" in packages):
-            print("desktop-build: cargo test -p langame-desktop --all-features --locked --no-run --message-format=json")
+            print("desktop-build: cargo test -p langame-desktop --all-features --locked --no-run --message-format=json"
+                  if args.cargo_wrapper else "desktop-metadata: cargo metadata --no-deps --all-features --locked --format-version 1")
             print(f"desktop: enumerate targets; exact serial batches for shard {args.shard_index}/{args.shard_count}; "
                   "library doctests on shard 1")
         elif not planned:

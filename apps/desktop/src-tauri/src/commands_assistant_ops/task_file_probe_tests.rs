@@ -9,6 +9,39 @@ struct FileProbeFixture {
     unregistered: Option<app_runtime::SpawnedProcess>,
 }
 
+impl FileProbeFixture {
+    fn probe_diagnostics(&self) -> String {
+        use std::io::{Read, Seek, SeekFrom};
+
+        let tail = |name: &str| -> std::io::Result<String> {
+            let mut file = fs::File::open(self.root.join(name))?;
+            let start = file.metadata()?.len().saturating_sub(4096);
+            file.seek(SeekFrom::Start(start))?;
+            let mut bytes = Vec::new();
+            file.take(4096).read_to_end(&mut bytes)?;
+            Ok(String::from_utf8_lossy(&bytes).into_owned())
+        };
+        let state = self.app.state::<DesktopState>();
+        let running = match (
+            self.instance_id.as_deref(),
+            state.runtime_supervisor.try_lock(),
+        ) {
+            (Some(id), Ok(mut supervisor)) => {
+                format!("{:?}", supervisor.instance_process_tree_is_running(id))
+            }
+            (None, _) => String::from("instance not registered"),
+            (_, Err(error)) => format!("supervisor unavailable: {error}"),
+        };
+        format!(
+            "process_tree_running={running}; script_started={:?}; ready={:?}; release={:?}; master_log_tail={:?}",
+            tail("probe-started"),
+            tail("probe-ready"),
+            tail("probe-release"),
+            tail("master.log"),
+        )
+    }
+}
+
 impl Drop for FileProbeFixture {
     fn drop(&mut self) {
         let mut errors = Vec::new();
@@ -170,6 +203,7 @@ async fn exercise_file_probe(fixture: &mut FileProbeFixture, storage: &mut Stora
     fs::write(
         &script,
         r#"
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'probe-started'), [string]$PID)
 while ($null -ne ($line = [Console]::In.ReadLine())) {
     if ($line -eq '[LGSM-MOD-PROBE-EXIT]') { exit 0 }
     if ($line -notmatch "local nonce='([a-f0-9]{32})'") { exit 70 }
@@ -285,7 +319,8 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
         evidence: Value::Null,
         can_continue: false,
     };
-    for change_during_probe in [false, true] {
+    for (round, change_during_probe) in [false, true].into_iter().enumerate() {
+        let round = round + 1;
         let ready = fixture.root.join("probe-ready");
         let release = fixture.root.join("probe-release");
         for gate in [&ready, &release] {
@@ -302,21 +337,34 @@ while ($null -ne ($line = [Console]::In.ReadLine())) {
             None,
             Some(&verification),
         );
-        let mutate_and_release = async {
-            tokio::time::timeout(Duration::from_secs(10), async {
-                while !ready.exists() {
-                    tokio::time::sleep(Duration::from_millis(10)).await;
-                }
-            })
-            .await
-            .expect("native probe must reach its reply gate");
-            assert_eq!(fs::read_to_string(&path).unwrap(), "return 2\n");
-            if change_during_probe {
-                fs::write(&path, "return 3\n").unwrap();
+        tokio::pin!(assessment);
+        let gate = tokio::time::timeout(Duration::from_secs(10), async {
+            while !ready.exists() {
+                tokio::time::sleep(Duration::from_millis(10)).await;
             }
-            fs::write(&release, "release").unwrap();
-        };
-        let (receipt, ()) = tokio::join!(assessment, mutate_and_release);
+        });
+        tokio::select! {
+            biased;
+            receipt = &mut assessment => {
+                panic!(
+                    "native probe assessment completed before release in round {round} (change_during_probe={change_during_probe}): {receipt:?}; {}",
+                    fixture.probe_diagnostics(),
+                );
+            }
+            result = gate => {
+                assert!(
+                    result.is_ok(),
+                    "native probe must reach its reply gate within 10s in round {round} (change_during_probe={change_during_probe}); {}",
+                    fixture.probe_diagnostics(),
+                );
+            }
+        }
+        assert_eq!(fs::read_to_string(&path).unwrap(), "return 2\n");
+        if change_during_probe {
+            fs::write(&path, "return 3\n").unwrap();
+        }
+        fs::write(&release, "release").unwrap();
+        let receipt = assessment.await;
         let check = |name| {
             receipt
                 .checks
