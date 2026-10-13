@@ -128,24 +128,58 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   // This shape is checked against the locked Vite 8.3.4 implementation. Its
   // public idle promise is one-shot, so it cannot certify subsequent warmups.
   assert.ok(client._pendingRequests instanceof Map, "Vite request ownership changed");
+  const entryUrls = [];
   for (const [, src] of scripts) {
     const entry = new URL(src.replaceAll("&amp;", "&"), `http://fixture.local${entryUrl}`);
     assert.equal(entry.origin, "http://fixture.local", "Fixture entry scripts must remain local");
-    const result = await client.transformRequest(entry.pathname + entry.search);
+    const url = entry.pathname + entry.search;
+    entryUrls.push(url);
+    const result = await client.transformRequest(url);
     assert.ok(result && typeof result.code === "string", "Fixture entry did not transform");
   }
-  for (;;) {
+  async function drainTransforms() {
+    for (;;) {
+      if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
+      const requests = [...client._pendingRequests.values()].map(({ request }) => request);
+      const optimizer = client.depsOptimizer;
+      const processing = optimizer?.metadata.depInfoList.flatMap((dependency) => dependency.processing ? [dependency.processing] : []) ?? [];
+      if (requests.length === 0 && !optimizer?.scanProcessing && processing.length === 0) break;
+      await Promise.all([...requests, ...processing, ...(optimizer?.scanProcessing ? [optimizer.scanProcessing] : [])]);
+      // Vite commits optimizer metadata on its own event-loop turn. Yield work,
+      // not a fixed delay, and recheck newly discovered transforms and bundles.
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
-    const requests = [...client._pendingRequests.values()].map(({ request }) => request);
-    const optimizer = client.depsOptimizer;
-    const processing = optimizer?.metadata.depInfoList.flatMap((dependency) => dependency.processing ? [dependency.processing] : []) ?? [];
-    if (requests.length === 0 && !optimizer?.scanProcessing && processing.length === 0) break;
-    await Promise.all([...requests, ...processing, ...(optimizer?.scanProcessing ? [optimizer.scanProcessing] : [])]);
-    // Vite commits optimizer metadata on its own event-loop turn. Yield work,
-    // not a fixed delay, and recheck newly discovered transforms and bundles.
-    await new Promise((resolve) => setImmediate(resolve));
   }
-  if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
+  await drainTransforms();
+  const modules = [];
+  const visited = new Set();
+  function enqueue(module) {
+    // CSS watch-only files have no transformable module identity in Vite.
+    if (module.type === "asset" || visited.has(module)) return;
+    visited.add(module);
+    modules.push(module);
+  }
+  for (const url of entryUrls) {
+    const module = await client.moduleGraph.getModuleByUrl(url);
+    assert.ok(module, `Fixture entry is missing from the module graph: ${url}`);
+    enqueue(module);
+  }
+  // Vite preTransformRequests follows static imports only. Its graph also
+  // records lazy imports; prepare those without executing browser modules.
+  for (let index = 0; index < modules.length;) {
+    const wave = modules.slice(index, index + 4);
+    index += wave.length;
+    const dependencies = await Promise.all(wave.map(async (module) => {
+      if (!module.transformResult) {
+        const result = await client.transformRequest(module.url);
+        assert.ok(result && typeof result.code === "string", `Fixture module did not transform: ${module.url}`);
+      }
+      return module.importedModules;
+    }));
+    for (const imports of dependencies) for (const module of imports) enqueue(module);
+  }
+  await drainTransforms();
 }
 
 async function browserExecutable() {
@@ -166,11 +200,17 @@ async function browserExecutable() {
 }
 
 async function browserCommand(endpoint, method, params = {}) {
+  const startedAt = performance.now();
+  const progress = { socket_open_ms: null, command_sent_ms: null };
   const socket = new WebSocket(endpoint);
   try {
     return await deadline(new Promise((resolve, reject) => {
       socket.addEventListener("error", () => reject(new Error(`${method} connection failed`)));
-      socket.addEventListener("open", () => socket.send(JSON.stringify({ id: 1, method, params })), { once: true });
+      socket.addEventListener("open", () => {
+        progress.socket_open_ms = Math.round(performance.now() - startedAt);
+        socket.send(JSON.stringify({ id: 1, method, params }));
+        progress.command_sent_ms = Math.round(performance.now() - startedAt);
+      }, { once: true });
       socket.addEventListener("message", ({ data }) => {
         const message = JSON.parse(data);
         if (message.id !== 1) return;
@@ -178,8 +218,32 @@ async function browserCommand(endpoint, method, params = {}) {
         else resolve(message.result);
       });
     }), 3000, method);
+  } catch (error) {
+    error.message += `; CDP progress: ${JSON.stringify(progress)}`;
+    throw error;
   } finally {
     socket.close();
+  }
+}
+
+function browserLogEnvironment(scratch) {
+  return { ...process.env, CHROME_LOG_FILE: path.join(scratch, "chrome_debug.log") };
+}
+
+async function readBrowserLog(scratch) {
+  try {
+    const handle = await fs.open(path.join(scratch, "chrome_debug.log"), "r");
+    try {
+      const info = await handle.stat();
+      if (!info.isFile()) return { state: "not-file" };
+      const bytes = Buffer.alloc(Math.min(info.size, outputLimit));
+      const { bytesRead } = await handle.read(bytes, 0, bytes.length, Math.max(0, info.size - bytes.length));
+      return { state: "read", truncated: info.size > outputLimit, tail: bytes.toString("utf8", 0, bytesRead) };
+    } finally {
+      await handle.close();
+    }
+  } catch (error) {
+    return { state: error.code === "ENOENT" ? "missing" : "read-error", code: error.code ?? "UNKNOWN" };
   }
 }
 
@@ -411,6 +475,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     }
   }
   let stderr = "";
+  let browserLog;
   let report;
   let failure;
   let processIds = [];
@@ -595,8 +660,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       "--headless", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1",
       ...(windowSize ? [`--window-size=${windowSize.width},${windowSize.height}`, "--force-device-scale-factor=1"] : []),
       `--user-data-dir=${path.join(scratch, "profile")}`, "--no-first-run", "--no-default-browser-check",
-      "--disable-background-networking", viewport ? "about:blank" : url,
-    ], { windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", "ignore", "pipe"] });
+      "--disable-background-networking", "--enable-logging", "--v=1", viewport ? "about:blank" : url,
+    ], { windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", "ignore", "pipe"],
+      env: browserLogEnvironment(scratch) });
     exited = new Promise((resolve) => {
       child.once("error", (error) => {
         startup.exit = { error: String(error), elapsed_ms: Math.round(performance.now() - browserStartedAt) };
@@ -754,9 +820,15 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     if (server) {
       try { await deadline(server.close(), 5000, "Fixture server shutdown"); } catch (error) { cleanupErrors.push(error); }
     }
+    // Read diagnostics before deleting an exited browser's profile. File errors
+    // are observations only and must not replace the original test failure.
+    if (failure || cleanupErrors.length || !treeExited) browserLog = await readBrowserLog(scratch);
     // Retain the profile if an owned process did not exit; never delete a live profile.
     if (treeExited) {
-      try { await removeScratch(scratch); } catch (error) { cleanupErrors.push(error); }
+      try { await removeScratch(scratch); } catch (error) {
+        cleanupErrors.push(error);
+        browserLog ??= await readBrowserLog(scratch);
+      }
     } else {
       retainedScratch = scratch;
       cleanupErrors.push(new Error(`Owned browser process-tree exit is unverified; retained fixture scratch: ${scratch}`));
@@ -767,7 +839,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   clearTimeout(watchdog);
   if (failure || cleanupErrors.length) {
     throw Object.assign(new AggregateError([failure, ...cleanupErrors].filter(Boolean),
-      `Browser reliability failed: ${[failure, ...cleanupErrors].filter(Boolean).map(String).join("; ")}\nBrowser startup: ${JSON.stringify(startup)}\n${stderr}`),
+      `Browser reliability failed: ${[failure, ...cleanupErrors].filter(Boolean).map(String).join("; ")}\nBrowser startup: ${JSON.stringify(startup)}\nBrowser log: ${JSON.stringify(browserLog)}\n${stderr}`),
     { retainedScratch, browserPid: child?.pid, browserExecutable: path.basename(executable), browserStartup: startup,
       browserTerminationDiagnostic: terminationError ? String(terminationError) : null,
       browserExited: !child?.pid || child.exitCode !== null || child.signalCode !== null });
@@ -778,4 +850,4 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
   browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer,
-  fixtureCacheDirectory, removeFixtureCache };
+  fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog };

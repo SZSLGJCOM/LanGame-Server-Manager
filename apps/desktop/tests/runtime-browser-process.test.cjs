@@ -6,7 +6,93 @@ const os = require("node:os");
 const path = require("node:path");
 const { setImmediate: nextTurn } = require("node:timers/promises");
 const { hostResourceUsage, runBrowserFixture, browserTimeBudgets, waitForBrowserEndpoint,
-  fixtureCacheDirectory, removeFixtureCache } = require("./helpers/runtime-browser-process.cjs");
+  fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment,
+  readBrowserLog } = require("./helpers/runtime-browser-process.cjs");
+
+test("browser diagnostics stay in the child-owned directory and retain only the log tail", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-diagnostics-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const scratch = path.join(root, "owned");
+  await fs.mkdir(scratch);
+  const inheritedLog = path.join(root, "other-browser.log");
+  await fs.writeFile(inheritedLog, "unrelated");
+  const previous = process.env.CHROME_LOG_FILE;
+  process.env.CHROME_LOG_FILE = inheritedLog;
+  t.after(() => {
+    if (previous === undefined) delete process.env.CHROME_LOG_FILE;
+    else process.env.CHROME_LOG_FILE = previous;
+  });
+  const environment = browserLogEnvironment(scratch);
+  assert.equal(environment.CHROME_LOG_FILE, path.join(scratch, "chrome_debug.log"));
+  assert.equal(process.env.CHROME_LOG_FILE, inheritedLog, "Logging must not mutate the parent environment");
+  const tail = "x".repeat(64 * 1024 - 5) + "last\n";
+  await fs.writeFile(environment.CHROME_LOG_FILE, "discarded-prefix\n" + tail);
+  assert.deepEqual(await readBrowserLog(scratch), { state: "read", truncated: true, tail });
+  assert.equal(await fs.readFile(inheritedLog, "utf8"), "unrelated");
+});
+
+test("missing or unreadable browser diagnostics remain observations, not replacement failures", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-diagnostics-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  assert.deepEqual(await readBrowserLog(root), { state: "missing", code: "ENOENT" });
+  t.mock.method(fs, "open", async (file) => {
+    assert.equal(file, path.join(root, "chrome_debug.log"));
+    throw Object.assign(new Error("Unavailable log"), { code: "EACCES" });
+  });
+  assert.deepEqual(await readBrowserLog(root), { state: "read-error", code: "EACCES" });
+});
+
+test("CDP timeout diagnostics distinguish an unopened socket from an unanswered command", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let clock = 0;
+  t.mock.method(performance, "now", () => clock);
+  for (const opened of [false, true]) {
+    let socket;
+    let closed = false;
+    let sends = 0;
+    t.mock.method(globalThis, "WebSocket", function () {
+      socket = new EventTarget();
+      socket.send = () => { sends += 1; };
+      socket.close = () => { closed = true; };
+      return socket;
+    });
+    const pending = browserCommand("ws://controlled.invalid", "Target.createTarget", { url: "about:blank" });
+    const rejected = assert.rejects(pending, (error) => {
+      assert.match(error.message, /^Target\.createTarget exceeded 3000 ms; CDP progress:/);
+      assert.deepEqual(JSON.parse(error.message.split("CDP progress: ")[1]),
+        { socket_open_ms: opened ? 7 : null, command_sent_ms: opened ? 7 : null });
+      return true;
+    });
+    clock += 7;
+    if (opened) socket.dispatchEvent(new Event("open"));
+    t.mock.timers.tick(2999);
+    await nextTurn();
+    assert.equal(closed, false, "Diagnostics must not change the three-second limit");
+    t.mock.timers.tick(1);
+    await rejected;
+    assert.equal(closed, true);
+    assert.equal(sends, Number(opened));
+  }
+});
+
+test("successful CDP commands keep their result and release their socket", async (t) => {
+  let socket;
+  let closed = false;
+  const result = { targetId: "owned-target" };
+  t.mock.method(globalThis, "WebSocket", function () {
+    socket = new EventTarget();
+    socket.send = (text) => {
+      assert.deepEqual(JSON.parse(text), { id: 1, method: "Target.createTarget", params: { url: "about:blank" } });
+      socket.dispatchEvent(new MessageEvent("message", { data: JSON.stringify({ id: 1, result }) }));
+    };
+    socket.close = () => { closed = true; };
+    return socket;
+  });
+  const pending = browserCommand("ws://controlled.invalid", "Target.createTarget", { url: "about:blank" });
+  socket.dispatchEvent(new Event("open"));
+  assert.deepEqual(await pending, result);
+  assert.equal(closed, true);
+});
 
 test("the worker reuses only the same fixture's compiled dependency cache", async (t) => {
   t.after(removeFixtureCache);
