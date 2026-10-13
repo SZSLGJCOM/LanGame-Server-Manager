@@ -14,7 +14,7 @@ pub async fn read_instance_isolation(
 ) -> Result<InstanceIsolationReport, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("instance isolation inspection")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

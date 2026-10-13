@@ -313,7 +313,9 @@ async fn modrinth_provider_stages_real_file_into_minecraft_instance_smoke()
             .iter()
             .any(|item| item.target_path.ends_with(".jar"))
     );
-    let inventory = command_result(read_manual_mod_inventory_inner(provisioning.summary.id).await)?;
+    let inventory = command_result(
+        read_manual_mod_inventory(app.state::<DesktopState>(), provisioning.summary.id).await,
+    )?;
     assert_eq!(inventory.module_id, "minecraft");
     assert_eq!(inventory.items.len(), 1);
     assert!(inventory.items[0].name.ends_with(".jar"));
@@ -375,7 +377,9 @@ async fn install_manual_mod_references_command_rejects_unverified_minecraft_runt
     let error: Value = serde_json::from_str(&error.to_string())?;
     assert_eq!(error["code"], "mod_runtime_unverified");
     assert_eq!(error["reason"], "minecraft_loader");
-    let inventory = command_result(read_manual_mod_inventory_inner(provisioning.summary.id).await)?;
+    let inventory = command_result(
+        read_manual_mod_inventory(app.state::<DesktopState>(), provisioning.summary.id).await,
+    )?;
     assert!(inventory.items.is_empty());
     Ok(())
 }

@@ -209,7 +209,7 @@ pub(super) async fn uninstall_module_game_transaction(
     state: tauri::State<'_, DesktopState>,
     module_id: String,
 ) -> Result<app_core::ModuleUninstallResult, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -231,9 +231,10 @@ pub(super) async fn uninstall_module_game_transaction(
         .collect::<Vec<_>>();
     let default = build_game_install_sync_record(&storage.settings, descriptor, false, None);
     roots.push(PathBuf::from(&default.install_root));
-    let lifecycle_guard = app_steamcmd::acquire_game_install_lifecycle(&module_id, &roots)
-        .await
-        .map_err(|error| steamcmd_error_message(&error))?;
+    let lifecycle_guard =
+        app_steamcmd::acquire_game_install_lifecycle(&state.install_locks, &module_id, &roots)
+            .await
+            .map_err(|error| steamcmd_error_message(&error))?;
     let running = running_instance_labels_for_module(&storage.paths, &module_id).await?;
     ensure_module_unused_for_uninstall(&descriptor.summary, &running)?;
     // Discover the canonical library too, including an installation that has

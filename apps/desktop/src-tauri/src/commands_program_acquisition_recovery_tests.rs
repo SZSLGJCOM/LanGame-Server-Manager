@@ -59,6 +59,7 @@ async fn completed_instance_acquisition_recovers_through_a_retained_library_with
         let target = &fixture.repair;
         let created = {
             let guard = app_steamcmd::acquire_game_install_lifecycle(
+                &fixture.state.install_locks,
                 &fixture.descriptor.summary.id,
                 &[
                     fixture.original.clone(),
@@ -166,6 +167,7 @@ async fn missing_instance_acquisition_rebuilds_into_shared_library_instead_of_re
     let calls = std::sync::atomic::AtomicUsize::new(0);
     let created = {
         let guard = app_steamcmd::acquire_game_install_lifecycle(
+            &fixture.state.install_locks,
             &fixture.descriptor.summary.id,
             &[
                 fixture.original.clone(),

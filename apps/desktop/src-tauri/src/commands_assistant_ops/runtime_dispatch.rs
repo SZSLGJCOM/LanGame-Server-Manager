@@ -641,7 +641,7 @@ async fn send_instance_runtime_command_inner(
         runtime_action_target,
         runtime_action_role,
     } = input;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

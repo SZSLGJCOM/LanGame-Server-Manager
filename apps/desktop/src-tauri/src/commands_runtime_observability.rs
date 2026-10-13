@@ -29,12 +29,10 @@ pub(super) struct ModuleRuntimeCapabilities {
     pub(super) performance: RuntimePerformancePolicy,
 }
 
-async fn collect_instance_process_memory() -> InstanceProcessMemorySnapshot {
-    let storage = match bootstrap_storage() {
-        Ok(storage) => storage,
-        Err(_) => return InstanceProcessMemorySnapshot::default(),
-    };
-    let active_runs = match list_active_instance_runs(&storage.paths).await {
+async fn collect_instance_process_memory(
+    paths: &app_storage::StoragePaths,
+) -> InstanceProcessMemorySnapshot {
+    let active_runs = match list_active_instance_runs(paths).await {
         Ok(active_runs) => active_runs,
         Err(_) => return InstanceProcessMemorySnapshot::default(),
     };
@@ -1321,27 +1319,26 @@ pub(super) async fn collect_system_snapshot(
 
     if start_refresh {
         let host_monitor = Arc::clone(&state.host_monitor);
-        let settings = latest.settings.clone();
         let instances = latest.instances.clone();
         let app = app.clone();
         let refresh = crate::state::spawn_timed_cache_refresh(
             Arc::clone(&state.system_snapshot_cache),
             "system snapshot",
             async move {
-                collect_system_snapshot_uncached(app, host_monitor, settings, instances)
+                let state = app.state::<DesktopState>();
+                let _operation =
+                    state.begin_storage_context_operation("system snapshot refresh")?;
+                let storage = state.bootstrap_storage()?;
+                collect_system_snapshot_uncached(&app, host_monitor, &storage, instances)
                     .await
                     .inspect_err(|error| {
-                        if let Ok(storage) = bootstrap_storage() {
-                            append_desktop_app_log(
-                                &storage,
-                                "warning",
-                                "system.snapshot.refresh_failed",
-                                "Failed to refresh system metrics",
-                                json!({ "error": error }),
-                            );
-                        } else {
-                            eprintln!("Failed to refresh system metrics: {error}");
-                        }
+                        append_desktop_app_log(
+                            &storage,
+                            "warning",
+                            "system.snapshot.refresh_failed",
+                            "Failed to refresh system metrics",
+                            json!({ "error": error }),
+                        );
                     })
             },
         );
@@ -1371,21 +1368,21 @@ pub(super) async fn collect_system_snapshot(
 }
 
 async fn collect_system_snapshot_uncached(
-    app: tauri::AppHandle,
+    app: &tauri::AppHandle,
     host_monitor: Arc<StdMutex<WindowsHostMonitor>>,
-    settings: AppSettings,
+    storage: &StorageBootstrap,
     instances: Vec<InstanceSummary>,
 ) -> Result<SystemSnapshot, String> {
-    let monitored_path = preferred_snapshot_path(&settings).to_string();
-    let storage_paths = system_storage_paths::monitored_storage_paths(&settings).await?;
+    let monitored_path = preferred_snapshot_path(&storage.settings).to_string();
+    let storage_paths = system_storage_paths::monitored_storage_paths(storage).await?;
     let host_snapshot_task = tauri::async_runtime::spawn_blocking(move || {
         host_monitor
             .lock()
             .map_err(|_| String::from("host monitor lock poisoned"))
             .map(|mut monitor| monitor.capture_paths(&monitored_path, &storage_paths))
     });
-    let instance_process_memory_task = collect_instance_process_memory();
-    let player_counts_task = collect_global_player_counts(&app, &instances);
+    let instance_process_memory_task = collect_instance_process_memory(&storage.paths);
+    let player_counts_task = collect_global_player_counts(app, &instances);
 
     let (host_snapshot, instance_process_memory, player_counts) = tokio::join!(
         host_snapshot_task,

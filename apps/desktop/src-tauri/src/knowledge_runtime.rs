@@ -71,21 +71,15 @@ pub(crate) struct KnowledgeCoordinator {
     wake: Notify,
 }
 
-impl Default for KnowledgeCoordinator {
-    fn default() -> Self {
-        #[cfg(not(test))]
-        let paths = app_storage::StoragePaths::resolve_default()
-            .map(|paths| (paths.app_data_root.join("knowledge"), paths.modules_root))
-            .map_err(|error| format!("Knowledge storage initialization failed: {error}"));
-        #[cfg(test)]
-        let paths = Err(String::from(
-            "Knowledge storage requires explicit test paths",
-        ));
-        Self::with_paths(paths)
-    }
-}
-
 impl KnowledgeCoordinator {
+    pub(crate) fn with_storage_paths(paths: Result<app_storage::StoragePaths, String>) -> Self {
+        Self::with_paths(
+            paths
+                .map(|paths| (paths.app_data_root.join("knowledge"), paths.modules_root))
+                .map_err(|error| format!("Knowledge storage initialization failed: {error}")),
+        )
+    }
+
     #[cfg(test)]
     fn new(root: PathBuf, modules_root: PathBuf) -> Self {
         Self::with_paths(Ok((root, modules_root)))

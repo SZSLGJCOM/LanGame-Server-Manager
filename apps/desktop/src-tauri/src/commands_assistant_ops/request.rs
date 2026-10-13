@@ -92,7 +92,7 @@ async fn assistant_request_in_session(
             ));
         }
     }
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let actual_identity = [
         storage.settings.servers_root.clone(),
         storage.settings.games_root.clone(),

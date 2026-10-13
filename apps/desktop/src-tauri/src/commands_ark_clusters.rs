@@ -40,7 +40,7 @@ pub async fn read_ark_cluster(
     input: ReadArkClusterInput,
 ) -> Result<ArkClusterReport, String> {
     let _operation = state.begin_storage_context_operation("ARK cluster inspection")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -57,7 +57,7 @@ pub async fn operate_ark_cluster(
     input: OperateArkClusterInput,
 ) -> Result<ArkClusterOperationResult, String> {
     let _operation = state.begin_storage_context_operation("ARK cluster operation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

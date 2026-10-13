@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
@@ -38,14 +38,17 @@ pub(crate) fn retired_library_is_clean(
             "initial and clean program inventories disagree",
         ));
     }
-    let files = initial
-        .as_ref()
-        .unwrap_or(&clean)
-        .files
-        .keys()
-        .map(|key| fold(key))
-        .collect::<BTreeSet<_>>();
-    if !only_package_files(root, &files, cancellation)? {
+    if !only_package_files(
+        root,
+        &initial.as_ref().unwrap_or(&clean).files,
+        &[
+            ".langame-clean-package.json",
+            ".langame-initial-package.json",
+            ".langame-program-identity.json",
+            ".langame-program-usage.json",
+        ],
+        cancellation,
+    )? {
         return Ok(false);
     }
     let mut verifier = PackageVerifier::new(root, true, cancellation);
@@ -93,11 +96,16 @@ fn fold(value: &str) -> String {
     }
 }
 
-fn only_package_files(
+/// Empty ordinary directories carry no operator data, including SteamCMD's
+/// working directories omitted from exact depot inventories. Unknown files and
+/// links still prevent direct reuse; each lifecycle supplies its own metadata.
+pub(crate) fn only_package_files(
     root: &Path,
-    files: &BTreeSet<String>,
+    files: &BTreeMap<String, String>,
+    managed_files: &[&str],
     cancellation: Option<&AtomicBool>,
 ) -> Result<bool, StorageError> {
+    let files = files.keys().map(|key| fold(key)).collect::<BTreeSet<_>>();
     let mut pending = vec![PathBuf::new()];
     let mut visited = 0_usize;
     while let Some(relative) = pending.pop() {
@@ -131,13 +139,7 @@ fn only_package_files(
                 source,
             })?;
             let key = fold(&key);
-            let managed = matches!(
-                key.as_str(),
-                ".langame-clean-package.json"
-                    | ".langame-initial-package.json"
-                    | ".langame-program-identity.json"
-                    | ".langame-program-usage.json"
-            );
+            let managed = managed_files.contains(&key.as_str());
             if metadata.is_dir() && !key.split('/').any(|part| part.starts_with(".langame-")) {
                 // Deletion owns files, not arbitrary directories. Traversing
                 // empty ordinary directories does not import any instance data.

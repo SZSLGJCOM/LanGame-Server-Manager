@@ -33,6 +33,15 @@ enum Token {
     Close,
 }
 pub fn parse_acf(bytes: &[u8], app_id: u32) -> Result<Object> {
+    let app = parse_acf_app_state(bytes, app_id)?;
+    if !acf_is_complete(&app)? {
+        return Err(invalid("ACF installation incomplete"));
+    }
+    Ok(app)
+}
+
+/// Parse identity and structure without certifying a pending installation.
+pub(crate) fn parse_acf_app_state(bytes: &[u8], app_id: u32) -> Result<Object> {
     let source = std::str::from_utf8(bytes)
         .map_err(invalid)?
         .trim_start_matches('\u{feff}')
@@ -87,36 +96,38 @@ pub fn parse_acf(bytes: &[u8], app_id: u32) -> Result<Object> {
         Some(Value::Object(app)) => app,
         _ => return Err(invalid("AppState missing")),
     };
-    if decimal(text(
+    let actual = decimal(text(
         app.get("appid")
             .ok_or_else(|| invalid("ACF appid missing"))?,
-    )?)? != u64::from(app_id)
-        || decimal(text(
-            app.get("stateflags")
-                .ok_or_else(|| invalid("ACF state missing"))?,
-        )?)? != 4
-    {
-        return Err(invalid("ACF appid mismatch or installation incomplete"));
+    )?)?;
+    if actual != u64::from(app_id) {
+        return Err(invalid(format!(
+            "ACF appid mismatch: expected {app_id}, found {actual}"
+        )));
     }
+    Ok(app)
+}
+
+pub(crate) fn acf_is_complete(app: &Object) -> Result<bool> {
+    let mut complete = decimal(text(
+        app.get("stateflags")
+            .ok_or_else(|| invalid("ACF state missing"))?,
+    )?)? == 4;
     for (total, done) in [
         ("bytestodownload", "bytesdownloaded"),
         ("bytestostage", "bytesstaged"),
     ] {
-        if let Some(total) = app.get(total) {
-            let total = decimal(text(total)?)?;
-            let done = app
-                .get(done)
+        let number = |key| {
+            app.get(key)
                 .map(text)
                 .transpose()?
                 .map(decimal)
-                .transpose()?
-                .unwrap_or(0);
-            if done < total {
-                return Err(invalid("ACF byte progress incomplete"));
-            }
-        }
+                .transpose()
+                .map(|number| number.unwrap_or(0))
+        };
+        complete &= number(done)? >= number(total)?;
     }
-    Ok(app)
+    Ok(complete)
 }
 fn acf_object(tokens: &[Token], cursor: &mut usize, depth: usize) -> Result<Object> {
     if depth > 16 {

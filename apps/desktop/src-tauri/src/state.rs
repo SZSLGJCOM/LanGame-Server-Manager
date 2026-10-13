@@ -6,8 +6,6 @@ use std::time::{Duration, Instant, SystemTime};
 use app_core::{AppState, RuntimeStartupSchedule, StorageStatus, SystemSnapshot};
 use app_platform_win::{BindAddressCandidate, WindowsHostMonitor};
 use app_runtime::RuntimeSupervisor;
-#[cfg(not(test))]
-use app_storage::bootstrap_storage;
 use app_storage::{StorageBootstrap, StoragePaths};
 
 use crate::live_players::cache::LivePlayerRegistry;
@@ -74,6 +72,7 @@ pub struct DesktopState {
     lan_directory_worker: Mutex<Option<LanDirectoryWorker>>,
     lan_host_thread: Mutex<Option<std::thread::JoinHandle<()>>>,
     storage_context_coordinator: Arc<Mutex<StorageContextCoordinator>>,
+    storage_source: StorageSource,
     pub startup_scheduler: Mutex<RuntimeStartupScheduler>,
     pub runtime_restart_scheduler: Mutex<RuntimeRestartScheduler>,
     pub live_player_registry: LivePlayerRegistry,
@@ -86,29 +85,81 @@ pub struct DesktopState {
     pub shutdown_completed: AtomicBool,
     pub(crate) steamcmd_preparation: Arc<crate::steamcmd_preparation::SteamCmdPreparationTracker>,
     pub(crate) install_operations: Arc<InstallOperationRegistry>,
+    pub(crate) install_locks: app_steamcmd::InstallLockContext,
     pub(crate) storage_management: Arc<StorageManagement>,
+}
+
+#[derive(Clone)]
+pub(crate) enum StorageSource {
+    UserDataRoot(std::path::PathBuf),
+    #[cfg(test)]
+    ExplicitPaths(Box<StoragePaths>),
+}
+
+impl StorageSource {
+    /// Inspect the anchored location for path-local services without initializing storage.
+    /// Configurable runtime roots still require `bootstrap_storage` to load settings.
+    #[cfg(windows)]
+    pub(crate) fn resolve_paths(&self) -> Result<StoragePaths, String> {
+        match self {
+            Self::UserDataRoot(root) => {
+                app_storage::StoragePaths::resolve_existing_at_user_root(root)
+                    .map_err(|error| error.to_string())?
+                    .ok_or_else(|| String::from("Application storage has not been initialized"))
+            }
+            #[cfg(test)]
+            Self::ExplicitPaths(paths) => Ok(paths.as_ref().clone()),
+        }
+    }
+
+    pub(crate) fn bootstrap_storage(&self) -> Result<StorageBootstrap, String> {
+        match self {
+            // Revalidate the selected location on every entry; a missing data
+            // directory must not silently become a fresh store.
+            Self::UserDataRoot(root) => app_storage::bootstrap_storage_at_user_root(root),
+            #[cfg(test)]
+            Self::ExplicitPaths(paths) => {
+                app_storage::bootstrap_storage_with_paths(paths.as_ref().clone())
+            }
+        }
+        .map_err(|error| error.to_string())
+    }
 }
 
 impl Default for DesktopState {
     fn default() -> Self {
         let default_paths = StoragePaths::default();
         #[cfg(not(test))]
-        let storage = match bootstrap_storage() {
-            Ok(storage) => Some(storage),
-            Err(error) => {
-                eprintln!("LanGame storage initialization failed: {error}");
-                None
-            }
-        };
+        let (storage, knowledge_paths) =
+            match app_storage::bootstrap_storage_at_user_root(&default_paths.app_data_root) {
+                Ok(storage) => {
+                    let paths = storage.paths.clone();
+                    (Some(storage), Ok(paths))
+                }
+                Err(error) => {
+                    eprintln!("LanGame storage initialization failed: {error}");
+                    (None, Err(error.to_string()))
+                }
+            };
         #[cfg(test)]
-        let storage = None;
+        let (storage, knowledge_paths) = (
+            None,
+            Err(String::from(
+                "Knowledge storage requires explicit test paths",
+            )),
+        );
         let app_state = initial_app_state(&default_paths, storage);
 
         Self {
-            knowledge: Arc::new(crate::knowledge_runtime::KnowledgeCoordinator::default()),
+            knowledge: Arc::new(
+                crate::knowledge_runtime::KnowledgeCoordinator::with_storage_paths(knowledge_paths),
+            ),
             assistant_sessions: crate::assistant_sessions::AssistantSessionStore::default(),
             booted_at: SystemTime::now(),
             install_operations: Arc::new(InstallOperationRegistry::default()),
+            install_locks: app_steamcmd::InstallLockContext::new(
+                default_paths.app_data_root.clone(),
+            ),
             storage_management: Arc::new(StorageManagement::default()),
             app_state: Arc::new(RwLock::new(app_state)),
             host_monitor: Arc::new(Mutex::new(WindowsHostMonitor::default())),
@@ -125,6 +176,7 @@ impl Default for DesktopState {
             lan_directory_worker: Mutex::new(None),
             lan_host_thread: Mutex::new(None),
             storage_context_coordinator: Arc::new(Mutex::new(StorageContextCoordinator::default())),
+            storage_source: StorageSource::UserDataRoot(default_paths.app_data_root.clone()),
             startup_scheduler: Mutex::new(RuntimeStartupScheduler::default()),
             runtime_restart_scheduler: Mutex::new(RuntimeRestartScheduler::default()),
             live_player_registry: LivePlayerRegistry::default(),
@@ -150,8 +202,27 @@ impl DesktopState {
         app_state.storage = storage.storage_status.clone();
         Self {
             app_state: Arc::new(RwLock::new(app_state)),
+            storage_source: StorageSource::ExplicitPaths(Box::new(storage.paths.clone())),
+            knowledge: Arc::new(
+                crate::knowledge_runtime::KnowledgeCoordinator::with_storage_paths(Ok(storage
+                    .paths
+                    .clone())),
+            ),
+            install_locks: app_steamcmd::InstallLockContext::new(
+                storage.paths.app_data_root.clone(),
+            ),
             ..Self::default()
         }
+    }
+
+    /// Resolve settings against this runtime's application-data anchor. Callers
+    /// retain their storage operation or transition lease while using the result.
+    pub(crate) fn bootstrap_storage(&self) -> Result<StorageBootstrap, String> {
+        self.storage_source.bootstrap_storage()
+    }
+
+    pub(crate) fn storage_source(&self) -> StorageSource {
+        self.storage_source.clone()
     }
 
     pub(crate) fn request_final_exit(&self) -> bool {

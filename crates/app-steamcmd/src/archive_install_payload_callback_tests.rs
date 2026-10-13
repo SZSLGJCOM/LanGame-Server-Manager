@@ -13,8 +13,12 @@ where
     let root = fixture.install_root();
     let mut module = fixture.module.clone();
     module.install.as_mut().unwrap().download_url_windows = Some(url.to_owned());
-    let guard =
-        acquire_game_install_lifecycle(&module.summary.id, std::slice::from_ref(&root)).await?;
+    let guard = acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        &module.summary.id,
+        std::slice::from_ref(&root),
+    )
+    .await?;
     let last_phase = std::sync::Mutex::new(None);
     install_or_update_module_at_with_callbacks(
         &fixture.settings,

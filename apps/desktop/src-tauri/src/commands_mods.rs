@@ -38,6 +38,7 @@ pub(super) use library_cleanup::after_instance_deletion;
 #[path = "commands_workshop_download.rs"]
 mod workshop_download;
 pub(super) async fn prepare_dst_import_workshop_items(
+    install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
     operation: &StorageContextOperationGuard,
     instance: &InstanceDetails,
@@ -45,7 +46,12 @@ pub(super) async fn prepare_dst_import_workshop_items(
     preference: app_network::SourcePreference,
 ) -> Result<(), String> {
     workshop_download::prepare_locked_dst_import_items(
-        storage, operation, instance, ids, preference,
+        install_locks,
+        storage,
+        operation,
+        instance,
+        ids,
+        preference,
     )
     .await
 }
@@ -462,7 +468,7 @@ pub(super) async fn install_module_game_inner(
 ) -> Result<ModuleInstallResult, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("module installation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -626,7 +632,7 @@ pub(super) async fn download_steam_workshop_items_inner(
 ) -> Result<SteamWorkshopDownloadResult, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("Steam Workshop download")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -657,6 +663,7 @@ pub(super) async fn download_steam_workshop_items_inner(
     let instance_lock =
         acquire_stopped_instance_mod_mutation(&state, &storage, &instance_id).await?;
     let instance_lock = super::commands_program_storage::prepare_instance_mod_program(
+        &state.install_locks,
         &storage,
         &storage_context_operation,
         &instance_id,
@@ -741,7 +748,8 @@ pub(super) async fn download_steam_workshop_items_inner(
                     ));
                 })?;
                 let stage_result: Result<ManualModStageResult, String> = async {
-                    let target = resolve_manual_mod_target(instance_id.clone(), true).await?;
+                    let target =
+                        resolve_manual_mod_target(&storage, instance_id.clone(), true).await?;
                     // The downloaded cache can be replaced by another Workshop job.
                     // Keep its source stable until this instance has copied the files.
                     let downloaded = result.clone();
@@ -829,20 +837,21 @@ pub(super) async fn stage_manual_mod_files_inner(
     source_paths: Vec<String>,
 ) -> Result<ManualModStageResult, String> {
     let source_paths = normalize_manual_mod_source_paths(source_paths)?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
     let instance_lock =
         acquire_stopped_instance_mod_mutation(state, &storage, &instance_id).await?;
     let instance_lock = super::commands_program_storage::prepare_instance_mod_program(
+        &state.install_locks,
         &storage,
         storage_context_operation,
         &instance_id,
         instance_lock,
     )
     .await?;
-    let target = resolve_manual_mod_target(instance_id, true).await?;
+    let target = resolve_manual_mod_target(&storage, instance_id, true).await?;
     spawn_blocking_storage_context_task(storage_context_operation, move || {
         let _instance_lock = instance_lock;
         stage_manual_mod_sources(target, source_paths)
@@ -858,7 +867,7 @@ pub(super) async fn install_manual_mod_references_inner(
     references: Vec<String>,
 ) -> Result<ManualModStageResult, String> {
     let references = normalize_manual_mod_references(references)?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -891,13 +900,14 @@ pub(super) async fn install_manual_mod_references_inner(
     let instance_lock =
         acquire_stopped_instance_mod_mutation(state, &storage, &instance_id).await?;
     let instance_lock = super::commands_program_storage::prepare_instance_mod_program(
+        &state.install_locks,
         &storage,
         storage_context_operation,
         &instance_id,
         instance_lock,
     )
     .await?;
-    let target = resolve_manual_mod_target(instance_id.clone(), true).await?;
+    let target = resolve_manual_mod_target(&storage, instance_id.clone(), true).await?;
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -910,13 +920,14 @@ pub(super) async fn install_manual_mod_references_inner(
         .map(|source| source.provider.trim().to_ascii_lowercase())
         .unwrap_or_default();
     let runtime_target = target.target_path.clone();
-    tokio::task::spawn_blocking(move || {
+    let instance_lock = spawn_blocking_storage_context_task(storage_context_operation, move || {
         mod_online::validate_runtime(
             &runtime_module,
             &runtime_provider,
             &runtime_root,
             &runtime_target,
-        )
+        )?;
+        Ok::<_, String>(instance_lock)
     })
     .await
     .map_err(|error| format!("Mod runtime inspection worker failed: {error}"))??;
@@ -938,19 +949,21 @@ pub(super) async fn install_manual_mod_references_inner(
 }
 
 pub(super) async fn read_manual_mod_inventory_inner(
+    storage: &StorageBootstrap,
+    operation: &StorageContextOperationGuard,
     instance_id: String,
 ) -> Result<ManualModInventoryResult, String> {
-    let target = resolve_manual_mod_target(instance_id, false).await?;
-    tokio::task::spawn_blocking(move || mod_inventory::read_inventory(target))
+    let target = resolve_manual_mod_target(storage, instance_id, false).await?;
+    spawn_blocking_storage_context_task(operation, move || mod_inventory::read_inventory(target))
         .await
         .map_err(|error| format!("Mod inventory inspection worker failed: {error}"))?
 }
 
 pub(super) async fn resolve_manual_mod_references_inner(
+    storage: &StorageBootstrap,
     instance_id: String,
     references: Vec<String>,
 ) -> Result<ManualModReferenceResolveResult, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -1034,10 +1047,10 @@ pub(super) async fn resolve_manual_mod_references_inner(
 }
 
 pub(super) async fn resolve_manual_mod_target(
+    storage: &StorageBootstrap,
     instance_id: String,
     require_installed: bool,
 ) -> Result<ResolvedManualModTarget, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -2164,7 +2177,7 @@ pub(super) async fn validate_module_game_inner(
     module_id: String,
 ) -> Result<ModuleInstallResult, String> {
     let _storage_context_operation = state.begin_storage_context_operation("module validation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

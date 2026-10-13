@@ -20,10 +20,13 @@ pub async fn execute_instance_manual_player_action(
     state: tauri::State<'_, DesktopState>,
     input: ExecuteInstanceManualPlayerActionInput,
 ) -> Result<ExecuteInstancePlayerActionResult, String> {
+    let _operation = state.begin_storage_context_operation("manual player action")?;
+    let storage = state.bootstrap_storage()?;
     let audit_instance_id = audit_reference(&input.instance_id);
     let audit_action_id = audit_reference(&input.action_id);
     let result = execute_instance_manual_player_action_inner(&state, input).await;
     audit_manual_player_action(
+        &storage,
         &audit_instance_id,
         &audit_action_id,
         result.as_ref().map(|_| ()).map_err(String::as_str),
@@ -48,7 +51,7 @@ async fn execute_instance_manual_player_action_inner(
         .await
         .map_err(|_| String::from("Unable to validate the current server run."))?;
     let _mutation = state.acquire_instance_mutation(instance_id).await;
-    let (_, details, descriptor) = load_persisted_live_player_context(instance_id)
+    let (_, details, descriptor) = load_persisted_live_player_context(state, instance_id)
         .await
         .map_err(|_| String::from("Unable to load the current manual player-action contract."))?;
     if details.active_run.is_none() {
@@ -159,16 +162,18 @@ fn value_consumes_action(value: &Value, action_id: &str) -> bool {
     }
 }
 
-fn audit_manual_player_action(instance_id: &str, action_id: &str, result: Result<(), &str>) {
-    let Ok(storage) = bootstrap_storage() else {
-        return;
-    };
+fn audit_manual_player_action(
+    storage: &StorageBootstrap,
+    instance_id: &str,
+    action_id: &str,
+    result: Result<(), &str>,
+) {
     let (level, outcome) = match result {
         Ok(()) => ("info", "sent"),
         Err(_) => ("warning", "rejected_or_failed"),
     };
     append_desktop_app_log(
-        &storage,
+        storage,
         level,
         "instance.live_players.manual_action",
         "Manual identity-bound player action completed",

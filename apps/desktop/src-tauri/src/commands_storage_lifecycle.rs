@@ -1,16 +1,18 @@
 use std::collections::BTreeMap;
 
-use app_steamcmd::GameInstallLifecycleGuard;
+use app_steamcmd::{GameInstallLifecycleGuard, InstallLockContext};
 use app_storage::{InstanceStorageResources, StoragePaths};
 
 use super::steamcmd_error_message;
 
 async fn acquire(
+    install_locks: &InstallLockContext,
     resources: &InstanceStorageResources,
     fallback_id: &str,
 ) -> Result<GameInstallLifecycleGuard, String> {
     let fallback = format!("archive-{fallback_id}");
     app_steamcmd::acquire_game_install_lifecycle(
+        install_locks,
         resources.module_id.as_deref().unwrap_or(&fallback),
         &resources.program_roots,
     )
@@ -29,13 +31,14 @@ fn ensure_unchanged(
 }
 
 pub(super) async fn acquire_retirement(
+    install_locks: &InstallLockContext,
     paths: &StoragePaths,
     instance_id: &str,
 ) -> Result<GameInstallLifecycleGuard, String> {
     let resources = app_storage::read_instance_retirement_resources(paths, instance_id)
         .await
         .map_err(|error| error.to_string())?;
-    let guard = acquire(&resources, instance_id).await?;
+    let guard = acquire(install_locks, &resources, instance_id).await?;
     let current = app_storage::read_instance_retirement_resources(paths, instance_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -44,11 +47,12 @@ pub(super) async fn acquire_retirement(
 }
 
 pub(super) async fn acquire_archive(
+    install_locks: &InstallLockContext,
     paths: &StoragePaths,
     archive_id: &str,
     resources: &InstanceStorageResources,
 ) -> Result<GameInstallLifecycleGuard, String> {
-    let guard = acquire(resources, archive_id).await?;
+    let guard = acquire(install_locks, resources, archive_id).await?;
     let current = app_storage::read_instance_archive_resources(paths, archive_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -57,11 +61,12 @@ pub(super) async fn acquire_archive(
 }
 
 pub(super) async fn acquire_archive_cleanup(
+    install_locks: &InstallLockContext,
     paths: &StoragePaths,
     archive_id: &str,
     resources: &InstanceStorageResources,
 ) -> Result<GameInstallLifecycleGuard, String> {
-    let guard = acquire(resources, archive_id).await?;
+    let guard = acquire(install_locks, resources, archive_id).await?;
     let current = app_storage::read_instance_archive_cleanup_resources(paths, archive_id)
         .await
         .map_err(|error| error.to_string())?;
@@ -72,6 +77,7 @@ pub(super) async fn acquire_archive_cleanup(
 // Recovery can span several games with overlapping external paths. Acquire
 // their union once, so a lease never waits for another root it already owns.
 pub(super) async fn acquire_recovery(
+    install_locks: &InstallLockContext,
     paths: &StoragePaths,
     instance_ids: &[String],
 ) -> Result<GameInstallLifecycleGuard, String> {
@@ -92,7 +98,7 @@ pub(super) async fn acquire_recovery(
         snapshots.push((id, resources));
     }
     let resources: Vec<_> = modules.into_iter().collect();
-    let guard = app_steamcmd::acquire_game_install_lifecycles(&resources)
+    let guard = app_steamcmd::acquire_game_install_lifecycles(install_locks, &resources)
         .await
         .map_err(|error| steamcmd_error_message(&error))?;
     for (id, before) in snapshots {

@@ -77,7 +77,7 @@ where
     let state = app.state::<DesktopState>();
     let operation = state.begin_storage_context_operation("instance retirement")?;
     let lease = state.storage_management.acquire()?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let event = format!("instance.{}", action.name());
     append_desktop_app_log(
         &storage,
@@ -113,7 +113,12 @@ where
     // A retried deletion may already have removed its active database row. The
     // storage transaction validates the durable intent as well as process state.
     let install = std::sync::Arc::new(
-        super::commands_storage_lifecycle::acquire_retirement(&storage.paths, &instance_id).await?,
+        super::commands_storage_lifecycle::acquire_retirement(
+            &state.install_locks,
+            &storage.paths,
+            &instance_id,
+        )
+        .await?,
     );
     let paths = storage.paths.clone();
     let worker_id = instance_id.clone();

@@ -1,5 +1,6 @@
 use super::security::{MAX_CONNECTIONS, MAX_CONTROL_CONNECTIONS, MAX_WORK_REQUESTS};
 use super::{events, security, wire};
+use crate::command_registry::{self, Completion, Execution, LanAccess};
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::time::Duration;
@@ -46,6 +47,7 @@ fn start_with_pipe(
             .map_err(|e| format!("Cannot claim the runtime service control channel: {e}"))?;
     events::install(app);
     super::log_service_event(
+        app,
         "info",
         "runtime.service.started",
         "Current-user runtime service is ready",
@@ -56,7 +58,12 @@ fn start_with_pipe(
         let app = app.clone();
         tauri::async_runtime::spawn(async move {
             if let Err(error) = accept(app.clone(), endpoint, pipe, control_only).await {
-                super::log_service_event("error", "runtime.service.control_channel_failed", &error);
+                super::log_service_event(
+                    &app,
+                    "error",
+                    "runtime.service.control_channel_failed",
+                    &error,
+                );
                 // A service without a control channel must not leave unmanaged servers.
                 crate::commands::request_app_exit_shutdown(app);
             }
@@ -203,30 +210,16 @@ fn accept_final_exit(app: &tauri::AppHandle, args: &Value) -> Result<Value, Stri
             .await
             {
                 Ok(()) => app.exit(0),
-                Err(error) => {
-                    super::log_service_event("error", "app.exit.background_stop_failed", &error)
-                }
+                Err(error) => super::log_service_event(
+                    &app,
+                    "error",
+                    "app.exit.background_stop_failed",
+                    &error,
+                ),
             }
         });
     }
     Ok(json!({ "shutdown_accepted": true, "pid": std::process::id() }))
-}
-
-fn requires_owned_completion(command: &str) -> bool {
-    matches!(
-        command,
-        "operate_ark_cluster"
-            | "create_ark_cluster_backup"
-            | "list_ark_cluster_backups"
-            | "restore_ark_cluster_backup"
-            | "read_pending_ark_cluster_restore"
-            | "recover_ark_cluster_restore"
-            | "archive_instance_record"
-            | "delete_instance_record"
-            | "list_instance_archives"
-            | "restore_instance_archive"
-            | "purge_instance_archive"
-    )
 }
 
 async fn complete_dispatch<F>(
@@ -240,7 +233,9 @@ where
     // Each maintenance stage owns its bounds and rollback. A generic IPC
     // observation deadline must not abandon the remaining cluster members or
     // drop a transaction between staging, promotion and recovery.
-    if requires_owned_completion(command) {
+    if command_registry::find(command)
+        .is_some_and(|registered| registered.completion == Completion::Owned)
+    {
         return operation.await;
     }
     match tokio::time::timeout(deadline, operation).await {
@@ -250,32 +245,7 @@ where
 }
 
 async fn dispatch(app: &tauri::AppHandle, request: wire::Request) -> Result<Value, String> {
-    if let Some(operation) =
-        super::local_commands::dispatch(app, &request.command, request.args.clone())
-    {
-        return operation.await;
-    }
     match request.command.as_str() {
-        "uninstall_steamcmd" => serde_json::to_value(
-            crate::commands::uninstall_steamcmd(app.state::<crate::state::DesktopState>()).await?,
-        )
-        .map_err(|e| e.to_string()),
-        "preview_dontstarve_world_start" => {
-            let id = request
-                .args
-                .get("instanceId")
-                .or_else(|| request.args.get("instance_id"))
-                .and_then(Value::as_str)
-                .ok_or("Missing instance ID")?;
-            serde_json::to_value(
-                crate::commands::commands_dst_world_state::preview_dontstarve_world_start(
-                    app.state::<crate::state::DesktopState>(),
-                    id.into(),
-                )
-                .await?,
-            )
-            .map_err(|e| e.to_string())
-        }
         "runtime_service_status" => {
             let state = app.state::<crate::state::DesktopState>();
             Ok(
@@ -287,7 +257,25 @@ async fn dispatch(app: &tauri::AppHandle, request: wire::Request) -> Result<Valu
             request.args["after"].as_u64().unwrap_or(0),
             request.args["generation"].as_str(),
         ),
-        _ => crate::lan_host::dispatch_command(app, &request.command, request.args).await,
+        _ => {
+            let registered = command_registry::find(&request.command)
+                .ok_or_else(|| format!("unknown LanGame command: {}", request.command))?;
+            match (registered.execution, registered.lan) {
+                (_, LanAccess::Allowed) => {
+                    crate::lan_host::dispatch_command(app, &request.command, request.args).await
+                }
+                (Execution::Runtime, LanAccess::Denied) => {
+                    super::local_commands::dispatch(app, &request.command, request.args)
+                        .ok_or_else(|| {
+                            format!("Missing runtime command route: {}", request.command)
+                        })?
+                        .await
+                }
+                (Execution::Desktop, LanAccess::Denied) => {
+                    Err(format!("unknown LanGame command: {}", request.command))
+                }
+            }
+        }
     }
 }
 
@@ -307,8 +295,12 @@ pub(super) fn run() -> Result<(), String> {
     context.config_mut().app.windows.clear();
     let app = tauri::Builder::default()
         .setup(move |app| {
-            let storage_paths = app_storage::StoragePaths::resolve_default()?;
-            app.manage(crate::state::DesktopState::default());
+            let state = crate::state::DesktopState::default();
+            let storage_paths = state
+                .storage_source()
+                .resolve_paths()
+                .map_err(std::io::Error::other)?;
+            app.manage(state);
             app.manage(crate::media_cache::MediaCacheState::new(
                 storage_paths.app_data_root.join("cache/media-service"),
             ));

@@ -300,8 +300,12 @@ async fn creation_lifecycle_shutdown_cancels_a_queued_create_without_waiting_for
         .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let program_roots = [storage.paths.games_root.join("astroneer")];
-    let lifecycle =
-        app_steamcmd::acquire_game_install_lifecycle("astroneer", &program_roots).await?;
+    let lifecycle = app_steamcmd::acquire_game_install_lifecycle(
+        &app.state::<DesktopState>().install_locks,
+        "astroneer",
+        &program_roots,
+    )
+    .await?;
     let hooks = CreationHooks::new(false);
     let handle = app.handle().clone();
     let creation = tokio::spawn(CREATION_HOOKS.scope(hooks.clone(), async move {
@@ -360,6 +364,7 @@ async fn creation_lifecycle_shutdown_cancels_the_owned_worker_before_preparation
     let _next = tokio::time::timeout(
         Duration::from_secs(2),
         app_steamcmd::acquire_game_install_lifecycle(
+            &app.state::<DesktopState>().install_locks,
             "astroneer",
             &[storage.paths.games_root.join("astroneer")],
         ),
@@ -377,8 +382,12 @@ async fn creation_lifecycle_waits_for_uninstall_then_reprobes_missing_program()
         .manage(DesktopState::from_storage(&storage))
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let program_roots = [storage.paths.games_root.join("astroneer")];
-    let lifecycle =
-        app_steamcmd::acquire_game_install_lifecycle("astroneer", &program_roots).await?;
+    let lifecycle = app_steamcmd::acquire_game_install_lifecycle(
+        &app.state::<DesktopState>().install_locks,
+        "astroneer",
+        &program_roots,
+    )
+    .await?;
     let hooks = CreationHooks::new(false);
     let handle = app.handle().clone();
     let creation = tokio::spawn(CREATION_HOOKS.scope(hooks.clone(), async move {
@@ -471,7 +480,9 @@ async fn creation_lifecycle_worker_keeps_lock_after_request_cancellation()
     assert!(list_instances(&storage.paths).await?.is_empty());
 
     let program_roots = [storage.paths.games_root.join("astroneer")];
-    let next_operation = app_steamcmd::acquire_game_install_lifecycle("astroneer", &program_roots);
+    let install_locks = app.state::<DesktopState>().install_locks.clone();
+    let next_operation =
+        app_steamcmd::acquire_game_install_lifecycle(&install_locks, "astroneer", &program_roots);
     tokio::pin!(next_operation);
     assert!(
         tokio::time::timeout(Duration::from_millis(100), &mut next_operation)

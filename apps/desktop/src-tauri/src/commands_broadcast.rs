@@ -250,7 +250,7 @@ pub async fn generate_instance_broadcast(
 ) -> Result<GenerateInstanceBroadcastOutput, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("broadcast event generation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -401,7 +401,7 @@ pub async fn send_instance_broadcast(
 ) -> Result<SendInstanceBroadcastOutput, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("broadcast event dispatch")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -526,9 +526,11 @@ pub async fn send_instance_broadcast(
 
 #[tauri::command]
 pub async fn read_instance_broadcast_policy(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<InstanceBroadcastPolicy, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let _operation = state.begin_storage_context_operation("broadcast policy read")?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -544,7 +546,7 @@ pub async fn update_instance_broadcast_policy(
 ) -> Result<InstanceBroadcastPolicy, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("broadcast policy update")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -555,10 +557,12 @@ pub async fn update_instance_broadcast_policy(
 
 #[tauri::command]
 pub async fn list_instance_broadcast_events(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
     limit: Option<usize>,
 ) -> Result<Vec<InstanceBroadcastEvent>, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let _operation = state.begin_storage_context_operation("broadcast event listing")?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

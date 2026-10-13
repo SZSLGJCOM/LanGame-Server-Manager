@@ -73,6 +73,7 @@ async fn cancelled_uninstall_finishes_with(
     assert!(requester.await.unwrap_err().is_cancelled());
     let lifecycle_roots = [install_root.clone()];
     let mut lifecycle = Box::pin(app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         "astroneer",
         &lifecycle_roots,
     ));

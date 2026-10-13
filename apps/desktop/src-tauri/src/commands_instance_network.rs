@@ -27,7 +27,7 @@ pub async fn read_instance_connection_info_from_storage(
     }
     let _storage_context_operation =
         state.begin_storage_context_operation("instance connection inspection")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let projections = app_storage::read_instance_port_projections(&storage.paths, &instance_ids)
         .await
         .map_err(|error| error.to_string())?;

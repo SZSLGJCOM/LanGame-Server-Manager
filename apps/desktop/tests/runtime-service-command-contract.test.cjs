@@ -5,18 +5,21 @@ const test = require("node:test");
 const nativeRoot = path.resolve(__dirname, "../src-tauri/src");
 const read = (file) => fs.readFileSync(path.join(nativeRoot, file), "utf8");
 
-test("every nonlocal desktop command has a runtime-service dispatcher", () => {
-  const registration = read("main.rs").match(/tauri::generate_handler!\[([\s\S]*?)\];/);
-  assert.ok(registration, "Desktop registration block missing");
-  const names = [...registration[1].matchAll(/^\s*(?:\w+::)+(\w+)\s*,?\s*$/gm)].map((match) => match[1]);
-  assert.ok(names.includes("start_instance_process"), "Registration parser omitted the startup contract");
-  const localBlock = read("runtime_service.rs").match(/fn is_local_command\([\s\S]*?\n\}/);
-  assert.ok(localBlock, "Desktop-local command boundary missing");
-  const local = new Set([...localBlock[0].matchAll(/"([a-z_]+)"/g)].map((match) => match[1]));
-  const routes = new Set(["runtime_service/server.rs", "runtime_service/local_commands.rs", "lan_host.rs"]
-    .flatMap((file) => [...read(file).matchAll(/^\s*"([a-z_]+)"\s*=>/gm)].map((match) => match[1])));
-  assert.deepEqual(names.filter((name) => !local.has(name) && !routes.has(name)), []);
-  assert.ok(local.has("install_app_update"), "The Tauri update progress Channel must remain inside its webview host");
+test("registered execution and transport policies cover exactly the product adapters", () => {
+  const registration = read("command_registry.rs");
+  const commands = [...registration.matchAll(/\(\s*([a-z_]+),\s*\[([a-z_:]+)\],\s*(Desktop|Runtime),\s*(Allowed|Denied),\s*(Bounded|Owned)\s*\)/g)]
+    .map(([, name, module, execution, lan, completion]) => ({ name, module, execution, lan, completion }));
+  assert.ok(commands.some(({ name }) => name === "start_instance_process"), "Registration parser omitted startup");
+  assert.equal(new Set(commands.map(({ name }) => name)).size, commands.length, "Duplicate registration");
+  const routes = (file) => [...read(file).matchAll(/^\s*"([a-z_]+)"\s*=>/gm)].map((match) => match[1]).sort();
+  assert.deepEqual(commands.filter(({ lan }) => lan === "Allowed").map(({ name }) => name).sort(), routes("lan_host.rs"));
+  assert.deepEqual(commands.filter(({ execution, lan }) => execution === "Runtime" && lan === "Denied")
+    .map(({ name }) => name).sort(), routes("runtime_service/local_commands.rs"));
+  for (const name of ["check_app_update", "install_app_update"]) {
+    const command = commands.find((command) => command.name === name);
+    assert.deepEqual(command, { name, module: "crate::app_updates", execution: "Desktop", lan: "Denied", completion: "Bounded" },
+      "Updater progress Channels must remain inside their webview host");
+  }
 });
 
 test("service startup routing forwards the confirmed DST world preview", () => {

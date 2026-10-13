@@ -803,6 +803,10 @@ pub(super) fn assistant_none_operation_message(reason: Option<&str>) -> String {
 
 include!("commands_assistant_ops/runtime_dispatch.rs");
 
+#[cfg(test)]
+#[path = "commands_assistant_ops/storage_context_tests.rs"]
+mod storage_context_tests;
+
 #[tauri::command]
 pub fn assistant_secret_status(
     descriptor: AssistantSecretDescriptor,
@@ -831,8 +835,12 @@ pub async fn assistant_list_ollama_models(base_url: Option<String>) -> Result<Ve
 }
 
 #[tauri::command]
-pub async fn assistant_run(input: AssistantRunInput) -> Result<AssistantRunOutput, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+pub async fn assistant_run(
+    state: tauri::State<'_, DesktopState>,
+    input: AssistantRunInput,
+) -> Result<AssistantRunOutput, String> {
+    let _operation = state.begin_storage_context_operation("assistant prompt")?;
+    let storage = state.bootstrap_storage()?;
     append_desktop_app_log(
         &storage,
         "info",
@@ -1018,7 +1026,7 @@ async fn assistant_operation_inner(
 ) -> Result<AssistantExecuteOperationOutput, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("assistant operation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -2125,6 +2133,7 @@ async fn assistant_operation_inner(
                     return Ok(output);
                 };
                 let reference_result = resolve_manual_mod_references_inner(
+                    &storage,
                     instance.id.clone(),
                     mod_references.clone(),
                 )

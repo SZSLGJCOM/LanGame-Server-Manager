@@ -25,9 +25,10 @@ pub async fn read_module_configuration_icons(
         .await
         .map_err(|_| String::from("configuration icon loading timed out while waiting"))?
         .map_err(|_| String::from("configuration icon loading is unavailable"))?;
+    let storage_source = state.storage_source();
     let (storage, descriptor, permit, request_permit) =
         spawn_blocking_storage_context_task(&lease, move || {
-            let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+            let storage = storage_source.bootstrap_storage()?;
             let descriptors =
                 discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
             let descriptor = find_descriptor(&descriptors, "dontstarve")?.clone();

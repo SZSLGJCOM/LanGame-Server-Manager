@@ -3,13 +3,17 @@ use super::*;
 #[path = "commands_program_update_policy.rs"]
 mod program_update_policy;
 
+#[cfg(test)]
+#[path = "commands_storage_context_tests.rs"]
+mod context_tests;
+
 #[tauri::command]
 pub async fn ensure_storage_ready(
     state: tauri::State<'_, DesktopState>,
 ) -> Result<StorageStatus, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("storage initialization")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     append_desktop_app_log(
         &storage,
         "info",
@@ -46,6 +50,8 @@ pub async fn ensure_storage_ready(
         );
         logged_error_message(&storage, message)
     })?;
+    // A successful startup retry must also replace its fallback settings snapshot.
+    state_guard.settings = storage.settings.clone();
     state_guard.storage = status.clone();
 
     append_desktop_app_log(
@@ -68,7 +74,7 @@ pub async fn sync_modules_to_storage(
 ) -> Result<Vec<ModuleSummary>, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("module synchronization")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let modules = sync_modules_to_storage_with(&state, &storage).await?;
     state.autostart.mark_modules_ready()?;
     Ok(modules)
@@ -171,7 +177,7 @@ pub async fn list_instances_from_storage(
 ) -> Result<Vec<InstanceSummary>, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("instance state reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     append_desktop_app_log(
         &storage,
         "info",
@@ -251,7 +257,7 @@ pub async fn read_instance_details_from_storage(
 ) -> Result<InstanceDetails, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("instance detail reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -323,7 +329,7 @@ pub async fn create_instance_backup(
 ) -> Result<InstanceBackupResult, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup creation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -368,7 +374,7 @@ pub async fn list_instance_backups(
 ) -> Result<Vec<InstanceBackupResult>, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("instance backup reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -387,7 +393,7 @@ pub async fn rename_instance_backup(
 ) -> Result<InstanceBackupResult, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup rename")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -437,7 +443,7 @@ pub async fn delete_instance_backup(
 ) -> Result<InstanceBackupResult, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup deletion")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -486,13 +492,14 @@ pub async fn restore_instance_backup(
     let preference = app_network::SourcePreference::from_locale(locale.as_deref());
     let storage_context_operation =
         state.begin_storage_context_operation("instance backup restore")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let restore_operation = storage_context_operation.clone();
+    let install_locks = state.install_locks.clone();
     let result = run_instance_mutation_to_completion(
         state.inner(),
         &storage_context_operation,
@@ -519,6 +526,7 @@ pub async fn restore_instance_backup(
                     .await
                     .map_err(|error| error.to_string())?;
                     super::commands_dst_import_operation::restore_dst_backup_locked(
+                        &install_locks,
                         &storage,
                         &restore_operation,
                         &task_instance_id,
@@ -561,7 +569,7 @@ pub async fn read_instance_runtime_overview_from_storage(
 ) -> Result<InstanceRuntimeOverview, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime overview reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -647,7 +655,7 @@ pub async fn read_instance_runtime_window_snapshot(
 ) -> Result<RuntimeWindowSnapshot, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime window reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -667,7 +675,7 @@ pub async fn suppress_instance_runtime_windows(
 ) -> Result<RuntimeWindowSuppressionResult, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("runtime window suppression")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -741,7 +749,7 @@ pub async fn read_palworld_operator_snapshot(
 ) -> Result<PalworldOperatorSnapshot, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("Palworld operator reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -767,7 +775,7 @@ pub async fn read_sevendaystodie_operator_snapshot(
 ) -> Result<SevenDaysOperatorSnapshot, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("7 Days to Die operator reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -818,7 +826,7 @@ pub async fn read_instance_log_document_from_storage(
     }
     let _storage_context_operation =
         state.begin_storage_context_operation("instance log reconciliation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -892,7 +900,7 @@ async fn create_instance_record_with_program_mode(
 ) -> Result<InstanceProvisioning, String> {
     let program_source = app_core::InstanceProgramSource::Verified;
     let storage_context_operation = state.begin_storage_context_operation("instance creation")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let request_context = json!({
         "name": input.name.clone(),
         "module_id": input.module_id.clone(),
@@ -1001,7 +1009,7 @@ async fn create_instance_record_with_program_mode(
             );
             return Err(message);
         }
-        result = app_steamcmd::acquire_game_install_lifecycle(&module_id, &program_roots) => {
+        result = app_steamcmd::acquire_game_install_lifecycle(&state.install_locks, &module_id, &program_roots) => {
             result.map_err(|error| steamcmd_error_message(&error))?
         }
         };
@@ -1238,7 +1246,7 @@ async fn update_instance_record_with_precondition(
 ) -> Result<InstanceDetails, String> {
     let storage_context_operation = state.begin_storage_context_operation("instance update")?;
     let expected_settings_json = expected_settings_json.map(str::to_owned);
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let request_context = json!({
         "instance_id": input.id.as_str(),
         "bind_ip": input.bind_ip.as_str(),
@@ -1364,7 +1372,7 @@ pub async fn import_dontstarve_world_data(
 ) -> Result<DstWorldImportResult, String> {
     let preference = app_network::SourcePreference::from_locale(locale.as_deref());
     let storage_context_operation = state.begin_storage_context_operation("DST world import")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let trimmed_source_path = source_path.trim().to_owned();
     append_desktop_app_log(
         &storage,
@@ -1383,6 +1391,7 @@ pub async fn import_dontstarve_world_data(
     reconcile_runtime_state(&state).await?;
     let task_instance_id = instance_id.clone();
     let import_operation = storage_context_operation.clone();
+    let install_locks = state.install_locks.clone();
     run_instance_mutation_to_completion(
         state.inner(),
         &storage_context_operation,
@@ -1390,7 +1399,7 @@ pub async fn import_dontstarve_world_data(
         move || async move {
             if trimmed_source_path.is_empty() { return Err("Select a DST cluster folder before importing world data.".into()); }
             let replacement = super::commands_dst_import_operation::replace_dst_world_locked(
-                &storage, &import_operation, &task_instance_id, PathBuf::from(trimmed_source_path), None, preference,
+                &install_locks, &storage, &import_operation, &task_instance_id, PathBuf::from(trimmed_source_path), None, preference,
             ).await?;
             let result = replacement.result;
             append_desktop_app_log(&storage, "info", "instance.dst_world_import.success", "DST world data imported",

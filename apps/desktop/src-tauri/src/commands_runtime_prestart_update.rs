@@ -10,6 +10,7 @@ use super::*;
 mod tests;
 
 pub(super) async fn acquire_prestart_program_guard(
+    state: &DesktopState,
     module_id: &str,
     root: &Path,
     reservation: &RuntimeStartReservationLease,
@@ -18,7 +19,7 @@ pub(super) async fn acquire_prestart_program_guard(
     tokio::select! {
         biased;
         _ = reservation.cancelled() => Err("启动已取消，实例未启动。".into()),
-        guard = app_steamcmd::acquire_game_install_lifecycle(module_id, &roots) => {
+        guard = app_steamcmd::acquire_game_install_lifecycle(&state.install_locks, module_id, &roots) => {
             guard.map_err(|error| steamcmd_error_message(&error))
         }
     }

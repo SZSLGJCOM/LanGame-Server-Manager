@@ -151,6 +151,9 @@ pub(super) fn run_if_requested() -> bool {
 }
 
 fn run(request: Request) -> Result<(), String> {
+    let storage_source = crate::state::StorageSource::UserDataRoot(
+        app_storage::StoragePaths::default().app_data_root,
+    );
     if request.pid == 0
         || request.pid == std::process::id()
         || request.sid != security::user_sid().map_err(|e| e.to_string())?
@@ -198,7 +201,15 @@ fn run(request: Request) -> Result<(), String> {
         // This task belongs to the helper, never to the interface or its pipe.
         tauri::async_runtime::spawn(async move {
             if let Err(error) = client.stop_for_tray_exit(request.deadline_tick_ms).await {
-                super::log_service_event("error", "app.exit.background_dispatch_failed", &error);
+                let log_path = storage_source
+                    .resolve_paths()
+                    .map(|paths| paths.app_log_path());
+                super::log_service_event_at(
+                    log_path.as_deref().map_err(String::as_str),
+                    "error",
+                    "app.exit.background_dispatch_failed",
+                    &error,
+                );
             }
         });
         #[cfg(feature = "desktop-reliability")]

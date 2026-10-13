@@ -89,6 +89,7 @@ impl WorkshopMutation {
 /// The import command already owns the stopped instance mutation lease. This
 /// only acquires program/SteamCMD leases, avoiding recursive instance locking.
 pub(super) async fn prepare_locked_dst_import_items(
+    install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
     operation: &StorageContextOperationGuard,
     instance: &InstanceDetails,
@@ -104,6 +105,7 @@ pub(super) async fn prepare_locked_dst_import_items(
     let install_root =
         PathBuf::from(super::commands_runtime_lifecycle::private_runtime_install_root(instance)?);
     let install = app_steamcmd::acquire_game_install_lifecycle(
+        install_locks,
         "dontstarve",
         std::slice::from_ref(&install_root),
     )

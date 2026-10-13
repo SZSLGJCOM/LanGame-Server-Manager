@@ -25,13 +25,17 @@ pub struct InstanceArkMapAvailability {
 
 #[tauri::command]
 pub async fn read_instance_ark_map_availability(
+    state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<InstanceArkMapAvailability, String> {
-    let target = super::commands_mods::resolve_manual_mod_target(instance_id, false).await?;
+    let operation = state.begin_storage_context_operation("installed map inspection")?;
+    let storage = state.bootstrap_storage()?;
+    let target =
+        super::commands_mods::resolve_manual_mod_target(&storage, instance_id, false).await?;
     if target.module_id != "arksurvivalascended" {
         return Err("Installed map discovery is supported for ARK: Survival Ascended.".into());
     }
-    tokio::task::spawn_blocking(move || {
+    spawn_blocking_storage_context_task(&operation, move || {
         Ok(InstanceArkMapAvailability {
             instance_id: target.instance_id,
             module_id: target.module_id,

@@ -607,6 +607,11 @@ pub(crate) fn dispatch_command<'a>(
     command: &'a str,
     args: Value,
 ) -> LanCommandFuture<'a> {
+    if !crate::command_registry::find(command)
+        .is_some_and(|registered| registered.lan == crate::command_registry::LanAccess::Allowed)
+    {
+        return boxed_command(|| async move { Err(format!("unknown LanGame command: {command}")) });
+    }
     match command {
         "read_satisfactory_world_settings" => boxed_command(|| async move {
             to_json(
@@ -768,6 +773,7 @@ pub(crate) fn dispatch_command<'a>(
         "read_module_details" => boxed_command(|| async move {
             to_json(
                 commands::read_module_details(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "moduleId", "module_id")?,
                     opt_arg(
                         &args,
@@ -840,6 +846,7 @@ pub(crate) fn dispatch_command<'a>(
         "read_project_zomboid_workshop_mods_snapshot" => boxed_command(|| async move {
             to_json(
                 commands::read_project_zomboid_workshop_mods_snapshot(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     arg(&args, "ids", "ids")?,
                 )
@@ -880,9 +887,11 @@ pub(crate) fn dispatch_command<'a>(
         "open_local_path" => boxed_command(|| async move {
             to_json(commands::open_local_path(arg(&args, "path", "path")?)?)
         }),
-        "probe_steamcmd_status" => {
-            boxed_command(|| async move { to_json(commands::probe_steamcmd_status()?) })
-        }
+        "probe_steamcmd_status" => boxed_command(|| async move {
+            to_json(commands::probe_steamcmd_status(
+                app_handle.state::<DesktopState>(),
+            )?)
+        }),
         "ensure_steamcmd_ready" => boxed_command(|| async move {
             to_json(
                 commands::ensure_steamcmd_ready(
@@ -978,6 +987,7 @@ pub(crate) fn dispatch_command<'a>(
         "read_steam_workshop_installation_status" => boxed_command(|| async move {
             to_json(
                 commands::read_steam_workshop_installation_status(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     arg(&args, "ids", "ids")?,
                 )
@@ -1006,23 +1016,26 @@ pub(crate) fn dispatch_command<'a>(
         }),
         "read_manual_mod_inventory" => boxed_command(|| async move {
             to_json(
-                commands::read_manual_mod_inventory(arg(&args, "instanceId", "instance_id")?)
-                    .await?,
+                commands::read_manual_mod_inventory(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
             )
         }),
-        "read_instance_ark_map_availability" => {
-            boxed_command(|| async move {
-                to_json(
-                    commands::commands_ark_map_availability::read_instance_ark_map_availability(
-                        arg(&args, "instanceId", "instance_id")?,
-                    )
-                    .await?,
+        "read_instance_ark_map_availability" => boxed_command(|| async move {
+            to_json(
+                commands::commands_ark_map_availability::read_instance_ark_map_availability(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
                 )
-            })
-        }
+                .await?,
+            )
+        }),
         "resolve_manual_mod_references" => boxed_command(|| async move {
             to_json(
                 commands::resolve_manual_mod_references(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     arg(&args, "references", "references")?,
                 )
@@ -1384,7 +1397,11 @@ pub(crate) fn dispatch_command<'a>(
         }),
         "assistant_run" => boxed_command(|| async move {
             to_json(
-                commands::assistant_run(arg::<AssistantRunInput>(&args, "input", "input")?).await?,
+                commands::assistant_run(
+                    app_handle.state::<DesktopState>(),
+                    arg::<AssistantRunInput>(&args, "input", "input")?,
+                )
+                .await?,
             )
         }),
         "assistant_check_connection" => boxed_command(|| async move {
@@ -1511,8 +1528,11 @@ pub(crate) fn dispatch_command<'a>(
         }),
         "read_instance_broadcast_policy" => boxed_command(|| async move {
             to_json(
-                commands::read_instance_broadcast_policy(arg(&args, "instanceId", "instance_id")?)
-                    .await?,
+                commands::read_instance_broadcast_policy(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
             )
         }),
         "update_instance_broadcast_policy" => boxed_command(|| async move {
@@ -1527,6 +1547,7 @@ pub(crate) fn dispatch_command<'a>(
         "list_instance_broadcast_events" => boxed_command(|| async move {
             to_json(
                 commands::list_instance_broadcast_events(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     opt_arg(&args, "limit", "limit")?,
                 )
@@ -1542,6 +1563,7 @@ pub(crate) fn dispatch_command<'a>(
         "log_frontend_event" => boxed_command(|| async move {
             to_json(
                 commands::log_frontend_event(
+                    app_handle.state::<DesktopState>(),
                     arg(&args, "level", "level")?,
                     arg(&args, "action", "action")?,
                     arg(&args, "message", "message")?,

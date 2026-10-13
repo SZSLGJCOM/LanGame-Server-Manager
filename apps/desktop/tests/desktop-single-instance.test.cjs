@@ -63,7 +63,7 @@ test("Windows stores server ownership in the service and connects the primary sh
   const builder = mainSource.indexOf("tauri::Builder::default()");
   const setup = mainSource.indexOf(".setup(move |app|");
   const secondaryGuard = mainSource.indexOf("let Some(storage_paths) = storage_paths else {", setup);
-  const client = mainSource.indexOf("runtime_service::setup(app)", setup);
+  const client = mainSource.indexOf("runtime_service::setup(app, storage_source)", setup);
   const updater = mainSource.indexOf("tauri_plugin_updater::Builder::new().build()", setup);
   const tray = mainSource.indexOf("setup_tray(app)?", setup);
 
@@ -92,11 +92,13 @@ test("Windows stores server ownership in the service and connects the primary sh
     assert.ok(client < position, `the backend connection must precede ${service} initialization`);
   }
   assert.match(mainSource, /#\[cfg\(not\(windows\)\)\]\s*if !app\.manage\(state::DesktopState::default\(\)\)/u);
-  const state = serverSource.indexOf("app.manage(crate::state::DesktopState::default())");
+  const state = serverSource.indexOf("let state = crate::state::DesktopState::default()");
+  const managedState = serverSource.indexOf("app.manage(state)", state);
   const firstPipe = serverSource.indexOf("security::create_pipe(&endpoint, true)", serverSource.indexOf("pub(super) fn run"));
   assert.ok(firstPipe >= 0 && firstPipe < state, "secure the current-user endpoint before opening storage");
+  assert.ok(managedState > state, "the captured backend state must be registered");
   for (const service of ["start_with_pipe(app.handle()", "crate::lan_host::is_lan_host_requested()", "crate::commands::spawn_runtime_heartbeat("]) {
-    assert.ok(serverSource.indexOf(service, state) > state, `backend state must precede ${service}`);
+    assert.ok(serverSource.indexOf(service, managedState) > managedState, `backend state must precede ${service}`);
   }
 });
 

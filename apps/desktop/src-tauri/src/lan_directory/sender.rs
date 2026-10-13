@@ -62,6 +62,7 @@ impl DirectorySenders {
 
     pub(super) fn publish(
         &mut self,
+        storage_source: &crate::state::StorageSource,
         now: Instant,
         emit: impl FnMut(&DirectorySender) -> Result<(), String>,
     ) {
@@ -70,7 +71,7 @@ impl DirectorySenders {
             now,
             |address| create_directory_sender(address, target),
             emit,
-            diagnostics::record,
+            |level, action, message| diagnostics::record(storage_source, level, action, message),
         );
     }
 

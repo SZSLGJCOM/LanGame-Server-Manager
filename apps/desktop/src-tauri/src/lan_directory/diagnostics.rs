@@ -2,12 +2,17 @@ use std::io::{self, Write};
 
 use serde_json::{Value, json};
 
-pub(super) fn record(level: &str, action: &str, message: &str) {
+pub(super) fn record(
+    source: &crate::state::StorageSource,
+    level: &str,
+    action: &str,
+    message: &str,
+) {
     record_with(
         &mut io::stderr().lock(),
         |entry| {
-            let paths = app_storage::StoragePaths::resolve_default().map_err(io::Error::other)?;
-            crate::desktop_app_log::append(&paths.app_log_path(), entry)
+            let storage = source.bootstrap_storage().map_err(io::Error::other)?;
+            crate::desktop_app_log::append(&storage.paths.app_log_path(), entry)
         },
         level,
         action,

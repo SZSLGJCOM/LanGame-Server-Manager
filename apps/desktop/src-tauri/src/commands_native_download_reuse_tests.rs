@@ -11,18 +11,25 @@ const APP_MANIFEST: &str = "steamapps/appmanifest_896660.acf";
 #[path = "commands_native_download_retry_tests.rs"]
 mod retry;
 
+#[path = "commands_native_dst_download_reuse_tests.rs"]
+mod dontstarve;
+
 /// Failed probes preserve their acquired package so investigation needs no
 /// additional download. No game process is started by either test.
 struct ProbeRoot {
     path: PathBuf,
     parent: PathBuf,
     cleaned: bool,
+    report_prefix: &'static str,
 }
 
 impl ProbeRoot {
     fn new() -> TestResult<Self> {
-        let path =
-            crate::commands::tests::real_smoke_support::allocate_smoke_run_root("vdownload")?;
+        Self::new_for("vdownload", "VALHEIM_DOWNLOAD_REUSE")
+    }
+
+    fn new_for(label: &str, report_prefix: &'static str) -> TestResult<Self> {
+        let path = crate::commands::tests::real_smoke_support::allocate_smoke_run_root(label)?;
         let path = fs::canonicalize(path)?;
         let parent = path
             .parent()
@@ -32,6 +39,7 @@ impl ProbeRoot {
             path,
             parent,
             cleaned: false,
+            report_prefix,
         })
     }
 
@@ -51,7 +59,8 @@ impl Drop for ProbeRoot {
     fn drop(&mut self) {
         if !self.cleaned {
             eprintln!(
-                "VALHEIM_DOWNLOAD_REUSE retained_root={} cleanup=preserved_for_investigation",
+                "{} retained_root={} cleanup=preserved_for_investigation",
+                self.report_prefix,
                 self.path.display()
             );
         }
@@ -394,8 +403,12 @@ async fn native_valheim_empty_acquisition_download_reuse() -> TestResult {
     sync_modules(&storage.paths, &descriptors).await?;
     let descriptor = find_descriptor(&descriptors, MODULE)?;
     let source = storage.paths.games_root.join(MODULE);
-    let guard =
-        app_steamcmd::acquire_game_install_lifecycle(MODULE, std::slice::from_ref(&source)).await?;
+    let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &app_steamcmd::InstallLockContext::new(storage.paths.app_data_root.clone()),
+        MODULE,
+        std::slice::from_ref(&source),
+    )
+    .await?;
     let seed =
         app_storage::prepare_clean_library_seed_at(&storage.paths, descriptor, &source, None)
             .await?;

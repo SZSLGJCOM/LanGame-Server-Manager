@@ -210,6 +210,124 @@ async fn first_instance_uses_downloaded_files_and_deletion_retains_the_installat
     );
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn first_instance_reuses_exact_inventory_with_empty_steam_work_directories() {
+    let fixture = CleanCreationFixture::new().await;
+    fixture.record();
+    let package = crate::program_seed::read_package_inventory(
+        &fixture.source,
+        &fixture.descriptor.summary.id,
+    )
+    .unwrap()
+    .unwrap();
+    for directory in ["steamapps/downloading", "steamapps/temp/nested"] {
+        fs::create_dir_all(fixture.source.join(directory)).unwrap();
+    }
+    // Exact depot inventories omit SteamCMD's empty working directories.
+    record_verified_library_program_baseline(
+        &fixture.source,
+        &fixture.descriptor,
+        package.files,
+        package.directories,
+        None,
+    )
+    .unwrap();
+    register(&fixture).await;
+    let cancellation = Arc::new(AtomicBool::new(false));
+    let reads = count_hash_reads(&cancellation);
+    let inventory = crate::inspect_module_programs(
+        &fixture.paths,
+        &fixture.descriptor,
+        Some(InstanceProgramMode::Independent),
+        app_core::InstanceProgramSource::Verified,
+        Arc::clone(&cancellation),
+        false,
+    )
+    .await
+    .unwrap();
+    assert_eq!(inventory.creation.action, "existing_install");
+    assert_eq!(inventory.creation.additional_bytes, Some(0));
+    let created = create_instance_with_options(
+        &fixture.paths,
+        &fixture.descriptor,
+        CreateInstanceInput {
+            name: "Reuse recovered Steam installation".into(),
+            module_id: fixture.descriptor.summary.id.clone(),
+        },
+        InstanceCreationOptions {
+            prefer_existing_install: true,
+            require_clean_program: true,
+            program_mode: Some(InstanceProgramMode::Independent),
+            cancellation: Some(cancellation),
+            ..Default::default()
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        fs::canonicalize(&created.effective_install_root).unwrap(),
+        fs::canonicalize(&fixture.source).unwrap()
+    );
+    assert!(
+        instance_uses_exclusive_program(
+            &fixture
+                .paths
+                .instances_root
+                .join(&created.provisioning.summary.id)
+        )
+        .unwrap()
+    );
+    assert_eq!(
+        reads.chunks(),
+        0,
+        "verified first-use bytes must not be reread"
+    );
+    assert!(fixture.source.join("steamapps/downloading").is_dir());
+    assert!(fixture.source.join("steamapps/temp/nested").is_dir());
+}
+
+#[tokio::test]
+async fn unlisted_steam_work_files_still_force_a_clean_first_instance_copy() {
+    let fixture = CleanCreationFixture::new().await;
+    fixture.record();
+    register(&fixture).await;
+    let unknown = fixture.source.join("steamapps/temp/nested/operator.dat");
+    fs::create_dir_all(unknown.parent().unwrap()).unwrap();
+    fs::write(&unknown, b"preserve operator data").unwrap();
+    let created = create(&fixture, "Exclude unfinished Steam work")
+        .await
+        .unwrap();
+    assert_ne!(
+        fs::canonicalize(&created.effective_install_root).unwrap(),
+        fs::canonicalize(&fixture.source).unwrap()
+    );
+    assert!(
+        !created
+            .effective_install_root
+            .join("steamapps/temp")
+            .exists()
+    );
+    assert_eq!(fs::read(unknown).unwrap(), b"preserve operator data");
+}
+
+#[tokio::test]
+async fn unlisted_managed_metadata_cannot_mark_a_fresh_library_reusable() {
+    for name in [".langame-program-identity.json", ".langame-unknown.json"] {
+        let fixture = CleanCreationFixture::new().await;
+        fixture.record();
+        fs::write(fixture.source.join(name), b"unrecognized ownership").unwrap();
+        assert!(
+            !crate::program_exclusive::unused_library_is_fresh(
+                &fixture.source,
+                &fixture.descriptor.summary.id,
+                None,
+            )
+            .unwrap()
+        );
+    }
+}
+
 #[tokio::test]
 async fn second_independent_instance_never_inherits_first_instance_unknown_files_or_mods() {
     let fixture = CleanCreationFixture::new().await;

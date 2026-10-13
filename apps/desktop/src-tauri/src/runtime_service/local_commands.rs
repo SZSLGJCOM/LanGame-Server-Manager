@@ -18,6 +18,23 @@ pub(super) fn dispatch<'a>(
     // Box each construction separately, as in the shared dispatcher. Large
     // native command futures must not accumulate on a connection worker's stack.
     match command {
+        "uninstall_steamcmd" => Some(Box::pin(async move {
+            to_json(crate::commands::uninstall_steamcmd(app.state::<DesktopState>()).await?)
+        })),
+        "preview_dontstarve_world_start" => Some(Box::pin(async move {
+            let id = args
+                .get("instanceId")
+                .or_else(|| args.get("instance_id"))
+                .and_then(Value::as_str)
+                .ok_or("Missing instance ID")?;
+            to_json(
+                crate::commands::commands_dst_world_state::preview_dontstarve_world_start(
+                    app.state::<DesktopState>(),
+                    id.into(),
+                )
+                .await?,
+            )
+        })),
         "read_ark_tools_status" => Some(Box::pin(async move {
             to_json(
                 crate::commands::commands_ark_tools::read_ark_tools_status(

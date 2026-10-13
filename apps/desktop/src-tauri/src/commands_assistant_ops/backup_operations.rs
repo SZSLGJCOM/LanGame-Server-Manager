@@ -96,6 +96,7 @@ async fn execute_assistant_backup_operation(
     let lease = state.begin_storage_context_operation("assistant backup operation")?;
     let restore_operation = lease.clone();
     let restore_storage = storage.clone();
+    let install_locks = state.install_locks.clone();
     let preference = pending.lifecycle_locale.source_preference();
     let task = pending.task.clone();
     // Reconciliation also owns the automatic restart future. Keep that runtime
@@ -131,7 +132,7 @@ async fn execute_assistant_backup_operation(
                 let restored_settings = serde_json::from_str(&expected_restored.settings_json).map_err(|error| error.to_string())?;
                 task.validate_settings(&restored_settings)?;
                 let restored = if current.summary.module_id == "dontstarve" {
-                    super::commands_dst_import_operation::restore_dst_backup_locked(&restore_storage, &restore_operation, &target, prepared, preference).await?
+                    super::commands_dst_import_operation::restore_dst_backup_locked(&install_locks, &restore_storage, &restore_operation, &target, prepared, preference).await?
                 } else {
                     app_storage::restore_prepared_instance_backup(&paths, &target, prepared).await.map_err(|error| error.to_string())?
                 };

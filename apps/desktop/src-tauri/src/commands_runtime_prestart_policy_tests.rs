@@ -100,9 +100,12 @@ async fn check_policy_boundary(
         RuntimeStartReservationAttempt::Reserved(reservation) => reservation,
         other => panic!("unexpected start reservation: {other:?}"),
     };
-    let guard =
-        app_steamcmd::acquire_game_install_lifecycle("minecraft", std::slice::from_ref(&program))
-            .await?;
+    let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
+        "minecraft",
+        std::slice::from_ref(&program),
+    )
+    .await?;
     let result = tokio::time::timeout(
         Duration::from_secs(3),
         run_prestart_update_if_needed(
@@ -362,6 +365,7 @@ async fn check_automatic_failure_or_cancellation(
     // Scope only the independently owned runtime. A regression that attempts
     // to check the game's library instead must fail before the HTTP request.
     let guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         "minecraft",
         std::slice::from_ref(&fixture.program),
     )
@@ -422,6 +426,7 @@ async fn check_automatic_failure_or_cancellation(
     let _reacquired = tokio::time::timeout(
         Duration::from_secs(3),
         app_steamcmd::acquire_game_install_lifecycle(
+            &state.install_locks,
             "minecraft",
             std::slice::from_ref(&fixture.program),
         ),
@@ -457,15 +462,19 @@ async fn cancelled_prestart_lock_wait_does_not_wait_for_the_current_program_owne
         uuid::Uuid::new_v4().simple()
     )));
     fs::create_dir_all(&root.0)?;
-    let current_owner =
-        app_steamcmd::acquire_game_install_lifecycle("minecraft", std::slice::from_ref(&root.0))
-            .await?;
     let state = DesktopState::default();
+    let current_owner = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
+        "minecraft",
+        std::slice::from_ref(&root.0),
+    )
+    .await?;
     let reservation = match state.try_reserve_runtime_start("cancelled-lock-wait", "manual")? {
         RuntimeStartReservationAttempt::Reserved(reservation) => reservation,
         other => panic!("unexpected start reservation: {other:?}"),
     };
     let mut wait = Box::pin(acquire_prestart_program_guard(
+        &state,
         "minecraft",
         &root.0,
         &reservation,
@@ -491,7 +500,11 @@ async fn cancelled_prestart_lock_wait_does_not_wait_for_the_current_program_owne
     drop(current_owner);
     let _next_owner = tokio::time::timeout(
         Duration::from_secs(3),
-        app_steamcmd::acquire_game_install_lifecycle("minecraft", std::slice::from_ref(&root.0)),
+        app_steamcmd::acquire_game_install_lifecycle(
+            &state.install_locks,
+            "minecraft",
+            std::slice::from_ref(&root.0),
+        ),
     )
     .await
     .expect("a cancelled waiter must not retain the install lock")?;

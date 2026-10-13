@@ -9,8 +9,8 @@ use tokio::process::Command;
 use super::ps_literal;
 use super::steamcmd_prepare_process::{PreparationAttempt, run_preparation_command};
 use super::{
-    InstallDeadline, SteamCmdError, SteamCmdSource, SteamCmdStatus, acquire_steamcmd_operation,
-    apply_no_window, configured_steamcmd_root, managed_steamcmd_status,
+    InstallDeadline, InstallLockContext, SteamCmdError, SteamCmdSource, SteamCmdStatus,
+    acquire_steamcmd_operation, apply_no_window, configured_steamcmd_root, managed_steamcmd_status,
     prepare_configured_steamcmd_root, steamcmd_status, validate_steamcmd_ownership,
 };
 
@@ -39,12 +39,14 @@ pub struct SteamCmdPrepareProgress {
 }
 
 pub async fn ensure_steamcmd_installed(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
 ) -> Result<SteamCmdStatus, SteamCmdError> {
-    ensure_steamcmd_installed_with_progress(settings, |_| {}).await
+    ensure_steamcmd_installed_with_progress(lock_context, settings, |_| {}).await
 }
 
 pub async fn ensure_steamcmd_installed_with_progress<F>(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     on_progress: F,
 ) -> Result<SteamCmdStatus, SteamCmdError>
@@ -52,6 +54,7 @@ where
     F: FnMut(SteamCmdPrepareProgress),
 {
     ensure_steamcmd_installed_with_progress_and_cancellation(
+        lock_context,
         settings,
         &super::InstallCancellation::new(),
         on_progress,
@@ -60,6 +63,7 @@ where
 }
 
 pub async fn ensure_steamcmd_installed_with_progress_and_cancellation<F>(
+    lock_context: &InstallLockContext,
     settings: &AppSettings,
     cancellation: &super::InstallCancellation,
     on_progress: F,
@@ -75,7 +79,7 @@ where
                 SteamCmdPreparePhase::Queued,
                 "Waiting for the installation lock...",
             );
-            let _operation = acquire_steamcmd_operation(settings, deadline).await?;
+            let _operation = acquire_steamcmd_operation(lock_context, settings, deadline).await?;
             prepare_locked(settings, deadline, &mut reporter).await
         })
         .await

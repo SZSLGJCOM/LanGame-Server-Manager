@@ -167,7 +167,7 @@ pub async fn update_instance_autostart(
     autostart: bool,
 ) -> Result<InstanceDetails, String> {
     let operation = state.begin_storage_context_operation("instance autostart update")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     update_instance_autostart_with(&state, &storage, &operation, instance_id, autostart).await
 }
 

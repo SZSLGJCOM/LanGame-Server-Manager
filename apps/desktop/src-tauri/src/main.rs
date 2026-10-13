@@ -5,6 +5,7 @@ mod archive_entry;
 mod assistant;
 mod assistant_sessions;
 mod astroneer_console;
+mod command_registry;
 mod commands;
 mod commands_assistant_connection;
 mod commands_knowledge;
@@ -133,6 +134,9 @@ fn main() {
     let instance_lease = acquire_desktop_instance_lease()
         .unwrap_or_else(|error| panic!("failed to acquire the process instance lease: {error}"));
     let secondary_instance = instance_lease.is_secondary();
+    #[cfg(windows)]
+    let storage_source =
+        state::StorageSource::UserDataRoot(app_storage::StoragePaths::default().app_data_root);
     // A native error dialog pumps window messages. Resolve storage before a WebView
     // can send IPC to the runtime client that setup has not installed yet.
     let storage_paths = if secondary_instance {
@@ -147,246 +151,94 @@ fn main() {
         }
     };
 
-    let run_result =
-        tauri::Builder::default()
-            .register_asynchronous_uri_scheme_protocol("lgsm-media", media_cache::handle_protocol)
-            .plugin(tauri_plugin_single_instance::init(
-                |app, _arguments, _cwd| {
-                    show_main_window(app);
-                },
-            ))
-            .manage(app_updates::PendingAppUpdate::default())
-            .setup(move |app| {
-                // The plugin can briefly miss a launch before its Windows message window exists.
-                // The file lease keeps that process from touching shared storage.
-                let Some(storage_paths) = storage_paths else {
-                    std::process::exit(0);
-                };
-                #[cfg(not(windows))]
-                if !app.manage(state::DesktopState::default()) {
-                    return Err(
-                        std::io::Error::other("desktop state was already initialized").into(),
-                    );
-                }
-                #[cfg(windows)]
-                runtime_service::setup(app).map_err(std::io::Error::other)?;
-                app.manage(media_cache::MediaCacheState::new(
-                    storage_paths.app_data_root.join("cache/media"),
-                ));
-                app.handle()
-                    .plugin(tauri_plugin_updater::Builder::new().build())?;
-                setup_tray(app)?;
-                let main_window = app
-                    .get_webview_window("main")
-                    .ok_or_else(|| std::io::Error::other("main window is missing"))?;
-                desktop_window::prepare(&main_window).map_err(std::io::Error::other)?;
-                #[cfg(windows)]
-                webview_drop::install(&main_window).map_err(std::io::Error::other)?;
-                main_window.show()?;
-                #[cfg(windows)]
-                {
-                    let window = app
-                        .config()
-                        .app
-                        .windows
-                        .iter()
-                        .find(|window| window.label == "main")
-                        .cloned()
-                        .ok_or_else(|| {
-                            std::io::Error::other("main window configuration missing")
-                        })?;
-                    webview_recovery::install(
-                        app.handle(),
-                        webview_recovery::RecoveryConfig {
-                            window,
-                            // The service owns desktop-app logs. Rotation has one
-                            // process owner per directory, including WebView failures.
-                            log_path: storage_paths.logs_root.join("desktop-ui/active.jsonl"),
-                        },
-                    )
+    let run_result = tauri::Builder::default()
+        .register_asynchronous_uri_scheme_protocol("lgsm-media", media_cache::handle_protocol)
+        .plugin(tauri_plugin_single_instance::init(
+            |app, _arguments, _cwd| {
+                show_main_window(app);
+            },
+        ))
+        .manage(app_updates::PendingAppUpdate::default())
+        .setup(move |app| {
+            // The plugin can briefly miss a launch before its Windows message window exists.
+            // The file lease keeps that process from touching shared storage.
+            let Some(storage_paths) = storage_paths else {
+                std::process::exit(0);
+            };
+            #[cfg(not(windows))]
+            if !app.manage(state::DesktopState::default()) {
+                return Err(std::io::Error::other("desktop state was already initialized").into());
+            }
+            #[cfg(windows)]
+            runtime_service::setup(app, storage_source).map_err(std::io::Error::other)?;
+            app.manage(media_cache::MediaCacheState::new(
+                storage_paths.app_data_root.join("cache/media"),
+            ));
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
+            setup_tray(app)?;
+            let main_window = app
+                .get_webview_window("main")
+                .ok_or_else(|| std::io::Error::other("main window is missing"))?;
+            desktop_window::prepare(&main_window).map_err(std::io::Error::other)?;
+            #[cfg(windows)]
+            webview_drop::install(&main_window).map_err(std::io::Error::other)?;
+            main_window.show()?;
+            #[cfg(windows)]
+            {
+                let window = app
+                    .config()
+                    .app
+                    .windows
+                    .iter()
+                    .find(|window| window.label == "main")
+                    .cloned()
+                    .ok_or_else(|| std::io::Error::other("main window configuration missing"))?;
+                webview_recovery::install(
+                    app.handle(),
+                    webview_recovery::RecoveryConfig {
+                        window,
+                        // The service owns desktop-app logs. Rotation has one
+                        // process owner per directory, including WebView failures.
+                        log_path: storage_paths.logs_root.join("desktop-ui/active.jsonl"),
+                    },
+                )
+                .map_err(std::io::Error::other)?;
+            }
+            #[cfg(not(windows))]
+            if lan_host::is_lan_host_requested() {
+                let config = lan_host::config_from_env().map_err(std::io::Error::other)?;
+                lan_host::spawn_lan_host(app.handle().clone(), config)
                     .map_err(std::io::Error::other)?;
-                }
-                #[cfg(not(windows))]
-                if lan_host::is_lan_host_requested() {
-                    let config = lan_host::config_from_env().map_err(std::io::Error::other)?;
-                    lan_host::spawn_lan_host(app.handle().clone(), config)
-                        .map_err(std::io::Error::other)?;
-                }
-                #[cfg(not(windows))]
-                if let Err(error) =
-                    lan_directory::spawn_lan_directory_broadcaster(app.handle().clone())
+            }
+            #[cfg(not(windows))]
+            if let Err(error) = lan_directory::spawn_lan_directory_broadcaster(app.handle().clone())
+            {
+                eprintln!("LanGame LAN directory is unavailable: {error}");
+            }
+            #[cfg(not(windows))]
+            {
+                commands::spawn_runtime_heartbeat(app.handle().clone());
+                knowledge_runtime::spawn_knowledge_scheduler(app.handle().clone());
+                commands::commands_managed_save::spawn_managed_save_worker(app.handle().clone());
+            }
+            Ok(())
+        })
+        .on_page_load(|webview, payload| {
+            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                #[cfg(windows)]
+                if webview.label() == "main"
+                    && let Some(window) = webview.app_handle().get_webview_window("main")
+                    && let Err(error) = webview_drop::install(&window)
                 {
-                    eprintln!("LanGame LAN directory is unavailable: {error}");
+                    eprintln!("Restore dropped-file bridge after page load: {error}");
                 }
-                #[cfg(not(windows))]
-                {
-                    commands::spawn_runtime_heartbeat(app.handle().clone());
-                    knowledge_runtime::spawn_knowledge_scheduler(app.handle().clone());
-                    commands::commands_managed_save::spawn_managed_save_worker(
-                        app.handle().clone(),
-                    );
-                }
-                Ok(())
-            })
-            .on_page_load(|webview, payload| {
-                if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
-                    #[cfg(windows)]
-                    if webview.label() == "main"
-                        && let Some(window) = webview.app_handle().get_webview_window("main")
-                        && let Err(error) = webview_drop::install(&window)
-                    {
-                        eprintln!("Restore dropped-file bridge after page load: {error}");
-                    }
-                    webview_recovery::page_loaded(webview.app_handle(), webview.label(), 1);
-                }
-            })
-            .on_window_event(handle_window_event)
-            .invoke_handler({
-                let local_handler: fn(tauri::ipc::Invoke<tauri::Wry>) -> bool =
-                    tauri::generate_handler![
-            set_tray_locale,
-            app_exit_status,
-            app_updates::check_app_update,
-            app_updates::install_app_update,
-            commands::app_version,
-            commands::bootstrap,
-            commands::read_background_jobs,
-            commands::refresh_modules,
-            commands::read_module_details,
-            media_cache::register_media_cache_source,
-            commands::commands_configuration_icons::read_module_configuration_icons,
-            commands::search_steam_workshop_items,
-            commands::lookup_steam_workshop_items,
-            commands::read_steam_workshop_item_details,
-            commands::read_steam_workshop_installation_status,
-            commands::read_dontstarve_mod_configuration_specs,
-            commands::read_project_zomboid_workshop_mods_snapshot,
-            commands::fetch_steam_news_for_app,
-            commands::fetch_steam_store_about,
-            commands::fetch_steam_review_summary,
-            commands::open_external_url,
-            commands::open_local_path,
-            commands::probe_steamcmd_status,
-            commands::commands_steamcmd_preparation::ensure_steamcmd_ready,
-            commands::commands_steamcmd_preparation::read_steamcmd_prepare_progress,
-            commands::commands_steamcmd_preparation::cancel_steamcmd_preparation,
-            commands::commands_install_progress::cancel_installation_job,
-            commands::uninstall_steamcmd,
-            commands::update_app_settings,
-            commands::pick_directory_path,
-            commands::install_module_game,
-            commands::validate_module_game,
-            commands::commands_program_storage::update_instance_program,
-            commands::uninstall_module_game,
-            commands::download_steam_workshop_items,
-            commands::commands_workshop_collection_removal::remove_instance_workshop_collection,
-            commands::stage_manual_mod_files,
-            commands::install_manual_mod_references,
-            commands::read_manual_mod_inventory,
-            commands::commands_ark_map_availability::read_instance_ark_map_availability,
-            commands::resolve_manual_mod_references,
-            commands::commands_runtime_lifecycle::preview_instance_launch,
-            commands::commands_runtime_lifecycle::start_instance_process,
-            commands::commands_runtime_lifecycle::stop_instance_process,
-            commands::commands_assistant_ops::send_instance_runtime_command,
-            commands::commands_assistant_ops::send_instance_gm_command,
-            commands::commands_ark_tools::read_ark_tools_status,
-            commands::commands_ark_tools::prepare_ark_tools,
-            commands::commands_ark_tools::spawn_ark_creature,
-            commands::commands_live_players::read_instance_live_players,
-            commands::commands_live_players::refresh_instance_live_players,
-            commands::commands_live_players::execute_instance_player_action,
-            commands::commands_manual_player_actions::execute_instance_manual_player_action,
-            commands::commands_storage::suppress_instance_runtime_windows,
-            commands::commands_storage::ensure_storage_ready,
-            commands::commands_storage::sync_modules_to_storage,
-            commands::commands_storage::list_instances_from_storage,
-            commands::commands_instance_network::read_instance_connection_info_from_storage,
-            commands::commands_autostart::update_instance_autostart,
-            commands::commands_storage::read_instance_details_from_storage,
-            commands::commands_instance_isolation::read_instance_isolation,
-            commands::commands_dragonwilds_world::read_dragonwilds_world_settings,
-            commands::commands_dragonwilds_world::write_dragonwilds_world_settings,
-            commands::commands_astroneer_saves::read_astroneer_save_catalog,
-            commands::commands_valheim_world::read_valheim_world_rules,
-            commands::commands_satisfactory_world::read_satisfactory_world_settings,
-            commands::commands_satisfactory_world::setup_satisfactory_server,
-            commands::commands_satisfactory_world::authorize_satisfactory_server,
-            commands::commands_satisfactory_world::read_satisfactory_admin_password,
-            commands::commands_satisfactory_world::write_satisfactory_world_rules,
-            commands::commands_satisfactory_world::create_satisfactory_world,
-            commands::commands_satisfactory_world::write_satisfactory_room,
-            commands::commands_satisfactory_world::load_satisfactory_save,
-            commands::commands_ark_clusters::read_ark_cluster,
-            commands::commands_ark_clusters::operate_ark_cluster,
-            commands::commands_ark_cluster_backups::list_ark_cluster_backups,
-            commands::commands_ark_cluster_backups::create_ark_cluster_backup,
-            commands::commands_ark_cluster_backups::restore_ark_cluster_backup,
-            commands::commands_ark_cluster_backups::read_pending_ark_cluster_restore,
-            commands::commands_ark_cluster_backups::recover_ark_cluster_restore,
-            commands::commands_storage::create_instance_backup,
-            commands::commands_storage::list_instance_backups,
-            commands::commands_storage::rename_instance_backup,
-            commands::commands_storage::delete_instance_backup,
-            commands::commands_storage::restore_instance_backup,
-            commands::commands_storage::read_instance_runtime_overview_from_storage,
-            commands::commands_storage::read_instance_runtime_window_snapshot,
-            commands::commands_storage::read_palworld_operator_snapshot,
-            commands::commands_storage::read_sevendaystodie_operator_snapshot,
-            commands::commands_storage::read_instance_log_document_from_storage,
-            commands::commands_storage::create_instance_record,
-            commands::commands_runtime_supervision::log_frontend_event,
-            commands::commands_storage::update_instance_record_if_current,
-            commands::commands_player_access::apply_instance_player_access_mutation,
-            commands::commands_instance_retirement::archive_instance_record,
-            commands::commands_instance_retirement::delete_instance_record,
-            commands::commands_storage_management::scan_storage_usage,
-            commands::commands_program_inventory::inspect_module_programs,
-            commands::commands_program_inventory::inspect_instance_removal,
-            commands_knowledge::read_knowledge_status,
-            commands_knowledge::update_knowledge_settings,
-            commands_knowledge::start_knowledge_sync,
-            commands_knowledge::cancel_knowledge_sync,
-            commands::commands_storage_management::cancel_storage_usage_scan,
-            commands::commands_storage_management::list_instance_archives,
-            commands::commands_storage_management::read_instance_archive_details,
-            commands::commands_storage_management::restore_instance_archive,
-            commands::commands_storage_management::purge_instance_archive,
-            commands::commands_storage::import_dontstarve_world_data,
-            commands::commands_dst_world_state::preview_dontstarve_world_start,
-            commands::commands_runtime_supervision::overlay_families,
-            commands::commands_runtime_supervision::bind_address_candidates,
-            commands::commands_assistant_ops::assistant_secret_status,
-            commands::commands_assistant_ops::assistant_store_secret,
-            commands::commands_assistant_ops::assistant_clear_secret,
-            commands::commands_assistant_ops::assistant_list_ollama_models,
-            commands_assistant_connection::assistant_check_connection,
-            commands_assistant_connection::assistant_cancel_connection_check,
-            commands::commands_assistant_ops::assistant_run,
-            commands::commands_assistant_ops::assistant_execute_operation,
-            commands::commands_assistant_ops::assistant_confirm_operation,
-            commands::commands_assistant_ops::assistant_create_conversation,
-            commands::commands_assistant_ops::assistant_list_conversations,
-            commands::commands_assistant_ops::assistant_cancel_turn,
-            commands::commands_assistant_ops::assistant_delete_conversation,
-            commands::commands_assistant_ops::assistant_resume_conversation,
-            commands::commands_assistant_ops::assistant_get_conversation_state,
-            commands::commands_broadcast::generate_instance_broadcast,
-            commands::commands_broadcast::send_instance_broadcast,
-            commands::commands_broadcast::read_instance_broadcast_policy,
-            commands::commands_broadcast::update_instance_broadcast_policy,
-            commands::commands_broadcast::list_instance_broadcast_events
-            ];
-                move |invoke: tauri::ipc::Invoke<tauri::Wry>| {
-                    #[cfg(windows)]
-                    if !runtime_service::is_local_command(invoke.message.command()) {
-                        runtime_service::forward(invoke);
-                        return true;
-                    }
-                    local_handler(invoke)
-                }
-            })
-            .build(tauri::tauri_build_context!());
+                webview_recovery::page_loaded(webview.app_handle(), webview.label(), 1);
+            }
+        })
+        .on_window_event(handle_window_event)
+        .invoke_handler(command_registry::invoke_handler)
+        .build(tauri::tauri_build_context!());
 
     match run_result {
         Ok(app) => app.run(|handle, event| {

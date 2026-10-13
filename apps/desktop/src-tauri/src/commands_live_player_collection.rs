@@ -10,7 +10,7 @@ pub(super) async fn refresh_live_players_uncached(
     requested_at: u64,
 ) -> LivePlayerCollectionResult {
     let _mutation = state.acquire_instance_mutation(instance_id).await;
-    let context = load_persisted_live_player_context(instance_id).await;
+    let context = load_persisted_live_player_context(state, instance_id).await;
     let (_, details, descriptor) = context.map_err(|_| {
         failed_snapshot(
             instance_id,

@@ -63,7 +63,7 @@ async fn program_update_policy_lease_serializes_program_writes_and_rejects_pendi
     )
     .await?;
     let current = read_instance_details(&storage.paths, &created.summary.id).await?;
-    let state = DesktopState::default();
+    let state = DesktopState::from_storage(&storage);
     let _instance = state.acquire_instance_mutation(&current.summary.id).await;
     let pinned = r#"{"program_update":{"policy":"pinned"}}"#;
     let policy = acquire_policy_change(&state, &storage, &current, pinned)
@@ -72,6 +72,7 @@ async fn program_update_policy_lease_serializes_program_writes_and_rejects_pendi
 
     let roots = [library];
     let mut update = Box::pin(app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         "minecraft",
         &roots,
     ));

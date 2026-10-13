@@ -53,7 +53,7 @@ pub async fn preview_instance_launch(
 ) -> Result<LaunchPlan, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("instance launch preview")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -114,7 +114,8 @@ pub(super) async fn start_instance_process_inner(
     instance_id: String,
     expected_world_start: Option<DstWorldStartPreview>,
 ) -> Result<StartInstanceResult, String> {
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let _storage_context_operation = state.begin_storage_context_operation("runtime start")?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -310,6 +311,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     .map_err(|error| error.to_string())?;
     let shared_install_guard = Some(
         super::commands_runtime_prestart_update::acquire_prestart_program_guard(
+            state,
             &instance.summary.module_id,
             &program_root,
             runtime_start_reservation,
@@ -1318,7 +1320,7 @@ pub(super) async fn stop_instance_process_with_precondition(
     expected_instance: Option<InstanceDetails>,
 ) -> Result<StopInstanceResult, String> {
     let storage_context_operation = state.begin_storage_context_operation("runtime stop")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
@@ -1670,7 +1672,7 @@ async fn prepare_app_shutdown(
         join_lan_host_for_app_exit(&state),
     );
     if let Ok(Some(warning)) = &lan_directory_result {
-        crate::lan_directory::report_shutdown_warning(warning);
+        crate::lan_directory::report_shutdown_warning(&state, warning);
     }
     let attempt_result = aggregate_app_shutdown_phase_results(
         lan_directory_result.map(|_| ()),
@@ -1832,7 +1834,7 @@ fn record_app_shutdown_failure(
             return;
         }
     };
-    match bootstrap_storage() {
+    match state.bootstrap_storage() {
         Ok(storage) => append_desktop_app_log(
             &storage,
             "error",
@@ -1870,7 +1872,7 @@ pub(super) async fn shutdown_all_running_instances_for_app_exit<L: StorageContex
     if pending_start_instance_ids.is_empty() && !app_exit_requires_instance_storage(&state)? {
         return Ok(());
     }
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;

@@ -8,31 +8,13 @@ pub(super) struct DstWorldReplacement {
     pub(super) safeguard: InstanceBackupResult,
 }
 
-type ModPreparation = for<'a> fn(
-    &'a StorageBootstrap,
-    &'a StorageContextOperationGuard,
-    &'a InstanceDetails,
-    &'a [String],
-    app_network::SourcePreference,
-) -> std::pin::Pin<
-    Box<dyn std::future::Future<Output = Result<(), String>> + Send + 'a>,
->;
-
-fn prepare_required_mods<'a>(
-    storage: &'a StorageBootstrap,
-    operation: &'a StorageContextOperationGuard,
-    details: &'a InstanceDetails,
-    ids: &'a [String],
-    preference: app_network::SourcePreference,
-) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + 'a>> {
-    Box::pin(prepare_dst_import_workshop_items(
-        storage, operation, details, ids, preference,
-    ))
-}
+type ModPreparationFuture<'a> =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send + 'a>>;
 
 /// The caller owns the stopped instance mutation for the entire future. Both
 /// external imports and confirmed backup restores publish world + settings.
 pub(super) async fn replace_dst_world_locked(
+    install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
     operation: &StorageContextOperationGuard,
     instance_id: &str,
@@ -40,6 +22,7 @@ pub(super) async fn replace_dst_world_locked(
     prepared: Option<app_storage::PreparedInstanceBackupRestore>,
     preference: app_network::SourcePreference,
 ) -> Result<DstWorldReplacement, String> {
+    let install_locks = install_locks.clone();
     replace_dst_world_with_mod_preparation(
         storage,
         operation,
@@ -47,7 +30,19 @@ pub(super) async fn replace_dst_world_locked(
         source_path,
         prepared,
         preference,
-        prepare_required_mods,
+        move |storage, operation, details, ids, preference| {
+            Box::pin(async move {
+                prepare_dst_import_workshop_items(
+                    &install_locks,
+                    storage,
+                    operation,
+                    details,
+                    ids,
+                    preference,
+                )
+                .await
+            })
+        },
     )
     .await
 }
@@ -59,7 +54,13 @@ async fn replace_dst_world_with_mod_preparation(
     source_path: PathBuf,
     prepared: Option<app_storage::PreparedInstanceBackupRestore>,
     preference: app_network::SourcePreference,
-    prepare_mods: ModPreparation,
+    prepare_mods: impl for<'a> FnOnce(
+        &'a StorageBootstrap,
+        &'a StorageContextOperationGuard,
+        &'a InstanceDetails,
+        &'a [String],
+        app_network::SourcePreference,
+    ) -> ModPreparationFuture<'a>,
 ) -> Result<DstWorldReplacement, String> {
     if read_active_instance_run(&storage.paths, instance_id)
         .await
@@ -211,6 +212,7 @@ async fn replace_dst_world_with_mod_preparation(
 }
 
 pub(super) async fn restore_dst_backup_locked(
+    install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
     operation: &StorageContextOperationGuard,
     instance_id: &str,
@@ -220,6 +222,7 @@ pub(super) async fn restore_dst_backup_locked(
     let backup_id = prepared.backup.backup_id.clone();
     let source = Path::new(&prepared.backup.backup_path).join("saves");
     let replacement = replace_dst_world_locked(
+        install_locks,
         storage,
         operation,
         instance_id,

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::*;
 use app_storage::StoragePaths;
 
@@ -54,8 +56,7 @@ impl Fixture {
             storage_status: paths.probe_status(),
             paths,
         };
-        let state = DesktopState::default();
-        state.app_state.write().unwrap().settings = storage.settings.clone();
+        let state = DesktopState::from_storage(&storage);
         let app = tauri::test::mock_builder()
             .manage(state)
             .build(tauri::test::mock_context(tauri::test::noop_assets()))
@@ -78,6 +79,39 @@ impl Fixture {
         )
         .await
         .unwrap()
+    }
+
+    async fn finish_capture(&self) {
+        // This fixture tests save scheduling, so its stdin reader exits only after
+        // all no-write assertions. Runtime cleanup still reaps the owned tree.
+        let state = self.app.state::<DesktopState>();
+        state
+            .runtime_supervisor
+            .lock()
+            .unwrap()
+            .dispatch_command(
+                &self.details.summary.id,
+                Some("main"),
+                "[LGSM-STDIN-CAPTURE-EXIT]",
+            )
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                if state
+                    .runtime_supervisor
+                    .lock()
+                    .unwrap()
+                    .instance_process_tree_is_running(&self.details.summary.id)
+                    .unwrap()
+                    == Some(false)
+                {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("synthetic no-write capture must exit after all assertions");
     }
 
     async fn update_interval(
@@ -255,35 +289,7 @@ async fn managed_save_disable_and_shutdown_prevent_due_writes() {
     assert!(!capture.exists());
     assert!(worker.schedules.is_empty());
 
-    // The no-write assertions are complete. This fixture-only command exits
-    // without creating a capture; Drop still reaps the original owned tree.
-    state
-        .runtime_supervisor
-        .lock()
-        .unwrap()
-        .dispatch_command(
-            &fixture.details.summary.id,
-            Some("main"),
-            "[LGSM-STDIN-CAPTURE-EXIT]",
-        )
-        .unwrap();
-    tokio::time::timeout(Duration::from_secs(5), async {
-        loop {
-            if state
-                .runtime_supervisor
-                .lock()
-                .unwrap()
-                .instance_process_tree_is_running(&fixture.details.summary.id)
-                .unwrap()
-                == Some(false)
-            {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(10)).await;
-        }
-    })
-    .await
-    .expect("synthetic no-write capture must exit after all assertions");
+    fixture.finish_capture().await;
     assert!(!capture.exists());
 }
 
@@ -305,6 +311,7 @@ async fn managed_save_prunes_stopped_runs_and_defers_pending_confirmation() {
         .await
         .unwrap();
     assert!(!capture.exists());
+    fixture.finish_capture().await;
     let mut running = state
         .runtime_supervisor
         .lock()
@@ -348,4 +355,6 @@ async fn managed_save_prunes_stopped_runs_and_defers_pending_confirmation() {
         worker.schedules[&fixture.details.summary.id].next_due,
         Some(now + Duration::from_secs(1200))
     );
+    fixture.finish_capture().await;
+    assert!(!capture.exists());
 }

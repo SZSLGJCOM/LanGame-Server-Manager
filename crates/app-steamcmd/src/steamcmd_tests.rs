@@ -104,10 +104,13 @@ async fn game_install_lifecycle_guard_removes_a_valid_staged_directory() {
     let staged = root.join(".rimworld.uninstall-42-100");
     fs::create_dir_all(&staged).unwrap();
     fs::write(staged.join("server.sentinel"), b"fixture").unwrap();
-    let operation =
-        acquire_game_install_lifecycle("staged-deletion-fixture", std::slice::from_ref(&published))
-            .await
-            .expect("acquire lifecycle operation");
+    let operation = acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
+        "staged-deletion-fixture",
+        std::slice::from_ref(&published),
+    )
+    .await
+    .expect("acquire lifecycle operation");
 
     operation
         .remove_staged_directory(published, staged.clone())
@@ -129,7 +132,7 @@ async fn steamcmd_uninstall_rejects_unmarked_root() {
     assert_eq!(status.ownership, SteamCmdOwnership::External);
     assert!(!status.can_uninstall);
     assert!(matches!(
-        remove_managed_steamcmd(&settings).await,
+        remove_managed_steamcmd(crate::test_install_lock_context(), &settings).await,
         Err(SteamCmdError::UnmanagedSteamCmdRoot { .. })
     ));
     assert!(root.join("steamcmd.exe").is_file());
@@ -147,7 +150,9 @@ async fn steamcmd_uninstall_removes_matching_marked_root() {
     let before = managed_steamcmd_status(&settings);
     assert_eq!(before.ownership, SteamCmdOwnership::Managed);
     assert!(before.can_uninstall);
-    let status = remove_managed_steamcmd(&settings).await.unwrap();
+    let status = remove_managed_steamcmd(crate::test_install_lock_context(), &settings)
+        .await
+        .unwrap();
     assert!(!root.exists());
     assert!(!status.executable_exists);
     assert_eq!(status.ownership, SteamCmdOwnership::None);
@@ -1383,7 +1388,13 @@ async fn fresh_direct_install_creates_root_before_entering_publish_helper() {
         runtime: app_core::ModuleRuntimeSpec::default(),
     };
 
-    let result = install_or_update_module(&settings, &module, false).await;
+    let result = install_or_update_module(
+        crate::test_install_lock_context(),
+        &settings,
+        &module,
+        false,
+    )
+    .await;
 
     assert!(matches!(
         result,

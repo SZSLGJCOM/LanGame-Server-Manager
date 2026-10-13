@@ -3,6 +3,9 @@ use super::*;
 #[path = "steam_install_payload_callback_tests.rs"]
 mod payload_callback_tests;
 
+#[path = "steam_install_shared_dependency_tests.rs"]
+mod shared_dependency_tests;
+
 struct Fixture {
     root: PathBuf,
     settings: AppSettings,
@@ -91,6 +94,9 @@ public static class Installer {
     if (File.Exists("fail")) return 9;
     Directory.CreateDirectory(Path.Combine(root, "bin"));
     File.WriteAllText(Path.Combine(root, "bin/Server.exe"), "server payload");
+    Directory.CreateDirectory(Path.Combine(root, "steamapps"));
+    File.WriteAllText(Path.Combine(root, "steamapps/appmanifest_42.acf"),
+      "\"AppState\" { \"appid\" \"42\" \"StateFlags\" \"4\" \"buildid\" \"17\" \"InstalledDepots\" { \"42\" { \"manifest\" \"1\" } } }");
     Console.WriteLine("Success! App '42' fully installed.");
     return 0;
   }
@@ -110,7 +116,7 @@ public static class Installer {
         );
         let status = steamcmd_status(&fixture.settings);
         assert_eq!(status.ownership, SteamCmdOwnership::External);
-        ensure_steamcmd_installed(&fixture.settings)
+        ensure_steamcmd_installed(crate::test_install_lock_context(), &fixture.settings)
             .await
             .expect("explicit fixture preparation");
         fixture
@@ -124,7 +130,14 @@ public static class Installer {
         &self,
         progress: impl FnMut(InstallProgressUpdate),
     ) -> Result<ModuleInstallResult, SteamCmdError> {
-        install_or_update_module_with_progress(&self.settings, &self.module, false, progress).await
+        install_or_update_module_with_progress(
+            crate::test_install_lock_context(),
+            &self.settings,
+            &self.module,
+            false,
+            progress,
+        )
+        .await
     }
 
     fn assert_retained(&self, uninstalled: bool) {
@@ -174,6 +187,7 @@ async fn explicit_program_install_reuses_held_lock_and_isolates_target_and_revis
     let target = fixture.root.join("instances/first/runtime");
     let other = fixture.root.join("instances/second/runtime");
     let guard = acquire_game_install_lifecycle(
+        crate::test_install_lock_context(),
         &fixture.module.summary.id,
         &[target.clone(), other.clone()],
     )
@@ -301,6 +315,7 @@ async fn retained_steam_cancel_after_publication_restores_original_data_and_mark
     let cancellation = InstallCancellation::new();
     let mut published_seen = false;
     let result = install_or_update_module_with_progress_and_cancellation(
+        crate::test_install_lock_context(),
         &fixture.settings,
         &fixture.module,
         false,

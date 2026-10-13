@@ -19,9 +19,12 @@ async fn archive_and_restore_complete_during_an_unrelated_install()
     // synthetic package needs no network or real server process to exercise
     // the scheduling boundary that previously serialized all games.
     let install_roots = [storage.paths.games_root.join("other-install-fixture")];
-    let _download =
-        app_steamcmd::acquire_game_install_lifecycle("other-install-fixture", &install_roots)
-            .await?;
+    let _download = app_steamcmd::acquire_game_install_lifecycle(
+        &app.state::<DesktopState>().install_locks,
+        "other-install-fixture",
+        &install_roots,
+    )
+    .await?;
     let archived = tokio::time::timeout(
         std::time::Duration::from_secs(10),
         archive_instance_record(app.handle().clone(), instance_id.clone()),

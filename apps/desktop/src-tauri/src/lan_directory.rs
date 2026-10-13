@@ -10,8 +10,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use app_core::{AppState, InstanceStatus, ModuleJoinProfile, PortBinding};
 use app_modules::discover_modules;
 use app_storage::{
-    InstancePortProjection, MAX_INSTANCE_PORT_PROJECTION_INSTANCES, bootstrap_storage,
-    read_instance_port_projections,
+    InstancePortProjection, MAX_INSTANCE_PORT_PROJECTION_INSTANCES, read_instance_port_projections,
 };
 use serde::Serialize;
 use tauri::Manager;
@@ -20,8 +19,13 @@ use crate::state::{DesktopState, LanDirectoryWorker};
 
 mod diagnostics;
 
-pub(crate) fn report_shutdown_warning(message: &str) {
-    diagnostics::record("warning", "app.exit.lan_directory_panicked", message);
+pub(crate) fn report_shutdown_warning(state: &DesktopState, message: &str) {
+    diagnostics::record(
+        &state.storage_source(),
+        "warning",
+        "app.exit.lan_directory_panicked",
+        message,
+    );
 }
 mod sender;
 use sender::{DirectorySender, DirectorySenders};
@@ -136,6 +140,7 @@ fn run_lan_directory_broadcaster(
     identity: DirectoryNodeIdentity,
     local_cancel: Arc<AtomicBool>,
 ) {
+    let storage_source = app_handle.state::<DesktopState>().storage_source();
     let mut senders = DirectorySenders::default();
     let mut last_error = None;
     let mut last_interface_error = None;
@@ -152,6 +157,7 @@ fn run_lan_directory_broadcaster(
             Ok(()) => {
                 if last_interface_error.take().is_some() {
                     diagnostics::record(
+                        &storage_source,
                         "info",
                         "lan_directory.interfaces_recovered",
                         "LanGame LAN directory interface discovery recovered",
@@ -161,7 +167,7 @@ fn run_lan_directory_broadcaster(
             Err(error) => {
                 // Keep previously bound healthy senders if enumeration failed.
                 // A failed interface cannot suppress other reachable networks.
-                report_directory_failure(&mut last_interface_error, &error);
+                report_directory_failure(&storage_source, &mut last_interface_error, &error);
             }
         }
         let state = app_handle.state::<DesktopState>();
@@ -182,6 +188,7 @@ fn run_lan_directory_broadcaster(
                 Ok(projection) => {
                     if last_projection_error.take().is_some() {
                         diagnostics::record(
+                            &storage_source,
                             "info",
                             "lan_directory.projection_recovered",
                             "LanGame LAN directory join projection recovered",
@@ -190,12 +197,16 @@ fn run_lan_directory_broadcaster(
                     projection
                 }
                 Err(error) => {
-                    report_directory_projection_failure(&mut last_projection_error, &error);
+                    report_directory_projection_failure(
+                        &storage_source,
+                        &mut last_projection_error,
+                        &error,
+                    );
                     DirectoryJoinProjection::default()
                 }
             };
             let emitted_at = current_unix_ms();
-            senders.publish(Instant::now(), |sender| {
+            senders.publish(&storage_source, Instant::now(), |sender| {
                 // Join eligibility belongs to the actual outgoing address,
                 // while node identity stays stable across every interface.
                 let cycle = build_directory_cycle(
@@ -216,6 +227,7 @@ fn run_lan_directory_broadcaster(
             Ok(()) => {
                 if last_error.take().is_some() {
                     diagnostics::record(
+                        &storage_source,
                         "info",
                         "lan_directory.state_recovered",
                         "LanGame LAN directory state snapshot recovered",
@@ -227,7 +239,7 @@ fn run_lan_directory_broadcaster(
                 }
             }
             Err(error) => {
-                report_directory_failure(&mut last_error, &error);
+                report_directory_failure(&storage_source, &mut last_error, &error);
                 if wait_for_shutdown(&local_cancel, retry_interval) {
                     return;
                 }
@@ -241,9 +253,14 @@ fn directory_cycle_is_publishable(cycle: &DirectoryCycle) -> bool {
     !cycle.servers.is_empty()
 }
 
-fn report_directory_failure(last_error: &mut Option<String>, error: &str) {
+fn report_directory_failure(
+    storage_source: &crate::state::StorageSource,
+    last_error: &mut Option<String>,
+    error: &str,
+) {
     if last_error.as_deref() != Some(error) {
         diagnostics::record(
+            storage_source,
             "warning",
             "lan_directory.multicast_failed",
             &format!("LanGame LAN directory multicast failed: {error}"),
@@ -252,9 +269,14 @@ fn report_directory_failure(last_error: &mut Option<String>, error: &str) {
     *last_error = Some(error.to_owned());
 }
 
-fn report_directory_projection_failure(last_error: &mut Option<String>, error: &str) {
+fn report_directory_projection_failure(
+    storage_source: &crate::state::StorageSource,
+    last_error: &mut Option<String>,
+    error: &str,
+) {
     if last_error.as_deref() != Some(error) {
         diagnostics::record(
+            storage_source,
             "warning",
             "lan_directory.projection_failed",
             &format!("LanGame LAN directory join projection failed: {error}"),
@@ -312,7 +334,7 @@ fn load_join_projection(
     }
 
     let _storage_operation = state.begin_storage_context_operation("LAN directory projection")?;
-    let storage = bootstrap_storage().map_err(|error| error.to_string())?;
+    let storage = state.bootstrap_storage()?;
     let mut module_signature = app_state
         .modules
         .iter()

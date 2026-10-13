@@ -19,7 +19,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
         "NATIVE_PLAYER_COUNT module={} phase=identity",
         descriptor.summary.id
     );
-    require_current_run(running).await?;
+    require_current_run(state, running).await?;
 
     println!(
         "NATIVE_PLAYER_COUNT module={} phase=collect",
@@ -65,7 +65,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     {
         return Err("native production global player count disagrees or is incomplete".into());
     }
-    require_current_run(running).await?;
+    require_current_run(state, running).await?;
     require_authoritative_snapshot(state, descriptor, running, players)?;
     println!(
         "NATIVE_PLAYER_COUNT module={} source=player_list collector=ready overview=ready players={players} global_total={} queried_instances={} queryable_instances={} complete=true stale=false same_run=true",
@@ -111,12 +111,17 @@ fn require_authoritative_snapshot(
     Ok(())
 }
 
-async fn require_current_run(expected: &InstanceDetails) -> Result<(), String> {
+async fn require_current_run(
+    state: &DesktopState,
+    expected: &InstanceDetails,
+) -> Result<(), String> {
     let expected_run = expected
         .active_run
         .as_ref()
         .ok_or("native player-count fixture has no active run")?;
-    let storage = app_storage::bootstrap_storage()
+    let _operation = state.begin_storage_context_operation("native player count verification")?;
+    let storage = state
+        .bootstrap_storage()
         .map_err(|_| "native player-count storage is unavailable")?;
     let current = app_storage::read_instance_details(&storage.paths, &expected.summary.id)
         .await

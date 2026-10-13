@@ -95,7 +95,7 @@ pub(crate) fn spawn_managed_save_worker(app_handle: tauri::AppHandle) {
             else {
                 continue;
             };
-            let storage = match bootstrap_storage() {
+            let storage = match state.bootstrap_storage() {
                 Ok(storage) => storage,
                 Err(error) => {
                     if worker.should_log_error(Instant::now()) {

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use super::commands_assistant_ops::*;
 use super::commands_broadcast::*;
 use super::commands_runtime_lifecycle::*;
@@ -56,7 +58,7 @@ mod workshop_collection_removal_tests;
 static COMMAND_SMOKE_LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
 static TEMP_TEST_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
-fn temp_test_dir(label: &str) -> PathBuf {
+pub(in crate::commands) fn temp_test_dir(label: &str) -> PathBuf {
     const MAX_ATTEMPTS: usize = 256;
 
     let short_label = label

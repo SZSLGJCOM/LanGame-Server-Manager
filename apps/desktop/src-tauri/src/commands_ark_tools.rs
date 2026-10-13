@@ -204,7 +204,7 @@ pub async fn read_ark_tools_status(
     input: InstanceInput,
 ) -> Result<ToolsStatus, String> {
     let _operation = state.begin_storage_context_operation("ARK creature tool inspection")?;
-    let storage = bootstrap_storage().map_err(|e| e.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|e| e.to_string())?;
@@ -242,7 +242,7 @@ pub async fn prepare_ark_tools(
     input: PrepareInput,
 ) -> Result<ToolsStatus, String> {
     let operation = state.begin_storage_context_operation("ARK creature extension installation")?;
-    let storage = bootstrap_storage().map_err(|e| e.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|e| e.to_string())?;
@@ -267,6 +267,7 @@ pub async fn prepare_ark_tools(
     }
     let root = owned_root(&storage, &details).await?;
     let install_guard = app_steamcmd::acquire_game_install_lifecycle(
+        &state.install_locks,
         &details.summary.module_id,
         std::slice::from_ref(&root),
     )
@@ -297,7 +298,7 @@ pub async fn spawn_ark_creature(
 ) -> Result<SpawnResult, String> {
     let command = protocol::spawn_command(&input)?;
     let operation = state.begin_storage_context_operation("ARK creature generation")?;
-    let storage = bootstrap_storage().map_err(|e| e.to_string())?;
+    let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
         .await
         .map_err(|e| e.to_string())?;

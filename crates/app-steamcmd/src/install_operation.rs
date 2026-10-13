@@ -23,6 +23,32 @@ const INSTALL_OPERATION_LOCK_DIRECTORY: &str = "locks";
 const INSTALL_OPERATION_LOCK_FILE: &str = "install-operation.lock";
 const INSTALL_OPERATION_LOCK_RETRY_INTERVAL: Duration = Duration::from_millis(25);
 
+/// Stable per-user namespace for cross-process installation locks.
+///
+/// Capture the application's user-data locator root during initialization, not
+/// its movable storage root or an instance directory. Every process managing
+/// that user's resources must pass the same root, even after environment changes.
+#[derive(Debug, Clone)]
+pub struct InstallLockContext {
+    directory: Arc<PathBuf>,
+}
+
+impl InstallLockContext {
+    pub fn new(user_data_root: PathBuf) -> Self {
+        Self {
+            directory: Arc::new(user_data_root.join(INSTALL_OPERATION_LOCK_DIRECTORY)),
+        }
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn test_install_lock_context() -> &'static InstallLockContext {
+    static CONTEXT: OnceLock<InstallLockContext> = OnceLock::new();
+    // Keep fixture identities in managed scratch, with room for the cleaner's
+    // temporary rename and the SHA-256 filename on Windows.
+    CONTEXT.get_or_init(|| InstallLockContext::new(std::env::temp_dir().join("lg")))
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct InstallDeadline {
     operation: &'static str,
@@ -137,33 +163,50 @@ impl InstallCoordinator {
         self.acquire_mode(LockMode::Exclusive, deadline).await
     }
 
-    pub(crate) fn for_resource(key: &str) -> Result<Self, InstallAcquireError> {
-        type Gates = BTreeMap<String, Weak<Mutex<()>>>;
+    pub(crate) fn for_resource(
+        context: &InstallLockContext,
+        key: &str,
+    ) -> Result<Self, InstallAcquireError> {
+        type Gates = BTreeMap<PathBuf, Weak<Mutex<()>>>;
         static GATES: OnceLock<RegistryMutex<Gates>> = OnceLock::new();
-        let directory = install_operation_data_root().join(INSTALL_OPERATION_LOCK_DIRECTORY);
+        let directory = context.directory.as_ref();
+        if !directory.is_absolute() {
+            return Err(lock_file_error(
+                "validate the installation lock namespace",
+                directory,
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "user-data root must be absolute",
+                ),
+            ));
+        }
+        let digest = Sha256::digest(key.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        let lock_path = directory.join(format!("resource-{digest}.lock"));
         let mut gates = GATES
             .get_or_init(RegistryMutex::default)
             .lock()
             .map_err(|_| {
                 lock_file_error(
                     "access installation resource gates",
-                    &directory,
+                    directory,
                     io::Error::other("installation resource gate registry is poisoned"),
                 )
             })?;
         gates.retain(|_, gate| gate.strong_count() > 0);
-        let gate = gates.get(key).and_then(Weak::upgrade).unwrap_or_else(|| {
-            let gate = Arc::new(Mutex::new(()));
-            gates.insert(key.to_owned(), Arc::downgrade(&gate));
-            gate
-        });
-        let digest = Sha256::digest(key.as_bytes())
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>();
+        let gate = gates
+            .get(&lock_path)
+            .and_then(Weak::upgrade)
+            .unwrap_or_else(|| {
+                let gate = Arc::new(Mutex::new(()));
+                gates.insert(lock_path.clone(), Arc::downgrade(&gate));
+                gate
+            });
         Ok(Self {
             gate,
-            lock_path: Arc::new(directory.join(format!("resource-{digest}.lock"))),
+            lock_path: Arc::new(lock_path),
         })
     }
 
@@ -319,42 +362,6 @@ fn lock_file_error(
         path: lock_path.to_path_buf(),
         source,
     }
-}
-
-#[cfg(test)]
-fn install_operation_data_root() -> PathBuf {
-    // Test children inherit the managed temporary root. Keep disposable fixture
-    // identities out of the user's persistent lifecycle lock directory.
-    // The managed cleaner temporarily lengthens the scratch directory name.
-    // Leave room for that rename and the SHA-256 lock filename on Windows.
-    std::env::temp_dir().join("lg")
-}
-
-#[cfg(not(test))]
-fn install_operation_data_root() -> PathBuf {
-    std::env::var_os("LOCALAPPDATA")
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
-        .or_else(|| {
-            std::env::var_os("XDG_DATA_HOME")
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-        })
-        .or_else(|| {
-            std::env::var_os("HOME")
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-                .map(|root| root.join(".local").join("share"))
-        })
-        .or_else(|| {
-            std::env::var_os("USERPROFILE")
-                .filter(|value| !value.is_empty())
-                .map(PathBuf::from)
-                .map(|root| root.join("AppData").join("Local"))
-        })
-        .unwrap_or_else(std::env::temp_dir)
-        .join("LanGame")
-        .join("ServerManager")
 }
 
 #[cfg(test)]
