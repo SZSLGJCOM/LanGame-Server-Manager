@@ -6,7 +6,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { setImmediate: nextTurn } = require("node:timers/promises");
 const { hostResourceUsage, runBrowserFixture, browserTimeBudgets, waitForBrowserEndpoint,
-  fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment,
+  fixtureUsesBundledDev, fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment,
   readBrowserLog } = require("./helpers/runtime-browser-process.cjs");
 
 test("browser diagnostics stay in the child-owned directory and retain only the log tail", async (t) => {
@@ -94,6 +94,18 @@ test("successful CDP commands keep their result and release their socket", async
   assert.equal(closed, true);
 });
 
+test("only ordinary development React fixtures use bundled dev", () => {
+  assert.equal(fixtureUsesBundledDev({}), true);
+  for (const options of [
+    { development: false },
+    { reactTransform: false },
+    { fixtureMiddleware() {} },
+    { development: false, reactTransform: false, fixtureMiddleware() {} },
+  ]) {
+    assert.equal(fixtureUsesBundledDev(options), false, "Transport and request fixtures must retain native ESM");
+  }
+});
+
 test("the worker reuses only the same fixture's compiled dependency cache", async (t) => {
   t.after(removeFixtureCache);
   const options = { fixturePath: "runtime-browser.html" };
@@ -106,8 +118,9 @@ test("the worker reuses only the same fixture's compiled dependency cache", asyn
     fixtureCacheDirectory({ fixturePath: "hover-help-browser.html" }),
     fixtureCacheDirectory({ ...options, development: false }),
     fixtureCacheDirectory({ ...options, reactTransform: false }),
+    fixtureCacheDirectory({ ...options, fixtureMiddleware() {} }),
   ]);
-  assert.equal(new Set([directory, ...others]).size, 4, "Different fixtures and compilation modes cannot share an optimizer cache");
+  assert.equal(new Set([directory, ...others]).size, 5, "Different fixtures and compilation modes cannot share an optimizer cache");
   assert.equal(path.dirname(path.dirname(directory)), path.resolve(os.tmpdir()));
 });
 
