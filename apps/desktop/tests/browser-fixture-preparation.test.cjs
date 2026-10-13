@@ -10,14 +10,15 @@ function boundary() {
   const calls = [];
   const entry = { url: "/tests/helpers/cold-entry.tsx", type: "js",
     transformResult: { code: "export {};" }, importedModules: new Set() };
+  const modules = new Map([[entry.url, entry]]);
   const client = {
     _pendingRequests: new Map(),
     depsOptimizer: { scanProcessing: undefined, metadata: { depInfoList: [] } },
-    moduleGraph: { async getModuleByUrl() { return entry; } },
+    moduleGraph: { async getModuleByUrl(url) { return modules.get(url); } },
     async transformRequest(url) { calls.push(["module", url]); return { code: "export {};" }; },
     async waitForRequestsIdle() { calls.push(["idle"]); }
   };
-  return { calls, client, entry, server: {
+  return { calls, client, entry, modules, server: {
     environments: { client },
     async listen() { calls.push(["listen"]); },
     async transformIndexHtml(url, html) {
@@ -102,35 +103,42 @@ test("a missing transformed entry fails before browser launch", async () => {
 });
 
 test("preparation transforms reachable lazy modules through the real Vite graph without executing them", async (t) => {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-preparation-"));
+  // Hosted Windows TEMP can use an 8.3 alias, which Vite's file-access boundary rejects.
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-preparation-")));
   const helpers = path.join(root, "tests/helpers");
   await fs.mkdir(helpers, { recursive: true });
   for (const [name, source] of Object.entries({
-    "runtime-browser.tsx": 'export const open = () => import("./lazy.js");',
-    "lazy.js": 'import "./static.js"; export const nested = () => import("./nested.js");',
+    "runtime-browser.tsx": 'import note from "./note.md?raw"; export { note }; export const open = () => import("./lazy.js");',
+    "lazy.js": 'import "./static.js"; import note from "./note.md?raw"; export { note }; export const nested = () => import("./nested.js");',
     "static.js": 'throw new Error("Preparation must not execute browser modules");',
     "nested.js": 'import "./lazy.js"; export const value = 1;',
+    "note.md": "# Watched markdown\n\nIt's **not JavaScript**.\n",
     "unreachable.js": 'this is deliberately invalid and outside the entry graph',
   })) await fs.writeFile(path.join(helpers, name), source);
   const { createServer } = await import("vite");
   const server = await createServer({ configFile: false, root, cacheDir: path.join(root, "cache"),
     appType: "mpa", optimizeDeps: { noDiscovery: true, include: [] }, logLevel: "error",
-    server: { host: "127.0.0.1", port: 0, strictPort: true, hmr: false } });
+    server: { host: "127.0.0.1", port: 0, strictPort: true, hmr: false, preTransformRequests: false } });
   t.after(async () => { await server.close(); await fs.rm(root, { recursive: true, force: true }); });
   await prepareFixtureServer(server, "runtime-browser.html", []);
-  for (const name of ["runtime-browser.tsx", "lazy.js", "static.js", "nested.js"]) {
+  for (const name of ["runtime-browser.tsx", "lazy.js", "static.js", "nested.js", "note.md?raw"]) {
     const module = await server.environments.client.moduleGraph.getModuleByUrl(`/tests/helpers/${name}`);
     assert.ok(module?.transformResult, `${name} must be prepared before browser launch`);
   }
+  const watched = await server.environments.client.moduleGraph.getModuleByUrl("/tests/helpers/note.md");
+  assert.equal(watched?.type, "js", "Vite records this raw source as a JavaScript-shaped watch dependency");
+  assert.equal(watched.transformResult, null, "The raw file must never be transformed as JavaScript");
   assert.equal(await server.environments.client.moduleGraph.getModuleByUrl("/tests/helpers/unreachable.js"), undefined);
 });
 
-test("lazy preparation bounds its transform wave and handles cycles and CSS watch-only assets", async () => {
-  const { server, client, entry } = boundary();
+test("lazy preparation bounds its transform wave and handles cycles and watch-only dependencies", async () => {
+  const { server, client, entry, modules } = boundary();
   const lazy = Array.from({ length: 9 }, (_, index) => ({ url: `/lazy-${index}.js`, type: "js",
     transformResult: null, importedModules: new Set([entry]) }));
   const asset = { url: "/watched-partial.css", type: "asset", transformResult: null, importedModules: new Set() };
   entry.importedModules = new Set([...lazy, asset]);
+  entry.transformResult.code = lazy.map((module, index) => `export const load${index} = () => import("${module.url}");`).join("\n");
+  for (const module of lazy) modules.set(module.url, module);
   const transformed = [];
   let active = 0;
   let peak = 0;
@@ -143,7 +151,7 @@ test("lazy preparation bounds its transform wave and handles cycles and CSS watc
     await nextTurn();
     active--;
     transformed.push(url);
-    return module.transformResult = { code: "export {};" };
+    return module.transformResult = { code: `import "${entry.url}";` };
   };
   await prepareFixtureServer(server, "runtime-browser.html", []);
   assert.equal(peak, 4);
@@ -151,9 +159,11 @@ test("lazy preparation bounds its transform wave and handles cycles and CSS watc
 });
 
 test("a lazy module transform failure prevents readiness", async () => {
-  const { server, client, entry } = boundary();
+  const { server, client, entry, modules } = boundary();
   const lazy = { url: "/broken-lazy.js", type: "js", transformResult: null, importedModules: new Set() };
   entry.importedModules.add(lazy);
+  entry.transformResult.code = 'export const open = () => import("/broken-lazy.js");';
+  modules.set(lazy.url, lazy);
   const failure = new Error("Lazy module could not compile");
   client.transformRequest = async (url) => {
     if (url === lazy.url) throw failure;
