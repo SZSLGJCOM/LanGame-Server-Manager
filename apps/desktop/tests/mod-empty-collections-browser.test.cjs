@@ -9,7 +9,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     const output = process.env.LANGAME_MOD_EMPTY_OUTPUT;
     if (output) { assert.equal(path.isAbsolute(output), true); await fs.mkdir(output, { recursive: true }); }
     const stem = `${scene}-${viewport.width}x${viewport.height}`;
-    const report = await runBrowserFixture({ fixturePath: "mod-empty-collections-browser.html", viewport,
+    const report = await runBrowserFixture({ fixturePath: "mod-empty-collections-browser.html", viewport, bundleWithMiddleware: true,
       fixtureMiddleware(request, response, next) { if (request.url !== "/__mod_empty_scene") return next(); response.writeHead(200, { "Content-Type": "text/plain" }); response.end(scene); },
       screenshotPath: output ? path.join(output, `${stem}.png`) : undefined });
     if (output) await fs.writeFile(path.join(output, `${stem}.json`), JSON.stringify(report, null, 2));

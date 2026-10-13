@@ -17,19 +17,20 @@ const outputLimit = 64 * 1024;
 const defaultBrowserStartupTimeoutMs = 15000;
 let fixtureCacheRoot;
 
-function fixtureUsesBundledDev({ development = true, reactTransform = true, fixtureMiddleware }) {
-  // Request interception and production transport fixtures must retain native ESM URLs.
-  return development && reactTransform && !fixtureMiddleware;
+function fixtureUsesBundledDev({ development = true, reactTransform = true, fixtureMiddleware, bundleWithMiddleware = false }) {
+  // Data-only middleware may opt in. Source request interception and production
+  // transport fixtures retain native ESM URLs by default.
+  return development && reactTransform && (!fixtureMiddleware || bundleWithMiddleware);
 }
 
-async function fixtureCacheDirectory({ fixturePath, development = true, reactTransform = true, fixtureMiddleware }) {
+async function fixtureCacheDirectory({ fixturePath, development = true, reactTransform = true, fixtureMiddleware, bundleWithMiddleware = false }) {
   assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
   // Only compiled dependencies survive between this worker's scenarios. Each
   // invocation still owns a fresh server, browser profile and mounted React tree.
   fixtureCacheRoot ??= fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-cache-"));
   return path.join(await fixtureCacheRoot,
     `${fixturePath}-${development ? "dev" : "production"}-${reactTransform ? "react" : "raw"}`
-      + `-${fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware }) ? "bundled" : "esm"}`);
+      + `-${fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware, bundleWithMiddleware }) ? "bundled" : "esm"}`);
 }
 
 async function removeFixtureCache() {
@@ -460,7 +461,7 @@ async function removeScratch(scratch) {
 
 async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboard = false, pointer = false, screenshotPath, viewport,
   deviceScaleFactor = 1, reducedMotion, fontSelector, development = true, reactTransform = true, contentSecurityPolicy, fixtureMiddleware,
-  fixtureCleanup = false, fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
+  bundleWithMiddleware = false, fixtureCleanup = false, fixtureTimeoutMs = 45000, browserStartupTimeoutMs = defaultBrowserStartupTimeoutMs } = {}) {
   assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
   const { commandTimeoutMs } = browserTimeBudgets({ fixtureTimeoutMs, browserStartupTimeoutMs });
   assert.ok(Number.isFinite(deviceScaleFactor) && deviceScaleFactor >= 1 && deviceScaleFactor <= 3,
@@ -557,12 +558,12 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     result.catch(() => {});
     server = await createServer({
       configFile: false,
-      ...(fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware }) ? {
+      ...(fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware, bundleWithMiddleware }) ? {
         experimental: { bundledDev: true },
         input: `tests/helpers/${fixturePath}`,
       } : {}),
       root: desktopRoot,
-      cacheDir: await fixtureCacheDirectory({ fixturePath, development, reactTransform, fixtureMiddleware }),
+      cacheDir: await fixtureCacheDirectory({ fixturePath, development, reactTransform, fixtureMiddleware, bundleWithMiddleware }),
       appType: "mpa",
       optimizeDeps: { entries: [`tests/helpers/${fixturePath}`] },
       logLevel: "error",

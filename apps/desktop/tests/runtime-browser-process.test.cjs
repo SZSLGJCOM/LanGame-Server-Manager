@@ -94,7 +94,7 @@ test("successful CDP commands keep their result and release their socket", async
   assert.equal(closed, true);
 });
 
-test("only ordinary development React fixtures use bundled dev", () => {
+test("ordinary React fixtures bundle while request middleware defaults to native ESM", () => {
   assert.equal(fixtureUsesBundledDev({}), true);
   for (const options of [
     { development: false },
@@ -106,6 +106,13 @@ test("only ordinary development React fixtures use bundled dev", () => {
   }
 });
 
+test("data-only middleware can opt into bundling without changing production or raw fixtures", () => {
+  const options = { fixtureMiddleware() {}, bundleWithMiddleware: true };
+  assert.equal(fixtureUsesBundledDev(options), true, "Scene data does not require source module URLs");
+  assert.equal(fixtureUsesBundledDev({ ...options, development: false }), false, "Production transport retains native ESM");
+  assert.equal(fixtureUsesBundledDev({ ...options, reactTransform: false }), false, "Raw fixtures retain native ESM");
+});
+
 test("the worker reuses only the same fixture's compiled dependency cache", async (t) => {
   t.after(removeFixtureCache);
   const options = { fixturePath: "runtime-browser.html" };
@@ -114,6 +121,8 @@ test("the worker reuses only the same fixture's compiled dependency cache", asyn
   await fs.writeFile(path.join(directory, "compiled-marker"), "retained");
   assert.equal(await fixtureCacheDirectory(options), directory);
   assert.equal(await fs.readFile(path.join(await fixtureCacheDirectory(options), "compiled-marker"), "utf8"), "retained");
+  assert.equal(await fixtureCacheDirectory({ ...options, fixtureMiddleware() {}, bundleWithMiddleware: true }), directory,
+    "Data-only middleware uses the same bundled compilation mode");
   const others = await Promise.all([
     fixtureCacheDirectory({ fixturePath: "hover-help-browser.html" }),
     fixtureCacheDirectory({ ...options, development: false }),
