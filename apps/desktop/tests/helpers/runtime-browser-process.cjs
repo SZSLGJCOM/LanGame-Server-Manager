@@ -688,6 +688,8 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       // browser PID and its DevTools stderr pipe from this fixture.
       ...(path.basename(executable).toLowerCase() === "msedge.exe" ? ["--edge-skip-compat-layer-relaunch"] : []),
       "--headless", "--remote-debugging-port=0", "--remote-debugging-address=127.0.0.1",
+      // Loopback fixtures must not wait for the host's system PAC initialization.
+      "--no-proxy-server",
       ...(windowSize ? [`--window-size=${windowSize.width},${windowSize.height}`, "--force-device-scale-factor=1"] : []),
       `--user-data-dir=${path.join(scratch, "profile")}`, "--no-first-run", "--no-default-browser-check",
       "--disable-background-networking", "--enable-logging", "--v=1", viewport ? "about:blank" : url,

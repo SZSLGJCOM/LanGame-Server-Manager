@@ -120,7 +120,7 @@ async function selectSection(sectionId: string) {
   const target = fixture.querySelector<HTMLButtonElement>(
     `[data-configuration-section-id="${CSS.escape(sectionId)}"] > .configuration-section-navigation__button`);
   check(target, `${activeModule}.${sectionId}: missing actionable navigation`);
-  await act(async () => { target.click(); await frame(); });
+  await act(async () => { target.click(); });
   const deadline = performance.now() + 5000;
   while (fixture.querySelector('.configuration-workspace [aria-busy="true"]') ||
     activeModule === "valheim" && sectionId === "world" && fixture.querySelector('[data-valheim-rule-group="preset"] [role="status"]')) {
