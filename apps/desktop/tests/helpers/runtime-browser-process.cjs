@@ -17,13 +17,19 @@ const outputLimit = 64 * 1024;
 const defaultBrowserStartupTimeoutMs = 15000;
 let fixtureCacheRoot;
 
-async function fixtureCacheDirectory({ fixturePath, development = true, reactTransform = true }) {
+function fixtureUsesBundledDev({ development = true, reactTransform = true, fixtureMiddleware }) {
+  // Request interception and production transport fixtures must retain native ESM URLs.
+  return development && reactTransform && !fixtureMiddleware;
+}
+
+async function fixtureCacheDirectory({ fixturePath, development = true, reactTransform = true, fixtureMiddleware }) {
   assert.match(fixturePath, /^[a-z-]+\.html$/, "Fixture must be an HTML entry in tests/helpers");
   // Only compiled dependencies survive between this worker's scenarios. Each
   // invocation still owns a fresh server, browser profile and mounted React tree.
   fixtureCacheRoot ??= fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-cache-"));
   return path.join(await fixtureCacheRoot,
-    `${fixturePath}-${development ? "dev" : "production"}-${reactTransform ? "react" : "raw"}`);
+    `${fixturePath}-${development ? "dev" : "production"}-${reactTransform ? "react" : "raw"}`
+      + `-${fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware }) ? "bundled" : "esm"}`);
 }
 
 async function removeFixtureCache() {
@@ -120,6 +126,16 @@ async function waitForFixtureReport({ session, url, result, exited, timeoutMs })
 
 async function prepareFixtureServer(server, fixturePath, compilationErrors) {
   await server.listen();
+  if (server.config.experimental.bundledDev) {
+    // Locked Vite 8.3.4 resolves this hook after either output or a build error.
+    // Both checks are necessary: a resolved initial build does not imply success.
+    const bundled = server.environments.client.bundledDev;
+    assert.equal(typeof bundled?.waitForInitialBuildFinish, "function", "Vite bundled-dev readiness hook changed");
+    await bundled.waitForInitialBuildFinish();
+    if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
+    assert.ok(bundled.hasBuildOutput, "Bundled fixture must produce initial output");
+    return;
+  }
   const entryUrl = `/tests/helpers/${fixturePath}`;
   const html = await fs.readFile(path.join(__dirname, fixturePath), "utf8");
   const transformed = await server.transformIndexHtml(entryUrl, html);
@@ -541,8 +557,12 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     result.catch(() => {});
     server = await createServer({
       configFile: false,
+      ...(fixtureUsesBundledDev({ development, reactTransform, fixtureMiddleware }) ? {
+        experimental: { bundledDev: true },
+        input: `tests/helpers/${fixturePath}`,
+      } : {}),
       root: desktopRoot,
-      cacheDir: await fixtureCacheDirectory({ fixturePath, development, reactTransform }),
+      cacheDir: await fixtureCacheDirectory({ fixturePath, development, reactTransform, fixtureMiddleware }),
       appType: "mpa",
       optimizeDeps: { entries: [`tests/helpers/${fixturePath}`] },
       logLevel: "error",
@@ -858,4 +878,4 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
   browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer,
-  fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog };
+  fixtureUsesBundledDev, fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog };
