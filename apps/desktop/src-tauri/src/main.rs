@@ -13,6 +13,8 @@ mod desktop_app_log;
 mod desktop_reliability;
 mod desktop_window;
 mod dst_mods;
+#[cfg(all(test, feature = "custom-protocol"))]
+mod embedded_frontend_tests;
 mod knowledge_runtime;
 mod lan_directory;
 mod lan_host;
@@ -384,7 +386,7 @@ fn main() {
                     local_handler(invoke)
                 }
             })
-            .build(tauri::generate_context!());
+            .build(tauri::tauri_build_context!());
 
     match run_result {
         Ok(app) => app.run(|handle, event| {

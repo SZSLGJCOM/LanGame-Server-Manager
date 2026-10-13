@@ -303,7 +303,7 @@ pub(super) fn run() -> Result<(), String> {
     // secured OS-wide endpoint before DesktopState can read or create storage.
     let first = tauri::async_runtime::block_on(async { security::create_pipe(&endpoint, true) })
         .map_err(|e| format!("Cannot claim the current-user runtime service: {e}"))?;
-    let mut context = tauri::generate_context!();
+    let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
     let app = tauri::Builder::default()
         .setup(move |app| {

@@ -104,7 +104,7 @@ test("the process lease is acquired before Builder and held through run", () => 
   const mainSource = fs.readFileSync(mainPath, "utf8");
   const lease = mainSource.indexOf("let instance_lease = acquire_desktop_instance_lease()");
   const builder = mainSource.indexOf("tauri::Builder::default()");
-  const build = mainSource.indexOf(".build(tauri::generate_context!())");
+  const build = mainSource.indexOf(".build(tauri::tauri_build_context!())");
   const run = mainSource.indexOf("Ok(app) => app.run(");
   const release = mainSource.indexOf("drop(instance_lease)");
 

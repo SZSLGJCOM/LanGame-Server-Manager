@@ -383,7 +383,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         window_visibility: Mutex::new(WindowVisibilityEvidence::default()),
         native_drop_checks: std::sync::atomic::AtomicU32::new(0),
     });
-    let mut context = tauri::generate_context!();
+    let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
     let url = tauri::Url::parse(&config.url).map_err(|error| error.to_string())?;
     context.config_mut().build.dev_url = Some(url.clone());
