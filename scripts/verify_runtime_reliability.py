@@ -262,9 +262,13 @@ def prepare_desktop(args, packages: list[str] | None, output: Path, report: dict
     if args.cargo_wrapper is None:
         targets, doctests = desktop_metadata_targets(capture("desktop-metadata", (
             "metadata", "--no-deps", "--all-features", "--locked", "--format-version", "1")))
+        # Compile selected targets together so Cargo can schedule their build
+        # work concurrently; enumeration and environment-sensitive tests stay serial.
+        selectors = tuple(argument for target in targets for argument in target)
+        capture("desktop-build", (*prefix, *selectors, "--no-run"))
     else:
         # The managed workstation wrapper admits Cargo test, but not metadata.
-        # Keep its supported discovery path; CI avoids the redundant prebuild.
+        # Its build output provides the target inventory without a second build.
         targets, doctests = desktop_targets(capture("desktop-build", (*prefix, "--no-run", "--message-format=json")))
     inventory, ignored = {}, {}
     for number, target in enumerate(targets, 1):
@@ -618,6 +622,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.group == "desktop" and (packages is None or "langame-desktop" in packages):
             print("desktop-build: cargo test -p langame-desktop --all-features --locked --no-run --message-format=json"
                   if args.cargo_wrapper else "desktop-metadata: cargo metadata --no-deps --all-features --locked --format-version 1")
+            if args.cargo_wrapper is None:
+                print("desktop-build: compile the metadata-selected test targets together with --no-run")
             print(f"desktop: enumerate targets; exact serial batches for shard {args.shard_index}/{args.shard_count}; "
                   "library doctests on shard 1")
         elif not planned:
