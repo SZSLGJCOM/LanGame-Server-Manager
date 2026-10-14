@@ -135,8 +135,11 @@ fn exact_official_allowlist_recording_excludes_unknown_existing_files() {
     package::record_verified_library_program_baseline(
         &source,
         &fixture.descriptor,
-        inventory.files,
-        inventory.directories,
+        ProgramBaselineInventory {
+            files: inventory.files,
+            directories: inventory.directories,
+            verified_files: VerifiedProgramFiles::default(),
+        },
         None,
     )
     .unwrap();
@@ -212,8 +215,11 @@ fn exact_official_allowlist_recording_rejects_changed_payload_before_publication
         package::record_verified_library_program_baseline(
             &source,
             &fixture.descriptor,
-            inventory.files,
-            inventory.directories,
+            ProgramBaselineInventory {
+                files: inventory.files,
+                directories: inventory.directories,
+                verified_files: VerifiedProgramFiles::default(),
+            },
             None,
         ),
         Err(StorageError::CleanLibraryProgramRequired { .. })

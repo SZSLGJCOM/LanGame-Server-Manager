@@ -748,6 +748,15 @@ pub(crate) fn hash_open_file(
     path: &Path,
     cancellation: Option<&AtomicBool>,
 ) -> Result<String, StorageError> {
+    hash_open_file_with_progress(file, path, cancellation, &mut |_| {})
+}
+
+pub(crate) fn hash_open_file_with_progress(
+    file: &mut fs::File,
+    path: &Path,
+    cancellation: Option<&AtomicBool>,
+    on_chunk: &mut dyn FnMut(u64),
+) -> Result<String, StorageError> {
     let mut hasher = Sha256::new();
     let mut buffer = [0_u8; 256 * 1024];
     loop {
@@ -764,6 +773,7 @@ pub(crate) fn hash_open_file(
         #[cfg(test)]
         crate::instance_archive::read_probe::record(path, count as u64);
         hasher.update(&buffer[..count]);
+        on_chunk(count as u64);
         #[cfg(test)]
         if let Some(cancellation) = cancellation {
             crate::instance_creation_io::test_gate::pause_if_registered(

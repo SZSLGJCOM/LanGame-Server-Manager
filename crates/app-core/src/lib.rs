@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 mod live_players;
 pub use live_players::*;
 mod install_progress;
-pub use install_progress::{InstallPhase, InstallProgress};
+pub use install_progress::{
+    InstallPhase, InstallProgress, InstallVerificationProgress, InstallVerificationStage,
+};
 mod program_cleanup;
 pub use program_cleanup::{ModuleUninstallResult, ProgramCleanupResult, ProgramCleanupRetention};
 mod download_integrity;

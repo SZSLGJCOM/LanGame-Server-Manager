@@ -91,6 +91,75 @@ test("unknown stages never use the old estimated job percentage and validation n
   assert.doesNotMatch(html, /aria-label="下载速度:|KB\/s|1 KB \/ 2 KB/);
 });
 
+test("verification labels distinguish Steam work from manager checks", () => {
+  for (const [detail, expected, english] of [
+    ["Update state (0x81) verifying update, progress: 50.0 (50 / 100)", "Steam 正在校验文件", "Steam is verifying files"],
+    ["Success! App '728470' fully installed.", "正在确认 Steam 安装结果", "Confirming Steam installation"],
+    ["Completing Steam shared dependencies for AppID 728470: [228980]", "正在补齐 Steam 运行依赖", "Completing Steam runtime dependencies"],
+    ["Verifying installed server files...", "正在检查服务器程序", "Checking server program"],
+    ["Recording the original server package inventory...", "正在记录原版程序清单", "Recording original program inventory"],
+    ["SteamCMD: Verifying installation...", "正在验证 SteamCMD", "Verifying SteamCMD"],
+  ]) {
+    const value = job({ detail, install_progress: { phase: "verifying", percent: null } });
+    assert.ok(render(value).replace(/<[^>]*>/g, "").includes(expected));
+    assert.ok(render(value, EN_US_EXTRA_MESSAGES).replace(/<[^>]*>/g, "").includes(english));
+  }
+});
+
+test("manager verification reports measured local bytes and files without download speed", () => {
+  for (const [stage, expected, english] of [
+    ["steam_files", "正在核验原版文件", "Verifying original Steam files"],
+    ["package_files", "正在复核程序文件", "Checking program files"],
+  ]) {
+    const value = job({ install_progress: { phase: "verifying", percent: 25, elapsed_seconds: 18,
+      downloaded_bytes: null, total_bytes: null,
+      verification: { stage, completed_bytes: 512 * 1024, total_bytes: 2 * 1024 * 1024, completed_files: 3, total_files: 12 } } });
+    const html = render(value);
+    assert.ok(html.replace(/<[^>]*>/g, "").includes(expected));
+    assert.match(html, /512 KB \/ 2 MB · 3 \/ 12 个文件/);
+    assert.match(html, /aria-valuenow="25"/);
+    assert.doesNotMatch(html, /aria-label="下载速度:|KB\/s/);
+    const en = render(value, EN_US_EXTRA_MESSAGES);
+    assert.ok(en.replace(/<[^>]*>/g, "").includes(english));
+    assert.match(en, /512 KB \/ 2 MB · 3 \/ 12 files/);
+  }
+});
+
+test("saving inventory remains a distinct unmeasured step until the operation completes", () => {
+  const value = job({ install_progress: { phase: "verifying", percent: 100, elapsed_seconds: 20,
+    downloaded_bytes: null, total_bytes: null,
+    verification: { stage: "recording_baseline", completed_bytes: 2 * 1024 * 1024, total_bytes: 2 * 1024 * 1024,
+      completed_files: 12, total_files: 12 } } });
+  const html = render(value);
+  assert.match(html.replace(/<[^>]*>/g, ""), /正在保存程序清单/);
+  assert.match(html, /12 \/ 12 个文件/);
+  assert.doesNotMatch(html, /aria-valuenow=|2 MB \/ 2 MB|安装已完成|aria-label="下载速度:/);
+  assert.equal(installationJobPercent(value), null);
+  assert.match(render(value, EN_US_EXTRA_MESSAGES).replace(/<[^>]*>/g, ""), /Saving program inventory/);
+});
+
+test("official verification waits for known totals without displaying zero of zero files", () => {
+  const value = job({ install_progress: { phase: "verifying", percent: null, elapsed_seconds: 20,
+    downloaded_bytes: null, total_bytes: null,
+    verification: { stage: "steam_files", completed_bytes: 0, total_bytes: 0, completed_files: 0, total_files: 0 } } });
+  const html = render(value);
+  assert.match(html.replace(/<[^>]*>/g, ""), /正在核验原版文件/);
+  assert.match(html, /shell-task-meter is-indeterminate/);
+  assert.doesNotMatch(html, /aria-valuenow=|0 \/ 0|个文件|aria-label="下载速度:/);
+  assert.equal(installationJobPercent(value), null);
+  assert.doesNotMatch(render(value, EN_US_EXTRA_MESSAGES), /0 \/ 0 files/);
+});
+
+test("verification counters cannot leak into download state or render invalid measurements", () => {
+  const verification = { stage: "package_files", completed_bytes: 2048, total_bytes: 1024, completed_files: -1, total_files: 4 };
+  const verifying = render(job({ install_progress: { phase: "verifying", percent: null, verification } }));
+  assert.doesNotMatch(verifying, /2 KB \/ 1 KB|-1 \/ 4/);
+  const downloading = render(job({ install_progress: { phase: "downloading", percent: 50, downloaded_bytes: 512,
+    total_bytes: 1024, verification: { ...verification, completed_bytes: 512, completed_files: 2 } } }));
+  assert.match(downloading, /0.5 KB \/ 1 KB/);
+  assert.doesNotMatch(downloading.replace(/<[^>]*>/g, ""), /复核|个文件/);
+});
+
 test("recovered installations report their terminal result exactly on the active-to-terminal transition", () => {
   const previous = job();
   for (const status of ["Completed", "Failed", "Cancelled"]) {

@@ -23,6 +23,7 @@ impl InstallProgressUpdate {
                 total_bytes: None,
                 percent,
                 elapsed_seconds: 0,
+                verification: None,
             }),
         }
     }
@@ -91,6 +92,7 @@ impl SteamInstallOutput {
                 total_bytes: None,
                 percent: None,
                 elapsed_seconds: 0,
+                verification: None,
             },
             bootstrap,
             runtime_started: false,
@@ -272,6 +274,7 @@ fn parse_steamcmd_install_progress(line: &str) -> Option<InstallProgress> {
         total_bytes: bytes.map(|(_, total)| total),
         percent,
         elapsed_seconds: 0,
+        verification: None,
     })
 }
 

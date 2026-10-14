@@ -228,8 +228,11 @@ async fn first_instance_reuses_exact_inventory_with_empty_steam_work_directories
     record_verified_library_program_baseline(
         &fixture.source,
         &fixture.descriptor,
-        package.files,
-        package.directories,
+        ProgramBaselineInventory {
+            files: package.files,
+            directories: package.directories,
+            verified_files: VerifiedProgramFiles::default(),
+        },
         None,
     )
     .unwrap();

@@ -4,6 +4,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
+use app_core::{InstallVerificationProgress, InstallVerificationStage};
 use app_modules::ModuleDescriptor;
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +19,7 @@ use crate::private_runtime_refresh::{PackageTree, validated_relative_path};
 mod file_stamp;
 #[path = "program_package_verification.rs"]
 mod verification;
+pub use verification::VerifiedProgramFiles;
 use verification::{CachedVerification, PackageVerifier};
 #[path = "program_steam_metadata.rs"]
 mod steam_metadata;
@@ -48,7 +50,11 @@ pub(super) struct CleanPackage {
 
 #[path = "program_baseline.rs"]
 mod baseline;
-pub use baseline::{record_library_program_baseline, record_verified_library_program_baseline};
+pub use baseline::{
+    ProgramBaselineInventory, record_library_program_baseline,
+    record_library_program_baseline_with_progress, record_verified_library_program_baseline,
+    record_verified_library_program_baseline_with_progress,
+};
 
 /// Destructive and archive operations always verify the current file bytes.
 pub(crate) fn read_clean_package_tree(
@@ -193,7 +199,21 @@ pub fn retain_verified_library_program_baseline(
     descriptor: &ModuleDescriptor,
     cancellation: Option<&AtomicBool>,
 ) -> Result<bool, StorageError> {
-    retain_baseline(root, descriptor, false, cancellation)
+    retain_verified_library_program_baseline_with_progress(
+        root,
+        descriptor,
+        cancellation,
+        &mut |_| {},
+    )
+}
+
+pub fn retain_verified_library_program_baseline_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> Result<bool, StorageError> {
+    retain_baseline(root, descriptor, false, cancellation, on_progress)
 }
 
 /// Finalize a just-published isolated payload. Retained data can change shipped
@@ -203,7 +223,21 @@ pub fn retain_published_library_program_baseline(
     descriptor: &ModuleDescriptor,
     cancellation: Option<&AtomicBool>,
 ) -> Result<bool, StorageError> {
-    retain_baseline(root, descriptor, true, cancellation)
+    retain_published_library_program_baseline_with_progress(
+        root,
+        descriptor,
+        cancellation,
+        &mut |_| {},
+    )
+}
+
+pub fn retain_published_library_program_baseline_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> Result<bool, StorageError> {
+    retain_baseline(root, descriptor, true, cancellation, on_progress)
 }
 
 fn retain_baseline(
@@ -211,6 +245,7 @@ fn retain_baseline(
     descriptor: &ModuleDescriptor,
     allow_cached: bool,
     cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<bool, StorageError> {
     let mut verifier = PackageVerifier::new(root, allow_cached, cancellation);
     let module_id = Some(descriptor.summary.id.as_str());
@@ -222,10 +257,45 @@ fn retain_baseline(
         allow_cached,
         cancellation,
     )?;
-    let Some(clean) = verifier.verify(module_id, clean)? else {
-        record_library_program_baseline(root, descriptor, false, cancellation)?;
+    let original_initial = if clean.is_some() {
+        read_named_manifest(root, INITIAL_PACKAGE)?
+    } else {
+        None
+    };
+    if let Some(clean) = &clean {
+        verifier.set_progress_inventory(clean, original_initial.as_ref())?;
+    }
+    let Some(clean) = verifier.verify_with_progress(module_id, clean, on_progress)? else {
+        record_library_program_baseline_with_progress(
+            root,
+            descriptor,
+            false,
+            cancellation,
+            on_progress,
+        )?;
         return Ok(false);
     };
+    let initial = if original_initial.is_some() {
+        let initial = prepare_retained_manifest(
+            root,
+            descriptor,
+            original_initial.as_ref(),
+            allow_cached,
+            cancellation,
+        )?;
+        verifier.verify_with_progress(module_id, initial, on_progress)?
+    } else {
+        None
+    };
+    let mut recording = InstallVerificationProgress {
+        stage: InstallVerificationStage::RecordingBaseline,
+        completed_bytes: 0,
+        total_bytes: 0,
+        completed_files: 0,
+        total_files: if original_initial.is_some() { 2 } else { 1 },
+    };
+    on_progress(recording.clone());
+    check_creation_cancelled(cancellation)?;
     persist_retained_manifest(
         &verifier,
         root,
@@ -234,32 +304,24 @@ fn retain_baseline(
         CLEAN_PACKAGE,
         cancellation,
     )?;
-    let original_initial = read_named_manifest(root, INITIAL_PACKAGE)?;
-    if original_initial.is_some() {
-        let initial = prepare_retained_manifest(
+    if let Some(initial) = initial {
+        persist_retained_manifest(
+            &verifier,
             root,
-            descriptor,
             original_initial.as_ref(),
-            allow_cached,
+            &initial,
+            INITIAL_PACKAGE,
             cancellation,
         )?;
-        if let Some(initial) = verifier.verify(module_id, initial)? {
-            persist_retained_manifest(
-                &verifier,
-                root,
-                original_initial.as_ref(),
-                &initial,
-                INITIAL_PACKAGE,
-                cancellation,
-            )?;
-        } else {
-            // Shipped defaults may have become instance data. Keep the filtered
-            // program allowlist, but never use that stale full tree for first use.
-            check_creation_cancelled(cancellation)?;
-            let path = normalize_resource_path(&root.join(INITIAL_PACKAGE))?;
-            fs::remove_file(&path).map_err(|source| StorageError::DeletePath { path, source })?;
-        }
+    } else if original_initial.is_some() {
+        // Shipped defaults may have become instance data. Keep the filtered
+        // program allowlist, but never use that stale full tree for first use.
+        check_creation_cancelled(cancellation)?;
+        let path = normalize_resource_path(&root.join(INITIAL_PACKAGE))?;
+        fs::remove_file(&path).map_err(|source| StorageError::DeletePath { path, source })?;
     }
+    recording.completed_files = recording.total_files;
+    on_progress(recording);
     Ok(true)
 }
 

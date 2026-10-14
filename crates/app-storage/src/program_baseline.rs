@@ -3,9 +3,10 @@ use std::fs;
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
+use app_core::{InstallVerificationProgress, InstallVerificationStage};
 use app_modules::ModuleDescriptor;
 
-use super::verification::{self, PackageVerifier};
+use super::verification::{self, PackageVerifier, VerifiedProgramFiles};
 use super::{
     CLEAN_PACKAGE, CleanPackage, INITIAL_PACKAGE, excluded, package_exclusions, validate_manifest,
     write_manifest, write_named_manifest,
@@ -13,6 +14,15 @@ use super::{
 use crate::StorageError;
 use crate::instance_creation_io::check_creation_cancelled;
 use crate::instance_isolation::paths::{normalize_path, normalize_resource_path};
+
+/// An exact official file inventory and the content evidence captured for it
+/// during this installation. Additional files never enter the baseline.
+#[derive(Debug)]
+pub struct ProgramBaselineInventory {
+    pub files: BTreeMap<String, String>,
+    pub directories: BTreeSet<String>,
+    pub verified_files: VerifiedProgramFiles,
+}
 
 /// Only the installer may assert this after acquiring into a new, empty directory,
 /// or after official validation plus complete exact depot size/hash verification
@@ -23,6 +33,22 @@ pub fn record_library_program_baseline(
     descriptor: &ModuleDescriptor,
     source_is_clean: bool,
     cancellation: Option<&AtomicBool>,
+) -> Result<(), StorageError> {
+    record_library_program_baseline_with_progress(
+        root,
+        descriptor,
+        source_is_clean,
+        cancellation,
+        &mut |_| {},
+    )
+}
+
+pub fn record_library_program_baseline_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    source_is_clean: bool,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<(), StorageError> {
     if !source_is_clean {
         // An update has already changed this directory. Even a cancellation
@@ -42,7 +68,8 @@ pub fn record_library_program_baseline(
     // Unknown roots have no marker; a present marker must belong to this exact
     // acquisition before the caller can finalize it as an official package.
     super::super::library_program_acquisition_is_trusted(&root, descriptor)?;
-    let (package, verified_files) = verification::scan_verified_package(&root, cancellation)?;
+    let (package, verified_files) =
+        verification::scan_verified_package_with_progress(&root, cancellation, on_progress)?;
     let initial = CleanPackage {
         version: 1,
         module_id: descriptor.summary.id.clone(),
@@ -51,7 +78,7 @@ pub fn record_library_program_baseline(
         directories: package.directories,
         verified_files,
     };
-    publish_baseline(&root, descriptor, initial, cancellation)
+    publish_baseline(&root, descriptor, initial, cancellation, on_progress)
 }
 
 /// Record only an allowlist established by exact official depot verification.
@@ -60,10 +87,30 @@ pub fn record_library_program_baseline(
 pub fn record_verified_library_program_baseline(
     root: &Path,
     descriptor: &ModuleDescriptor,
-    files: BTreeMap<String, String>,
-    directories: BTreeSet<String>,
+    inventory: ProgramBaselineInventory,
     cancellation: Option<&AtomicBool>,
 ) -> Result<(), StorageError> {
+    record_verified_library_program_baseline_with_progress(
+        root,
+        descriptor,
+        inventory,
+        cancellation,
+        &mut |_| {},
+    )
+}
+
+pub fn record_verified_library_program_baseline_with_progress(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+    inventory: ProgramBaselineInventory,
+    cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
+) -> Result<(), StorageError> {
+    let ProgramBaselineInventory {
+        files,
+        directories,
+        verified_files,
+    } = inventory;
     check_creation_cancelled(cancellation)?;
     let root = normalize_path(root)?;
     super::super::library_program_acquisition_is_trusted(&root, descriptor)?;
@@ -77,9 +124,10 @@ pub fn record_verified_library_program_baseline(
     };
     validate_manifest(&initial, &root)?;
     let initial = PackageVerifier::new(&root, false, cancellation)
-        .verify(Some(&descriptor.summary.id), Some(initial))?
+        .with_verified_files(verified_files)
+        .verify_with_progress(Some(&descriptor.summary.id), Some(initial), on_progress)?
         .ok_or_else(|| StorageError::CleanLibraryProgramRequired { path: root.clone() })?;
-    publish_baseline(&root, descriptor, initial, cancellation)
+    publish_baseline(&root, descriptor, initial, cancellation, on_progress)
 }
 
 fn publish_baseline(
@@ -87,6 +135,7 @@ fn publish_baseline(
     descriptor: &ModuleDescriptor,
     initial: CleanPackage,
     cancellation: Option<&AtomicBool>,
+    on_progress: &mut dyn FnMut(InstallVerificationProgress),
 ) -> Result<(), StorageError> {
     let mut exclusions = package_exclusions(descriptor)?;
     // The runtime scanner intentionally recognizes only numeric Workshop
@@ -142,7 +191,19 @@ fn publish_baseline(
     };
     validate_manifest(&manifest, root)?;
     check_creation_cancelled(cancellation)?;
+    let mut progress = InstallVerificationProgress {
+        stage: InstallVerificationStage::RecordingBaseline,
+        completed_bytes: 0,
+        total_bytes: 0,
+        completed_files: 0,
+        total_files: 2,
+    };
+    on_progress(progress.clone());
+    check_creation_cancelled(cancellation)?;
     write_named_manifest(root, &initial, INITIAL_PACKAGE)?;
     write_manifest(root, &manifest)?;
-    super::super::clear_completed_acquisition(root, descriptor)
+    super::super::clear_completed_acquisition(root, descriptor)?;
+    progress.completed_files = 2;
+    on_progress(progress);
+    Ok(())
 }

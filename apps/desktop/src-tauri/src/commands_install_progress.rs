@@ -1,4 +1,7 @@
-use app_core::{BackgroundJob, InstallPhase, InstallProgress, JobStatus};
+use app_core::{
+    BackgroundJob, InstallPhase, InstallProgress, InstallVerificationProgress,
+    InstallVerificationStage, JobStatus,
+};
 use app_steamcmd::InstallProgressUpdate;
 
 pub(super) struct InstallationJobLease {
@@ -65,7 +68,42 @@ pub(super) fn queued_install_progress() -> InstallProgress {
         total_bytes: None,
         percent: None,
         elapsed_seconds: 0,
+        verification: None,
     }
+}
+
+pub(super) fn verification_install_progress(
+    verification: InstallVerificationProgress,
+) -> InstallProgressUpdate {
+    let detail = match verification.stage {
+        InstallVerificationStage::SteamFiles => "正在核验 Steam 官方程序文件…",
+        InstallVerificationStage::PackageFiles => "正在确认原版程序清单…",
+        InstallVerificationStage::RecordingBaseline => "正在保存原版程序清单…",
+    };
+    let percent = if verification.stage == InstallVerificationStage::RecordingBaseline {
+        None
+    } else if verification.total_bytes > 0 {
+        Some(
+            ((verification.completed_bytes.min(verification.total_bytes) as f64
+                / verification.total_bytes as f64)
+                * 100.0) as f32,
+        )
+    } else if verification.total_files > 0 {
+        Some(
+            ((verification.completed_files.min(verification.total_files) as f64
+                / verification.total_files as f64)
+                * 100.0) as f32,
+        )
+    } else {
+        None
+    };
+    let mut update = InstallProgressUpdate::stage(InstallPhase::Verifying, detail);
+    update.progress_percent = percent.unwrap_or(0.0);
+    if let Some(progress) = update.install_progress.as_mut() {
+        progress.percent = percent;
+        progress.verification = Some(verification);
+    }
+    update
 }
 
 pub(super) fn apply_install_progress(job: &mut BackgroundJob, update: &InstallProgressUpdate) {
@@ -87,6 +125,7 @@ pub(super) fn complete_install_progress(job: &mut BackgroundJob) {
         progress.downloaded_bytes = None;
         progress.total_bytes = None;
         progress.percent = Some(100.0);
+        progress.verification = None;
     }
 }
 
@@ -146,6 +185,7 @@ pub(super) fn begin_install_deployment(job: &mut BackgroundJob) {
         progress.downloaded_bytes = None;
         progress.total_bytes = None;
         progress.percent = None;
+        progress.verification = None;
     }
 }
 
@@ -169,6 +209,7 @@ mod tests {
                 total_bytes: Some(1024),
                 percent: Some(25.0),
                 elapsed_seconds: 12,
+                verification: None,
             }),
             target_id: Some(String::from("fixture")),
             detail: None,
@@ -248,6 +289,7 @@ mod tests {
             total_bytes: None,
             percent: None,
             elapsed_seconds: 18,
+            verification: None,
         };
         apply_install_progress(
             &mut job,
@@ -299,6 +341,7 @@ mod tests {
                 total_bytes: None,
                 percent: Some(100.0),
                 elapsed_seconds: 12,
+                verification: None,
             })
         );
     }
@@ -329,5 +372,51 @@ mod tests {
         assert_eq!(progress.downloaded_bytes, None);
         assert_eq!(progress.total_bytes, None);
         assert_eq!(progress.elapsed_seconds, 12);
+    }
+
+    #[test]
+    fn verification_reports_measured_bytes_then_unmeasured_baseline_publication() {
+        let snapshot = InstallVerificationProgress {
+            stage: InstallVerificationStage::SteamFiles,
+            completed_bytes: 512,
+            total_bytes: 1024,
+            completed_files: 1,
+            total_files: 8,
+        };
+        let update = verification_install_progress(snapshot.clone());
+        let progress = update.install_progress.unwrap();
+        assert_eq!(update.progress_percent, 50.0);
+        assert_eq!(progress.percent, Some(50.0));
+        assert_eq!(progress.downloaded_bytes, None);
+        assert_eq!(progress.total_bytes, None);
+        assert_eq!(progress.verification, Some(snapshot.clone()));
+
+        let update = verification_install_progress(InstallVerificationProgress {
+            stage: InstallVerificationStage::PackageFiles,
+            completed_bytes: 0,
+            total_bytes: 0,
+            completed_files: 1,
+            total_files: 4,
+        });
+        assert_eq!(update.install_progress.unwrap().percent, Some(25.0));
+
+        let update = verification_install_progress(InstallVerificationProgress {
+            stage: InstallVerificationStage::RecordingBaseline,
+            ..snapshot
+        });
+        let mut job = downloading_job();
+        apply_install_progress(&mut job, &update);
+        assert_eq!(job.install_progress.as_ref().unwrap().percent, None);
+        assert_eq!(
+            job.install_progress.as_ref().unwrap().phase,
+            InstallPhase::Verifying
+        );
+        assert!(matches!(job.status, JobStatus::Running));
+        complete_install_progress(&mut job);
+        assert_eq!(job.install_progress.as_ref().unwrap().verification, None);
+        assert_eq!(
+            job.install_progress.as_ref().unwrap().phase,
+            InstallPhase::Ready
+        );
     }
 }

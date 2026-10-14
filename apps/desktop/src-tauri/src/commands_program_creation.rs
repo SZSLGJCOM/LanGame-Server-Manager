@@ -99,6 +99,7 @@ pub(in crate::commands) async fn prepare_creation_program(
                     storage.paths.steamcmd_root.clone(),
                     app_id,
                     version,
+                    |_| {},
                 )
                 .await
                 .map_err(|error| {

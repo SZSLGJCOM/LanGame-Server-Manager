@@ -29,9 +29,14 @@ use package::{
     write_manifest,
 };
 pub use package::{
-    library_program_is_pristine, record_library_program_baseline,
-    record_verified_library_program_baseline, retain_published_library_program_baseline,
+    ProgramBaselineInventory, VerifiedProgramFiles, library_program_is_pristine,
+    record_library_program_baseline, record_library_program_baseline_with_progress,
+    record_verified_library_program_baseline,
+    record_verified_library_program_baseline_with_progress,
+    retain_published_library_program_baseline,
+    retain_published_library_program_baseline_with_progress,
     retain_verified_library_program_baseline,
+    retain_verified_library_program_baseline_with_progress,
 };
 pub(crate) use package::{read_clean_package_tree, require_clean_package_tree};
 

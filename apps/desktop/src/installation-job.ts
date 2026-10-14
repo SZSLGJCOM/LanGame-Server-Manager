@@ -24,6 +24,7 @@ export function installationJobPhase(job: BackgroundJob): InstallProgress["phase
 }
 
 export function installationJobPercent(job: BackgroundJob): number | null {
+  if (installationJobPhase(job) === "verifying" && job.install_progress?.verification?.stage === "recording_baseline") return null;
   const percent = job.install_progress?.percent;
   return typeof percent === "number" && Number.isFinite(percent) && percent >= 0
     ? Math.min(100, percent) : null;
@@ -33,7 +34,14 @@ export function installationJobPhaseLabel(job: BackgroundJob, t: TranslateFn): s
   const phase = installationJobPhase(job);
   const detail = job.detail?.trim() ?? "";
   const retry = /^Retry ([1-4]): (.*)$/s.exec(detail);
-  const label = installationStepLabel(phase, retry?.[2] ?? detail, t);
+  const verification = phase === "verifying" ? job.install_progress?.verification : null;
+  const verificationLabels: Record<NonNullable<InstallProgress["verification"]>["stage"], string> = {
+    steam_files: "installation.verification.steam_files",
+    package_files: "installation.verification.package_files",
+    recording_baseline: "installation.verification.recording_baseline",
+  };
+  const verificationLabel = verification ? verificationLabels[verification.stage] : undefined;
+  const label = verificationLabel ? t(verificationLabel) : installationStepLabel(phase, retry?.[2] ?? detail, t);
   return retry ? t("installation.retryStep", { attempt: retry[1], step: label }) : label;
 }
 
@@ -60,6 +68,19 @@ function installationStepLabel(phase: ReturnType<typeof installationJobPhase>, d
   if (phase === "installing") {
     if (/reconfiguring/i.test(detail)) return t("installation.step.configuring");
     if (/committing/i.test(detail)) return t("installation.step.committing");
+  }
+  if (phase === "verifying") {
+    const steps: readonly [RegExp, string][] = [
+      [/SteamCMD:.*verif/i, "steamcmd.prepare.verifying"],
+      [/update state \([^)]*\)\s*(?:validating|verifying)/i, "installation.step.steamFiles"],
+      [/Success! App '/i, "installation.step.steamResult"],
+      [/Completing Steam shared dependencies/i, "installation.step.steamDependencies"],
+      [/Verifying installed server files/i, "installation.step.programEntry"],
+      [/Recording the original server package inventory/i, "installation.step.originalInventory"],
+      [/正在校验程序文件并准备后续实例所需的干净基线/, "installation.verification.package_files"],
+    ];
+    const step = steps.find(([pattern]) => pattern.test(detail));
+    if (step) return t(step[1]);
   }
   return t(`installation.phase.${phase}`);
 }

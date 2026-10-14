@@ -12,6 +12,24 @@ pub enum InstallPhase {
     Ready,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallVerificationStage {
+    SteamFiles,
+    PackageFiles,
+    RecordingBaseline,
+}
+
+/// Local file processing counters, kept separate from network download bytes.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InstallVerificationProgress {
+    pub stage: InstallVerificationStage,
+    pub completed_bytes: u64,
+    pub total_bytes: u64,
+    pub completed_files: u64,
+    pub total_files: u64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct InstallProgress {
     pub phase: InstallPhase,
@@ -19,6 +37,8 @@ pub struct InstallProgress {
     pub total_bytes: Option<u64>,
     pub percent: Option<f32>,
     pub elapsed_seconds: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verification: Option<InstallVerificationProgress>,
 }
 
 #[cfg(test)]
@@ -54,6 +74,7 @@ mod tests {
             total_bytes: None,
             percent: None,
             elapsed_seconds: 17,
+            verification: None,
         };
         let value = serde_json::to_value(&progress).unwrap();
         assert_eq!(
@@ -90,5 +111,36 @@ mod tests {
             serde_json::to_value(job).unwrap()["install_progress"],
             json!(null)
         );
+    }
+
+    #[test]
+    fn verification_counters_round_trip_without_claiming_network_bytes() {
+        for stage in [
+            InstallVerificationStage::SteamFiles,
+            InstallVerificationStage::PackageFiles,
+            InstallVerificationStage::RecordingBaseline,
+        ] {
+            let progress = InstallProgress {
+                phase: InstallPhase::Verifying,
+                downloaded_bytes: None,
+                total_bytes: None,
+                percent: None,
+                elapsed_seconds: 20,
+                verification: Some(InstallVerificationProgress {
+                    stage,
+                    completed_bytes: 64,
+                    total_bytes: 128,
+                    completed_files: 1,
+                    total_files: 2,
+                }),
+            };
+            let encoded = serde_json::to_value(&progress).unwrap();
+            assert!(encoded["downloaded_bytes"].is_null());
+            assert!(encoded["total_bytes"].is_null());
+            assert_eq!(
+                serde_json::from_value::<InstallProgress>(encoded).unwrap(),
+                progress
+            );
+        }
     }
 }

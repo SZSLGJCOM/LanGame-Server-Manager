@@ -11,7 +11,10 @@ pub mod manifest;
 #[path = "steam_depot_verification.rs"]
 mod verification;
 use manifest::{Object, collect_depots, decimal, depot_gid, insert_depot, object, parse_acf, text};
-pub use verification::{VerifiedSteamPackage, verify_installed_steam_package};
+pub use verification::{
+    VerifiedSteamPackage, verify_installed_steam_package,
+    verify_installed_steam_package_with_progress,
+};
 
 pub const MAX_MANIFEST: usize = 128 * 1024 * 1024;
 pub const MAX_ACF: usize = 4 * 1024 * 1024;

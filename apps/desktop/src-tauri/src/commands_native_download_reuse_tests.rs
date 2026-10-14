@@ -10,9 +10,14 @@ const APP_MANIFEST: &str = "steamapps/appmanifest_896660.acf";
 
 #[path = "commands_native_download_retry_tests.rs"]
 mod retry;
+#[path = "commands_native_verification_benchmark_tests.rs"]
+mod verification_benchmark;
 
 #[path = "commands_native_dst_download_reuse_tests.rs"]
 mod dontstarve;
+
+#[path = "commands_native_verification_timing_tests.rs"]
+mod verification_timing;
 
 /// Failed probes preserve their acquired package so investigation needs no
 /// additional download. No game process is started by either test.

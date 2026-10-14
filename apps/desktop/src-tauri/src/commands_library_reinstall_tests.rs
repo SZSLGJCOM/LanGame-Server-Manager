@@ -130,7 +130,7 @@ async fn retained_reinstall_creates_first_and_second_instances_without_another_d
                         .unwrap(),
                         b"shipped default"
                     );
-                    baseline.prepare_fresh_payload(root).await
+                    baseline.prepare_fresh_payload(root, |_| {}).await
                 }
             },
         },
@@ -139,7 +139,7 @@ async fn retained_reinstall_creates_first_and_second_instances_without_another_d
     (&mut server.task).await??;
     assert_eq!(result.install_state, InstallState::Installed);
     let guard = baseline
-        .finish(guard, fixture.original.clone(), false, false)
+        .finish(guard, fixture.original.clone(), false, false, |_| {})
         .await?;
     sync_game_installs(
         &fixture.storage.paths,

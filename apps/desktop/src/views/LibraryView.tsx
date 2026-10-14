@@ -21,7 +21,7 @@ import { LibraryCatalogPage } from "./library/LibraryCatalogPage";
 import { useLibraryGamepadNavigation } from "./library/useLibraryGamepadNavigation";
 import { LibraryAtmosphere } from "./library/LibraryAtmosphere";
 import { formatInstallState, installTone, suggestedName } from "./library/library-shared";
-import { isActiveInstallationJob, installationJobPhase } from "../installation-job";
+import { isActiveInstallationJob, installationJobPhaseLabel } from "../installation-job";
 
 const LibraryDetailPage = lazy(() =>
   import("./library/LibraryDetailPage").then((module) => ({ default: module.LibraryDetailPage }))
@@ -684,7 +684,7 @@ export function LibraryView(props: LibraryViewProps) {
               storyParagraphs={storyParagraphs}
               categoryTags={categoryTags}
               genreTags={genreTags}
-              installLabel={selectedInstallJob ? t(`installation.phase.${installationJobPhase(selectedInstallJob)}`) : installLabel}
+              installLabel={selectedInstallJob ? installationJobPhaseLabel(selectedInstallJob, t) : installLabel}
               installBusy={Boolean(selectedInstallJob)}
               installStatusClass={installStatusClass}
               creating={selected !== null && props.creatingModuleIds.has(selected.id)}
