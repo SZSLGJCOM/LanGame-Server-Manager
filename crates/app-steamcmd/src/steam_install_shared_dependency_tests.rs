@@ -74,9 +74,28 @@ public static class SharedDependencyInstaller {
         "{}",
         output_excerpt(&output.stdout, &output.stderr)
     );
-    ensure_steamcmd_installed(crate::test_install_lock_context(), &fixture.settings)
-        .await
-        .unwrap();
+    let mut preparation = std::collections::VecDeque::new();
+    let result = crate::ensure_steamcmd_installed_with_progress(
+        crate::test_install_lock_context(),
+        &fixture.settings,
+        |progress| {
+            if preparation.len() == 32 {
+                preparation.pop_front();
+            }
+            preparation.push_back(format!(
+                "{:?}: {}\n{}",
+                progress.phase, progress.detail, progress.output_excerpt
+            ));
+        },
+    )
+    .await;
+    assert!(
+        result.is_ok(),
+        "Shared dependency fixture preparation failed: mode={mode}, executable={}, status={:?}, result={result:?}\n{}",
+        executable.display(),
+        steamcmd_status(&fixture.settings),
+        preparation.into_iter().collect::<Vec<_>>().join("\n")
+    );
     fixture
 }
 
