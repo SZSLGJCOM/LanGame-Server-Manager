@@ -23,6 +23,24 @@ struct ProcessIdList {
     ids: [usize; MAX_WAITED_PROCESSES],
 }
 
+impl ProcessIdList {
+    fn returned_process_ids(&self) -> io::Result<&[usize]> {
+        if self.assigned as usize > self.ids.len() || self.count as usize > self.ids.len() {
+            return Err(io::Error::other(format!(
+                "managed process tree exceeds the 4096-process cleanup bound (assigned={}, returned={})",
+                self.assigned, self.count
+            )));
+        }
+        // Only count PIDs were returned. Requiring equality with assigned races
+        // process exits; Job accounting and retained handles establish completion.
+        Ok(&self.ids[..self.count as usize])
+    }
+}
+
+#[cfg(test)]
+#[path = "windows_process_job_snapshot_tests.rs"]
+mod snapshot_tests;
+
 /// An anonymous launch container. Its handle is never inherited by workloads,
 /// so loss of the manager's final owner also terminates remaining descendants.
 #[derive(Debug)]
@@ -290,13 +308,8 @@ impl OwnedProcessJob {
                 error
             });
         }
-        if list.assigned > list.count || list.count as usize > MAX_WAITED_PROCESSES {
-            return Err(io::Error::other(
-                "managed process tree PID list is incomplete",
-            ));
-        }
         let mut added = false;
-        for pid in &list.ids[..list.count as usize] {
+        for pid in list.returned_process_ids()? {
             let pid = u32::try_from(*pid)
                 .map_err(|_| io::Error::other("managed process tree returned an invalid PID"))?;
             ensure_before_deadline(deadline, phase, Some(pid))?;
