@@ -208,6 +208,27 @@ struct JobProcessIds {
 }
 
 #[cfg(windows)]
+impl JobProcessIds {
+    fn returned_process_ids(&self) -> std::io::Result<&[usize]> {
+        if self.assigned as usize > self.ids.len() || self.count as usize > self.ids.len() {
+            return Err(std::io::Error::other(format!(
+                "install process tree exceeds the cleanup process limit (assigned={}, returned={}, limit={})",
+                self.assigned,
+                self.count,
+                self.ids.len()
+            )));
+        }
+        // Only count PIDs were returned. Requiring equality with assigned races
+        // process exits; Job accounting and retained handles establish completion.
+        Ok(&self.ids[..self.count as usize])
+    }
+}
+
+#[cfg(all(test, windows))]
+#[path = "install_process_job_snapshot_tests.rs"]
+mod job_snapshot_tests;
+
+#[cfg(windows)]
 impl WindowsJob {
     fn new() -> std::io::Result<Self> {
         let raw = unsafe {
@@ -338,13 +359,8 @@ impl WindowsJob {
                 error
             });
         }
-        if list.assigned > list.count || list.count as usize > MAX_CLEANUP_PROCESSES {
-            return Err(std::io::Error::other(
-                "install process tree snapshot is incomplete",
-            ));
-        }
         let mut added = false;
-        for pid in &list.ids[..list.count as usize] {
+        for pid in list.returned_process_ids()? {
             if tokio::time::Instant::now() >= deadline {
                 return Err(std::io::Error::new(
                     std::io::ErrorKind::TimedOut,
