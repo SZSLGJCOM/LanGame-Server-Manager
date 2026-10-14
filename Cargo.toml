@@ -32,3 +32,11 @@ tokio = { version = "1.53.2", features = ["io-util", "macros", "net", "process",
 toml = "1.1.8"
 uuid = { version = "1.28.0", features = ["v4"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Storage_FileSystem"] }
+
+# The local desktop hashes multi-GiB server packages in development builds.
+# Optimize compression without changing assertions, algorithms or CPU dispatch.
+[profile.dev.package."sha1:0.11.0"]
+opt-level = 3
+
+[profile.dev.package."sha2:0.11.1"]
+opt-level = 3

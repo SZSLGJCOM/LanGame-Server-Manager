@@ -1037,6 +1037,13 @@ export interface InstallProgress {
   total_bytes: number | null;
   percent: number | null;
   elapsed_seconds: number;
+  verification?: {
+    stage: "steam_files" | "package_files" | "recording_baseline";
+    completed_bytes: number;
+    total_bytes: number;
+    completed_files: number;
+    total_files: number;
+  } | null;
 }
 
 export interface BackgroundJob {

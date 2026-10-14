@@ -120,6 +120,14 @@ Tauri、共享领域契约、游戏模块和迁移等生产边界变更仍运行
 
 模拟进程、浏览器组件与真实游戏验收是不同证据；报告实际执行的范围、环境和结果。需要游戏包、外部服务或真实凭据的可选验收应在获准的隔离环境中执行。
 
+真实包校验基准为 ignored 测试 `native_valheim_verification_benchmark_and_three_instance_acceptance`，使用 `--ignored --test-threads=1 --nocapture` 单独执行。`LANGAME_VERIFICATION_FIXTURE_ROOT` 指向已复制的完整 Valheim 包，`LANGAME_VERIFICATION_STEAMCMD_ROOT` 指向含对应 `depotcache` 的独立目录；`LANGAME_SMOKE_RUNTIME_ROOT` 和 `LANGAME_VERIFICATION_REPORT` 必须是仓库外已创建的测试、报告目录。可用 `LANGAME_VERIFICATION_SECOND_FIXTURE_ROOT` 与 `LANGAME_VERIFICATION_SECOND_MODULE` 添加第二个包的计时。测试不会下载、运行 SteamCMD 或启动游戏；它复制输入，在副本中校验、篡改及创建三个实例，成功后清理副本并保留 JSON 报告。基准预热后交错执行四次双重哈希对照与四次当前证据复用，两边均完整执行官方 SHA-1/SHA-256；报告当前构建的本地耗时和 Windows 进程逻辑读取量，不代表旧提交完整二进制、冷磁盘或 SteamCMD 下载/validate 的耗时。
+
+普通 `cargo test` 使用开发测试设置。发行优化设置使用 `cargo bench --locked -p langame-desktop --bin langame-desktop --features custom-protocol native_valheim_verification_benchmark_and_three_instance_acceptance -- --test --ignored --test-threads=1 --nocapture`；默认 bench profile 继承 release，末尾的 `--test` 让优化后的测试程序执行现有验收。报告记录编译时的 `debug_assertions_enabled`；发行对照必须为 `false`，且优化前后使用相同构建，只切换本轮证据复用，避免将 Debug SHA 依赖编译优化混入发行去重收益。托管工作站仍通过规定的 Cargo 封装执行。
+
+仅重跑真实完整性及三实例验收时，选择 `native_valheim_three_instance_integrity_acceptance`，使用相同输入目录；它执行同样的完整哈希、归属及篡改断言，跳过耗时统计，报告中的计时字段为 `null`。
+
+本地桌面 Debug 构建对当前 SHA-1/SHA-256 依赖单独启用 `opt-level=3`，避免多 GiB 原版文件核验被未优化的压缩循环拖慢。算法、校验范围、开发断言、运行时 CPU 能力判断及发行 profile 保持原有设置；测试继承该依赖配置。基准将编译时嵌入的 workspace manifest 摘要及依赖覆盖设置写入报告，比较构建参数时须保留原始对照并重新测量，不能混合统计。
+
 ### 模块与生成文件
 
 新增游戏或修改配置、启动、生命周期、端口、查询及玩家管理时，遵循[游戏接入验证](game-integration-validation.md)。设置与排除项记录在 `config-sources.toml`，脱敏夹具放在 `modules/<module-id>/config-fixtures/`；支持声明应有权威来源或可复现的专用服务器证据。
@@ -217,6 +225,14 @@ Production changes to Tauri, shared contracts, game modules and migrations retai
 Rust dependency caching and a shared frontend artifact avoid repeated preparation. Measure the 5–10 minute quick-feedback target using actual GitHub runs of the corresponding commit; passing local checks does not establish that the target has been reached. Use `--plan`, `--component`, `--cargo-wrapper`, `--node-wrapper`, `--frontend-output`, `--frontend-dist` and `--native-executable` as described above for focused or managed execution. Preserve existing assertions and failure handling. Real signed installation, upgrade and retained-data acceptance remain separate release requirements; optional NSIS guard checks require `--nsis-root`. Report synthetic, browser and native-game evidence separately. Opt-in tests requiring game packages, external services or credentials need an authorized isolated environment.
 
 Follow [Game Integration Validation](game-integration-validation.md#english) for module changes. Maintain `config-sources.toml` and sanitized fixtures, then use the [generation and check commands](#模块与生成文件); do not edit generated ledgers or acceptance Markdown directly. Tauri's generated schemas are ignored output; edit the source capability or Tauri configuration instead.
+
+The ignored `native_valheim_verification_benchmark_and_three_instance_acceptance` test runs alone with `--ignored --test-threads=1 --nocapture`. Point `LANGAME_VERIFICATION_FIXTURE_ROOT` to a copied complete Valheim package and `LANGAME_VERIFICATION_STEAMCMD_ROOT` to an isolated directory containing its exact `depotcache`. Create external directories for `LANGAME_SMOKE_RUNTIME_ROOT` and `LANGAME_VERIFICATION_REPORT`. Optional `LANGAME_VERIFICATION_SECOND_FIXTURE_ROOT` and `LANGAME_VERIFICATION_SECOND_MODULE` add timing for another package. The test copies its inputs, verifies and tampers with owned copies, and creates three instances without downloading, running SteamCMD or starting games. Successful runs remove owned copies and retain JSON reports. After warmup it interleaves four full second-hash controls and four current-evidence reuse samples; both perform complete official SHA-1/SHA-256 verification. Measurements describe the current build's local wall time and Windows logical process reads, not an old-commit binary, cold disk or native download/validate timing.
+
+Ordinary `cargo test` uses development test settings. For release optimization, run `cargo bench --locked -p langame-desktop --bin langame-desktop --features custom-protocol native_valheim_verification_benchmark_and_three_instance_acceptance -- --test --ignored --test-threads=1 --nocapture`. The default bench profile inherits release; the final `--test` executes the existing acceptance in the optimized test harness. Reports record the compiled `debug_assertions_enabled` value. Release comparisons require `false` and the same build in both modes, switching only current-operation evidence reuse rather than mixing in the Debug SHA dependency overrides. Managed workstations still use their required Cargo wrapper.
+
+Select `native_valheim_three_instance_integrity_acceptance` with the same inputs to repeat full hashes, ownership and tamper assertions without repeating timing. Its report uses `null` timing fields.
+
+Local debug builds optimize only the current SHA-1/SHA-256 dependencies at level 3 for multi-GiB package verification. Algorithms, verification coverage, development assertions, runtime CPU dispatch and release profiles keep their existing settings; tests inherit the dependency overrides. Timing reports embed the workspace manifest hash and package overrides from compilation. Preserve original controls and measure build-parameter changes separately.
 
 Generated game translations retain only fallback keys not overridden by hand-authored catalogs. After changing schema, settings modules or authored message keys, run `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs`; `--module <module-id>` limits schema regeneration to one game. Generation respects runtime spread order. Verification loads actual exports, including computed messages, to check effective values, placeholders and language coverage.
 

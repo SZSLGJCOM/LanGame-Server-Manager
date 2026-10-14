@@ -5,6 +5,9 @@ use crate::instance_creation_io::test_gate::{PausePoint, pause_at};
 #[path = "program_package_verification_tests.rs"]
 mod verification;
 
+#[path = "program_baseline_evidence_tests.rs"]
+mod evidence;
+
 struct Fixture {
     root: PathBuf,
     descriptor: ModuleDescriptor,

@@ -138,9 +138,11 @@ async fn native_valheim_interrupted_download_retry_reuse() -> TestResult {
             |update| {
                 // A deterministic failure after native Steam repaired the partial
                 // payload but before the manager publishes its clean inventory.
-                if update.progress_percent == 99.0
-                    && update.detail == "正在校验程序文件并准备后续实例所需的干净基线…"
-                {
+                if update.install_progress.as_ref().is_some_and(|progress| {
+                    progress.verification.as_ref().is_some_and(|verification| {
+                        verification.stage == app_core::InstallVerificationStage::SteamFiles
+                    })
+                }) {
                     interrupted = true;
                     cancellation.cancel();
                 }

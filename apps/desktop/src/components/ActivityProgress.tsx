@@ -11,6 +11,7 @@ interface ActivityProgressProps {
   error?: boolean;
   percent: number | null;
   transfer?: string;
+  localProgress?: boolean;
   speed?: string;
   speedLabel?: string;
   speedTitle?: string;
@@ -25,7 +26,7 @@ export function ActivityProgress(props: ActivityProgressProps) {
   const percent = props.percent !== null && Number.isFinite(props.percent)
     ? Math.max(0, Math.min(100, props.percent)) : null;
   return (
-    <div className={`shell-task-activity${props.active ? " is-active" : ""}${props.error ? " is-error" : ""}`}>
+    <div className={`shell-task-activity${props.active ? " is-active" : ""}${props.error ? " is-error" : ""}${props.localProgress ? " has-local-progress" : ""}`}>
       <div className="shell-task-summary">
         <span className="shell-activity-text" title={props.title} role={props.error ? "alert" : undefined}>
           <span className="shell-task-phase">{props.label}</span>

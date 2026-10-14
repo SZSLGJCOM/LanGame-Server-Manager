@@ -222,12 +222,137 @@ fn cancelled_verification_returns_no_package() {
         size: 3,
         sha1: "a9993e364706816aba3e25717850c26c9cd0d89d".into(),
     };
+    let mut on_progress = |_| {};
+    let mut reporter = VerificationReporter::new(3, 1, &mut on_progress);
+    let mut file = open_read(&fixture.root.join("x.bin")).unwrap();
     assert_eq!(
-        verify_file(&fixture.root.join("x.bin"), &[&expected], Some(&signal))
-            .unwrap_err()
-            .kind(),
+        verify_file(
+            &mut file,
+            &fixture.root.join("x.bin"),
+            &[&expected],
+            Some(&signal),
+            &mut reporter
+        )
+        .unwrap_err()
+        .kind(),
         io::ErrorKind::Interrupted
     );
+}
+
+#[test]
+fn measured_progress_counts_only_the_exact_official_files() {
+    let fixture = Fixture::new();
+    fs::write(fixture.root.join("operator-data.bin"), vec![0; 4096]).unwrap();
+    let mut reports = Vec::new();
+    let mut observed = BTreeMap::new();
+    let result = verify_installed_steam_package_with_progress(
+        &fixture.root,
+        &fixture.steamcmd,
+        7,
+        "17",
+        None,
+        |progress| reports.push(progress),
+        |relative, file, digest| {
+            assert_eq!(
+                file.metadata()?.len(),
+                fs::metadata(fixture.root.join(relative))?.len()
+            );
+            observed.insert(relative.to_owned(), digest.to_owned());
+            #[cfg(windows)]
+            {
+                assert!(
+                    fs::OpenOptions::new()
+                        .write(true)
+                        .open(fixture.root.join(relative))
+                        .is_err()
+                );
+                assert!(
+                    fs::rename(
+                        fixture.root.join(relative),
+                        fixture.root.join("replaced.bin")
+                    )
+                    .is_err()
+                );
+            }
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert_eq!(observed, result.files);
+    let start = reports.first().unwrap();
+    assert_eq!(start.completed_bytes, 0);
+    assert_eq!(start.completed_files, 0);
+    let end = reports.last().unwrap();
+    assert_eq!(end.stage, InstallVerificationStage::SteamFiles);
+    assert_eq!(end.total_files, 2);
+    assert_eq!(end.completed_files, 2);
+    assert_eq!(
+        end.total_bytes,
+        3 + Fixture::acf("", "17", "4").len() as u64
+    );
+    assert_eq!(end.completed_bytes, end.total_bytes);
+}
+
+#[test]
+fn failed_official_hash_cannot_produce_evidence_or_completion() {
+    let fixture = Fixture::new();
+    fs::write(fixture.root.join("x.bin"), b"xyz").unwrap();
+    let mut reports = Vec::new();
+    let mut observations = 0;
+    assert!(
+        verify_installed_steam_package_with_progress(
+            &fixture.root,
+            &fixture.steamcmd,
+            7,
+            "17",
+            None,
+            |progress| reports.push(progress),
+            |_, _, _| {
+                observations += 1;
+                Ok(())
+            },
+        )
+        .is_err()
+    );
+    assert_eq!(observations, 0);
+    assert!(
+        reports
+            .iter()
+            .all(|progress| progress.completed_files < progress.total_files)
+    );
+}
+
+#[test]
+fn evidence_callback_errors_and_progress_cancellation_stop_publication() {
+    let fixture = Fixture::new();
+    let error = verify_installed_steam_package_with_progress(
+        &fixture.root,
+        &fixture.steamcmd,
+        7,
+        "17",
+        None,
+        |_| {},
+        |_, _, _| Err(io::Error::other("evidence unavailable")),
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("evidence unavailable"));
+    let signal = AtomicBool::new(false);
+    let mut observed = false;
+    let error = verify_installed_steam_package_with_progress(
+        &fixture.root,
+        &fixture.steamcmd,
+        7,
+        "17",
+        Some(&signal),
+        |_| signal.store(true, Ordering::Release),
+        |_, _, _| {
+            observed = true;
+            Ok(())
+        },
+    )
+    .unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::Interrupted);
+    assert!(!observed);
 }
 
 #[cfg(windows)]

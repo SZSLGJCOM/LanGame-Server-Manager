@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "commands_steam_baseline_tests.rs"]
+mod steam_acquisition;
+
 struct ProgramBaselineFixture {
     root: PathBuf,
     descriptor: ModuleDescriptor,
@@ -74,7 +77,7 @@ async fn program_update_same_version_preserves_verified_allowlist_without_trusti
     )?;
     fixture
         .recorder()?
-        .finish((), fixture.root.clone(), false, true)
+        .finish((), fixture.root.clone(), false, true, |_| {})
         .await?;
     assert_eq!(fixture.clean_manifest()?, before);
     assert!(app_storage::library_program_is_pristine(
@@ -105,7 +108,7 @@ async fn program_update_new_version_invalidates_old_allowlist_even_when_old_hash
     )?;
     fixture
         .recorder()?
-        .finish((), fixture.root.clone(), false, false)
+        .finish((), fixture.root.clone(), false, false, |_| {})
         .await?;
     assert!(!fixture.root.join(".langame-clean-package.json").exists());
     assert!(!fixture.root.join(".langame-initial-package.json").exists());
@@ -124,7 +127,7 @@ async fn program_update_same_version_cannot_certify_changed_program_bytes()
     fs::write(fixture.root.join("server.jar"), b"modified server")?;
     fixture
         .recorder()?
-        .finish((), fixture.root.clone(), false, true)
+        .finish((), fixture.root.clone(), false, true, |_| {})
         .await?;
     assert!(!fixture.root.join(".langame-clean-package.json").exists());
     assert_eq!(
@@ -139,11 +142,13 @@ async fn program_update_fresh_payload_keeps_program_hashes_after_retaining_opera
 -> Result<(), Box<dyn std::error::Error>> {
     let fixture = ProgramBaselineFixture::new()?;
     let recorder = fixture.recorder()?;
-    recorder.prepare_fresh_payload(fixture.root.clone()).await?;
+    recorder
+        .prepare_fresh_payload(fixture.root.clone(), |_| {})
+        .await?;
     fs::write(fixture.root.join("user.cfg"), b"operator settings")?;
     fs::write(fixture.root.join("custom-loader.dll"), b"operator loader")?;
     recorder
-        .finish((), fixture.root.clone(), false, false)
+        .finish((), fixture.root.clone(), false, false, |_| {})
         .await?;
     assert!(app_storage::library_program_is_pristine(
         &fixture.root,

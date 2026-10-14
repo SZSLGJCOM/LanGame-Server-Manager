@@ -1,3 +1,4 @@
+use super::super::commands_install_progress::verification_install_progress;
 use super::*;
 
 /// The complete caller-owned mutation lease survives the blocking baseline work.
@@ -38,12 +39,14 @@ pub(in crate::commands) struct ProgramUpdateRequest<'a, G> {
 /// transition. The returned guard must remain owned through result persistence.
 pub(in crate::commands) async fn install_program_with_baseline<G, P>(
     request: ProgramUpdateRequest<'_, G>,
-    mut on_progress: P,
+    on_progress: P,
 ) -> Result<(ModuleInstallResult, G), app_steamcmd::SteamCmdError>
 where
     G: ProgramUpdateGuard,
-    P: FnMut(InstallProgressUpdate),
+    P: FnMut(InstallProgressUpdate) + Send,
 {
+    let started_at = std::time::Instant::now();
+    let on_progress = std::sync::Mutex::new(on_progress);
     let ProgramUpdateRequest {
         storage,
         descriptor,
@@ -120,22 +123,31 @@ where
         module,
         root,
         guard.install_guard(),
-        // A failed acquisition may already contain its executable. Always
-        // validate retries before certifying the exact official file inventory.
-        validate || needs_steam_inventory.is_some(),
+        // Empty first acquisitions have no old bytes to repair and still require
+        // exact official depot verification below. Existing partial or unknown
+        // payloads must be repaired before their inventory can be certified.
+        should_validate_program_acquisition(
+            validate,
+            needs_steam_inventory.is_some(),
+            source_was_empty,
+        ),
         cancellation,
         app_steamcmd::ModuleInstallCallbacks {
-            on_progress: &mut on_progress,
-            prepare_fresh_payload: |root| baseline.prepare_fresh_payload(root),
+            on_progress: |update| {
+                report_program_install_progress(&on_progress, started_at, update);
+            },
+            prepare_fresh_payload: |root| {
+                baseline.prepare_fresh_payload(root, |progress| {
+                    report_program_install_progress(
+                        &on_progress,
+                        started_at,
+                        verification_install_progress(progress),
+                    );
+                })
+            },
         },
     )
     .await?;
-    let mut progress = InstallProgressUpdate::stage(
-        app_core::InstallPhase::Verifying,
-        "正在校验程序文件并准备后续实例所需的干净基线…",
-    );
-    progress.progress_percent = 99.0;
-    on_progress(progress);
     let same_version = previous_version
         .as_ref()
         .is_some_and(|version| result.current_version.as_ref() == Some(version));
@@ -151,12 +163,119 @@ where
                 storage.paths.steamcmd_root.clone(),
                 app_id,
                 version,
+                |progress| {
+                    report_program_install_progress(
+                        &on_progress,
+                        started_at,
+                        verification_install_progress(progress),
+                    );
+                },
             )
             .await?
     } else {
         baseline
-            .finish(guard, root.to_owned(), source_was_empty, same_version)
+            .finish(
+                guard,
+                root.to_owned(),
+                source_was_empty,
+                same_version,
+                |progress| {
+                    report_program_install_progress(
+                        &on_progress,
+                        started_at,
+                        verification_install_progress(progress),
+                    );
+                },
+            )
             .await?
     };
     Ok((result, guard))
+}
+
+fn should_validate_program_acquisition(
+    explicit_validation: bool,
+    needs_steam_inventory: bool,
+    source_was_empty: bool,
+) -> bool {
+    explicit_validation || (needs_steam_inventory && !source_was_empty)
+}
+
+fn report_program_install_progress<P: FnMut(InstallProgressUpdate)>(
+    on_progress: &std::sync::Mutex<P>,
+    started_at: std::time::Instant,
+    mut update: InstallProgressUpdate,
+) {
+    if let Some(progress) = update.install_progress.as_mut() {
+        // Native completion precedes inventory publication and database persistence.
+        // The owning job announces Ready only after those steps succeed.
+        if progress.phase == app_core::InstallPhase::Ready {
+            return;
+        }
+        progress.elapsed_seconds = started_at.elapsed().as_secs();
+    }
+    on_progress
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)(update);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use app_core::{InstallPhase, InstallVerificationProgress, InstallVerificationStage};
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn new_empty_acquisition_needs_official_inventory_without_native_revalidation() {
+        assert!(!should_validate_program_acquisition(false, true, true));
+    }
+
+    #[test]
+    fn failed_retry_and_existing_payload_without_inventory_keep_native_validation() {
+        assert!(should_validate_program_acquisition(false, true, false));
+        // A normally registered installation retains the ordinary update policy.
+        assert!(!should_validate_program_acquisition(false, false, false));
+    }
+
+    #[test]
+    fn explicitly_requested_validation_always_reaches_the_native_installer() {
+        for needs_inventory in [false, true] {
+            for source_was_empty in [false, true] {
+                assert!(should_validate_program_acquisition(
+                    true,
+                    needs_inventory,
+                    source_was_empty
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn baseline_progress_keeps_outer_elapsed_and_native_ready_waits_for_persistence() {
+        let reports = std::sync::Mutex::new(Vec::new());
+        let on_progress = std::sync::Mutex::new(|update| reports.lock().unwrap().push(update));
+        let started_at = Instant::now() - Duration::from_secs(12);
+        report_program_install_progress(
+            &on_progress,
+            started_at,
+            InstallProgressUpdate::stage(InstallPhase::Ready, "native install complete"),
+        );
+        assert!(reports.lock().unwrap().is_empty());
+        report_program_install_progress(
+            &on_progress,
+            started_at,
+            verification_install_progress(InstallVerificationProgress {
+                stage: InstallVerificationStage::SteamFiles,
+                completed_bytes: 128,
+                total_bytes: 256,
+                completed_files: 1,
+                total_files: 2,
+            }),
+        );
+        let reports = reports.lock().unwrap();
+        let progress = reports[0].install_progress.as_ref().unwrap();
+        assert_eq!(progress.phase, InstallPhase::Verifying);
+        assert_eq!(progress.percent, Some(50.0));
+        assert!(progress.elapsed_seconds >= 12);
+        assert!(progress.verification.is_some());
+    }
 }

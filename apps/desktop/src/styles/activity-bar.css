@@ -209,6 +209,11 @@
   min-width: 0;
 }
 
+.shell-task-activity.has-local-progress {
+  grid-template-columns: minmax(0, 1fr) 128px 34px 216px 0 84px 24px;
+}
+.shell-task-activity.has-local-progress .shell-task-speed { display: none; }
+
 .shell-task-detail { margin-left: 8px; }
 .shell-task-summary { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .shell-task-summary .shell-activity-text { flex: 1; min-width: 0; }
@@ -283,6 +288,9 @@
 @media (max-width: 1000px) {
   .shell-task-activity {
     grid-template-columns: minmax(0, 1fr) 112px 34px 128px 80px 84px 24px;
+  }
+  .shell-task-activity.has-local-progress {
+    grid-template-columns: minmax(0, 1fr) 112px 34px 216px 0 84px 24px;
   }
 }
 

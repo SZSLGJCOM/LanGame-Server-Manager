@@ -1,4 +1,5 @@
 use super::*;
+use app_core::{InstallVerificationProgress, InstallVerificationStage};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -26,18 +27,21 @@ impl LibraryBaselineRecorder {
     pub(in crate::commands) async fn prepare_fresh_payload(
         &self,
         root: PathBuf,
+        on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<(), app_steamcmd::SteamCmdError> {
         let descriptor = self.descriptor.clone();
         run_baseline_worker(
             &self.operation,
             &self.installation,
             &self.descriptor.summary.id,
-            move |cancellation| {
-                app_storage::record_library_program_baseline(
+            on_progress,
+            move |cancellation, progress| {
+                app_storage::record_library_program_baseline_with_progress(
                     &root,
                     &descriptor,
                     true,
                     Some(cancellation),
+                    progress,
                 )
                 .map_err(|error| error.to_string())
             },
@@ -53,6 +57,7 @@ impl LibraryBaselineRecorder {
         root: PathBuf,
         source_was_empty: bool,
         same_version: bool,
+        on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<G, app_steamcmd::SteamCmdError> {
         let fresh_payload_recorded = self.fresh_payload_recorded.load(Ordering::Acquire);
         let descriptor = self.descriptor;
@@ -61,29 +66,33 @@ impl LibraryBaselineRecorder {
             &self.operation,
             &self.installation,
             &module_id,
-            move |cancellation| {
+            on_progress,
+            move |cancellation, progress| {
                 if fresh_payload_recorded {
                     // Retained user data can replace shipped defaults at publication.
                     // Keep only the installer's allowlist that still matches afterwards.
-                    app_storage::retain_published_library_program_baseline(
+                    app_storage::retain_published_library_program_baseline_with_progress(
                         &root,
                         &descriptor,
                         Some(cancellation),
+                        progress,
                     )
                     .map_err(|error| error.to_string())?;
                 } else if !source_was_empty && same_version {
-                    app_storage::retain_verified_library_program_baseline(
+                    app_storage::retain_verified_library_program_baseline_with_progress(
                         &root,
                         &descriptor,
                         Some(cancellation),
+                        progress,
                     )
                     .map_err(|error| error.to_string())?;
                 } else {
-                    app_storage::record_library_program_baseline(
+                    app_storage::record_library_program_baseline_with_progress(
                         &root,
                         &descriptor,
                         source_was_empty,
                         Some(cancellation),
+                        progress,
                     )
                     .map_err(|error| error.to_string())?;
                 }
@@ -103,31 +112,53 @@ impl LibraryBaselineRecorder {
         steamcmd: PathBuf,
         app_id: u32,
         version: String,
+        mut on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<G, app_steamcmd::SteamCmdError> {
         if self.fresh_payload_recorded.load(Ordering::Acquire) {
-            return self.finish(guard, root, false, false).await;
+            return self.finish(guard, root, false, false, on_progress).await;
         }
+        // The caller can cancel before any filesystem worker starts. Totals
+        // become measurable after the official depot inventory has been read.
+        on_progress(InstallVerificationProgress {
+            stage: InstallVerificationStage::SteamFiles,
+            completed_bytes: 0,
+            total_bytes: 0,
+            completed_files: 0,
+            total_files: 0,
+        });
         let descriptor = self.descriptor;
         let module_id = descriptor.summary.id.clone();
         run_baseline_worker(
             &self.operation,
             &self.installation,
             &module_id,
-            move |cancellation| {
-                let verified = app_steamcmd::verify_installed_steam_package(
+            on_progress,
+            move |cancellation, progress| {
+                let mut evidence = app_storage::VerifiedProgramFiles::default();
+                let verified = app_steamcmd::verify_installed_steam_package_with_progress(
                     &root,
                     &steamcmd,
                     app_id,
                     &version,
                     Some(cancellation),
+                    &mut *progress,
+                    |relative, file, digest| {
+                        evidence
+                            .capture_large_verified_file(relative, file, digest)
+                            .map_err(std::io::Error::other)
+                    },
                 )
                 .map_err(|error| error.to_string())?;
-                app_storage::record_verified_library_program_baseline(
+                app_storage::record_verified_library_program_baseline_with_progress(
                     &root,
                     &descriptor,
-                    verified.files,
-                    verified.directories,
+                    app_storage::ProgramBaselineInventory {
+                        files: verified.files,
+                        directories: verified.directories,
+                        verified_files: evidence,
+                    },
                     Some(cancellation),
+                    progress,
                 )
                 .map_err(|error| error.to_string())?;
                 Ok(guard)
@@ -149,11 +180,14 @@ async fn run_baseline_worker<T, F>(
     operation: &StorageContextOperationGuard,
     installation: &app_steamcmd::InstallCancellation,
     module_id: &str,
+    mut on_progress: impl FnMut(InstallVerificationProgress),
     work: F,
 ) -> Result<T, app_steamcmd::SteamCmdError>
 where
     T: Send + 'static,
-    F: FnOnce(&AtomicBool) -> Result<T, String> + Send + 'static,
+    F: FnOnce(&AtomicBool, &mut dyn FnMut(InstallVerificationProgress)) -> Result<T, String>
+        + Send
+        + 'static,
 {
     let cancelled = || app_steamcmd::SteamCmdError::InstallCancelled {
         operation: "recording original program inventory".into(),
@@ -169,15 +203,46 @@ where
     }
     let signal = CancelBaselineOnDrop(Arc::new(AtomicBool::new(false)));
     let worker_signal = Arc::clone(&signal.0);
-    let mut worker = spawn_blocking_storage_context_task(operation, move || work(&worker_signal));
-    let completed = tokio::select! {
-        biased;
-        _ = installation.cancelled() => None,
-        _ = operation.cancelled() => None,
-        result = &mut worker => Some(result),
+    // One latest snapshot bounds memory when the worker outpaces UI persistence.
+    // User progress callbacks run here, never on the filesystem worker.
+    let (progress_sender, mut progress_receiver) = tokio::sync::watch::channel(None);
+    let mut worker = spawn_blocking_storage_context_task(operation, move || {
+        work(&worker_signal, &mut |progress| {
+            progress_sender.send_replace(Some(progress));
+        })
+    });
+    let mut progress_open = true;
+    let mut last_progress = None;
+    let completed = loop {
+        tokio::select! {
+            biased;
+            _ = installation.cancelled() => break None,
+            _ = operation.cancelled() => break None,
+            result = &mut worker => break Some(result),
+            changed = progress_receiver.changed(), if progress_open => {
+                if changed.is_err() {
+                    progress_open = false;
+                    continue;
+                }
+                let current = progress_receiver.borrow_and_update().clone();
+                if let Some(progress) = current {
+                    last_progress = Some(progress.clone());
+                    on_progress(progress);
+                }
+            }
+        }
     };
     let result = match completed {
-        Some(result) => result,
+        Some(result) => {
+            // The worker can complete before the final channel change is polled.
+            let current = progress_receiver.borrow_and_update().clone();
+            if let Some(progress) = current
+                && last_progress.as_ref() != Some(&progress)
+            {
+                on_progress(progress);
+            }
+            result
+        }
         None => {
             signal.0.store(true, Ordering::Release);
             // The installer may recover/remove staging only after all baseline
