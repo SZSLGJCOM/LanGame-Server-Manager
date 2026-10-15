@@ -105,6 +105,8 @@ export interface GuidedSettingsField extends ConfigurationPresentationField {
   suggestions?: GuidedEnumOption[];
   minLength?: number;
   maxLength?: number;
+  /** Native UTF-16 code-unit limit; validation only, never truncate input. */
+  maxUtf16Length?: number;
   pattern?: string;
   disallowedLinePrefixes?: readonly string[];
   minimum?: number;

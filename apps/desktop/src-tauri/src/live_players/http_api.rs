@@ -4,7 +4,7 @@ use std::time::Duration;
 pub(super) const MAX_HTTP_RESPONSE_BYTES: usize = 256 * 1024;
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) enum HttpApiError {
+pub(crate) enum HttpApiError {
     Authentication,
     Timeout,
     TooLarge,
@@ -14,7 +14,7 @@ pub(super) enum HttpApiError {
 
 /// Call a code-selected path on a numeric local instance endpoint. The caller
 /// owns endpoint selection; proxy routing and redirects cannot move the request.
-pub(super) async fn fetch_json(
+pub(crate) async fn fetch_json(
     address: SocketAddr,
     path: &'static str,
     admin_password: Option<&str>,

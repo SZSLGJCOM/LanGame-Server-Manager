@@ -171,7 +171,7 @@ export function ConfigurationWorkspace(props: ConfigurationWorkspaceProps) {
     const activeFields = new Set(validationSchema.fields.map((field) => field.key));
     return validateGuidedSettingsObject(schema, settingsParseResult.value, defaultContext, t)
       .filter((issue) => activeFields.has(issue.fieldKey) ||
-        ["maxLength", "number", "managedDirective"].includes(issue.reason));
+        ["maxLength", "maxUtf16Length", "number", "managedDirective"].includes(issue.reason));
   }, [defaultContext, schema, validationSchema, settingsParseResult.value, t, readOnly]);
   const moduleIssues = useMemo(() => {
     if (readOnly || !settingsParseResult.value) return [];

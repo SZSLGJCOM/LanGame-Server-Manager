@@ -234,7 +234,7 @@ pub(super) fn service_identity(pipe: &NamedPipeClient) -> io::Result<ServiceIden
     }
     let identity = app_runtime::inspect_process_identity(pid)
         .map_err(|error| io::Error::other(error.to_string()))?
-        .ok_or_else(|| io::Error::other("Runtime service process exited"))?;
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Runtime service process exited"))?;
     let expected = dunce::canonicalize(std::env::current_exe()?)?;
     let actual = dunce::canonicalize(&identity.image_path)?;
     if !expected

@@ -710,6 +710,9 @@ export function parseGuidedSettingsSchema(
         }
         const minLength = type === "string" && typeof property.minLength === "number" ? property.minLength : undefined;
         const maxLength = type === "string" && typeof property.maxLength === "number" ? property.maxLength : undefined;
+        const maxUtf16Length = type === "string"
+          ? readSchemaExtensionNumber(property, "x-lsgm-max-utf16-length")
+          : undefined;
         const pattern = type === "string" && typeof property.pattern === "string" ? property.pattern : undefined;
         const disallowedLinePrefixes = type === "string"
           ? readSchemaExtensionStrings(property, "x-lsgm-disallowed-line-prefixes")
@@ -760,6 +763,7 @@ export function parseGuidedSettingsSchema(
           suggestions: localizedSuggestionOptions.length > 0 ? localizedSuggestionOptions : undefined,
           minLength,
           maxLength,
+          maxUtf16Length,
           pattern,
           disallowedLinePrefixes,
           minimum,
@@ -902,6 +906,17 @@ export function validateGuidedSettingsObject(
             { field: field.title, maximum: field.maxLength },
             `${field.title} must be at most ${field.maxLength} characters.`
           ) ?? `${field.title} must be at most ${field.maxLength} characters.`
+        });
+      }
+      if (field.maxUtf16Length !== undefined && text.length > field.maxUtf16Length) {
+        issues.push({
+          fieldKey: field.key,
+          reason: "maxUtf16Length",
+          message: t?.(
+            "settings.configuration.validation.maxUtf16Length",
+            { field: field.title, maximum: field.maxUtf16Length },
+            `${field.title} exceeds the game's length limit (${field.maxUtf16Length}).`
+          ) ?? `${field.title} exceeds the game's length limit (${field.maxUtf16Length}).`
         });
       }
       if (field.pattern) {

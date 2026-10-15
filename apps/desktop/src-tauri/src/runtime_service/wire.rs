@@ -6,6 +6,14 @@ pub(super) const PROTOCOL: u32 = 1;
 pub(super) const MAX_FRAME: usize = 16 * 1024 * 1024;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub(super) struct Status {
+    pub pid: u32,
+    pub protocol: u32,
+    pub shutdown_in_progress: bool,
+    pub final_exit_requested: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub(super) struct Request {
     pub protocol: u32,
     pub command: String,

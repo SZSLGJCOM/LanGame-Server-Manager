@@ -106,6 +106,8 @@ pub(super) fn run(
     let mut helper_report = Value::Null;
     let mut service_exit_tick_ms = None;
     let mut game_exit_tick_ms = None;
+    let mut reopen_client = None;
+    let mut reopen_waiting = Value::Null;
     loop {
         if client_exit.is_none() {
             client_exit = second
@@ -140,10 +142,30 @@ pub(super) fn run(
             }
             helper = Some(capture(&helper_report, "helper")?);
             if !forced {
+                reopen_client = Some(OwnedChild::spawn(config, super::CLIENT_REOPEN, path)?);
+            }
+        }
+        if !forced
+            && reopen_waiting.is_null()
+            && let Some(reopen) = reopen_client.as_mut()
+        {
+            if config.root.join("client-reopen-waiting.ready").exists() {
+                let waiting: Value = read_json(&config.root.join("client-reopen-waiting.json"))?;
+                if waiting["nonce"] != config.nonce
+                    || waiting["client_pid"] != reopen.0.pid
+                    || waiting["service_pid"] != first_report["service_pid"]
+                    || waiting["waiting_for_final_exit"] != true
+                    || !service_running
+                    || !game_running
+                    || config.root.join("data/game-saved.json").exists()
+                {
+                    return Err("Immediate reopen did not enter startup wait before the old runtime finished saving".into());
+                }
+                reopen_waiting = waiting;
                 write_new(
                     &config.root.join("data/allow-game-save.json"),
                     &json!({
-                        "nonce":config.nonce,"client_exited":true,
+                        "nonce":config.nonce,"client_exited":true,"reopen_waiting":true,
                     }),
                 )?;
                 std::fs::File::options()
@@ -151,6 +173,16 @@ pub(super) fn run(
                     .create_new(true)
                     .open(config.root.join("data/allow-game-save.ready"))
                     .map_err(|error| error.to_string())?;
+            } else if reopen
+                .0
+                .child
+                .as_mut()
+                .ok_or("Immediate reopen lost its client process")?
+                .try_wait()
+                .map_err(|error| error.to_string())?
+                .is_some()
+            {
+                return Err("Immediate-reopen client exited before entering startup wait".into());
             }
         }
         if client_exit.is_none() && observed_at > requested_at.saturating_add(3_000) {
@@ -195,6 +227,56 @@ pub(super) fn run(
             "All tray processes exited, but their observed completion exceeded the full deadline: elapsed_ms={elapsed_ms}"
         ));
     }
+    let reopen = if let Some(reopen_client) = reopen_client.as_mut() {
+        let reopened = wait_for_reopen(config, reopen_client)?;
+        if reopen_waiting.is_null()
+            || reopened["nonce"] != config.nonce
+            || reopened["client_pid"] != reopen_client.0.pid
+            || reopened["service_pid"] == first_report["service_pid"]
+            || reopened["instance_id"] != first_report["instance_id"]
+            || reopened["storage_initialized"] != true
+            || reopened["instance_read"] != true
+            || reopened["stopped_state_persisted"] != true
+        {
+            return Err("Immediate-reopen evidence does not match the replacement runtime".into());
+        }
+        let replacement = capture(&reopened, "service")?;
+        if !replacement
+            .is_running()
+            .map_err(|error| error.to_string())?
+        {
+            return Err("Original exit helper terminated the replacement runtime".into());
+        }
+        write_new(
+            &config.root.join("data/release-reopen.json"),
+            &json!({"nonce":config.nonce,"service_pid":reopened["service_pid"]}),
+        )?;
+        std::fs::File::options()
+            .write(true)
+            .create_new(true)
+            .open(config.root.join("data/release-reopen.ready"))
+            .map_err(|error| error.to_string())?;
+        reopen_client.wait(45)?;
+        let stopped: Value = read_json(&config.root.join("client-reopen-stopped.json"))?;
+        if stopped["nonce"] != config.nonce
+            || stopped["service_pid"] != reopened["service_pid"]
+            || stopped["coordinated_shutdown_completed"] != true
+            || replacement
+                .is_running()
+                .map_err(|error| error.to_string())?
+        {
+            return Err("Replacement runtime did not complete coordinated cleanup".into());
+        }
+        reopen_client.finish()?;
+        json!({
+            "waiting":reopen_waiting,"client":reopened,
+            "waited_before_original_save_completed":true,
+            "replacement_survived_original_exit_helper":true,
+            "coordinated_shutdown_completed":true,
+        })
+    } else {
+        Value::Null
+    };
     let instance_id = first_report["instance_id"]
         .as_str()
         .ok_or("Missing fixture instance ID")?;
@@ -276,14 +358,19 @@ pub(super) fn run(
     // Cleanup follows the observations, so it cannot manufacture a passing exit.
     second.finish()?;
     first.finish()?;
+    let mut client_pids = vec![first.0.pid, second.0.pid];
+    if let Some(client) = reopen_client.as_ref() {
+        client_pids.push(client.0.pid);
+    }
     write_new(
         &config.root.join("report.json"),
         &json!({
             "schema_version":3,"passed":true,"scenario":config.scenario,
-            "client_kind":"two headless clients; production final tray handler",
+            "client_kind":if forced { "two headless clients; production final tray handler" }
+                else { "three headless clients; production final tray handler and immediate reopen" },
             "game_kind":"synthetic managed Necesse protocol process",
             "service_pid":first_report["service_pid"],"game_pid":first_report["game_pid"],
-            "client_pids":[first.0.pid,second.0.pid],"first_client":first_report,
+            "client_pids":client_pids,"first_client":first_report,
             "request_evidence":request,"started_by_first_client":true,
             "survived_first_client_exit":true,"reconnected_same_processes":true,
             "production_tray_handler":true,"duplicate_tray_request":true,
@@ -302,6 +389,7 @@ pub(super) fn run(
             "observed_game_exit_elapsed_ms":game_exit_tick_ms.map(|tick| tick.saturating_sub(requested_at)),
             "native_settle_allowance_ms":2000,"external_observation_allowance_ms":1000,
             "save_state":state,"native_firewall_exercised":false,
+            "immediate_reopen":reopen,
         }),
     )
 }
@@ -337,6 +425,34 @@ fn wait_for_request(config: &Config, second: &mut OwnedChild) -> Result<Value, S
             .is_some()
         {
             return Err("Tray fixture client exited before recording its request".into());
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn wait_for_reopen(config: &Config, client: &mut OwnedChild) -> Result<Value, String> {
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        if config.root.join("client-reopen.ready").exists() {
+            return read_json(&config.root.join("client-reopen.json"));
+        }
+        if client
+            .0
+            .child
+            .as_mut()
+            .ok_or("Immediate reopen lost its client owner")?
+            .try_wait()
+            .map_err(|error| error.to_string())?
+            .is_some()
+        {
+            return Err(
+                "Immediate-reopen client exited before initializing replacement storage".into(),
+            );
+        }
+        if Instant::now() >= deadline {
+            return Err(
+                "Immediate reopen did not finish storage initialization within 30 seconds".into(),
+            );
         }
         std::thread::sleep(Duration::from_millis(20));
     }

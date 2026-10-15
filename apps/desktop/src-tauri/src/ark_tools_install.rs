@@ -359,6 +359,32 @@ pub(super) fn ensure_can_start(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+/// Startup may use an intact previously installed proxy/plugin. Their build
+/// hashes can differ from this manager while the pinned framework is unchanged.
+pub(super) fn has_owned_asa_framework(
+    root: &Path,
+    embedded: EmbeddedArkTools,
+) -> Result<bool, String> {
+    let wanted = expected(&ASA, embedded)?;
+    let (bin, _pins) = files::runtime(root, ASA.executable)?;
+    if transaction::pending(&bin)? {
+        return Ok(false);
+    }
+    let Some(owned) = files::ownership(&bin, &ASA, &wanted)? else {
+        return Ok(false);
+    };
+    for (path, hash) in owned.files {
+        if files::read(&bin, &path)?
+            .as_ref()
+            .map(|bytes| digest(bytes))
+            != Some(hash)
+        {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
 #[cfg(test)]
 #[path = "ark_tools_install_tests.rs"]
 mod tests;

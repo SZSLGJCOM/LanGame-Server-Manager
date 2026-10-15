@@ -2,7 +2,7 @@
 
 LanGame 使用独立的 `LgsmPlayerQuery` Lua 扩展读取专服当前连接名单。加载器由官方 UE4SS 核心和本目录脚本构建的 `version.dll` 代理组成；首次安装加载器和专用配置后，LanGame 在启动准备阶段部署 Lua 脚本、启用标记和请求目录。
 
-已验证组合为 Dragonwilds build `24574222`、Unreal Engine `5.6.1`、UE4SS `3.0.1-1125-g527a483b`。隔离专服通过 LanGame 正式启动路径运行，Rust 读取器连续获取两个不同请求对应的完整空名单，并在停服后拒绝旧进程；Lua 构造测试覆盖空服、多人数据和异常响应。真实多人加入、退出和重连尚未验收。证据和许可范围见 [SOURCE.md](SOURCE.md)。
+2026-10-15 已在 Dragonwilds `1.0.1` build `25811348`、Unreal Engine `5.6.1-248854`、UE4SS `3.0.1-1125-g527a483b` 的隔离副本中复验空服名单：通过生产 `spawn_launch_plan` 启动专服、核对进程归属，Rust 读取器连续取得两个不同请求对应的完整空名单，并在停服后拒绝旧进程。这次验证覆盖原生加载器与名单读取，不代表桌面实例启停、备份、客户端联机或全部设置已验收。2026-09-08 对 build `24574222` 的历史验证及 28 个 Lua 构造用例仍保留，本轮没有重跑构造用例。真实多人加入、退出、重连、平台认证与服主权限尚未验收。证据和许可范围见 [SOURCE.md](SOURCE.md)。
 
 名单中的数字标识仅区分本次运行的玩家会话，不是平台账号。玩家行保持只读，不提供踢人或封禁操作。扩展调用游戏自身的 `IsPlayerReady` 判断游戏就绪状态；这个检查不代表已经独立验证 EOS 账号认证。
 
@@ -39,7 +39,7 @@ $outputDirectory = Read-Host '代理构建输出目录完整路径（与源码�
 以下步骤用于**没有已有加载器的独立安装目录**。已有模组环境不要直接覆盖配置；使用下方「已有加载器」说明。
 
 1. 在 LanGame 中停止目标实例，并确认所有使用同一安装目录的实例均已停止。
-2. 准备官方资产 **`UE4SS_v3.0.1-1125-g527a483b.zip`**。它的 SHA-256 为 `4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7`。官方 [`experimental-latest` 发布页](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest)会移动。使用通过上述哈希核对的 `1125` 资产，不自动替换成新版本，也不使用 `zDEV` 包。
+2. 下载官方固定资产 [UE4SS_v3.0.1-1125-g527a483b.zip](https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip)。它的 SHA-256 必须为 `4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7`。官方 [`experimental-latest` 发布页](https://github.com/UE4SS-RE/RE-UE4SS/releases/tag/experimental-latest)是可移动 tag，不能用来定位固定的 `1125` 资产；下载链接本身也不能替代哈希核对。不自动替换成新版本，也不使用 `zDEV` 包。
 3. 从仓库根目录运行以下 PowerShell 命令。目标安装目录必须包含 `RSDragonwildsServer.exe` 和实际专服程序。
 
 ```powershell

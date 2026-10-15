@@ -30,33 +30,40 @@ class UnrealServerConsoleContractTests(unittest.TestCase):
                         self.assertIn("-log", launch["arguments"], path.name)
 
     def test_modules_without_native_gui_commands_do_not_request_new_console(self) -> None:
-        for module_id in ("soulmask", "runescapedragonwilds", "nightingale", "scum"):
+        for module_id in ("soulmask", "nightingale", "scum"):
             with self.subTest(module=module_id):
                 root = ROOT / "modules" / module_id
                 process = tomllib.loads((root / "module.toml").read_text(encoding="utf-8"))["process"]
                 self.assertNotIn("-newconsole", [arg.lower() for arg in process["args_template"]])
 
-    def test_windrose_uses_native_gui_quit_with_managed_standard_output(self) -> None:
-        root = ROOT / "modules" / "windrose"
-        manifest = tomllib.loads((root / "module.toml").read_text(encoding="utf-8"))
-        arguments = [arg.lower() for arg in manifest["process"]["args_template"]]
-        # The verified native quit channel requires FConsoleWindow; it keeps
-        # shutdown and backup work on the game thread (native_console_quit_20261001).
-        for argument in ("-newconsole", "-stdout", "-fullstdoutlogoutput"):
-            self.assertEqual(arguments.count(argument), 1)
-        commands = manifest["runtime"]["shutdown"]["commands"]
-        self.assertEqual(
-            [(command["transport"], command["command"]) for command in commands],
-            [("unreal_console", "quit")],
-        )
-        self.assertNotIn("fallback_transport", commands[0])
-        for path in (root / "config-fixtures").glob("*.json"):
-            fixture = json.loads(path.read_text(encoding="utf-8-sig"))
-            launch = fixture.get("expected", {}).get("launch")
-            if launch is not None:
-                fixture_arguments = [arg.lower() for arg in launch["arguments"]]
+    def test_verified_unreal_quit_profiles_keep_console_and_managed_standard_output(self) -> None:
+        for module_id in ("windrose", "runescapedragonwilds"):
+            with self.subTest(module=module_id):
+                root = ROOT / "modules" / module_id
+                manifest = tomllib.loads((root / "module.toml").read_text(encoding="utf-8"))
+                arguments = [arg.lower() for arg in manifest["process"]["args_template"]]
+                # Both verified game-thread quit channels require FConsoleWindow.
+                # Dragonwilds quit does not imply an additional world save.
                 for argument in ("-newconsole", "-stdout", "-fullstdoutlogoutput"):
-                    self.assertEqual(fixture_arguments.count(argument), 1, path.name)
+                    self.assertEqual(arguments.count(argument), 1)
+                commands = manifest["runtime"]["shutdown"]["commands"]
+                self.assertEqual(
+                    [(command["transport"], command["command"]) for command in commands],
+                    [("unreal_console", "quit")],
+                )
+                self.assertNotIn("fallback_transport", commands[0])
+                for path in (root / "config-fixtures").glob("*.json"):
+                    fixture = json.loads(path.read_text(encoding="utf-8-sig"))
+                    launch = fixture.get("expected", {}).get("launch")
+                    if launch is not None:
+                        fixture_arguments = [arg.lower() for arg in launch["arguments"]]
+                        extra_arguments = fixture["settings"].get("extra_launch_args", "").lower().split()
+                        for argument in ("-newconsole", "-stdout", "-fullstdoutlogoutput"):
+                            self.assertEqual(
+                                fixture_arguments.count(argument),
+                                1 + extra_arguments.count(argument),
+                                path.name,
+                            )
 
 
 if __name__ == "__main__":

@@ -328,6 +328,17 @@ fn collect_string_diagnostics(
             &format!("must be at most {max_length} characters"),
         ));
     }
+    if let Some(max_length) = schema
+        .get("x-lsgm-max-utf16-length")
+        .and_then(Value::as_u64)
+        && text.encode_utf16().count() as u64 > max_length
+    {
+        diagnostics.push(diagnostic(
+            field_path,
+            "max_length",
+            &format!("must be at most {max_length} UTF-16 code units; do not truncate the value"),
+        ));
+    }
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
         match Regex::new(pattern) {
             Ok(regex) if !regex.is_match(text) => diagnostics.push(diagnostic(

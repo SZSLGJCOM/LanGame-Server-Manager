@@ -1,6 +1,28 @@
 status = "best_effort_verified"
 last_verified = "2026-09-08"
-notes = "Enshrouded Dedicated Server app 2278520 public build 23178631 and the installed enshrouded_server_readme.txt Version 0.9.0.0 were verified on 2026-07-13. The generated clean configuration still matches LanGame's 74 modeled root, gameSettings, preset userGroup, custom-userGroup, and bans fields, so no schema or launch change was required. On 2026-09-29 the same installed build's Version 0.9.0.0 README was rechecked: all 19 documented tags match the schema checklist and native-output allowlist. Player bans remain owned by Player Access, not Configuration. On 2026-09-30 static inspection of the same current executable established bans.accountId as uint64 and bans.banDate.value as sint64. AccountAction carries a HashKey64 into the native ban table; the player editor therefore accepts native decimal account hashes without converting platform IDs. This evidence does not establish a Steam64-to-hash algorithm or native ban/rejoin enforcement and does not renew historical native-launch evidence."
+notes = "Enshrouded Dedicated Server app 2278520 public build 23178631 and the installed enshrouded_server_readme.txt Version 0.9.0.0 were verified on 2026-07-13. The generated clean configuration still matches LanGame's 74 modeled root, gameSettings, preset userGroup, custom-userGroup, and bans fields, so no schema or launch change was required. On 2026-09-29 the same installed build's Version 0.9.0.0 README was rechecked: all 19 documented tags match the schema checklist and native-output allowlist. Player bans remain owned by Player Access, not Configuration. On 2026-09-30 static inspection of the same current executable established bans.accountId as uint64 and bans.banDate.value as sint64. AccountAction carries a HashKey64 into the native ban table; the player editor therefore accepts native decimal account hashes without converting platform IDs. This evidence does not establish a Steam64-to-hash algorithm or native ban/rejoin enforcement and does not renew historical native-launch evidence. Refreshed public metadata at 2026-10-15 13:09 +08:00 still matched installed build 23178631, before the announced 1.0 release at 23:00 Asia/Shanghai. The 1.0 native keys for Automatic enemy amount, Updraft charge duration and the Shroud-clearing flame-level requirement, together with save migration compatibility, await the released package and isolated native verification."
+
+[[sources]]
+id = "current_public_native_lifecycle_2026_10_15"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/commands_native_lifecycle_tests.rs: native_package_lifecycle"
+authority = "official_steamcmd_acquisition_and_isolated_production_lifecycle"
+description = "2026-10-15, before the scheduled 1.0 release: public build 23178631 passed the explicit official-acquisition fixture with a private SteamCMD root. Production commands created an independent instance, started it and passed A2S readiness, stopped and restarted it with a new run identity, backed up and restored generated save bytes with a safeguard, retained instance saves/configuration when uninstalling the separate library, recovered an interrupted archive-restoration commit, and launched the restored instance. All four cycles stopped with no tracked or active run remaining; instance and fixture cleanup passed. The opt-in test exited 0 (1 passed). It used disposable generated worlds, not the operator's existing saves. This is current-public lifecycle evidence, not 1.0 native-setting or save-migration compatibility, client gameplay, or desktop GUI acceptance."
+
+[[sources]]
+id = "steamcmd_public_metadata_2026_10_15"
+kind = "install_probe"
+path = "<steamcmd-root>/steamcmd.exe"
+authority = "steamcmd_app_info_update_and_print"
+description = "At 2026-10-15 13:09 +08:00, SteamCMD app_info_update 1 followed by app_info_print 2278520 reported public build 23178631 and depot 2278521 public manifest 2174935030716737236, matching the installed package. This refreshed delivery-metadata check is not a native launch or evidence of 1.0 compatibility."
+
+[[sources]]
+id = "official_1_0_release_schedule"
+kind = "documentation"
+path = "https://enshrouded.com/en-US/news/enshrouded-launch-faq-early-access-reward-world"
+authority = "Keen_Games"
+description = "The official 2026-10-13 launch FAQ links a release-time map explicitly labeling Beijing as Thursday October 15, 23:00 CST (2026-10-15 15:00 UTC). The map was visually checked on 2026-10-15: https://clan.fastly.steamstatic.com/images/44053561/e0d2d238c6dae0c3a765aad76e21ce722ce57132.png . The scheduled release was still pending at the 13:09 +08:00 SteamCMD check."
+url = "https://enshrouded.com/en-US/news/enshrouded-launch-faq-early-access-reward-world"
 
 [[sources]]
 id = "steamcmd_anonymous_probe_2278520"

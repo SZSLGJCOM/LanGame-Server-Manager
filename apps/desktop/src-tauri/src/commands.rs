@@ -108,6 +108,8 @@ pub(crate) mod commands_ark_clusters;
 pub(crate) mod commands_ark_map_availability;
 #[path = "commands_ark_tools.rs"]
 pub(crate) mod commands_ark_tools;
+#[path = "commands_asa_startup_budget.rs"]
+mod commands_asa_startup_budget;
 #[path = "commands_assistant_ops.rs"]
 pub(crate) mod commands_assistant_ops;
 #[path = "commands_autostart.rs"]

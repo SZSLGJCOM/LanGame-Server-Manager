@@ -360,6 +360,86 @@ async fn asa_mod_startup_rechecks_start_authorization_before_success() {
     assert_eq!(calls.get(), 2);
 }
 
+#[tokio::test]
+async fn asa_budget_path_keeps_listener_evidence_and_cancellation_authoritative() {
+    let state = DesktopState::default();
+    let reservation = reserve(&state);
+    let mut images = super::super::super::commands_asa_startup_budget::StartupSession::default();
+    let budget = super::super::super::commands_asa_startup_budget::StartupBudget::prepare(
+        "arksurvivalascended",
+        &mut [],
+        Duration::from_secs(300),
+        &reservation,
+        &mut images,
+        &[],
+    )
+    .await
+    .unwrap();
+    let mut wait = Box::pin(wait_for_owned_listener_with_budget(
+        Duration::from_secs(300),
+        Duration::ZERO,
+        &reservation,
+        || Ok(()),
+        std::future::pending::<Result<StrictBindEvaluation, String>>,
+        Some(budget),
+    ));
+    std::future::poll_fn(|context| {
+        assert!(std::future::Future::poll(wait.as_mut(), context).is_pending());
+        std::task::Poll::Ready(())
+    })
+    .await;
+    state.shutdown_in_progress.store(true, Ordering::SeqCst);
+    assert!(
+        state
+            .drain_storage_operations_for_shutdown(Duration::ZERO)
+            .await
+            .is_err()
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_secs(1), &mut wait)
+            .await
+            .unwrap()
+            .unwrap_err()
+            .contains("cancelled")
+    );
+}
+
+#[tokio::test]
+async fn asa_budget_path_still_requires_three_consecutive_owned_listener_samples() {
+    let state = DesktopState::default();
+    let reservation = reserve(&state);
+    let mut images = super::super::super::commands_asa_startup_budget::StartupSession::default();
+    let budget = super::super::super::commands_asa_startup_budget::StartupBudget::prepare(
+        "arksurvivalascended",
+        &mut [],
+        Duration::from_secs(1),
+        &reservation,
+        &mut images,
+        &[],
+    )
+    .await
+    .unwrap();
+    let mut observations = VecDeque::from([
+        StrictBindEvaluation::Ready,
+        StrictBindEvaluation::Ready,
+        pending(),
+        StrictBindEvaluation::Ready,
+        StrictBindEvaluation::Ready,
+        StrictBindEvaluation::Ready,
+    ]);
+    wait_for_owned_listener_with_budget(
+        Duration::from_secs(1),
+        Duration::ZERO,
+        &reservation,
+        || Ok(()),
+        || std::future::ready(Ok(observations.pop_front().unwrap())),
+        Some(budget),
+    )
+    .await
+    .unwrap();
+    assert!(observations.is_empty());
+}
+
 #[cfg(windows)]
 #[path = "commands_asa_mod_startup_native_tests.rs"]
 mod native_tests;

@@ -164,8 +164,38 @@ fn run_controller(root: &Path, nonce: &str, normalize: bool) {
     let endpoint = security::Endpoint::isolated(nonce).unwrap();
     // Client::connect verifies this process through the real secured control
     // pipe. No command dispatcher, storage bootstrap, or real endpoint is used.
-    let _pipe = tauri::async_runtime::block_on(async {
-        security::create_pipe(&endpoint.control(), true).unwrap()
+    let control_endpoint = endpoint.control();
+    let mut listener = tauri::async_runtime::block_on(async {
+        security::create_pipe(&control_endpoint, true).unwrap()
+    });
+    tauri::async_runtime::spawn(async move {
+        loop {
+            listener.connect().await.unwrap();
+            let mut connection = listener;
+            listener = security::create_replacement_pipe(&control_endpoint)
+                .await
+                .unwrap();
+            tauri::async_runtime::spawn(async move {
+                let Ok(request) = wire::read_frame::<wire::Request>(&mut connection).await else {
+                    return;
+                };
+                assert_eq!(request.command, "runtime_service_status");
+                wire::write_response(
+                    &mut connection,
+                    &wire::Response {
+                        result: Ok(serde_json::to_value(wire::Status {
+                            pid: std::process::id(),
+                            protocol: wire::PROTOCOL,
+                            shutdown_in_progress: false,
+                            final_exit_requested: false,
+                        })
+                        .unwrap()),
+                    },
+                )
+                .await
+                .unwrap();
+            });
+        }
     });
     wait_until(Duration::from_secs(5), || root.join("connected").exists());
     if normalize {

@@ -458,6 +458,7 @@ const baseEnUs: MessageCatalog = {
   "settings.configuration.validation.required": "{field} is required.",
   "settings.configuration.validation.minLength": "{field} must be at least {minimum} characters.",
   "settings.configuration.validation.maxLength": "{field} must be at most {maximum} characters.",
+  "settings.configuration.validation.maxUtf16Length": "{field} exceeds the game's length limit ({maximum}).",
   "settings.configuration.validation.pattern": "{field} does not match the required format.",
   "settings.configuration.validation.invalidPattern": "{field} has an invalid schema pattern.",
   "settings.configuration.validation.managedDirective": "{field} line {line} duplicates managed directive {prefix}.",

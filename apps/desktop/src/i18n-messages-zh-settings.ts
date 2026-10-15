@@ -91,6 +91,7 @@ export const ZH_CN_SETTINGS_MESSAGES: MessageCatalog = {
   "settings.configuration.validation.required": "{field}为必填项。",
   "settings.configuration.validation.minLength": "{field}至少需要 {minimum} 个字符。",
   "settings.configuration.validation.maxLength": "{field}最多允许 {maximum} 个字符。",
+  "settings.configuration.validation.maxUtf16Length": "{field}超出游戏允许的长度（上限 {maximum}）。",
   "settings.configuration.validation.pattern": "{field}不符合要求的格式。",
   "settings.configuration.validation.invalidPattern": "{field}的格式校验规则无效。",
   "settings.configuration.validation.managedDirective": "{field}第 {line} 行与受管指令 {prefix} 重复。",

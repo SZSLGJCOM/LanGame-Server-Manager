@@ -6,6 +6,7 @@
     "verified_at": "2026-07-13",
     "build": "Steam public build 23986150 / launch-smoke build 23940936",
     "source_ids": [
+      "dragonwilds_orderly_exit_build_25811348",
       "steamdb_app_4019830",
       "steamcmd_appinfo_4019830_2026_07_13",
       "dragonwilds_smoke_launch_2026_06_29",
@@ -83,6 +84,9 @@
       "executable_suffix": "RSDragonwildsServer.exe",
       "arguments": [
         "-log",
+        "-NewConsole",
+        "-stdout",
+        "-FullStdOutLogOutput",
         "-Port=7777",
         "-QueryPort=27057",
         "-log",

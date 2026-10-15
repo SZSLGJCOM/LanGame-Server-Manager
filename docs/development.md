@@ -24,6 +24,8 @@ Windows 正式运行时，React 页面与 hooks 通过 `api.ts` / `api-transport
 
 `app-core` 定义共享领域数据，`app-modules` 读取游戏清单与 schema；`app-storage` 负责 SQLite、实例配置、存档与备份；`app-runtime` 和 `app-platform-win` 负责进程生命周期及 Windows 能力；`app-steamcmd`、`app-network`、`app-knowledge` 分别承载安装、网络策略和知识检索。Tauri commands 编排这些模块。更新安装先下载并验证包，再停止后台服务及游戏进程，最后运行安装器。
 
+桌面启动在后台建立连接，界面保持加载状态。连接前核实后台状态；若旧后台正在退出，等待其原始进程句柄确认结束后再启动新后台，不能向退出中的后台初始化存储。退出助手在关闭旧界面前持有按用户和原进程身份隔离的原生命名事件，覆盖退出请求尚未送达的窗口。启动期间再次退出会取消尚未创建后台的连接等待；已创建的后台仍交给同一退出流程处理，沿用点击退出时的截止时间，不重放业务操作。
+
 产品命令在 `apps/desktop/src-tauri/src/command_registry.rs` 统一声明 Tauri 注册、执行进程、LAN 访问权限和完成策略。参数解码仍由各传输适配层负责；runtime service 的内部控制消息不进入产品命令表。修改 IPC 时同步核对前端参数和实际适配器，契约检查核对登记与适配器的双向覆盖。客户端顶层命令参数使用 Tauri 的 camelCase，不重复发送 snake_case 别名；嵌套 `input` 遵循对应 Rust Serde 数据类型的命名，不能递归改名。桌面进程归属和仅限命名管道访问是不同边界，命令登记不能混合这两种含义。
 
 存储就绪缓存保存数据库文件身份。运行概览与实例详情共用一次局部数据库读取，数据库阶段在成功及错误路径都显式关闭连接，再读取配置、分析日志和查询玩家。保留数据库替换检测、前置就绪检查、事务和恢复语义；连接创建次数减少不能替代实际耗时测量。
@@ -175,6 +177,8 @@ The repository separates the React/Tauri application in `apps/desktop/`, reusabl
 ### Runtime flow and ownership
 
 On Windows, React views and hooks call Tauri through `api.ts` / `api-transport.ts`. The desktop process owns windows, the tray, file selection and application updates. Other calls reach the background runtime service through a current-user named pipe. That service owns game processes, runtime state, storage mutations and recovery workers, allowing the interface to reconnect after a reload. The explicitly enabled LAN HTTP entry shares business dispatch while local-only maintenance retains a separate authorization boundary. Preview data loads only in development mode.
+
+The desktop connects off the UI thread while the interface remains in its loading state. Startup checks service admission before initializing storage. A closing service must exit through its pinned process handle before a replacement starts. The exit helper retains a native event scoped to the user and original process identity before releasing the old interface, covering the gap before shutdown IPC arrives. Exiting during startup cancels waits that have not created a service; an already created service still passes through coordinated shutdown using the original click deadline. Product operations are never replayed against a replacement service.
 
 `app-core` defines shared domain data and `app-modules` reads game manifests and schemas. `app-storage` owns SQLite, instance configuration, saves and backups; `app-runtime` and `app-platform-win` own process lifecycle and Windows integration. `app-steamcmd`, `app-network` and `app-knowledge` provide installation, network policy and knowledge retrieval. Tauri commands coordinate these components. Updates download and verify the package before stopping the runtime service and game processes and invoking the installer.
 

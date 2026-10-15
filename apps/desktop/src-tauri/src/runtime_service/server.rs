@@ -248,10 +248,7 @@ async fn dispatch(app: &tauri::AppHandle, request: wire::Request) -> Result<Valu
     match request.command.as_str() {
         "runtime_service_status" => {
             let state = app.state::<crate::state::DesktopState>();
-            Ok(
-                json!({ "pid": std::process::id(), "protocol": wire::PROTOCOL,
-                "shutdown_in_progress": state.shutdown_in_progress.load(std::sync::atomic::Ordering::SeqCst) }),
-            )
+            serde_json::to_value(runtime_status(&state)).map_err(|error| error.to_string())
         }
         "runtime_service_events" => app.state::<events::Events>().after(
             request.args["after"].as_u64().unwrap_or(0),
@@ -276,6 +273,17 @@ async fn dispatch(app: &tauri::AppHandle, request: wire::Request) -> Result<Valu
                 }
             }
         }
+    }
+}
+
+fn runtime_status(state: &crate::state::DesktopState) -> wire::Status {
+    wire::Status {
+        pid: std::process::id(),
+        protocol: wire::PROTOCOL,
+        shutdown_in_progress: state
+            .shutdown_in_progress
+            .load(std::sync::atomic::Ordering::SeqCst),
+        final_exit_requested: state.is_final_exit_requested(),
     }
 }
 
@@ -338,6 +346,22 @@ pub(super) fn run() -> Result<(), String> {
 #[cfg(test)]
 mod admission_tests {
     use super::*;
+
+    #[test]
+    fn status_reports_final_intent_before_the_shutdown_worker_begins() {
+        let state = crate::state::DesktopState::default();
+        assert!(state.request_final_exit());
+        assert!(
+            state
+                .begin_storage_context_operation("storage initialization")
+                .is_err()
+        );
+        let status = runtime_status(&state);
+        assert!(status.final_exit_requested);
+        assert!(!status.shutdown_in_progress);
+        assert_eq!(status.pid, std::process::id());
+        assert_eq!(status.protocol, wire::PROTOCOL);
+    }
 
     #[test]
     fn shutdown_and_status_remain_available_when_creation_fills_work_capacity() {

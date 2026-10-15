@@ -1,4 +1,6 @@
 use super::install_progress::SteamInstallOutput;
+use super::steamcmd_content_evidence::ContentLogEvidence;
+use super::steamcmd_manifest_recovery::ManifestDenial;
 use super::*;
 
 #[path = "steamcmd_stream_logs.rs"]
@@ -14,6 +16,7 @@ pub(super) struct StreamingCommandResult {
     pub(super) exit_code: Option<i32>,
     pub(super) excerpt: String,
     pub(super) content_log_excerpt: Option<String>,
+    pub(super) denied_manifests: Vec<ManifestDenial>,
 }
 
 pub(super) async fn run_steamcmd_script_with_progress<F>(
@@ -57,10 +60,13 @@ fn steamcmd_script_command(
     if let Some(source) = update_source {
         command.args(["-overridepackageurl", source]);
     }
+    // Scripts accept no interactive input. Native console detach/attach can
+    // invalidate inherited stdin, so give this child an independent EOF source.
     command
         .arg("+runscript")
         .arg(script_path)
         .current_dir(working_directory)
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     command
@@ -78,6 +84,12 @@ where
     F: FnMut(InstallProgressUpdate),
 {
     deadline.check_cancelled()?;
+    let content_evidence = deadline
+        .run(ContentLogEvidence::before_spawn(Path::new(
+            working_directory,
+        )))
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
     let content_log_before = deadline
         .run(read_steamcmd_content_log_excerpt(Path::new(
             working_directory,
@@ -218,6 +230,10 @@ where
         .map(|exit_status| exit_status.success())
         .unwrap_or(false);
     let exit_code = status.and_then(|exit_status| exit_status.code());
+    let denied_manifests = deadline
+        .run(content_evidence.finish())
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
     let content_log_after = deadline
         .run(read_steamcmd_content_log_excerpt(Path::new(
             working_directory,
@@ -232,6 +248,7 @@ where
             content_log_before.as_deref(),
             content_log_after.as_deref(),
         ),
+        denied_manifests,
     })
 }
 
@@ -493,3 +510,7 @@ mod command_tests {
         assert_eq!(arguments, ["+runscript", "installation script.txt"]);
     }
 }
+
+#[cfg(all(test, windows))]
+#[path = "steamcmd_stream_spawn_tests.rs"]
+mod spawn_tests;

@@ -338,6 +338,17 @@ async fn prepare_official_library(
     {
         return Err("native installation requires its settled disposable fixture".into());
     }
+    // Official creation and startup need the tool even when the library bytes
+    // are retained or reused without another game-package installation.
+    if let Some(install) = descriptor.install.as_ref()
+        && install.source != Some(app_core::InstallSource::MinecraftJava)
+        && install.download_url_windows.is_none()
+        && descriptor.summary.steam_app_id.is_some_and(|id| id > 0)
+    {
+        package.cleanup_allowed.store(false, Ordering::SeqCst);
+        app_steamcmd::ensure_steamcmd_installed(&state.install_locks, &storage.settings).await?;
+        package.cleanup_allowed.store(true, Ordering::SeqCst);
+    }
     let registered =
         app_storage::read_library_program_install(&storage.paths, &descriptor.summary.id).await?;
     if let Some(registered) = &registered {
@@ -437,12 +448,6 @@ async fn prepare_official_library(
         descriptor.summary.id
     );
     package.cleanup_allowed.store(false, Ordering::SeqCst);
-    if install.source != Some(app_core::InstallSource::MinecraftJava)
-        && install.download_url_windows.is_none()
-        && descriptor.summary.steam_app_id.is_some_and(|id| id > 0)
-    {
-        app_steamcmd::ensure_steamcmd_installed(&state.install_locks, &storage.settings).await?;
-    }
     let result = Box::pin(install_module_game(state, descriptor.summary.id.clone())).await?;
     // Only successful installer completion establishes that its children have
     // settled. On failure the package owner retains the complete fixture.

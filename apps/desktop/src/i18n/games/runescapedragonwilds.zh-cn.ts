@@ -26,7 +26,7 @@ export const ZH_CN_RUNESCAPE_DRAGONWILDS_MESSAGES: MessageCatalog = {
   "runescapedragonwilds.settings.groups.advanced.description": "供运维人员使用的底层启动参数。",
 
   "settings.schema.runescapedragonwilds.owner_id.title": "服主 Player ID（选填）",
-  "settings.schema.runescapedragonwilds.owner_id.description": "留空可开服，但没有指定服主；在游戏内设置菜单底部复制 Player ID（不是 Steam64），填写并重启后可匹配服主专属权限。",
+  "settings.schema.runescapedragonwilds.owner_id.description": "留空可开服，但没有服主专属权限。请在游戏内设置菜单底部完整复制 Player ID（不是 Steam64），填写并重启后启用服主专属权限。在线专服最多接受 32 个 UTF-16 码元；请勿截短 ID。",
   "settings.schema.runescapedragonwilds.server_name.title": "服务器名称",
   "settings.schema.runescapedragonwilds.server_name.description": "公开房间名称；服务器最多保留前 15 个字符。",
   "settings.schema.runescapedragonwilds.default_world_name.title": "加载世界名称",

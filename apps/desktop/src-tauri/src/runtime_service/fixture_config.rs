@@ -146,6 +146,45 @@ impl Config {
             std::env::set_var("LANGAME_RUNTIME_SERVICE_FIXTURE_NONCE", &self.nonce);
             std::env::remove_var("LANGAME_LAN_HOST");
         }
+        let user_root = app_storage::StoragePaths::default().app_data_root;
+        checked_path(&user_root)?;
+        if !user_root.starts_with(&self.root) {
+            return Err("Fixture user-data location escaped its exclusive root".into());
+        }
+        let verify_storage_paths = |paths: &app_storage::StoragePaths| -> Result<(), String> {
+            // Modules and migrations are read-only application resources. Every
+            // writable data/runtime path must stay inside the fixture owner.
+            for path in [
+                &paths.app_data_root,
+                &paths.settings_path,
+                &paths.database_path,
+                &paths.logs_root,
+                &paths.steamcmd_root,
+                &paths.games_root,
+                &paths.instances_root,
+                &paths.archives_root,
+            ] {
+                if !path.starts_with(&self.root) {
+                    return Err("Fixture storage escaped its exclusive root".into());
+                }
+                checked_path(path)?;
+            }
+            Ok(())
+        };
+        if let Some(existing) = app_storage::StoragePaths::resolve_existing_at_user_root(&user_root)
+            .map_err(|error| error.to_string())?
+        {
+            verify_storage_paths(&existing)?;
+            if existing.settings_path.is_file() {
+                let existing_settings: app_core::AppSettings = read_json(&existing.settings_path)?;
+                verify_storage_paths(&existing.with_app_settings(&existing_settings))?;
+            }
+        }
+        // Select through the production location contract before any default
+        // resolver can choose a real drive outside this disposable namespace.
+        let selected = app_storage::StoragePaths::resolve_in_directory(&self.root.join("data"))
+            .map_err(|error| error.to_string())?;
+        verify_storage_paths(&selected)?;
         let settings = app_core::AppSettings {
             archives_root: String::new(),
             servers_root: self
@@ -158,16 +197,14 @@ impl Config {
                 .join("runtime/games")
                 .to_string_lossy()
                 .into_owned(),
-            modules_root: app_storage::StoragePaths::default()
-                .modules_root
-                .to_string_lossy()
-                .into_owned(),
+            modules_root: selected.modules_root.to_string_lossy().into_owned(),
             steamcmd_root: self
                 .root
                 .join("runtime/steamcmd")
                 .to_string_lossy()
                 .into_owned(),
         };
+        verify_storage_paths(&selected.with_app_settings(&settings))?;
         app_storage::save_app_settings(settings).map_err(|e| e.to_string())?;
         let paths = app_storage::bootstrap_storage()
             .map_err(|e| e.to_string())?

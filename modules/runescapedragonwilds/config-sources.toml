@@ -1,6 +1,48 @@
 status = "best_effort_verified"
-last_verified = "2026-10-09"
-notes = "Installed Steam build 24574222 was launched in an isolated copy on 2026-09-08 with fresh DedicatedServer.ini and no original saves. UE 5.6.1 loaded L_World, reached ReadyToJoin=1 and honored the explicit loopback game port. The independent LgsmPlayerQuery extension returned current complete empty rosters through the production bootstrap and native file-IPC reader. Existing configuration keys remain based on the official guide and earlier configuration-specific probes below; this player-query test does not claim a new acceptance run for every setting. Native A2S and moderation remain unavailable."
+last_verified = "2026-10-15"
+notes = "2026-10-15 bounded recheck of official build 25811348: the existing Custom-world copy loaded, applied BuildingMaterialCostScale=1.5, completed a native autosave and restarted with the same world/rule. The host now rejects online OwnerId values above 32 UTF-16 units and uses owned Unreal-console quit for orderly teardown, with no additional save-on-exit guarantee. These new sources do not renew every configuration or multiplayer claim. Historical evidence follows. Installed Steam build 24574222 was launched in an isolated copy on 2026-09-08 with fresh DedicatedServer.ini and no original saves. UE 5.6.1 loaded L_World, reached ReadyToJoin=1 and honored the explicit loopback game port. The independent LgsmPlayerQuery extension returned current complete empty rosters through the production bootstrap and native file-IPC reader. Existing configuration keys remain based on the official guide and earlier configuration-specific probes below; this player-query test does not claim a new acceptance run for every setting. Native A2S and moderation remain unavailable."
+
+[[sources]]
+id = "dragonwilds_production_stop_backup_restart_build_25811348"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/commands_dragonwilds_compatibility_tests.rs: isolated_dragonwilds_production_stop_backs_up_completed_autosave_and_restarts"
+authority = "isolated_production_start_stop_database_and_automatic_backup"
+description = "2026-10-15: a clean local build-25811348 package and an immutable old Custom-world copy with BuildingMaterialCostScale=1.5 seeded a new independent fixture. The production pinned-update policy prevented downloads; the native fixture-only MULTIHOME argument bound game port 7777 and beacon 8888 to 127.0.0.1, independently inspected through the Windows UDP table. Production startup reached the same saved world, Load: Success, the 1.50 rule and ReadyToJoin=1. The first run completed a fresh five-minute native autosave and changed the saved bytes. Production stop dispatched the declared Unreal-console quit, returned exit 0 for every process, completed native PreExit and world teardown, cleared tracked/active/pending ownership, and produced exactly one AutoStop backup whose entire save inventory equals the last completed native save. A second production start used a fresh run identity, loaded the same world and rule, then stopped and backed up with the same byte-preservation assertions. The immutable input remained unchanged, and the owned fixture was removed. The ignored test exited 0 (1 passed, 334.76s). This verifies the desktop command implementation with a Tauri test host, not desktop GUI interaction, real clients, authentication, owner permissions or latest in-memory player progress; quit does not initiate another save."
+
+[[sources]]
+id = "dragonwilds_player_extension_build_25811348"
+kind = "runtime_probe"
+path = "extensions/evidence.json: revalidations; extensions/SOURCE.md"
+authority = "isolated_native_bootstrap_and_production_file_ipc_reader"
+description = "2026-10-15: build 25811348 / UE 5.6.1-248854 passed the existing isolated production-bootstrap probe with the same fixed UE4SS 3.0.1-1125-g527a483b core and unchanged read-only Lua script. A fresh proxy was built from the same 32 verified upstream source files. Two distinct current nonces returned complete zero-player snapshots; the reader rejected the stopped process. The opt-in test exited 0 (1 passed, 8.08s), with no remaining owned process or temporary drive mapping. Exact package, loader, proxy and Lua hashes are appended as a separate extension revalidation record; the historical 28 Lua cases were not rerun. This does not verify real clients, authentication, owner permissions, player join/leave/reconnect, other loaders or all native settings."
+
+[[sources]]
+id = "dragonwilds_native_save_codec_build_25811348"
+kind = "runtime_probe"
+path = "crates/app-storage/src/dragonwilds_save/tests.rs; crates/app-storage/src/dragonwilds_world_settings_tests.rs"
+authority = "fresh_native_autosave_and_production_storage_api"
+description = "2026-10-15: an immutable copy of the actual build-25811348 autosave from the completed old-world native probe passed native_probe_save_matches_actual_custom_setting_and_round_trips byte-identically. native_public_write_produces_a_server_reload_candidate_with_verified_backup then changed BuildingMaterialCostScale from 1.5 to 2.0 through the production world-settings API, read the changed revision back, verified the pre-change backup equals every original saved byte and left the native input unchanged. The two opt-in tests exited 0 (2 passed, 0.24s). The 2.0 output is an isolated reload candidate, not a deployed operator save or a separately exercised 2.0 native restart. The separate 1.5 native probe establishes the tested game's load/save/restart behavior."
+
+[[sources]]
+id = "dragonwilds_existing_world_autosave_build_25811348"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/live_players/dragonwilds_probe_tests.rs: isolated_dragonwilds_old_world_autosaves_and_survives_orderly_restart"
+authority = "isolated_native_world_copy_and_production_storage_api"
+description = "2026-10-15: Steam build 25811348 loaded a stopped copy of the existing Custom world. Before native startup, the production world-settings writer changed BuildingMaterialCostScale from 1.0 to 1.5, made an exact pre-change backup and verified that reversing only that rule recovers every original byte, preserving unknown content. Fresh native logs confirmed the selected saved world, Applied custom setting 1.50, Load: Success and ReadyToJoin=1. The actual configuration logged dom.StateSaveFrequencyMins:5; this boot subsequently completed Save to slot and Save completed SUCCESSFULLY, changing the saved bytes. Owned game-thread quit exited 0 with normal PreExit, drained world teardown and complete owned-tree exit, leaving those completed-save bytes unchanged. A second fresh boot loaded the same world and 1.50 rule, then exited 0 and preserved the save again. The ignored test exited 0 (1 passed, 320.50s). Original operator files remained unchanged in a separate 14-file hash comparison. This verifies one existing Custom world and one changed rule, not every rule, arbitrary save formats, character saves or player progress. Native quit does not initiate an additional save."
+
+[[sources]]
+id = "dragonwilds_orderly_exit_build_25811348"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/live_players/dragonwilds_probe_tests.rs; modules/runescapedragonwilds/module.toml"
+authority = "isolated_native_process_and_fresh_shutdown_logs"
+description = "2026-10-15: official Windows Steam build 25811348, manifest 201953044557705869, Shipping SHA256 89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed. A copied old Custom world loaded with BuildingMaterialCostScale=1.5 and reached ReadyToJoin=1. The previous console_ctrl_c policy exited with 0xC000013A after ConsoleCtrl RequestExit, without normal teardown or a completed save. Adding the first-party -NewConsole profile allowed the existing owned-Job/private-desktop Unreal console transport to execute quit on the game thread, return exit 0, drain pending save requests and complete PreExit/Game engine shutdown/Exiting. The saved file remained byte-identical. Neither native engine quit nor Ctrl+C triggered an extra world save. The package logs dom.StateSaveFrequencyMins:5; orderly exit does not guarantee preservation of progress after the last completed autosave. LanGame changes the launch/shutdown contract without adding a force-stop fallback or a write-capable UE4SS interface. Historical fixture evidence dates/builds remain unchanged; their expected launch arrays follow this current host contract. Client joins, authentication, owner permissions and multiplayer state remain unverified."
+
+[[sources]]
+id = "dragonwilds_owner_id_native_length_build_25811348"
+kind = "runtime_probe"
+path = "RSDragonwilds/Binaries/Win64/RSDragonwildsServer-Win64-Shipping.exe: online session OwnerId publication and consumption"
+authority = "official_steam_package_disassembly_and_isolated_native_session_failure"
+description = "2026-10-15: Steam public build 25811348, Windows depot 4019831 manifest 201953044557705869, Shipping SHA256 89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed, native file version ++dominion+staging-CL-248854. An isolated native server loaded an existing world but rejected an overlong ASCII OwnerId while publishing/consuming session settings, failed EOS session creation and remained ReadyToJoin=0. Fresh disassembly locates the writer's OwnerId length comparison at preferred VA 0x145d6d9e9 and the consuming comparison at 0x145d635e2; both compare FString Num minus its terminator, which counts Windows UTF-16 code units. Both select a limit of 32 for ordinary online operation or 128 when DominionNetworkSubsystem+0x80 is true. The initializer at 0x145dc0420 reads OnlineSubsystem/DefaultPlatformService and enables that flag only when it equals NULL. LanGame's supported online configuration therefore declares one x-lsgm-max-utf16-length value of 32 for owner_id; the generic JSON Schema maxLength scalar-count semantics are unchanged. Empty user IDs continue to materialize as the 21-unit non-account marker LGSM_UNASSIGNED_OWNER. IDs are rejected intact rather than truncated. Real owner authorization and multiplayer joins are outside this evidence."
 
 [[sources]]
 id = "configuration_review_20260930"
@@ -88,7 +130,7 @@ id = "launch_args"
 kind = "launch_arg"
 path = "RSDragonwildsServer.exe command line"
 authority = "official_runescape_dragonwilds_dedicated_server_guide_and_steamcmd_appinfo"
-description = "The current Jagex guide, reread on 2026-10-01, recommends -log -NewConsole for console feedback. LanGame now supplies -log while retaining its private desktop, managed game/query ports, and operator-provided extra arguments. It does not force a separate -NewConsole. This aligns the launch profile with first-party logging guidance; runtime console ownership and graceful stopping still require acceptance."
+description = "The current Jagex guide recommends -log -NewConsole for console feedback. The 2026-10-15 build-25811348 orderly-exit probe supersedes the earlier -log-only launch policy: LanGame supplies -log -NewConsole -stdout -FullStdOutLogOutput on its private desktop, retaining managed game/query ports and operator-provided extra arguments. The owned native GUI console executes quit on the game thread without a force fallback. This does not request a new world save; see dragonwilds_orderly_exit_build_25811348 for measured boundaries."
 url = "https://runescapedragonwilds.help.jagex.com/hc/en-gb/articles/45365343055249-Dedicated-Servers-How-to-Guide"
 
 [[sources]]

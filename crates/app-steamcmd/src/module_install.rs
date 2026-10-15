@@ -1,4 +1,5 @@
 use super::steam_install_retained::RetainedSteamInstall;
+use super::steamcmd_manifest_recovery::InstalledManifest;
 use super::steamcmd_stream::{sleep_with_deadline, steamcmd_output_is_retryable_file_lock};
 use super::*;
 use app_core::InstallPhase;
@@ -379,7 +380,16 @@ where
 
             let mut last_excerpt = String::new();
             let mut command_succeeded = false;
-            for attempt in 0..5 {
+            let mut manifest_recovery: Option<PathBuf> = None;
+            // Existing transient retries retain their budget; one additional
+            // attempt is reserved for a positively identified old manifest.
+            for attempt in 0..6 {
+                deadline.check_cancelled()?;
+                let installed_manifest = if manifest_recovery.is_none() {
+                    InstalledManifest::before_attempt(&acquisition_root, steam_app_id).await
+                } else {
+                    None
+                };
                 let output = match run_steamcmd_script_with_progress(
                     &steamcmd.executable_path,
                     &script_path,
@@ -406,8 +416,75 @@ where
                     )
                 };
                 if output.success {
+                    if let Some(backup) = &manifest_recovery {
+                        on_progress(InstallProgressUpdate::stage(
+                            InstallPhase::Verifying,
+                            format!(
+                                "Steam manifest recovery validation completed; verifying server files. Preserved manifests: {}",
+                                backup.display()
+                            ),
+                        ));
+                    }
                     command_succeeded = true;
                     break;
+                }
+
+                if let Some(installed) = installed_manifest
+                    && let Some(denied) = installed.matching_denial(&output.denied_manifests)
+                {
+                    on_progress(
+                        InstallProgressUpdate::stage(
+                            InstallPhase::Preparing,
+                            format!(
+                                "Steam denied installed manifest {} for AppID {}, depot {}. Preserving manifests before one validation recovery...",
+                                denied.manifest, denied.app, denied.depot
+                            ),
+                        )
+                        .with_output(last_excerpt.clone()),
+                    );
+                    let backup = match installed.preserve_and_reset(deadline).await {
+                        Ok(backup) => backup,
+                        Err(error) => {
+                            let _ = fs::remove_file(&script_path);
+                            return Err(match error {
+                                SteamCmdError::SteamCmdCommandFailed { output_excerpt } => {
+                                    SteamCmdError::SteamCmdCommandFailed {
+                                        output_excerpt: format!("{last_excerpt}\n{output_excerpt}"),
+                                    }
+                                }
+                                error => error,
+                            });
+                        }
+                    };
+                    on_progress(InstallProgressUpdate::stage(
+                        InstallPhase::Preparing,
+                        format!(
+                            "Preserved Steam manifests at {}. Retrying AppID {} with validation...",
+                            backup.display(), steam_app_id
+                        ),
+                    ));
+                    manifest_recovery = Some(backup);
+                    let lines = steamcmd_install_script_lines(
+                        module, steam_app_id, &acquisition_root, true,
+                    );
+                    if let Err(source) = fs::write(&script_path, lines.join("\r\n")) {
+                        let _ = fs::remove_file(&script_path);
+                        return Err(SteamCmdError::WriteScript {
+                            path: script_path.clone(), source,
+                        });
+                    }
+                    continue;
+                }
+
+                if let Some(backup) = &manifest_recovery {
+                    last_excerpt.push_str(&format!(
+                        "\nSteam manifest recovery failed; preserved manifests: {}",
+                        backup.display()
+                    ));
+                    let _ = fs::remove_file(&script_path);
+                    return Err(SteamCmdError::SteamCmdCommandFailed {
+                        output_excerpt: last_excerpt,
+                    });
                 }
 
                 let retryable_missing_configuration = attempt == 0

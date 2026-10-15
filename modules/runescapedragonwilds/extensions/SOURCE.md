@@ -4,7 +4,7 @@
 
 ## 加载器来源
 
-UE4SS 核心固定为 `3.0.1-1125-g527a483b`，源码 commit 为 `527a483b63b4dd0104fe1ca1a3934a06b87fcfb2`。固定资产来自官方发布页，其 SHA-256 已与 GitHub Release API `digest` 核对：
+UE4SS 核心固定为 `3.0.1-1125-g527a483b`，源码 commit 为 `527a483b63b4dd0104fe1ca1a3934a06b87fcfb2`。下载官方固定资产 [UE4SS_v3.0.1-1125-g527a483b.zip](https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip)后必须核对下表中的 SHA-256；下载链接本身不能替代哈希核对。该 ZIP 的 SHA-256 已与 [GitHub Release API 资产 546250363](https://api.github.com/repos/UE4SS-RE/RE-UE4SS/releases/assets/546250363) 的 `digest` 核对，大小为 8,718,500 字节：
 
 | 文件 | SHA-256 |
 | --- | --- |
@@ -30,6 +30,19 @@ UE4SS、代理生成器及所用第一方依赖采用 [MIT 许可证](https://gi
 RSDWTools/Dev Kit 仅用于发现可观察的游戏 API 线索。本实现不复制其模块、界面、配置或派生脚本，也不将其许可解释为可重新分发整个工具包。
 
 ## 已确认的实服事实
+
+### 2026-10-15：1.0.1 空服名单复验
+
+隔离的 Steam 专服 build `25811348`，Windows depot `4019831`、manifest `201953044557705869`，Shipping 可执行文件 SHA-256 为 `89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed`，UE 版本为 `5.6.1-248854`。沿用上表中的官方 `1125` 核心，按本目录脚本重建代理，未升级加载器或修改生产 Lua：
+
+- 本轮代理 SHA-256 为 `cdd3cf56d2af50dc35deef48e0fef4e3d56e922e0262d209d86d368c86351d6f`，大小 448,512 字节；32 个固定源码均通过 SHA-256 与 Git blob 校验，构建退出码为 0。17 个导出名称及序号与本机已验签的 `version.dll` 相符，依赖仍仅为 `KERNEL32.dll`、`USER32.dll` 和 `SHELL32.dll`。
+- 生产 `LgsmPlayerQuery/Scripts/main.lua` 的 SHA-256 为 `0bda4f9149c9ff8a6c2f3c8854165bea1f77c0c0bfab8fb65f7987f71485d3e4`，与仓库原脚本逐字节一致。
+- 原生测试 `isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process` 通过生产 `spawn_launch_plan` 启动 `RSDragonwildsServer.exe` 并确认进程归属；两个不同请求标识分别取得 `complete=true`、`current_players=0`、`players=[]` 的当前响应，均通过 Rust 严格解析。停止受控进程树后，读取器拒绝旧 PID。
+- 本轮该测试通过 1 项、失败 0 项，测试进程退出码 0、用时 8.08 秒；收尾核对所属进程残留为 0，临时盘符映射已移除。
+
+本轮证据限于新版加载器和当前空名单通道，不代表桌面实例启停、自动保存、备份、全部设置或任一客户端已验收。没有进行真实多人加入、退出、重连、账号认证或服主权限测试。下面的 28 个 Lua 构造用例和重启观测属于 2026-09-08 的历史结果，本轮未重跑。机器记录以 `evidence.json` 的 `revalidations` 数组保存，本轮未记录具体请求标识或 `boot_id`。
+
+### 2026-09-08：历史验证
 
 2026-09-08，在隔离的 Steam 专服 build `24574222`、UE `5.6.1` 上验证：
 

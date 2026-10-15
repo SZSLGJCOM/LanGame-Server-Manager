@@ -29,7 +29,11 @@ impl Fixture {
         };
         fs::create_dir(&config.root).unwrap();
         write_new(&config.root.join(super::super::config::MARKER), &config).unwrap();
-        let app_data_root = config.root.join("localappdata/LanGame/ServerManager");
+        let user_root = config.root.join("localappdata/LanGame/ServerManager");
+        let selected_root = config.root.join("data/LanGame");
+        let app_data_root = selected_root
+            .join("app-data/ServerManager")
+            .join(uuid::Uuid::new_v4().simple().to_string());
         let paths = StoragePaths {
             settings_path: app_data_root.join("settings.json"),
             database_path: app_data_root.join("db/lgs.db"),
@@ -50,6 +54,19 @@ impl Fixture {
         ] {
             fs::create_dir_all(dir).unwrap();
         }
+        fs::create_dir_all(&user_root).unwrap();
+        fs::create_dir_all(paths.database_path.parent().unwrap()).unwrap();
+        fs::write(&paths.settings_path, b"{}").unwrap();
+        fs::write(&paths.database_path, []).unwrap();
+        // Model the external location record, then let the production read-only
+        // resolver validate its schema, selected directories and required files.
+        write_new(
+            &user_root.join("storage-location.json"),
+            &serde_json::json!({
+                "version":1,"runtime_root":selected_root,"app_data_root":paths.app_data_root,
+            }),
+        )
+        .unwrap();
         let root = paths.instances_root.join("owned-instance");
         for relative in ["config", "data/saves", "runtime/jre/bin"] {
             fs::create_dir_all(root.join(relative)).unwrap();
@@ -211,6 +228,34 @@ fn wrong_marker_and_storage_or_instance_paths_are_rejected() {
     fixture.paths.games_root = original;
     fixture.instance.saves_path = fixture.owner.to_string_lossy().into_owned();
     assert!(fixture.verify().is_err());
+}
+
+#[test]
+fn selected_data_location_must_remain_inside_fixture_data() {
+    let mut fixture = Fixture::new();
+    let relocated = fixture.owner.join("LanGame");
+    let selected = fixture.config.root.join("data/LanGame");
+    let relative = fixture.paths.app_data_root.strip_prefix(&selected).unwrap();
+    let app_data_root = relocated.join(relative);
+    fs::rename(selected, &relocated).unwrap();
+    fs::write(
+        fixture
+            .config
+            .root
+            .join("localappdata/LanGame/ServerManager/storage-location.json"),
+        serde_json::to_vec(&serde_json::json!({
+            "version":1,"runtime_root":relocated,"app_data_root":app_data_root,
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    fixture.paths.app_data_root = app_data_root;
+    assert!(
+        fixture
+            .verify()
+            .unwrap_err()
+            .contains("escaped fixture data storage")
+    );
 }
 
 #[tokio::test]

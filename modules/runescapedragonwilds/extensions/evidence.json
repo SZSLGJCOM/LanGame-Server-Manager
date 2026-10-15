@@ -100,6 +100,86 @@
     "mismatched_source_preserved_and_rejected": "passed",
     "missing_offline_source_rejected_without_writes": "passed"
   },
+  "revalidations": [
+    {
+      "observed_at": "2026-10-15",
+      "release": "1.0.1",
+      "scope": "isolated_native_bootstrap_current_complete_empty_roster_and_stopped_process_rejection",
+      "steam_app_id": 4019830,
+      "steam_build_id": 25811348,
+      "windows_depot_id": 4019831,
+      "windows_depot_manifest": "201953044557705869",
+      "shipping_executable_sha256": "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
+      "unreal_engine_version": "5.6.1-248854",
+      "loader": {
+        "version": "3.0.1-1125-g527a483b",
+        "commit": "527a483b63b4dd0104fe1ca1a3934a06b87fcfb2",
+        "asset": "UE4SS_v3.0.1-1125-g527a483b.zip",
+        "asset_id": 546250363,
+        "asset_bytes": 8718500,
+        "asset_url": "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip",
+        "asset_sha256": "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7",
+        "asset_digest_verified": true,
+        "ue4ss_dll_sha256": "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958"
+      },
+      "proxy_build": {
+        "source_manifest": "proxy-sources.json",
+        "source_manifest_sha256": "7d2a03749c570614b0fb88705c0d89b4134ff608e6affb6be7d639fa307b2f35",
+        "source_files_verified": 32,
+        "hash_checks": ["sha256", "git_blob_sha1"],
+        "generator_source_modified": false,
+        "configure_exit_code": 0,
+        "build_exit_code": 0,
+        "proxy_sha256": "cdd3cf56d2af50dc35deef48e0fef4e3d56e922e0262d209d86d368c86351d6f",
+        "proxy_bytes": 448512,
+        "repository_script_proxy_loaded_in_dedicated_server": true,
+        "exports_match_system_names_and_ordinals": true,
+        "export_count": 17,
+        "imported_dlls": ["KERNEL32.dll", "USER32.dll", "SHELL32.dll"]
+      },
+      "production_empty_roster": {
+        "script_sha256": "0bda4f9149c9ff8a6c2f3c8854165bea1f77c0c0bfab8fb65f7987f71485d3e4",
+        "script_matches_repository_bytes": true,
+        "complete": true,
+        "current_players": 0,
+        "players": [],
+        "actions": []
+      },
+      "native_host_probe": {
+        "test": "isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process",
+        "launch": "production spawn_launch_plan, RSDragonwildsServer.exe bootstrap",
+        "managed_process_identity_verified": true,
+        "current_empty_snapshots": 2,
+        "distinct_nonces": true,
+        "nonce_matched": true,
+        "native_response_parser_passed": true,
+        "stopped_process_rejected": true,
+        "owned_process_tree_stopped": true,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "test_exit_code": 0,
+        "elapsed_seconds": 8.08,
+        "result": "passed"
+      },
+      "cleanup": {
+        "remaining_owned_processes": 0,
+        "temporary_drive_mapping_removed": true
+      },
+      "historical_lua_mock_tests_rerun": false,
+      "not_verified": [
+        "production_instance_start_stop_backup_restart",
+        "native_save_behavior",
+        "all_game_settings",
+        "real_player_multiplayer_session",
+        "steam_or_epic_client_compatibility",
+        "real_player_authentication_completion",
+        "real_owner_authorization",
+        "real_player_join",
+        "real_player_leave",
+        "real_player_reconnect"
+      ]
+    }
+  ],
   "not_verified": [
     "real_player_multiplayer_session",
     "real_player_authentication_completion",

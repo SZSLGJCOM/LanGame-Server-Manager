@@ -6,6 +6,7 @@
     "verified_at": "2026-09-08",
     "build": "Steam public build 24574222; native unassigned-owner launch and configuration round trip",
     "source_ids": [
+      "dragonwilds_orderly_exit_build_25811348",
       "dragonwilds_unassigned_owner_2026_09_08",
       "steamdb_app_4019830",
       "steamcmd_appinfo_4019830_2026_07_13",
@@ -84,6 +85,9 @@
       "executable_suffix": "RSDragonwildsServer.exe",
       "arguments": [
         "-log",
+        "-NewConsole",
+        "-stdout",
+        "-FullStdOutLogOutput",
         "-Port=7777",
         "-QueryPort=27057",
         "-log",

@@ -46,6 +46,8 @@ mod retained_install_data;
 pub mod steam_depot;
 mod steam_install_retained;
 mod steamcmd_bootstrap_log;
+mod steamcmd_content_evidence;
+mod steamcmd_manifest_recovery;
 mod steamcmd_prepare;
 mod steamcmd_prepare_process;
 mod steamcmd_readiness;

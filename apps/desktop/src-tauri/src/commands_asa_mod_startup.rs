@@ -52,22 +52,28 @@ pub(super) async fn wait_until_previous_map_ready(
     target: StartupTarget<'_>,
     policy: &ModuleBindAddressSpec,
     processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
-    source: &str,
-    reservation: &RuntimeStartReservationLease,
+    context: super::super::commands_runtime_supervision::StartupVerificationContext<'_>,
 ) -> Result<(), String> {
+    let super::super::commands_runtime_supervision::StartupVerificationContext {
+        source,
+        reservation,
+        asa_session: startup_images,
+    } = context;
     let StartupTarget {
         instance,
         process_key: next_process_key,
     } = target;
-    let (previous, _) = processes
+    let (previous_key, previous_log_path) = processes
         .last()
+        .map(|(plan, _)| (plan.process_key.clone(), plan.log_path.clone()))
         .ok_or("ASA Mod cache barrier has no preceding map")?;
-    let startup_console_path = &processes
+    let startup_console_path = processes
         .first()
         .ok_or("ASA Mod cache barrier has no startup console")?
         .0
-        .log_path;
-    let required_ports = required_game_listener(instance, &previous.process_key)?;
+        .log_path
+        .clone();
+    let required_ports = required_game_listener(instance, &previous_key)?;
     let expected_address = normalize_strict_bind_address(&instance.summary.bind_ip)?;
     let targets = build_window_inspection_targets_from_spawned_processes(processes);
     let ports = required_ports
@@ -77,7 +83,7 @@ pub(super) async fn wait_until_previous_map_ready(
     let started = Instant::now();
     let context = json!({
         "source": source, "instance_id": instance.summary.id,
-        "process_key": previous.process_key, "next_process_key": next_process_key,
+        "process_key": previous_key, "next_process_key": next_process_key,
         "required_ports": required_ports, "timeout_ms": policy.startup_timeout_ms,
     });
     append_desktop_app_log(
@@ -88,15 +94,24 @@ pub(super) async fn wait_until_previous_map_ready(
         context.clone(),
     );
     let _ = append_startup_console_line(
-        startup_console_path,
+        &startup_console_path,
         &format!(
             "ASA Mod cache: waiting for map `{}` game listener before starting `{next_process_key}`.",
-            previous.process_key
+            previous_key
         ),
         "",
     );
 
-    let result = wait_for_owned_listener(
+    let budget = super::super::commands_asa_startup_budget::StartupBudget::prepare(
+        &instance.summary.module_id,
+        processes,
+        Duration::from_millis(policy.startup_timeout_ms),
+        reservation,
+        startup_images,
+        &required_ports,
+    )
+    .await?;
+    let result = wait_for_owned_listener_with_budget(
         Duration::from_millis(policy.startup_timeout_ms),
         Duration::from_millis(500),
         reservation,
@@ -118,11 +133,19 @@ pub(super) async fn wait_until_previous_map_ready(
                         }
                     }
                     let inspection = WindowsPlatform::inspect_process_network_endpoints(&targets, &ports)?;
+                    for target in &targets {
+                        if !process_matches_identity(target.pid, &target.process_identity)
+                            .map_err(|error| error.to_string())?
+                        {
+                            return Err(format!("ASA map `{}` exited or changed identity during listener inspection", target.process_key));
+                        }
+                    }
                     Ok(super::super::commands_runtime_ark::evaluate_bind_ports(
                         &required_ports, &expected_address, &inspection.endpoints))
                 }).await.map_err(|error| format!("ASA Mod cache inspection worker failed: {error}"))?
             }
         },
+        Some(budget),
     ).await;
     let mut context = context;
     context["elapsed_ms"] = json!(started.elapsed().as_millis());
@@ -136,10 +159,10 @@ pub(super) async fn wait_until_previous_map_ready(
                 context,
             );
             let _ = append_startup_console_line(
-                startup_console_path,
+                &startup_console_path,
                 &format!(
                     "ASA Mod cache: map `{}` owns its game listener; starting `{next_process_key}`.",
-                    previous.process_key
+                    previous_key
                 ),
                 "",
             );
@@ -148,7 +171,7 @@ pub(super) async fn wait_until_previous_map_ready(
         Err(error) => {
             let error = format!(
                 "ASA map `{}` Mod cache startup barrier failed before `{next_process_key}`: {error}; see {}",
-                previous.process_key, previous.log_path
+                previous_key, previous_log_path
             );
             append_desktop_app_log(
                 storage,
@@ -162,6 +185,7 @@ pub(super) async fn wait_until_previous_map_ready(
     }
 }
 
+#[cfg(test)]
 async fn wait_for_owned_listener<Observe, Observation, Allowed>(
     timeout: Duration,
     sample_interval: Duration,
@@ -174,17 +198,63 @@ where
     Observation: std::future::Future<Output = Result<StrictBindEvaluation, String>>,
     Allowed: FnMut() -> Result<(), String>,
 {
+    wait_for_owned_listener_with_budget(
+        timeout,
+        sample_interval,
+        reservation,
+        &mut allowed,
+        &mut observe,
+        None,
+    )
+    .await
+}
+
+async fn wait_for_owned_listener_with_budget<Observe, Observation, Allowed>(
+    timeout: Duration,
+    sample_interval: Duration,
+    reservation: &RuntimeStartReservationLease,
+    mut allowed: Allowed,
+    mut observe: Observe,
+    mut budget: Option<super::super::commands_asa_startup_budget::StartupBudget<'_>>,
+) -> Result<(), String>
+where
+    Observe: FnMut() -> Observation,
+    Observation: std::future::Future<Output = Result<StrictBindEvaluation, String>>,
+    Allowed: FnMut() -> Result<(), String>,
+{
     let deadline = tokio::time::Instant::now() + timeout;
     let mut ready_samples = 0_u8;
     loop {
         allowed()?;
+        let current_deadline = if let Some(budget) = &mut budget {
+            let remaining = tokio::select! {
+                biased;
+                _ = reservation.cancelled() => return Err(String::from("ASA Mod cache startup wait was cancelled.")),
+                result = budget.remaining() => result?,
+            };
+            tokio::time::Instant::now() + remaining
+        } else {
+            deadline
+        };
+        let timeout_message = budget.as_ref().map_or_else(
+            || {
+                format!(
+                    "owned game listener was not verified within {} ms",
+                    timeout.as_millis()
+                )
+            },
+            |budget| budget.timeout_message(),
+        );
         let evaluation = tokio::select! {
             biased;
             _ = reservation.cancelled() => return Err(String::from("ASA Mod cache startup wait was cancelled.")),
-            result = tokio::time::timeout_at(deadline, observe()) => result
-                .map_err(|_| format!("owned game listener was not verified within {} ms", timeout.as_millis()))??,
+            result = tokio::time::timeout_at(current_deadline, observe()) => result
+                .map_err(|_| timeout_message.clone())??,
         };
         allowed()?;
+        if let Some(budget) = &mut budget {
+            budget.record_evaluation(&evaluation)?;
+        }
         match evaluation {
             StrictBindEvaluation::Ready => {
                 ready_samples += 1;
@@ -195,15 +265,13 @@ where
             StrictBindEvaluation::Failed { message } => return Err(message),
             StrictBindEvaluation::Pending { .. } => ready_samples = 0,
         }
-        if tokio::time::Instant::now() >= deadline {
-            return Err(format!(
-                "owned game listener was not verified within {} ms",
-                timeout.as_millis()
-            ));
+        if tokio::time::Instant::now() >= current_deadline {
+            return Err(timeout_message);
         }
         wait_for_runtime_start_delay(
             reservation,
-            sample_interval.min(deadline.saturating_duration_since(tokio::time::Instant::now())),
+            sample_interval
+                .min(current_deadline.saturating_duration_since(tokio::time::Instant::now())),
         )
         .await;
     }

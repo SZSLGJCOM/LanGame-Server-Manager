@@ -1,5 +1,77 @@
 use super::*;
 
+fn unreal_console_details(module_id: &str) -> InstanceDetails {
+    serde_json::from_value(json!({
+        "summary": {
+            "id": "untracked-unreal-fixture", "name": "Untracked Unreal fixture", "module_id": module_id,
+            "status": app_core::InstanceStatus::Running, "bind_ip": "127.0.0.1", "port_count": 0, "autostart": false
+        },
+        "config_file_path": "", "saves_path": "", "auto_backup_on_stop": false,
+        "backup_retention_count": 1, "settings_json": "{}", "ports": [], "active_run": null
+    }))
+    .unwrap()
+}
+
+#[tokio::test]
+async fn unreal_console_supported_modules_reach_runtime_ownership_validation() {
+    for module_id in ["windrose", "runescapedragonwilds"] {
+        let details = unreal_console_details(module_id);
+        let error = dispatch_instance_runtime_transport(
+            &DesktopState::default(),
+            &details,
+            &RuntimeTransportRequest {
+                command: "quit",
+                transport: "unreal_console",
+                process_key: None,
+                port_name: None,
+                password_setting_key: None,
+                enabled_setting_key: None,
+            },
+        )
+        .await
+        .expect_err("a declared transport must still require an owned running instance");
+        assert_eq!(
+            error, "tracked instance `untracked-unreal-fixture` is not running",
+            "{module_id} must pass the module gate and fail runtime ownership"
+        );
+    }
+}
+
+#[tokio::test]
+async fn unreal_console_rejects_every_other_catalog_module_before_runtime_dispatch() {
+    let module_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let modules =
+        app_modules::discover_modules(&module_root).expect("discover current module catalog");
+    let mut rejected = 0;
+    for module in modules {
+        let module_id = module.summary.id;
+        if matches!(module_id.as_str(), "windrose" | "runescapedragonwilds") {
+            continue;
+        }
+        let details = unreal_console_details(&module_id);
+        let error = dispatch_instance_runtime_transport(
+            &DesktopState::default(),
+            &details,
+            &RuntimeTransportRequest {
+                command: "quit",
+                transport: "unreal_console",
+                process_key: None,
+                port_name: None,
+                password_setting_key: None,
+                enabled_setting_key: None,
+            },
+        )
+        .await
+        .expect_err("undeclared native console transports must fail at the module gate");
+        assert_eq!(
+            error, "Unreal GUI console is not declared for this module",
+            "{module_id} must never reach the runtime console dispatcher"
+        );
+        rejected += 1;
+    }
+    assert_eq!(rejected, 30);
+}
+
 #[tokio::test]
 async fn shutdown_failed_save_prevents_quit_and_reports_both_transport_failures() {
     for source in [

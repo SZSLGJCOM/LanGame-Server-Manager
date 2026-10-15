@@ -8,7 +8,7 @@ use app_core::{InstanceDetails, ProcessLaunchPlan};
 use app_storage::StoragePaths;
 use tauri::Manager;
 
-use super::config::{Config, same_path, write_new};
+use super::config::{Config, checked_path, same_path, write_new};
 
 pub(super) struct LoopbackFixture(pub Config);
 
@@ -71,8 +71,18 @@ fn validate_boundary(
             "Synthetic firewall boundary requires the dedicated TEMP fixture namespace".into(),
         );
     }
+    let user_root = config.root.join("localappdata/LanGame/ServerManager");
+    let selected = StoragePaths::resolve_existing_at_user_root(&user_root)
+        .map_err(|error| error.to_string())?
+        .ok_or("Synthetic firewall boundary requires an initialized fixture data location")?;
+    checked_path(&selected.app_data_root)?;
+    if !selected.app_data_root.starts_with(config.root.join("data")) {
+        return Err(
+            "Synthetic firewall boundary data location escaped fixture data storage".into(),
+        );
+    }
+    same_path(&paths.app_data_root, &selected.app_data_root)?;
     for (actual, relative) in [
-        (&paths.app_data_root, "localappdata/LanGame/ServerManager"),
         (&paths.instances_root, "runtime/instances"),
         (&paths.games_root, "runtime/games"),
         (&paths.steamcmd_root, "runtime/steamcmd"),

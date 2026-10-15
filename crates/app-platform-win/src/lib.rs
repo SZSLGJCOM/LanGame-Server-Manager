@@ -15,6 +15,7 @@ mod host_inventory;
 #[cfg(test)]
 mod host_monitor_tests;
 mod host_telemetry;
+mod loopback_tcp_listener_owners;
 mod process_inspection;
 mod system_utility;
 pub use process_inspection::WindowInspectionTarget;
@@ -420,6 +421,14 @@ impl WindowsPlatform {
         ports: &[u16],
     ) -> Result<ProcessNetworkInspectionResult, String> {
         inspect_process_network_endpoints(targets, ports)
+    }
+
+    /// All listener owners that can receive IPv4 loopback traffic on this port.
+    /// Unlike process inspection, this must retain owners outside a target set.
+    pub fn loopback_tcp_listener_owners(
+        port: u16,
+    ) -> Result<std::collections::BTreeSet<u32>, String> {
+        loopback_tcp_listener_owners::inspect(port)
     }
 
     pub fn inspect_visible_window_surfaces(
