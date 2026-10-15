@@ -123,6 +123,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup-frontend
+      - uses: ./.github/actions/setup-test-browser
       - name: Verify selected desktop UI behavior
         env:
           BROWSER_FILES_JSON: ${{ needs.scope.outputs.frontend_files }}

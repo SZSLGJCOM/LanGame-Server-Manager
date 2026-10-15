@@ -4,7 +4,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { setImmediate: nextTurn } = require("node:timers/promises");
-const { prepareFixtureServer } = require("./helpers/runtime-browser-process.cjs");
+const { prepareFixtureServer, fixtureUsesBundledDev } = require("./helpers/runtime-browser-process.cjs");
 
 function boundary() {
   const calls = [];
@@ -122,7 +122,7 @@ test("bundled preparation waits for the initial build and rejects missing output
   await assert.rejects(prepareFixtureServer(server, "runtime-browser.html", []), /must produce initial output/);
 });
 
-async function createBundledFixture(t, files) {
+async function createBundledFixture(t, files, { fixtureMiddleware, bundleWithMiddleware } = {}) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "langame-reliability-browser-bundle-")));
   let server;
   t.after(async () => {
@@ -141,8 +141,10 @@ async function createBundledFixture(t, files) {
   const logger = createLogger("silent");
   logger.error = (message) => errors.push(String(message));
   server = await createServer({ configFile: false, root, cacheDir: path.join(root, "cache"),
-    experimental: { bundledDev: true }, input: "tests/helpers/runtime-browser.html",
+    experimental: { bundledDev: fixtureUsesBundledDev({ fixtureMiddleware, bundleWithMiddleware }) },
+    input: "tests/helpers/runtime-browser.html",
     appType: "mpa", logLevel: "silent", customLogger: logger,
+    plugins: fixtureMiddleware ? [{ name: "fixture-data", configureServer(vite) { vite.middlewares.use(fixtureMiddleware); } }] : [],
     server: { host: "127.0.0.1", port: 0, strictPort: true, hmr: false } });
   return { server, errors };
 }
@@ -160,6 +162,40 @@ test("real bundled Vite prepares only the selected entry with lazy, raw and CSS 
   const response = await fetch(`http://127.0.0.1:${server.httpServer.address().port}/tests/helpers/runtime-browser.html`);
   assert.equal(response.status, 200);
   assert.match(await response.text(), /<script/);
+});
+
+test("data-only archive middleware can serve its preference alongside real bundled fixture scripts", { timeout: 15000 }, async (t) => {
+  const preferencePath = "/__server_archive_screenshot_tab";
+  const fixtureMiddleware = (request, response, next) => {
+    if (request.url !== preferencePath) return next();
+    response.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("runtime");
+  };
+  assert.equal(fixtureUsesBundledDev({ fixtureMiddleware }), false,
+    "Source-interception fixtures must still require explicit bundled opt-in");
+  const { server, errors } = await createBundledFixture(t, {
+    "entry.js": 'globalThis.fixture = { openSettings: () => import("./settings.js") };',
+    "settings.js": 'import "./settings.css"; export const raw = "retained archive JSON";',
+    "settings.css": ".configuration-workspace__raw { display: block; }",
+  }, { fixtureMiddleware, bundleWithMiddleware: true });
+  await prepareFixtureServer(server, "runtime-browser.html", errors);
+  assert.deepEqual(errors, []);
+  assert.equal(server.config.experimental.bundledDev, true);
+  const origin = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const preference = await fetch(`${origin}${preferencePath}`);
+  assert.equal(preference.status, 200);
+  assert.equal(await preference.text(), "runtime");
+  const html = await fetch(`${origin}/tests/helpers/runtime-browser.html`);
+  assert.equal(html.status, 200);
+  const scripts = [...(await html.text()).matchAll(/<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)]
+    .map((match) => match[1]);
+  assert.ok(scripts.some((src) => src.startsWith("/assets/")), "The real fixture entry uses bundled output");
+  assert.ok(!scripts.includes("/tests/helpers/entry.js"));
+  for (const src of scripts) {
+    const script = await fetch(new URL(src, origin));
+    assert.equal(script.status, 200, `Data middleware must leave bundled source requests to Vite: ${src}`);
+    assert.ok((await script.text()).length > 0);
+  }
 });
 
 test("real bundled Vite compilation errors prevent readiness even after the build promise resolves", { timeout: 15000 }, async (t) => {

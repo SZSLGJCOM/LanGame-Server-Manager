@@ -10,7 +10,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     const screenshotLabel = `server-archives-${screenshotTab}`;
     const screenshotPath = process.env.LANGAME_SERVER_ARCHIVES_SCREENSHOT_DIR
       ? path.join(process.env.LANGAME_SERVER_ARCHIVES_SCREENSHOT_DIR, `${screenshotLabel}-${viewport.width}x${viewport.height}.png`) : undefined;
-    const report = await runBrowserFixture({ fixturePath: "server-archives-browser.html", viewport, screenshotPath, keyboard: true,
+    const report = await runBrowserFixture({ fixturePath: "server-archives-browser.html", viewport, screenshotPath, keyboard: true, bundleWithMiddleware: true,
       fixtureMiddleware(request, response, next) {
         if (request.url !== "/__server_archive_screenshot_tab") return next();
         response.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }); response.end(screenshotTab);
