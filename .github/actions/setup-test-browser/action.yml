@@ -1,0 +1,28 @@
+name: Set up pinned test browser
+description: Download a fixed Windows Chrome for Testing archive and verify its SHA256.
+runs:
+  using: composite
+  steps:
+    - name: Prepare Chrome for Testing
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'Stop'
+        if ($env:RUNNER_OS -ne 'Windows') { throw 'The test browser requires a Windows runner' }
+        # Official manifest: https://googlechromelabs.github.io/chrome-for-testing/155.0.8059.79.json
+        $version = '155.0.8059.79'
+        $expectedSha256 = '4966d9df2c8ed9be606ff0fc8877b2e800def164fbad63fed6a1d93222ad9dbf'
+        $archiveUrl = "https://storage.googleapis.com/chrome-for-testing-public/$version/win64/chrome-win64.zip"
+        $browserRoot = Join-Path $env:RUNNER_TEMP "lgsm-test-browser-$version"
+        New-Item -ItemType Directory -Path $browserRoot -ErrorAction Stop | Out-Null
+        $archive = Join-Path $browserRoot 'chrome-win64.zip'
+        Invoke-WebRequest -Uri $archiveUrl -OutFile $archive -MaximumRedirection 0 -TimeoutSec 300
+        $actualSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualSha256 -cne $expectedSha256) { throw 'The Chrome for Testing archive SHA256 does not match' }
+        Expand-Archive -LiteralPath $archive -DestinationPath $browserRoot
+        $browser = Join-Path $browserRoot 'chrome-win64/chrome.exe'
+        if (-not (Test-Path -LiteralPath $browser -PathType Leaf)) { throw 'The test browser executable is missing' }
+        if ((Get-Item -LiteralPath $browser).VersionInfo.ProductVersion -cne $version) {
+          throw 'The test browser version does not match'
+        }
+        "LANGAME_RELIABILITY_BROWSER=$browser" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "Pinned Chrome for Testing $version; archive SHA256 $actualSha256"
