@@ -4458,16 +4458,16 @@ Repository / 仓库: https://github.com/rustls/webpki
 VCS commit / 版本提交: c14836d8de33c0ad0ac7dcb28fe9aade20831a4d
 Legal text / 法律文本: 5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a — checksum-verified crate file rustls-webpki-0.103.15/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: rustls@0.23.45
+Package / 软件包: rustls@0.23.46
 Declared license / 声明许可证: Apache-2.0 OR ISC OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634
-Source archive / 源码归档: https://static.crates.io/crates/rustls/rustls-0.23.45.crate
+Archive SHA-256: 48e13bd8c0e9365c43cfa5c9e8f9ad49d3c8444926c9aac819e0e4dc503c8fdf
+Source archive / 源码归档: https://static.crates.io/crates/rustls/rustls-0.23.46.crate
 Repository / 仓库: https://github.com/rustls/rustls
-VCS commit / 版本提交: 2976d90fd1c2db6b518700dd101b714069cfcb17
-Legal text / 法律文本: 709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c — checksum-verified crate file rustls-0.23.45/LICENSE-MIT
-Legal text / 法律文本: 7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4 — checksum-verified crate file rustls-0.23.45/LICENSE-ISC
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file rustls-0.23.45/LICENSE-APACHE
+VCS commit / 版本提交: f04804fa13341a9b1dc02b5d1dd8a746f2c4b7fb
+Legal text / 法律文本: 709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c — checksum-verified crate file rustls-0.23.46/LICENSE-MIT
+Legal text / 法律文本: 7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4 — checksum-verified crate file rustls-0.23.46/LICENSE-ISC
+Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file rustls-0.23.46/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: rustversion@1.0.23
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -18598,7 +18598,7 @@ limitations under the License.
 
 Text SHA-256 / 文本 SHA-256: 709e3175b4212f7b13aa93971c9f62ff8c69ec45ad8c6532a7e0c41d7a7d6f8c
 Source / 来源: checksum-verified crate file hyper-rustls-0.27.10/LICENSE-MIT
-Source / 来源: checksum-verified crate file rustls-0.23.45/LICENSE-MIT
+Source / 来源: checksum-verified crate file rustls-0.23.46/LICENSE-MIT
 Source / 来源: checksum-verified crate file rustls-native-certs-0.8.4/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>
@@ -20033,7 +20033,7 @@ Creator: Person: Daniel Thompson-Yvetot
 
 Text SHA-256 / 文本 SHA-256: 7cfafc877eccc46c0e346ccbaa5c51bb6b894d2b818e617d970211e232785ad4
 Source / 来源: checksum-verified crate file hyper-rustls-0.27.10/LICENSE-ISC
-Source / 来源: checksum-verified crate file rustls-0.23.45/LICENSE-ISC
+Source / 来源: checksum-verified crate file rustls-0.23.46/LICENSE-ISC
 Source / 来源: checksum-verified crate file rustls-native-certs-0.8.4/LICENSE-ISC
 --------------------------------------------------------------------------------
 ISC License (ISC)
@@ -23958,7 +23958,7 @@ Source / 来源: checksum-verified crate file regex-syntax-0.8.11/LICENSE-APACHE
 Source / 来源: checksum-verified crate file ring-0.17.14/src/polyfill/once_cell/LICENSE-APACHE
 Source / 来源: checksum-verified crate file rustc_version-0.4.1/LICENSE-APACHE
 Source / 来源: checksum-verified crate file rustix-1.1.5/LICENSE-APACHE
-Source / 来源: checksum-verified crate file rustls-0.23.45/LICENSE-APACHE
+Source / 来源: checksum-verified crate file rustls-0.23.46/LICENSE-APACHE
 Source / 来源: checksum-verified crate file rustls-native-certs-0.8.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file scopeguard-1.2.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file secret-service-5.2.0/LICENSE-APACHE

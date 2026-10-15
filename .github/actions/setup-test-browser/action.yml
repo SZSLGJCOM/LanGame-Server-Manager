@@ -24,5 +24,8 @@ runs:
         if ((Get-Item -LiteralPath $browser).VersionInfo.ProductVersion -cne $version) {
           throw 'The test browser version does not match'
         }
+        # https://pptr.dev/troubleshooting#chrome-reports-sandbox-errors-on-windows
+        & "$env:SystemRoot\System32\icacls.exe" $browserRoot /grant '*S-1-15-2-1:(OI)(CI)(RX)'
+        if ($LASTEXITCODE -ne 0) { throw 'The test browser sandbox directory permissions could not be configured' }
         "LANGAME_RELIABILITY_BROWSER=$browser" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         Write-Output "Pinned Chrome for Testing $version; archive SHA256 $actualSha256"
