@@ -16,6 +16,8 @@ mod catalog;
 mod creation;
 #[path = "commands_native_diagnostics.rs"]
 mod diagnostics;
+#[path = "commands_dragonwilds_compatibility_tests.rs"]
+mod dragonwilds_compatibility;
 #[path = "commands_native_environment.rs"]
 mod environment;
 #[cfg(windows)]

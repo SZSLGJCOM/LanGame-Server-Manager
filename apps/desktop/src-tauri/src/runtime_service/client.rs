@@ -5,6 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tauri::{Emitter, Manager};
 
+#[path = "client_startup.rs"]
+mod startup;
+
 #[cfg(test)]
 #[path = "client_tests.rs"]
 mod tests;
@@ -13,12 +16,23 @@ mod tests;
 #[path = "client_ctrl_c_tests.rs"]
 mod ctrl_c_tests;
 
+#[cfg(test)]
+#[path = "client_startup_tests.rs"]
+mod startup_tests;
+
 pub(crate) struct Client {
     endpoint: security::Endpoint,
     service_identity: Option<security::ServiceIdentity>,
     service_target: Option<Arc<app_runtime::ProcessExitTarget>>,
     closing: AtomicBool,
     exit_requested: Arc<AtomicBool>,
+}
+
+pub(super) struct StartupFailure {
+    pub(super) message: String,
+    // A newly launched process remains owned even if it never becomes ready.
+    // This client is restricted to the shell's final-exit path.
+    pub(super) cleanup_client: Option<Box<Client>>,
 }
 
 pub(super) struct ExitRequest {
@@ -80,7 +94,12 @@ impl Client {
         let pipe = security::connect_verified(&endpoint.control())?;
         let identity = security::service_identity(&pipe)?;
         let target = app_runtime::ProcessExitTarget::capture(identity.pid, &identity.process)?
-            .ok_or_else(|| std::io::Error::other("Runtime service exited while connecting"))?;
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Runtime service exited while connecting",
+                )
+            })?;
         let mut client = Self::new(endpoint);
         client.service_identity = Some(identity);
         client.service_target = Some(Arc::new(target));
@@ -222,55 +241,48 @@ async fn receive_response(
     response.result
 }
 
-pub(super) fn connect_or_start() -> Result<Client, String> {
-    let endpoint = security::Endpoint::current().map_err(|e| e.to_string())?;
+pub(super) fn connect_or_start(cancelled: Arc<AtomicBool>) -> Result<Client, StartupFailure> {
+    let endpoint = security::Endpoint::current().map_err(|error| StartupFailure {
+        message: error.to_string(),
+        cleanup_client: None,
+    })?;
     let mut arguments = vec![std::ffi::OsString::from("--runtime-service")];
     if crate::lan_host::is_lan_host_requested() {
         arguments.push("--lan-host".into());
     }
-    connect_or_start_with_arguments(endpoint, &arguments)
+    startup::connect_owned(
+        endpoint,
+        &arguments,
+        &cancelled,
+        startup::StartupBudgets::default(),
+    )
 }
 
+#[cfg(any(test, feature = "desktop-reliability"))]
 pub(super) fn connect_or_start_with_arguments(
     endpoint: security::Endpoint,
     arguments: &[std::ffi::OsString],
 ) -> Result<Client, String> {
-    match tauri::async_runtime::block_on(async { Client::connect(endpoint.clone()) }) {
-        Ok(client) => return Ok(client),
-        Err(error) if matches!(error.raw_os_error(), Some(2 | 231)) => (),
-        Err(error) => return Err(error.to_string()),
-    }
-    use std::os::windows::process::CommandExt;
-    let mut command =
-        std::process::Command::new(std::env::current_exe().map_err(|e| e.to_string())?);
-    // DETACHED_PROCESS keeps the service independent of the UI console.
-    // CREATE_NEW_PROCESS_GROUP also disables Ctrl+C, which the first managed
-    // game inherits even when it creates its own console.
-    command.args(arguments).creation_flags(0x0000_0008);
-    let mut child = command
-        .spawn()
-        .map_err(|e| format!("Cannot launch runtime service: {e}"))?;
-    let deadline = std::time::Instant::now() + Duration::from_secs(20);
-    loop {
-        match tauri::async_runtime::block_on(async { Client::connect(endpoint.clone()) }) {
-            Ok(client) => return Ok(client),
-            Err(error) if !matches!(error.raw_os_error(), Some(2 | 231)) => {
-                return Err(error.to_string());
-            }
-            Err(_) => (),
-        }
-        if let Some(status) = child.try_wait().map_err(|e| e.to_string())?
-            && !status.success()
-        {
-            return Err(format!(
-                "Runtime service exited before becoming ready: {status}"
-            ));
-        }
-        if std::time::Instant::now() >= deadline {
-            return Err("Runtime service did not become ready within 20 seconds; inspect its startup before retrying".into());
-        }
-        std::thread::sleep(Duration::from_millis(50));
-    }
+    startup::connect(
+        endpoint,
+        arguments,
+        &AtomicBool::new(false),
+        startup::StartupBudgets::default(),
+    )
+}
+
+#[cfg(feature = "desktop-reliability")]
+pub(super) fn connect_with_arguments_owned(
+    endpoint: security::Endpoint,
+    arguments: &[std::ffi::OsString],
+    cancelled: &AtomicBool,
+) -> Result<Client, StartupFailure> {
+    startup::connect_owned(
+        endpoint,
+        arguments,
+        cancelled,
+        startup::StartupBudgets::default(),
+    )
 }
 
 pub(super) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
@@ -286,7 +298,10 @@ pub(super) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
     };
     let app = invoke.message.webview().app_handle().clone();
     tauri::async_runtime::spawn(async move {
-        let result = app.state::<Client>().request(&command, args).await;
+        let result = match super::wait_for_client(&app).await {
+            Ok(client) => client.request(&command, args).await,
+            Err(error) => Err(error),
+        };
         invoke
             .resolver
             .respond(result.map_err(tauri::ipc::InvokeError::from));
@@ -295,13 +310,16 @@ pub(super) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
 
 pub(super) fn relay_events(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
+        let client = match super::wait_for_client(&app).await {
+            Ok(client) => client,
+            Err(_) => return,
+        };
         let mut cursor = super::events::Cursor::default();
         loop {
-            if app.state::<Client>().is_closing() {
+            if super::interface_is_closing(&app) {
                 return;
             }
-            match app
-                .state::<Client>()
+            match client
                 .request("runtime_service_events", cursor.request_args())
                 .await
             {
@@ -324,7 +342,7 @@ pub(super) fn relay_events(app: tauri::AppHandle) {
                     }
                 }
                 Err(_) => {
-                    if app.state::<Client>().is_closing() {
+                    if super::interface_is_closing(&app) {
                         return;
                     }
                 }
@@ -335,7 +353,7 @@ pub(super) fn relay_events(app: tauri::AppHandle) {
 }
 
 pub(crate) async fn stop_service(app: &tauri::AppHandle) -> Result<(), String> {
-    let client = app.state::<Client>();
+    let client = super::wait_for_client(app).await?;
     let status = client
         .request("runtime_service_status", Value::Null)
         .await?;

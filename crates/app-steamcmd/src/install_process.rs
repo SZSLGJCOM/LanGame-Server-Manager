@@ -585,7 +585,10 @@ pub(super) async fn run_command_capture(
     deadline: InstallDeadline,
 ) -> Result<std::process::Output, SteamCmdError> {
     deadline.check_cancelled()?;
+    // Capture helpers never write stdin. Native console operations can leave
+    // the parent's input handle invalid or open indefinitely instead of EOF.
     command
+        .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
     let (child, process_guard) = spawn_managed_command(&mut command).await?;

@@ -24,6 +24,7 @@ mod media_cache;
 mod project_zomboid_mods;
 mod runtime_astroneer_health;
 mod runtime_log_stream;
+mod runtime_palworld_health;
 #[cfg(windows)]
 mod runtime_service;
 mod runtime_transport;

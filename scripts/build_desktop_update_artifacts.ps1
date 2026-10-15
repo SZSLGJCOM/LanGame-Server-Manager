@@ -229,12 +229,16 @@ if ($BuildManaged) {
     $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')
     try {
         # Tauri's deprecated environment override takes precedence over the captured configuration.
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $null, 'Process')
+        Remove-Item -LiteralPath Env:STATIC_VCRUNTIME -ErrorAction SilentlyContinue
         & powershell.exe @buildArguments
         if ($LASTEXITCODE -ne 0) { throw "Managed desktop build failed with exit code $LASTEXITCODE. No installer was exported." }
     }
     finally {
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
+        if ($null -eq $oldStaticVcruntime) {
+            Remove-Item -LiteralPath Env:STATIC_VCRUNTIME -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
+        }
     }
     Import-Module (Join-Path (Split-Path -Parent $managedCargoEntry) 'codex-snapshot-build.psm1') -Force
     $verified = Read-CodexSnapshotBuildReceipt -Path $receiptPath
@@ -301,7 +305,7 @@ if ($BuildPortable) {
         $signaturePath = "$payloadPath.sig"
         $beforePayload = Get-Fingerprint -Path $payloadPath
         $beforeSignature = Get-Fingerprint -Path $signaturePath
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $null, 'Process')
+        Remove-Item -LiteralPath Env:STATIC_VCRUNTIME -ErrorAction SilentlyContinue
         & cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis --config $mergeConfigPath -- --locked
         if ($LASTEXITCODE -ne 0) { throw 'cargo tauri build failed.' }
         $afterPayload = Get-Fingerprint -Path $payloadPath
@@ -316,8 +320,16 @@ if ($BuildPortable) {
         if ($LASTEXITCODE -ne 0) { throw 'Desktop executable runtime dependency verification failed.' }
     }
     finally {
-        [Environment]::SetEnvironmentVariable('VITE_LANGAME_DESKTOP_UPDATES_ENABLED', $oldUpdatesValue, 'Process')
-        [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
+        if ($null -eq $oldUpdatesValue) {
+            Remove-Item -LiteralPath Env:VITE_LANGAME_DESKTOP_UPDATES_ENABLED -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable('VITE_LANGAME_DESKTOP_UPDATES_ENABLED', $oldUpdatesValue, 'Process')
+        }
+        if ($null -eq $oldStaticVcruntime) {
+            Remove-Item -LiteralPath Env:STATIC_VCRUNTIME -ErrorAction SilentlyContinue
+        } else {
+            [Environment]::SetEnvironmentVariable('STATIC_VCRUNTIME', $oldStaticVcruntime, 'Process')
+        }
         Pop-Location
     }
 }

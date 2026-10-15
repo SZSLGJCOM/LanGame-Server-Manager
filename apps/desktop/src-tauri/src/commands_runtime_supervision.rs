@@ -1490,15 +1490,25 @@ fn ensure_bind_required_setting_enabled(
     ))
 }
 
+pub(super) struct StartupVerificationContext<'a> {
+    pub(super) source: &'a str,
+    pub(super) reservation: &'a RuntimeStartReservationLease,
+    pub(super) asa_session: &'a mut super::commands_asa_startup_budget::StartupSession,
+}
+
 pub(super) async fn verify_spawned_process_bind_address(
     state: &DesktopState,
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     policy: &ModuleBindAddressSpec,
     spawned_processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
-    source: &str,
-    start_reservation: &RuntimeStartReservationLease,
+    context: StartupVerificationContext<'_>,
 ) -> Result<(), String> {
+    let StartupVerificationContext {
+        source,
+        reservation: start_reservation,
+        asa_session: startup_images,
+    } = context;
     let expected_address = normalize_strict_bind_address(&instance.summary.bind_ip)?;
     if is_wildcard_bind_address(&expected_address)
         && !super::commands_runtime_ark::has_multiple_maps(instance)?
@@ -1526,6 +1536,15 @@ pub(super) async fn verify_spawned_process_bind_address(
         .collect::<Vec<_>>();
     let timeout = Duration::from_millis(policy.startup_timeout_ms);
     let started_at = Instant::now();
+    let mut startup_budget = super::commands_asa_startup_budget::StartupBudget::prepare(
+        &instance.summary.module_id,
+        spawned_processes,
+        timeout,
+        start_reservation,
+        startup_images,
+        &required_ports,
+    )
+    .await?;
     let mut consecutive_ready_samples = 0_u8;
 
     loop {
@@ -1535,8 +1554,13 @@ pub(super) async fn verify_spawned_process_bind_address(
                 instance.summary.id
             ));
         }
+        let remaining = tokio::select! {
+            biased;
+            _ = start_reservation.cancelled() => return Err(String::from("bind-address verification was cancelled.")),
+            result = startup_budget.remaining() => result?,
+        };
         for (plan, spawned) in spawned_processes.iter_mut() {
-            match process_is_running(spawned.pid) {
+            match process_matches_identity(spawned.pid, &spawned.process_identity) {
                 Ok(true) => {}
                 Ok(false) => {
                     return Err(format!(
@@ -1554,14 +1578,32 @@ pub(super) async fn verify_spawned_process_bind_address(
         }
         let inspection_targets = targets.clone();
         let inspection_ports = port_numbers.clone();
-        let inspection = tokio::task::spawn_blocking(move || {
+        let inspection_task = tokio::task::spawn_blocking(move || {
             WindowsPlatform::inspect_process_network_endpoints(
                 &inspection_targets,
                 &inspection_ports,
             )
-        })
-        .await
-        .map_err(|error| format!("bind-address verification worker failed: {error}"))??;
+        });
+        let inspection = tokio::select! {
+            biased;
+            _ = start_reservation.cancelled() => return Err(String::from("bind-address verification was cancelled.")),
+            result = tokio::time::timeout(remaining, inspection_task) => result
+                .map_err(|_| startup_budget.timeout_message())?
+                .map_err(|error| format!("bind-address verification worker failed: {error}"))??,
+        };
+        if state.shutdown_in_progress.load(Ordering::SeqCst) || start_reservation.is_cancelled() {
+            return Err(String::from("bind-address verification was cancelled."));
+        }
+        for (plan, spawned) in spawned_processes.iter() {
+            if !process_matches_identity(spawned.pid, &spawned.process_identity)
+                .map_err(|error| error.to_string())?
+            {
+                return Err(format!(
+                    "instance process `{}` exited or changed identity during bind-address verification",
+                    plan.display_name
+                ));
+            }
+        }
 
         let evaluation = if app_core::ark_maps::is_ark(&instance.summary.module_id) {
             super::commands_runtime_ark::evaluate_bind_ports(
@@ -1576,6 +1618,7 @@ pub(super) async fn verify_spawned_process_bind_address(
                 &inspection.endpoints,
             )
         };
+        startup_budget.record_evaluation(&evaluation)?;
         match evaluation {
             StrictBindEvaluation::Ready => {
                 consecutive_ready_samples = consecutive_ready_samples.saturating_add(1);
@@ -1622,13 +1665,13 @@ pub(super) async fn verify_spawned_process_bind_address(
             }
             StrictBindEvaluation::Pending { missing_port_names } => {
                 consecutive_ready_samples = 0;
-                if started_at.elapsed() >= timeout {
+                if remaining.is_zero() {
                     let message = format!(
-                        "instance `{}` did not expose required listener(s) {} on {} within {} ms",
+                        "instance `{}` did not expose required listener(s) {} on {}: {}",
                         instance.summary.id,
                         missing_port_names.join(", "),
                         expected_address,
-                        policy.startup_timeout_ms
+                        startup_budget.timeout_message()
                     );
                     append_desktop_app_log(
                         storage,

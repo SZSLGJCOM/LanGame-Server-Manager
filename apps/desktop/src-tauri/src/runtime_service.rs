@@ -6,6 +6,7 @@ mod events;
 mod existing_acceptance_client;
 mod exit_deadline;
 mod exit_handoff;
+mod exit_intent;
 #[cfg(feature = "desktop-reliability")]
 mod fixture;
 #[cfg(feature = "desktop-reliability")]
@@ -13,6 +14,7 @@ pub(crate) use fixture::try_fixture_firewall_boundary;
 mod local_commands;
 mod security;
 mod server;
+mod startup_state;
 mod wire;
 
 pub(crate) use client::stop_service;
@@ -101,11 +103,92 @@ pub(crate) fn setup(
     app: &mut tauri::App,
     storage_source: crate::state::StorageSource,
 ) -> Result<(), String> {
+    setup_with_connector(app, storage_source, client::connect_or_start)
+}
+
+fn setup_with_connector(
+    app: &mut tauri::App,
+    storage_source: crate::state::StorageSource,
+    connect: impl FnOnce(
+        std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> Result<client::Client, client::StartupFailure>
+    + Send
+    + 'static,
+) -> Result<(), String> {
     use tauri::Manager;
     app.manage(storage_source);
-    app.manage(client::connect_or_start()?);
+    if !app.manage(startup_state::Startup::default()) {
+        return Err(String::from(
+            "Runtime service startup state was already initialized",
+        ));
+    }
+    let startup_app = app.handle().clone();
+    let cancellation = app.state::<startup_state::Startup>().cancellation();
+    // Setup must return before the hidden window can render its loading state.
+    // Only this worker installs a client; an active client never changes targets.
+    tauri::async_runtime::spawn(async move {
+        let result = match tauri::async_runtime::spawn_blocking(move || connect(cancellation)).await
+        {
+            Ok(Ok(client)) => {
+                if startup_app.manage(client) {
+                    Ok(())
+                } else {
+                    Err(String::from(
+                        "Runtime service client was already initialized",
+                    ))
+                }
+            }
+            Ok(Err(error)) => {
+                let mut message = error.message;
+                // Failed startup may still own a detached process it created.
+                // Retain that exact client for exit cleanup, never product work.
+                if let Some(cleanup_client) = error.cleanup_client
+                    && !startup_app.manage(*cleanup_client)
+                {
+                    message.push_str("; Runtime startup cleanup client was already initialized");
+                }
+                Err(message)
+            }
+            Err(error) => Err(format!("Runtime service startup worker failed: {error}")),
+        };
+        let failure = result.as_ref().err().cloned();
+        // Client registration precedes publication so every successful waiter
+        // can immediately obtain the exact same verified process identity.
+        startup_app
+            .state::<startup_state::Startup>()
+            .complete(result);
+        if let Some(error) = failure {
+            log_service_event(
+                &startup_app,
+                "error",
+                "runtime.client.startup_failed",
+                &error,
+            );
+        }
+    });
     client::relay_events(app.handle().clone());
     Ok(())
+}
+
+pub(super) async fn wait_for_client<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Result<tauri::State<'_, client::Client>, String> {
+    use tauri::Manager;
+    if let Some(startup) = app.try_state::<startup_state::Startup>() {
+        if startup.is_exit_requested() {
+            return Err(String::from("Application final exit is in progress"));
+        }
+        // Registration alone does not grant admission: the installed client
+        // may be retained only to clean up a failed startup's detached child.
+        startup.wait().await?;
+        if startup.is_exit_requested() {
+            return Err(String::from("Application final exit is in progress"));
+        }
+    }
+    // Isolated fixtures install their verified client directly without a
+    // production startup flight.
+    app.try_state::<client::Client>()
+        .ok_or_else(|| String::from("Runtime service startup completed without a client"))
 }
 
 pub(crate) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
@@ -114,6 +197,14 @@ pub(crate) fn forward(invoke: tauri::ipc::Invoke<tauri::Wry>) {
 
 pub(crate) fn interface_is_closing<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> bool {
     use tauri::Manager;
+    if let Some(startup) = app.try_state::<startup_state::Startup>() {
+        if startup.is_exit_requested() {
+            return true;
+        }
+        return app
+            .try_state::<client::Client>()
+            .is_some_and(|client| client.is_closing());
+    }
     app.try_state::<client::Client>()
         .is_none_or(|client| client.is_closing())
 }
@@ -131,24 +222,80 @@ fn exit_grace(app: &tauri::AppHandle) -> std::time::Duration {
 pub(crate) fn exit_status(app: &tauri::AppHandle) -> serde_json::Value {
     use tauri::Manager;
     serde_json::json!({
-        "requested": app.state::<client::Client>().is_exit_requested(),
+        "requested": app.try_state::<startup_state::Startup>()
+            .is_some_and(|startup| startup.is_exit_requested())
+            || app.try_state::<client::Client>()
+                .is_some_and(|client| client.is_exit_requested()),
     })
 }
 
 pub(crate) fn request_stop_and_exit(app: tauri::AppHandle) {
-    use tauri::{Emitter, Manager};
+    use tauri::Manager;
+    // The startup latch spans client installation, so repeated clicks on either
+    // side of that boundary cannot restart the final-exit allowance.
+    if let Some(startup) = app.try_state::<startup_state::Startup>()
+        && !startup.try_begin_exit()
+    {
+        return;
+    }
     let grace = exit_grace(&app);
     let deadline = std::time::Instant::now() + grace;
     let deadline_tick_ms = exit_deadline::deadline_tick_ms(grace);
+    let startup_is_pending = app
+        .try_state::<startup_state::Startup>()
+        .is_some_and(|startup| !startup.is_complete());
+    if !startup_is_pending && app.try_state::<client::Client>().is_some() {
+        if !begin_connected_exit(app.clone(), deadline, deadline_tick_ms) {
+            return;
+        }
+    } else {
+        hide_exiting_interface(&app);
+        let pending_app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let result = match pending_app.try_state::<startup_state::Startup>() {
+                Some(startup) => startup.wait().await,
+                None => Err(String::from("Runtime service startup state is unavailable")),
+            };
+            // Even failed startup may publish a cleanup-only client. Its exact
+            // spawned child retains the original click's exit allowance.
+            if pending_app.try_state::<client::Client>().is_some() {
+                begin_connected_exit(pending_app, deadline, deadline_tick_ms);
+            } else {
+                // There is no connected target to own. Logging or a frozen
+                // WebView must not retain this already-cancelled interface.
+                exit_deadline::finish_interface();
+                if let Err(error) = result {
+                    log_service_event(
+                        &pending_app,
+                        "info",
+                        "app.exit.startup_finished",
+                        &format!(
+                            "Runtime startup ended after interface exit was requested: {error}"
+                        ),
+                    );
+                }
+                pending_app.exit(0);
+            }
+        });
+    }
+    announce_exit_request(app, grace);
+}
+
+fn begin_connected_exit(
+    app: tauri::AppHandle,
+    deadline: std::time::Instant,
+    deadline_tick_ms: u64,
+) -> bool {
+    use tauri::Manager;
     let client = app.state::<client::Client>();
     let Some(request) = client.try_begin_exit() else {
-        return;
+        return false;
     };
     let Some(target) = client.service_target() else {
         // A production client captures its target before setup succeeds.
         // Only a detached test client can reach this branch.
         app.exit(1);
-        return;
+        return false;
     };
     exit_deadline::arm(target, deadline);
     request.commit();
@@ -161,6 +308,11 @@ pub(crate) fn request_stop_and_exit(app: tauri::AppHandle) {
     {
         retain_local_exit_owner(&app, deadline_tick_ms, &error.to_string());
     }
+    true
+}
+
+fn announce_exit_request(app: tauri::AppHandle, grace: std::time::Duration) {
+    use tauri::Emitter;
     tauri::async_runtime::spawn_blocking(move || {
         // A recreated WebView reads the same latched intent through app_exit_status.
         if let Err(error) = app.emit("app-exit-requested", exit_status(&app)) {
@@ -176,7 +328,7 @@ pub(crate) fn request_stop_and_exit(app: tauri::AppHandle) {
             "info",
             "app.exit.requested",
             &format!(
-                "Final tray exit requested; interface ownership is handed off immediately and background save/stop cleanup retains its {}-second deadline.",
+                "Final tray exit requested; background save/stop cleanup retains its original {}-second deadline.",
                 grace.as_secs()
             ),
         );
@@ -233,7 +385,53 @@ fn hide_exiting_interface(app: &tauri::AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::future::poll_fn;
+    use std::task::Poll;
     use tauri::Manager;
+
+    #[tokio::test]
+    async fn cleanup_client_cannot_admit_work_before_or_after_startup_failure() {
+        let app = tauri::test::mock_builder()
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        app.manage(startup_state::Startup::default());
+        let endpoint =
+            security::Endpoint::isolated(&uuid::Uuid::new_v4().simple().to_string()).unwrap();
+        app.manage(client::Client::new(endpoint));
+
+        let mut waiting = Box::pin(wait_for_client(app.handle()));
+        assert!(
+            poll_fn(|cx| Poll::Ready(waiting.as_mut().poll(cx)))
+                .await
+                .is_pending()
+        );
+        app.state::<startup_state::Startup>()
+            .complete(Err(String::from("Spawned runtime did not become ready")));
+        assert_eq!(
+            waiting.await.err().expect("failed startup rejects work"),
+            "Spawned runtime did not become ready"
+        );
+        assert_eq!(
+            wait_for_client(app.handle())
+                .await
+                .err()
+                .expect("cleanup client stays unavailable to product work"),
+            "Spawned runtime did not become ready"
+        );
+        assert!(app.try_state::<client::Client>().is_some());
+    }
+
+    #[tokio::test]
+    async fn directly_installed_fixture_client_does_not_require_startup_state() {
+        let app = tauri::test::mock_builder()
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        let endpoint =
+            security::Endpoint::isolated(&uuid::Uuid::new_v4().simple().to_string()).unwrap();
+        app.manage(client::Client::new(endpoint));
+
+        assert!(wait_for_client(app.handle()).await.is_ok());
+    }
 
     #[test]
     fn desktop_media_remains_available_without_backend_state_until_interface_closes() {
@@ -247,6 +445,18 @@ mod tests {
         let shutdown = crate::media_cache::app_shutdown_check(app.handle().clone());
         assert!(!shutdown());
         app.state::<client::Client>().close_interface();
+        assert!(shutdown());
+    }
+
+    #[test]
+    fn desktop_media_remains_available_during_startup_until_exit_is_requested() {
+        let app = tauri::test::mock_builder()
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .unwrap();
+        app.manage(startup_state::Startup::default());
+        let shutdown = crate::media_cache::app_shutdown_check(app.handle().clone());
+        assert!(!shutdown());
+        assert!(app.state::<startup_state::Startup>().try_begin_exit());
         assert!(shutdown());
     }
 }

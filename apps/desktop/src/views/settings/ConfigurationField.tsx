@@ -110,6 +110,7 @@ function textInputAttributes(field: GuidedSettingsField) {
   return {
     // Number inputs normalize drafts such as `0.` before React receives them.
     inputMode: isNumber ? field.type === "integer" ? "numeric" as const : "decimal" as const : undefined,
+    // Native UTF-16 limits are validation-only so pasted identities remain complete.
     maxLength: isNumber ? undefined : field.maxLength,
     minLength: isNumber ? undefined : field.minLength,
     pattern: isNumber || field.control === "textarea" ? undefined : field.pattern

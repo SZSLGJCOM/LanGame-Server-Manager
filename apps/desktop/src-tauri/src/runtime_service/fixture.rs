@@ -1,4 +1,4 @@
-//! Opt-in native acceptance: a real service, two independent IPC
+//! Opt-in native acceptance: a real service, independent IPC
 //! clients, and a synthetic game behind the existing Necesse module contract.
 #[path = "fixture_client.rs"]
 mod client;
@@ -35,6 +35,35 @@ pub(super) fn record_exit_helper(service_pid: u32, deadline_tick_ms: u64) -> Res
             "service_pid":service_pid,"deadline_tick_ms":deadline_tick_ms,
         }),
     )
+}
+
+pub(super) fn record_startup_waiting(service_pid: u32) -> Result<(), String> {
+    let args: Vec<_> = std::env::args_os().skip(1).collect();
+    if args.first().and_then(|argument| argument.to_str()) != Some(CLIENT_REOPEN) {
+        return Ok(());
+    }
+    if args.len() != 2 {
+        return Err("Invalid immediate-reopen fixture arguments".into());
+    }
+    let config = Config::load(Path::new(&args[1]))?;
+    config.verify()?;
+    let first: Value = read_json(&config.root.join("client-start.json"))?;
+    if config.scenario != config::Scenario::TrayExit || first["service_pid"] != service_pid {
+        return Err("Immediate reopen did not wait for the original fixture runtime".into());
+    }
+    write_new(
+        &config.root.join("client-reopen-waiting.json"),
+        &json!({
+            "nonce":config.nonce,"client_pid":std::process::id(),
+            "service_pid":service_pid,"waiting_for_final_exit":true,
+        }),
+    )?;
+    std::fs::File::options()
+        .write(true)
+        .create_new(true)
+        .open(config.root.join("client-reopen-waiting.ready"))
+        .map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 pub(super) fn block_shutdown_storage_until_save(app: &tauri::AppHandle) -> Result<(), String> {
@@ -118,6 +147,7 @@ const OWNER: &str = "--runtime-service-fixture";
 const SERVICE: &str = "--runtime-service-fixture-service";
 const CLIENT_START: &str = "--runtime-service-fixture-client-start";
 const CLIENT_STOP: &str = "--runtime-service-fixture-client-stop";
+const CLIENT_REOPEN: &str = "--runtime-service-fixture-client-reopen";
 
 pub(super) fn run_if_requested() -> bool {
     let args: Vec<_> = std::env::args_os().skip(1).collect();
@@ -127,7 +157,7 @@ pub(super) fn run_if_requested() -> bool {
         let Some(role) = args.first().and_then(|value| value.to_str()) else {
             return false;
         };
-        if ![OWNER, SERVICE, CLIENT_START, CLIENT_STOP].contains(&role) {
+        if ![OWNER, SERVICE, CLIENT_START, CLIENT_STOP, CLIENT_REOPEN].contains(&role) {
             return false;
         }
         if args.len() != 2 {
@@ -139,6 +169,7 @@ pub(super) fn run_if_requested() -> bool {
                 SERVICE => run_service(config),
                 CLIENT_START => client::run(config, path, true),
                 CLIENT_STOP => client::run(config, path, false),
+                CLIENT_REOPEN => client::run_reopen(config, path),
                 _ => Err("Unknown fixture role".into()),
             })
         }
@@ -271,11 +302,32 @@ fn run_owned_children(config: &Config, path: &Path) -> Result<(), String> {
 }
 
 fn run_service(config: Config) -> Result<(), String> {
+    let first_ready = config.root.join("service-ready.json");
+    let ready = if first_ready.exists() {
+        let first: Value = read_json(&config.root.join("client-start.json"))?;
+        let previous: Value = read_json(&first_ready)?;
+        let pid = previous["pid"]
+            .as_u64()
+            .and_then(|pid| u32::try_from(pid).ok())
+            .ok_or("Missing original service readiness identity")?;
+        let identity: app_core::ProcessIdentity =
+            serde_json::from_value(first["service_identity"].clone()).map_err(|e| e.to_string())?;
+        if config.scenario != config::Scenario::TrayExit
+            || first["service_pid"] != pid
+            || app_runtime::process_matches_identity(pid, &identity).map_err(|e| e.to_string())?
+        {
+            return Err(
+                "Replacement fixture runtime initialized before the original exited".into(),
+            );
+        }
+        config.root.join("service-reopen-ready.json")
+    } else {
+        first_ready
+    };
     config.initialize_environment()?;
     let endpoint = super::security::Endpoint::isolated(&config.nonce).map_err(|e| e.to_string())?;
     let mut context = tauri::tauri_build_context!();
     context.config_mut().app.windows.clear();
-    let ready = config.root.join("service-ready.json");
     let app = tauri::Builder::default()
         .setup(move |app| {
             app.manage(crate::state::DesktopState::default());

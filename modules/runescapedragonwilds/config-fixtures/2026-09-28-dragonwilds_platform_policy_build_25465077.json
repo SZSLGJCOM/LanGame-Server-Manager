@@ -6,6 +6,7 @@
     "verified_at": "2026-09-28",
     "build": "Steam public build 25465077; static PlatformPolicy enum, parser and missing-value default; deterministic configuration materialization, no multiplayer launch",
     "source_ids": [
+      "dragonwilds_orderly_exit_build_25811348",
       "dragonwilds_platform_policy_build_25465077"
     ]
   },
@@ -57,6 +58,9 @@
       "executable_suffix": "RSDragonwildsServer.exe",
       "arguments": [
         "-log",
+        "-NewConsole",
+        "-stdout",
+        "-FullStdOutLogOutput",
         "-Port=7777",
         "-QueryPort=27057"
       ]

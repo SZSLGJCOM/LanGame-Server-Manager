@@ -410,6 +410,109 @@ async fn native_time_and_world_name_select_the_server_world_independently_of_mti
 
 #[tokio::test]
 #[ignore = "requires explicit isolated native fixture and a new output path outside the repository"]
+async fn native_public_write_prepares_custom_save_with_verified_backup_and_preserved_content() {
+    let source = PathBuf::from(
+        std::env::var_os("LGSM_DRAGONWILDS_SAVE_FIXTURE")
+            .expect("supply the stopped isolated native save copy"),
+    );
+    let output = PathBuf::from(
+        std::env::var_os("LGSM_DRAGONWILDS_SAVE_OUTPUT")
+            .expect("supply a new absolute output path outside the repository"),
+    );
+    assert!(source.is_absolute());
+    assert!(
+        output.is_absolute()
+            && !output
+                .components()
+                .any(|part| matches!(part, std::path::Component::ParentDir))
+    );
+    assert!(
+        !output.try_exists().expect("inspect explicit output path"),
+        "refuse to overwrite an existing output"
+    );
+    let parent = output.parent().expect("output must have a parent");
+    let _output_guards =
+        guard_directories(parent).expect("output ancestors must be ordinary directories");
+    let repository =
+        fs::canonicalize(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")).unwrap();
+    assert!(
+        !fs::canonicalize(parent).unwrap().starts_with(repository),
+        "native output must remain outside the repository"
+    );
+
+    let golden = read_world(&source).expect("read explicitly supplied isolated native copy");
+    let native = decode_world_settings(&golden).expect("decode actual native save");
+    assert_eq!(
+        native.world_mode, 3,
+        "this probe preserves an existing Custom world"
+    );
+    assert_ne!(
+        native.overrides.get(BUILDING),
+        Some(&1.5),
+        "probe needs a real change"
+    );
+    let fixture = Fixture::new(false).await;
+    fs::write(&fixture.world, &golden).unwrap();
+    let config = fixture.instance.join("config/instance.json");
+    let mut settings: serde_json::Value =
+        serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
+    settings["settings"]["default_world_name"] =
+        serde_json::Value::String(native.world_name.clone());
+    fs::write(&config, serde_json::to_vec(&settings).unwrap()).unwrap();
+
+    let before = read_dragonwilds_world_settings(&fixture.paths, ID)
+        .await
+        .unwrap();
+    assert!(before.writable);
+    let changed = write_dragonwilds_world_settings(
+        &fixture.paths,
+        fixture.input(DragonwildsWorldMode::Custom, &[(BUILDING, 1.5)]),
+    )
+    .await
+    .unwrap();
+    let mut expected_values = before.values;
+    expected_values.insert(BUILDING.to_owned(), 1.5);
+    assert_eq!(changed.values, expected_values);
+    let actual = fs::read(&fixture.world).unwrap();
+    let reopened = read_dragonwilds_world_settings(&fixture.paths, ID)
+        .await
+        .unwrap();
+    assert_eq!(reopened.values, changed.values);
+    assert_eq!(reopened.revision.as_deref(), Some(sha256(&actual).as_str()));
+    let mut expected = native.overrides.clone();
+    expected.insert(BUILDING.to_owned(), 1.5);
+    assert_eq!(
+        decode_world_settings(&actual).unwrap(),
+        NativeWorldSettings {
+            world_name: native.world_name.clone(),
+            world_mode: native.world_mode,
+            hardcore_state: native.hardcore_state,
+            overrides: expected,
+        }
+    );
+    // Restoring only the rule must recover every original byte, including
+    // unknown metadata, objects and level chunks from this native world.
+    assert_eq!(
+        patch_world_settings(&actual, native.world_mode, &native.overrides).unwrap(),
+        golden
+    );
+    let backups = crate::list_instance_backups(&fixture.paths, ID)
+        .await
+        .unwrap();
+    assert_eq!(backups.len(), 1);
+    assert_eq!(changed.backup_id.as_ref(), Some(&backups[0].backup_id));
+    assert_eq!(
+        fs::read(Path::new(&backups[0].backup_path).join("saves/Fixture.sav")).unwrap(),
+        golden
+    );
+    crate::atomic_file::create_file_atomically(&output, &actual)
+        .expect("publish complete new native reload candidate");
+    assert_eq!(fs::read(&output).unwrap(), actual);
+    assert_eq!(fs::read(&source).unwrap(), golden);
+}
+
+#[tokio::test]
+#[ignore = "requires explicit isolated native fixture and a new output path outside the repository"]
 async fn native_public_write_produces_a_server_reload_candidate_with_verified_backup() {
     let source = PathBuf::from(
         std::env::var_os("LGSM_DRAGONWILDS_SAVE_FIXTURE")

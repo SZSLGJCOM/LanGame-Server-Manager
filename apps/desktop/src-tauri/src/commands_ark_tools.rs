@@ -120,6 +120,10 @@ pub(super) async fn ensure_can_start_instance(details: &InstanceDetails) -> Resu
         .map_err(|error| format!("ARK extension recovery inspection failed: {error}"))?
 }
 
+pub(super) fn has_owned_asa_framework_for_start(root: &Path) -> Result<bool, String> {
+    install::has_owned_asa_framework(root, embedded("arksurvivalascended")?)
+}
+
 async fn ensure_endpoint(details: &InstanceDetails) -> Result<(), String> {
     let port = details
         .ports

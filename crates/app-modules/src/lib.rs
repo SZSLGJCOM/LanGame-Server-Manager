@@ -1961,23 +1961,23 @@ mod tests {
                 managed_terminal_count += 1;
             }
 
-            // Native logging remains on the managed private desktop. Windrose
-            // additionally needs FConsoleWindow for its game-thread quit command.
+            // Native logging remains on the managed private desktop. These
+            // verified Unreal quit channels additionally need FConsoleWindow.
             assert_eq!(
                 process
                     .args_template
                     .iter()
                     .filter(|arg| arg.eq_ignore_ascii_case("-newconsole"))
                     .count(),
-                usize::from(module_id == "windrose"),
+                usize::from(matches!(module_id, "windrose" | "runescapedragonwilds")),
                 "{module_id} must use only its declared native GUI command channel"
             );
-            if module_id == "windrose" {
+            if matches!(module_id, "windrose" | "runescapedragonwilds") {
                 let shutdown = descriptor
                     .runtime
                     .shutdown
                     .as_ref()
-                    .expect("Windrose shutdown");
+                    .expect("Unreal console shutdown");
                 assert_eq!(
                     shutdown
                         .commands
@@ -2178,13 +2178,16 @@ mod tests {
         );
         assert_eq!(process.window_policy, ProcessWindowPolicy::Background);
         assert_eq!(process.host_surface, ProcessHostSurface::ManagedTerminal);
-        assert!(
-            process
-                .args_template
-                .iter()
-                .all(|arg| !arg.eq_ignore_ascii_case("-newconsole")),
-            "runescapedragonwilds does not use the native GUI command channel"
-        );
+        for flag in ["-NewConsole", "-stdout", "-FullStdOutLogOutput"] {
+            assert_eq!(
+                process
+                    .args_template
+                    .iter()
+                    .filter(|arg| *arg == flag)
+                    .count(),
+                1
+            );
+        }
         assert_eq!(
             process
                 .args_template
@@ -2205,8 +2208,9 @@ mod tests {
                 .iter()
                 .map(|command| (command.transport.as_str(), command.command.as_str()))
                 .collect::<Vec<_>>(),
-            [("console_ctrl_c", "CTRL_C")]
+            [("unreal_console", "quit")]
         );
+        assert!(shutdown.commands[0].fallback_transport.is_none());
         assert!(
             descriptor
                 .default_ports

@@ -6,6 +6,9 @@ mod payload_callback_tests;
 #[path = "steam_install_shared_dependency_tests.rs"]
 mod shared_dependency_tests;
 
+#[path = "steam_install_manifest_recovery_tests.rs"]
+mod manifest_recovery_tests;
+
 struct Fixture {
     root: PathBuf,
     settings: AppSettings,

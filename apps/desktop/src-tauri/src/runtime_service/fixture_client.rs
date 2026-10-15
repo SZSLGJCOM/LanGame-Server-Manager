@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use app_core::{
-    InstanceDetails, InstanceProvisioning, LogTailSnapshot, StartInstanceResult,
+    InstanceDetails, InstanceProvisioning, LogTailSnapshot, StartInstanceResult, StorageStatus,
     UpdateInstanceInput,
 };
 use serde_json::{Value, json};
@@ -14,6 +14,129 @@ use crate::runtime_service::security::Endpoint;
 
 #[path = "fixture_tray.rs"]
 mod tray;
+
+pub(super) fn run_reopen(config: Config, path: &std::path::Path) -> Result<(), String> {
+    if config.scenario != super::config::Scenario::TrayExit {
+        return Err("Immediate reopen requires the normal tray-exit scenario".into());
+    }
+    config.initialize_environment()?;
+    let endpoint = Endpoint::isolated(&config.nonce).map_err(|error| error.to_string())?;
+    let arguments = vec![super::SERVICE.into(), path.as_os_str().to_owned()];
+    let storage_source = crate::state::StorageSource::UserDataRoot(
+        app_storage::StoragePaths::default().app_data_root,
+    );
+    let result = Arc::new(Mutex::new(None));
+    let result_writer = Arc::clone(&result);
+    let mut context = tauri::tauri_build_context!();
+    context.config_mut().app.windows.clear();
+    let app = tauri::Builder::default()
+        .setup(move |app| {
+            crate::runtime_service::setup_with_connector(app, storage_source, move |cancelled| {
+                crate::runtime_service::client::connect_with_arguments_owned(
+                    endpoint, &arguments, &cancelled,
+                )
+            })
+            .map_err(std::io::Error::other)?;
+            let app = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let operation = exercise_reopen(&app, &config).await;
+                if let Ok(mut writer) = result_writer.lock() {
+                    *writer = Some(operation);
+                }
+                app.exit(0);
+            });
+            Ok(())
+        })
+        .build(context)
+        .map_err(|error| error.to_string())?;
+    app.run_return(|_, event| {
+        if let tauri::RunEvent::ExitRequested { code, api, .. } = event
+            && code.is_none()
+        {
+            api.prevent_exit();
+        }
+    });
+    result
+        .lock()
+        .map_err(|_| "Reopen fixture result lock poisoned")?
+        .take()
+        .ok_or("Reopen fixture client exited without a result")?
+}
+
+async fn exercise_reopen(app: &tauri::AppHandle, config: &Config) -> Result<(), String> {
+    let first: Value = read_json(&config.root.join("client-start.json"))?;
+    let id = first["instance_id"]
+        .as_str()
+        .ok_or("Missing original instance ID")?;
+    let client = crate::runtime_service::wait_for_client(app).await?;
+    let status = client
+        .request("runtime_service_status", Value::Null)
+        .await?;
+    let pid = status["pid"]
+        .as_u64()
+        .and_then(|pid| u32::try_from(pid).ok())
+        .ok_or("Reopened runtime did not return its PID")?;
+    if status["pid"] == first["service_pid"] {
+        return Err("Immediate reopen reused the runtime committed to final exit".into());
+    }
+    let identity = app_runtime::inspect_process_identity(pid)
+        .map_err(|error| error.to_string())?
+        .ok_or("Reopened runtime exited before storage initialization")?;
+    let storage: StorageStatus =
+        serde_json::from_value(client.request("ensure_storage_ready", Value::Null).await?)
+            .map_err(|error| error.to_string())?;
+    let details: InstanceDetails = serde_json::from_value(
+        client
+            .request(
+                "read_instance_details_from_storage",
+                json!({"instanceId":id}),
+            )
+            .await?,
+    )
+    .map_err(|error| error.to_string())?;
+    if !storage.database_exists
+        || !storage.migrations_applied
+        || storage.schema_version <= 0
+        || !std::path::Path::new(&storage.database_path).starts_with(&config.root)
+        || details.summary.id != id
+        || !matches!(details.summary.status, app_core::InstanceStatus::Stopped)
+        || details.active_run.is_some()
+    {
+        return Err(
+            "Immediate reopen did not initialize and read the persisted stopped instance".into(),
+        );
+    }
+    write_new(
+        &config.root.join("client-reopen.json"),
+        &json!({
+            "nonce":config.nonce,"client_pid":std::process::id(),
+            "service_pid":pid,"service_identity":identity,"instance_id":id,
+            "storage":storage,"storage_initialized":true,"instance_read":true,
+            "stopped_state_persisted":true,
+        }),
+    )?;
+    std::fs::File::options()
+        .write(true)
+        .create_new(true)
+        .open(config.root.join("client-reopen.ready"))
+        .map_err(|error| error.to_string())?;
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(60);
+    while !config.root.join("data/release-reopen.ready").exists() {
+        if tokio::time::Instant::now() >= deadline {
+            return Err("Immediate-reopen owner did not release coordinated shutdown".into());
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    }
+    let release: Value = read_json(&config.root.join("data/release-reopen.json"))?;
+    if release["nonce"] != config.nonce || release["service_pid"] != pid {
+        return Err("Reopen shutdown barrier targeted a different runtime".into());
+    }
+    crate::runtime_service::client::stop_service(app).await?;
+    write_new(
+        &config.root.join("client-reopen-stopped.json"),
+        &json!({"nonce":config.nonce,"service_pid":pid,"coordinated_shutdown_completed":true}),
+    )
+}
 
 pub(super) fn run(config: Config, path: &std::path::Path, start: bool) -> Result<(), String> {
     let final_tray_exit = !start && config.scenario.is_tray_exit();
@@ -150,12 +273,20 @@ async fn start_game(app: &tauri::AppHandle, config: &Config) -> Result<Value, St
     for binding in &mut ports {
         binding.port = port;
     }
+    let mut settings: serde_json::Map<String, Value> =
+        serde_json::from_str(&details.settings_json).map_err(|error| error.to_string())?;
+    // Keep this explicitly synthetic package on its current verified bytes;
+    // a lifecycle fixture must not invoke real Steam acquisition before start.
+    settings.insert(
+        "program_update".into(),
+        json!({"policy":app_core::InstanceProgramUpdatePolicy::Pinned}),
+    );
     let update = UpdateInstanceInput {
         id: id.clone(),
         bind_ip: "127.0.0.1".into(),
         auto_backup_on_stop: true,
         backup_retention_count: details.backup_retention_count,
-        settings_json: details.settings_json.clone(),
+        settings_json: serde_json::to_string(&settings).map_err(|error| error.to_string())?,
         ports,
     };
     client

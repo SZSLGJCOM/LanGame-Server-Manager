@@ -13,6 +13,9 @@ verification_path = "RSDragonwildsServer.exe"
 executable = "RSDragonwildsServer.exe"
 args_template = [
   "-log",
+  "-NewConsole",
+  "-stdout",
+  "-FullStdOutLogOutput",
   "-Port={{ports.game.port}}",
   "-QueryPort={{ports.query.port}}",
   "{{runescapedragonwilds.extra_launch_args}}"
@@ -20,7 +23,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "Steam appinfo for app 4019830 reports RSDragonwildsServer.exe as the current Windows launch executable. RuneScape: Dragonwilds reads RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini under [/Script/Dominion.DedicatedServerSettings] for owner identity, server name, default world name, admin password, and optional world password. An empty owner_id represents no assigned owner: LanGame writes the explicit non-account marker LGSM_UNASSIGNED_OWNER required by the tested native startup gate. Real owner permissions require the in-game Player ID. LanGame renders and materializes that file before launch while preserving the server-generated ServerGuid, and passes the configured UDP game and query ports with -Port and -QueryPort. LanGame supplies the officially documented -log flag on its private desktop. Additional native flags remain available through extra_launch_args; runtime console and graceful-stop behavior require acceptance."
+host_notes = "Steam appinfo for app 4019830 reports RSDragonwildsServer.exe as the current Windows launch executable. RuneScape: Dragonwilds reads RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini under [/Script/Dominion.DedicatedServerSettings] for owner identity, server name, default world name, admin password, and optional world password. An empty owner_id represents no assigned owner: LanGame writes the explicit non-account marker LGSM_UNASSIGNED_OWNER required by the tested native startup gate. Real owner permissions require the complete in-game Player ID, at most 32 UTF-16 units. LanGame preserves ServerGuid and passes the managed UDP game/query ports. The official -log -NewConsole profile runs on the private desktop with full managed standard output. Shutdown uses the owned Unreal console's game-thread quit rather than Ctrl+C, which exited build 25811348 with STATUS_CONTROL_C_EXIT before normal teardown. Native quit completes orderly teardown but does not flush a new world save; only the most recent completed native autosave is recoverable. Additional arguments remain operator controlled."
 
 [[default_ports]]
 name = "game"
@@ -47,8 +50,8 @@ player_action_ids = []
 grace_period_ms = 15000
 
 [[runtime.shutdown.commands]]
-transport = "console_ctrl_c"
-command = "CTRL_C"
+transport = "unreal_console"
+command = "quit"
 wait_after_ms = 12000
 
 [player_management]

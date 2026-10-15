@@ -53,7 +53,7 @@ test("all current modules select their declared text channel without sending act
     astroneer: "stdin", barotrauma: "stdin", conanexiles: "source_rcon", corekeeper: "stdin",
     dontstarve: "stdin", enshrouded: "stdin", humanitz: "source_rcon", minecraft: "source_rcon",
     necesse: "stdin", nightingale: "stdin", palworld: "stdin", projectzomboid: "source_rcon",
-    returntomoria: "stdin", rimworld: "stdin", romestead: "stdin", runescapedragonwilds: "stdin",
+    returntomoria: "stdin", rimworld: "stdin", romestead: "stdin", runescapedragonwilds: "unreal_console",
     rust: "websocket_rcon", satisfactory: "stdin", scum: "stdin", sevendaystodie: "telnet",
     sonsoftheforest: "stdin", soulmask: "source_rcon", squad: "source_rcon", terraria: "stdin",
     theforest: "stdin", unturned: "stdin", valheim: "stdin", vrising: "source_rcon", windrose: "unreal_console"

@@ -625,6 +625,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     let session_id = Some(generate_session_id(&instance_id));
 
     let mut spawned_processes = Vec::<(ProcessLaunchPlan, app_runtime::SpawnedProcess)>::new();
+    let mut asa_startup_images = super::commands_asa_startup_budget::StartupSession::default();
     let mut failed_bind_message = None;
     let mut _windrose_bootstrap_guard = None;
     if let Some(prepared) = windrose_bootstrap {
@@ -732,8 +733,11 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 },
                 &module.runtime.bind_address,
                 &mut spawned_processes,
-                source,
-                runtime_start_reservation,
+                super::commands_runtime_supervision::StartupVerificationContext {
+                    source,
+                    reservation: runtime_start_reservation,
+                    asa_session: &mut asa_startup_images,
+                },
             )
             .await
         {
@@ -841,8 +845,11 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             &instance,
             &module.runtime.bind_address,
             &mut spawned_processes,
-            source,
-            runtime_start_reservation,
+            super::commands_runtime_supervision::StartupVerificationContext {
+                source,
+                reservation: runtime_start_reservation,
+                asa_session: &mut asa_startup_images,
+            },
         )
         .await
     {
@@ -2469,7 +2476,10 @@ pub(super) async fn dispatch_instance_runtime_transport(
     }
 
     if transport.eq_ignore_ascii_case("unreal_console") {
-        if details.summary.module_id != "windrose" {
+        if !matches!(
+            details.summary.module_id.as_str(),
+            "windrose" | "runescapedragonwilds"
+        ) {
             return Err("Unreal GUI console is not declared for this module".into());
         }
         let runtime = state.runtime_supervisor.clone();

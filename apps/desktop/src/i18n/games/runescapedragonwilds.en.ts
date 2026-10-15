@@ -26,7 +26,7 @@ export const EN_US_RUNESCAPE_DRAGONWILDS_MESSAGES: MessageCatalog = {
   "runescapedragonwilds.settings.groups.advanced.description": "Low-level launch arguments for operators.",
 
   "settings.schema.runescapedragonwilds.owner_id.title": "Owner Player ID (Optional)",
-  "settings.schema.runescapedragonwilds.owner_id.description": "Leave empty to start without an assigned owner; copy your Player ID from the bottom of the in-game Settings menu to enable owner permissions after a restart (not Steam64).",
+  "settings.schema.runescapedragonwilds.owner_id.description": "Leave empty to start without an assigned owner. Copy the complete Player ID from the bottom of the in-game Settings menu (not Steam64), then restart to enable owner permissions. Online servers accept at most 32 UTF-16 code units; never truncate the ID.",
   "settings.schema.runescapedragonwilds.server_name.title": "Server Name",
   "settings.schema.runescapedragonwilds.server_name.description": "Public session name; the server truncates it to 15 characters.",
   "settings.schema.runescapedragonwilds.default_world_name.title": "World to Load",

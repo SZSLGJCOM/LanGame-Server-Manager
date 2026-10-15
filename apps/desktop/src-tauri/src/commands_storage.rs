@@ -582,6 +582,8 @@ pub async fn read_instance_runtime_overview_from_storage(
         .map_err(|message| logged_error_message(&storage, message))?;
     crate::runtime_astroneer_health::apply(&state, &storage.paths, &instance, &mut overview.health)
         .await;
+    crate::runtime_palworld_health::apply(&state, &storage.paths, &instance, &mut overview.health)
+        .await;
     if let Some(pending_log) = pending_start_console_log_snapshot(&state, &instance_id, 32) {
         overview.log_tail = pending_log;
     }

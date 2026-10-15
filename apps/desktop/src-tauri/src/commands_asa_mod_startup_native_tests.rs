@@ -117,8 +117,11 @@ Start-Sleep -Seconds 30
             },
             &policy,
             &mut self.processes,
-            "manual",
-            &reservation,
+            super::super::super::super::commands_runtime_supervision::StartupVerificationContext {
+                source: "manual",
+                reservation: &reservation,
+                asa_session: &mut super::super::super::super::commands_asa_startup_budget::StartupSession::default(),
+            },
         )
         .await
     }

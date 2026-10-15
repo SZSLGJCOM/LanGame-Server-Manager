@@ -8,7 +8,7 @@
 ## `2026-07-13-steamdb_app_4019830.json`
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `Steam public build 23986150 / launch-smoke build 23940936`)
-- Sources: `steamdb_app_4019830`, `steamcmd_appinfo_4019830_2026_07_13`, `dragonwilds_smoke_launch_2026_06_29`, `dragonwilds_dedicated_server_ini`, `dragonwilds_savegames`, `dragonwilds_saved_logs`, `dragonwilds_query_port_a2s_probe_2026_06_29`, `launch_args`, `player_management`
+- Sources: `dragonwilds_orderly_exit_build_25811348`, `steamdb_app_4019830`, `steamcmd_appinfo_4019830_2026_07_13`, `dragonwilds_smoke_launch_2026_06_29`, `dragonwilds_dedicated_server_ini`, `dragonwilds_savegames`, `dragonwilds_saved_logs`, `dragonwilds_query_port_a2s_probe_2026_06_29`, `launch_args`, `player_management`
 - Coverage: editable `6`, specialized `0`, derived `0`, generated `0`, excluded `8`
 
 ### Initial native files
@@ -59,6 +59,9 @@
   "launch": {
     "arguments": [
       "-log",
+      "-NewConsole",
+      "-stdout",
+      "-FullStdOutLogOutput",
       "-Port=7777",
       "-QueryPort=27057",
       "-log",
@@ -72,7 +75,7 @@
 ## `2026-09-08-dragonwilds_unassigned_owner_2026_09_08.json`
 
 - Evidence: `best_effort_verified` at `2026-09-08` (build `Steam public build 24574222; native unassigned-owner launch and configuration round trip`)
-- Sources: `dragonwilds_unassigned_owner_2026_09_08`, `steamdb_app_4019830`, `steamcmd_appinfo_4019830_2026_07_13`, `dragonwilds_smoke_launch_2026_06_29`, `dragonwilds_dedicated_server_ini`, `dragonwilds_savegames`, `dragonwilds_saved_logs`, `dragonwilds_query_port_a2s_probe_2026_06_29`, `launch_args`, `player_management`
+- Sources: `dragonwilds_orderly_exit_build_25811348`, `dragonwilds_unassigned_owner_2026_09_08`, `steamdb_app_4019830`, `steamcmd_appinfo_4019830_2026_07_13`, `dragonwilds_smoke_launch_2026_06_29`, `dragonwilds_dedicated_server_ini`, `dragonwilds_savegames`, `dragonwilds_saved_logs`, `dragonwilds_query_port_a2s_probe_2026_06_29`, `launch_args`, `player_management`
 - Coverage: editable `6`, specialized `0`, derived `0`, generated `0`, excluded `8`
 
 ### Initial native files
@@ -123,6 +126,9 @@
   "launch": {
     "arguments": [
       "-log",
+      "-NewConsole",
+      "-stdout",
+      "-FullStdOutLogOutput",
       "-Port=7777",
       "-QueryPort=27057",
       "-log",
@@ -136,7 +142,7 @@
 ## `2026-09-28-dragonwilds_platform_policy_build_25465077.json`
 
 - Evidence: `best_effort_verified` at `2026-09-28` (build `Steam public build 25465077; static PlatformPolicy enum, parser and missing-value default; deterministic configuration materialization, no multiplayer launch`)
-- Sources: `dragonwilds_platform_policy_build_25465077`
+- Sources: `dragonwilds_orderly_exit_build_25811348`, `dragonwilds_platform_policy_build_25465077`
 - Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `1`
 
 ### Initial native files
@@ -181,6 +187,9 @@
   "launch": {
     "arguments": [
       "-log",
+      "-NewConsole",
+      "-stdout",
+      "-FullStdOutLogOutput",
       "-Port=7777",
       "-QueryPort=27057"
     ],

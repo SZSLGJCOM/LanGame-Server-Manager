@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
-use super::{client::Client, exit_deadline, security};
+use super::{client::Client, exit_deadline, exit_intent, security};
 
 const HELPER: &str = "--runtime-service-exit-watchdog";
 const HANDOFF_TIMEOUT: Duration = Duration::from_secs(2);
@@ -184,6 +184,14 @@ fn run(request: Request) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     if let Some(target) = target {
         let target = Arc::new(target);
+        // Publish final exit before READY lets the interface release its lease.
+        // A reopened interface must not depend on the stop task reaching IPC
+        // before deciding whether this original service can be reused.
+        let _exit_intent = exit_intent::mark(&security::ServiceIdentity {
+            pid: request.pid,
+            process: request.process.clone(),
+        })
+        .map_err(|e| format!("Cannot publish independent exit ownership: {e}"))?;
         let watchdog = app_runtime::spawn_exit_watchdog(Arc::clone(&target), deadline, |outcome| {
             exit_deadline::terminate_current_process(i32::from(
                 outcome.forced || outcome.error.is_some(),

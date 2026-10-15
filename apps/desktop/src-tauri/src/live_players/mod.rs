@@ -12,7 +12,7 @@ mod log_capture;
 
 pub(crate) mod console_codecs;
 pub(crate) mod console_log;
-mod http_api;
+pub(crate) mod http_api;
 pub(crate) mod minecraft;
 pub(crate) mod nightingale;
 pub(crate) mod palworld;
