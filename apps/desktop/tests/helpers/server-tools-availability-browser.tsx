@@ -291,14 +291,16 @@ async function run() {
     x: request.x, y: request.y, z: request.z, tamed: request.tamed
   } }));
   await act(async () => { tab("gm").click(); });
-  check(element(".ark-creature-spawner__result").textContent?.includes("ID 501:902"),
+  await act(async () => element<HTMLButtonElement>(".shell-activity-expand").click());
+  check(element(".shell-activity-panel").textContent?.includes("ID 501:902"),
     "A native result received on another top-level tab must remain visible on return"); checks++;
   await act(async () => {
     viewProps.selectedDetails = { ...viewProps.selectedDetails!, summary: { ...viewProps.selectedDetails!.summary, id: "ark-other-instance" } };
     viewProps.selectedInstanceId = "ark-other-instance";
     render();
   });
-  check(!fixture.querySelector(".ark-creature-spawner__result"), "Switching instances must not carry the previous creature result"); checks++;
+  check(!fixture.textContent?.includes("ID 501:902"), "Switching instances must not carry the previous creature result"); checks++;
+  await act(async () => element<HTMLButtonElement>(".shell-activity-panel-close").click());
   Object.assign(window, { isTauri: false });
   viewProps.selectedInstanceId = instance.id;
 

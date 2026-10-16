@@ -142,9 +142,9 @@ function buildEnshroudedFieldGroups(
         description: t(
           "enshrouded.settings.groups.adminRoleDescription",
           undefined,
-          "Operator-level password and permissions."
+          "Operator permissions and reserved slots."
         ),
-        keys: ["admin_password", "admin_can_kick_ban", "admin_can_access_inventories", "admin_can_edit_world", "admin_can_edit_base", "admin_can_extend_base", "admin_reserved_slots"]
+        keys: ["admin_can_kick_ban", "admin_can_access_inventories", "admin_can_edit_world", "admin_can_edit_base", "admin_can_extend_base", "admin_reserved_slots"]
       }
     ],
     friend_role: [
@@ -156,7 +156,7 @@ function buildEnshroudedFieldGroups(
           undefined,
           "Collaborator access without full operator power."
         ),
-        keys: ["friend_password", "friend_can_kick_ban", "friend_can_access_inventories", "friend_can_edit_world", "friend_can_edit_base", "friend_can_extend_base", "friend_reserved_slots"]
+        keys: ["friend_can_kick_ban", "friend_can_access_inventories", "friend_can_edit_world", "friend_can_edit_base", "friend_can_extend_base", "friend_reserved_slots"]
       }
     ],
     guest_role: [
@@ -168,7 +168,7 @@ function buildEnshroudedFieldGroups(
           undefined,
           "Temporary access with a smaller edit perimeter."
         ),
-        keys: ["guest_password", "guest_can_kick_ban", "guest_can_access_inventories", "guest_can_edit_world", "guest_can_edit_base", "guest_can_extend_base", "guest_reserved_slots"]
+        keys: ["guest_can_kick_ban", "guest_can_access_inventories", "guest_can_edit_world", "guest_can_edit_base", "guest_can_extend_base", "guest_reserved_slots"]
       }
     ],
     visitor_role: [
@@ -180,7 +180,7 @@ function buildEnshroudedFieldGroups(
           undefined,
           "One-lane access for short event attendance."
         ),
-        keys: ["visitor_password", "visitor_can_kick_ban", "visitor_can_access_inventories", "visitor_can_edit_world", "visitor_can_edit_base", "visitor_can_extend_base", "visitor_reserved_slots"]
+        keys: ["visitor_can_kick_ban", "visitor_can_access_inventories", "visitor_can_edit_world", "visitor_can_edit_base", "visitor_can_extend_base", "visitor_reserved_slots"]
       }
     ],
     moderation: [
@@ -284,7 +284,7 @@ function buildEnshroudedSections(t: TranslateFn): GuidedSettingsSection[] {
       description: t(
         "enshrouded.settings.sections.admin_roleDescription",
         undefined,
-        "The highest-trust password, permissions, and reserved slots for operators."
+        "Permissions and reserved slots for operators. Join passwords are in Room Settings."
       )
     },
     {

@@ -781,10 +781,17 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
               </ConfigurationActionHelp>
             </div>
             {execution.result ? (
-              <ActivityNotice tone={execution.result.error ? "error" : "success"}>
+              <ActivityNotice tone={execution.result.error ? "error" : "info"}>
                 {[gmExecutionText(locale, execution.result),
-                  ...execution.result.responses.map((response) => response.response_text?.replace(/\s+/g, " ").trim()).filter(Boolean)
-                ].join(" · ")}
+                  ...execution.result.responses.map((response) => [response.command,
+                    response.write_confirmation_pending
+                      ? selectLocaleText(locale, "等待写入确认", "Awaiting write confirmation")
+                      : selectLocaleText(locale, "已发送", "Sent"),
+                    response.response_text || selectLocaleText(locale,
+                      "服务器没有返回响应文本，请查看运行日志或游戏内结果。",
+                      "The server returned no response text. Check the runtime log or in-game result.")
+                  ].join(" · "))
+                ].join("\n")}
               </ActivityNotice>
             ) : null}
           </form>

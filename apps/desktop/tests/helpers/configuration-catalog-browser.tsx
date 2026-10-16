@@ -228,6 +228,33 @@ async function run() {
     const { descriptor, schema, model } = await mount("enshrouded", {
       game_settings_preset: "Default", banned_player_ids: retainedBans
     });
+    const rolePasswords = ["admin_password", "friend_password", "guest_password", "visitor_password"];
+    for (const key of rolePasswords) {
+      check(schema.fields.find((field) => field.key === key)?.sectionId === "room",
+        `${key}: join password belongs to Room Settings`);
+      check(fixture.querySelector<HTMLInputElement>(`[data-field-key="${key}"] input`)?.type === "password",
+        `${key}: the initial room form must show a concealed password editor`);
+    }
+    for (const query of ["房间密码", "服务器密码", "加入密码"]) {
+      const toggle = fixture.querySelector<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
+      if (toggle?.getClientRects().length && toggle.getAttribute("aria-expanded") !== "true") {
+        await act(async () => { toggle.click(); });
+      }
+      const search = fixture.querySelector<HTMLInputElement>('.configuration-search input[type="search"]');
+      check(search, "Configuration search must be available");
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(search, query);
+        search.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      const results = [...fixture.querySelectorAll<HTMLButtonElement>(".configuration-search-results button")];
+      check(results.length === 4 && results.every((button) => button.textContent?.includes("房间配置")),
+        `${query}: search must locate all four role passwords in Room Settings`);
+      const friend = results.find((button) => button.textContent?.includes("userGroups.Friend.password"));
+      check(friend, "Search must expose the native Friend role password");
+      await act(async () => { friend.click(); });
+      check(fixture.querySelector('[data-configuration-section-id="room"] > button')?.getAttribute("aria-current") === "page",
+        "Selecting a password search result must open Room Settings");
+    }
     check(Object.keys(JSON.parse(descriptor.schema_json!).properties).length === 75 && schema.fields.length === 74,
       "Enshrouded must retain all 75 modeled fields and 74 configuration editors");
     check(schema.fields.filter((field) => field.sourceKey?.startsWith("gameSettings.")).length === 38,
@@ -242,6 +269,10 @@ async function run() {
     for (const sectionId of model.actionableSectionIds) {
       await selectSection(sectionId);
       configurationFields += verifySection("enshrouded", sectionId, schema).fields;
+      if (sectionId === "access" || sectionId.endsWith("_role")) {
+        check(rolePasswords.every((key) => !fixture.querySelector(`[data-field-key="${key}"]`)),
+          `${sectionId}: permission groups must not duplicate room password editors`);
+      }
     }
     check(configurationFields === 74, "Every configuration editor must appear once");
     const gameplaySections = ["players", "survival", "world", "progression", "combat"];
@@ -270,24 +301,27 @@ async function run() {
       check(fixture.querySelector(`[data-field-key="${key}"]`)?.textContent?.includes("分钟"),
         `${key}: time editor must state minutes`);
     }
-    await verifySaveReadback("enshrouded", "friend_password", "Enshrouded UI review password");
-    check(fixture.querySelector<HTMLInputElement>('[data-field-key="friend_password"] input')?.type === "password",
-      "Role passwords must remain concealed in the permissions configuration");
+    for (const key of rolePasswords) {
+      await verifySaveReadback("enshrouded", key, `Enshrouded UI review ${key}`);
+      check(fixture.querySelector<HTMLInputElement>(`[data-field-key="${key}"] input`)?.type === "password",
+        "Role passwords must remain concealed in Room Settings");
+    }
     const stored = JSON.parse(persisted.get("enshrouded")!.settings_json);
     check(stored.game_settings_preset === "Custom" && stored.banned_player_ids === retainedBans,
       "Configuration saves must retain the explicit preset choice and exact player ban entries");
-    check(saves.length === 5, "Five edits must produce five debounced saves");
-    await selectSection("progression");
+    check(saves.length === 8, "Eight edits must produce eight debounced saves");
+    await selectSection("room");
     const toggle = fixture.querySelector<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
     if (toggle?.getClientRects().length && toggle.getAttribute("aria-expanded") === "true") {
       await act(async () => { toggle.click(); });
     }
-    fixture.querySelector('[data-field-key="flame_level_fog_removal"]')?.scrollIntoView({ block: "center" });
+    fixture.querySelector('[data-field-key="admin_password"]')?.scrollIntoView({ block: "center" });
     await act(async () => { await frame(); });
     check(errors.length === 0, "Browser and React must report no errors");
     return { status: "passed", configuration_fields: configurationFields, gameplay_fields: 38,
       custom_requirement_sections: gameplaySections, preset_requires_explicit_edit: true,
       minute_value_readbacks: { hunger: 15, day: 45, night: 18 }, role_password_save_readback: true,
+      room_password_editors: rolePasswords, password_search_queries: ["房间密码", "服务器密码", "加入密码"],
       exact_bans_preserved: true, setting_save_readbacks: saves.length,
       save_boundary: "synthetic onSave; no server files written", browser_errors: errors };
   }

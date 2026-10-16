@@ -76,7 +76,7 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly }: Props) 
     </div>
     {readOnly ? <p className="form-note" role="status">{t("servers.archives.workspace.restoreForMaintenance")}</p>
       : model.unavailable ? <p className="form-note" role="status">{model.unavailable}</p> : null}
-    <ActivityNotice tone={pending ? "warning" : visible?.sending ? "info" : "success"}>{status ? [status, visible?.response?.response_text?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" · ") : ""}</ActivityNotice>
+    <ActivityNotice tone={pending ? "warning" : "info"}>{status ? [status, visible?.response?.response_text?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" · ") : ""}</ActivityNotice>
     <ActivityNotice tone="error">{visible?.error ?? ""}</ActivityNotice>
   </section>;
 }

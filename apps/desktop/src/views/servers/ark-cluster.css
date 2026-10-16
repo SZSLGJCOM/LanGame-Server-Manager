@@ -27,7 +27,7 @@
   background: var(--theme-badge-bg); color: var(--theme-badge-text); font-size: var(--text-meta); white-space: nowrap; }
 .ark-cluster-port__role { color: var(--shell-muted); }
 .ark-cluster-port code { font-size: var(--text-meta); color: var(--shell-text); }
-.ark-cluster-port small { font-size: 0.85em; color: var(--shell-muted); }
+.ark-cluster-port small { font-size: var(--text-meta); color: var(--shell-muted); }
 .ark-cluster-issues, .ark-cluster-results ul { margin: 0; padding-left: 20px; font-size: var(--text-meta); line-height: var(--leading-body); }
 .ark-cluster-issues code { display: block; }
 .ark-cluster-results { display: grid; gap: 6px; }

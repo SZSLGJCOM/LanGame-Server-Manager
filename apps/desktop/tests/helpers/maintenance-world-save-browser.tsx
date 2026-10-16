@@ -82,6 +82,9 @@ async function run() {
     check(calls.at(-1)?.runtimeActionId === "save_world" && calls.at(-1)?.command === command,
       `${moduleId} must submit the declared save action`);
     check(fixture.textContent?.includes("Native save response"), "Native result must remain visible");
+    check(fixture.querySelector(".immediate-world-save .shell-activity-notice.is-info")
+      && !fixture.querySelector(".immediate-world-save .shell-activity-notice.is-success"),
+      "A save command response must not claim that the world was written to disk");
     last = details; lastModule = module;
   }
   await render({ ...last, summary: { ...last.summary, status: "Stopped", active_process_count: 0 }, active_run: null }, lastModule);

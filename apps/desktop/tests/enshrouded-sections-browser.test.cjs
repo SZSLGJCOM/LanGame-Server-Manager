@@ -23,8 +23,10 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.preset_requires_explicit_edit, true);
     assert.deepEqual(report.minute_value_readbacks, { hunger: 15, day: 45, night: 18 });
     assert.equal(report.role_password_save_readback, true);
+    assert.deepEqual(report.room_password_editors, ["admin_password", "friend_password", "guest_password", "visitor_password"]);
+    assert.deepEqual(report.password_search_queries, ["房间密码", "服务器密码", "加入密码"]);
     assert.equal(report.exact_bans_preserved, true);
-    assert.equal(report.setting_save_readbacks, 5);
+    assert.equal(report.setting_save_readbacks, 8);
     assert.equal(report.save_boundary, "synthetic onSave; no server files written");
     assert.deepEqual(report.browser_errors, []);
     assert.equal(report.browser_exited, true);
