@@ -711,11 +711,11 @@ test("Terraria official 1.4.5.8 package download and serverconfig path-owned key
   assert.match(moduleToml, /args_template = \[\s*\n\s+"\{\{terraria\.launch_args\}\}"/);
   assert.match(moduleToml, /working_directory_template = "\{\{terraria\.working_directory\}\}"/);
 
-  assert.match(ledger, /last_verified = "2026-09-28"/);
+  assert.match(ledger, /last_verified = "2026-10-16"/);
   assert.match(ledger, /official_dedicated_zip_1458/);
   assert.match(ledger, /official_dedicated_zip_1456/);
   assert.match(ledger, /terraria-server-1456\.zip/);
-  assert.match(ledger, /45635619-byte archive/);
+  assert.match(ledger, /45635619 bytes/);
   assert.match(ledger, /SHA256 D75C455AC217FD3434448C8F8251C1347F0875A85C438589DC71B557777E9155/);
   assert.match(ledger, /1456\/Windows\/serverconfig\.txt/);
   assert.match(ledger, /Version 1\.4\.5\.6/);
