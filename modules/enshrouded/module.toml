@@ -33,7 +33,7 @@ port_names = ["query"]
 [player_management]
 status = "persistent_roster"
 planned_surface = "enshrouded_server.json roles and bans"
-reason = "Enshrouded role passwords and banned accounts are materialized into native server JSON. A2S_PLAYER is queried for read-only names when available; live kick, ban, and unban remain without a verified command adapter."
+reason = "Role passwords and banned accounts are written to native server JSON. Read-only player names use A2S responses or continuous current-run join/leave logs checked against live player counts. Live kick, ban, and unban have no verified command adapter."
 verification = "Create an instance, confirm enshrouded_server.json contains the role and bans values, start the server, and verify role/ban behavior in-game. Runtime actions are unavailable because no verified live admin surface is declared."
 
 [runtime.shutdown]

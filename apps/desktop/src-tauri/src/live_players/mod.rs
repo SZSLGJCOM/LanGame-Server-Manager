@@ -1,6 +1,7 @@
 pub(crate) mod astroneer;
 mod barotrauma;
 pub(crate) mod cache;
+pub(crate) mod enshrouded;
 pub(crate) mod file_ipc;
 pub(crate) mod returntomoria;
 pub(crate) mod satisfactory;

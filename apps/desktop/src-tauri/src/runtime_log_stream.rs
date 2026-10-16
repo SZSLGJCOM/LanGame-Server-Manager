@@ -20,6 +20,12 @@ pub struct RuntimeLogTailState {
     managed: bool,
 }
 
+impl RuntimeLogTailState {
+    pub(crate) fn is_discarding_overlong_line(&self) -> bool {
+        self.discarding_overlong_line
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeLogBoundedDelta {
     pub lines: Vec<String>,
