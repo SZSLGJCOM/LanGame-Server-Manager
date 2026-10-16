@@ -1915,7 +1915,7 @@ mod tests {
         let repo_modules_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../modules");
         let modules = discover_modules(&repo_modules_root).expect("discover repo modules");
         let managed_native_window_exceptions = ["sevendaystodie"];
-        let managed_pseudo_console_exceptions = ["barotrauma", "unturned"];
+        let managed_pseudo_console_exceptions = ["barotrauma", "terraria", "unturned"];
 
         assert_eq!(
             modules.len(),
@@ -1990,7 +1990,7 @@ mod tests {
             }
         }
 
-        assert_eq!(managed_terminal_count, 29);
+        assert_eq!(managed_terminal_count, 28);
         assert_eq!(
             managed_pseudo_console_modules,
             managed_pseudo_console_exceptions
