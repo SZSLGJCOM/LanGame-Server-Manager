@@ -22,7 +22,7 @@
 | `conanexiles` | structured | `unban_player` | — | `codec:conan_list_players` |
 | `corekeeper` | read_only | — | `admin`, `block` | `codec:a2s_players` |
 | `dontstarve` | structured | — | `admin`, `allow`, `block` | `codec:dst_client_table_v1` |
-| `enshrouded` | read_only | — | `block` | `codec:a2s_players` |
+| `enshrouded` | read_only | — | `block` | A2S 与当前运行日志 |
 | `humanitz` | read_only | `kick_player` | `admin`, `block`, `priority` | `codec:humanitz_players` |
 | `minecraft` | read_only | `kick_player`, `ban_player`, `unban_player`, `op_player`, `deop_player`, `whitelist_add`, `whitelist_remove` | `admin`, `allow`, `block` | `codec:minecraft_players` |
 | `necesse` | read_only | `check_permission`, `set_permission`, `ban_player`, `unban_player` | `admin` | `codec:necesse_players` |
@@ -65,7 +65,8 @@
 - **Windrose**：安装已验证的 UE4SS 加载器及专用配置后，启动准备部署独立的 `LgsmPlayerQuery` 只读脚本。脚本在游戏线程读取当前世界的 `GameNetDriver.ClientConnections`，逐项关联控制器、玩家状态并与完整 `PlayerArray` 对照；登录未完成、世界切换、无效身份或调度器未响应均不能生成完整名单。桌面通过实例运行目录中的随机请求标识交换读取结果；`PlayerId` 仅作会话标识，行只读。安装要求与版本证据见 `modules/windrose/extensions/`。Windrose+ 的缓存状态、角色回退、存档及邀请码不进入此数据源。
 - **RuneScape: Dragonwilds**：通过独立的 `LgsmPlayerQuery` 读取正式 `L_World` 的当前连接，逐项核对 Dominion 控制器、玩家状态、完整 `PlayerArray` 及游戏的只读 `IsPlayerReady` 检查。使用官方 UE4SS 固定源码自建的 `version.dll` 专服代理，无须复制 Nexus 或 Dev Kit 工具包。只有完整且匹配本轮请求的响应才能成为实时名单；`PlayerId` 仅作会话标识，行只读。安装和构建步骤见 `modules/runescapedragonwilds/extensions/README.md`；原生 A2S 与管理动作仍未接入。
 - **SCUM**：通过独立 `LgsmPlayerQuery` 扩展读取正式 `The_Island` 世界的当前连接，并与完整玩家状态数组交叉核对。官方 UE4SS 加载器需按 `modules/scum/extensions/README.md` 安装；未就绪或扩展不可用时显示错误。名称和会话 ID 只读，不作为 Steam64 或管理目标。原生 A2S 在已测试版本中仍无响应。
-- **Core Keeper、Enshrouded、Sons of the Forest、Unturned、Valheim、V Rising、The Forest、Abiotic Factor**：在已声明的查询端口尝试 A2S_PLAYER。协议只保证名称、分数和在线时长，不保证账号 ID，也不保证每款游戏、平台或服务器设置都会返回名字。返回匿名行、仅人数、拒绝或超时时明确展示对应状态，保留可确认的人数。特别是启用跨平台后，查询行为可能不同；不能把“已接入查询”写成“每服必有名单”。压缩分包暂不支持，失败时不生成空名单。
+- **Enshrouded**：A2S_PLAYER 可能只返回匿名记录。此时从当前受管服务器的连续日志读取玩家加入、退出事件，并与实时 A2S_PLAYER 和 A2S_INFO 人数核对后显示姓名。重名保留为独立记录；名称不作为账号 ID，也不推断在线时长或管理权限。日志缺段、记录不完整或人数不一致时保留可确认的人数，不将历史姓名当成当前完整名单。重新开服会重建名单。
+- **Core Keeper、Sons of the Forest、Unturned、Valheim、V Rising、The Forest、Abiotic Factor**：在已声明的查询端口尝试 A2S_PLAYER。协议只保证名称、分数和在线时长，不保证账号 ID，也不保证每款游戏、平台或服务器设置都会返回名字。返回匿名行、仅人数、拒绝或超时时明确展示对应状态，保留可确认的人数。特别是启用跨平台后，查询行为可能不同；不能把“已接入查询”写成“每服必有名单”。压缩分包暂不支持，失败时不生成空名单。
 
 ## 尚不能建立实时名单的游戏
 

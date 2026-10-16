@@ -1,6 +1,10 @@
 use super::*;
 use crate::live_players::cache::CachedLivePlayerSnapshot;
 
+#[cfg(test)]
+#[path = "live_players/enshrouded_integration_tests.rs"]
+mod enshrouded_integration_tests;
+
 pub(super) async fn collect_direct_players(
     state: &tauri::State<'_, DesktopState>,
     details: &InstanceDetails,
@@ -124,6 +128,16 @@ pub(super) async fn collect_direct_players(
                         false,
                     )
                 })?;
+            if descriptor.summary.id == "enshrouded" {
+                return crate::live_players::enshrouded::collect(
+                    &state.enshrouded_players,
+                    details,
+                    query,
+                    &request_id,
+                    observed_at,
+                )
+                .await;
+            }
             return crate::live_players::server_query::collect_a2s_players(
                 details,
                 query,

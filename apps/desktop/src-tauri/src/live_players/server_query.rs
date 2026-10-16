@@ -20,6 +20,23 @@ pub(crate) async fn collect_a2s_players(
     request_id: &str,
     observed_at: u64,
 ) -> LivePlayerCollectionResult {
+    collect_a2s_player_evidence(details, query, request_id, observed_at)
+        .await
+        .map(|evidence| evidence.snapshot)
+}
+
+pub(super) struct A2sPlayerEvidence {
+    pub snapshot: CachedLivePlayerSnapshot,
+    pub returned_players: usize,
+    pub info: Option<app_storage::QueriedPlayerCount>,
+}
+
+pub(super) async fn collect_a2s_player_evidence(
+    details: &InstanceDetails,
+    query: &ModulePlayerQuerySpec,
+    request_id: &str,
+    observed_at: u64,
+) -> Result<A2sPlayerEvidence, Box<RuntimeLivePlayerSnapshot>> {
     let instance_id = &details.summary.id;
     let source = ModulePlayerListSource::ServerQuery;
     if let Some((setting_key, summary)) = app_storage::steam_player_query_visibility_restriction(
@@ -96,13 +113,11 @@ pub(crate) async fn collect_a2s_players(
             .into());
         }
     };
-    Ok(project_players(
-        instance_id,
-        request_id,
-        observed_at,
-        players,
-        count,
-    ))
+    Ok(A2sPlayerEvidence {
+        returned_players: players.len(),
+        info: count,
+        snapshot: project_players(instance_id, request_id, observed_at, players, count),
+    })
 }
 
 #[derive(Debug)]
