@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import shutil
 import socket
+import ssl
 import subprocess
 import tempfile
 import threading
@@ -310,6 +311,49 @@ class ReleaseSyncTests(unittest.TestCase):
                                if isinstance(handler, sync.urllib.request.ProxyHandler)]
                     self.assertEqual([handler.proxies for handler in proxies], [{}] if provider == "gitcode" else [])
 
+    def test_tls_ceiling_is_opt_in_and_confined_to_all_gitcode_transfers(self):
+        source = self.root / "upload.bin"
+        source.write_bytes(b"fixture")
+        ticket = {"url": "https://bucket.obs.cn-north-4.myhuaweicloud.com/file",
+                  "headers": {"Content-Type": "application/octet-stream"}}
+        for ceiling in (None, "1.2"):
+            for provider, operation in (("github", "api"), ("gitcode", "api"),
+                                        ("github", "download"), ("gitcode", "download"),
+                                        ("gitcode", "upload")):
+                with self.subTest(ceiling=ceiling, provider=provider, operation=operation):
+                    environment = {} if ceiling is None else {"LGSM_GITCODE_TLS_MAX": ceiling}
+                    response = MagicMock()
+                    response.__enter__.return_value.status = 200
+                    response.__enter__.return_value.read.side_effect = [b"fixture", b""] if operation == "download" else [b"{}"]
+                    with patch.dict(sync.os.environ, environment), patch.object(sync.urllib.request, "build_opener") as build:
+                        if ceiling is None:
+                            sync.os.environ.pop("LGSM_GITCODE_TLS_MAX", None)
+                        build.return_value.open.return_value = response
+                        client = sync.Transport()
+                        if operation == "api":
+                            client.api(provider, "GET", "/releases/latest")
+                        elif operation == "download":
+                            target = self.root / f"{ceiling}-{provider}.bin"
+                            client.download(f"https://{provider}.com/fixture", target, 7, digest(b"fixture"), provider)
+                        else:
+                            client.upload(ticket, source)
+                    handlers = [handler for handler in build.call_args.args
+                                if isinstance(handler, sync.urllib.request.HTTPSHandler)]
+                    self.assertEqual(len(handlers), int(ceiling == "1.2" and provider == "gitcode"))
+                    if handlers:
+                        context = handlers[0]._context
+                        self.assertEqual(context.maximum_version, ssl.TLSVersion.TLSv1_2)
+                        self.assertEqual(context.minimum_version, ssl.create_default_context().minimum_version)
+                        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+                        self.assertTrue(context.check_hostname)
+                        self.assertGreater(context.cert_store_stats()["x509_ca"], 0)
+
+    def test_invalid_tls_ceiling_is_rejected_before_transport_use(self):
+        for value in ("", "1.0", "1.1", "1.3", " 1.2", "1.2 ", "default"):
+            with self.subTest(value=value), patch.dict(sync.os.environ, {"LGSM_GITCODE_TLS_MAX": value}):
+                with self.assertRaisesRegex(sync.SyncError, "LGSM_GITCODE_TLS_MAX"):
+                    sync.Transport()
+
     def test_unrelated_upload_origin_or_credential_headers_are_rejected(self):
         client = sync.Transport(gitcode_token="fixture-secret")
         for ticket in ({"url": "https://other.test/upload", "headers": {"Content-Type": "application/octet-stream"}},
@@ -422,6 +466,21 @@ class CurlUploadTests(unittest.TestCase):
         self.assertNotIn("stderr", output.getvalue())
         self.assertEqual(run.call_count, 1)
 
+    def test_tls_ceiling_reaches_curl_upload_without_changing_other_options(self):
+        baseline = sync._curl_command(self.source)
+        completed = subprocess.CompletedProcess([], 0, self.statistics(), b"")
+        for ceiling in (None, "1.2"):
+            environment = {"LGSM_GITCODE_UPLOAD_TRANSPORT": "curl"}
+            if ceiling is not None:
+                environment["LGSM_GITCODE_TLS_MAX"] = ceiling
+            with self.subTest(ceiling=ceiling), patch.dict(sync.os.environ, environment):
+                if ceiling is None:
+                    sync.os.environ.pop("LGSM_GITCODE_TLS_MAX", None)
+                with patch.object(sync.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(io.StringIO()):
+                    sync.Transport().upload({"url": self.url, "headers": self.headers}, self.source)
+            expected = baseline + (["--tls-max", "1.2"] if ceiling else [])
+            self.assertEqual(run.call_args.args[0], expected)
+
     def test_statistics_are_strict_and_unknown_output_is_never_repeated(self):
         invalid = [self.statistics(size_upload=True), self.statistics(size_upload=1.5),
                    self.statistics(speed_upload=float("nan")), self.statistics(time_total=float("inf")),
@@ -503,8 +562,8 @@ class CurlUploadTests(unittest.TestCase):
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         original_command = sync._curl_command
-        def local_command(source):
-            command = original_command(source)
+        def local_command(source, tls_max=None):
+            command = original_command(source, tls_max)
             command[command.index("--proto") + 1] = "=http"
             return command
         try:
