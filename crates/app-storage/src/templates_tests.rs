@@ -1372,7 +1372,7 @@ fn rust_extra_cfg_tokens_cannot_render_managed_identity_directives() {
 }
 
 #[test]
-fn valheim_roster_lists_filter_to_single_platform_id_tokens() {
+fn valheim_roster_lists_preserve_platform_ids_and_exact_character_bans() {
     let mut settings = Map::new();
     settings.insert(
             String::from("admin_list"),
@@ -1383,7 +1383,7 @@ fn valheim_roster_lists_filter_to_single_platform_id_tokens() {
     settings.insert(
         String::from("banned_list"),
         Value::String(String::from(
-            "blocked-player\nblocked-player\nname|note\nname,note\n// comment\nCrossPlay-User",
+            "blocked-player\nblocked-player\nname|note\nname,note\n// comment\nCrossPlay-User\nRaven\nraven\n名字 有空格\nSteam_Player_42\nsteam_player_42\n{{unsafe}}\n#comment",
         )),
     );
     settings.insert(
@@ -1401,11 +1401,13 @@ fn valheim_roster_lists_filter_to_single_platform_id_tokens() {
     );
     assert_eq!(
         lookup_valheim_template_token(&settings, "banned_list_lines"),
-        Some(String::from("blocked-player\nCrossPlay-User"))
+        Some(String::from(
+            "blocked-player\nname|note\nname,note\nCrossPlay-User\nRaven\nraven\n名字 有空格\nSteam_Player_42\nsteam_player_42"
+        ))
     );
     assert_eq!(
         lookup_valheim_template_token(&settings, "permitted_list_lines"),
-        Some(String::from("friend_one\nfriend-three"))
+        Some(String::from("friend_one\nFRIEND_ONE\nfriend-three"))
     );
 }
 

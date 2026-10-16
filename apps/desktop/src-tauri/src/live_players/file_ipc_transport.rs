@@ -81,6 +81,14 @@ pub(super) fn open_directory(root: &Path, path: &Path) -> Result<File, BridgeErr
 }
 
 pub(super) fn read_response(root: &Path, path: &Path) -> Result<Vec<u8>, BridgeError> {
+    read_response_with_limit(root, path, MAX_BYTES)
+}
+
+fn read_response_with_limit(
+    root: &Path,
+    path: &Path,
+    maximum: usize,
+) -> Result<Vec<u8>, BridgeError> {
     if !check_path(root, path)?.is_file() {
         return Err(BridgeError::Io);
     }
@@ -99,14 +107,14 @@ pub(super) fn read_response(root: &Path, path: &Path) -> Result<Vec<u8>, BridgeE
     if !metadata.is_file() || is_reparse(&metadata) {
         return Err(BridgeError::Io);
     }
-    if metadata.len() > MAX_BYTES as u64 {
+    if metadata.len() > maximum as u64 {
         return Err(BridgeError::Limit);
     }
     let mut body = Vec::new();
-    file.take((MAX_BYTES + 1) as u64)
+    file.take((maximum + 1) as u64)
         .read_to_end(&mut body)
         .map_err(file_error)?;
-    if body.len() > MAX_BYTES {
+    if body.len() > maximum {
         return Err(BridgeError::Limit);
     }
     Ok(body)
@@ -117,7 +125,21 @@ pub(super) fn response_for_request(
     path: &Path,
     nonce: &str,
 ) -> Result<Option<Vec<u8>>, BridgeError> {
-    let body = match read_response(root, path) {
+    response_for_request_with_limit(root, path, nonce, MAX_BYTES)
+}
+
+fn response_for_request_with_limit(
+    root: &Path,
+    path: &Path,
+    nonce: &str,
+    maximum: usize,
+) -> Result<Option<Vec<u8>>, BridgeError> {
+    let read = if maximum == MAX_BYTES {
+        read_response(root, path)
+    } else {
+        read_response_with_limit(root, path, maximum)
+    };
+    let body = match read {
         Ok(body) => body,
         Err(BridgeError::Missing | BridgeError::Busy) => return Ok(None),
         Err(error) => return Err(error),
@@ -176,6 +198,23 @@ pub(super) fn publish_request(
     observed_at: u64,
     deadline: Instant,
 ) -> Result<(), BridgeError> {
+    let request = serde_json::json!({"request_id": nonce, "requested_at": observed_at / 1000});
+    publish_body(
+        root,
+        directory,
+        nonce,
+        request.to_string().as_bytes(),
+        deadline,
+    )
+}
+
+fn publish_body(
+    root: &Path,
+    directory: &Path,
+    nonce: &str,
+    body: &[u8],
+    deadline: Instant,
+) -> Result<(), BridgeError> {
     if !valid_nonce(nonce) {
         return Err(BridgeError::Incomplete);
     }
@@ -195,9 +234,7 @@ pub(super) fn publish_request(
     // Ownership starts only after create_new succeeds; a pre-existing path
     // must never be removed by this request's cleanup.
     let temporary = RequestFile(temporary_path);
-    let request = serde_json::json!({"request_id": nonce, "requested_at": observed_at / 1000});
-    file.write_all(request.to_string().as_bytes())
-        .map_err(file_error)?;
+    file.write_all(body).map_err(file_error)?;
     drop(file);
     // Rust rename replaces an existing file on Windows too. Removing the
     // destination first would introduce an unnecessary request-file gap.
@@ -220,22 +257,80 @@ pub(super) fn exchange(
     nonce: &str,
     observed_at: u64,
 ) -> Result<Vec<u8>, BridgeError> {
+    exchange_body(
+        game,
+        pid,
+        identity,
+        nonce,
+        ExchangeRequest::Query(observed_at),
+    )
+}
+
+#[derive(Clone, Copy)]
+enum ExchangeRequest<'a> {
+    Query(u64),
+    DragonwildsControl(&'a [u8]),
+}
+
+/// The caller serializes this instance's collection and moderation under its
+/// lifecycle permit. Control cannot select another game's directory or image.
+pub(crate) fn exchange_dragonwilds_control(
+    pid: u32,
+    identity: &ProcessIdentity,
+    nonce: &str,
+    body: &[u8],
+) -> Result<Vec<u8>, BridgeError> {
+    if body.len() > 2048 {
+        return Err(BridgeError::Limit);
+    }
+    exchange_body(
+        Game::Dragonwilds,
+        pid,
+        identity,
+        nonce,
+        ExchangeRequest::DragonwildsControl(body),
+    )
+}
+
+fn exchange_body(
+    game: Game,
+    pid: u32,
+    identity: &ProcessIdentity,
+    nonce: &str,
+    request: ExchangeRequest<'_>,
+) -> Result<Vec<u8>, BridgeError> {
     let deadline = Instant::now() + TIMEOUT;
     verify_process(pid, identity)?;
     let root = fs::canonicalize(game.install_root(Path::new(&identity.image_path))?)
         .map_err(|_| BridgeError::Io)?;
-    let directory = root.join("langame_player_query");
+    let (directory_name, maximum) = match request {
+        ExchangeRequest::Query(_) => ("langame_player_query", MAX_BYTES),
+        ExchangeRequest::DragonwildsControl(_) => ("langame_player_control", 256 * 1024),
+    };
+    let directory = root.join(directory_name);
     // Extension preparation creates this directory before launch. Its absence
     // never causes a native installation to be changed by a refresh request.
     let _directory = open_directory(&root, &directory)?;
-    publish_request(&root, &directory, nonce, observed_at, deadline)?;
+    match request {
+        ExchangeRequest::Query(observed_at) => {
+            publish_request(&root, &directory, nonce, observed_at, deadline)?
+        }
+        ExchangeRequest::DragonwildsControl(body) => {
+            publish_body(&root, &directory, nonce, body, deadline)?
+        }
+    }
     let response_path = directory.join("response.json");
     loop {
         if Instant::now() >= deadline {
             return Err(BridgeError::Timeout);
         }
         verify_process(pid, identity)?;
-        if let Some(body) = response_for_request(&root, &response_path, nonce)? {
+        let response = if maximum == MAX_BYTES {
+            response_for_request(&root, &response_path, nonce)?
+        } else {
+            response_for_request_with_limit(&root, &response_path, nonce, maximum)?
+        };
+        if let Some(body) = response {
             verify_process(pid, identity)?;
             if Instant::now() >= deadline {
                 return Err(BridgeError::Timeout);

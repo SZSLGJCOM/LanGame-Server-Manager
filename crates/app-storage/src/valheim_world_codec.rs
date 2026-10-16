@@ -2,6 +2,8 @@
 /// BinaryWriter strings. Version 32 adds starting global keys; 41 adds player
 /// history after them. The full package is validated, including history records,
 /// but names, seeds and player identifiers are never returned.
+/// Version 42 retains the version 41 metadata layout, verified against native
+/// World.SaveWorldFWLData/LoadWorld in Steam dedicated-server build 25909431.
 pub(super) fn decode_keys(bytes: &[u8]) -> Result<(i32, Vec<String>, bool), String> {
     let mut reader = Reader { bytes, offset: 0 };
     let length = reader.int()?;
@@ -9,7 +11,7 @@ pub(super) fn decode_keys(bytes: &[u8]) -> Result<(i32, Vec<String>, bool), Stri
         return Err("World metadata package length is invalid.".into());
     }
     let version = reader.int()?;
-    if !(26..=41).contains(&version) {
+    if !(26..=42).contains(&version) {
         return Err(format!(
             "Unsupported Valheim world metadata version: {version}."
         ));

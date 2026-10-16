@@ -62,6 +62,7 @@ pub enum ModulePlayerListCodec {
     WindrosePlayers,
     DragonwildsPlayers,
     ScumPlayers,
+    EnshroudedNativePlayers,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -77,6 +78,8 @@ pub enum RuntimePlayerIdentityKind {
     PalworldUserId,
     MinecraftUuid,
     AstroneerGuid,
+    EnshroudedAccountId,
+    ValheimPlatformId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

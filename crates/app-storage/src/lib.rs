@@ -32,6 +32,9 @@ mod ark_cluster_backups;
 mod ark_clusters;
 mod ark_maps;
 mod atomic_file;
+// Desktop-owned extension updates use the same bounded, synced publication and
+// cooperative compare-and-swap as native configuration writers.
+pub use atomic_file::{compare_and_swap_file_atomically, create_file_atomically};
 mod backups;
 pub use backups::save_import::{
     InstanceSaveImportChange, InstanceSaveImportPreview, InstanceSaveImportResult,
@@ -60,6 +63,8 @@ mod instance_stored_settings;
 pub use instance_reconciliation::{list_missing_instance_candidates, reconcile_missing_instance};
 pub use instance_stored_settings::read_instance_stored_settings;
 mod enshrouded_bans;
+mod enshrouded_native_receipt;
+pub use enshrouded_native_receipt::record_enshrouded_ban_from_native;
 mod instance_native_settings;
 pub use instance_archive::{
     InstanceArchiveDetails, InstanceRemovalPlan, ensure_program_archive_dependencies,
@@ -76,6 +81,8 @@ mod dragonwilds_save;
 pub use astroneer_saves::read_astroneer_save_catalog;
 mod valheim_world;
 pub use valheim_world::read_valheim_world_rules;
+mod valheim_player_roster;
+pub use valheim_player_roster::materialize_valheim_player_roster;
 mod dragonwilds_world_settings;
 mod instance_file_patch;
 pub use dragonwilds_world_settings::{

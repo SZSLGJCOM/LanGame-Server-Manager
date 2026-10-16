@@ -6,7 +6,9 @@ import type {
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
   InstanceRuntimeOverview,
+  InstanceDetails,
   ModulePlayerActionDetails,
+  RuntimeLivePlayerEntry,
   RuntimeLivePlayerSnapshot
 } from "../../../types";
 import { LivePlayerActionPanel } from "./LivePlayerActionPanel";
@@ -15,7 +17,9 @@ import { LivePlayerTable } from "./LivePlayerTable";
 import type { PlayerAccessRosterCapability } from "./player-access-roster-model";
 import { PlayerAccessRosterList } from "./PlayerAccessRosterList";
 import { SelectedPlayerRosterActions } from "./SelectedPlayerRosterActions";
-import { resolveSelectedRosterIdentity } from "./player-access-selected-target";
+import { SelectedPlayerDetails } from "./SelectedPlayerDetails";
+import { ValheimAccountControlSetup } from "./ValheimAccountControlSetup";
+import { isEnshroudedNativeBanRoster, resolveSelectedRosterIdentity } from "./player-access-selected-target";
 import { matchRosterLivePlayer, rosterEntryPlayer } from "./player-center-selection";
 import type { PlayerAccessState } from "./use-player-access";
 
@@ -38,6 +42,8 @@ interface OnlinePlayersViewProps {
   rosterCapabilities?: PlayerAccessRosterCapability[];
   runtime: InstanceRuntimeOverview | null;
   runtimeAvailable: boolean;
+  instanceDetails?: InstanceDetails;
+  onPrepareValheimControl?: (instanceId: string) => Promise<InstanceDetails>;
   snapshot: RuntimeLivePlayerSnapshot | null;
   t: TranslateFn;
 }
@@ -91,22 +97,60 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const observedAt = formatObservedAt(props.locale, props.snapshot?.observed_at_unix_ms ?? null);
   const declaredPlayerActionIds = [...new Set(props.playerActionIds)]
     .filter((actionId) => props.declaredActions.some((action) => action.id === actionId));
-  // 7DTD's native ban also records its exact result in this persistent roster.
-  const nativeBanField = props.moduleId === "sevendaystodie" && declaredPlayerActionIds.includes("ban_player")
-    ? fields.find((field) => field.key === "blacklist_entries") : undefined;
+  // Native bans record their exact result in the corresponding persistent roster.
+  const nativeBanField = !declaredPlayerActionIds.includes("ban_player") ? undefined
+    : props.moduleId === "sevendaystodie" ? fields.find((field) => field.key === "blacklist_entries")
+      : props.moduleId === "enshrouded" ? fields.find(isEnshroudedNativeBanRoster) : undefined;
+  const enshroudedRoster = fields.find(isEnshroudedNativeBanRoster)
+    ?? props.rosterCapabilities?.find(isEnshroudedNativeBanRoster);
+  function hasEnshroudedExtensionIdentity(player: RuntimeLivePlayerEntry | null): boolean {
+    return props.snapshot?.source === "file_ipc" && Boolean(enshroudedRoster
+      && resolveSelectedRosterIdentity(player, enshroudedRoster));
+  }
+  const enshroudedNativeActionsDeclared = declaredPlayerActionIds.some((id) => id === "kick_player" || id === "ban_player");
+  const inspectedPlayer = matchedLivePlayer ?? selectedPlayer;
+  const enshroudedExtensionIdentityAvailable = inspectedPlayer ? hasEnshroudedExtensionIdentity(inspectedPlayer)
+    : props.presentation.rows.some(hasEnshroudedExtensionIdentity)
+      || (props.snapshot?.source === "file_ipc" && props.presentation.authoritative && props.presentation.rows.length === 0);
   const selectedBanIdentity = nativeBanField
-    ? resolveSelectedRosterIdentity(selectedPlayer, nativeBanField)?.identity : null;
+    ? resolveSelectedRosterIdentity(selectedPlayer, nativeBanField)?.identity
+      ?? (selectedRoster?.field.key === nativeBanField.key ? selectedRoster.entry.key : null) : null;
   const selectedPlayerBanned = selectedBanIdentity && nativeBanField?.entries.some((entry) => entry.key === selectedBanIdentity);
   const actionIds = declaredPlayerActionIds;
-  const runtimePlayer = matchedLivePlayer && selectedPlayerBanned
-    ? { ...matchedLivePlayer, available_action_ids: matchedLivePlayer.available_action_ids.filter((id) => id !== "ban_player") } : matchedLivePlayer;
+  const missingEnshroudedExtensionIdentity = props.moduleId === "enshrouded"
+    && !hasEnshroudedExtensionIdentity(matchedLivePlayer);
+  const enshroudedModerationProtected = props.moduleId === "enshrouded"
+    && matchedLivePlayer?.attributes.some((attribute) => attribute.key === "moderation_immune" && attribute.value === "true");
+  const protectedPlayerReason = props.t("servers.playerCenter.enshrouded.moderationProtected", undefined,
+    "The server protects this player; native permissions do not allow kicking or banning them.");
+  const disabledActionReasons = {
+    ...(selectedPlayerBanned ? { ban_player: props.t("servers.playerCenter.actions.alreadyBanned", undefined, "This player is already in the ban roster.") } : {}),
+    ...(enshroudedModerationProtected ? { kick_player: protectedPlayerReason, ban_player: protectedPlayerReason } : {})
+  };
+  const runtimePlayer = matchedLivePlayer && (selectedPlayerBanned || missingEnshroudedExtensionIdentity || enshroudedModerationProtected)
+    ? { ...matchedLivePlayer, available_action_ids: matchedLivePlayer.available_action_ids.filter((id) =>
+      !missingEnshroudedExtensionIdentity && (!selectedPlayerBanned || id !== "ban_player")
+      && (!enshroudedModerationProtected || (id !== "kick_player" && id !== "ban_player"))) } : matchedLivePlayer;
   const showPlayerPanel = actionIds.length > 0;
   const hasControls = Boolean(showPlayerPanel || props.manualActions || fields.length > 0);
-  const primaryIdentity = selectedPlayer?.identifiers.find((identifier) => identifier.stable)
-    ?? selectedPlayer?.identifiers[0];
+  const showMemberPane = hasControls || props.presentation.tableVisible;
+  const runtimeUnavailableReason = props.readOnly
+    ? props.t("servers.playerCenter.actions.readOnly", undefined, "This workspace is read-only.")
+    : !props.runtimeAvailable
+      ? props.t("servers.playerCenter.actions.serverStopped", undefined, "The server is not running; live actions are unavailable.")
+      : props.error
+        ? props.t("servers.playerCenter.actions.listReadFailed", undefined, "The player list could not be read. Refresh it before retrying.")
+        : !props.presentation.authoritative
+          ? props.t("servers.playerCenter.actions.snapshotNotCurrent", undefined, "The player snapshot is not complete and current. Refresh it before retrying.")
+          : rosterSelection && !runtimePlayer
+            ? props.t("servers.playerCenter.actions.noUniqueOnlineMatch", undefined, "This entry does not uniquely match a current online player.")
+            : missingEnshroudedExtensionIdentity && inspectedPlayer
+              ? props.t("servers.playerCenter.enshrouded.extensionIdentityUnavailable", undefined,
+                "Verified native player identity is unavailable from the Enshrouded extension. Live kick and ban are disabled; the player list remains read-only.")
+              : null;
 
   return (
-    <div className={`player-center-member-layout${hasControls ? "" : " is-read-only"}`}>
+    <div className={`player-center-member-layout${showMemberPane ? "" : " is-read-only"}`}>
       <section className="player-center-list-pane" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")} aria-busy={online && props.loading}>
         <header className="player-center-pane-header">
           <div className="player-center-list-tabs" role="tablist" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")}
@@ -197,21 +241,39 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
         </div>
       </section>
 
-      {hasControls ? <div className="player-center-controls">
+      {showMemberPane ? <div className="player-center-controls">
         <header className="player-center-member-header">
           <span className="player-center-member-avatar" aria-hidden="true"><ShellIcon name="user" /></span>
-          <strong>{props.t("servers.playerCenter.member.ariaLabel", undefined, "Player actions")}</strong>
+          <strong>{props.t("servers.playerCenter.member.detailsAndActions", undefined, "Player details and actions")}</strong>
         </header>
         <div className="player-center-total-controls">
-        {selectedPlayer || selectedRoster ? <div className="player-center-member-heading">
-          <strong title={selectedRoster?.entry.label ?? selectedPlayer?.display_name}>{selectedRoster?.entry.label ?? selectedPlayer?.display_name}</strong>
-          {primaryIdentity ? <span title={primaryIdentity.value}>{primaryIdentity.value}</span> : null}
-        </div> : null}
+        {selectedRoster ? <div className="player-center-member-heading"><strong>{selectedRoster.entry.label}</strong></div>
+          : selectedPlayer ? <SelectedPlayerDetails locale={props.locale} now={props.now} player={selectedPlayer}
+            sessionUnknownReason={props.moduleId === "enshrouded" && props.snapshot?.source === "server_query" ? props.t("servers.playerCenter.enshrouded.sessionUnknown", undefined,
+              "Anonymous query durations cannot be reliably matched to player names, and this roster has no usable join time for this player.") : undefined}
+            stale={!props.presentation.authoritative || Boolean(props.error)} />
+          : <p className="player-center-capability-note">{props.t("servers.playerCenter.member.selectForDetails", undefined, "Select a player or roster entry to view details.")}</p>}
+        {props.moduleId === "enshrouded" ? <p className="player-center-capability-note">
+          {!enshroudedNativeActionsDeclared
+            ? props.t("servers.playerCenter.enshrouded.managementUnavailable", undefined,
+              "Enshrouded has no verified live administration interface connected. Kick and immediate ban are unavailable. Its ban roster uses native accountId values; stop the server before editing, then start it to apply changes.")
+            : !enshroudedExtensionIdentityAvailable
+              ? props.t("servers.playerCenter.enshrouded.extensionIdentityUnavailable", undefined,
+                "Verified native player identity is unavailable from the Enshrouded extension. Live kick and ban are disabled; the player list remains read-only.")
+              : props.t("servers.playerCenter.enshrouded.managementConnected", undefined,
+                "The native extension is connected. Bans and unbans can apply immediately. Stop the server before manually adding native accountId values to the persistent roster.")}
+        </p> : null}
+        {props.moduleId === "valheim" && props.instanceDetails ? <ValheimAccountControlSetup key={props.instanceDetails.summary.id}
+          details={props.instanceDetails} locale={props.locale} readOnly={props.readOnly} onPrepare={props.onPrepareValheimControl}
+          connected={props.presentation.authoritative && (props.snapshot?.source === "file_ipc"
+            || props.presentation.rows.some((player) => player.identifiers.some((identifier) => identifier.kind === "valheim_platform_id" && identifier.stable)))} /> : null}
         {showPlayerPanel ? (
           <LivePlayerActionPanel
             actionIds={actionIds}
-            actionsEnabled={props.runtimeAvailable && !props.error && (rosterSelection ? Boolean(runtimePlayer) : props.presentation.actionsEnabled)}
+            actionsEnabled={!props.readOnly && props.runtimeAvailable && !props.error && (rosterSelection ? Boolean(runtimePlayer) : props.presentation.actionsEnabled)}
             declaredActions={props.declaredActions}
+            disabledReason={runtimeUnavailableReason}
+            disabledActionReasons={disabledActionReasons}
             locale={props.locale}
             onActionCompleted={props.onRefresh}
             onExecute={props.onExecutePlayerAction}
@@ -225,6 +287,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
           suppressedAddFieldKeys={nativeBanField ? [nativeBanField.key] : undefined}
           fields={fields} busyFieldKey={props.access.busyFieldKey}
           disabled={props.access.disabled} locale={props.locale} onMutate={props.access.onMutate}
+          disabledReason={props.access.disabledReason}
           /> : null}
         {props.manualActions?.(true)}
         </div>

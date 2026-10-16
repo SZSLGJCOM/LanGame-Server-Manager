@@ -264,6 +264,8 @@ export const updateInstanceAutostart = (instanceId: string, autostart: boolean) 
   invokeOrMock<InstanceDetails>("update_instance_autostart", { instanceId, autostart });
 export const applyInstancePlayerAccessMutation = (input: InstancePlayerAccessMutationInput) =>
   invokeOrMock<InstancePlayerAccessMutationResult>("apply_instance_player_access_mutation", { input });
+export const prepareValheimPlayerControl = (instanceId: string) =>
+  invokeOrMock<InstanceDetails>("prepare_valheim_player_control", { instanceId });
 export const lookupSteamWorkshopItems = async (ids: string[], locale: string = readPreferredLocale()): Promise<SteamWorkshopLookupItem[]> => {
   const uniqueIds = Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
   const items: SteamWorkshopLookupItem[] = [];

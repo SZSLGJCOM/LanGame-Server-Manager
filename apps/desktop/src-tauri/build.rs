@@ -80,6 +80,125 @@ fn main() {
                 String::from_utf8_lossy(&result.stderr)
             );
         }
+        let script = root.join("scripts/build_enshrouded_control.ps1");
+        println!("cargo:rerun-if-changed={}", script.display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/enshrouded/control").display()
+        );
+        let output = std::path::PathBuf::from(
+            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
+        )
+        .join("enshrouded-control");
+        let mut command = std::process::Command::new("powershell.exe");
+        command
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+            ])
+            .arg(script)
+            .arg("-OutDir")
+            .arg(output);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+        let result = command
+            .output()
+            .expect("failed to start the Enshrouded control builder");
+        if !result.status.success() {
+            panic!(
+                "Enshrouded control build failed:\n{}\n{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+        let script = root.join("scripts/build_valheim_control.ps1");
+        println!("cargo:rerun-if-changed={}", script.display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/valheim/control").display()
+        );
+        let output = std::path::PathBuf::from(
+            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
+        )
+        .join("valheim-control");
+        let mut command = std::process::Command::new("powershell.exe");
+        command
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+            ])
+            .arg(script)
+            .arg("-OutDir")
+            .arg(output);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+        let result = command
+            .output()
+            .expect("failed to start the Valheim control builder");
+        if !result.status.success() {
+            panic!(
+                "Valheim control build failed:\n{}\n{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+        let script = root.join("scripts/build_dragonwilds_player_query.ps1");
+        println!("cargo:rerun-if-changed={}", script.display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/runescapedragonwilds/extensions")
+                .display()
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/runescapedragonwilds/control").display()
+        );
+        let output = std::path::PathBuf::from(
+            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
+        )
+        .join("dragonwilds-player-query");
+        let mut command = std::process::Command::new("powershell.exe");
+        command
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+            ])
+            .arg(script)
+            .arg("-OutDir")
+            .arg(output);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+        let result = command
+            .output()
+            .expect("failed to start the Dragonwilds player query builder");
+        if !result.status.success() {
+            panic!(
+                "Dragonwilds player query build failed:\n{}\n{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
     }
 
     let windows = tauri_build::WindowsAttributes::new()

@@ -482,19 +482,37 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     );
     let materialization_paths = storage.paths.clone();
     let materialization_instance_id = instance_id.clone();
+    let query_reservation = runtime_start_reservation.clone();
+    let query_log_path = prestart_update_log_path.clone();
     let (guards, materialized_instance) =
         spawn_storage_context_task(runtime_start_reservation, async move {
-            let result = if defer_materialization {
-                Ok(instance)
-            } else {
-                materialize_runtime_start_configuration(
-                    materialization_paths,
-                    instance,
-                    remapped_ports,
-                    materialization_instance_id,
-                )
-                .await
-            };
+            // Keep both guards inside the worker through loader publication and
+            // configuration rendering, including caller cancellation.
+            let result = async {
+                Box::pin(super::commands_dragonwilds_player_query::prepare(
+                    &instance,
+                    &query_reservation,
+                    query_log_path.as_deref().map(Path::new),
+                ))
+                .await?;
+                Box::pin(super::commands_dragonwilds_player_control::prepare(
+                    &instance,
+                    query_log_path.as_deref().map(Path::new),
+                ))
+                .await?;
+                if defer_materialization {
+                    Ok(instance)
+                } else {
+                    materialize_runtime_start_configuration(
+                        materialization_paths,
+                        instance,
+                        remapped_ports,
+                        materialization_instance_id,
+                    )
+                    .await
+                }
+            }
+            .await;
             (program_guards, result)
         })
         .await
@@ -517,8 +535,18 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     ensure_module_installed_for_start(&module)?;
     crate::astroneer_console::validate_start_settings(&instance)?;
     super::commands_theforest_control::prepare(storage, &instance).await?;
+    super::commands_enshrouded_control::prepare(storage, &instance).await?;
     let mut launch_plans =
         build_process_launch_plans_for_instance(&storage.settings, &module, &instance)?;
+    // Only a stopped-instance, explicit account-control preparation creates
+    // this ownership marker. Ordinary starts never install or detach programs.
+    if let Some((key, value)) = super::commands_valheim_control::startup_environment(&instance)? {
+        for plan in &mut launch_plans {
+            plan.launch_plan
+                .environment
+                .insert(key.clone(), value.clone());
+        }
+    }
     assign_process_log_paths_with_stamp(&instance, &mut launch_plans, startup_log_stamp);
     if let Some(primary_plan) = launch_plans.first() {
         publish_pending_start_console_log_path(

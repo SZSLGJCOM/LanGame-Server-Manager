@@ -32,11 +32,15 @@ pub(super) fn player_list_spec_from_toml(
             | ModulePlayerListSource::FileIpc
     ) {
         if action_id.is_some()
-            || (response_codec != ModulePlayerListCodec::PalworldPlayers
-                && player_list
-                    .player_action_ids
-                    .as_ref()
-                    .is_some_and(|ids| !ids.is_empty()))
+            || (!matches!(
+                response_codec,
+                ModulePlayerListCodec::PalworldPlayers
+                    | ModulePlayerListCodec::EnshroudedNativePlayers
+                    | ModulePlayerListCodec::DragonwildsPlayers
+            ) && player_list
+                .player_action_ids
+                .as_ref()
+                .is_some_and(|ids| !ids.is_empty()))
         {
             return Err(String::from(
                 "query-only sources must not declare runtime actions",
@@ -115,6 +119,55 @@ pub(super) fn player_list_spec_from_toml(
             .iter()
             .find(|action| action.id == *action_id)
             .ok_or_else(|| format!("player action '{action_id}' is not declared"))?;
+        if response_codec == ModulePlayerListCodec::DragonwildsPlayers {
+            let command = match action_id.as_str() {
+                "kick_player" => "kick {{target}}",
+                "ban_player" => "ban {{target}}",
+                _ => {
+                    return Err(format!(
+                        "Dragonwilds player rows do not support action '{action_id}'"
+                    ));
+                }
+            };
+            if identity_kind != RuntimePlayerIdentityKind::EosId
+                || action.transport != "dragonwilds_native"
+                || action.command_template != command
+                || action.process_key.is_some()
+                || action.port_name.is_some()
+                || action.password_setting_key.is_some()
+                || action.enabled_setting_key.is_some()
+                || !action.destructive
+                || action.target_encoding.as_deref() != Some("raw")
+            {
+                return Err(format!(
+                    "Dragonwilds player action '{action_id}' must use its verified native account contract"
+                ));
+            }
+        }
+        if response_codec == ModulePlayerListCodec::EnshroudedNativePlayers {
+            let command = match action_id.as_str() {
+                "kick_player" => "kick {{target}}",
+                "ban_player" => "ban {{target}}",
+                _ => {
+                    return Err(format!(
+                        "Enshrouded player rows do not support action '{action_id}'"
+                    ));
+                }
+            };
+            if action.transport != "enshrouded_native"
+                || action.command_template != command
+                || action.process_key.is_some()
+                || action.port_name.is_some()
+                || action.password_setting_key.is_some()
+                || action.enabled_setting_key.is_some()
+                || !action.destructive
+                || action.target_encoding.as_deref() != Some("raw")
+            {
+                return Err(format!(
+                    "Enshrouded player action '{action_id}' must use its verified native contract"
+                ));
+            }
+        }
         if response_codec == ModulePlayerListCodec::PalworldPlayers {
             let command = match action_id.as_str() {
                 "kick_player" => "kick {{target}}",
@@ -218,11 +271,17 @@ fn validate_source(
             source == Source::HttpApi && identity == Identity::PlayerName
         }
         Codec::A2sPlayers => source == Source::ServerQuery && identity == Identity::PlayerName,
+        Codec::EnshroudedNativePlayers => {
+            source == Source::FileIpc && identity == Identity::EnshroudedAccountId
+        }
         Codec::BarotraumaPlayers => source == Source::ConsoleLog && identity == Identity::SessionId,
         Codec::ReturnToMoriaPlayers => {
             source == Source::NativeConsole && identity == Identity::PlayerName
         }
-        Codec::WindrosePlayers | Codec::DragonwildsPlayers | Codec::ScumPlayers => {
+        Codec::DragonwildsPlayers => {
+            source == Source::FileIpc && matches!(identity, Identity::SessionId | Identity::EosId)
+        }
+        Codec::WindrosePlayers | Codec::ScumPlayers => {
             source == Source::FileIpc && identity == Identity::SessionId
         }
         Codec::NecessePlayers | Codec::RomesteadPlayers | Codec::TerrariaPlayers => {
@@ -357,6 +416,77 @@ mod tests {
         ] {
             assert!(player_list_spec_from_toml(invalid, &[]).is_err());
         }
+    }
+
+    #[test]
+    fn dragonwilds_actions_require_native_transport_and_stable_account_contract() {
+        let make = |identity| {
+            spec(
+                "file_ipc",
+                "dragonwilds_players",
+                identity,
+                "player_action_ids = ['kick_player']",
+            )
+        };
+        let mut kick = action("dragonwilds_native", "kick {{target}}");
+        kick.id = "kick_player".into();
+        kick.target_required = true;
+        kick.target_encoding = Some("raw".into());
+        kick.destructive = true;
+        assert!(player_list_spec_from_toml(make("eos_id"), &[kick.clone()]).is_ok());
+        assert!(player_list_spec_from_toml(make("session_id"), &[kick.clone()]).is_err());
+        for mutation in 0..5 {
+            let mut invalid = kick.clone();
+            match mutation {
+                0 => invalid.transport = "stdin".into(),
+                1 => invalid.command_template = "kick fixed-name".into(),
+                2 => invalid.target_required = false,
+                3 => invalid.port_name = Some("game".into()),
+                _ => invalid.destructive = false,
+            }
+            assert!(player_list_spec_from_toml(make("eos_id"), &[invalid]).is_err());
+        }
+        let foreign = spec(
+            "file_ipc",
+            "scum_players",
+            "session_id",
+            "player_action_ids = ['kick_player']",
+        );
+        assert!(player_list_spec_from_toml(foreign, &[kick]).is_err());
+    }
+
+    #[test]
+    fn enshrouded_rows_require_native_identity_and_bound_moderation() {
+        let mut native = action("enshrouded_native", "ban {{target}}");
+        native.id = "ban_player".to_owned();
+        native.target_required = true;
+        native.destructive = true;
+        native.target_encoding = Some("raw".to_owned());
+        let list = || {
+            spec(
+                "file_ipc",
+                "enshrouded_native_players",
+                "enshrouded_account_id",
+                "player_action_ids = ['ban_player']",
+            )
+        };
+        assert!(player_list_spec_from_toml(list(), &[native.clone()]).is_ok());
+        for transport in ["stdin", "source_rcon", "palworld_rest"] {
+            let mut invalid = native.clone();
+            invalid.transport = transport.to_owned();
+            assert!(player_list_spec_from_toml(list(), &[invalid]).is_err());
+        }
+        let wrong_identity = spec("file_ipc", "enshrouded_native_players", "steam_id", "");
+        assert!(player_list_spec_from_toml(wrong_identity, &[]).is_err());
+        let wrong_source = spec(
+            "server_query",
+            "enshrouded_native_players",
+            "enshrouded_account_id",
+            "",
+        );
+        assert!(player_list_spec_from_toml(wrong_source, &[]).is_err());
+        native.target_required = false;
+        assert!(player_list_spec_from_toml(list(), &[native]).is_err());
     }
 
     #[test]

@@ -95,6 +95,37 @@ async fn execute_instance_manual_player_action_inner(
         .map(|run| run.run_id)
         .ok_or_else(|| String::from("The server is not running."))?;
 
+    if details.summary.module_id == "runescapedragonwilds" {
+        if action_id != "unban_player" || role.is_some() {
+            return Err(
+                "Only account unban is available without a current Dragonwilds player selection."
+                    .into(),
+            );
+        }
+        let resolved = super::commands_runtime_actions::resolve_declared_runtime_action(
+            &descriptor,
+            action_id,
+            Some(target),
+            None,
+            None,
+            false,
+        )?;
+        state.live_player_registry.invalidate_instance(instance_id);
+        super::commands_dragonwilds_player_control::execute(
+            state,
+            details,
+            resolved.command,
+            _mutation,
+        )
+        .await?;
+        return Ok(ExecuteInstancePlayerActionResult {
+            action_id: action_id.to_owned(),
+            status: RuntimeLivePlayerActionStatus::Sent,
+            executed_at_unix_ms: state.live_player_registry.now_unix_ms(),
+            summary: "The native Dragonwilds unban was confirmed and persisted.".into(),
+        });
+    }
+
     dispatch_after_live_player_authorization_revocation(
         &state.live_player_registry,
         instance_id,

@@ -14,7 +14,7 @@ export function parseValheimWorldRules(value: unknown, instanceId: string, world
   if (record.instance_id !== instanceId || record.world_name !== worldName ||
     !["saved", "new_world", "missing_metadata"].includes(String(record.source)) ||
     !(record.world_version === null || typeof record.world_version === "number" &&
-      Number.isSafeInteger(record.world_version) && record.world_version >= 26 && record.world_version <= 41) ||
+      Number.isSafeInteger(record.world_version) && record.world_version >= 26 && record.world_version <= 42) ||
     !Array.isArray(record.saved_keys) || record.saved_keys.length > 512 ||
     !record.saved_keys.every((key): key is string => typeof key === "string" && key.length <= 1024 && !/[\u0000-\u001f\u007f]/.test(key)) ||
     (record.source === "saved" ? record.world_version === null : record.world_version !== null || record.saved_keys.length !== 0)) {

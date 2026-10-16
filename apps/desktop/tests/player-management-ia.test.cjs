@@ -110,7 +110,7 @@ test("snapshot actions submit only instance, snapshot, player, and action refere
   assert.match(onlinePlayers, /onExecute=\{props\.onExecutePlayerAction\}/);
   assert.match(actionPanel, /!props\.actionIds\.includes\(actionId\) \|\| !player\.available_action_ids\.includes\(actionId\)/);
   assert.match(actionPanel, /const disabled = !props\.actionsEnabled \|\| hasPendingRequest \|\| !props\.player\?\.available_action_ids\.includes\(actionId\)/);
-  assert.match(actionPanel, /return danger \? \([\s\S]*?<InlineConfirmAction/);
+  assert.match(actionPanel, /return <ConfigurationHelp[\s\S]*?\{danger \? \([\s\S]*?<InlineConfirmAction/);
   assert.match(actionPanel, /scopeKey=\{JSON\.stringify\(\[props\.snapshot\?\.instance_id, props\.snapshot\?\.snapshot_id, props\.player\?\.player_key, actionId\]\)\}/);
   assert.doesNotMatch(actionPanel, /window\.confirm/);
 });

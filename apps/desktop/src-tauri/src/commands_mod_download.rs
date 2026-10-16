@@ -5,7 +5,7 @@ const MOD_DOWNLOAD_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 const MOD_DOWNLOAD_STARTUP_ALLOWANCE: Duration = Duration::from_secs(120);
 const MOD_DOWNLOAD_MIN_BYTES_PER_SECOND: u64 = 64 * 1024;
 
-pub(super) fn mod_package_client() -> Result<reqwest::Client, String> {
+pub(in crate::commands) fn mod_package_client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
         .user_agent(concat!("LanGameServerManager/", env!("CARGO_PKG_VERSION")))
         .connect_timeout(Duration::from_secs(20))
@@ -65,7 +65,7 @@ enum ModDownloadDigest {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct ModDownloadIntegrity {
+pub(in crate::commands) struct ModDownloadIntegrity {
     size: u64,
     digest: ModDownloadDigest,
 }
@@ -185,15 +185,15 @@ impl Drop for DownloadedFileCleanup {
 }
 
 #[derive(Clone, Copy)]
-pub(super) struct ModDownloadRequest<'a> {
-    pub(super) download_url: &'a str,
-    pub(super) package_name: &'a str,
-    pub(super) version: &'a str,
-    pub(super) preferred_filename: Option<&'a str>,
-    pub(super) fallback_extension: &'a str,
-    pub(super) integrity: Option<ModDownloadIntegrity>,
-    pub(super) max_bytes: Option<u64>,
-    pub(super) download_root: &'a Path,
+pub(in crate::commands) struct ModDownloadRequest<'a> {
+    pub(in crate::commands) download_url: &'a str,
+    pub(in crate::commands) package_name: &'a str,
+    pub(in crate::commands) version: &'a str,
+    pub(in crate::commands) preferred_filename: Option<&'a str>,
+    pub(in crate::commands) fallback_extension: &'a str,
+    pub(in crate::commands) integrity: Option<ModDownloadIntegrity>,
+    pub(in crate::commands) max_bytes: Option<u64>,
+    pub(in crate::commands) download_root: &'a Path,
 }
 
 enum ModDownloadFailure {
@@ -208,7 +208,7 @@ impl From<String> for ModDownloadFailure {
     }
 }
 
-pub(super) async fn download_mod_site_file_with_limit(
+pub(in crate::commands) async fn download_mod_site_file_with_limit(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
 ) -> Result<PathBuf, String> {

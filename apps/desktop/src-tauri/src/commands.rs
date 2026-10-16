@@ -164,6 +164,12 @@ pub(super) mod commands_module_mutation_locks;
 #[path = "commands_program_storage.rs"]
 pub(crate) mod commands_program_storage;
 pub use commands_program_storage::update_instance_program;
+#[path = "commands_dragonwilds_player_control.rs"]
+mod commands_dragonwilds_player_control;
+#[path = "commands_dragonwilds_player_query.rs"]
+mod commands_dragonwilds_player_query;
+#[path = "commands_enshrouded_control.rs"]
+mod commands_enshrouded_control;
 #[path = "commands_instance_reconciliation.rs"]
 mod commands_instance_reconciliation;
 #[path = "commands_instance_retirement.rs"]
@@ -186,6 +192,12 @@ mod commands_runtime_observability;
 mod commands_runtime_prestart_update;
 #[path = "commands_theforest_control.rs"]
 mod commands_theforest_control;
+#[path = "commands_valheim_control.rs"]
+pub(crate) mod commands_valheim_control;
+#[cfg(test)]
+pub(crate) use commands_dragonwilds_player_query::{
+    prepare_dragonwilds_player_query_probe, verify_dragonwilds_player_query_probe,
+};
 #[path = "commands_runtime_exit.rs"]
 mod runtime_exit;
 use commands_runtime_prestart_update::*;
@@ -1239,7 +1251,7 @@ pub async fn read_dontstarve_mod_configuration_specs(
         .parent()
         .and_then(Path::parent)
         .ok_or_else(|| String::from("instance config path has no instance root"))?;
-    let install_root = app_storage::resolve_instance_private_runtime_root(instance_root)
+    let install_root = app_storage::resolve_instance_runtime_root(instance_root)
         .map_err(|error| error.to_string())?;
     let normalized_locale = locale.unwrap_or_else(|| String::from("en"));
     let steamcmd_root = PathBuf::from(read_steamcmd_status(&storage.settings).root);

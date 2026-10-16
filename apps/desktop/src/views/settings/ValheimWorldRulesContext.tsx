@@ -7,6 +7,8 @@ const Context = createContext<{ state: RuleState; refresh(): Promise<void> } | n
 
 export function ValheimWorldRulesProvider(props: ConfigurationWorkspaceProviderProps) {
   const instanceId = props.details.summary.id;
+  const status = props.details.summary.status;
+  const runId = props.details.active_run?.run_id ?? null;
   let worldName = props.details.summary.name;
   try {
     const settings: unknown = JSON.parse(props.details.settings_json);
@@ -27,7 +29,10 @@ export function ValheimWorldRulesProvider(props: ConfigurationWorkspaceProviderP
       if (generation.current === request) setSnapshot({ identity, state: { status: "error", error: String(error) } });
     }
   }, [identity, instanceId, worldName]);
-  useEffect(() => { void refresh(); return () => { generation.current++; }; }, [refresh]);
+  useEffect(() => {
+    if (status !== "Starting" && status !== "Stopping") void refresh();
+    return () => { generation.current++; };
+  }, [refresh, status, runId]);
   return <Context.Provider value={{ state: snapshot.identity === identity ? snapshot.state : { status: "loading" }, refresh }}>
     {props.children}
   </Context.Provider>;

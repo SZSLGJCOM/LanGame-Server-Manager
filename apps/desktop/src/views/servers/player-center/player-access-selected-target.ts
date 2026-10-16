@@ -26,12 +26,29 @@ function identityValue(player: RuntimeLivePlayerEntry, kinds: RuntimePlayerIdent
   return values.size === 1 ? Array.from(values)[0] : null;
 }
 
+function valheimPlatformIdentity(player: RuntimeLivePlayerEntry): string | null {
+  const identifiers = player.identifiers.filter((identifier) => identifier.kind === "valheim_platform_id");
+  // An unresolved native binding must not silently downgrade an account operation
+  // to a character-name operation, or be filled from a different namespace.
+  if (!identifiers.length || identifiers.some((identifier) => !identifier.stable || !identifier.value
+    || identifier.value !== identifier.value.trim()
+    || !normalizePlayerAccessMutationEntry("valheim_platform_id", identifier.value, {}, "add"))) return null;
+  const values = new Set(identifiers.map((identifier) => identifier.value));
+  return values.size === 1 ? Array.from(values)[0] : null;
+}
+
 export function isPlayerRosterCapability(field: PlayerAccessRosterCapability): boolean {
   const sourceKey = field.property["x-lsgm-source-key"];
   const codec = parsePlayerAccessCodec(field.property);
   return field.property.readOnly !== true && codec !== null && codec !== "minecraft_ip_csv"
     && !/(?:^|_)groups?(?:_|$)/i.test(field.key)
     && !(typeof sourceKey === "string" && /(?:^|\/)groups?$/i.test(sourceKey));
+}
+
+export function isEnshroudedNativeBanRoster(field: PlayerAccessRosterCapability): boolean {
+  return field.key === "banned_player_ids" && parsePlayerAccessCodec(field.property) === "uint64"
+    && field.property["x-lsgm-source"] === "ban_records"
+    && field.property["x-lsgm-source-key"] === "bannedAccounts";
 }
 
 function objectIdentityTarget(player: RuntimeLivePlayerEntry, field: PlayerAccessRosterCapability): Record<string, unknown> | null {
@@ -141,6 +158,13 @@ export function resolveSelectedRosterTarget(
     case "terraria_banlist":
       candidate = identityValue(player, ["player_name"]);
       break;
+    case "valheim_ban":
+      candidate = player.identifiers.some((identifier) => identifier.kind === "valheim_platform_id")
+        ? valheimPlatformIdentity(player) : identityValue(player, ["player_name"]);
+      break;
+    case "valheim_platform_id":
+      candidate = valheimPlatformIdentity(player);
+      break;
     case "plain":
       // Existing name-only rosters have an explicit storage contract; plain text
       // by itself does not declare whether an account ID or player name is expected.
@@ -154,12 +178,14 @@ export function resolveSelectedRosterTarget(
     case "object_identity":
       candidate = objectTarget(player, field);
       break;
-    // Native account hashes, IPs and Valheim platform IDs have no live identity namespace.
+    case "uint64":
+      if (!isEnshroudedNativeBanRoster(field)) return null;
+      candidate = identityValue(player, ["enshrouded_account_id"]);
+      break;
+    // IPs have no live identity namespace.
     // HumanitZ info provides names only; an EOS PUID is not its composite NetID.
     case "humanitz_net_id":
-    case "uint64":
     case "minecraft_ip_csv":
-    case "valheim_platform_id":
       return null;
   }
   if (candidate === null) return null;

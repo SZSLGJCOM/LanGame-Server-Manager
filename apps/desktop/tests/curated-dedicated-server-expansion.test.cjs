@@ -316,13 +316,29 @@ test("curated dedicated-server candidates are wired without exposing unverified 
     assert.match(moduleToml, new RegExp(`^id = "${moduleSpec.id}"$`, "m"));
     assert.match(moduleToml, new RegExp(`^steam_app_id = ${moduleSpec.steamAppId}$`, "m"));
     assert.match(moduleToml, new RegExp(`executable = "${moduleSpec.executable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
-    assert.match(moduleToml, new RegExp(`\\[player_management\\][\\s\\S]*status = "${moduleSpec.id === "romestead" ? "runtime_actions" : "pending_adapter"}"`));
+    const hasRuntimeActions = moduleSpec.id === "romestead" || moduleSpec.id === "runescapedragonwilds";
+    assert.match(moduleToml, new RegExp(`\\[player_management\\][\\s\\S]*status = "${hasRuntimeActions ? "runtime_actions" : "pending_adapter"}"`));
     assert.match(moduleToml, /\[runtime\.player_query\][\s\S]*protocol = "none"/);
     if (moduleSpec.id === "romestead") {
       assert.match(moduleToml, /response_codec = "romestead_players"/);
       assert.match(moduleToml, /player_action_ids = \[\]/);
       assert.match(moduleToml, /command_template = "list"/);
       assert.doesNotMatch(moduleToml, /command_template = "(?:kick|ban|unban) /);
+    } else if (moduleSpec.id === "runescapedragonwilds") {
+      const playerList = moduleToml.match(/\[runtime\.player_list\]([\s\S]*?)(?=\n\[|$)/)?.[1];
+      assert.ok(playerList, "Dragonwilds player list contract missing");
+      assert.match(playerList, /^source = "file_ipc"$/m);
+      assert.match(playerList, /^response_codec = "dragonwilds_players"$/m);
+      assert.match(playerList, /^identity_kind = "eos_id"$/m);
+      assert.match(playerList, /^player_action_ids = \["kick_player", "ban_player"\]$/m);
+      const actions = moduleToml.split("[[runtime.player_actions]]").slice(1);
+      assert.deepEqual(actions.map((action) => action.match(/^id = "([^"]+)"$/m)?.[1]),
+        ["kick_player", "ban_player", "unban_player"]);
+      for (const [index, command] of ["kick", "ban", "unban"].entries()) {
+        assert.match(actions[index], /^transport = "dragonwilds_native"$/m);
+        assert.match(actions[index], new RegExp(`^command_template = "${command} \\{\\{target\\}\\}"$`, "m"));
+        assert.match(actions[index], /^target_required = true$/m);
+      }
     } else {
       assert.doesNotMatch(moduleToml, /\[\[runtime\.player_actions\]\]/);
     }

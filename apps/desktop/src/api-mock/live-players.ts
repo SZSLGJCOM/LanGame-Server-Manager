@@ -96,6 +96,7 @@ function parseCodec(value: string | null): ModulePlayerListCodec | null {
     case "windrose_players":
     case "dragonwilds_players":
     case "scum_players":
+    case "enshrouded_native_players":
     case "a2s_players":
       return value;
     default: return null;
@@ -114,6 +115,7 @@ function parseIdentityKind(value: string | null): RuntimePlayerIdentityKind | nu
     case "palworld_user_id":
     case "minecraft_uuid":
     case "astroneer_guid":
+    case "enshrouded_account_id":
       return value;
     default: return null;
   }
@@ -147,8 +149,31 @@ export function parseMockPlayerListFromModuleToml(moduleId: string): ModulePlaye
 
 function declaredRowActions(context: MockLivePlayerContext): string[] {
   const capability = context.player_list;
+  if (context.module_id === "runescapedragonwilds") {
+    return capability?.source === "file_ipc" && capability.response_codec === "dragonwilds_players"
+      && capability.identity_kind === "eos_id"
+      ? capability.player_action_ids.filter((id) => id === "kick_player" || id === "ban_player") : [];
+  }
   return !capability || capability.source === "server_query" || capability.source === "console_log"
     ? [] : capability.player_action_ids;
+}
+
+function dragonwildsRowAuthorized(entry: RuntimeLivePlayerEntry, entries: RuntimeLivePlayerEntry[]): boolean {
+  const accounts = entry.identifiers.filter((identity) => identity.kind === "eos_id");
+  const sessions = entry.identifiers.filter((identity) => identity.kind === "session_id");
+  const account = accounts[0];
+  const session = sessions[0];
+  if (accounts.length !== 1 || !account?.stable || !/^[0-9a-f]{32}$/.test(account.value)
+    || sessions.length !== 1 || !session || session.stable || !/^(0|[1-9][0-9]{0,9})$/.test(session.value)
+    || Number(session.value) > 2_147_483_647) return false;
+  return entries.filter((candidate) => candidate.identifiers.some((identity) => identity.kind === "eos_id" && identity.value === account.value)).length === 1
+    && entries.filter((candidate) => candidate.identifiers.some((identity) => identity.kind === "session_id" && identity.value === session.value)).length === 1;
+}
+
+function snapshotLifetime(context: MockLivePlayerContext): number {
+  const requested = context.player_list?.refresh_interval_ms ?? 30_000;
+  return context.module_id === "runescapedragonwilds" && context.player_list?.identity_kind === "eos_id"
+    ? Math.min(requested, 15_000) : requested;
 }
 
 function sampleEntries(context: MockLivePlayerContext): RuntimeLivePlayerEntry[] {
@@ -167,13 +192,30 @@ function sampleEntries(context: MockLivePlayerContext): RuntimeLivePlayerEntry[]
     palworld_user_id: ["steam_76561198000000001", "steam_76561198000000002"],
     minecraft_uuid: ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"],
     astroneer_guid: ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"],
+    // Synthetic platform-3 pairs checked against native_account_hash.json;
+    // these preview values do not establish that a native extension is running.
+    enshrouded_account_id: ["7105925790711809417", "10863749286127979488"],
+    valheim_platform_id: ["Steam_76561198000000001", "Xbox_NativeAccount_A7"],
     player_name: ["HostAlice", "Bob"]
   };
+  function sampleIdentities(index: 0 | 1): RuntimeLivePlayerEntry["identifiers"] {
+    if (namesOnly) return [];
+    const identities: RuntimeLivePlayerEntry["identifiers"] = [
+      { kind: identityKind, value: sampleIdentifiers[identityKind][index], stable: stableIdentity }
+    ];
+    if (identityKind === "enshrouded_account_id") identities.push({
+      kind: "steam_id", value: ["76561197960265729", "76561200107749375"][index], stable: true
+    });
+    if (context.module_id === "runescapedragonwilds" && identityKind === "eos_id") identities.push({
+      kind: "session_id", value: sampleIdentifiers.session_id[index], stable: false
+    });
+    return identities;
+  }
   const samples: RuntimeLivePlayerEntry[] = [
     {
       player_key: "unbound:1",
       display_name: "HostAlice",
-      identifiers: namesOnly ? [] : [{ kind: identityKind, value: sampleIdentifiers[identityKind][0], stable: stableIdentity }],
+      identifiers: sampleIdentities(0),
       available_action_ids: [...actionIds],
       ping_ms: null,
       session_started_at_unix_ms: null,
@@ -183,7 +225,7 @@ function sampleEntries(context: MockLivePlayerContext): RuntimeLivePlayerEntry[]
     {
       player_key: "unbound:2",
       display_name: "Bob",
-      identifiers: namesOnly ? [] : [{ kind: identityKind, value: sampleIdentifiers[identityKind][1], stable: stableIdentity }],
+      identifiers: sampleIdentities(1),
       available_action_ids: [...actionIds],
       ping_ms: null,
       session_started_at_unix_ms: null,
@@ -297,7 +339,7 @@ export class MockLivePlayerStore {
       const failed = this.buildSnapshot(context, {
         status: "failed",
         observedAt,
-        expiresAt: observedAt + (context.player_list?.refresh_interval_ms ?? 30_000),
+        expiresAt: observedAt + snapshotLifetime(context),
         complete: false,
         truncated: collected.truncated,
         stale: Boolean(previous),
@@ -312,7 +354,7 @@ export class MockLivePlayerStore {
     const ready = this.buildSnapshot(context, {
       status: "ready",
       observedAt,
-      expiresAt: observedAt + (context.player_list?.refresh_interval_ms ?? 30_000),
+      expiresAt: observedAt + snapshotLifetime(context),
       complete: true,
       truncated: false,
       stale: false,
@@ -323,7 +365,8 @@ export class MockLivePlayerStore {
     ready.entries = ready.entries.map((entry, index) => ({
       ...entry,
       player_key: `player:${ready.snapshot_id}:${index + 1}`,
-      available_action_ids: entry.available_action_ids.filter((id) => declaredRowActions(context).includes(id))
+      available_action_ids: context.module_id === "runescapedragonwilds" && !dragonwildsRowAuthorized(entry, ready.entries)
+        ? [] : entry.available_action_ids.filter((id) => declaredRowActions(context).includes(id))
     }));
     this.snapshots.set(context.instance_id, clone(ready));
     this.lastSuccessfulSnapshots.set(context.instance_id, clone(ready));

@@ -31,10 +31,10 @@ protocol = "a2s_info"
 port_names = ["query"]
 
 [player_management]
-status = "persistent_roster"
-planned_surface = "enshrouded_server.json roles and bans"
-reason = "Role passwords and banned accounts are written to native server JSON. Read-only player names use A2S responses or continuous current-run join/leave logs checked against live player counts. Live kick, ban, and unban have no verified command adapter."
-verification = "Create an instance, confirm enshrouded_server.json contains the role and bans values, start the server, and verify role/ban behavior in-game. Runtime actions are unavailable because no verified live admin surface is declared."
+status = "runtime_actions"
+planned_surface = "instance-owned enshrouded_native file_ipc identity and moderation; persistent enshrouded_server.json roster"
+reason = "The fingerprinted native extension captures the server's own copied player identities and dispatches moderation on its server thread, preserving native protection. Ban and unban require canonical bannedAccounts readback; kick and ban require confirmed departure. Unknown builds or unavailable extensions retain read-only query/log names."
+verification = "Read the file_ipc player list through the enshrouded_native command surface, verify executable identity, native-copy generation and protected targets, then test ban, rejected reconnect and unban recovery with a disposable account. Confirm canonical bannedAccounts in enshrouded_server.json; native function return alone is not confirmation."
 
 [runtime.shutdown]
 grace_period_ms = 15000
@@ -45,7 +45,7 @@ command = "CTRL_C"
 wait_after_ms = 12000
 
 [storage]
-runtime_copy_exclusions = ["enshrouded_server.json", "mods"]
+runtime_copy_exclusions = ["enshrouded_server.json", "mods", ".langame-enshrouded-control", ".langame-enshrouded-control-owner.json"]
 saves_path_template = "{{paths.instance_root}}/savegame"
 retained_paths = ["enshrouded_server.json"]
 
@@ -65,7 +65,50 @@ role = "player"
 port_names = ["query"]
 
 [runtime.player_list]
-source = "server_query"
-response_codec = "a2s_players"
-identity_kind = "player_name"
-refresh_interval_ms = 30000
+source = "file_ipc"
+response_codec = "enshrouded_native_players"
+identity_kind = "enshrouded_account_id"
+player_action_ids = ["kick_player", "ban_player"]
+refresh_interval_ms = 15000
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick player"
+label_zh_cn = "踢出玩家"
+target_label = "Current native accountId"
+target_label_zh_cn = "当前原生账号 accountId"
+target_placeholder = "Select the current player from the verified online list"
+target_placeholder_zh_cn = "从已验证在线名单选择当前玩家"
+transport = "enshrouded_native"
+command_template = "kick {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban player"
+label_zh_cn = "封禁玩家"
+target_label = "Current native accountId"
+target_label_zh_cn = "当前原生账号 accountId"
+target_placeholder = "Select the current player from the verified online list"
+target_placeholder_zh_cn = "从已验证在线名单选择当前玩家"
+transport = "enshrouded_native"
+command_template = "ban {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban native accountId"
+label_zh_cn = "解除原生账号封禁"
+target_label = "Native accountId"
+target_label_zh_cn = "原生 accountId"
+target_placeholder = "Account ID from the native ban roster"
+target_placeholder_zh_cn = "原生黑名单中的 accountId"
+transport = "enshrouded_native"
+command_template = "unban {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true

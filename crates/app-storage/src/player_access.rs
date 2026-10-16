@@ -16,9 +16,10 @@ use crate::player_access_delimited::{
     player_access_text_accepts_comma, split_player_access_text_entries,
 };
 use crate::player_access_normalization::{
-    is_humanitz_net_id, is_stored_humanitz_identity, normalize_ark_account_id,
-    normalize_dst_klei_id, normalize_module_player_access_settings_strict,
-    normalize_terraria_banlist_entry, normalize_uint64_id, normalize_valheim_platform_id,
+    canonical_valheim_ban_identity, is_humanitz_net_id, is_stored_humanitz_identity,
+    normalize_ark_account_id, normalize_dst_klei_id,
+    normalize_module_player_access_settings_strict, normalize_terraria_banlist_entry,
+    normalize_uint64_id, normalize_valheim_ban_entry, normalize_valheim_platform_id,
 };
 use crate::save_paths::load_module_descriptor;
 use crate::{StorageError, StoragePaths, read_instance_details};
@@ -111,6 +112,7 @@ enum PlayerAccessCodec {
     BarotraumaAccount,
     DstKleiId,
     ValheimPlatformId,
+    ValheimBan,
     ObjectIdentity,
 }
 
@@ -129,6 +131,7 @@ impl PlayerAccessCodec {
             Self::BarotraumaAccount => "barotrauma_account",
             Self::DstKleiId => "dst_klei_id",
             Self::ValheimPlatformId => "valheim_platform_id",
+            Self::ValheimBan => "valheim_ban",
             Self::ObjectIdentity => "object_identity",
         }
     }
@@ -545,6 +548,7 @@ fn parse_codec(
         "barotrauma_account" => Ok(PlayerAccessCodec::BarotraumaAccount),
         "dst_klei_id" => Ok(PlayerAccessCodec::DstKleiId),
         "valheim_platform_id" => Ok(PlayerAccessCodec::ValheimPlatformId),
+        "valheim_ban" => Ok(PlayerAccessCodec::ValheimBan),
         "object_identity" => Ok(PlayerAccessCodec::ObjectIdentity),
         codec => Err(invalid_player_access_input(
             module_id,
@@ -917,8 +921,15 @@ fn normalize_entry(
                     "valheim_platform_id must be one platform ID token without whitespace, comma, or pipe delimiters",
                 )
             })?;
-            Ok(normalized_string_entry(&platform_id, &platform_id))
+            Ok(normalized_valheim_platform_entry(platform_id))
         }
+        PlayerAccessCodec::ValheimBan => normalized_valheim_ban_entry(value).ok_or_else(|| {
+            invalid_player_access_input(
+                module_id,
+                field_key,
+                "valheim_ban must be one platform ID or exact character name of at most 256 characters without control/template syntax or comment prefixes",
+            )
+        }),
         PlayerAccessCodec::ObjectIdentity => unreachable!(),
     }
 }
@@ -928,6 +939,23 @@ fn normalized_string_entry(stored: &str, identity: &str) -> NormalizedEntry {
         stored: Value::String(stored.to_string()),
         canonical_identity: canonical_text(identity),
         live_target: identity.to_string(),
+    }
+}
+
+fn normalized_valheim_ban_entry(value: &str) -> Option<NormalizedEntry> {
+    let value = normalize_valheim_ban_entry(value)?;
+    Some(NormalizedEntry {
+        canonical_identity: canonical_valheim_ban_identity(&value),
+        live_target: value.clone(),
+        stored: Value::String(value),
+    })
+}
+
+fn normalized_valheim_platform_entry(value: String) -> NormalizedEntry {
+    NormalizedEntry {
+        canonical_identity: value.clone(),
+        live_target: value.clone(),
+        stored: Value::String(value),
     }
 }
 
@@ -1581,8 +1609,9 @@ fn normalize_existing_entry(
         }
         PlayerAccessCodec::ValheimPlatformId => {
             let platform_id = normalize_valheim_platform_id(value)?;
-            Some(normalized_string_entry(&platform_id, &platform_id))
+            Some(normalized_valheim_platform_entry(platform_id))
         }
+        PlayerAccessCodec::ValheimBan => normalized_valheim_ban_entry(value),
         PlayerAccessCodec::ObjectIdentity => unreachable!(),
     }
 }
@@ -2071,6 +2100,129 @@ mod tests {
         )
         .expect("EOS identity");
         assert_ne!(eos.canonical_identity, normalized.canonical_identity);
+    }
+
+    #[test]
+    fn valheim_bans_keep_exact_character_names_and_reject_unsafe_entries() {
+        let schema = field_schema(json!({"type":"string","format":"textarea"}));
+        for value in [
+            "Raven",
+            "raven",
+            "名字 有空格",
+            "Name,with|punctuation",
+            &"界".repeat(256),
+        ] {
+            let normalized = normalize_entry(
+                "valheim",
+                "banned_list",
+                PlayerAccessCodec::ValheimBan,
+                &schema,
+                PlayerAccessMutationOperation::Add,
+                &json!(value),
+            )
+            .expect("native character-name ban");
+            assert_eq!(normalized.stored, json!(value));
+            assert_eq!(normalized.canonical_identity, value);
+        }
+        for invalid in [
+            "",
+            " ",
+            "Name\nOther",
+            "Name\r",
+            "Name\t",
+            "Name\u{85}",
+            "{{Name}}",
+            "Name}}",
+            "#comment",
+            "//comment",
+            &"界".repeat(257),
+        ] {
+            assert!(
+                normalize_entry(
+                    "valheim",
+                    "banned_list",
+                    PlayerAccessCodec::ValheimBan,
+                    &schema,
+                    PlayerAccessMutationOperation::Add,
+                    &json!(invalid),
+                )
+                .is_err(),
+                "unsafe name was accepted: {invalid:?}"
+            );
+        }
+        let entry = normalize_entry(
+            "valheim",
+            "banned_list",
+            PlayerAccessCodec::ValheimBan,
+            &schema,
+            PlayerAccessMutationOperation::Remove,
+            &json!("Raven"),
+        )
+        .expect("remove exact name");
+        let patched = patch_field_value(
+            "valheim",
+            "banned_list",
+            PlayerAccessCodec::ValheimBan,
+            &schema,
+            PlayerAccessMutationOperation::Remove,
+            &json!("Steam_Previous\nRaven\nraven\n名字 有空格\n{{retained}}"),
+            &entry,
+        )
+        .expect("remove only the exact case-sensitive name");
+        assert_eq!(
+            patched.value,
+            json!("Steam_Previous\nraven\n名字 有空格\n{{retained}}")
+        );
+    }
+
+    #[test]
+    fn valheim_ban_account_targets_share_existing_platform_conflict_identity() {
+        let schema = field_schema(json!({"type":"string","format":"textarea"}));
+        for (value, previous) in [
+            ("Steam_Player_42", "Steam_Player_42"),
+            ("PlayFab_AbC", "PlayFab_AbC"),
+            ("Xbox_Banned_7", "Xbox_Banned_7"),
+            ("76561198000000001", "76561198000000001"),
+        ] {
+            let banned = normalize_entry(
+                "valheim",
+                "banned_list",
+                PlayerAccessCodec::ValheimBan,
+                &schema,
+                PlayerAccessMutationOperation::Add,
+                &json!(value),
+            )
+            .expect("platform ban target");
+            let platform = normalize_entry(
+                "valheim",
+                "admin_list",
+                PlayerAccessCodec::ValheimPlatformId,
+                &schema,
+                PlayerAccessMutationOperation::Add,
+                &json!(previous),
+            )
+            .expect("existing platform target");
+            assert_eq!(banned.canonical_identity, platform.canonical_identity);
+            assert_eq!(banned.canonical_identity, value);
+            assert_eq!(banned.stored, json!(value));
+        }
+        assert_eq!(
+            parse_codec(
+                "valheim",
+                "banned_list",
+                &field_schema(json!({
+                    "x-lsgm-player-access-codec":"valheim_ban"
+                }))
+            )
+            .expect("declared ban codec"),
+            PlayerAccessCodec::ValheimBan
+        );
+        assert_eq!(canonical_valheim_ban_identity("Raven"), "Raven");
+        assert_ne!(
+            canonical_valheim_ban_identity("Raven"),
+            canonical_valheim_ban_identity("raven")
+        );
+        assert!(normalize_valheim_platform_id("名字 有空格").is_none());
     }
 
     #[test]

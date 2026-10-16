@@ -38,6 +38,7 @@ interface PlayerCenterWorkbenchProps {
     input: InstancePlayerAccessMutationInput
   ) => Promise<InstancePlayerAccessMutationResult>;
   onExecutePlayerAction?: (input: ExecuteInstancePlayerActionInput) => Promise<ExecuteInstancePlayerActionResult>;
+  onPrepareValheimControl?: (instanceId: string) => Promise<InstanceDetails>;
   onOpenSettings?: () => void;
   onSaveSettings?: (input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions) => Promise<InstanceDetails | undefined>;
 }
@@ -98,6 +99,8 @@ function PlayerCenterInstance(props: PlayerCenterWorkbenchProps) {
         details={props.details} moduleDetails={props.moduleDetails} kind="permissions"
         locale={locale} t={t} readOnly={props.readOnly} onSaveSettings={props.onSaveSettings} />}
       <OnlinePlayersView
+        instanceDetails={props.details}
+        onPrepareValheimControl={props.onPrepareValheimControl}
         readOnly={props.readOnly}
         moduleId={props.details.summary.module_id}
         declaredActions={declaredActions}

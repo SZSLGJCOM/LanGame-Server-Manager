@@ -255,7 +255,7 @@ test("mock preserves native 7DTD expiry seconds through metadata edits and remov
   }
 });
 
-test("mock rejects declared cross-roster identity conflicts", () => {
+test("mock rejects exact native cross-roster identities without folding Valheim case", () => {
   const { applyMockPlayerAccessMutation } = loadMockPlayerAccess();
   const properties = moduleProperties("valheim");
   const settings = {
@@ -267,10 +267,19 @@ test("mock rejects declared cross-roster identity conflicts", () => {
   assert.throws(() => applyMockPlayerAccessMutation(
     properties.banned_list,
     settings.banned_list,
-    { operation: "add", value: "steam_76561198000000001" },
+    { operation: "add", value: "Steam_76561198000000001" },
     false,
     { fieldKey: "banned_list", properties, settings }
   ), /conflicts with permitted_list/i);
+
+  const differentlyCased = applyMockPlayerAccessMutation(
+    properties.banned_list,
+    settings.banned_list,
+    { operation: "add", value: "steam_76561198000000001" },
+    false,
+    { fieldKey: "banned_list", properties, settings }
+  );
+  assert.equal(differentlyCased.value, "steam_76561198000000001");
 
   const removed = applyMockPlayerAccessMutation(
     properties.permitted_list,

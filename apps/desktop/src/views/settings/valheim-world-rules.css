@@ -1,0 +1,33 @@
+.valheim-world-rules-readback {
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+  padding-top: 20px;
+}
+
+.valheim-world-rules-readback__preset {
+  color: var(--text-muted);
+  font-size: var(--text-meta);
+  margin: 8px 0;
+}
+
+.valheim-world-rules-readback table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-meta);
+  margin-top: 12px;
+}
+
+.valheim-world-rules-readback th,
+.valheim-world-rules-readback td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.valheim-world-rules-readback th {
+  font-weight: var(--font-weight-medium);
+}
+
+.valheim-world-rules-readback thead {
+  color: var(--text-muted);
+}

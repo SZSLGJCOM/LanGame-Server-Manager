@@ -87,7 +87,8 @@ pub(super) async fn refresh_live_players_uncached(
                 ))
             })?;
         verify_collection_process(state, instance_id, run.run_id, process, source)?;
-        let collected = collect_direct_players(state, &details, &descriptor, requested_at).await?;
+        let collected =
+            collect_direct_players(state, &details, &descriptor, requested_at, _mutation).await?;
         verify_collection_process(state, instance_id, run.run_id, process, source)?;
         return Ok(collected);
     }

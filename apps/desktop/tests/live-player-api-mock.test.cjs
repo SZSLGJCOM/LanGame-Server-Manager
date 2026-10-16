@@ -155,6 +155,26 @@ function assertPublicOutputOnly(value) {
   }
 }
 
+test("Enshrouded native preview uses synthetic Steam and accountId pairs from independent evidence", () => {
+  const fixture = JSON.parse(fs.readFileSync(path.resolve(desktopRoot, "../../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json"), "utf8"));
+  const store = new MockLivePlayerStore({ now: () => 1_000 });
+  const snapshot = store.refresh({ instance_id: "enshrouded-native-preview", module_id: "enshrouded", running: true,
+    settings: {}, current_players: 2, max_players: 16, player_list: {
+      scope: "online", source: "file_ipc", action_id: null, player_action_ids: ["kick_player", "ban_player"],
+      response_codec: "enshrouded_native_players", identity_kind: "enshrouded_account_id", refresh_interval_ms: 30_000
+    } });
+  assert.equal(snapshot.status, "ready");
+  assert.equal(snapshot.entries.length, 2);
+  for (const row of snapshot.entries) {
+    const steam = row.identifiers.find((identifier) => identifier.kind === "steam_id");
+    const native = row.identifiers.find((identifier) => identifier.kind === "enshrouded_account_id");
+    const evidence = fixture.cases.find((entry) => entry.platform === 3 && entry.synthetic_platform_id === steam?.value);
+    assert.ok(evidence, "preview Steam identity must belong to a synthetic native vector");
+    assert.equal(native?.value, evidence.native_hash);
+    assert.equal(native?.stable, true);
+  }
+});
+
 test("running DST returns deterministic ready and authoritative-empty snapshots", () => {
   const store = new MockLivePlayerStore({ now: () => 1_000 });
   const initial = store.read(dstContext("dst-ready", 2));

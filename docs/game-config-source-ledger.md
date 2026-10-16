@@ -33,6 +33,6 @@
 | `terraria` | best_effort_verified | 40 | 40 | 9 | 13 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 15 |
 | `unturned` | best_effort_verified | 301 | 301 | 13 | 58 |
-| `valheim` | best_effort_verified | 18 | 18 | 7 | 43 |
+| `valheim` | best_effort_verified | 18 | 18 | 7 | 46 |
 | `vrising` | best_effort_verified | 194 | 197 | 8 | 27 |
 | `windrose` | best_effort_verified | 23 | 23 | 13 | 11 |

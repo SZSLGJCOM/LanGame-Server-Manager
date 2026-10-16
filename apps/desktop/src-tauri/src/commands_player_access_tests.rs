@@ -1,5 +1,28 @@
 use super::*;
 
+#[test]
+fn running_native_unban_preserves_writable_roster_contract() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let modules = discover_modules(&root).unwrap();
+    let mut descriptor = modules
+        .into_iter()
+        .find(|module| module.summary.id == "enshrouded")
+        .unwrap();
+    validate_native_unban_roster(&descriptor).unwrap();
+    let original: Value = serde_json::from_str(descriptor.schema_json.as_ref().unwrap()).unwrap();
+    for (key, value) in [
+        ("readOnly", json!(true)),
+        ("x-lsgm-player-access-codec", json!("steam64")),
+        ("x-lsgm-source-key", json!("otherAccounts")),
+        ("x-lsgm-player-access-kind", json!("admin")),
+    ] {
+        let mut schema = original.clone();
+        schema["properties"]["banned_player_ids"][key] = value;
+        descriptor.schema_json = Some(schema.to_string());
+        assert!(validate_native_unban_roster(&descriptor).is_err(), "{key}");
+    }
+}
+
 fn action(template: &str, encoding: Option<&str>) -> ModulePlayerActionSpec {
     ModulePlayerActionSpec {
         id: String::from("ban"),

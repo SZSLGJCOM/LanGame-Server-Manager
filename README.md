@@ -77,7 +77,7 @@ Server Manager 负责 Windows 开服与运维。同属 [LanGame 聚域游](https
 
 ## 从源码运行
 
-需要 Git、Rust `1.99.0`（MSVC）、Node.js `>=26.10.0 <27`、npm `>=12.2.0 <13`，以及 Python 3.11 以上版本。C++ Build Tools 和 WebView2 的安装方式见 [Tauri 前置条件](https://v2.tauri.app/start/prerequisites/)。
+需要 Git、Rust `1.99.0`（MSVC）、Node.js `>=26.10.0 <27`、npm `>=12.2.0 <13`，以及 Python 3.11 以上版本。C++ Build Tools 和 WebView2 的安装方式见 [Tauri 前置条件](https://v2.tauri.app/start/prerequisites/)。构建内嵌的 Dragonwilds 玩家查询代理还需要 CMake 3.24 以上版本；首次构建会下载并校验固定的代理源码，之后复用构建缓存。普通开服机无需这些构建工具。
 
 <details>
 <summary>展开构建、运行和打包命令</summary>

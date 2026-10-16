@@ -149,15 +149,18 @@ test("Valheim saved rule display is based on native serialized preset and modifi
 });
 
 test("Valheim metadata responses keep saved, new and missing worlds separate and reject stale identity", () => {
-  const ready = { instance_id: "id", world_name: "world", source: "saved", world_version: 41, saved_keys: ["nomap", "future_rule 99"] };
-  assert.deepEqual(parseValheimWorldRules(ready, "id", "world"), ready);
+  const ready = { instance_id: "id", world_name: "world", source: "saved", world_version: 42, saved_keys: ["nomap", "future_rule 99"] };
+  for (const version of [26, 41, 42]) {
+    const response = { ...ready, world_version: version };
+    assert.deepEqual(parseValheimWorldRules(response, "id", "world"), response);
+  }
   for (const source of ["new_world", "missing_metadata"]) {
     const response = { ...ready, source, world_version: null, saved_keys: [] };
     assert.deepEqual(parseValheimWorldRules(response, "id", "world"), response);
   }
   for (const response of [{ ...ready, instance_id: "peer" }, { ...ready, world_name: "peer" },
     { ...ready, source: "guess" }, { ...ready, source: "saved", world_version: null },
-    { ...ready, source: "missing_metadata" }, { ...ready, world_version: 42 },
+    { ...ready, source: "missing_metadata" }, { ...ready, world_version: 25 }, { ...ready, world_version: 43 },
     { ...ready, saved_keys: ["nomap\nunsafe"] }, { ...ready, saved_keys: Array(513).fill("nomap") }]) {
     assert.throws(() => parseValheimWorldRules(response, "id", "world"), /Invalid Valheim/);
   }

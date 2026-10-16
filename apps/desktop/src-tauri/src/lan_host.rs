@@ -694,6 +694,15 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "prepare_valheim_player_control" => boxed_command(|| async move {
+            to_json(
+                commands::commands_valheim_control::prepare_valheim_player_control(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
         "read_valheim_world_rules" => boxed_command(|| async move {
             to_json(
                 commands::commands_valheim_world::read_valheim_world_rules(

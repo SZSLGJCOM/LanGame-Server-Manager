@@ -67,7 +67,7 @@ if (Test-Path -LiteralPath $cache) {
 }
 & cmake -S $buildSource -B $outputRoot -G $Generator -A x64 "-DLGSM_PROXY_SOURCE_DIR=$sourceRoot" "-DUE4SS_PROXY_PATH=$systemDll"
 if ($LASTEXITCODE -ne 0) { throw ('CMake configure failed: ' + $LASTEXITCODE) }
-& cmake --build $outputRoot --config Release --target proxy --parallel 2
+& cmake --build $outputRoot --config Release --target proxy LgsmPlayerControl --parallel 2
 if ($LASTEXITCODE -ne 0) { throw ('CMake build failed: ' + $LASTEXITCODE) }
 
 $runtimeDirectory = Join-Path $outputRoot 'bin/Release'

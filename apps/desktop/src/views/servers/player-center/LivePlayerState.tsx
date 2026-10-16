@@ -59,7 +59,7 @@ function localizedIssueCopy(
       return selectLocaleText(locale, "玩家查询认证失败，请检查远程控制或 API 凭据。", "Player query authentication failed. Check the remote-control or API credentials.");
     case "extension_unavailable":
       if (moduleId === "runescapedragonwilds") {
-        return selectLocaleText(locale, "Dragonwilds 的玩家查询扩展未就绪。请安装兼容的 UE4SS 加载器、专服代理和 LgsmPlayerQuery，重启服务器后刷新。", "The Dragonwilds player-query extension is unavailable. Install a compatible UE4SS loader, dedicated-server proxy and LgsmPlayerQuery, restart the server, and refresh.");
+        return selectLocaleText(locale, "Dragonwilds 的玩家查询扩展未就绪。独立运行副本会在下次启动时自动准备 UE4SS、专服代理和 LgsmPlayerQuery，请查看启动日志；已有加载器或未验证版本需要按扩展说明处理。此提示不表示游戏开服失败。", "The Dragonwilds player-query extension is unavailable. Independent runtimes prepare UE4SS, the dedicated-server proxy and LgsmPlayerQuery on their next start; check the startup log. Existing loaders and unverified builds require the extension instructions. This does not mean the game server failed to start.");
       }
       if (moduleId === "windrose") {
         return selectLocaleText(locale, "Windrose 的玩家查询扩展未就绪。请安装兼容的 UE4SS 加载器并启用 LgsmPlayerQuery，重启服务器后刷新。", "The Windrose player-query extension is unavailable. Install a compatible UE4SS loader, enable LgsmPlayerQuery, restart the server, and refresh.");

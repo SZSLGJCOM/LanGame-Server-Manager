@@ -76,7 +76,7 @@ pub struct DesktopState {
     pub startup_scheduler: Mutex<RuntimeStartupScheduler>,
     pub runtime_restart_scheduler: Mutex<RuntimeRestartScheduler>,
     pub live_player_registry: LivePlayerRegistry,
-    pub(crate) enshrouded_players: crate::live_players::enshrouded::EnshroudedPlayerRegistry,
+    pub(crate) native_player_logs: crate::live_players::native_log::NativePlayerLogRegistry,
     pub(crate) astroneer_health: crate::runtime_astroneer_health::AstroneerHealthRegistry,
     pub(crate) palworld_health: crate::runtime_palworld_health::PalworldHealthRegistry,
     module_sync_lock: tokio::sync::Mutex<()>,
@@ -182,8 +182,7 @@ impl Default for DesktopState {
             startup_scheduler: Mutex::new(RuntimeStartupScheduler::default()),
             runtime_restart_scheduler: Mutex::new(RuntimeRestartScheduler::default()),
             live_player_registry: LivePlayerRegistry::default(),
-            enshrouded_players: crate::live_players::enshrouded::EnshroudedPlayerRegistry::default(
-            ),
+            native_player_logs: crate::live_players::native_log::NativePlayerLogRegistry::default(),
             astroneer_health: crate::runtime_astroneer_health::AstroneerHealthRegistry::default(),
             palworld_health: crate::runtime_palworld_health::PalworldHealthRegistry::default(),
             module_sync_lock: tokio::sync::Mutex::new(()),

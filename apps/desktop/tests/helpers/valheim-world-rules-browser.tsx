@@ -10,6 +10,7 @@ import { ValheimWorldRulesProvider } from "../../src/views/settings/ValheimWorld
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
+import { createValheimNativeTransport, verifyValheimReadback, WorldRulesActivityFixture } from "./valheim-world-rules-readback-checks";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 document.documentElement.dataset.theme = "dark";
@@ -38,13 +39,7 @@ addEventListener("unhandledrejection", (event) => errors.push(String(event.reaso
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
 window.alert = window.confirm = window.prompt = () => { throw new Error("Unexpected native dialog"); };
-let nativeKeys: string[] = [];
-let nativeSource: "saved" | "missing_metadata" = "saved";
-Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: Record<string, unknown>) => {
-  if (command !== "read_valheim_world_rules") throw new Error(`Unexpected native command: ${command}`);
-  return { instance_id: args.instanceId, world_name: args.worldName, source: nativeSource,
-    world_version: nativeSource === "saved" ? 41 : null, saved_keys: structuredClone(nativeKeys) };
-} } });
+const native = createValheimNativeTransport();
 
 const moduleDetails: ModuleDetails = {
   summary: { id: "valheim", name: "Valheim", version: "1.0", install_state: "Installed", supported_platforms: ["windows"] },
@@ -119,7 +114,7 @@ function sameSettings(left: string | undefined, right: string) {
 const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 async function draw(key: string) {
   await act(async () => { root.render(<I18nProvider key={key}><InstanceSettingsSaveProvider>
-    <main className="server-detail-panel" style={{ height: "calc(100vh - 32px)", margin: 16 }}><Workspace /></main>
+    <WorldRulesActivityFixture><Workspace /></WorldRulesActivityFixture>
   </InstanceSettingsSaveProvider></I18nProvider>); });
   const deadline = performance.now() + 5000;
   while (!fixture?.querySelector(".configuration-workspace__body")) {
@@ -249,12 +244,12 @@ async function verifyDisabled(locale: string) {
   const before = disabledPatches;
   const values = settings();
   await act(async () => { root.render(<I18nProvider key={`${locale}-disabled`}>
-    <main className="server-detail-panel configuration-workspace" style={{ height: "calc(100vh - 32px)", margin: 16, padding: 24 }}>
+    <WorldRulesActivityFixture><div className="configuration-workspace" style={{ padding: 24 }}>
       <ValheimWorldRulesProvider details={{ ...instance, settings_json: saved }}>
         <ValheimWorldRulesPanel sectionId="world" details={{ ...instance, settings_json: saved }} moduleDetails={moduleDetails}
           settings={values} disabled onPatch={() => { disabledPatches++; }} />
       </ValheimWorldRulesProvider>
-    </main>
+    </div></WorldRulesActivityFixture>
   </I18nProvider>); await frame(); });
   const states = controlKeys.map((key) => { const input = control(key); return input instanceof HTMLSelectElement ? input.value : input.checked; });
   for (const key of controlKeys) {
@@ -273,9 +268,9 @@ async function verifyMalformed(locale: string, fieldKey: "world_modifiers" | "wo
   malformedReadback = initial;
   const before = malformedPatches.length;
   await act(async () => { root.render(<I18nProvider key={`${locale}-${fieldKey}-malformed`}>
-    <main className="server-detail-panel configuration-workspace" style={{ height: "calc(100vh - 32px)", margin: 16, padding: 24 }}>
+    <WorldRulesActivityFixture><div className="configuration-workspace" style={{ padding: 24 }}>
       <MalformedSettings initial={initial} />
-    </main>
+    </div></WorldRulesActivityFixture>
   </I18nProvider>); await frame(); });
   const group = element<HTMLElement>(`[data-field-key="${fieldKey}"]`);
   const inputs = [...group.querySelectorAll<HTMLInputElement | HTMLSelectElement>("select,input[type='checkbox']")];
@@ -288,8 +283,9 @@ async function verifyMalformed(locale: string, fieldKey: "world_modifiers" | "wo
   await act(async () => { for (const input of inputs) { input.click(); input.labels?.[0]?.click(); } });
   check(malformedPatches.length === before && JSON.stringify(malformedReadback[fieldKey]) === JSON.stringify(invalid),
     `${locale}: clicking disabled ${fieldKey} controls preserves the original array`);
-  const repair = element<HTMLButtonElement>(`[data-field-key="${fieldKey}"] [role="alert"] button`);
+  const repair = element<HTMLButtonElement>('[data-valheim-test-activity] .shell-activity-notice-actions button');
   check(!repair.disabled && Boolean(repair.textContent?.trim()), `${locale}: malformed ${fieldKey} exposes an explicit repair action`);
+  check(!group.querySelector('[role="alert"]'), `${locale}: malformed ${fieldKey} repair feedback uses the activity bar`);
   await act(async () => { repair.click(); });
   check(malformedPatches.length === before + 1 && JSON.stringify(malformedPatches.at(-1)) === JSON.stringify({ [fieldKey]: "" }) &&
     malformedReadback[otherKey] === initial[otherKey] && malformedReadback.future_setting === initial.future_setting,
@@ -314,11 +310,11 @@ async function run() {
     await section("world");
     check(preset().value === "" && modifierKeys.every((key) => modifier(key).value === "") && worldKeys.every((key) => !toggle(key).checked),
       `${locale}: absent startup overrides retain the saved world's rules`);
-    check(preset().selectedOptions[0].textContent?.includes(locale === "zh-CN" ? "标准" : "Normal") &&
-      modifierKeys.every((key) => modifier(key).selectedOptions[0].textContent === (locale === "zh-CN" ? "标准" : "Normal")),
-    `${locale}: metadata-backed normal rules show concrete current choices`);
-    check(!fixture?.textContent?.includes(locale === "zh-CN" ? "沿用预设或存档" : "Use preset or saved rules"),
-      `${locale}: selected rules never use the ambiguous inheritance label`);
+    check(preset().selectedOptions[0].textContent === (locale === "zh-CN" ? "保留存档规则" : "Preserve saved rules") &&
+      modifierKeys.every((key) => modifier(key).selectedOptions[0].textContent === (locale === "zh-CN" ? "不覆盖启动规则" : "No startup override")),
+    `${locale}: configuration controls explicitly preserve saved rules without displaying observed values as overrides`);
+    check(element<HTMLElement>('[data-valheim-readback-rule="combat"]').textContent?.includes(locale === "zh-CN" ? "标准" : "Normal"),
+      `${locale}: concrete native values appear in the separate readback table`);
     check(JSON.stringify([...preset().options].map((option) => option.value)) ===
       JSON.stringify(["", "normal", "casual", "easy", "hard", "hardcore", "immersive", "hammer"]),
     `${locale}: all native presets remain selectable`);
@@ -399,39 +395,9 @@ async function run() {
     await verifyMalformed(locale, "world_modifiers");
     await verifyMalformed(locale, "world_set_keys");
 
-    nativeKeys = ["playerdamage 85", "enemydamage 150", "enemyspeedsize 110", "enemyleveluprate 120", "nomap", "resourcerate 300"];
+    await verifyValheimReadback(root, locale, native, instance, moduleDetails, initialSettings, check);
     saved = JSON.stringify(initialSettings);
-    await draw(`${locale}-native-custom`);
-    await section("world");
-    check(modifier("combat").selectedOptions[0].textContent === (locale === "zh-CN" ? "困难" : "Hard") &&
-      modifier("resources").selectedOptions[0].textContent === (locale === "zh-CN" ? "3 倍" : "3 ×"),
-    `${locale}: the saved custom world's concrete combat and resource choices are displayed`);
-    check(toggle("nomap").checked && toggle("nomap").disabled && !toggle("nobuildcost").checked && !toggle("nobuildcost").disabled,
-      `${locale}: an enabled saved rule stays visibly enabled without an unsupported disable action`);
-    const beforeRead = calls.length;
-    await save();
-    check(calls.length === beforeRead && absent(), `${locale}: reading concrete native rules never creates launch overrides`);
-    await change(preset(), "normal");
-    await save();
-    check(!toggle("nomap").checked && !toggle("nomap").disabled &&
-      fixture?.textContent?.includes(locale === "zh-CN" ? "当前存档：开启 · 重启后：关闭" : "Saved world: On · After restart: Off"),
-    `${locale}: selecting Normal shows the saved-to-startup rule change truthfully`);
-    nativeKeys = ["preset hammer"];
-    saved = JSON.stringify(initialSettings);
-    await draw(`${locale}-native-preset-tag`);
-    await section("world");
-    check(toggle("nobuildcost").checked && toggle("nobuildcost").disabled && toggle("passivemobs").checked &&
-      modifier("raids").selectedOptions[0].textContent === (locale === "zh-CN" ? "无袭击" : "No Raids"),
-    `${locale}: serialized preset tags expand through the native key contract before rendering effective rules`);
-    nativeKeys = [];
-    nativeSource = "missing_metadata";
-    saved = JSON.stringify(initialSettings);
-    await draw(`${locale}-native-missing`);
-    await section("world");
-    check(modifier("combat").selectedOptions[0].textContent === (locale === "zh-CN" ? "尚未读取" : "Not read") &&
-      toggle("nomap").indeterminate && toggle("nomap").disabled,
-    `${locale}: missing metadata is an unknown rule value rather than a fabricated Normal or Off state`);
-    nativeSource = "saved";
+    await draw(`${locale}-password`);
     await verifyPassword(locale);
   }
   await draw("zh-CN-final-preview");

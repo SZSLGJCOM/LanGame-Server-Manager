@@ -86,8 +86,15 @@ async fn player_count_registry_polls_humanitz_collector_with_disabled_rcon() {
     let refresh = state
         .live_player_registry
         .refresh_or_join(key, requested_at, || async {
-            super::sources::collect_direct_players(&state, &details, &descriptor, requested_at)
-                .await
+            let permit = state.acquire_instance_mutation(&details.summary.id).await;
+            super::sources::collect_direct_players(
+                &state,
+                &details,
+                &descriptor,
+                requested_at,
+                permit,
+            )
+            .await
         });
     let snapshot = refresh.await;
 

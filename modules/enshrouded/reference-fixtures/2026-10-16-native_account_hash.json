@@ -1,0 +1,89 @@
+{
+  "verified_on": "2026-10-16",
+  "steam_app_id": 2278520,
+  "server_executable_sha256": "4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba",
+  "method": "Independently disassembled the official executable, traced the platform-account hash through session records into the native ban record, and compared an independent implementation with the mapped native pure function using ten synthetic inputs. The executable was mapped with DONT_RESOLVE_DLL_REFERENCES; no server, entry point, real account, or moderation function was executed.",
+  "hash_function_rva": "0x9f58a0",
+  "hash_function_code_sha256": "0cc3a10a5bcf8859d33b225dcb2448f6a7c3c946e89286238cab4c9256f13f9b",
+  "steam_platform": 3,
+  "algorithm": {
+    "seed": "0x3f63b56db2890a16",
+    "prime": "0x100000001b3",
+    "input": "8 little-endian bytes of the u64 Steam64 value",
+    "step": "h = (h XOR byte) * prime, wrapping modulo 2^64",
+    "no_platform_result": "0"
+  },
+  "evidence_scope": "Native hash computation and static identity/ban-record data flow only. Live identity collection, moderation thread scheduling, actual player rejection and unban recovery require separate integration evidence. Do not substitute a Steam64 number directly for accountId, guess a player identity from log order, or assume compatibility with another executable.",
+  "cases": [
+    {
+      "platform": 3,
+      "synthetic_platform_id": "0",
+      "native_hash": "16416629834108545238",
+      "native_hash_hex": "0xe3d395dae71ea8d6",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "1",
+      "native_hash": "202201167366583031",
+      "native_hash_hex": "0x2ce5ce3f20df2f7",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "4294967295",
+      "native_hash": "5621711285765869554",
+      "native_hash_hex": "0x4e0454a119e10ff2",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "4294967296",
+      "native_hash": "9497601108413277543",
+      "native_hash_hex": "0x83ce41e33d546567",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "18446744073709551615",
+      "native_hash": "14372126887411190606",
+      "native_hash_hex": "0xc7740d41defc0b4e",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "76561197960265729",
+      "native_hash": "7105925790711809417",
+      "native_hash_hex": "0x629d51db9baa0589",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "76561200107749375",
+      "native_hash": "10863749286127979488",
+      "native_hash_hex": "0x96c3ca6ac88fcbe0",
+      "equal": true
+    },
+    {
+      "platform": 3,
+      "synthetic_platform_id": "76561202255233023",
+      "native_hash": "17164730736130194784",
+      "native_hash_hex": "0xee355fa97044fd60",
+      "equal": true
+    },
+    {
+      "platform": 0,
+      "synthetic_platform_id": "0",
+      "native_hash": "0",
+      "native_hash_hex": "0x0",
+      "equal": true
+    },
+    {
+      "platform": 0,
+      "synthetic_platform_id": "76561197960265729",
+      "native_hash": "0",
+      "native_hash_hex": "0x0",
+      "equal": true
+    }
+  ]
+}

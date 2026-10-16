@@ -55,4 +55,4 @@ tauri = { workspace = true, features = ["test"] }
 webview2-com = "=0.39.1"
 # COM interface types must match the windows-core version used by webview2-com.
 windows-core = "=0.62.2"
-windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Pipes", "Win32_System_Threading", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Diagnostics_ToolHelp", "Win32_System_Pipes", "Win32_System_Threading", "Win32_System_SystemInformation", "Win32_UI_WindowsAndMessaging"] }

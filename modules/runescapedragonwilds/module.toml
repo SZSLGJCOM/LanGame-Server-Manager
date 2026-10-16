@@ -42,9 +42,51 @@ protocol = "none"
 scope = "online"
 source = "file_ipc"
 response_codec = "dragonwilds_players"
-identity_kind = "session_id"
+identity_kind = "eos_id"
 refresh_interval_ms = 30000
-player_action_ids = []
+player_action_ids = ["kick_player", "ban_player"]
+
+[[runtime.player_actions]]
+id = "kick_player"
+label = "Kick player"
+label_zh_cn = "踢出玩家"
+target_label = "Current EOS account ID"
+target_label_zh_cn = "当前 EOS 账号 ID"
+target_placeholder = "Select the current player from the verified online list"
+target_placeholder_zh_cn = "从已验证在线名单选择当前玩家"
+transport = "dragonwilds_native"
+command_template = "kick {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true
+
+[[runtime.player_actions]]
+id = "ban_player"
+label = "Ban player"
+label_zh_cn = "封禁玩家"
+target_label = "Current EOS account ID"
+target_label_zh_cn = "当前 EOS 账号 ID"
+target_placeholder = "Select the current player from the verified online list"
+target_placeholder_zh_cn = "从已验证在线名单选择当前玩家"
+transport = "dragonwilds_native"
+command_template = "ban {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true
+
+[[runtime.player_actions]]
+id = "unban_player"
+label = "Unban player"
+label_zh_cn = "解除封禁"
+target_label = "EOS account ID"
+target_label_zh_cn = "EOS 账号 ID"
+target_placeholder = "32 lowercase hexadecimal digits"
+target_placeholder_zh_cn = "32 位小写十六进制账号 ID"
+transport = "dragonwilds_native"
+command_template = "unban {{target}}"
+target_required = true
+target_encoding = "raw"
+destructive = true
 
 [runtime.shutdown]
 grace_period_ms = 15000
@@ -55,13 +97,13 @@ command = "quit"
 wait_after_ms = 12000
 
 [player_management]
-status = "pending_adapter"
-planned_surface = "in_game_server_management"
-reason = "Owner/admin roles and moderation remain in-game; no host-callable kick/ban transport is verified. Online names are independently available through the read-only LgsmPlayerQuery UE4SS extension. Its session identifiers do not authorize moderation. Standard Steam A2S_INFO remains unavailable on the verified QueryPort."
-verification = "Follow extensions/README.md for the verified loader, dedicated-server proxy and read-only player-query script. Keep runtime.player_actions absent until a real host moderation interface and identity binding are verified. Keep runtime.player_query disabled; file_ipc is the separately declared complete roster channel."
+status = "runtime_actions"
+planned_surface = "instance-owned dragonwilds_native file_ipc player moderation extension"
+reason = "The separately owned UE4SS control extension binds online moderation to the current boot, connection and complete EOS account. Kick uses the native authority function; ban and unban use the pinned game build's native moderation state and confirm the game's persisted KnownPlayerList. Owner/admin grants remain in-game. The read-only roster remains available when control has not been prepared."
+verification = "Follow extensions/README.md for loader and control admission. Native capabilities are advertised only after game-thread interface checks; action replies require confirmed effects. Standard Steam A2S_INFO remains unavailable on the verified QueryPort."
 
 [storage]
-runtime_copy_exclusions = ["RSDragonwilds/Saved", "langame_player_query"]
+runtime_copy_exclusions = ["RSDragonwilds/Saved", "langame_player_query", "langame_player_control"]
 saves_path_template = "{{paths.install_root}}/RSDragonwilds/Saved/SaveGames"
 retained_paths = ["RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini"]
 

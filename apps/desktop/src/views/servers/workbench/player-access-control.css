@@ -27,6 +27,10 @@
   display: grid;
 }
 
+.player-access-total-action button:disabled {
+  pointer-events: none;
+}
+
 .player-access-selected-editor .player-access-roster-editor {
   padding: 10px 0 0;
   border-bottom: 0;

@@ -31,6 +31,7 @@ use templates_render_barotrauma::render_barotrauma_config_player_xml;
 #[path = "templates_render_common_games.rs"]
 mod templates_render_common_games;
 pub use templates_render_common_games::projectzomboid_mod_reorder_preserves_ids;
+pub(crate) use templates_render_common_games::render_valheim_platform_id_lines;
 use templates_render_common_games::*;
 #[path = "templates_render_ark.rs"]
 mod templates_render_ark;
@@ -1409,7 +1410,7 @@ fn render_humanitz_net_id_lines(settings: &Map<String, Value>, key: &str) -> Opt
 fn lookup_valheim_template_token(settings: &Map<String, Value>, path: &str) -> Option<String> {
     match path {
         "admin_list_lines" => Some(render_valheim_platform_id_lines(settings, "admin_list")),
-        "banned_list_lines" => Some(render_valheim_platform_id_lines(settings, "banned_list")),
+        "banned_list_lines" => Some(render_valheim_ban_lines(settings, "banned_list")),
         "permitted_list_lines" => {
             Some(render_valheim_platform_id_lines(settings, "permitted_list"))
         }

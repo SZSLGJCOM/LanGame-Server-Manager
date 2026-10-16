@@ -208,14 +208,14 @@
     },
     "banned_list": {
       "type": "string",
-      "title": "Banned Platform IDs",
-      "description": "One platform ID per line. LanGame renders bannedlist.txt and syncs it into the live Valheim save directory.",
+      "title": "Banned Platform IDs or Character Names",
+      "description": "One platform ID or exact, case-sensitive character name per line, up to 256 characters. Name bans also affect matching character names and can be bypassed by renaming. Comment prefixes (#, //), control characters, and template delimiters are unsupported. LanGame renders bannedlist.txt; changes apply on the next server start.",
       "format": "textarea",
       "default": "",
       "x-lsgm-section": "access",
       "x-lsgm-order": 203,
       "x-lsgm-player-access-kind": "block",
-      "x-lsgm-player-access-codec": "valheim_platform_id",
+      "x-lsgm-player-access-codec": "valheim_ban",
       "x-lsgm-player-access-conflicts-with": [
         "admin_list",
         "permitted_list"

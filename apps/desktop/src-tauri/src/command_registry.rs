@@ -122,6 +122,7 @@ register_commands! {
     (write_dragonwilds_world_settings, [crate::commands::commands_dragonwilds_world], Runtime, Allowed, Bounded),
     (read_astroneer_save_catalog, [crate::commands::commands_astroneer_saves], Runtime, Allowed, Bounded),
     (read_valheim_world_rules, [crate::commands::commands_valheim_world], Runtime, Allowed, Bounded),
+    (prepare_valheim_player_control, [crate::commands::commands_valheim_control], Runtime, Allowed, Owned),
     (read_satisfactory_world_settings, [crate::commands::commands_satisfactory_world], Runtime, Allowed, Bounded),
     (setup_satisfactory_server, [crate::commands::commands_satisfactory_world], Runtime, Allowed, Bounded),
     (authorize_satisfactory_server, [crate::commands::commands_satisfactory_world], Runtime, Allowed, Bounded),

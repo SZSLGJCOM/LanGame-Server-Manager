@@ -17,6 +17,27 @@ authority = "read_only_installed_valheim_1_0_world_metadata_and_serialized_ui_co
 description = "2026-10-10: Installed build 25527701, assembly SHA256 7cab9b49d31ec064591ca80402dd35c566e03b7297cfb7bf4696c38da4e24d8b, asset bundle SHA256 f3cc1e6260689671aa42ba07c45e9b09e4df9a11f5632c82980fa7f206144317. World metadata is a length-prefixed ZPackage using BinaryWriter UTF-8 strings; versions 32+ serialize m_startingGlobalKeys, which native rule changes update and the native menu reads. Version 41 supports committed worlds_local/<world>/_main.<number>.fwl2/.db2/.ok generations. LanGame reads bounded ordinary metadata files only, selects the latest committed generation, preserves unknown keys, and exposes no seeds or player history. The checked-in world-rules.json records the native preset and slider key matrices for showing saved values and selected startup presets. Missing metadata is distinct from a new world; neither is silently treated as an existing Normal save. No saved-world file write or live-player acceptance is claimed. The native CLI -setkey is enable-only, so already-enabled saved/preset keys are displayed as enabled with their unsupported individual-disable action unavailable. WorldModifierOption.Default parses but its empty KeySlider keys do not establish a verified standard-reset contract, so no unsupported normal/default launch choice is added."
 
 [[sources]]
+id = "native_world_metadata_20261016"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: World.SaveWorldFWLData / World.LoadWorld / KeySlider.SetKeys"
+authority = "read_only_installed_valheim_build_25909431_and_world_metadata"
+description = "2026-10-16: Installed build 25909431, assembly SHA256 ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3, writes world metadata version 42. SaveWorldFWLData and LoadWorld retain the version 41 length-prefixed package layout, including the four-string player history records. Real local and PAMD version 42 metadata parses completely without trailing bytes. Support is bounded to versions 26-42; unknown future versions remain rejected. Startup configuration and saved readback are separate: absent startup overrides preserve existing rules, reading never fills configuration, and removing a setkey override does not clear a saved rule. KeySlider replaces only keys present in the selected option, so projections retain other existing native keys rather than assuming a whole-modifier reset."
+
+[[sources]]
+id = "native_current_run_player_names_20261016"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: ZNet.RPC_CharacterID / ZNet.ClearPlayerData / ZDOMan.RemovePeer / ZDOMan.RemoveOrphanNonPersistentZDOS"
+authority = "read_only_installed_valheim_1_0_20_and_managed_current_run_log"
+description = "2026-10-16: Installed build 25909431 static IL confirms RPC_CharacterID prints the connected peer's character name and session-local character ZDO ID. RemovePeer removes the peer before orphan cleanup; cleanup logs actual owners only when IsPeerConnected(owner) is false. Current native logs reproduce join, explicit owner cleanup and socket close; saved Player history entries are a distinct source and are ignored. The managed collector supplements missing A2S_PLAYER names only after replaying the complete owned current run, with unchanged membership across A2S collection and matching INFO count; session owners remain private and do not become account identifiers or action permissions. Missing/rotated-away history, pending joins and unattributed departures keep names incomplete. Private Steam and crossplay query availability are not implied."
+
+[[sources]]
+id = "native_character_name_bans_20261016"
+kind = "install_probe"
+path = "valheim_server_Data/Managed/assembly_valheim.dll: ZNet.IsAllowed / ZNet.IsAdmin / ZNet.ListContainsId; assembly_utils.dll: SyncedList.Contains / SyncedList.Load"
+authority = "read_only_installed_valheim_build_25909431_native_access_contract"
+description = "2026-10-16: Installed build 25909431, assembly SHA256 ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3. IsAllowed rejects a banned platform ID or an exact, case-sensitive character-name match; administrator and permitted lists only match platform IDs. SyncedList.Contains uses exact string matching and Load treats // as comments. LanGame's separate valheim_ban codec retains spaces/case in character names, supports existing platform IDs, bounds entries to 256 characters, and rejects controls, template delimiters and unsupported comment-prefixed targets (# or //). Name bans affect matching names and can be bypassed by renaming. Changes are persisted/materialized for the next server start; no real-time kick/ban transport or character-to-account mapping is claimed. The existing admin/permitted platform codec is unchanged."
+
+[[sources]]
 id = "steamcmd_anonymous_app_896660"
 kind = "documentation"
 path = "<validated-install-root>/steamapps/appmanifest_896660.acf"
@@ -73,8 +94,8 @@ url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
 id = "bannedlist_file"
 kind = "generated_roster"
 path = "bannedlist.txt"
-authority = "official_valheim_dedicated_server_guide"
-description = "Valheim banned platform-ID list read from the active save directory. LanGame renders and materializes it into the instance save root."
+authority = "official_valheim_dedicated_server_guide_and_installed_native_access_contract"
+description = "Valheim banned platform-ID or exact character-name list read from the active save directory. Native name matching is case-sensitive; it does not identify an account. LanGame renders/materializes entries preserving character-name spelling for the next server start. See native_character_name_bans_20261016 for the read-only native evidence and entry limits."
 url = "https://valheim.com/support/a-guide-to-dedicated-servers/"
 
 [[sources]]

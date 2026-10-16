@@ -19,7 +19,11 @@ impl Fixture {
         Self { root, log }
     }
     fn tracker(&self) -> TrackedLog {
+        self.tracker_for(Game::Enshrouded)
+    }
+    fn tracker_for(&self, game: Game) -> TrackedLog {
         TrackedLog::new(RunKey {
+            game,
             run_id: 1,
             pid: 123,
             identity: Some((456, "enshrouded_server.exe".into())),
@@ -198,7 +202,7 @@ fn unfinished_utf8_log_line_is_not_an_event_until_newline_arrives() {
 #[test]
 fn run_or_process_generation_changes_discard_previous_names() {
     let fixture = Fixture::new();
-    let registry = EnshroudedPlayerRegistry::default();
+    let registry = NativePlayerLogRegistry::default();
     for variant in 0..4 {
         let mut old = fixture.tracker();
         old.roster
@@ -311,4 +315,246 @@ fn managed_rotation_preserves_names_but_retention_gaps_require_a_new_empty_basel
     let recovered = project(&mut log, 1, &[]).snapshot.public_snapshot;
     assert!(recovered.complete);
     assert_eq!(recovered.entries[0].display_name, "New");
+}
+
+#[test]
+fn valheim_log_uses_only_active_session_names_and_removes_departures() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Player history entry with index 0: Historical (Steam_123, abc)\n10/16/2026 20:55:39: Server: New peer connected,sending global keys\n10/16/2026 20:55:39: Got character ZDOID from Current : 42:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    let first = project(&mut log, 1, &[]).snapshot.public_snapshot;
+    assert!(first.complete);
+    assert_eq!(first.entries[0].display_name, "Current");
+    assert_eq!(first.entries[0].identifiers.len(), 1);
+    assert_eq!(
+        first.entries[0].identifiers[0].kind,
+        RuntimePlayerIdentityKind::PlayerName
+    );
+    assert_eq!(first.entries[0].identifiers[0].value, "Current");
+    assert!(!first.entries[0].identifiers[0].stable);
+    assert!(first.entries[0].available_action_ids.is_empty());
+    fixture.write("10/16/2026 20:56:46: RPC_Disconnect\n10/16/2026 20:56:46: Destroying abandoned non persistent zdo 42:1 owner 42\n10/16/2026 20:56:46: Closing socket 76561198000000001\n");
+    log.advance();
+    let departed = project(&mut log, 0, &[]).snapshot.public_snapshot;
+    assert!(departed.complete);
+    assert!(departed.entries.is_empty());
+}
+
+#[test]
+fn valheim_pending_join_or_unattributed_disconnect_prevents_complete_names() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Server: New peer connected,sending global keys\n10/16/2026 20:55:39: Got character ZDOID from Old : 42:1\n10/16/2026 20:56:00: Server: New peer connected,sending global keys\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    assert!(!project(&mut log, 1, &[]).snapshot.public_snapshot.complete);
+    fixture.write("10/16/2026 20:56:46: RPC_Disconnect\n10/16/2026 20:56:46: Closing socket 76561198000000001\n");
+    log.advance();
+    assert!(!project(&mut log, 1, &[]).snapshot.public_snapshot.complete);
+    assert!(log.roster.names.is_empty());
+}
+
+fn valheim_snapshot(log: &mut TrackedLog, request: &str, count: usize) -> CachedLivePlayerSnapshot {
+    let mut query = evidence(count, &[]);
+    query.returned_players = 0;
+    query.snapshot.public_snapshot.snapshot_id = request.to_owned();
+    let revision = log.roster.revision;
+    let caught_up = log.caught_up;
+    supplement(&mut query, log, revision, caught_up);
+    query.snapshot
+}
+
+#[test]
+fn valheim_opaque_selection_key_survives_refresh_duplicate_events_and_respawn() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Server: New peer connected,sending global keys\n10/16/2026 20:55:39: Got character ZDOID from Same : 42:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    let first = valheim_snapshot(&mut log, "first-request", 1);
+    let key = first.public_snapshot.entries[0].player_key.clone();
+    let opaque = key
+        .strip_prefix("valheim-log:")
+        .expect("Valheim opaque row key");
+    assert!(uuid::Uuid::parse_str(opaque).is_ok());
+    let refreshed = valheim_snapshot(&mut log, "second-request", 1);
+    assert_ne!(
+        first.public_snapshot.snapshot_id,
+        refreshed.public_snapshot.snapshot_id
+    );
+    assert_eq!(refreshed.public_snapshot.entries[0].player_key, key);
+    fixture.write("10/16/2026 20:55:40: Got character ZDOID from Same : 42:1\n10/16/2026 20:55:41: Got character ZDOID from Same : 0:0\n10/16/2026 20:55:42: Got character ZDOID from Renamed : 42:2\n");
+    log.advance();
+    let respawned = valheim_snapshot(&mut log, "third-request", 1);
+    assert!(respawned.public_snapshot.complete);
+    let entry = &respawned.public_snapshot.entries[0];
+    assert_eq!(entry.player_key, key);
+    assert_eq!(entry.display_name, "Renamed");
+    assert_eq!(entry.identifiers.len(), 1);
+    assert_eq!(
+        entry.identifiers[0].kind,
+        RuntimePlayerIdentityKind::PlayerName
+    );
+    assert_eq!(entry.identifiers[0].value, "Renamed");
+    assert!(!entry.identifiers[0].stable);
+    assert!(entry.available_action_ids.is_empty());
+    assert!(respawned.private_action_bindings.is_empty());
+}
+
+#[test]
+fn valheim_same_name_departure_and_owner_reuse_do_not_inherit_selection_keys() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Server: New peer connected,sending global keys\n10/16/2026 20:55:39: Got character ZDOID from Same : 42:1\n10/16/2026 20:55:40: Server: New peer connected,sending global keys\n10/16/2026 20:55:40: Got character ZDOID from Same : 43:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    let first = valheim_snapshot(&mut log, "first-request", 2).public_snapshot;
+    assert!(first.complete);
+    assert_ne!(first.entries[0].player_key, first.entries[1].player_key);
+    fixture.write("10/16/2026 20:56:46: RPC_Disconnect\n10/16/2026 20:56:46: Destroying abandoned non persistent zdo 42:1 owner 42\n10/16/2026 20:56:46: Closing socket 76561198000000001\n");
+    log.advance();
+    let remaining = valheim_snapshot(&mut log, "second-request", 1).public_snapshot;
+    assert!(remaining.complete);
+    let remaining_key = remaining.entries[0].player_key.clone();
+    assert!(
+        first
+            .entries
+            .iter()
+            .any(|entry| entry.player_key == remaining_key)
+    );
+    let departed_key = first
+        .entries
+        .iter()
+        .find(|entry| entry.player_key != remaining_key)
+        .expect("distinct departed peer")
+        .player_key
+        .clone();
+    fixture.write("10/16/2026 20:56:50: Server: New peer connected,sending global keys\n10/16/2026 20:56:50: Got character ZDOID from Same : 42:2\n");
+    log.advance();
+    let rejoined = valheim_snapshot(&mut log, "third-request", 2).public_snapshot;
+    assert!(rejoined.complete);
+    assert!(
+        rejoined
+            .entries
+            .iter()
+            .any(|entry| entry.player_key == remaining_key)
+    );
+    assert!(
+        rejoined
+            .entries
+            .iter()
+            .all(|entry| entry.player_key != departed_key)
+    );
+}
+
+#[test]
+fn valheim_process_run_generations_never_reuse_opaque_selection_keys() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Got character ZDOID from Same : 42:1\n");
+    let registry = NativePlayerLogRegistry::default();
+    for variant in 0..3 {
+        let mut old = fixture.tracker_for(Game::Valheim);
+        old.advance();
+        let previous_key = valheim_snapshot(&mut old, "old", 1).public_snapshot.entries[0]
+            .player_key
+            .clone();
+        let mut next_key = old.key.clone();
+        match variant {
+            0 => next_key.run_id += 1,
+            1 => next_key.pid += 1,
+            _ => next_key.identity.as_mut().unwrap().0 += 1,
+        }
+        registry.remember("instance".into(), old).unwrap();
+        let mut next = registry.take("instance", next_key).unwrap();
+        next.advance();
+        let current = valheim_snapshot(&mut next, "new", 1).public_snapshot;
+        assert!(current.complete);
+        assert_ne!(current.entries[0].player_key, previous_key);
+    }
+}
+
+#[test]
+fn valheim_log_gap_and_unknown_disconnect_invalidate_opaque_selection_keys() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Got character ZDOID from Same : 42:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    let previous_key = valheim_snapshot(&mut log, "old", 1).public_snapshot.entries[0]
+        .player_key
+        .clone();
+    log.read_failed();
+    log.advance();
+    let gap = valheim_snapshot(&mut log, "gap", 1).public_snapshot;
+    assert!(!gap.complete);
+    assert!(gap.entries.is_empty());
+    // An actual empty baseline may recover the damaged stream, without restoring old tokens.
+    assert!(
+        valheim_snapshot(&mut log, "empty", 0)
+            .public_snapshot
+            .complete
+    );
+    fixture.write("10/16/2026 20:56:50: Server: New peer connected,sending global keys\n10/16/2026 20:56:50: Got character ZDOID from Same : 42:2\n");
+    log.advance();
+    let recovered = valheim_snapshot(&mut log, "recovered", 1).public_snapshot;
+    assert!(recovered.complete);
+    assert_ne!(recovered.entries[0].player_key, previous_key);
+    fixture.write("10/16/2026 20:56:51: Closing socket 76561198000000001\n");
+    log.advance();
+    let unknown_departure = valheim_snapshot(&mut log, "unknown-departure", 1).public_snapshot;
+    assert!(!unknown_departure.complete);
+    assert!(unknown_departure.entries.is_empty());
+    assert!(log.valheim_peers.entries().next().is_none());
+}
+
+#[test]
+fn valheim_complete_a2s_names_use_proven_native_peer_keys_and_character_identifiers() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Got character ZDOID from Same : 42:1\n10/16/2026 20:55:39: Got character ZDOID from Same : 43:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    let native = valheim_snapshot(&mut log, "native-first", 2).public_snapshot;
+    let from_a2s = project(&mut log, 2, &["Same", "Same"]).snapshot;
+    assert!(from_a2s.public_snapshot.complete);
+    assert_eq!(from_a2s.public_snapshot.entries.len(), 2);
+    for (expected, entry) in native.entries.iter().zip(&from_a2s.public_snapshot.entries) {
+        assert_eq!(entry.player_key, expected.player_key);
+        assert_eq!(entry.display_name, "Same");
+        assert_eq!(entry.identifiers.len(), 1);
+        assert_eq!(
+            entry.identifiers[0].kind,
+            RuntimePlayerIdentityKind::PlayerName
+        );
+        assert_eq!(entry.identifiers[0].value, "Same");
+        assert!(!entry.identifiers[0].stable);
+        assert!(entry.available_action_ids.is_empty());
+        // Query durations cannot be attributed to same-named peers by row order.
+        assert_eq!(entry.session_started_at_unix_ms, None);
+    }
+    assert_ne!(
+        from_a2s.public_snapshot.entries[0].player_key,
+        from_a2s.public_snapshot.entries[1].player_key
+    );
+    assert!(from_a2s.private_action_bindings.is_empty());
+}
+
+#[test]
+fn valheim_complete_a2s_names_remain_read_only_and_complete_when_log_has_a_gap() {
+    let fixture = Fixture::new();
+    fixture.write("10/16/2026 20:55:39: Got character ZDOID from Character : 42:1\n");
+    let mut log = fixture.tracker_for(Game::Valheim);
+    log.advance();
+    log.read_failed();
+    log.advance();
+    assert!(log.roster.incomplete);
+    let query = project(&mut log, 1, &["Query display name"]).snapshot;
+    let snapshot = query.public_snapshot;
+    assert!(snapshot.complete);
+    assert_eq!(snapshot.current_players, Some(1));
+    assert_eq!(snapshot.entries.len(), 1);
+    let entry = &snapshot.entries[0];
+    assert_eq!(entry.player_key, "0");
+    assert_eq!(entry.display_name, "Query display name");
+    assert_eq!(entry.session_started_at_unix_ms, Some(999));
+    assert!(entry.identifiers.is_empty());
+    assert!(entry.available_action_ids.is_empty());
+    assert!(snapshot.issue.is_none());
+    assert!(query.private_action_bindings.is_empty());
 }

@@ -99,7 +99,28 @@ test("a mixed invalid stored roster cannot be silently filtered by a valid mutat
 
 test("native account hashes cannot be inferred from a selected Steam identity", () => {
   const player = { identifiers: [{ kind: "steam_id", value: "76561198000000001", stable: true }] };
-  const field = { key: "banned_player_ids", property };
+  const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../../modules/enshrouded/schema.json"), "utf8"));
+  const field = { key: "banned_player_ids", property: schema.properties.banned_player_ids };
   assert.equal(selection.resolveSelectedRosterTarget(player, field), null);
   assert.equal(selection.resolveSelectedRosterIdentity(player, field), null);
+});
+
+test("only the declared Enshrouded native ban roster accepts its exact stable account namespace", () => {
+  const schema = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../../modules/enshrouded/schema.json"), "utf8"));
+  const field = { key: "banned_player_ids", property: schema.properties.banned_player_ids };
+  const native = (value, stable = true) => ({ kind: "enshrouded_account_id", value, stable });
+  const player = (...identifiers) => ({ identifiers });
+  for (const value of ["0", "9007199254740993", maximum]) {
+    const selected = player({ kind: "steam_id", value: "76561198000000001", stable: true }, native(value));
+    assert.deepEqual(plain(selection.resolveSelectedRosterTarget(selected, field)), { identity: value, rawValue: value });
+  }
+  for (const selected of [player(native("1", false)), player(native("18446744073709551616")),
+    player(native("1"), native("2")), player({ kind: "steam_id", value: maximum, stable: true })]) {
+    assert.equal(selection.resolveSelectedRosterIdentity(selected, field), null);
+  }
+  for (const changed of [{ ...field, key: "unrelated_ids" },
+    { ...field, property: { ...field.property, "x-lsgm-source": "unrelated" } },
+    { ...field, property: { ...field.property, "x-lsgm-source-key": "otherAccounts" } }]) {
+    assert.equal(selection.resolveSelectedRosterTarget(player(native("1")), changed), null);
+  }
 });

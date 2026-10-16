@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { executeInstancePlayerAction } from "../../../api";
 import { describeError } from "../../../app-state";
 import { InlineConfirmAction } from "../../../components/InlineConfirmAction";
+import { ConfigurationHelp } from "../../settings/ConfigurationFieldHelp";
 import type { LocaleCode, TranslateFn } from "../../../i18n";
 import type {
   ExecuteInstancePlayerActionInput,
@@ -16,6 +17,8 @@ interface LivePlayerActionPanelProps {
   actionIds: string[];
   actionsEnabled: boolean;
   declaredActions: ModulePlayerActionDetails[];
+  disabledReason?: string | null;
+  disabledActionReasons?: Readonly<Record<string, string>>;
   locale: LocaleCode;
   onActionCompleted: () => Promise<void>;
   onExecute?: (input: ExecuteInstancePlayerActionInput) => Promise<ExecuteInstancePlayerActionResult>;
@@ -127,12 +130,24 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
             const label = actionLabel(actionId, action, props.locale);
             const danger = action?.destructive !== false;
             const disabled = !props.actionsEnabled || hasPendingRequest || !props.player?.available_action_ids.includes(actionId);
+            const unavailableReason = !disabled ? null : hasPendingRequest
+              ? props.t("servers.playerCenter.actions.waitForPending", undefined, "A player action is in progress. Wait for it to finish.")
+              : props.disabledReason ?? (!props.player
+                ? props.t("servers.playerCenter.actions.selectOnlinePlayer", undefined, "Select a current online player first.")
+                : props.disabledActionReasons?.[actionId] ?? (!props.player.available_action_ids.includes(actionId)
+                  ? props.t("servers.playerCenter.actions.playerIdentityUnavailable", undefined, "The current player data does not provide the identity required for this action.")
+                  : props.t("servers.playerCenter.actions.snapshotNotCurrent", undefined, "The player snapshot is not complete and current. Refresh it before retrying.")));
             const content = busyActionId === actionId ? props.t("servers.playerCenter.actions.running", undefined, "Running...") : label;
-            return danger ? (
+            return <ConfigurationHelp key={JSON.stringify([instanceId, props.player?.player_key, actionId])} description={unavailableReason}>{(help) =>
+              <div className="player-access-total-action" ref={help.anchorRef} {...help.interactionProps}
+                tabIndex={disabled ? 0 : undefined} role={disabled ? "group" : undefined} aria-label={disabled ? label : undefined}
+                aria-disabled={disabled || undefined} aria-describedby={help.descriptionId}>
+              {danger ? (
               <InlineConfirmAction
                 key={JSON.stringify([instanceId, props.player?.player_key, actionId])}
                 className="secondary-button player-center-action-button player-center-member-action danger"
                 disabled={disabled}
+                aria-describedby={help.descriptionId}
                 scopeKey={JSON.stringify([props.snapshot?.instance_id, props.snapshot?.snapshot_id, props.player?.player_key, actionId])}
                 confirmation={props.t(
                   "servers.playerCenter.member.confirm",
@@ -149,11 +164,12 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
                 type="button"
                 className="secondary-button player-center-action-button player-center-member-action"
                 disabled={disabled}
+                aria-describedby={help.descriptionId}
                 onClick={() => void execute(actionId)}
               >
                 {content}
               </button>
-            );
+            )}</div>}</ConfigurationHelp>;
           })}
         </div>
       </section> : null}

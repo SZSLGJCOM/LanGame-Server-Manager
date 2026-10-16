@@ -59,7 +59,7 @@ impl Drop for Fixture {
 
 #[test]
 fn world_metadata_decodes_native_versions_and_preserves_unknown_rule_values() {
-    for version in [26, 29, 30, 31, 32, 40, 41] {
+    for version in [26, 29, 30, 31, 32, 40, 41, 42] {
         let input = metadata(version, &["enemydamage 150", "nomap", "futurecustom 77"]);
         let original = input.clone();
         let (actual_version, keys, needs_db) = codec::decode_keys(&input).unwrap();
@@ -87,7 +87,7 @@ fn world_metadata_rejects_truncation_future_versions_and_unbounded_strings() {
         }
         assert!(codec::decode_keys(&truncated).is_err(), "length={length}");
     }
-    for version in [25, 42, i32::MAX] {
+    for version in [25, 43, i32::MAX] {
         assert!(codec::decode_keys(&metadata(version, &[])).is_err());
     }
     assert!(codec::decode_keys(&metadata(41, &["nomap\nsecret"])).is_err());
@@ -102,8 +102,14 @@ fn world_metadata_rejects_truncation_future_versions_and_unbounded_strings() {
 }
 
 #[test]
-fn version_41_requires_complete_history_records_and_no_trailing_data() {
-    let valid = metadata(41, &["nomap"]);
+fn versions_41_and_42_require_complete_history_records_and_no_trailing_data() {
+    for version in [41, 42] {
+        assert_complete_history_records_and_no_trailing_data(version);
+    }
+}
+
+fn assert_complete_history_records_and_no_trailing_data(version: i32) {
+    let valid = metadata(version, &["nomap"]);
     let mut without_history_count = valid[..valid.len() - 4].to_vec();
     let length = (without_history_count.len() - 4) as i32;
     without_history_count[..4].copy_from_slice(&length.to_le_bytes());
@@ -133,7 +139,7 @@ fn version_41_requires_complete_history_records_and_no_trailing_data() {
 #[test]
 fn read_selects_latest_committed_chunked_metadata_without_changing_files() {
     let fixture = Fixture::new();
-    let original = metadata(41, &["nomap", "resourcerate 300"]);
+    let original = metadata(42, &["nomap", "resourcerate 300"]);
     let old = fixture.save(
         "worlds_local/World/_main.1.fwl2",
         &metadata(40, &["teleportall"]),
@@ -158,7 +164,7 @@ fn read_selects_latest_committed_chunked_metadata_without_changing_files() {
         rules,
         (
             ValheimWorldRuleSource::Saved,
-            Some(41),
+            Some(42),
             vec!["nomap".into(), "resourcerate 300".into()]
         )
     );
@@ -232,7 +238,7 @@ fn installed_world_metadata_read_only_probe() {
     validate_world_name(&name).unwrap();
     let (source, version, keys) = scan_world(&root, &name).unwrap();
     assert_eq!(source, ValheimWorldRuleSource::Saved);
-    assert!(matches!(version, Some(26..=41)));
+    assert!(matches!(version, Some(26..=42)));
     println!(
         "VALHEIM_NATIVE_RULES_READBACK world_version={} rule_count={} read_only=true",
         version.unwrap(),
@@ -317,7 +323,7 @@ async fn public_reader_verifies_module_committed_selector_and_authoritative_defa
     let original = fs::read(&config).unwrap();
     let saves = fixture.instance.join("saves/worlds_local");
     fs::create_dir_all(&saves).unwrap();
-    let native = metadata(41, &["nomap", "resourcerate 300"]);
+    let native = metadata(42, &["nomap", "resourcerate 300"]);
     // The internal editable display name is intentionally different. Native
     // dedicated-server -world selects the disk identity, not this display name.
     fs::write(saves.join("Committed.fwl"), &native).unwrap();

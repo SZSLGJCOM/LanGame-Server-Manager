@@ -2,7 +2,7 @@ use super::*;
 
 #[path = "commands_mod_thunderstore_plan.rs"]
 mod thunderstore_plan;
-pub(super) use thunderstore_plan::prepare_thunderstore_install;
+pub(in crate::commands) use thunderstore_plan::prepare_thunderstore_install;
 
 const MAX_ONLINE_PACKAGES: usize = 32;
 
