@@ -22,7 +22,7 @@
 | `conanexiles` | structured | `unban_player` | — | `codec:conan_list_players` |
 | `corekeeper` | read_only | — | `admin`, `block` | `codec:a2s_players` |
 | `dontstarve` | structured | — | `admin`, `allow`, `block` | `codec:dst_client_table_v1` |
-| `enshrouded` | read_only | — | `block` | A2S 与当前运行日志 |
+| `enshrouded` | read_only | — | `block` | `codec:a2s_players` |
 | `humanitz` | read_only | `kick_player` | `admin`, `block`, `priority` | `codec:humanitz_players` |
 | `minecraft` | read_only | `kick_player`, `ban_player`, `unban_player`, `op_player`, `deop_player`, `whitelist_add`, `whitelist_remove` | `admin`, `allow`, `block` | `codec:minecraft_players` |
 | `necesse` | read_only | `check_permission`, `set_permission`, `ban_player`, `unban_player` | `admin` | `codec:necesse_players` |
