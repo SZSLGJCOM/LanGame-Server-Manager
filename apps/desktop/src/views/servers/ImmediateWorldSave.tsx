@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityNotice } from "../../components/ActivityNotice";
+import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { sendInstanceRuntimeCommand } from "../../api";
 import { describeError } from "../../app-state";
 import { ShellIcon } from "../../components/ShellIcon";
@@ -67,15 +69,14 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly }: Props) 
     aria-label={text("立即保存世界", "Save world now")}>
     <div className="server-workbench-section-label server-maintenance-card-label">
       <ShellIcon name="database" className="server-workbench-section-icon" />
-      <span>{text("立即保存世界", "Save world now")}</span>
-      <button type="button" className="secondary-button" disabled={readOnly || Boolean(model.unavailable) || Boolean(state?.sending)}
-        onClick={() => void saveWorld()}>{state?.sending ? text("发送中…", "Sending…") : text("立即保存", "Save now")}</button>
+      <ConfigurationHelp description={text("请求游戏服务器将当前世界写入存档。", "Ask the game server to write the current world to its save files.")}>{(help) =>
+        <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{text("立即保存世界", "Save world now")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
+      <ConfigurationActionHelp reason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : model.unavailable || null}><button type="button" className="secondary-button" disabled={readOnly || Boolean(model.unavailable) || Boolean(state?.sending)}
+        onClick={() => void saveWorld()}>{state?.sending ? text("发送中…", "Sending…") : text("立即保存", "Save now")}</button></ConfigurationActionHelp>
     </div>
-    <p className="form-note">{text("请求游戏服务器将当前世界写入存档。", "Ask the game server to write the current world to its save files.")}</p>
     {readOnly ? <p className="form-note" role="status">{t("servers.archives.workspace.restoreForMaintenance")}</p>
       : model.unavailable ? <p className="form-note" role="status">{model.unavailable}</p> : null}
-    {status ? <p className="form-note" role="status">{status}</p> : null}
-    {visible?.error ? <p className="immediate-world-save__error" role="alert">{visible.error}</p> : null}
-    {visible?.response?.response_text ? <pre className="immediate-world-save__response">{visible.response.response_text}</pre> : null}
+    <ActivityNotice tone={pending ? "warning" : visible?.sending ? "info" : "success"}>{status ? [status, visible?.response?.response_text?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" · ") : ""}</ActivityNotice>
+    <ActivityNotice tone="error">{visible?.error ?? ""}</ActivityNotice>
   </section>;
 }

@@ -3,11 +3,12 @@
   "module_id": "enshrouded",
   "evidence": {
     "status": "best_effort_verified",
-    "verified_at": "2026-09-30",
-    "build": "Build 23178631 static type/serialization evidence; synthetic exact uint64 storage/output fixture, not a native ban/rejoin probe.",
+    "verified_at": "2026-10-16",
+    "build": "Historical build 23178631 record-type fixture, routed through the current bannedAccounts root independently confirmed by build 25967645; exact synthetic uint64 output, not client enforcement",
     "source_ids": [
       "ban_records",
-      "native_ban_contract_build_23178631"
+      "native_ban_contract_build_23178631",
+      "native_ban_contract_build_25967645"
     ]
   },
   "coverage": {
@@ -20,7 +21,7 @@
   "classifications": {
     "editable": [],
     "specialized": [
-      "ban_records.bans"
+      "ban_records.bannedAccounts"
     ],
     "derived": [],
     "generated": [],
@@ -36,13 +37,13 @@
         "path": "enshrouded_server.json",
         "format": "json",
         "keys": {
-          "/bans/0/accountId": 0,
-          "/bans/1/accountId": 9007199254740993,
-          "/bans/2/accountId": 76561198000000001,
-          "/bans/3/accountId": 18446744073709551615,
-          "/bans/3/displayName": "",
-          "/bans/3/characterName": "",
-          "/bans/3/banDate/value": 0
+          "/bannedAccounts/0/accountId": 0,
+          "/bannedAccounts/1/accountId": 9007199254740993,
+          "/bannedAccounts/2/accountId": 76561198000000001,
+          "/bannedAccounts/3/accountId": 18446744073709551615,
+          "/bannedAccounts/3/displayName": "",
+          "/bannedAccounts/3/characterName": "",
+          "/bannedAccounts/3/banDate/value": 0
         }
       }
     ],

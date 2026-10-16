@@ -11,16 +11,16 @@ fn schema() -> Map<String, Value> {
 }
 
 #[test]
-fn enshrouded_uint64_mutations_preserve_exact_strings_and_existing_17_digit_values() {
+fn enshrouded_uint64_mutations_canonicalize_numeric_identity_without_platform_conversion() {
     let schema = schema();
     let codec = parse_codec("enshrouded", "banned_player_ids", &schema).unwrap();
     assert_eq!(codec, PlayerAccessCodec::Uint64);
-    for value in [
-        "0",
-        "00123",
-        "9007199254740993",
-        "76561198000000001",
-        "18446744073709551615",
+    for (value, expected) in [
+        ("0", "0"),
+        ("00123", "123"),
+        ("9007199254740993", "9007199254740993"),
+        ("76561198000000001", "76561198000000001"),
+        ("18446744073709551615", "18446744073709551615"),
     ] {
         let entry = normalize_entry(
             "enshrouded",
@@ -31,8 +31,9 @@ fn enshrouded_uint64_mutations_preserve_exact_strings_and_existing_17_digit_valu
             &json!(value),
         )
         .unwrap();
-        assert_eq!(entry.stored, json!(value));
-        assert_eq!(entry.canonical_identity, value);
+        assert_eq!(entry.stored, json!(expected));
+        assert_eq!(entry.canonical_identity, expected);
+        assert_eq!(entry.live_target, expected);
         let original = json!("76561198000000002,18446744073709551614");
         let added = patch_field_value(
             "enshrouded",
@@ -46,7 +47,9 @@ fn enshrouded_uint64_mutations_preserve_exact_strings_and_existing_17_digit_valu
         .unwrap();
         assert_eq!(
             added.value,
-            json!(format!("76561198000000002\n18446744073709551614\n{value}"))
+            json!(format!(
+                "76561198000000002\n18446744073709551614\n{expected}"
+            ))
         );
         let removed = patch_field_value(
             "enshrouded",
@@ -63,6 +66,19 @@ fn enshrouded_uint64_mutations_preserve_exact_strings_and_existing_17_digit_valu
             json!("76561198000000002\n18446744073709551614")
         );
     }
+    // Only Enshrouded uses numeric identity here; the shared codec's existing
+    // text-preserving contract remains unchanged for other modules.
+    let other = normalize_entry(
+        "fixture",
+        "banned_player_ids",
+        codec,
+        &schema,
+        PlayerAccessMutationOperation::Add,
+        &json!("00123"),
+    )
+    .unwrap();
+    assert_eq!(other.stored, json!("00123"));
+    assert_eq!(other.canonical_identity, "00123");
 }
 
 #[test]
@@ -121,21 +137,37 @@ fn enshrouded_uint64_rejects_invalid_mutations_and_whole_rosters_atomically() {
 }
 
 #[test]
-fn enshrouded_uint64_full_settings_preserve_lists_without_platform_conversion() {
-    for value in [
-        "",
-        "00123,76561198000000001\n18446744073709551615,\n",
-        "# comment\n0",
+fn enshrouded_uint64_full_settings_canonicalize_text_without_platform_conversion() {
+    // Commas, comments and leading zeroes are presentation, not native uint64
+    // identity. Wide numeric values remain exact and are never Steam-converted.
+    for (value, expected, changed) in [
+        ("", "", false),
+        (
+            "00123,76561198000000001\n18446744073709551615,\n",
+            "123\n76561198000000001\n18446744073709551615",
+            true,
+        ),
+        ("# comment\n0", "0", true),
+        (
+            "9007199254740993\n18446744073709551615",
+            "9007199254740993\n18446744073709551615",
+            false,
+        ),
     ] {
         let mut settings = json!({"banned_player_ids": value})
             .as_object()
             .unwrap()
             .clone();
-        let original = settings.clone();
+        assert_eq!(
+            normalize_module_player_access_settings_strict("enshrouded", &mut settings).unwrap(),
+            changed
+        );
+        assert_eq!(settings["banned_player_ids"], json!(expected));
+        let canonical = settings.clone();
         assert!(
             !normalize_module_player_access_settings_strict("enshrouded", &mut settings).unwrap()
         );
-        assert_eq!(settings, original);
+        assert_eq!(settings, canonical);
     }
     let mut settings = json!({"banned_player_ids": 123})
         .as_object()

@@ -49,3 +49,12 @@ test("cluster backup and recovery commands stay out of the LAN dispatcher", () =
     assert.doesNotMatch(lan, new RegExp(`"${name}"\\s*=>`));
   }
 });
+
+test("file Mod management forwards package identity and retains completion ownership", () => {
+  const route = read("lan_host.rs").split('"manage_manual_mod" =>')[1]?.split('"read_manual_mod_inventory" =>')[0];
+  assert.ok(route, "File Mod management must be reachable through the service");
+  for (const argument of ["instanceId", "packageId", "action"]) {
+    assert.ok(route.includes(`arg(&args, "${argument}"`), `Missing ${argument}`);
+  }
+  assert.match(read("command_registry.rs"), /\(manage_manual_mod,\s*\[crate::commands::commands_file_mods\],\s*Runtime,\s*Allowed,\s*Owned\)/);
+});

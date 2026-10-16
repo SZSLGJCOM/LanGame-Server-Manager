@@ -39,6 +39,8 @@ import type {
   LaunchPlan,
   LogTailSnapshot,
   ManualModInventoryResult,
+  ManagedModAction,
+  ManagedModActionResult,
   ManualModReferenceResolveResult,
   ManualModStageResult,
   ModulePlayerActionDetails,
@@ -1252,7 +1254,9 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         return { instance_id: instanceId, bind_ip: details.summary.bind_ip, ports: details.ports,
           settings_json: details.summary.module_id === "corekeeper"
             ? JSON.stringify({ game_id: settings.game_id, direct_connection_enabled: settings.direct_connection_enabled })
-            : "{}" };
+            : details.summary.module_id === "valheim"
+              ? JSON.stringify({ crossplay_enabled: settings.crossplay_enabled })
+              : "{}" };
       })) as T;
     }
     case "read_module_details": {
@@ -1837,6 +1841,40 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       };
       return result as T;
     }
+    case "manage_manual_mod": {
+      const instanceId = String(args?.instanceId ?? "");
+      const details = ensureMockInstanceDetails(instanceId);
+      const module = buildMockModuleDetails(details.summary.module_id);
+      if (!module.mods?.manual_staging || module.mods.enablement || module.workshop?.provider === "steam") {
+        throw new Error("This game uses a separate Mod management workflow.");
+      }
+      if (details.summary.status !== "Stopped" || details.active_run || details.summary.active_process_count > 0) {
+        throw new Error("Stop the instance before changing Mods.");
+      }
+      const packageId = String(args?.packageId ?? "");
+      const action = String(args?.action ?? "") as ManagedModAction;
+      if (!["enable", "disable", "delete", "adopt"].includes(action)) throw new Error("Unknown Mod action.");
+      const inventory = await invokeMock<ManualModInventoryResult>("read_manual_mod_inventory", { instanceId });
+      const item = inventory.items.find((entry) => action === "adopt" ? entry.name === packageId : entry.management?.package_id === packageId);
+      if (!item) throw new Error("The Mod is no longer available. Refresh the inventory and retry.");
+      if (action === "adopt") {
+        if (/^(?:0_tfp_harmony|config|configs|cache|core|patchers)$/i.test(item.name) || item.name.startsWith(".")) {
+          throw new Error("These files are not a recognized Mod package and cannot be managed.");
+        }
+        item.management = { package_id: item.name, enabled: true, dependencies: [], dependents: [], dependency_status: "unknown" };
+      } else {
+        const management = item.management;
+        if (!management) throw new Error("Manage this package before changing it.");
+        if ((action === "disable" || action === "delete") && management.dependents.length) {
+          throw new Error(`Required by: ${management.dependents.join(", ")}. Remove or disable dependent Mods first.`);
+        }
+        if (action === "delete") inventory.items = inventory.items.filter((entry) => entry !== item);
+        else management.enabled = action === "enable";
+      }
+      mockManualModInventoryStore.set(instanceId, clone(inventory));
+      return { inventory, preserved_path: null, removed_file_count: action === "delete" ? item.file_count : 0,
+        warnings: [] } satisfies ManagedModActionResult as T;
+    }
     case "resolve_manual_mod_references": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       const details = ensureMockInstanceDetails(instanceId);
@@ -1933,7 +1971,10 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
             inferred_id: mockInferManualModId(module.mods?.enablement?.id_strategy, name),
             file_count: item.file_count,
             total_bytes: item.total_bytes,
-            modified_unix_ms: Date.now()
+            modified_unix_ms: Date.now(),
+            management: !module.mods?.enablement && module.workshop?.provider !== "steam"
+              ? { package_id: name, enabled: true, dependencies: [], dependents: [], dependency_status: "unknown" }
+              : null
           };
         })
       });

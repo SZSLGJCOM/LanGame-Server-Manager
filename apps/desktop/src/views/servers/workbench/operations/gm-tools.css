@@ -314,7 +314,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: var(--settings-control-height, 38px);
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 62%, transparent);
   border-radius: 8px;
@@ -343,12 +343,13 @@
   box-sizing: border-box;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 72%, transparent);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--theme-card-elevated);
   color: var(--shell-text);
   font-size: var(--text-body);
   font-family: inherit;
   transition: border-color 150ms ease, box-shadow 150ms ease;
+  min-height: var(--settings-control-height, 38px);
 }
 
 .gmt-text-input:focus {
@@ -362,13 +363,14 @@
   box-sizing: border-box;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 68%, transparent);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--theme-card-elevated);
   color: var(--shell-text);
   font-size: var(--text-secondary);
   font-family: inherit;
   cursor: pointer;
   transition: border-color 150ms ease;
+  min-height: var(--settings-control-height, 38px);
 }
 
 .gmt-select:focus {
@@ -382,7 +384,7 @@
   box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 72%, transparent);
-  border-radius: 10px;
+  border-radius: 8px;
   background: var(--theme-card-elevated);
   color: var(--shell-text);
   font-size: var(--text-body);
@@ -404,7 +406,7 @@
   align-items: center;
   gap: 9px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--theme-card-muted) 82%, transparent);
   border: 1px solid color-mix(in srgb, var(--shell-line) 56%, transparent);
   color: var(--shell-muted);
@@ -466,9 +468,9 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 36px;
+  height: var(--settings-control-height, 38px);
   padding: 0 16px;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid transparent;
   font-size: var(--text-body);
   font-weight: var(--font-weight-medium);
@@ -528,7 +530,7 @@
   margin-top: 8px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 58%, transparent);
-  border-radius: 10px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--theme-card-muted) 62%, transparent);
 }
 
@@ -601,7 +603,7 @@
 }
 
 .gmt-ark-catalog-search {
-  height: 32px;
+  height: var(--settings-control-height, 38px);
 }
 
 .gmt-ark-catalog-status {
@@ -798,7 +800,7 @@
 }
 
 .gmt-dst-prefab-search {
-  height: 32px;
+  height: var(--settings-control-height, 38px);
 }
 
 .gmt-dst-prefab-status {
@@ -1032,3 +1034,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Irreversible GM actions (e.g. destroy wild creatures) use the shared danger tone; InlineConfirmAction asks first. */
+.gmt-btn--danger {
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+.gmt-btn--danger:not(:disabled):hover { background: color-mix(in srgb, var(--danger) 22%, transparent); }

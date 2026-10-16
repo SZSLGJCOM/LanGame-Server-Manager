@@ -49,6 +49,13 @@ function unwrapRedirectReference(value: string): string {
 
 function normalizeReferenceCandidate(token: string): string {
   const decoded = decodeHtmlEntities(token.trim().replace(/[),;\]}]+$/g, ""));
+  if (/^ror2mm:/i.test(decoded)) {
+    const install = /^ror2mm:\/\/v1\/install\/thunderstore\.io\/([A-Za-z0-9_]{1,128})\/([A-Za-z0-9_]{1,128})\/(\d+\.\d+\.\d+)\/?$/i.exec(decoded);
+    if (!install || install[3].length > 32 || install[3].split(".").some((part) => Number(part) > 0xffff_ffff)) return "";
+    // Consume only the package identity. Never dispatch the external protocol
+    // or trust a repository supplied by a dragged Mod Manager address.
+    return `https://thunderstore.io/package/${install[1]}/${install[2]}/${install[3]}/`;
+  }
   return /^https?:\/\//i.test(decoded) ? unwrapRedirectReference(decoded) : decoded;
 }
 

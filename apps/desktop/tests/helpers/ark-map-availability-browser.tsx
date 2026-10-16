@@ -24,8 +24,8 @@ let pendingInstance: string | null = null;
 let finishPending: ((result: InstanceArkMapAvailability) => void) | null = null;
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
-addEventListener("error", (event) => errors.push(event.message));
-addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
+addEventListener("error", (event) => errors.push(event.error instanceof Error ? event.error.stack ?? event.message : event.message));
+addEventListener("unhandledrejection", (event) => errors.push(event.reason instanceof Error ? event.reason.stack ?? String(event.reason) : String(event.reason)));
 Object.assign(globalThis, { isTauri: true, __reliabilityFixtureCleanup: async () => {
   await act(async () => root.unmount()); return { browser_errors: errors, native_dialogs: 0 };
 } });

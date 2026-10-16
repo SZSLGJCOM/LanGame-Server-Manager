@@ -421,14 +421,6 @@ test("merges patches into the current draft without dropping unrelated native ke
   assert.strictEqual(next.nested, nested);
 });
 
-test("keeps network in Configuration and autostart in Maintenance", () => {
-  const source = readRequired(workspacePath, "ConfigurationWorkspace.tsx");
-  assertMatches(source, /InstanceConnectionSettingsPanel/, "missing built-in network editor");
-  assert.doesNotMatch(source, /InstanceRuntimeSettingsPanel/, "autostart belongs to Maintenance");
-  assertMatches(source, /instance-network/, "network model node is not handled");
-  assert.doesNotMatch(source, /instance-runtime/, "native runtime settings remain schema-owned");
-});
-
 test("connection address select has one global arrow style owner", () => {
   const connectionSelect = readRequired(
     path.join(desktopRoot, "src", "views", "settings", "PlayerJoinAddressSelect.tsx"),

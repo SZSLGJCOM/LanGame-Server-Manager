@@ -29,7 +29,7 @@ export function useInstanceConnections(
     const fingerprint = JSON.stringify([
       instances.map(({ id, module_id, bind_ip, status, port_count }) => [id, module_id, bind_ip, status, port_count]),
       selectedDetails && [selectedDetails.summary.id, selectedDetails.summary.bind_ip, selectedDetails.ports,
-        selectedDetails.summary.module_id === "corekeeper" ? selectedDetails.settings_json : null]
+        ["corekeeper", "valheim"].includes(selectedDetails.summary.module_id) ? selectedDetails.settings_json : null]
     ]);
     if (fingerprint !== owner.fingerprint) {
       owner.fingerprint = fingerprint;

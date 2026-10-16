@@ -68,6 +68,8 @@ import {
 } from "./mod-workbench-collections";
 import { ManualModInstallHelp } from "./ManualModInstallHelp";
 import { ManualModInventoryList } from "./ManualModInventoryList";
+import { ManagedModDeleteDialog } from "./ManagedModDeleteDialog";
+import { useManagedManualMods } from "./useManagedManualMods";
 import { WorkshopStatus } from "./WorkshopStatus";
 import type { WorkshopManifestReview } from "./workshop-manifest";
 import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
@@ -143,11 +145,15 @@ export interface ModWorkbenchProps {
 }
 
 function referencesFromDomDrop(event: DragEvent<HTMLElement>): string[] {
-  return uniqueEntries([
-    ...referenceCandidatesFromText(event.dataTransfer.getData("text/uri-list")),
-    ...referenceCandidatesFromText(event.dataTransfer.getData("text/plain")),
-    ...referenceCandidatesFromText(event.dataTransfer.getData("text/html"))
-  ]);
+  // These are alternative representations of the same selection. Combining
+  // them can turn an anchor's thumbnail URL into a second Mod installation.
+  for (const type of ["text/uri-list", "text/plain"]) {
+    const references = referenceCandidatesFromText(event.dataTransfer.getData(type));
+    if (references.length) return references;
+  }
+  const html = event.dataTransfer.getData("text/html");
+  const hrefs = Array.from(html.matchAll(/href=["']([^"']+)["']/gi), (match) => match[1]);
+  return referenceCandidatesFromText(hrefs.length ? hrefs.join("\n") : html);
 }
 
 export function ModWorkbench(props: ModWorkbenchProps) {
@@ -270,6 +276,15 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const { mutationBusy, mutationError, setMutationError, runModMutation, launchModMutation } = useModWorkbenchMutations(
     props.details.summary.id, moduleId, modChangesBlockedRef, latestSettingsRef, t
   );
+  const managedManualMods = useManagedManualMods({
+    instanceId: props.details.summary.id,
+    runOperation: (operation) => runModMutation("staging", operation),
+    onResult: (result) => {
+      setManualInventory(result.inventory);
+      setManualInventoryError(null);
+      setScanNonce((current) => current + 1);
+    }
+  });
   const collectionRemoval = useWorkshopCollectionRemoval({
     instanceId: props.details.summary.id, moduleId,
     readState: readWritableInstanceState,
@@ -303,6 +318,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const lookupMap = useMemo(() => composeWorkshopLookups(browseResult?.items ?? [], resolvedLookupMap, presentations),
     [browseResult, resolvedLookupMap, presentations]);
   const isManualEnablementModule = Boolean(manualEnablement && (!isSteamWorkshopModule || manualEnablement.id_strategy === "palworld_package_name"));
+  const usesFileModManagement = Boolean(manualStaging && !manualEnablement && !isSteamWorkshopModule
+    && moduleId !== "astroneer" && moduleId !== "satisfactory");
   const showsManualInventory = !readOnly && Boolean(manualStaging && (!manualEnablement || isManualEnablementModule));
   const workshopCatalogIds = useMemo(
     () => expandWorkshopItemIds([
@@ -1334,9 +1351,9 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     } catch (error) {
       startTransition(() => {
         setManualReferenceError(t(
-          "servers.mods.referenceFailed",
+          manualEnablement ? "servers.mods.referenceFailed" : "servers.mods.referenceInstallFailed",
           { message: formatDesktopError(t, error) },
-          "Mod reference resolution failed: {message}"
+          manualEnablement ? "Mod reference resolution failed: {message}" : "Mod installation failed: {message}"
         ));
         setManualReferenceState("error");
         if (!manualEnablement) {
@@ -1750,6 +1767,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           canEnable={isManualEnablementModule} disabled={modMutationsDisabled}
           onSelect={(path) => { setSelectedInventoryPath(path); setActiveDetailSource("inventory"); }}
           onEnable={handleEnableManualInventoryItem}
+          fileManagement={usesFileModManagement}
+          onManagedToggle={(item) => managedManualMods.change(item, item.management?.enabled ? "disable" : "enable")}
+          onManagedDelete={managedManualMods.requestDelete}
+          onAdopt={(item) => managedManualMods.change(item, "adopt")}
           canRemove={(item) => {
             if (moduleId === "arksurvivalascended") return Boolean(canonicalAsaModId(item.inferred_id));
             const ids = inventoryWorkshopIds(item, manualInventory);
@@ -2192,7 +2213,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           }>{t("servers.mods.browseFailed", { error: formatDesktopError(t, browseError) }, "Could not load Workshop results: {error}")}</ActivityNotice> : null}
           {lookupError ? <ActivityNotice tone="error">{formatDesktopError(t, lookupError)}</ActivityNotice> : null}
           {catalogItems.length > 0 ? (
-            <div className="mw-mod-grid" aria-busy={browseLoading || lookupLoading || workshopInstallationLoading}>
+            <div className={catalogItems.length === browseResult?.page_size ? "mw-mod-grid mw-mod-grid--full-page" : "mw-mod-grid"}
+              aria-busy={browseLoading || lookupLoading || workshopInstallationLoading}>
               {catalogItems.map((item) => {
                 const id = item.id;
                 const hasMismatch = !steamItemBelongsToApp(item, expectedAppId);
@@ -2394,15 +2416,26 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               }
             }}
             onDrop={(event) => {
-              if (updateDropFeedback(event) === "none") {
+              const effect = updateDropFeedback(event);
+              if (effect === "none") {
                 return;
               }
-              // Files take precedence over incidental browser-provided file URL/text formats.
+              const references = canUseManualReferences ? referencesFromDomDrop(event) : [];
+              const files = Array.from(event.dataTransfer.files);
+              const fileItems = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
+              const browserLinkFiles = files.length > 0 && files.length === fileItems.length
+                && files.every((file) => /\.url$/i.test(file.name) || file.type.startsWith("image/"))
+                && fileItems.every((item) => !item.webkitGetAsEntry?.()?.isDirectory);
+              const webReferences = references.filter((reference) => /^https?:\/\//i.test(reference));
+              if (effect === "link" || (browserLinkFiles && webReferences.length > 0)) {
+                void handleEnableManualReferences(effect === "link" ? references : webReferences);
+                return;
+              }
+              // Local Mod packages and folders retain precedence over incidental text.
               if (event.dataTransfer.files.length || Array.from(event.dataTransfer.items).some((item) => item.kind === "file")) {
                 void handleManualFileDrop(event.dataTransfer);
                 return;
               }
-              const references = referencesFromDomDrop(event);
               if (references.length > 0 && canUseManualReferences) {
                 void handleEnableManualReferences(references);
                 return;
@@ -2417,7 +2450,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             <ShellIcon name="package" className="mw-dropzone-icon" />
             <div className="mw-dropzone-copy">
               <strong className="mw-dropzone-title">
-                {manualReferenceState === "running"
+                {manualReferenceState === "running" && manualEnablement
                   ? t("servers.mods.referenceResolving", undefined, "Resolving...")
                   : manualStageState === "running"
                   ? t("servers.mods.manualDropRunning", undefined, "Installing...")
@@ -2574,6 +2607,23 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             {downloadError ? <ActivityNotice tone="error">{t("servers.mods.installFailed", { error: formatDesktopError(t, downloadError) }, "Mod installation failed: {error}")}</ActivityNotice> : null}
             {manualInventoryError ? <ActivityNotice tone="error">{manualInventoryError}</ActivityNotice> : null}
             {mutationError ? <ActivityNotice tone="error">{mutationError}</ActivityNotice> : null}
+            {managedManualMods.error && !managedManualMods.review ? <ActivityNotice tone="error">{managedManualMods.error}</ActivityNotice> : null}
+            {managedManualMods.result ? <ActivityNotice
+              tone={managedManualMods.result.value.warnings.length ? "warning" : "success"}
+              action={managedManualMods.result.value.preserved_path ? <button type="button" className="mw-ghost-btn"
+                onClick={() => {
+                  const path = managedManualMods.result?.value.preserved_path;
+                  if (path) void openLocalPath(path).catch((error) => setMutationError(describeError(error)));
+                }}>{t("servers.mods.managed.openPreserved", undefined, "Open preserved files")}</button> : undefined}>
+              {[
+                managedManualMods.result.action === "delete"
+                  ? t("servers.mods.managed.deleted", { count: managedManualMods.result.value.removed_file_count }, "Mod deleted; {count} program file(s) removed.")
+                  : t("servers.mods.managed.updated", undefined, "Mod management updated."),
+                managedManualMods.result.value.preserved_path
+                  ? t("servers.mods.managed.preserved", { path: managedManualMods.result.value.preserved_path }, "Preserved files: {path}") : "",
+                ...managedManualMods.result.value.warnings
+              ].filter(Boolean).join("\n")}
+            </ActivityNotice> : null}
             {collectionRemoval.error && !collectionRemoval.review ? <ActivityNotice tone="error">{collectionRemoval.error}</ActivityNotice> : null}
 
         <section className={`mw-workspace-section mw-workspace-section--${activeWorkbenchView}`} role="tabpanel">
@@ -2606,6 +2656,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         unavailableReason={collectionRemoval.blockMessage}
         lookup={lookupMap} busy={collectionRemoval.busy} error={collectionRemoval.error}
         onClose={collectionRemoval.close} onRemove={(ids) => { void collectionRemoval.remove(ids); }}
+      /> : null}
+      {managedManualMods.review ? <ManagedModDeleteDialog
+        key={`${props.details.summary.id}:${managedManualMods.review.management?.package_id}`}
+        item={managedManualMods.review} busy={mutationBusy} blocked={modChangesBlocked}
+        error={managedManualMods.error} onClose={managedManualMods.close}
+        onDelete={() => {
+          if (managedManualMods.review) managedManualMods.change(managedManualMods.review, "delete");
+        }}
       /> : null}
     </section>
   );

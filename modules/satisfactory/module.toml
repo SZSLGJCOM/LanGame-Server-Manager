@@ -84,7 +84,7 @@ saves_path_template = "{{paths.data_dir}}/profile/AppData/Local/FactoryGame/Save
 provider = "manual"
 label = "Satisfactory Mod Manager / FICSIT.app"
 url = "https://ficsit.app/"
-install_note = "Satisfactory dedicated-server mods are managed by SMM/ficsit-cli or manually staged under FactoryGame/Mods. LanGame only stages server-compatible mod payloads here; keep client and server mod versions aligned."
+install_note = "Use SMM or ficsit-cli to install and manage server-compatible Mods. Packages must be extracted into directories matching their .uplugin names; current GameFeature packages require the GameFeatures layout. LanGame currently provides inventory and directory access only, and blocks generic file changes until the package and loader layouts are modeled. Keep client and server versions aligned."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/FactoryGame/Mods"

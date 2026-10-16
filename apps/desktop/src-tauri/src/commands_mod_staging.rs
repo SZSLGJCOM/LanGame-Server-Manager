@@ -1,18 +1,32 @@
+use super::commands_mod_capacity::{ModSpaceBudget, copy_mod_payload, require_mod_capacity};
 use super::*;
+
+#[path = "commands_mod_game_boundaries.rs"]
+mod game_boundaries;
+pub(super) use game_boundaries::validate_game_mod_mutation;
 
 #[path = "commands_mod_packages.rs"]
 mod online_packages;
 pub(super) use online_packages::{
-    ONLINE_MOD_MANIFEST, stage_online_mod_sources, verify_online_mod_dependencies,
+    ONLINE_MOD_MANIFEST, decorate_inventory, manage_package, recover_management,
+    stage_online_mod_sources,
+};
+
+#[path = "commands_mod_thunderstore_layout.rs"]
+mod thunderstore_layout;
+
+#[path = "commands_mod_thunderstore_import.rs"]
+mod thunderstore_import;
+
+#[path = "commands_mod_bepinex_loader.rs"]
+mod bepinex_loader;
+pub(super) use bepinex_loader::{
+    ThunderstoreGameProfile, reviewed_loader_satisfies, runtime_loader_requires_archive,
+    stage_thunderstore_online_mod_sources, thunderstore_game_profile,
 };
 
 const MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT: usize = 20_000;
-const MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 const MANUAL_MOD_ARCHIVE_MAX_CENTRAL_DIRECTORY_BYTES: u64 = 64 * 1024 * 1024;
-const MANUAL_MOD_ARCHIVE_CENTRAL_DIRECTORY_ALLOWANCE_BYTES: u64 =
-    MANUAL_MOD_ARCHIVE_MAX_CENTRAL_DIRECTORY_BYTES;
-const MANUAL_MOD_ARCHIVE_MAX_SOURCE_BYTES: u64 = MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES
-    + MANUAL_MOD_ARCHIVE_CENTRAL_DIRECTORY_ALLOWANCE_BYTES;
 const MANUAL_MOD_ARCHIVE_MAX_COMPRESSION_RATIO: u64 = 200;
 #[cfg(windows)]
 const WINDOWS_FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x0000_0400;
@@ -34,9 +48,10 @@ enum ManualModArchiveEntryKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ManualModArchiveLayout {
+pub(super) enum ManualModArchiveLayout {
     Preserve,
     ThunderstorePayload,
+    CoreKeeperNative,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -91,6 +106,10 @@ pub(super) fn stage_manual_mod_sources(
     target: ResolvedManualModTarget,
     source_paths: Vec<PathBuf>,
 ) -> Result<ManualModStageResult, String> {
+    validate_game_mod_mutation(&target.module_id)?;
+    if matches!(target.module_id.as_str(), "valheim" | "vrising") {
+        return thunderstore_import::stage_sources(target, source_paths);
+    }
     stage_manual_mod_source_batch(
         &target,
         source_paths,
@@ -103,6 +122,7 @@ pub(super) fn stage_manual_mod_sources(
 pub(super) fn stage_thunderstore_archive_to_directory(
     archive_path: PathBuf,
     target_path: PathBuf,
+    layout: ManualModArchiveLayout,
 ) -> Result<(), String> {
     let target = ResolvedManualModTarget {
         instance_id: String::from("thunderstore-download"),
@@ -113,13 +133,7 @@ pub(super) fn stage_thunderstore_archive_to_directory(
         accepts: vec![String::from("zip")],
         id_strategy: None,
     };
-    stage_manual_mod_source_batch(
-        &target,
-        vec![archive_path],
-        true,
-        ManualModArchiveLayout::ThunderstorePayload,
-        false,
-    )?;
+    stage_manual_mod_source_batch(&target, vec![archive_path], true, layout, false)?;
     Ok(())
 }
 
@@ -196,19 +210,48 @@ fn stage_manual_mod_source_batch(
     let mut copied_file_count = 0usize;
     let mut copied_total_bytes = 0u64;
     let mut replace_roots = HashSet::new();
+    let manage_imports = !replace_source_roots && online_packages::manages_local_imports(target);
+    let mut import_metadata =
+        std::collections::BTreeMap::<String, Option<online_packages::LocalImportMetadata>>::new();
     for source_path in source_paths {
-        let staged = match stage_manual_mod_source_to_transaction(
+        let metadata = if manage_imports {
+            online_packages::local_import_metadata(&source_path)
+                .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?
+        } else {
+            None
+        };
+        let previous_paths = manage_imports.then(|| registry.path_kinds.clone());
+        let staged_result = stage_manual_mod_source_to_transaction(
             &source_path,
             &transaction,
             &mut registry,
             archive_layout,
             None,
-        ) {
+        );
+        let staged = match staged_result {
             Ok(staged) => staged,
             Err(error) => {
                 return Err(manual_mod_staging_failure(error, &transaction, true));
             }
         };
+        if let Some(previous_paths) = previous_paths {
+            let roots = registry
+                .path_kinds
+                .keys()
+                .filter(|path| !previous_paths.contains_key(*path))
+                .filter_map(|path| path.split('/').next())
+                .collect::<HashSet<_>>();
+            for root in roots {
+                import_metadata
+                    .entry(root.to_string())
+                    .and_modify(|previous| {
+                        if *previous != metadata {
+                            *previous = None;
+                        }
+                    })
+                    .or_insert_with(|| metadata.clone());
+            }
+        }
         if registry.path_kinds.contains_key(ONLINE_MOD_MANIFEST) {
             return Err(manual_mod_staging_failure(
                 format!(
@@ -248,6 +291,11 @@ fn stage_manual_mod_source_batch(
             &transaction,
             true,
         ));
+    }
+
+    if manage_imports {
+        online_packages::prepare_local_mod_ownership(target, &transaction, &import_metadata)
+            .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
     }
 
     validate_manual_mod_target_path(&target.target_path)
@@ -554,7 +602,7 @@ fn copy_manual_mod_file_to_staging(
         })?;
     }
     let partial_path = partials_root.join(uuid::Uuid::new_v4().simple().to_string());
-    let copied_bytes = match fs::copy(source_path, &partial_path) {
+    let copied_bytes = match copy_mod_payload(source_path, &partial_path) {
         Ok(copied_bytes) => copied_bytes,
         Err(error) => {
             let _ = fs::remove_file(&partial_path);
@@ -583,14 +631,92 @@ fn extract_zip_archive_to_directory(
     registry: &mut ManualModStagingRegistry,
     archive_layout: ManualModArchiveLayout,
 ) -> Result<DirectoryCopyStats, String> {
-    let source_metadata = fs::symlink_metadata(archive_path).map_err(|error| {
+    let file = open_preflighted_mod_archive(archive_path)?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
         format!(
-            "failed to inspect mod archive {}: {}",
-            archive_path.display(),
-            error
+            "failed to read mod archive {}: {error}",
+            archive_path.display()
         )
     })?;
-    validate_manual_mod_archive_source_size(archive_path, source_metadata.len())?;
+    let plan = inspect_manual_mod_archive(&mut archive, archive_path, registry, archive_layout)?;
+    require_mod_capacity(staging_root, plan.metrics.uncompressed_bytes)?;
+    let mut stats = DirectoryCopyStats::default();
+    for entry_plan in &plan.entries {
+        let output_path = staging_root.join(&entry_plan.relative_path);
+        if entry_plan.kind == ManualModArchiveEntryKind::Directory {
+            fs::create_dir_all(&output_path).map_err(|error| {
+                format!(
+                    "failed to prepare staged archive directory {}: {error}",
+                    output_path.display()
+                )
+            })?;
+            continue;
+        }
+        let mut entry = archive.by_index(entry_plan.index).map_err(|error| {
+            format!(
+                "failed to read entry {} from {}: {error}",
+                entry_plan.index,
+                archive_path.display()
+            )
+        })?;
+        if entry.size() != entry_plan.uncompressed_bytes
+            || entry.compressed_size() != entry_plan.compressed_bytes
+        {
+            return Err(format!(
+                "manual mod archive {} changed while it was being staged",
+                archive_path.display()
+            ));
+        }
+        if let Some(parent) = output_path.parent() {
+            fs::create_dir_all(parent).map_err(|error| {
+                format!(
+                    "failed to prepare staged archive target {}: {error}",
+                    parent.display()
+                )
+            })?;
+        }
+        let remaining_bytes = plan
+            .metrics
+            .uncompressed_bytes
+            .checked_sub(stats.total_bytes)
+            .ok_or("manual mod archive extracted size exceeded its declared total")?;
+        let copied_bytes = extract_manual_mod_archive_file(
+            &mut entry,
+            entry_plan,
+            &output_path,
+            partials_root,
+            remaining_bytes,
+        )?;
+        stats.file_count = stats
+            .file_count
+            .checked_add(1)
+            .ok_or("manual mod archive file count overflowed")?;
+        stats.total_bytes = stats
+            .total_bytes
+            .checked_add(copied_bytes)
+            .ok_or("manual mod archive extracted size overflowed")?;
+    }
+    if stats.file_count != plan.metrics.file_count
+        || stats.total_bytes != plan.metrics.uncompressed_bytes
+    {
+        return Err(format!(
+            "manual mod archive changed during extraction: expected {} files and {} bytes, extracted {} files and {} bytes",
+            plan.metrics.file_count,
+            plan.metrics.uncompressed_bytes,
+            stats.file_count,
+            stats.total_bytes
+        ));
+    }
+    Ok(stats)
+}
+
+/// Bound ZIP metadata before ZipArchive allocates its directory, including callers
+/// which only inspect entries before the normal extraction pass.
+pub(super) fn open_preflighted_mod_archive(archive_path: &Path) -> Result<fs::File, String> {
+    let source_metadata = validate_manual_mod_source_filesystem_entry(archive_path)?;
+    if !source_metadata.is_file() {
+        return Err("manual mod archive is not a regular file".into());
+    }
     let mut file = fs::File::open(archive_path).map_err(|error| {
         format!(
             "failed to open mod archive {}: {}",
@@ -608,7 +734,6 @@ fn extract_zip_archive_to_directory(
             )
         })?
         .len();
-    validate_manual_mod_archive_source_size(archive_path, opened_size)?;
     if opened_size != source_metadata.len() {
         return Err(format!(
             "manual mod archive {} changed while it was being opened",
@@ -616,104 +741,9 @@ fn extract_zip_archive_to_directory(
         ));
     }
     preflight_manual_mod_archive_container(&mut file, archive_path, opened_size)?;
-    let mut archive = zip::ZipArchive::new(file).map_err(|error| {
-        format!(
-            "failed to read mod archive {}: {}",
-            archive_path.display(),
-            error
-        )
-    })?;
-    let plan = inspect_manual_mod_archive(&mut archive, archive_path, registry, archive_layout)?;
-    let mut stats = DirectoryCopyStats::default();
-    for entry_plan in &plan.entries {
-        let output_path = staging_root.join(&entry_plan.relative_path);
-        if entry_plan.kind == ManualModArchiveEntryKind::Directory {
-            fs::create_dir_all(&output_path).map_err(|error| {
-                format!(
-                    "failed to prepare staged archive directory {}: {}",
-                    output_path.display(),
-                    error
-                )
-            })?;
-            continue;
-        }
-
-        let mut entry = archive.by_index(entry_plan.index).map_err(|error| {
-            format!(
-                "failed to read entry {} from {}: {}",
-                entry_plan.index,
-                archive_path.display(),
-                error
-            )
-        })?;
-        if entry.size() != entry_plan.uncompressed_bytes
-            || entry.compressed_size() != entry_plan.compressed_bytes
-        {
-            return Err(format!(
-                "manual mod archive {} changed while it was being staged",
-                archive_path.display()
-            ));
-        }
-        if let Some(parent) = output_path.parent() {
-            fs::create_dir_all(parent).map_err(|error| {
-                format!(
-                    "failed to prepare staged archive target {}: {}",
-                    parent.display(),
-                    error
-                )
-            })?;
-        }
-        let remaining_bytes = MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES
-            .checked_sub(stats.total_bytes)
-            .ok_or_else(|| String::from("manual mod archive extracted size exceeded its limit"))?;
-        let copied_bytes = extract_manual_mod_archive_file(
-            &mut entry,
-            entry_plan,
-            &output_path,
-            partials_root,
-            remaining_bytes,
-        )?;
-        stats.file_count = stats
-            .file_count
-            .checked_add(1)
-            .ok_or_else(|| String::from("manual mod archive file count overflowed"))?;
-        stats.total_bytes = stats
-            .total_bytes
-            .checked_add(copied_bytes)
-            .ok_or_else(|| String::from("manual mod archive extracted size overflowed"))?;
-        if stats.total_bytes > MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES {
-            return Err(String::from(
-                "manual mod archive extracted size exceeded its limit",
-            ));
-        }
-    }
-    if stats.file_count != plan.metrics.file_count
-        || stats.total_bytes != plan.metrics.uncompressed_bytes
-    {
-        return Err(format!(
-            "manual mod archive changed during extraction: expected {} files and {} bytes, extracted {} files and {} bytes",
-            plan.metrics.file_count,
-            plan.metrics.uncompressed_bytes,
-            stats.file_count,
-            stats.total_bytes
-        ));
-    }
-    Ok(stats)
-}
-
-fn validate_manual_mod_archive_source_size(
-    archive_path: &Path,
-    source_bytes: u64,
-) -> Result<(), String> {
-    if source_bytes > MANUAL_MOD_ARCHIVE_MAX_SOURCE_BYTES {
-        return Err(format!(
-            "manual mod archive {} is too large: {} bytes exceeds the source limit of {} bytes",
-            archive_path.display(),
-            source_bytes,
-            MANUAL_MOD_ARCHIVE_MAX_SOURCE_BYTES
-        ));
-    }
-    Ok(())
+    file.seek(SeekFrom::Start(0))
+        .map_err(|error| format!("cannot rewind Mod archive: {error}"))?;
+    Ok(file)
 }
 
 fn preflight_manual_mod_archive_container(
@@ -1009,7 +1039,23 @@ fn extract_manual_mod_archive_file(
     })?;
     let copy_result = {
         let mut bounded_entry = entry.take(read_limit);
-        std::io::copy(&mut bounded_entry, &mut output)
+        let mut budget = ModSpaceBudget::new(&partial_path)?;
+        let mut buffer = [0u8; 64 * 1024];
+        let mut copied = 0u64;
+        (|| -> Result<u64, std::io::Error> {
+            loop {
+                let count = bounded_entry.read(&mut buffer)?;
+                if count == 0 {
+                    break;
+                }
+                budget.before_write(count).map_err(std::io::Error::other)?;
+                output.write_all(&buffer[..count])?;
+                copied = copied
+                    .checked_add(count as u64)
+                    .ok_or_else(|| std::io::Error::other("archive extracted size overflowed"))?;
+            }
+            Ok(copied)
+        })()
     };
     let copied_bytes = match copy_result {
         Ok(copied_bytes) => copied_bytes,
@@ -1164,11 +1210,40 @@ fn inspect_manual_mod_archive(
     let payload_prefix = match archive_layout {
         ManualModArchiveLayout::Preserve => None,
         ManualModArchiveLayout::ThunderstorePayload => {
-            let entry_names = archive_entries
+            let files = archive_entries
                 .iter()
-                .map(|entry| entry.relative_path.to_string_lossy().replace('\\', "/"))
+                .filter(|entry| entry.kind == ManualModArchiveEntryKind::File)
+                .map(|entry| entry.relative_path.clone())
                 .collect::<Vec<_>>();
-            select_thunderstore_payload_prefix(&entry_names).map(PathBuf::from)
+            thunderstore_layout::thunderstore_payload_routes(&files)?;
+            None
+        }
+        ManualModArchiveLayout::CoreKeeperNative => {
+            let manifests = archive_entries
+                .iter()
+                .filter(|entry| {
+                    entry.kind == ManualModArchiveEntryKind::File
+                        && entry
+                            .relative_path
+                            .file_name()
+                            .and_then(std::ffi::OsStr::to_str)
+                            .is_some_and(|name| name.eq_ignore_ascii_case("ModManifest.json"))
+                })
+                .map(|entry| {
+                    entry
+                        .relative_path
+                        .parent()
+                        .unwrap_or(Path::new(""))
+                        .to_path_buf()
+                })
+                .collect::<Vec<_>>();
+            if manifests.len() != 1 {
+                return Err("Core Keeper requires one native ModManifest.json per package. This Thunderstore community contains old BepInEx packages; use a compatible native package from mod.io or Workshop.".into());
+            }
+            manifests
+                .into_iter()
+                .next()
+                .filter(|path| !path.as_os_str().is_empty())
         }
     };
     let mut metrics = ManualModArchiveMetrics::default();
@@ -1217,19 +1292,6 @@ fn inspect_manual_mod_archive(
     Ok(ManualModArchivePlan { entries, metrics })
 }
 
-pub(super) fn select_thunderstore_payload_prefix(entry_names: &[String]) -> Option<&'static str> {
-    if entry_names
-        .iter()
-        .any(|name| name.starts_with("BepInEx/plugins/"))
-    {
-        return Some("BepInEx/plugins/");
-    }
-    if entry_names.iter().any(|name| name.starts_with("plugins/")) {
-        return Some("plugins/");
-    }
-    None
-}
-
 pub(super) fn validate_manual_mod_archive_metrics(
     file_count: usize,
     compressed_bytes: u64,
@@ -1241,12 +1303,9 @@ pub(super) fn validate_manual_mod_archive_metrics(
             file_count, MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT
         ));
     }
-    if uncompressed_bytes > MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES {
-        return Err(format!(
-            "archive uncompressed size {} bytes exceeds the limit of {} bytes",
-            uncompressed_bytes, MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES
-        ));
-    }
+    uncompressed_bytes
+        .checked_add(1)
+        .ok_or("archive uncompressed size overflows streaming accounting")?;
     if uncompressed_bytes > 0
         && (compressed_bytes == 0
             || uncompressed_bytes
@@ -1620,7 +1679,9 @@ fn resolve_manual_mod_path_with_missing_components(path: &Path) -> Result<PathBu
     }
 }
 
-fn manual_mod_target_lock(target_path: &Path) -> Result<Arc<StdMutex<()>>, String> {
+pub(in crate::commands) fn manual_mod_target_lock(
+    target_path: &Path,
+) -> Result<Arc<StdMutex<()>>, String> {
     let key = target_path
         .to_string_lossy()
         .replace('/', "\\")
@@ -1760,15 +1821,18 @@ fn commit_manual_mod_transaction(
 
     {
         let mut actions = Vec::new();
-        let result = commit_manual_mod_directory_entries(
-            &transaction.staging,
-            target_path,
-            target_path,
-            Path::new(""),
-            &transaction.backup,
-            &mut actions,
-            replace_roots,
-        );
+        let result = (|| {
+            preserve_removed_mod_files(transaction, target_path, replace_roots, &mut actions)?;
+            commit_manual_mod_directory_entries(
+                &transaction.staging,
+                target_path,
+                target_path,
+                Path::new(""),
+                &transaction.backup,
+                &mut actions,
+                replace_roots,
+            )
+        })();
         match result {
             Ok(()) => Ok(()),
             Err(error) => {
@@ -1788,6 +1852,52 @@ fn commit_manual_mod_transaction(
             }
         }
     }
+}
+
+// A removed, owned patcher must stop loading on update. Preserve it in the
+// same transaction before publication, so any later failure restores it.
+fn preserve_removed_mod_files(
+    transaction: &ManualModTransactionPaths,
+    target: &Path,
+    replacements: &HashSet<PathBuf>,
+    actions: &mut Vec<ManualModCommitAction>,
+) -> Result<(), String> {
+    let mut paths = replacements.iter().collect::<Vec<_>>();
+    paths.sort();
+    for relative in paths {
+        if normalize_manual_mod_relative_path(relative)? != *relative {
+            return Err("Removed Mod file has a noncanonical path".into());
+        }
+        match fs::symlink_metadata(transaction.staging.join(relative)) {
+            Ok(_) => continue,
+            Err(error) if error.kind() == ErrorKind::NotFound => {}
+            Err(error) => return Err(error.to_string()),
+        }
+        let destination = target.join(relative);
+        match fs::symlink_metadata(&destination) {
+            Err(error) if error.kind() == ErrorKind::NotFound => continue,
+            Err(error) => return Err(error.to_string()),
+            Ok(metadata) if !metadata.is_file() || manual_mod_metadata_is_reparse(&metadata) => {
+                return Err(format!(
+                    "Removed Mod payload is not a safe file: {}",
+                    destination.display()
+                ));
+            }
+            Ok(_) => {}
+        }
+        validate_manual_mod_target_operation_parent(target, &destination)?;
+        validate_manual_mod_destination_for_backup(&destination)?;
+        let backup = transaction.backup.join(relative);
+        fs::create_dir_all(backup.parent().ok_or("Removed Mod backup has no parent")?)
+            .map_err(|error| error.to_string())?;
+        fs::rename(&destination, &backup).map_err(|error| error.to_string())?;
+        actions.push(ManualModCommitAction {
+            destination,
+            backup: Some(backup),
+            installed: false,
+        });
+    }
+    Ok(())
 }
 
 fn commit_manual_mod_directory_entries(
@@ -2367,13 +2477,119 @@ mod staging_tests {
             ],
         );
 
-        stage_thunderstore_archive_to_directory(archive_path, target.clone()).unwrap();
+        stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .unwrap();
 
-        assert_eq!(fs::read(target.join("Example.dll")).unwrap(), b"plugin");
-        assert!(!target.join("manifest.json").exists());
-        assert!(!target.join("BepInEx").exists());
+        assert_eq!(
+            fs::read(target.join("BepInEx/plugins/Example.dll")).unwrap(),
+            b"plugin"
+        );
+        assert!(target.join("manifest.json").exists());
+        assert!(target.join("BepInEx").exists());
         assert_no_staging_transaction(&root);
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn thunderstore_archive_preserves_all_routed_payloads() {
+        for extra in [
+            "BepInEx/config/Example.cfg",
+            "BepInEx/patchers/Patch.dll",
+            "plugins/Other.dll",
+            "Helper.dll",
+        ] {
+            let root = staging_test_root("thunderstore-routes");
+            let archive = root.join("package.zip");
+            let target = root.join("payload");
+            write_staging_test_zip(
+                &archive,
+                &[
+                    ("BepInEx/plugins/Example.dll", b"plugin"),
+                    (extra, b"required"),
+                ],
+            );
+            stage_thunderstore_archive_to_directory(
+                archive,
+                target.clone(),
+                ManualModArchiveLayout::ThunderstorePayload,
+            )
+            .unwrap();
+            assert_eq!(fs::read(target.join(extra)).unwrap(), b"required");
+            assert!(target.join("BepInEx/plugins/Example.dll").exists());
+            assert_no_staging_transaction(&root);
+            fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[test]
+    fn thunderstore_archive_keeps_mixed_case_plugin_files_and_resources() {
+        let root = staging_test_root("thunderstore-case-payload");
+        let archive_path = root.join("package.zip");
+        let target = root.join("payload");
+        write_staging_test_zip(
+            &archive_path,
+            &[
+                ("bepinex/PLUGINS/Example.dll", b"plugin"),
+                ("BepInEx/plugins/Assets/Data.bundle", b"resource"),
+                ("README.md", b"documentation"),
+            ],
+        );
+        stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(target.join("bepinex/PLUGINS/Example.dll")).unwrap(),
+            b"plugin"
+        );
+        assert_eq!(
+            fs::read(target.join("BepInEx/plugins/Assets/Data.bundle")).unwrap(),
+            b"resource"
+        );
+        assert!(target.join("README.md").exists());
+        assert_no_staging_transaction(&root);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn thunderstore_directory_import_routes_configuration_without_loss() {
+        for module_id in ["valheim", "vrising"] {
+            let root = staging_test_root("thunderstore-local-omitted");
+            let source = root.join("package");
+            fs::create_dir_all(source.join("BepInEx/plugins")).unwrap();
+            fs::create_dir_all(source.join("BepInEx/config")).unwrap();
+            fs::write(source.join("BepInEx/plugins/Example.dll"), b"plugin").unwrap();
+            fs::write(source.join("BepInEx/config/Example.cfg"), b"required").unwrap();
+            let target = root.join("runtime/BepInEx/plugins");
+            stage_manual_mod_sources(
+                ResolvedManualModTarget {
+                    instance_id: "layout-check".into(),
+                    module_id: module_id.into(),
+                    source_label: "local".into(),
+                    target_label: "plugins".into(),
+                    target_path: target.clone(),
+                    accepts: vec!["folder".into()],
+                    id_strategy: None,
+                },
+                vec![source],
+            )
+            .expect("directory imports retain config at its runtime path");
+            assert_eq!(
+                fs::read(root.join("runtime/BepInEx/config/Example.cfg")).unwrap(),
+                b"required"
+            );
+            assert_eq!(
+                fs::read(target.join("local-package/Example.dll")).unwrap(),
+                b"plugin"
+            );
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]
@@ -2389,8 +2605,12 @@ mod staging_tests {
             ],
         );
 
-        let error = stage_thunderstore_archive_to_directory(archive_path, target.clone())
-            .expect_err("Windows aliases must fail before publication");
+        let error = stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .expect_err("Windows aliases must fail before publication");
 
         assert!(error.contains("duplicate or Windows-aliased path"));
         assert!(!target.exists());
@@ -2406,8 +2626,12 @@ mod staging_tests {
         let compressed = vec![0u8; 1024 * 1024];
         write_staging_test_zip(&archive_path, &[("plugins/compressed.dll", &compressed)]);
 
-        let error = stage_thunderstore_archive_to_directory(archive_path, target.clone())
-            .expect_err("high-ratio archives must fail before publication");
+        let error = stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .expect_err("high-ratio archives must fail before publication");
 
         assert!(error.contains("compression ratio"));
         assert!(!target.exists());
@@ -2431,8 +2655,12 @@ mod staging_tests {
             .unwrap();
         archive.finish().unwrap();
 
-        let error = stage_thunderstore_archive_to_directory(archive_path, target.clone())
-            .expect_err("archive links must fail before publication");
+        let error = stage_thunderstore_archive_to_directory(
+            archive_path,
+            target.clone(),
+            ManualModArchiveLayout::ThunderstorePayload,
+        )
+        .expect_err("archive links must fail before publication");
 
         assert!(error.contains("symbolic link"));
         assert!(!target.exists());

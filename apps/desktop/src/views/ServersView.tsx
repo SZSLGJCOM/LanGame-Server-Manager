@@ -4,6 +4,7 @@ import { describeError, type RuntimeRefreshIssue } from "../app-state";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { AiSettings } from "../ai-settings";
 import { ServerCardFrame } from "./servers/ServerCardFrame";
+import { SaveImportOperationsProvider } from "./servers/SaveImportOperations";
 import { ShellIcon } from "../components/ShellIcon";
 import { ActivityNotice } from "../components/ActivityNotice";
 import { InlineConfirmAction } from "../components/InlineConfirmAction";
@@ -470,7 +471,7 @@ export function ServersView(props: ServersViewProps) {
   ].join(" ");
 
   return (
-    <div className={`page-grid workspace-page servers-page${!showMetrics ? " servers-page--no-metrics" : ""}`}>
+    <SaveImportOperationsProvider><div className={`page-grid workspace-page servers-page${!showMetrics ? " servers-page--no-metrics" : ""}`}>
       {archives.error && <ActivityNotice tone="error" action={
         <button type="button" className="secondary-button" onClick={() => void archives.refresh()} disabled={archives.loading}>{t("common.refresh")}</button>
       }>{archives.error}</ActivityNotice>}
@@ -720,6 +721,6 @@ export function ServersView(props: ServersViewProps) {
           )}
         </section>
       </section>
-    </div>
+    </div></SaveImportOperationsProvider>
   );
 }

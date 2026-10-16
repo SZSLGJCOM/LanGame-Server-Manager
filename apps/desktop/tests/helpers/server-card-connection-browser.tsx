@@ -8,6 +8,9 @@ import type { InstanceConnectionInfo, InstanceDetails } from "../../src/types";
 import { useInstanceConnections } from "../../src/hooks/useInstanceConnections";
 import { ServersView } from "../../src/views/ServersView";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
+import { ServerCardFrame } from "../../src/views/servers/ServerCardFrame";
+import { ServerCardConnection } from "../../src/views/servers/ServerCardConnection";
+import { InstanceConnectionSettingsPanel } from "../../src/views/settings/InstanceConnectionSettingsPanel";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -122,7 +125,8 @@ async function checkConnectionRefresh(selected: InstanceDetails, other: Instance
 
     await rerenderPoll();
     const publicationsBeforeChange = published.length;
-    const changedSelected = { ...selected, ports: [{ name: "game", protocol: "udp", port: 40000 }] };
+    const changedSelected = { ...selected, summary: { ...selected.summary, module_id: "valheim" },
+      settings_json: '{"crossplay_enabled":false}', ports: [{ name: "game", protocol: "udp", port: 40000 }] };
     const changedOther = { ...other, summary: { ...other.summary, id: `${other.summary.id}-replacement` } };
     input = { instances: [changedSelected.summary, changedOther.summary], selectedDetails: changedSelected };
     await renderProbe();
@@ -146,11 +150,24 @@ async function checkConnectionRefresh(selected: InstanceDetails, other: Instance
     checks++;
 
     await rerenderPoll();
-    check(requests.length === 6 && activeRequests === 1, "Unmount coverage needs an in-flight read");
+    const publicationsBeforeCrossplay = published.length;
+    const crossplaySelected = { ...changedSelected, settings_json: '{"crossplay_enabled":true}' };
+    input = { ...input, selectedDetails: crossplaySelected };
+    await renderProbe();
+    await resolveRequest(5, currentRows);
+    check(published.length === publicationsBeforeCrossplay && requests.length === 7,
+      "Changing only Valheim crossplay settings must reject an older direct-connect response");
+    await resolveRequest(6, [toConnection(crossplaySelected), toConnection(changedOther)]);
+    check(snapshot.connections[selected.summary.id]?.settings_json === crossplaySelected.settings_json,
+      "The next connection snapshot must publish the current Valheim backend");
+    checks++;
+
+    await rerenderPoll();
+    check(requests.length === 8 && activeRequests === 1, "Unmount coverage needs an in-flight read");
     const publicationsBeforeUnmount = published.length;
     await act(async () => { probeRoot.unmount(); });
-    await resolveRequest(5, currentRows);
-    check(published.length === publicationsBeforeUnmount && requests.length === 6 && activeRequests === 0,
+    await resolveRequest(7, currentRows);
+    check(published.length === publicationsBeforeUnmount && requests.length === 8 && activeRequests === 0,
       "Unmounted connection owner must neither publish nor start a follow-up request");
     checks++;
   } finally {
@@ -158,6 +175,70 @@ async function checkConnectionRefresh(selected: InstanceDetails, other: Instance
     host.remove();
   }
 }
+
+async function checkCrossplayConnection(source: InstanceDetails) {
+  const host = document.createElement("section");
+  host.style.cssText = "padding:24px;max-width:760px;margin:0 auto;min-height:560px";
+  document.body.appendChild(host);
+  const probeRoot = createRoot(host);
+  let details: InstanceDetails = { ...source,
+    summary: { ...source.summary, module_id: "valheim", name: "Valheim" },
+    settings_json: '{"crossplay_enabled":true}' };
+  const candidates = [{ address: "192.0.2.42", kind: "overlay", family_name: "Radmin VPN" }];
+  for (const locale of ["zh-CN", "en-US"] as const) {
+    localStorage.setItem("langame.locale", locale);
+    const render = async () => { await act(async () => {
+      probeRoot.render(<I18nProvider key={locale}><InstanceSettingsSaveProvider>
+        <div style={{ maxWidth: 400, marginBottom: 24 }}>
+          <ServerCardFrame id={details.summary.id} name="Valheim" moduleId="valheim" active={false}
+            status="Stopped" statusLabel={locale === "zh-CN" ? "已停止" : "Stopped"} onSelect={noOperation}
+            primary={<button type="button" className="primary-button">{locale === "zh-CN" ? "启动" : "Start"}</button>}
+            metadata={<ServerCardConnection instance={details.summary} connection={{ instance_id: details.summary.id,
+              bind_ip: details.summary.bind_ip, ports: details.ports, settings_json: details.settings_json }}
+              failed={false} candidates={candidates} onRead={noOperation} onActivity={noOperation} />} />
+        </div>
+        <InstanceConnectionSettingsPanel details={details} moduleDetails={null} bindAddressCandidates={candidates}
+          bindIp={details.summary.bind_ip} ports={details.ports} defaultPorts={details.ports}
+          onPortsChange={noOperation} onBindIpChange={noOperation} />
+      </InstanceSettingsSaveProvider></I18nProvider>);
+    }); };
+    details = { ...details, settings_json: '{"crossplay_enabled":true}' };
+    await render();
+    const expected = locale === "zh-CN" ? "跨平台：加入码或服务器列表" : "Crossplay: join code or server list";
+    await settleUntil(() => host.querySelector(".server-list-card-meta")?.textContent === expected,
+      "Crossplay card must show localized join guidance instead of the saved adapter address");
+    const explanation = host.querySelector<HTMLElement>(".player-join-address__instructions");
+    check(explanation?.textContent?.includes(locale === "zh-CN" ? "本次启动日志" : "current startup log")
+      && explanation.textContent.includes("Radmin"), "Connection settings must explain current-run join codes and the local-IP restriction");
+    check(!host.textContent?.includes("192.0.2.42") && !host.querySelector(".player-join-address__select")
+      && !host.querySelector(".player-join-address__copy"), "Crossplay settings must not offer a local adapter or copy action");
+    const cardCopy = host.querySelector<HTMLButtonElement>(".server-list-card-copy-action")!;
+    check(cardCopy.disabled && cardCopy.title.includes("Radmin"), "Crossplay card copy must be disabled with useful guidance");
+    const writes = clipboardWrites.length;
+    await click(cardCopy);
+    check(clipboardWrites.length === writes, "Crossplay must never copy a saved adapter endpoint");
+    check(explanation.scrollWidth <= explanation.clientWidth + 1 && explanation.getBoundingClientRect().height > 0,
+      "Crossplay instructions must be visible without horizontal overflow");
+    checks++;
+
+    details = { ...details, settings_json: '{"crossplay_enabled":false}' };
+    await render();
+    await settleUntil(() => host.querySelector(".server-list-card-meta")?.textContent?.includes("192.0.2.42:28898") === true,
+      "Disabling crossplay must restore the saved direct endpoint");
+    check(!host.querySelector(".player-join-address__instructions")
+      && host.querySelector<HTMLSelectElement>(".player-join-address__select")?.value === "192.0.2.42",
+    "Direct mode must preserve the preferred adapter address");
+    await click(host.querySelector<HTMLButtonElement>(".player-join-address__copy"));
+    await settleUntil(() => clipboardWrites.length === writes + 1, "Direct mode must retain working join-address copy");
+    check(clipboardWrites.at(-1) === "192.0.2.42:28898", "Direct copy must retain the saved game port");
+    checks++;
+
+    details = { ...details, settings_json: '{"crossplay_enabled":true}' };
+    await render();
+  }
+  await act(async () => { host.scrollIntoView({ block: "start" }); });
+}
+
 async function run() {
   const bootstrap = await bootstrapApp({ includeSystemSnapshot: false });
   const minecraft = bootstrap.state.instances.find((instance) => instance.module_id === "minecraft");
@@ -306,6 +387,7 @@ async function run() {
   check(nativeDialogs === 0 && errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   checks++;
   await checkConnectionRefresh(selected, other);
+  await checkCrossplayConnection(selected);
   check(errors.length === 0, `Connection loader produced browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, native_dialogs: nativeDialogs, browser_errors: errors,
     card_width: Math.round(card.getBoundingClientRect().width), card_height: Math.round(card.getBoundingClientRect().height), card_shell_height: Math.round(shell.getBoundingClientRect().height), start_width: Math.round(start().getBoundingClientRect().width),

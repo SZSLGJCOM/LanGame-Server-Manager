@@ -130,6 +130,7 @@ export const ZH_CN_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.workspace.save": "保存",
   "returntomoria.workspace.saved": "已保存，下次启动时应用。",
   "returntomoria.workspace.saveFailed": "未能确认已保存的配置，请重新加载实例后再重试。",
+  "returntomoria.workspace.upgradeWarningShort": "升级不可撤销，请先备份世界。",
   "returntomoria.workspace.upgradeWarning": "升级无法撤销。请先备份世界；升级后，没有对应 DLC 的玩家无法加入。",
   "returntomoria.workspace.conflict": "此设置已在其他位置更改，请放弃修改并重新加载。",
   "returntomoria.workspace.schemaUnavailable": "暂时无法读取此游戏的配置定义。",

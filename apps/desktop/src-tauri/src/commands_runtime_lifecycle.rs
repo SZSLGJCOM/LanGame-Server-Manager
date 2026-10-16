@@ -386,6 +386,14 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
     ensure_instance_bind_policy_allowed(&instance, &descriptor.runtime.bind_address)?;
+    let (instance_lock, shared_install_guard) = super::commands_file_mods::recover_before_start(
+        storage,
+        runtime_start_reservation,
+        &instance_id,
+        &descriptor.manifest_toml,
+        (instance_lock, shared_install_guard),
+    )
+    .await?;
     let port_groups =
         super::commands_runtime_ark::port_groups(&instance, &descriptor.runtime.port_groups)?;
     let remapped_ports = app_runtime::remap_taken_port_bindings_for_module(
@@ -713,6 +721,13 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             }
         }
     }
+    let mut vrising_startup =
+        super::commands_runtime_supervision::vrising_startup::StartupSession::prepare(
+            &module.summary.id,
+            &mut launch_plans,
+            runtime_start_reservation,
+        )
+        .await?;
     let serialize_asa_mod_startup = asa_mod_startup::requires_barrier(
         &module.summary.id,
         launch_plans.len(),
@@ -850,6 +865,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 reservation: runtime_start_reservation,
                 asa_session: &mut asa_startup_images,
             },
+            vrising_startup.as_mut(),
         )
         .await
     {

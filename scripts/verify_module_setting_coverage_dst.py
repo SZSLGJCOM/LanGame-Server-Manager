@@ -469,9 +469,9 @@ def validate_dst_instance_config_commit_contract(
 
     for source, function, call in (
         (storage_instances_source, "update_instance_locked",
-         "update_instance_with_baseline_locked(paths,input,settings_lock,None).await"),
+         "update_instance_with_baseline_locked(paths,input,settings_lock,None,None).await"),
         (storage_templates_source, "write_pending_instance_configuration",
-         "write_pending_configuration_with_native_snapshot(templates_root,render_input,context,config_path,input,prepared,None,)"),
+         "write_pending_configuration_with_native_snapshot(templates_root,&render_input,&context,config_path,InstanceConfigInput{settings:settings.clone(),..input},prepared,NativeConfigurationSnapshots{moria_permissions:None,enshrouded_bans:native_bans,},)"),
     ):
         if call not in re.sub(r"\s+", "", rust_function_body_from_source(source, function)):
             failures.append(f"dontstarve: {function} must delegate to the coordinated native configuration path")
@@ -480,7 +480,6 @@ def validate_dst_instance_config_commit_contract(
     for marker in (
         "render_module_templates_with_writer(",
         "write_rendered_preserving_ark_ini(render_input, path, rendered, &mut files)",
-        "materialize_module_support_files_pending(context, &mut files, prepared)?;",
         "files.write(config_path, &render_instance_config(input)?)?;",
         "Err(error) => Err(files.rollback_after(error))",
     ):
@@ -493,11 +492,29 @@ def validate_dst_instance_config_commit_contract(
     if "input.module_id" not in writer_body or "return files.write(path, rendered.as_bytes())" not in writer_body:
         failures.append("dontstarve: ARK-aware writer must keep other modules on the coordinated file transaction")
 
-    support_call = "materialize_module_support_files_pending(context,&mutfiles,prepared)?;"
+    support_call = (
+        r"\bmaterialize_module_support_files_pending\(context,&mutfiles,prepared,"
+        r"native_bans\.as_ref\(\),?\)\?;"
+    )
     helper_code = re.sub(r"\s+", "", helper_body)
-    if helper_code.count(support_call) != 1 or (
-        "if!context.instance_running{" + support_call + "}"
-    ) not in helper_code:
+    support_calls = list(re.finditer(support_call, helper_code))
+    if not support_calls:
+        failures.append(
+            "dontstarve: unified support/config helper is missing its transactional support-file call"
+        )
+    stopped_blocks = [
+        re.sub(r"\s+", "", rust_function_body_from_source(
+            "fn stopped_support() " + helper_body[guard.end() - 1:], "stopped_support"
+        ))
+        for guard in re.finditer(r"\bif\s*!\s*context\.instance_running\s*\{", helper_body)
+    ]
+    # Test setup may precede the call; every stopped instance must still use
+    # this same transaction exactly once, without a second conditional gate.
+    if len(re.findall(r"\bmaterialize_module_support_files_pending\(", helper_code)) != 1 or not any(
+        block[:call.start()].count("{") == block[:call.start()].count("}")
+        for block in stopped_blocks
+        for call in re.finditer(support_call, block)
+    ):
         failures.append("dontstarve: support files must stay in the stopped-instance file transaction")
     failures.extend(private_setup_failures)
 

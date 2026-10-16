@@ -13,6 +13,9 @@ static INSTANCE_TRANSACTION_LOCKS: OnceLock<InstanceTransactionLocks> = OnceLock
 
 include!("backups_checked.rs");
 
+#[path = "save_import.rs"]
+pub(crate) mod save_import;
+
 #[path = "backups_publication.rs"]
 pub(crate) mod publication;
 
@@ -63,7 +66,9 @@ pub async fn create_instance_pre_restore_backup(
     let source_backup_id = source_backup_id.to_owned();
     run_instance_transaction(instance_root(&record), move || {
         let source = validated_backup_path(&record, &source_backup_id)?;
-        load_instance_backup_for_instance(&source, &instance_id, &source_backup_id)?;
+        let source_backup =
+            load_instance_backup_for_instance(&source, &instance_id, &source_backup_id)?;
+        let saves_dir = backup_restore_scope(&record, &saves_dir, &source_backup);
         let backup = create_instance_backup_with_prefix(
             &record,
             &saves_dir,
@@ -698,27 +703,39 @@ fn prune_instance_backups(
     let retention_count = record.backup_retention_count.max(1) as usize;
     let preserved_ids = preserve_backup_ids.iter().copied().collect::<HashSet<_>>();
     let backups = collect_instance_backups(record, instance_id)?;
-    let preserved_count = backups
-        .iter()
-        .filter(|backup| preserved_ids.contains(backup.backup_id.as_str()))
-        .count();
-    // Protected snapshots count toward the limit, but a restore must keep both its
-    // source and safeguard even when the configured limit cannot accommodate them.
-    let unprotected_retention_count = retention_count.saturating_sub(preserved_count);
-    let mut kept_non_preserved = 0usize;
+    // 7DTD map safeguards restore a different owned root. Pruning a world
+    // backup must not consume the map's retention budget (or vice versa).
+    let map_root = instance_root(record).join("GeneratedWorlds");
+    let map_scope = |backup: &InstanceBackupResult| {
+        record.summary.module_id == "sevendaystodie" && Path::new(&backup.saves_path) == map_root
+    };
+    for generated_map in [false, true] {
+        let backups: Vec<_> = backups
+            .iter()
+            .filter(|backup| map_scope(backup) == generated_map)
+            .collect();
+        let preserved_count = backups
+            .iter()
+            .filter(|backup| preserved_ids.contains(backup.backup_id.as_str()))
+            .count();
+        // Protected snapshots count toward the limit, but a restore must keep both its
+        // source and safeguard even when the configured limit cannot accommodate them.
+        let unprotected_retention_count = retention_count.saturating_sub(preserved_count);
+        let mut kept_non_preserved = 0usize;
 
-    for backup in backups {
-        if preserved_ids.contains(backup.backup_id.as_str()) {
-            continue;
+        for backup in backups {
+            if preserved_ids.contains(backup.backup_id.as_str()) {
+                continue;
+            }
+
+            if kept_non_preserved < unprotected_retention_count {
+                kept_non_preserved += 1;
+                continue;
+            }
+
+            let backup_path = validated_backup_path(record, &backup.backup_id)?;
+            remove_managed_directory(&backup_path, &instance_backup_root(record))?;
         }
-
-        if kept_non_preserved < unprotected_retention_count {
-            kept_non_preserved += 1;
-            continue;
-        }
-
-        let backup_path = validated_backup_path(record, &backup.backup_id)?;
-        remove_managed_directory(&backup_path, &instance_backup_root(record))?;
     }
 
     Ok(())

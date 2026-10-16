@@ -1,6 +1,6 @@
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
-import { bootstrapApp, readInstanceDetails, updateInstance } from "../../src/api";
+import { bootstrapApp, createInstance, readInstanceDetails, updateInstance } from "../../src/api";
 import { I18nProvider } from "../../src/i18n";
 import { SystemView } from "../../src/views/SystemView";
 import type { InstanceDetails, PortBinding } from "../../src/types";
@@ -31,12 +31,12 @@ async function settleUntil(predicate: () => boolean, description: string) {
 }
 const ports = (port: number): PortBinding[] => [{ name: "query", protocol: "udp", port: port + 1 },
   { name: "game", protocol: "udp", port }];
-async function savePorts(details: InstanceDetails, nextPorts: PortBinding[]) {
+async function savePorts(details: InstanceDetails, nextPorts: PortBinding[], settingsJson = details.settings_json) {
   let updated!: InstanceDetails;
   // Canvas measurement and renderer setup may finish while storage is pending.
   await act(async () => {
     updated = await updateInstance({ id: details.summary.id, bind_ip: "0.0.0.0", ports: nextPorts,
-      settings_json: details.settings_json, auto_backup_on_stop: details.auto_backup_on_stop,
+      settings_json: settingsJson, auto_backup_on_stop: details.auto_backup_on_stop,
       backup_retention_count: details.backup_retention_count }, details.settings_json);
   });
   return updated;
@@ -129,6 +129,18 @@ async function run() {
       "Saved connection text must remain visible inside its row");
   }
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
+  checks++;
+
+  const provisioned = await createInstance({ name: "Valheim", module_id: "valheim" });
+  let valheim = await readInstanceDetails(provisioned.summary.id);
+  valheim = await savePorts(valheim, valheim.ports, JSON.stringify({ ...JSON.parse(valheim.settings_json), crossplay_enabled: true }));
+  props.instances = [...summaries, valheim.summary];
+  await render();
+  const crossplay = locale === "zh-CN" ? "跨平台：加入码或服务器列表" : "Crossplay: join code or server list";
+  await settleUntil(() => address("Valheim")?.textContent === crossplay,
+    "System overview must consume the projected Valheim backend and replace local adapter addresses");
+  check(address("Valheim")?.title.includes("Radmin") && !address("Valheim")?.textContent?.includes("192.0.2.42"),
+    "Crossplay row must explain the local-IP restriction without presenting a stale adapter");
   checks++;
   return { status: "passed", checks, locale, browser_errors: errors, opened_instances: opened,
     displayed_connections: [...fixture.querySelectorAll(".system-instance-item-address")].map((entry) => entry.textContent) };

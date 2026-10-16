@@ -9,8 +9,9 @@ pub(crate) use templates_materialize::ManagedConfigMutation;
 pub(crate) use templates_materialize::materialize_module_support_files;
 pub(crate) use templates_materialize::validate_asa_mod_configurations;
 pub(crate) use templates_materialize::{
-    PreparedWorkshopConfiguration, prepare_workshop_configuration_in_worker,
-    write_pending_instance_configuration, write_pending_instance_configuration_in_worker,
+    NativeConfigurationSnapshots, PreparedWorkshopConfiguration,
+    prepare_workshop_configuration_in_worker, write_pending_instance_configuration,
+    write_pending_instance_configuration_in_worker,
 };
 #[path = "templates_prestart.rs"]
 mod templates_prestart;
@@ -647,6 +648,23 @@ pub(crate) fn collect_schema_defaults_from_schema_json(
     schema_json: Option<&str>,
     context: SchemaDefaultContext<'_>,
 ) -> Result<Map<String, Value>, StorageError> {
+    collect_schema_defaults(schema_json, context, true)
+}
+
+/// Inspection must not generate a fresh secret for a missing persisted field.
+/// Creation and configuration writes retain their existing generation behavior.
+pub(crate) fn collect_schema_inspection_defaults(
+    schema_json: Option<&str>,
+    context: SchemaDefaultContext<'_>,
+) -> Result<Map<String, Value>, StorageError> {
+    collect_schema_defaults(schema_json, context, false)
+}
+
+fn collect_schema_defaults(
+    schema_json: Option<&str>,
+    context: SchemaDefaultContext<'_>,
+    generate_secrets: bool,
+) -> Result<Map<String, Value>, StorageError> {
     let mut settings = Map::new();
 
     let Some(schema_json) = schema_json else {
@@ -662,6 +680,15 @@ pub(crate) fn collect_schema_defaults_from_schema_json(
         let Some(property) = property.as_object() else {
             continue;
         };
+
+        if !generate_secrets
+            && property
+                .get("x-lsgm-default-source")
+                .and_then(Value::as_str)
+                == Some("generated_secret")
+        {
+            continue;
+        }
 
         if let Some(default) = resolve_schema_default_value(property, context) {
             settings.insert(key.clone(), default);

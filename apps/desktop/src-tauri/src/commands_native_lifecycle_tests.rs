@@ -18,11 +18,15 @@ mod creation;
 mod diagnostics;
 #[path = "commands_dragonwilds_compatibility_tests.rs"]
 mod dragonwilds_compatibility;
+#[path = "commands_enshrouded_compatibility_tests.rs"]
+mod enshrouded_compatibility;
 #[path = "commands_native_environment.rs"]
 mod environment;
 #[cfg(windows)]
 #[path = "commands_existing_instance_acceptance.rs"]
 mod existing_instances;
+#[path = "commands_file_mods_acceptance.rs"]
+mod file_mods_acceptance;
 use crate::commands::tests::native_firewall as firewall;
 #[path = "commands_native_gm_tools.rs"]
 mod gm_tools;

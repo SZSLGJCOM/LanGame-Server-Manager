@@ -8,6 +8,8 @@
 
 - [项目介绍与下载](../README.md)
 - [服务器配置](server-configuration.md#简体中文)：设置、保存、实例隔离与生效方式。
+- [Mod 管理](mod-management.md#简体中文)：导入、启停、依赖检查与保留配置的删除。
+- [存档导入支持结果](game-save-import.md)：31 款已有专服存档迁入与单机转换限制。
 - [系统资源监控](system-monitoring.md#简体中文)：资源状态、采样有效性与提醒。
 - [LAN AI 助手](assistant.md#简体中文)与[游戏文档库](game-knowledge.md#简体中文)。
 - [玩家管理能力](player-center-capability-matrix.md)：各游戏的查询与管理范围。
@@ -33,6 +35,8 @@
 
 - [Project introduction and downloads](../README.en.md).
 - [Server configuration](server-configuration.md#english): settings, saving, instance isolation and applying changes.
+- [Mod management](mod-management.md#english): import, enablement, dependency checks and deletion with configuration preservation.
+- [Save import support](game-save-import.md): existing dedicated saves for 31 games and single-player conversion limits.
 - [System monitoring](system-monitoring.md#english): resource states, observation quality and alerts.
 - [LAN AI assistant](assistant.md#english) and [game documentation](game-knowledge.md#english).
 - [Player management capabilities](player-center-capability-matrix.md).

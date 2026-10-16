@@ -1,4 +1,5 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { ShellIcon } from "../../components/ShellIcon";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, RuntimeResourceLimits, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
@@ -6,7 +7,7 @@ import { instanceHasRunningProcess } from "../../runtime-action-state";
 import { mergeResourceLimits, parseResourceDraft, readResourceLimits, resourceDraft, type ResourceDraft } from "../../runtime-resource-policy";
 import { parseSettingsObject, serializeSettingsObject } from "../settings/guided-settings";
 import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
-import { ConfigurationHelp, useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
+import { ConfigurationHelp, useConfigurationFieldHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import "./runtime-resources.css";
 
 interface Props {
@@ -100,7 +101,8 @@ function ResourceForm(props: Props) {
   const savedLimits = data && props.readOnly ? retainedLimits(data.settings) : {};
   return <section className="server-resource-policy server-maintenance-card" aria-label={props.t("servers.resources.title")}>
     <div className="server-resource-heading">
-      <h3 className="server-workbench-section-label">{props.t("servers.resources.title")}</h3>
+      <h3 className="server-workbench-section-label server-maintenance-card-label">
+          <ShellIcon name="server" className="server-workbench-section-icon" />{props.t("servers.resources.title")}</h3>
       {running && <p className="form-note">{props.t("servers.resources.stopFirst")}</p>}
     </div>
     <form className="server-save-policy-editor" onSubmit={(event) => void save(event)} noValidate>
@@ -140,7 +142,7 @@ function ResourceForm(props: Props) {
       {(dirty || status !== "idle") && <div className="server-backup-policy-footer">
         <ActivityNotice tone={saving ? "info" : "success"}>{saving ? props.t("servers.backups.policySaving") : status === "saved" ? props.t("servers.backups.policySaved") : ""}</ActivityNotice>
         {dirty && <button type="button" className="ghost-button" disabled={saving || Boolean(props.readOnly)} onClick={() => { setEdit(null); setStatus("idle"); setSaveError(null); }}>{props.t("servers.savePolicy.reload")}</button>}
-        <button type="submit" className="secondary-button" disabled={disabled || !dirty || Boolean(invalid)}>{props.t("servers.backups.policySave")}</button>
+        <ConfigurationActionHelp reason={running ? props.t("servers.resources.stopFirst") : invalid ? props.t(`servers.resources.invalid.${invalid}`) : !dirty ? props.t("servers.maintenance.noChanges") : null}><button type="submit" className="secondary-button" disabled={disabled || !dirty || Boolean(invalid)}>{props.t("servers.backups.policySave")}</button></ConfigurationActionHelp>
       </div>}
     </form>
   </section>;

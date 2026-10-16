@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "commands_vrising_startup.rs"]
+pub(super) mod vrising_startup;
+
 #[path = "commands_runtime_reconciliation.rs"]
 mod runtime_reconciliation;
 #[path = "commands_runtime_restart.rs"]
@@ -1496,6 +1499,34 @@ pub(super) struct StartupVerificationContext<'a> {
     pub(super) asa_session: &'a mut super::commands_asa_startup_budget::StartupSession,
 }
 
+enum ListenerStartupBudget<'a> {
+    Standard(super::commands_asa_startup_budget::StartupBudget<'a>),
+    Vrising(vrising_startup::StartupBudget<'a>),
+}
+
+impl ListenerStartupBudget<'_> {
+    async fn remaining(&mut self) -> Result<Duration, String> {
+        match self {
+            Self::Standard(budget) => budget.remaining().await,
+            Self::Vrising(budget) => budget.remaining().await,
+        }
+    }
+
+    fn record_evaluation(&mut self, evaluation: &StrictBindEvaluation) -> Result<(), String> {
+        match self {
+            Self::Standard(budget) => budget.record_evaluation(evaluation),
+            Self::Vrising(budget) => budget.record_evaluation(),
+        }
+    }
+
+    fn timeout_message(&self) -> String {
+        match self {
+            Self::Standard(budget) => budget.timeout_message(),
+            Self::Vrising(budget) => budget.timeout_message(),
+        }
+    }
+}
+
 pub(super) async fn verify_spawned_process_bind_address(
     state: &DesktopState,
     storage: &StorageBootstrap,
@@ -1503,6 +1534,7 @@ pub(super) async fn verify_spawned_process_bind_address(
     policy: &ModuleBindAddressSpec,
     spawned_processes: &mut [(ProcessLaunchPlan, app_runtime::SpawnedProcess)],
     context: StartupVerificationContext<'_>,
+    vrising_session: Option<&mut vrising_startup::StartupSession>,
 ) -> Result<(), String> {
     let StartupVerificationContext {
         source,
@@ -1536,15 +1568,25 @@ pub(super) async fn verify_spawned_process_bind_address(
         .collect::<Vec<_>>();
     let timeout = Duration::from_millis(policy.startup_timeout_ms);
     let started_at = Instant::now();
-    let mut startup_budget = super::commands_asa_startup_budget::StartupBudget::prepare(
-        &instance.summary.module_id,
-        spawned_processes,
-        timeout,
-        start_reservation,
-        startup_images,
-        &required_ports,
-    )
-    .await?;
+    let mut startup_budget = if let Some(session) = vrising_session {
+        ListenerStartupBudget::Vrising(vrising_startup::StartupBudget::prepare(
+            session,
+            spawned_processes,
+            timeout,
+        )?)
+    } else {
+        ListenerStartupBudget::Standard(
+            super::commands_asa_startup_budget::StartupBudget::prepare(
+                &instance.summary.module_id,
+                spawned_processes,
+                timeout,
+                start_reservation,
+                startup_images,
+                &required_ports,
+            )
+            .await?,
+        )
+    };
     let mut consecutive_ready_samples = 0_u8;
 
     loop {

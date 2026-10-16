@@ -820,7 +820,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     let treeExited = false;
     // Capture the mounted fixture first, then let React finish its own cleanup
     // and report errors from the page and its preview frames before browser exit.
-    if (fixtureCleanup && endpoint && child?.exitCode === null && child.signalCode === null) {
+    if (fixtureCleanup && startup.fixture_requested_ms !== null && endpoint && child?.exitCode === null && child.signalCode === null) {
       try {
         const result = await browserCommand(await pageEndpoint(), "Runtime.evaluate", {
           expression: "globalThis.__reliabilityFixtureCleanup()", awaitPromise: true, returnByValue: true,

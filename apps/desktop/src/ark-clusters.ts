@@ -64,3 +64,10 @@ export function clusterOperationCounts(result: ArkClusterOperationResult) {
     return counts;
   }, { succeeded: 0, skipped: 0, failed: 0 });
 }
+
+/** Strip the Win32 verbatim prefix (\\?\ or \\?\UNC\) so paths read like Explorer paths. */
+export function displayLocalPath(path: string | null | undefined): string {
+  const value = String(path ?? "");
+  if (value.startsWith("\\\\?\\UNC\\")) return `\\\\${value.slice(8)}`;
+  return value.startsWith("\\\\?\\") ? value.slice(4) : value;
+}

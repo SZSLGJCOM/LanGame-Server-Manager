@@ -1,0 +1,9 @@
+.mw-entry-row.mw-entry-row--adopt {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.mw-managed-adopt {
+  padding: 6px 9px;
+  white-space: nowrap;
+  font-size: var(--text-secondary);
+}

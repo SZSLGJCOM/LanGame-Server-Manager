@@ -90,7 +90,7 @@ target_label = "BepInEx/plugins"
 accepts = ["dll", "folder", "zip"]
 
 [storage]
-runtime_copy_exclusions = ["BepInEx/plugins", "BepInEx/config", "BepInEx/cache", "BepInEx/patchers", "BepInEx/LogOutput.log"]
+runtime_copy_exclusions = ["BepInEx", "winhttp.dll", "doorstop_config.ini", ".doorstop_version", ".langame-valheim-loader.json"]
 saves_path_template = "{{paths.instance_root}}/saves"
 
 [[runtime.port_roles]]

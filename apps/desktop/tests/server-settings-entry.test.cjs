@@ -483,9 +483,11 @@ test("settings surface uses one compact control design language", () => {
   assert.match(selectControlCss, /select\s*\{[\s\S]*?background-repeat: no-repeat !important;/, "all selects should share a non-repeating global arrow rule");
   assert.doesNotMatch(guidedCss, /select\.settings-schema-input\s*\{/, "guided controls should not own a second select arrow");
   assert.doesNotMatch(overlaysCss, /select\.settings-schema-select/, "overlay controls should not own a second select arrow");
+  const portFieldsSource = readSource("apps", "desktop", "src", "views", "settings", "InstancePortFields.tsx");
   assert.match(connectionCss, /\.instance-port-fields__input/, "player port input should match compact settings controls");
-  assert.match(connectionCss, /minmax\(276px, 420px\)/, "player port group should leave enough width for inline secondary ports");
-  assert.match(connectionCss, /width: 96px;/, "inline port items should fit several listeners beside the listen address");
+  assert.match(portFieldsSource, /settings-schema-grid instance-port-fields/, "ports should use the shared two-column settings grid");
+  assert.match(portFieldsSource, /settings-schema-field instance-port-fields__item/, "each port should be a standard settings field");
+  assert.doesNotMatch(connectionCss, /width: 96px;|minmax\(276px, 420px\)/, "ports must not shrink into one-off compact boxes");
   assert.match(connectionCss, /\.instance-connection-settings__grid/, "network settings should use a deliberate focused layout");
   assert.match(connectionCss, /\.instance-port-fields/, "player ports should stay inside the connection row");
 });
@@ -1143,7 +1145,7 @@ test("maintenance keeps storage, policy and broadcast in its section navigation 
   assert.match(maintenanceWorkspace, /maintenance-workspace/);
   assert.match(
     serverMaintenance,
-    /id: "backups"[\s\S]*server-backup-history-card[\s\S]*DstWorldImportPanel[\s\S]*id: "save-policy"[\s\S]*server-backup-policy-card[\s\S]*id: "runtime"[\s\S]*InstanceAutostartEditor[\s\S]*RuntimeRecoveryEditor[\s\S]*id: "storage"[\s\S]*InstanceIsolationPanel/
+    /id: "backups"[\s\S]*server-backup-history-card[\s\S]*id: "save-import"[\s\S]*SaveImportPanel[\s\S]*id: "save-policy"[\s\S]*server-backup-policy-card[\s\S]*id: "runtime"[\s\S]*InstanceAutostartEditor[\s\S]*RuntimeRecoveryEditor[\s\S]*id: "storage"[\s\S]*InstanceIsolationPanel/
   );
   assert.doesNotMatch(serverMaintenance, /<details|<summary|maintenance-disclosure/);
   assert.doesNotMatch(serverMaintenance, /role="tablist"|server-file-panel--paths|server-maintenance-backup-grid/);

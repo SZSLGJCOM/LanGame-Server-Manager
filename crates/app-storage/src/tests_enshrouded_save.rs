@@ -71,25 +71,35 @@ impl EnshroudedSaveFixture {
     }
 
     async fn assert_unchanged(&self, before: &[Vec<u8>; 3]) {
-        let details = read_instance_details(&self.paths, &self.original.summary.id)
+        // A malformed native roster deliberately blocks the projected details
+        // API. Verify persistence independently so this rollback assertion still
+        // checks every DB field and every original file, including the bad JSON.
+        let pool = crate::storage_db::connect_pool(&self.paths).await.unwrap();
+        let record = crate::storage_db::fetch_instance_record(&pool, &self.original.summary.id)
             .await
             .unwrap();
-        assert_eq!(details.summary.bind_ip, self.original.summary.bind_ip);
-        assert_eq!(details.summary.autostart, self.original.summary.autostart);
+        let ports = crate::storage_db::load_instance_ports(&pool, &self.original.summary.id)
+            .await
+            .unwrap();
+        pool.close().await;
+        assert_eq!(record.summary.bind_ip, self.original.summary.bind_ip);
+        assert_eq!(record.summary.autostart, self.original.summary.autostart);
         assert_eq!(
-            details.auto_backup_on_stop,
+            record.auto_backup_on_stop,
             self.original.auto_backup_on_stop
         );
         assert_eq!(
-            details.backup_retention_count,
+            record.backup_retention_count,
             self.original.backup_retention_count
         );
         assert_eq!(
-            serde_json::to_value(&details.ports).unwrap(),
+            serde_json::to_value(&ports).unwrap(),
             serde_json::to_value(&self.original.ports).unwrap()
         );
+        let persisted: Value = serde_json::from_slice(&fs::read(&self.files[0]).unwrap()).unwrap();
+        let expected_settings: Value = serde_json::from_str(&self.original.settings_json).unwrap();
         assert!(
-            details.settings_json == self.original.settings_json,
+            persisted["settings"] == expected_settings,
             "failed save changed persisted settings"
         );
         for (path, expected) in self.files.iter().zip(before) {
@@ -105,6 +115,64 @@ impl EnshroudedSaveFixture {
 impl Drop for EnshroudedSaveFixture {
     fn drop(&mut self) {
         cleanup_root(&self.root);
+    }
+}
+
+#[tokio::test]
+async fn enshrouded_1_0_settings_validate_before_writes_and_render_native_values() {
+    let fixture = EnshroudedSaveFixture::new().await;
+    let before = fixture.file_snapshot();
+    for invalid in [
+        serde_json::json!(-1),
+        serde_json::json!(0),
+        serde_json::json!(12),
+        serde_json::json!(20),
+        serde_json::json!(21),
+        serde_json::json!(10.5),
+        serde_json::json!("11"),
+    ] {
+        let mut input = fixture.update_input();
+        let mut settings: Value = serde_json::from_str(&input.settings_json).unwrap();
+        settings["flame_level_fog_removal"] = invalid;
+        input.settings_json = settings.to_string();
+        assert!(matches!(
+            update_instance(&fixture.paths, input).await,
+            Err(StorageError::InvalidModuleSetting { field, .. }) if field == "flame_level_fog_removal"
+        ));
+        fixture.assert_unchanged(&before).await;
+    }
+    // Existing instances created before 1.0 do not store the new setting.
+    let mut omitted = fixture.update_input();
+    let mut previous: Value = serde_json::from_str(&omitted.settings_json).unwrap();
+    previous
+        .as_object_mut()
+        .unwrap()
+        .remove("flame_level_fog_removal");
+    omitted.settings_json = previous.to_string();
+    update_instance(&fixture.paths, omitted).await.unwrap();
+    materialize_instance_configuration_for_start(&fixture.paths, &fixture.original.summary.id)
+        .await
+        .unwrap();
+    let native: Value = serde_json::from_slice(&fs::read(&fixture.files[2]).unwrap()).unwrap();
+    assert_eq!(native["gameSettings"]["flameLevelFogRemoval"], 11);
+    for level in [1, 11] {
+        let mut input = fixture.update_input();
+        let mut settings: Value = serde_json::from_str(&input.settings_json).unwrap();
+        settings["game_settings_preset"] = serde_json::json!("Custom");
+        settings["random_spawner_amount"] = serde_json::json!("Automatic");
+        settings["flame_level_fog_removal"] = serde_json::json!(level);
+        input.settings_json = settings.to_string();
+        let saved = update_instance(&fixture.paths, input).await.unwrap();
+        let persisted: Value = serde_json::from_str(&saved.settings_json).unwrap();
+        assert_eq!(persisted["flame_level_fog_removal"], level);
+        for path in &fixture.files[1..] {
+            let native: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+            assert_eq!(native["gameSettings"]["flameLevelFogRemoval"], level);
+            assert_eq!(native["gameSettings"]["randomSpawnerAmount"], "Automatic");
+            assert_eq!(native["gameSettings"]["aggroPoolAmount"], "Normal");
+        }
+        let runtime: Value = serde_json::from_slice(&fs::read(&fixture.files[2]).unwrap()).unwrap();
+        assert_eq!(runtime["futureNativeOption"]["enabled"], true);
     }
 }
 
@@ -146,10 +214,10 @@ async fn enshrouded_account_hash_save_and_prestart_keep_exact_ids() {
         .await
         .unwrap();
     let persisted: Value = serde_json::from_str(&loaded.settings_json).unwrap();
-    assert_eq!(persisted["banned_player_ids"], hashes);
+    assert_eq!(persisted["banned_player_ids"], hashes.replace(',', "\n"));
     for path in &fixture.files[1..] {
         let native: Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
-        let ids: Vec<_> = native["bans"]
+        let ids: Vec<_> = native["bannedAccounts"]
             .as_array()
             .unwrap()
             .iter()
@@ -157,7 +225,7 @@ async fn enshrouded_account_hash_save_and_prestart_keep_exact_ids() {
             .collect();
         assert_eq!(ids, [0, 9007199254740993, 76561198000000001, u64::MAX]);
         assert_eq!(
-            native["bans"][3]["banDate"],
+            native["bannedAccounts"][3]["banDate"],
             serde_json::json!({"value": 0})
         );
     }
@@ -186,6 +254,10 @@ async fn enshrouded_update_invalid_runtime_keeps_files_and_database_unchanged() 
     assert!(matches!(
         error,
         StorageError::ModuleSupportMaterialization { .. }
+    ));
+    assert!(matches!(
+        read_instance_details(&fixture.paths, &fixture.original.summary.id).await,
+        Err(StorageError::ModuleSupportMaterialization { .. })
     ));
     fixture.assert_unchanged(&before).await;
 }
@@ -298,6 +370,10 @@ async fn enshrouded_materialize_invalid_runtime_keeps_source_and_database_unchan
         };
         assert!(matches!(
             result,
+            Err(StorageError::ModuleSupportMaterialization { .. })
+        ));
+        assert!(matches!(
+            read_instance_details(&fixture.paths, &fixture.original.summary.id).await,
             Err(StorageError::ModuleSupportMaterialization { .. })
         ));
         fixture.assert_unchanged(&before).await;

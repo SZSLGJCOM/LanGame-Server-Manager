@@ -53,6 +53,8 @@ import type {
   LogTailSnapshot,
   RuntimeLogSource,
   ManualModInventoryResult,
+  ManagedModAction,
+  ManagedModActionResult,
   ManualModReferenceResolveResult,
   ModuleDetails,
   ModuleInstallResult,
@@ -202,6 +204,8 @@ export const installManualModReferences = (instanceId: string, references: strin
   });
 export const readManualModInventory = (instanceId: string) =>
   invokeOrMock<ManualModInventoryResult>("read_manual_mod_inventory", { instanceId });
+export const manageManualMod = (instanceId: string, packageId: string, action: ManagedModAction) =>
+  invokeOrMock<ManagedModActionResult>("manage_manual_mod", { instanceId, packageId, action });
 export const readInstanceArkMapAvailability = async (instanceId: string) =>
   parseInstanceArkMapAvailability(await invokeOrMock<unknown>("read_instance_ark_map_availability", {
     instanceId

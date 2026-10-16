@@ -1,0 +1,1006 @@
+[
+  {
+    "moduleId": "abioticfactor",
+    "server": {
+      "status": "direct",
+      "zh": "可迁入原生专服世界目录；目标由 world_save_name 选择。",
+      "en": "Native dedicated-server world folders can be transferred; world_save_name selects the destination."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "官方确认 Steam 单机及玩家托管世界可迁入；PS5、Xbox、Windows Game Pass 存档不支持此路径。",
+      "en": "The developer documents migration of Steam solo and player-hosted worlds. PS5, Xbox and Windows Game Pass saves are excluded."
+    },
+    "source": {
+      "zh": "选择 Worlds 下的单个完整世界目录，保留 WorldSave_Facility.sav、WorldSave_MetaData.sav 及关联文件；本地来源通常在 %LOCALAPPDATA%/AbioticFactor/Saved/SaveGames/<SteamID>/Worlds。",
+      "en": "Select one complete world folder under Worlds, including WorldSave_Facility.sav, WorldSave_MetaData.sav and associated files. Local worlds normally reside under %LOCALAPPDATA%/AbioticFactor/Saved/SaveGames/<SteamID>/Worlds."
+    },
+    "cautions": [
+      {
+        "zh": "确认来源与目标的游戏版本和 Mod 相容；已有沙盒规则应在设置中核对，导入世界不代表接管来源服务器的管理员权限。",
+        "en": "Match game versions and mods. Review sandbox settings separately; importing a world does not import the source server's administrator permissions."
+      }
+    ],
+    "references": [
+      {
+        "label": "Deep Field Games: Migrating Saves",
+        "url": "https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Guide-%E2%80%90-Migrating-Saves.md"
+      },
+      {
+        "label": "Deep Field Games: Launch Parameters",
+        "url": "https://raw.githubusercontent.com/wiki/DFJacob/AbioticFactorDedicatedServer/Technical-%E2%80%90-Launch-Parameters.md"
+      }
+    ]
+  },
+  {
+    "moduleId": "arksurvivalascended",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入同版本、同地图的 ASA 原生存档时，需同时保留角色、部落及所需 Mod；集群数据另行核对。",
+      "en": "Transfer ASA saves for the same version and map together with their player, tribe and required mod data. Review cluster data separately."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "当前单机主人角色到专服 ARK/EOS 身份的完整转换规则未证实；提供世界文件不等于完成角色转换。",
+      "en": "The complete current mapping from a solo host to the dedicated server's ARK/EOS identity was not verified. Supplying world files does not complete character conversion."
+    },
+    "source": {
+      "zh": "选择原专服 Saved 根，或已含完整玩家、部落数据的主地图目录，保留 map_name 对应的 .ark 及原生备份。",
+      "en": "Select the original server Saved root, or a complete main-map directory with player and tribe files, including the configured map_name .ark and native backups."
+    },
+    "cautions": [
+      {
+        "zh": "ASA 与 ASE 是不同存档契约；相同扩展名不证明兼容。Mod、账户平台和集群上传数据也需独立核对。",
+        "en": "ASA and ASE have different save contracts; matching extensions do not prove compatibility. Check mods, account platforms and uploaded cluster data separately."
+      }
+    ],
+    "references": [
+      {
+        "label": "Studio Wildcard: Server Backups",
+        "url": "https://survivetheark.com/index.php?/server-backups/"
+      },
+      {
+        "label": "Studio Wildcard: Community Crunch 480",
+        "url": "https://survivetheark.com/index.php?/forums/topic/773181-community-crunch-480-first-look-at-ossidon/"
+      }
+    ]
+  },
+  {
+    "moduleId": "arksurvivalevolved",
+    "server": {
+      "status": "conditional",
+      "zh": "PC 原生专服存档可重新托管，但地图、Mod 和集群转移数据必须对应。",
+      "en": "PC dedicated saves can be re-hosted when the map, mods and cluster-transfer data match."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "单机世界迁移及主人角色身份改写，本轮未取得当前版本的完整官方步骤；不能保证直接复制后保留角色。",
+      "en": "A complete current first-party procedure for solo-world migration and host identity conversion was not verified. Direct copying does not guarantee character continuity."
+    },
+    "source": {
+      "zh": "选择原专服 Saved 根或主地图目录，保留 map_name 对应的 .ark、同地图玩家、部落及原生备份文件。",
+      "en": "Select the original server Saved root or main-map directory containing the configured map_name .ark and its complete player, tribe and native backup files."
+    },
+    "cautions": [
+      {
+        "zh": "不要混用 ASE 与 ASA 存档；缺失 Mod、地图或玩家/部落数据可能造成内容或归属变化。",
+        "en": "Do not mix ASE and ASA saves. Missing mods, maps or player/tribe data can change content and ownership."
+      },
+      {
+        "zh": "LocalPlayer.arkprofile 不能被假定为专服账户档；身份转换需先确认目标账户和版本，不能靠猜 SteamID 自动重命名。",
+        "en": "Do not assume LocalPlayer.arkprofile already represents a dedicated-server account. Verify the account mapping and game version before any identity conversion."
+      }
+    ],
+    "references": [
+      {
+        "label": "Studio Wildcard: Server Backups",
+        "url": "https://survivetheark.com/index.php?/server-backups/"
+      }
+    ]
+  },
+  {
+    "moduleId": "astroneer",
+    "server": {
+      "status": "direct",
+      "zh": "官方支持将原生 .savegame 放入专服 SaveGames，并选择对应存档名。",
+      "en": "The official guide supports copying a native .savegame into the dedicated SaveGames folder and selecting its save name."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "可迁入可导出的个人世界 .savegame；需匹配命名格式及平台接入条件。",
+      "en": "An exported personal-world .savegame can be used when its naming format and platform access requirements are satisfied."
+    },
+    "source": {
+      "zh": "选择 NAME$YYYY.MM.DD-HH.MM.SS.savegame；目标 active_save_file_name 只填写 $ 前的 NAME，并启用 load_auto_save。",
+      "en": "Use NAME$YYYY.MM.DD-HH.MM.SS.savegame. Set active_save_file_name to NAME before the $ and enable load_auto_save."
+    },
+    "cautions": [
+      {
+        "zh": "同名的多个时间快照应先选定需要的版本；不把最近修改时间当作世界正确性的证明。自托管服务器的平台接入受官方限制。",
+        "en": "Choose the intended snapshot when several files share a name. A recent timestamp does not prove it is the intended world. Self-hosted servers have platform access restrictions."
+      }
+    ],
+    "references": [
+      {
+        "label": "System Era: Dedicated Servers",
+        "url": "https://astroneer.space/dedicatedserver/"
+      }
+    ]
+  },
+  {
+    "moduleId": "barotrauma",
+    "server": {
+      "status": "conditional",
+      "zh": "多人战役需一起迁入 .save 和同名 _CharacterData.xml，并在原生战役加载入口选择该存档。",
+      "en": "A multiplayer campaign requires its .save and matching _CharacterData.xml, then selection through the native campaign-loading flow."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "单人战役与多人角色保存路径不同；无完整官方转换证据，不能把单人 .save 直接标为已转换。",
+      "en": "Solo campaigns and multiplayer characters use different persistence paths. A complete official conversion was not verified; a copied solo .save must not be reported as converted."
+    },
+    "source": {
+      "zh": "选择完整多人战役集合：Campaign.save、Campaign_CharacterData.xml 及需要保留的对应快照；目标是实例 Multiplayer 目录。.save 是游戏自有压缩容器。",
+      "en": "Use the complete multiplayer campaign set: Campaign.save, Campaign_CharacterData.xml and any matching snapshots to retain. The destination is the instance Multiplayer folder; .save is the game's own compressed container."
+    },
+    "cautions": [
+      {
+        "zh": "角色 XML 缺失会丢失多人角色连续性；同时核对内容包、潜艇和游戏版本。复制文件完成后仍需在游戏中确认战役已加载。",
+        "en": "Missing character XML breaks character continuity. Match content packages, submarines and game versions, and verify the campaign loads in-game after copying."
+      }
+    ],
+    "references": [
+      {
+        "label": "Barotrauma upstream: SaveUtil",
+        "url": "https://raw.githubusercontent.com/Regalis11/Barotrauma/master/Barotrauma/BarotraumaShared/SharedSource/Utils/SaveUtil.cs"
+      },
+      {
+        "label": "Barotrauma upstream: MultiPlayerCampaign",
+        "url": "https://raw.githubusercontent.com/Regalis11/Barotrauma/master/Barotrauma/BarotraumaShared/SharedSource/GameSession/GameModes/MultiPlayerCampaign.cs"
+      }
+    ]
+  },
+  {
+    "moduleId": "conanexiles",
+    "server": {
+      "status": "conditional",
+      "zh": "原生世界数据库可迁入，但必须区分旧版 game.db 和 Enhanced 的 game_0.db，核对地图、版本及 Mod。",
+      "en": "Native world databases can be transferred, subject to map, version and mod compatibility. Distinguish legacy game.db from Enhanced game_0.db."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "当前 Enhanced 单机槽位及主人角色到专服的完整迁移未证实；不将更换数据库名称视为完整转换。",
+      "en": "A complete current Enhanced solo-slot and host-character migration was not verified. Renaming a database alone is not a verified conversion."
+    },
+    "source": {
+      "zh": "选择原专服 ConanSandbox/Saved 或数据库目录，包含已干净关闭的 game_0.db，或供游戏原生升级的 Game.db。",
+      "en": "Select the original ConanSandbox/Saved or database directory containing a cleanly closed game_0.db, or Game.db for the native game upgrade."
+    },
+    "cautions": [
+      {
+        "zh": "官方 UE4→UE5 指南说明：仅当 game_0.db 不存在时才从 Game.db 复制；已有 game_0.db 会令旧 Game.db 不被选用。",
+        "en": "The official UE4-to-UE5 guide copies Game.db only if game_0.db is absent. An existing game_0.db prevents the legacy file from being selected."
+      },
+      {
+        "zh": "加载较新引擎后的数据库不能假定可降级；保留原始副本，并独立确认玩家归属。",
+        "en": "Do not assume a database opened by a newer engine can be downgraded. Keep the original and verify player ownership separately."
+      }
+    ],
+    "references": [
+      {
+        "label": "Funcom / Inflexion: UE4 To UE5 Migration",
+        "url": "https://exiles-enhanced.inflexion.io/servers/ue4-ue5-migration/"
+      },
+      {
+        "label": "Funcom: Dedicated Servers",
+        "url": "https://www.conanexiles.com/dedicated-servers/"
+      }
+    ]
+  },
+  {
+    "moduleId": "corekeeper",
+    "server": {
+      "status": "conditional",
+      "zh": "原生世界由 world_index 槽位加载；迁入需连同该槽位关联数据，不能只复制种子或生成参数。",
+      "en": "Native worlds are selected by world_index. Transfer the slot's associated save data; seeds or generation parameters alone do not transfer progress."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "本轮官方材料只明确世界生成参数迁入，未证实完整单机进度及角色迁移；不能把 worldgenparams 复制当作转档。",
+      "en": "Reviewed first-party material documents copying generation parameters, but not complete solo progress and character migration. Copying worldgenparams is not save conversion."
+    },
+    "source": {
+      "zh": "当前实例世界存于 data/worlds，原生运行证据包含 <index>.world.gzip；槽位取 0–29。完整关联文件集合须按来源版本核对。",
+      "en": "This instance stores worlds in data/worlds; native-run evidence includes <index>.world.gzip. Slots range from 0 to 29. Confirm the complete associated file set for the source version."
+    },
+    "cautions": [
+      {
+        "zh": "官方包 README 的同种子、同 worldgenparams 步骤会创建同规则的新世界，不会还原建筑和游玩进度。Mod 和客户端/服务器版本也需匹配。",
+        "en": "The bundled README's matching-seed/worldgenparams procedure creates a new world with matching generation rules; it does not restore buildings or progress. Match mods and client/server versions."
+      }
+    ],
+    "references": [
+      {
+        "label": "Pugstorm: Dedicated Server Connection Notes",
+        "url": "https://store.steampowered.com/news/app/1621690/view/591771368562885598"
+      }
+    ]
+  },
+  {
+    "moduleId": "dontstarve",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入完整 DST Cluster，保留 Master、Caves 和其他分片的世界及玩家会话；分片配置须对应。",
+      "en": "Transfer a complete DST cluster with world and player sessions for Master, Caves and other shards, using matching shard configuration."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "DST 客户端创建的本地托管世界按 Cluster 迁入；原版 Don't Starve 单机存档不属于此模块。",
+      "en": "DST worlds hosted from the game client migrate as clusters. Original Don't Starve solo saves are outside this module's format."
+    },
+    "source": {
+      "zh": "选择包含 cluster.ini、Master 及可选 Caves 的 Cluster 目录，保留各分片 save/session；目标为实例 clusters/main。",
+      "en": "Choose the cluster containing cluster.ini, Master and optional Caves, preserving each shard's save/session data. The destination is the instance clusters/main folder."
+    },
+    "cautions": [
+      {
+        "zh": "服务器令牌、管理员名单和端口须使用目标实例配置；Mod、在线/离线身份及主从分片必须一致，不能只导入地表的一份快照。",
+        "en": "Use the destination's token, administrators and ports. Match mods, online/offline identities and shard relationships; a surface-only snapshot is not a complete multi-shard world."
+      }
+    ],
+    "references": [
+      {
+        "label": "Klei: Dedicated Server Command Line Options",
+        "url": "https://support.klei.com/hc/en-us/articles/360029556192-Dedicated-Server-Command-Line-Options-Guide"
+      }
+    ]
+  },
+  {
+    "moduleId": "enshrouded",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入来源 saveDirectory 中一致的世界文件集合；先确认游戏版本及存档格式，不能只替换一个快照。",
+      "en": "Transfer a consistent world file set from the source saveDirectory, after confirming the game version and save format. Do not replace only one snapshot."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "官方公开了本地/云端存档与世界编号，但当前版本单机槽位到专服的完整映射未证实。",
+      "en": "Official documentation identifies local/cloud saves and world IDs, but a complete current mapping from a solo slot to the dedicated server was not verified."
+    },
+    "source": {
+      "zh": "选择完整专服 savegame 目录：1.0 使用 world0.ksd 及关联备份，migrated/ 保留升级前数据；旧格式需完整保留第一槽 3ad85aea 文件族及 -index。旧档格式转换由游戏启动时执行。",
+      "en": "Choose the complete dedicated savegame directory: 1.0 uses world0.ksd and associated backups; migrated/ retains pre-upgrade data. Legacy saves require the complete first-slot 3ad85aea family and -index. The game performs legacy-format migration when started."
+    },
+    "cautions": [
+      {
+        "zh": "仓库已记录官方 1.0 专服对一个小型、无持久实体的旧世界副本完成迁移、重启和备份恢复；这不能保证复杂世界、角色或所有版本兼容。保留独立升级前副本，不猜测改名、跨槽位或降级规则。",
+        "en": "Repository evidence records the official 1.0 server migrating, restarting and restoring a tiny legacy world with no persisted entities. This does not establish compatibility for complex worlds, characters or every version. Keep independent pre-upgrade originals; do not guess renaming, slot mapping or downgrade rules."
+      }
+    ],
+    "references": [
+      {
+        "label": "Keen Games: Save Game Management",
+        "url": "https://enshrouded.zendesk.com/hc/en-us/articles/17764283835677-Save-Game-Management"
+      },
+      {
+        "label": "Keen Games: Dedicated Server Configuration",
+        "url": "https://enshrouded.zendesk.com/hc/en-us/articles/16055441447709-Dedicated-Server-Configuration"
+      }
+    ]
+  },
+  {
+    "moduleId": "humanitz",
+    "server": {
+      "status": "conditional",
+      "zh": "需迁入与 SaveName 对应的完整世界、玩家和关联索引；本轮未证实可只复制某个 .sav。",
+      "en": "Transfer the complete world, player and associated index data for SaveName. Copying an arbitrary single .sav was not verified."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "开发者确认本地主人使用 Host 身份，专服使用 Steam/EOS 身份；保留主人角色需要额外身份修补。",
+      "en": "The developer confirms local hosts use a Host identity while dedicated servers use Steam/EOS identities. Preserving the host character requires additional identity repair."
+    },
+    "source": {
+      "zh": "选择完整 SaveGames（或其 Saved 父目录），包含 SaveList/Default/Save_<SaveName>.sav、同名世界目录、SaveList/SaveCache.sav 和 DedSave_ResGlobal.sav。",
+      "en": "Select complete SaveGames or its Saved parent, including SaveList/Default/Save_<SaveName>.sav, the matching world directory, SaveList/SaveCache.sav and DedSave_ResGlobal.sav."
+    },
+    "cautions": [
+      {
+        "zh": "不要把 Host_Offline.sav 简单改名当成完整角色转换；开发者给出的处理涉及存档内部身份，且未承诺所有版本自动兼容。",
+        "en": "Renaming Host_Offline.sav alone is not a complete character conversion. The developer describes internal identity changes and does not promise automatic compatibility across versions."
+      }
+    ],
+    "references": [
+      {
+        "label": "HumanitZ developer: Host_Offline save identity",
+        "url": "https://steamcommunity.com/app/1766060/discussions/0/562535810309813537/"
+      }
+    ]
+  },
+  {
+    "moduleId": "minecraft",
+    "server": {
+      "status": "direct",
+      "zh": "同版本 Java 原版世界以完整世界目录迁入；目标文件夹由 level_name 决定。",
+      "en": "Transfer a complete world folder from a matching vanilla Java server; level_name selects the destination folder."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "Java 世界可迁入，但单机主人数据与联机 UUID 数据需单独核对；Bedrock 或依赖其他服务端的世界需先转换。",
+      "en": "Java worlds can be transferred, but verify solo-host data against multiplayer UUID data. Bedrock worlds and worlds requiring another server distribution need separate conversion."
+    },
+    "source": {
+      "zh": "选择含 level.dat 的完整 Java 世界目录，保留 region、dimensions/DIM*、data、playerdata、advancements、stats 和 datapacks 等已有内容。",
+      "en": "Choose the complete Java world folder containing level.dat, retaining its existing region, dimensions/DIM*, data, playerdata, advancements, stats and datapacks content."
+    },
+    "cautions": [
+      {
+        "zh": "不能把 level.dat 单文件视为完整世界；加载器、数据包和游戏版本需兼容，online_mode 变化会影响玩家 UUID 对应。",
+        "en": "level.dat alone is not a complete world. Match loaders, data packs and game versions; changing online_mode changes player UUID correspondence."
+      }
+    ],
+    "references": [
+      {
+        "label": "Mojang: Java Edition Server",
+        "url": "https://www.minecraft.net/en-us/download/server"
+      }
+    ]
+  },
+  {
+    "moduleId": "necesse",
+    "server": {
+      "status": "direct",
+      "zh": "原生世界存为一个世界 ZIP 或未压缩目录，world_name 与 zip_saves 选择相应保存形式。",
+      "en": "A native world is a world ZIP or uncompressed folder; world_name and zip_saves select the corresponding save form."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "本地世界与专服共用原生世界保存位置和格式；角色接管需核对世界的外部角色规则。",
+      "en": "Local worlds and dedicated servers use the native world-save location and format. Check the world's outside-character rules before assuming character continuity."
+    },
+    "source": {
+      "zh": "选择 saves/<world_name>.zip 或对应完整世界目录，内含 worldSettings.cfg 及世界/玩家关联文件；目标为实例 data/saves。",
+      "en": "Use saves/<world_name>.zip or its complete world folder, containing worldSettings.cfg and associated world/player files. The destination is the instance data/saves folder."
+    },
+    "cautions": [
+      {
+        "zh": "世界 ZIP 是游戏原生存档，不应当作通用上传包随意拆散；确认版本、Mod、allowOutsideCharacters 和存档压缩设置一致。",
+        "en": "The world ZIP is a native save, not an arbitrary upload archive. Match versions, mods, allowOutsideCharacters and save-compression settings."
+      }
+    ],
+    "references": [
+      {
+        "label": "Fair Games: Server Files",
+        "url": "https://necessegame.com/server"
+      },
+      {
+        "label": "Officially linked Necesse Wiki: Multiplayer",
+        "url": "https://necessewiki.com/Multiplayer"
+      }
+    ]
+  },
+  {
+    "moduleId": "nightingale",
+    "server": {
+      "status": "conditional",
+      "zh": "专服 Realm 与角色分开保存；迁入需保留 Offline 中的 Realm 和各平台账户 Profiles，并核对配置。",
+      "en": "Dedicated realms and characters are stored separately. Preserve Offline realm data and each platform account's Profiles, with compatible configuration."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "官方提供游戏内迁移：首次连接空专服的玩家会带入其关联 Realm；角色随连接带入，无需把本地 Saved 直接覆盖服务器。",
+      "en": "The official migration is in-game: the first player joining an empty dedicated server imports their associated realms. Characters travel when connecting; do not overwrite the server with a local Saved tree."
+    },
+    "source": {
+      "zh": "选择同一原专服的 NWX/Saved 根，包含完整 Offline/（Realm 与 Profiles）及 Config/WindowsServer/ServerState.ini 中与 Realm 一致的 CurrentDeploy。",
+      "en": "Select the original server NWX/Saved root with complete Offline/ realms and Profiles, plus Config/WindowsServer/ServerState.ini selecting the matching CurrentDeploy."
+    },
+    "cautions": [
+      {
+        "zh": "首位连接者决定空服初始 Realm。若不希望导入，应先用新角色连接；不要删除现有世界来触发迁移。官方指南对应 0.8，后续版本需复核。",
+        "en": "The first connection determines an empty server's initial realms. Connect with a new character first to avoid importing realms; do not delete existing worlds to trigger migration. The reviewed manual targets 0.8."
+      }
+    ],
+    "references": [
+      {
+        "label": "Inflexion: Nightingale Dedicated Server Manual 0.8",
+        "url": "https://a.storyblok.com/f/239842/x/e8167d5c91/nightingale-dedicated-server-0-8-final.pdf"
+      }
+    ]
+  },
+  {
+    "moduleId": "palworld",
+    "server": {
+      "status": "conditional",
+      "zh": "完整专服世界可迁入当前实例世界目录；平台、版本或运行环境变化时必须核对角色身份。",
+      "en": "Transfer a complete dedicated-server world into the instance's managed world folder. Verify character identities when platforms, versions or runtime environments change."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "单机/合作主人使用特殊角色 GUID，需同时改写角色文件及 Level.sav 中的引用；本功能不自动执行该转换。",
+      "en": "Solo/co-op hosts use a special player GUID. Conversion requires updating player files and references inside Level.sav; this feature does not perform that conversion automatically."
+    },
+    "source": {
+      "zh": "保留同一世界的 Level.sav、LevelMeta.sav、Players 及关联数据；目标为 Pal/Saved/SaveGames/0/<实例 ID>，由托管的 DedicatedServerName 选择。",
+      "en": "Keep the world's Level.sav, LevelMeta.sav, Players and associated data together. The destination is Pal/Saved/SaveGames/0/<instance ID>, selected by the managed DedicatedServerName."
+    },
+    "cautions": [
+      {
+        "zh": "不要只给 000…001.sav 改名；公会、帕鲁和物品归属也引用身份。LocalData.sav 的客户端探索数据需另行处理，来源 WorldOption.sav 也不能被当作目标配置已接管。",
+        "en": "Renaming 000…001.sav alone is insufficient; guilds, Pals and ownership also reference player identities. Handle client exploration data in LocalData.sav separately, and review source WorldOption.sav settings."
+      },
+      {
+        "zh": "角色转换证据来自社区工具源码，非 Pocketpair 官方保证；需要匹配版本的工具及可恢复原始副本。",
+        "en": "Character conversion is documented by community tool source, not guaranteed by Pocketpair. It requires version-compatible tooling and recoverable originals."
+      }
+    ],
+    "references": [
+      {
+        "label": "Pocketpair: Palworld Server Guide",
+        "url": "https://docs.palworldgame.com/"
+      },
+      {
+        "label": "Community upstream: Palworld Host Save Fix",
+        "url": "https://raw.githubusercontent.com/xNul/palworld-host-save-fix/main/README.md"
+      },
+      {
+        "label": "Community upstream: Palworld co-op save format",
+        "url": "https://github.com/haggyroth/palworld-coop-migrator/blob/main/docs/save-format.md"
+      }
+    ]
+  },
+  {
+    "moduleId": "projectzomboid",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入完整多人世界目录及配套设置；当前 -servername 固定为实例 ID，世界名称和玩家账户对应需核对。",
+      "en": "Transfer the complete multiplayer world and matching settings. This instance fixes -servername to its instance ID; verify world-name and player-account mappings."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "本地托管多人世界有官方支持人员迁移指引；真正单机角色与 networkPlayers 数据不同，不能只复制世界就承诺保留角色。",
+      "en": "Official support staff document migration of locally hosted multiplayer worlds. True solo characters differ from networkPlayers data, so world copying alone does not guarantee character migration."
+    },
+    "source": {
+      "zh": "选择含 map_ver.bin、players.db 的完整多人世界目录，或仅含一个此类世界的根；不迁入 db 下的登录账户库。",
+      "en": "Select the complete multiplayer world with map_ver.bin and players.db, or a root containing exactly one such world; the separate db login-account database is excluded."
+    },
+    "cautions": [
+      {
+        "zh": "Build 41 与 Build 42 存档和 Mod 不应混用；用户名、SteamID 或世界名称变化可能需要显式身份映射，不能自动更改账户数据库。",
+        "en": "Do not mix Build 41 and Build 42 saves or mods. Username, SteamID or world-name changes may require explicit identity mapping; do not silently rewrite account databases."
+      }
+    ],
+    "references": [
+      {
+        "label": "The Indie Stone support: Local world to dedicated server",
+        "url": "https://steamcommunity.com/app/108600/discussions/1/3198118348348733221/"
+      },
+      {
+        "label": "The Indie Stone support: Player identity in Build 42",
+        "url": "https://theindiestone.com/forums/topic/90885-issue-with-character-randomly-being-removed-as-server-host-game-ver-42131/"
+      }
+    ]
+  },
+  {
+    "moduleId": "returntomoria",
+    "server": {
+      "status": "direct",
+      "zh": "原生 MW_*.sav 世界可复制到专服 SaveGamesDedicated，再按世界名或文件名加载。",
+      "en": "Native MW_*.sav worlds can be copied into SaveGamesDedicated and loaded by world name or filename."
+    },
+    "singlePlayer": {
+      "status": "direct",
+      "zh": "官方明确支持 PC Steam 或 Epic 个人世界迁入专服；角色与世界应分别核对。",
+      "en": "The official guide explicitly supports transferring PC Steam or Epic personal worlds to a dedicated server. Verify characters separately from the world."
+    },
+    "source": {
+      "zh": "选择 SaveGamesSteam 或 SaveGamesEpic 下以 MW_ 开头的世界 .sav；保留原文件名，目标由 server_name 或 world_file_name 选择。",
+      "en": "Choose the MW_-prefixed world .sav from SaveGamesSteam or SaveGamesEpic. Preserve the filename and select it with server_name or world_file_name."
+    },
+    "cautions": [
+      {
+        "zh": "官方不支持直接重命名世界文件。未找到指定世界时服务器会创建新世界，因此复制完成后要核实实际加载结果。",
+        "en": "The official guide does not support renaming world files. A missing selected world causes creation of a new world, so verify which world actually loaded."
+      }
+    ],
+    "references": [
+      {
+        "label": "North Beach Games: Dedicated Servers Guide",
+        "url": "https://www.returntomoria.com/news-updates/dedicated-server"
+      }
+    ]
+  },
+  {
+    "moduleId": "rimworld",
+    "server": {
+      "status": "conditional",
+      "zh": "同版本 RimWorld Together 可迁入完整 Assets 数据及关联 Configs；用户、个人存档、聚落、站点和共享星球互相关联，不能仅复制一个 .rws。",
+      "en": "Migrate matching RimWorld Together Assets together with the related Configs. Accounts, personal saves, settlements, sites and the shared planet are linked; a lone .rws is insufficient."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "未证实任意原版单机档可转换为 Together 共享星球。UseClientSave 允许兼容客户端使用本地存档，不等于完成服务器世界与账号迁移。",
+      "en": "Conversion of arbitrary vanilla saves into a Together planet is unverified. UseClientSave permits a compatible client's local save; it does not migrate the shared world or account links."
+    },
+    "source": {
+      "zh": "选择原 Together 专服的完整 Assets 根，包含 WorldValuesFile.json、Users/ 和 Saves/，目标 Configs 与宿主设置保留。",
+      "en": "Select the original Together server complete Assets root with WorldValuesFile.json, Users/ and Saves/; target Configs and host settings are retained."
+    },
+    "cautions": [
+      {
+        "zh": "保持 Together、客户端游戏和 Mod 版本一致，并保留原用户名关联；配置与访问凭据需要单独核对。",
+        "en": "Match Together, game and mod versions, preserve username associations, and review configuration and credentials separately."
+      }
+    ],
+    "references": [
+      {
+        "label": "Together 26.8.31.1 native data paths",
+        "url": "https://raw.githubusercontent.com/RimWorld-Together/Rimworld-Together/26.8.31.1/Source/Server/Core/Master.cs"
+      },
+      {
+        "label": "Together save ownership and UseClientSave",
+        "url": "https://raw.githubusercontent.com/RimWorld-Together/Rimworld-Together/26.8.31.1/Source/Server/PacketManagers/PM_Saves.cs"
+      }
+    ]
+  },
+  {
+    "moduleId": "romestead",
+    "server": {
+      "status": "conditional",
+      "zh": "完整迁入 saved_worlds/<世界名>，包含 game_state、world_desc 及配套文件；AutoStartWorldName 必须对应原世界名。结构已由仓库记录的原生包检查验证。",
+      "en": "Migrate the complete saved_worlds/<world> directory, including game_state, world_desc and companions. AutoStartWorldName must match. The structure is backed by the repository's native-package inspection."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "未找到可读的一手单机转专服说明；尚未核实客户端世界目录、角色保存与专服的对应关系，不能承诺直接复制。",
+      "en": "No readable first-party conversion instructions were established. Client world layout and character mapping remain unverified; direct copying is not promised."
+    },
+    "source": {
+      "zh": "选择原专服 saved_worlds 根目录，其中包含与 AutoStartWorldName 对应的完整世界子目录；导入会替换整个目标 saved_worlds，不包含的其他目标世界也会被移出。config.json 单独核对。",
+      "en": "Select the original saved_worlds root containing the complete world subdirectory matching AutoStartWorldName. Import replaces the entire destination saved_worlds, removing destination worlds absent from the source. Review config.json separately."
+    },
+    "cautions": [
+      {
+        "zh": "客户端和专服需兼容。公开设置指南不可读，已有包检查不能替代真实玩家加入与世界加载验收。",
+        "en": "Use compatible client/server builds. Public setup guidance was unavailable; package inspection does not prove player joins or world loading."
+      }
+    ],
+    "references": [
+      {
+        "label": "Romestead publisher hotfix announcement",
+        "url": "https://steamcommunity.com/games/1805320/announcements/detail/672870313012233904"
+      }
+    ]
+  },
+  {
+    "moduleId": "runescapedragonwilds",
+    "server": {
+      "status": "direct",
+      "zh": "官方支持迁入原生世界 .sav；目标为 RSDragonwilds/Saved/SaveGames，DefaultWorldName 对应所需世界，多个同名档会影响最新档选择。",
+      "en": "Native world .sav migration is documented. Place it in RSDragonwilds/Saved/SaveGames and match DefaultWorldName; duplicate world names affect latest-save selection."
+    },
+    "singlePlayer": {
+      "status": "direct",
+      "zh": "官方明确支持本地世界 .sav 转专服，包括先在客户端创建自定义世界再迁入。角色身份与真实玩家进度仍需进入游戏核对。",
+      "en": "The publisher explicitly supports local world .sav files, including locally created custom worlds. Verify character identity and player progress in game."
+    },
+    "source": {
+      "zh": "本地 %LOCALAPPDATA%/RSDragonwilds/Saved/SaveGames 中选定的世界 .sav，或已停服专服的同类文件。",
+      "en": "The selected world .sav from %LOCALAPPDATA%/RSDragonwilds/Saved/SaveGames, or a stopped dedicated server."
+    },
+    "cautions": [
+      {
+        "zh": "停服并保留原存档备份；导入不覆盖 DedicatedServer.ini。官方指南部分限制针对 0.11，后续版本兼容性需按实际构建确认。",
+        "en": "Stop the server and retain a source backup. Keep DedicatedServer.ini separate. Some guide limits target 0.11; confirm compatibility with the installed build."
+      }
+    ],
+    "references": [
+      {
+        "label": "Jagex: moving a world to a dedicated server",
+        "url": "https://dragonwilds.runescape.com/news/how-to-dedicated-servers"
+      }
+    ]
+  },
+  {
+    "moduleId": "rust",
+    "server": {
+      "status": "conditional",
+      "zh": "迁移原 server/<identity> 中相互匹配的世界存档、地图与玩家数据库；LGSM 使用实例 ID 作为 identity。地图类型、种子、大小及自定义地图设置需匹配。",
+      "en": "Move the matching world save, map and player databases from server/<identity>. LGSM uses the instance ID as identity. Match map type, seed, size and custom-map settings."
+    },
+    "singlePlayer": {
+      "status": "not_applicable",
+      "zh": "Rust 的私人本地开服仍是专服，可按专服迁移；没有独立单机世界转换流程。",
+      "en": "A private local Rust host is still a dedicated server and follows server migration; there is no separate single-player world conversion."
+    },
+    "source": {
+      "zh": "选择已停服的单个 identity 根，包含与当前地图配置匹配的 .sav、.map 及完整玩家数据库和日志侧文件，宿主 cfg 与 Rust+ 配对凭据不迁入。",
+      "en": "Select one stopped server identity root with matching .sav and .map files and complete player databases and journal sidecars; host cfg and Rust+ pairing credentials are excluded."
+    },
+    "cautions": [
+      {
+        "zh": "强制清档与存档协议版本可能阻止旧世界加载；不能仅凭文件存在保证兼容，Mod 数据也不包含在单个世界文件中。",
+        "en": "Forced wipes and save-protocol changes can prevent old worlds loading. File presence does not prove compatibility; plugin state is separate from a world file."
+      }
+    ],
+    "references": [
+      {
+        "label": "Facepunch server identity and world configuration",
+        "url": "https://wiki.facepunch.com/rust/Creating-a-server"
+      },
+      {
+        "label": "Facepunch wipe scheduling",
+        "url": "https://wiki.facepunch.com/rust/server-wipe-timer"
+      }
+    ]
+  },
+  {
+    "moduleId": "satisfactory",
+    "server": {
+      "status": "conditional",
+      "zh": "可迁入世界 .sav；复制后仍需通过游戏内 Server Manager 加载正确存档并设置自动加载会话。不要导入 ServerSettings.<端口>.sav 等服务器身份文件。",
+      "en": "A world .sav can be migrated, then loaded through the game's Server Manager with the appropriate auto-load session. Exclude ServerSettings.<port>.sav identity files."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "本地存档可经游戏内 Manage Saves 上传到专服。导入文件与加载会话是两个步骤，Mod 世界需要对应的服务端 Mod。",
+      "en": "Local saves can be uploaded through Manage Saves. Uploading and loading a session are separate steps; modded worlds require matching server mods."
+    },
+    "source": {
+      "zh": "选择原专服 SaveGames 根（含 server/*.sav）或其 server 子目录；仅迁入世界 .sav，保留目标 ServerSettings 身份，启动后原生选档。",
+      "en": "Select the original server SaveGames root with server/*.sav, or its server subdirectory; world saves are imported while target ServerSettings identity is retained, then selected natively after startup."
+    },
+    "cautions": [
+      {
+        "zh": "官方说明角色绑定在线玩家 ID；离线或账号关联变化可能出现新角色。先备份，再核对游戏分支、版本及玩家库存。",
+        "en": "The publisher ties characters to online player IDs; offline sessions or account-link changes can create another character. Check branch, version and inventory after backing up."
+      }
+    ],
+    "references": [
+      {
+        "label": "Coffee Stain support, saves and player identity",
+        "url": "https://www.satisfactorygame.com/support/"
+      },
+      {
+        "label": "Publisher-linked community server guide",
+        "url": "https://satisfactory.wiki.gg/wiki/Server"
+      }
+    ]
+  },
+  {
+    "moduleId": "scum",
+    "server": {
+      "status": "conditional",
+      "zh": "开发者曾确认可在服务器间迁移数据库。需要原服完整且一致的数据库备份及配套文件；SCUM/Saved 同时含设置与日志，不能整体视为纯存档。",
+      "en": "The developer has confirmed database migration between servers. Obtain a complete consistent database backup and companions; SCUM/Saved also contains settings and logs."
+    },
+    "singlePlayer": {
+      "status": "unsupported",
+      "zh": "开发者在 2025-10-08 的答复中明确表示单机档不能转多人服务器；不能以改名或复制 SCUM.db 承诺转换。该结论未对后续版本实机复测。",
+      "en": "A developer reply dated 2025-10-08 states single-player saves cannot transfer into multiplayer. Renaming or copying SCUM.db is not a supported conversion; later builds were not tested here."
+    },
+    "source": {
+      "zh": "选择原专服 SaveFiles 或其 Saved 父目录，包含已干净关闭的 SCUM.db 及完整关联存档，不接受本地 Sandbox 转换。",
+      "en": "Select the original dedicated-server SaveFiles or its Saved parent with a cleanly closed SCUM.db and complete associated saves; local Sandbox conversion is excluded."
+    },
+    "cautions": [
+      {
+        "zh": "公开讨论正文受年龄页面限制；来源依据包括搜索索引中的开发者答复，本次原生数据库结构检查不代表当前版游戏内加载验收。",
+        "en": "Discussion bodies were age-gated; source evidence includes indexed developer replies, and native database layout checks do not establish current-build in-game loading."
+      }
+    ],
+    "references": [
+      {
+        "label": "SCUM developer: single-player versus server saves (2025)",
+        "url": "https://steamcommunity.com/app/513710/discussions/0/598539991659882203/"
+      },
+      {
+        "label": "SCUM developer: database migration between providers (2022)",
+        "url": "https://steamcommunity.com/app/513710/discussions/5/3386168507486701392/"
+      }
+    ]
+  },
+  {
+    "moduleId": "sevendaystodie",
+    "server": {
+      "status": "conditional",
+      "zh": "完整迁入 Saves/<GameWorld>/<GameName>，包含玩家与区块；随机生成地图还需要对应 GeneratedWorlds/<GameWorld>。只复制存档目录不能补齐地图。",
+      "en": "Move the complete Saves/<GameWorld>/<GameName>, including players and regions, plus GeneratedWorlds/<GameWorld> for generated maps. The save directory alone is insufficient."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "官方工作人员确认本地游戏可转专服；同时迁移世界与存档，并使 GameWorld、GameName 对应原目录。需要核对原玩家平台身份。",
+      "en": "Fun Pimps staff confirm local-to-server migration. Bring both world and save, match GameWorld and GameName, and check original platform identities."
+    },
+    "source": {
+      "zh": "选择原专服 UserDataFolder 根，包含 Saves/<GameWorld>/<GameName> 与 GeneratedWorlds/<GameWorld>；已安装内置图可选原 Saves 根，GameWorld 须为实际地图名。",
+      "en": "Select the original UserDataFolder with Saves/<GameWorld>/<GameName> and GeneratedWorlds/<GameWorld>; an installed built-in map also accepts the original Saves root, with GameWorld set to the actual map name."
+    },
+    "cautions": [
+      {
+        "zh": "游戏、地图、Mod 版本需兼容；地图与玩家档必须来自同一世界快照。不要仅凭同名重新生成地图。",
+        "en": "Match game, map and mod versions, and use world/player files from one consistent snapshot. Do not regenerate a map merely because names match."
+      }
+    ],
+    "references": [
+      {
+        "label": "Fun Pimps staff: move local save and generated world",
+        "url": "https://community.thefunpimps.com/threads/can-you-move-a-save-from-my-local-pc-to-a-server.32860/"
+      }
+    ]
+  },
+  {
+    "moduleId": "sonsoftheforest",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入完整原生存档槽位及其目录层次，目标位于实例 Saves；SaveSlot 必须选中该槽，SaveMode 必须为 Continue。",
+      "en": "Move the complete native save slot with its directory layout into the instance Saves root. Select its SaveSlot and set SaveMode to Continue."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "本次未建立一手资料可验证的单机或私人联机角色转换流程；世界和原房主角色不能假定同时通过复制保留。",
+      "en": "No first-party verified conversion of solo/private-host character data was established. Copying a world does not prove preservation of the original host character."
+    },
+    "source": {
+      "zh": "选择原专服 Saves 根，内含 DedicatedServer/Multiplayer/<十位 SaveSlot> 的完整槽位，并先将 SaveMode 设为 Continue。",
+      "en": "Select the original server Saves root containing the complete DedicatedServer/Multiplayer/<ten-digit SaveSlot> slot, with SaveMode set to Continue."
+    },
+    "cautions": [
+      {
+        "zh": "New 会在每次启动时覆盖选定槽位。现有公开配置指南为社区作者、更新于 2025-01-15，未证明所有当前存档格式。",
+        "en": "New overwrites the selected slot on every start. The public configuration guide is community-authored, updated 2025-01-15, and does not prove all current save layouts."
+      }
+    ],
+    "references": [
+      {
+        "label": "Dedicated server configuration guide (community; provenance disclosed)",
+        "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=2992700419"
+      }
+    ]
+  },
+  {
+    "moduleId": "soulmask",
+    "server": {
+      "status": "conditional",
+      "zh": "同地图专服世界可迁移；开发者明确 EA 与 1.0 的同地图服务器档兼容。应保留完整世界数据库及该世界的关联数据，配置单独核对。",
+      "en": "Same-map dedicated worlds can migrate; the developer explicitly states EA and 1.0 server files are compatible for the same map. Preserve the complete database and linked data; review settings separately."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "尚未核实完整单机世界转专服及原房主身份映射。1.0 的单机跨地图继承只带角色等数据，不带建筑、资源，不能当作整世界导入。",
+      "en": "Complete solo-world to dedicated-server conversion and host identity mapping remain unverified. Version 1.0 cross-map inheritance carries character data, excluding buildings/resources; it is not whole-world import."
+    },
+    "source": {
+      "zh": "选择原专服完整 Level01_Main 目录，或含该目录的 WS/Saved/Worlds 根，包含已干净关闭的 world.db 及配套世界数据。",
+      "en": "Select the complete original Level01_Main directory or its WS/Saved/Worlds root, including a cleanly closed world.db and associated world data."
+    },
+    "cautions": [
+      {
+        "zh": "跨地图是另一套服务器/传送流程，必须核对地图、DLC、版本和角色身份；旧教程中的文件改名不能视为当前版已验证转换。",
+        "en": "Cross-map travel uses another server/transfer flow. Verify map, DLC, version and identities; old renaming recipes do not establish current conversion support."
+      }
+    ],
+    "references": [
+      {
+        "label": "Soulmask developer: 1.0 save compatibility and inheritance limits",
+        "url": "https://steamcommunity.com/app/2646460/discussions/0/806848045381637764"
+      }
+    ]
+  },
+  {
+    "moduleId": "squad",
+    "server": {
+      "status": "not_applicable",
+      "zh": "Squad 没有可恢复的持久世界存档。ServerConfig、管理员列表及轮换等属于服务器配置迁移，不提供世界导入。",
+      "en": "Squad has no recoverable persistent world save. ServerConfig, administrators and map rotations belong to configuration migration, not world import."
+    },
+    "singlePlayer": {
+      "status": "not_applicable",
+      "zh": "没有单机世界转持久专服的场景；对局与训练进度不作为可迁入的服务器世界。",
+      "en": "There is no solo-world to persistent-server conversion; match/training progress is not an importable world."
+    },
+    "source": {
+      "zh": "无需选择世界源。需要迁移运营设置时，单独审查 SquadGame/ServerConfig；Saved 内文件不等于世界存档。",
+      "en": "No world source is needed. Review SquadGame/ServerConfig separately for administration settings; files under Saved are not world saves."
+    },
+    "cautions": [
+      {
+        "zh": "保留配置与日志不证明可恢复一场进行中的对局。服务器许可和管理规则仍单独适用。",
+        "en": "Preserving settings or logs does not restore an in-progress match. Server licensing and administration policies apply separately."
+      }
+    ],
+    "references": [
+      {
+        "label": "Offworld server administration policies",
+        "url": "https://www.joinsquad.com/server-licensing-and-administration-policies"
+      }
+    ]
+  },
+  {
+    "moduleId": "terraria",
+    "server": {
+      "status": "direct",
+      "zh": "原版世界以 .wld 为单位迁入实例 saves，World Save File 必须对应文件名；角色继续由客户端管理，不通过世界文件迁入。",
+      "en": "For vanilla, import the .wld into instance saves and match World Save File to its filename. Characters remain client-managed and are not imported with the world."
+    },
+    "singlePlayer": {
+      "status": "direct",
+      "zh": "同版本原版单机世界可作为专服世界加载，无需改写世界格式；从云存档中先取得完整本地文件副本。",
+      "en": "A compatible vanilla solo world loads as a dedicated world without format conversion. First obtain a complete local copy of any cloud save."
+    },
+    "source": {
+      "zh": "所选原版 .wld，可连同同名备份保留。tModLoader 世界需同时保留 .twld 及对应 Mod，不能当成纯原版档导入。",
+      "en": "The selected vanilla .wld, retaining matching backups. A tModLoader world also requires its .twld and matching mods; treat it as modded."
+    },
+    "cautions": [
+      {
+        "zh": "核对原版或 tModLoader 运行时及版本。只载入 .wld 而丢掉 .twld 可能丢失 Mod 数据；公开原版 Wiki 本次不可读取。",
+        "en": "Match vanilla/tModLoader runtime and versions. Loading only .wld can lose mod data if .twld is omitted. The public vanilla wiki was unavailable during review."
+      }
+    ],
+    "references": [
+      {
+        "label": "tModLoader native world load/save integration",
+        "url": "https://raw.githubusercontent.com/tModLoader/tModLoader/stable/patches/tModLoader/Terraria/IO/WorldFile.cs.patch"
+      },
+      {
+        "label": "tModLoader companion world data",
+        "url": "https://raw.githubusercontent.com/tModLoader/tModLoader/stable/patches/tModLoader/Terraria/ModLoader/IO/WorldIO.cs"
+      }
+    ]
+  },
+  {
+    "moduleId": "theforest",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入所选 Multiplayer/SlotN 的完整原生槽位；saveFolderPath 指向实例 saves 根，slot 与原槽位对应，initType 必须为 Continue。",
+      "en": "Move the complete native Multiplayer/SlotN slot. saveFolderPath points at instance saves, slot must match, and initType must be Continue."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "未核实可保证世界与原房主角色完整保留的单机转专服流程。不能仅将 SinglePlayer 文件夹改名为 Multiplayer 就宣称转换成功。",
+      "en": "No conversion guaranteeing both world and original host character was verified. Renaming SinglePlayer to Multiplayer does not prove successful conversion."
+    },
+    "source": {
+      "zh": "选择原服 saveFolderPath 根，内含 Multiplayer/Slot<save_slot> 的完整槽位和 __RESUME__ 检查点，并先将 init_type 设为 Continue。",
+      "en": "Select the original saveFolderPath root with the complete Multiplayer/Slot<save_slot> slot and native __RESUME__ checkpoint, with init_type set to Continue."
+    },
+    "cautions": [
+      {
+        "zh": "New 会新建世界。角色与原房主身份需进入游戏验收；公开指南是发行方曾链接的社区指南，版本范围较早。",
+        "en": "New creates a fresh world. Verify character/host identity in game. The publisher-linked community guide covers an older release."
+      }
+    ],
+    "references": [
+      {
+        "label": "Dedicated server tutorial (publisher-linked community guide)",
+        "url": "https://steamcommunity.com/sharedfiles/filedetails/?id=907906289"
+      }
+    ]
+  },
+  {
+    "moduleId": "unturned",
+    "server": {
+      "status": "conditional",
+      "zh": "原服 Level/<地图> 与 Players/<SteamID_角色ID>/<地图> 必须成套迁移至 Servers/<实例ID>；同时匹配 Map 与 Workshop 地图/资产。",
+      "en": "Move Level/<map> together with Players/<SteamID_characterID>/<map> into Servers/<instanceID>, matching Map and Workshop maps/assets."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "官方源码显示本地 Worlds 与专服 Servers 采用相同保存路径机制；需映射原世界内 Level、Players 到目标实例，不复制整个安装根。",
+      "en": "Official source uses the same save-path mechanism under local Worlds and dedicated Servers. Map the original world's Level and Players into the target instance."
+    },
+    "source": {
+      "zh": "选择原专服 Servers/<ServerID> 根，内含 Level/<当前地图>/ 与完整 Players/，宿主配置、权限及客户端 Sync 不迁入。",
+      "en": "Select the original Servers/<ServerID> root with Level/<configured map>/ and complete Players/; host settings, access lists and client Sync are excluded."
+    },
+    "cautions": [
+      {
+        "zh": "保留原 SteamID、角色槽和地图名；先用 Save/Shutdown 正常保存，本次仅迁移 Level/Players，不迁入客户端 Sync 或更改身份。",
+        "en": "Preserve SteamID, character slot and map name, and Save/Shutdown cleanly first; import copies Level/Players without client Sync or identity conversion."
+      }
+    ],
+    "references": [
+      {
+        "label": "SDG server hosting and save lifecycle",
+        "url": "https://docs.smartlydressedgames.com/en/stable/servers/server-hosting.html"
+      },
+      {
+        "label": "SDG ServerSavedata native root selection",
+        "url": "https://raw.githubusercontent.com/SmartlyDressedGames/U3-SDK/main/Assets/Runtime/Assembly-CSharp/Unturned/Files/ServerSavedata.cs"
+      },
+      {
+        "label": "SDG PlayerSavedata identity mapping",
+        "url": "https://raw.githubusercontent.com/SmartlyDressedGames/U3-SDK/main/Assets/Runtime/Assembly-CSharp/Unturned/Files/PlayerSavedata.cs"
+      }
+    ]
+  },
+  {
+    "moduleId": "valheim",
+    "server": {
+      "status": "conditional",
+      "zh": "完整迁入 worlds_local 的选定世界。旧格式必须同时有同名 .fwl 与 .db；新格式须保留世界目录内配套 .fwl2、.db2、.ok 提交代。-world 对应世界名。",
+      "en": "Move the selected complete world under worlds_local. Older saves need both .fwl and .db; newer world directories require matching .fwl2, .db2 and .ok generations. Match -world."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "本地原生世界可由专服加载；云世界先在游戏内转成本地副本。角色仍在玩家客户端，世界迁移不等于角色档迁移。",
+      "en": "A local native world can load on a dedicated server. Convert cloud worlds to a local copy in game first. Characters remain client-side; world migration does not migrate character files."
+    },
+    "source": {
+      "zh": "Valheim 保存根 worlds_local 下的世界文件对或完整世界目录；LGSM 通过 -savedir 使用实例 saves 根。",
+      "en": "The paired world files or complete world directory under worlds_local. LGSM supplies instance saves through -savedir."
+    },
+    "cautions": [
+      {
+        "zh": "不能只选元数据、未提交代或任意同名数据库。核对版本与 Mod；启动的 preset/modifier 可能覆盖存档中的规则。",
+        "en": "Do not select metadata alone, uncommitted generations or unrelated databases. Match versions/mods; startup presets and modifiers can overwrite saved rules."
+      }
+    ],
+    "references": [
+      {
+        "label": "Iron Gate dedicated server world and save-directory settings",
+        "url": "https://valheim.com/support/a-guide-to-dedicated-servers/"
+      }
+    ]
+  },
+  {
+    "moduleId": "vrising",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入相同存档代际下的完整世界目录，如 Saves/v4/<SaveName>，包含原生自动存档及配套元数据；SaveName 必须对应所选目录。",
+      "en": "Move the complete world directory for the matching save generation, such as Saves/v4/<SaveName>, including native autosaves and metadata. Match SaveName."
+    },
+    "singlePlayer": {
+      "status": "unverified",
+      "zh": "本次未从一手说明核实私人游戏/云档转专服的完整步骤；私人档路径与版本、角色和设置关联需要先核对，不能只复制最新 autosave 作保证。",
+      "en": "Complete private/cloud-game migration was not verified in first-party instructions. Check save generation, characters and settings before treating the newest autosave as sufficient."
+    },
+    "source": {
+      "zh": "原服 persistentDataPath/Saves 下的完整世界目录；Settings、管理员和封禁列表分开审查，不覆盖新服务器身份。",
+      "en": "The complete world directory under the old persistentDataPath/Saves. Review Settings, admin and ban lists separately without replacing server identity."
+    },
+    "cautions": [
+      {
+        "zh": "官方文档范围为 PC 1.1.x，不适用于 PS5 或所有旧存档代际。核对 Mod 与原游戏规则，并避免自动重置策略覆盖导入档。",
+        "en": "The official instructions target PC 1.1.x, not PS5 or every older save generation. Check mods/rules and ensure reset policies cannot overwrite the imported world."
+      }
+    ],
+    "references": [
+      {
+        "label": "Stunlock PC 1.1.x settings and save files",
+        "url": "https://raw.githubusercontent.com/StunlockStudios/vrising-dedicated-server-instructions/master/1.1.x-pc/INSTRUCTIONS.md"
+      }
+    ]
+  },
+  {
+    "moduleId": "windrose",
+    "server": {
+      "status": "conditional",
+      "zh": "迁入完整 WorldID 世界目录，保留数据库版本层次。world_island_id、WorldDescription 的原生 islandId 与目录名必须一致；不要重命名世界 ID。",
+      "en": "Move the complete WorldID directory, preserving database-version layout. Match world_island_id, native WorldDescription islandId and directory name; never rename world IDs."
+    },
+    "singlePlayer": {
+      "status": "conditional",
+      "zh": "官方明确支持客户端世界转专服。只迁入完整 Worlds 世界，角色数据仍在客户端；先确认源档属于当前 RocksDB_v2 还是旧库/备份格式。",
+      "en": "The publisher supports client-world migration. Move the complete Worlds world; characters remain client-side. Establish whether the source is current RocksDB_v2, an older database, or a backup."
+    },
+    "source": {
+      "zh": "选择已正常停服的完整 Default 根，含唯一匹配世界的 RocksDB_v2 及全部备份树，且原生 islandId、world_island_id 与目标 WorldIslandId 一致。",
+      "en": "Select the complete cleanly stopped Default root with its uniquely matching RocksDB_v2 world and all backup trees, with native islandId matching world_island_id and target WorldIslandId."
+    },
+    "cautions": [
+      {
+        "zh": "停服并退出客户端后复制，保留源档。官方 FAQ 混有旧结构示例，应以当前原生结构为准；不要迁入原服邀请代码、密码或身份。",
+        "en": "Stop both applications before copying and retain the source. FAQ examples include older layouts; follow the installed native format. Keep invite codes, passwords and server identity separate."
+      }
+    ],
+    "references": [
+      {
+        "label": "Windrose official save transfer and world identity guide",
+        "url": "https://playwindrose.com/dedicated-server-guide"
+      }
+    ]
+  }
+]

@@ -1,3 +1,5 @@
+@import "../managed-manual-mods.css";
+
 .mw-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -84,9 +86,9 @@
 }
 
 .mw-browse-pane {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-content: start;
   min-height: 0;
   padding: 14px;
   overflow-y: auto;
@@ -94,13 +96,12 @@
   scrollbar-color: color-mix(in srgb, var(--shell-line) 80%, transparent) transparent;
 }
 
-.mw-browse-pane--empty {
-  display: flex;
-  flex-direction: column;
+.mw-browse-pane > * {
+  flex-shrink: 0;
 }
 
-.mw-browse-pane--empty > * {
-  flex-shrink: 0;
+.mw-browse-pane > .mw-pager {
+  margin-top: auto;
 }
 
 .mw-browse-pane--empty > .mw-empty {
@@ -221,6 +222,12 @@
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 9px;
   align-items: start;
+}
+
+.mw-mod-grid--full-page {
+  flex: 1 0 auto;
+  grid-auto-rows: 1fr;
+  align-items: stretch;
 }
 
 .mw-mod-card {

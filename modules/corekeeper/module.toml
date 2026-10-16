@@ -73,6 +73,7 @@ wait_after_ms = 10000
 provider = "thunderstore"
 label = "Thunderstore"
 url = "https://thunderstore.io/c/core-keeper/"
+install_note = "Core Keeper uses native Mods with ModManifest.json. Its Thunderstore community contains old BepInEx packages; incompatible packages are rejected. Use current native packages from mod.io or Workshop for local import."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/CoreKeeperServer_Data/StreamingAssets/Mods"

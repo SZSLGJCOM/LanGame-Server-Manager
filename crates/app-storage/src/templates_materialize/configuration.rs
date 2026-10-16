@@ -1,5 +1,12 @@
 use super::*;
 
+/// Native files observed before preparation retain their original CAS baseline
+/// when configuration rendering moves onto the blocking worker.
+pub(crate) struct NativeConfigurationSnapshots {
+    pub(crate) moria_permissions: Option<crate::instance_native_settings::MoriaPermissionsSnapshot>,
+    pub(crate) enshrouded_bans: Option<crate::enshrouded_bans::EnshroudedBansSnapshot>,
+}
+
 pub(crate) async fn write_pending_instance_configuration_in_worker(
     templates_root: &Path,
     context: &ModuleSupportMaterializationContext<'_>,
@@ -7,7 +14,7 @@ pub(crate) async fn write_pending_instance_configuration_in_worker(
     input: InstanceConfigInput<'_>,
     settings_lock: &crate::instance_settings_lock::InstanceSettingsLock,
     prepared: Option<PreparedWorkshopConfiguration>,
-    native_permissions: Option<crate::instance_native_settings::MoriaPermissionsSnapshot>,
+    native: NativeConfigurationSnapshots,
 ) -> Result<ManagedConfigMutation, StorageError> {
     let templates_root = templates_root.to_owned();
     let storage_paths = context.storage_paths.clone();
@@ -65,7 +72,7 @@ pub(crate) async fn write_pending_instance_configuration_in_worker(
                     ports: &ports,
                 },
                 prepared,
-                native_permissions,
+                native,
             )
         })
         .await
@@ -83,14 +90,37 @@ pub(crate) fn write_pending_instance_configuration(
     input: InstanceConfigInput<'_>,
     prepared: Option<PreparedWorkshopConfiguration>,
 ) -> Result<ManagedConfigMutation, StorageError> {
+    let native_bans = crate::enshrouded_bans::EnshroudedBansSnapshot::read(
+        context.module_id,
+        context.install_root,
+        context.config_dir,
+    )?;
+    let mut settings = input.settings;
+    if let Some(snapshot) = &native_bans {
+        snapshot.project(&mut settings)?;
+    }
+    let render_input = ModuleTemplateRenderInput {
+        settings: &settings,
+        ..*render_input
+    };
+    let context = ModuleSupportMaterializationContext {
+        settings: &settings,
+        ..*context
+    };
     write_pending_configuration_with_native_snapshot(
         templates_root,
-        render_input,
-        context,
+        &render_input,
+        &context,
         config_path,
-        input,
+        InstanceConfigInput {
+            settings: settings.clone(),
+            ..input
+        },
         prepared,
-        None,
+        NativeConfigurationSnapshots {
+            moria_permissions: None,
+            enshrouded_bans: native_bans,
+        },
     )
 }
 
@@ -101,10 +131,17 @@ fn write_pending_configuration_with_native_snapshot(
     config_path: &Path,
     input: InstanceConfigInput<'_>,
     prepared: Option<PreparedWorkshopConfiguration>,
-    native_permissions: Option<crate::instance_native_settings::MoriaPermissionsSnapshot>,
+    native: NativeConfigurationSnapshots,
 ) -> Result<ManagedConfigMutation, StorageError> {
+    let NativeConfigurationSnapshots {
+        moria_permissions: native_permissions,
+        enshrouded_bans: native_bans,
+    } = native;
     let mut files = ManagedConfigMutation::new(context.module_id);
     let result = (|| {
+        if let Some(snapshot) = &native_bans {
+            snapshot.verify_unchanged(context.instance_id)?;
+        }
         ark_ini::capture_previous_ownership(context, config_path, &mut files)?;
         if !context.instance_running {
             if let Some(snapshot) = native_permissions {
@@ -123,7 +160,19 @@ fn write_pending_configuration_with_native_snapshot(
             }
         }
         if !context.instance_running {
-            materialize_module_support_files_pending(context, &mut files, prepared)?;
+            #[cfg(test)]
+            if native_bans.is_some() {
+                crate::instance_archive::test_gate::pause(
+                    &context.storage_paths.database_path,
+                    crate::instance_archive::test_gate::Point::EnshroudedBanRendered,
+                );
+            }
+            materialize_module_support_files_pending(
+                context,
+                &mut files,
+                prepared,
+                native_bans.as_ref(),
+            )?;
         }
         files.write(config_path, &render_instance_config(input)?)?;
         Ok(())

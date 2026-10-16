@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { ShellIcon } from "../../components/ShellIcon";
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import type { LocaleCode, TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
 import { ScumServerSettingsRenderer } from "../settings/ScumServerSettingsRenderer";
@@ -116,8 +118,10 @@ function ScumWipeEditor(props: ScumWipeSettingsEditorProps) {
 
   return <section className="server-workbench-surface server-maintenance-card" aria-label={t("scum.maintenance.title")}>
     <form className="server-save-policy-editor" onSubmit={(event) => void save(event)} noValidate>
-      <h3 className="server-workbench-section-label">{t("scum.maintenance.title")}</h3>
-      <p className="form-note" role="note">{t("scum.maintenance.warning")} {t("scum.maintenance.persistenceNotice")}</p>
+      <ConfigurationHelp description={`${t("scum.maintenance.warning")} ${t("scum.maintenance.persistenceNotice")} ${t("scum.maintenance.requiresStop")}`}>{(help) =>
+        <h3 className="server-workbench-section-label server-maintenance-card-label" ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}><ShellIcon name="database" className="server-workbench-section-icon" />{t("scum.maintenance.title")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></h3>}</ConfigurationHelp>
+      <p className="form-note form-note--error" role="note">{t("scum.maintenance.warningShort")}</p>
+
       {schemaError && <ActivityNotice tone="error">{schemaError}</ActivityNotice>}
       {props.moduleDetails?.summary.id === "scum" && <ScumServerSettingsRenderer sectionId="maintenance"
         details={details} moduleDetails={props.moduleDetails} settings={settings} disabled={disabled}
@@ -137,7 +141,6 @@ function ScumWipeEditor(props: ScumWipeSettingsEditorProps) {
           });
           setStatus("idle"); setError(null);
         }} />}
-      <p className="form-note">{t("scum.maintenance.requiresStop")}</p>
       {issues.map((issue) => <ActivityNotice key={issue.fieldKey} tone="error">{issue.message}</ActivityNotice>)}
       <ActivityNotice tone={status === "failed" ? "error" : status === "saving" ? "info" : "success"}>
         {error ?? (status === "saved" ? t("scum.maintenance.saved") : status === "saving" ? t("settings.configuration.save.saving") : "")}
@@ -149,9 +152,9 @@ function ScumWipeEditor(props: ScumWipeSettingsEditorProps) {
             setDraft({}); setError(null); setStatus("idle");
             if (!schemaError) void coordinator.runOperation(details.summary.id, async () => undefined, SAVE_OWNER);
           }}>{t("servers.savePolicy.reload")}</button>}
-        <button type="submit" className="secondary-button" disabled={disabled || !changed.length || issues.length > 0}>
+        <ConfigurationActionHelp reason={!stopped ? t("scum.maintenance.requiresStop") : schemaError ? schemaError : issues[0]?.message ?? (!changed.length ? t("servers.maintenance.noChanges") : null)}><button type="submit" className="secondary-button" disabled={disabled || !changed.length || issues.length > 0}>
           {t("scum.maintenance.save")}
-        </button>
+        </button></ConfigurationActionHelp>
       </div>}
     </form>
   </section>;

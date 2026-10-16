@@ -12,7 +12,9 @@ export function modDropEffect(transfer: Pick<DataTransfer, "effectAllowed" | "ty
   const hasReferences = acceptsReferences && ["text/plain", "text/uri-list", "text/html"].some((type) => types.has(type));
   if (!hasFiles && !hasReferences) return "none";
   if (["copy", "copyLink", "copyMove", "all", "uninitialized"].includes(transfer.effectAllowed)) return "copy";
-  if (!hasFiles && hasReferences && ["link", "linkMove"].includes(transfer.effectAllowed)) return "link";
+  // Browser links can also expose a virtual shortcut or image file. A link
+  // operation consumes the reference, never copies or moves that file.
+  if (hasReferences && ["link", "linkMove"].includes(transfer.effectAllowed)) return "link";
   // A move acknowledgement may remove source text or files. Importing Mods never authorizes that.
   return "none";
 }

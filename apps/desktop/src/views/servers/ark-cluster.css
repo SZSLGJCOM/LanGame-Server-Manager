@@ -3,21 +3,31 @@
    height instead of collapsing to zero as a flex child of a bounded card. */
 .ark-cluster-panel > * { flex-shrink: 0; }
 .ark-cluster-panel h3, .ark-cluster-panel p, .ark-cluster-panel dl { margin: 0; }
-.ark-cluster-heading, .ark-cluster-actions { display: flex; align-items: center; gap: 10px; }
-.ark-cluster-heading { justify-content: space-between; }
-.ark-cluster-heading h3 { font-size: var(--text-section-title); font-weight: var(--font-weight-semibold); }
-.ark-cluster-identity { display: grid; gap: 7px; font-size: var(--text-body); }
-.ark-cluster-identity > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; }
-.ark-cluster-identity dt, .ark-cluster-note { color: var(--shell-muted); }
-.ark-cluster-identity dd { margin: 0; }
+/* Headings reuse .server-maintenance-card-label (icon + title); refresh sits at the far right. */
+.ark-cluster-heading { display: flex; align-items: center; gap: 8px; }
+.ark-cluster-heading :is(h3, h4) { margin: 0; font: inherit; }
+.ark-cluster-heading > button { margin-left: auto; }
+/* Standard action row: right-aligned, separated like the policy footers. */
+.ark-cluster-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.ark-cluster-value { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; min-width: 0; }
+.ark-cluster-value__input { width: 100%; min-width: 0; font-family: var(--font-mono); text-overflow: ellipsis; }
+.ark-cluster-value > button { display: inline-flex; align-items: center; gap: 5px; min-height: var(--settings-control-height); }
+.ark-cluster-value > button svg { width: 13px; height: 13px; }
+.ark-cluster-note { color: var(--shell-muted); }
 .ark-cluster-panel code { overflow-wrap: anywhere; font-size: var(--text-code); }
 .ark-cluster-table-wrap { overflow-x: auto; }
 .ark-cluster-members { width: 100%; border-collapse: collapse; font-size: var(--text-body); text-align: left; }
 .ark-cluster-members caption { text-align: left; color: var(--shell-muted); padding-bottom: 8px; }
-.ark-cluster-members th, .ark-cluster-members td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.ark-cluster-members th, .ark-cluster-members td { padding: 10px 8px; border-bottom: 1px solid var(--shell-line); vertical-align: top; }
 .ark-cluster-members thead { color: var(--shell-muted); }
 .ark-cluster-members th { font-weight: var(--font-weight-medium); }
-.ark-cluster-members td:last-child span { display: block; white-space: nowrap; }
+.ark-cluster-port-groups { display: grid; gap: 6px; }
+.ark-cluster-port-group { display: flex; flex-wrap: wrap; gap: 4px; }
+.ark-cluster-port { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 7px; border: 1px solid var(--shell-line); border-radius: 999px;
+  background: var(--theme-badge-bg); color: var(--theme-badge-text); font-size: var(--text-meta); white-space: nowrap; }
+.ark-cluster-port__role { color: var(--shell-muted); }
+.ark-cluster-port code { font-size: var(--text-meta); color: var(--shell-text); }
+.ark-cluster-port small { font-size: 0.85em; color: var(--shell-muted); }
 .ark-cluster-issues, .ark-cluster-results ul { margin: 0; padding-left: 20px; font-size: var(--text-meta); line-height: var(--leading-body); }
 .ark-cluster-issues code { display: block; }
 .ark-cluster-results { display: grid; gap: 6px; }

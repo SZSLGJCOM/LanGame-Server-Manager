@@ -46,6 +46,24 @@ impl ManagedConfigMutation {
         self.write(destination, &bytes)
     }
 
+    /// A module consuming a just-rendered source must not adopt an external
+    /// replacement as if this transaction had published those bytes.
+    pub(crate) fn verify_published_source(
+        &self,
+        path: &Path,
+        bytes: &[u8],
+        before_render: Option<&[u8]>,
+    ) -> Result<(), StorageError> {
+        if !self.changes.iter().any(|change| change.path == path) && before_render != Some(bytes) {
+            return Err(materialization_error(
+                &self.module_id,
+                path,
+                "refusing to consume a configuration file changed after a no-op render".to_owned(),
+            ));
+        }
+        self.verify_previous_write(path, Some(bytes))
+    }
+
     fn replace(&mut self, path: &Path, replacement: Option<Vec<u8>>) -> Result<(), StorageError> {
         let original = super::read_optional_bytes(path)?;
         self.verify_previous_write(path, original.as_deref())?;

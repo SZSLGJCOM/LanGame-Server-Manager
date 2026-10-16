@@ -128,6 +128,8 @@ mod commands_dst_import_validation;
 pub(crate) mod commands_dst_world_state;
 #[path = "commands_external_url.rs"]
 mod commands_external_url;
+#[path = "commands_file_mods.rs"]
+pub mod commands_file_mods;
 #[path = "commands_global_player_counts.rs"]
 mod commands_global_player_counts;
 #[path = "commands_install_progress.rs"]
@@ -146,6 +148,8 @@ mod commands_local_paths;
 pub(crate) mod commands_managed_save;
 #[path = "commands_manual_player_actions.rs"]
 pub(crate) mod commands_manual_player_actions;
+#[path = "commands_mod_capacity.rs"]
+mod commands_mod_capacity;
 #[path = "commands_mod_staging.rs"]
 mod commands_mod_staging;
 #[path = "commands_mods.rs"]
@@ -188,6 +192,8 @@ use commands_runtime_prestart_update::*;
 
 #[path = "commands_runtime_supervision.rs"]
 pub(crate) mod commands_runtime_supervision;
+#[path = "commands_save_import.rs"]
+pub(crate) mod commands_save_import;
 #[path = "commands_stdin_dispatch.rs"]
 pub(crate) mod commands_stdin_dispatch;
 #[path = "commands_steamcmd_errors.rs"]
@@ -260,7 +266,6 @@ use commands_mods::{
     cleanup_downloaded_mod_source, download_modrinth_mod_sources, extract_curseforge_mod_slug,
     extract_curseforge_project_id_from_reference, extract_modrinth_project_reference,
     extract_thunderstore_package_reference, manual_mod_path_stats, select_modrinth_download_file,
-    select_thunderstore_payload_prefix,
 };
 pub use commands_player_access::apply_instance_player_access_mutation;
 #[cfg(not(windows))]
@@ -784,6 +789,24 @@ pub struct ManualModInventoryItem {
     pub file_count: usize,
     pub total_bytes: u64,
     pub modified_unix_ms: Option<u128>,
+    pub management: Option<ManagedModState>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManagedModState {
+    pub package_id: String,
+    pub enabled: bool,
+    pub dependencies: Vec<String>,
+    pub dependents: Vec<String>,
+    pub dependency_status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ManagedModActionResult {
+    pub inventory: ManualModInventoryResult,
+    pub preserved_path: Option<String>,
+    pub removed_file_count: usize,
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]

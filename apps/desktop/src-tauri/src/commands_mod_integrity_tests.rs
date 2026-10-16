@@ -65,7 +65,7 @@ async fn download_integrity_fixture(
             preferred_filename: Some(&file.filename),
             fallback_extension: "jar",
             integrity: Some(ModDownloadIntegrity::from_modrinth_file(file).unwrap()),
-            max_bytes: 20,
+            max_bytes: Some(20),
             download_root: root,
         },
     )
@@ -106,7 +106,7 @@ async fn interrupted_modrinth_download_restarts_its_checksum_state() {
             preferred_filename: Some(&file.filename),
             fallback_extension: "jar",
             integrity: Some(ModDownloadIntegrity::from_modrinth_file(&file).unwrap()),
-            max_bytes: 20,
+            max_bytes: Some(20),
             download_root: &root,
         },
     )
@@ -164,7 +164,7 @@ async fn modrinth_metadata_over_the_download_limit_is_rejected_before_requesting
             preferred_filename: Some(&file.filename),
             fallback_extension: "jar",
             integrity: Some(ModDownloadIntegrity::from_modrinth_file(&file).unwrap()),
-            max_bytes: 20,
+            max_bytes: Some(20),
             download_root: &root,
         },
     )
@@ -185,7 +185,7 @@ async fn verified_modrinth_file_is_removed_when_commit_is_cancelled() {
     let integrity = ModDownloadIntegrity::from_modrinth_file(&file).unwrap();
     let writer_path = path.clone();
     let writer = tokio::task::spawn_blocking(move || {
-        write_downloaded_mod_file(writer_path, receiver, ready_sender, Some(integrity))
+        write_downloaded_mod_file(writer_path, receiver, ready_sender, Some(integrity), None)
     });
     ready_receiver.await.unwrap().unwrap();
     messages

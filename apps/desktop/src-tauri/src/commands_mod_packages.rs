@@ -11,6 +11,23 @@ const MAX_PACKAGE_DEPTH: usize = 64;
 mod dependencies;
 use dependencies::verify_dependencies;
 
+#[path = "commands_mod_management.rs"]
+mod management;
+pub(in crate::commands) use management::{decorate_inventory, manage_package, recover_management};
+
+#[path = "commands_mod_routed_packages.rs"]
+mod routed;
+pub(super) use routed::{
+    finalize_thunderstore_transaction, prepare_local_thunderstore_transaction,
+    prepare_thunderstore_mod_transaction,
+};
+
+#[path = "commands_mod_packages_import.rs"]
+mod local_imports;
+pub(super) use local_imports::{
+    LocalImportMetadata, local_import_metadata, manages_local_imports, prepare_local_mod_ownership,
+};
+
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InstalledPackages {
@@ -22,23 +39,18 @@ struct InstalledPackages {
 struct InstalledPackage {
     target_name: String,
     files: BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    routed_files: BTreeMap<String, String>,
     #[serde(default)]
     version: Option<String>,
     #[serde(default)]
     dependencies: Option<Vec<String>>,
+    #[serde(default = "enabled_by_default")]
+    enabled: bool,
 }
 
-pub(in crate::commands) fn verify_online_mod_dependencies(
-    target: &Path,
-    identities: &[OnlineModIdentity],
-) -> Result<(), String> {
-    let target_lock = manual_mod_target_lock(target)?;
-    let _guard = target_lock
-        .lock()
-        .map_err(|_| "manual mod target lock poisoned")?;
-    validate_manual_mod_target_path(target)?;
-    let manifest = read_manifest(&target.join(ONLINE_MOD_MANIFEST))?;
-    verify_dependencies(target, &manifest, identities)
+fn enabled_by_default() -> bool {
+    true
 }
 
 /// Package identity and its ownership record are published in the same rollback
@@ -47,6 +59,7 @@ pub(in crate::commands) fn stage_online_mod_sources(
     target: ResolvedManualModTarget,
     sources: &[DownloadedManualModSource],
 ) -> Result<ManualModStageResult, String> {
+    validate_game_mod_mutation(&target.module_id)?;
     if sources.is_empty() {
         return Err("no online mod packages were provided".into());
     }
@@ -56,19 +69,8 @@ pub(in crate::commands) fn stage_online_mod_sources(
         .map_err(|_| "manual mod target lock poisoned")?;
     validate_manual_mod_target_path(&target.target_path)?;
     validate_manual_mod_target_tree(&target.target_path)?;
-    reject_untracked_downloads(&target.target_path, sources)?;
-    let manifest_path = target.target_path.join(ONLINE_MOD_MANIFEST);
-    let mut manifest = read_manifest(&manifest_path)?;
-    verify_dependencies(
-        &target.target_path,
-        &manifest,
-        &sources
-            .iter()
-            .map(|source| source.identity.clone())
-            .collect::<Vec<_>>(),
-    )?;
     let transaction = create_manual_mod_transaction(&target.target_path)?;
-    let prepared = prepare_packages(&target, sources, &transaction, &mut manifest);
+    let prepared = prepare_online_mod_transaction(&target, sources, &transaction, &[]);
     let (items, copied_file_count, copied_total_bytes, replace_roots) = match prepared {
         Ok(prepared) => prepared,
         Err(error) => return Err(manual_mod_staging_failure(error, &transaction, true)),
@@ -104,7 +106,28 @@ pub(in crate::commands) fn stage_online_mod_sources(
     })
 }
 
-type PreparedPackages = (Vec<ManualModStageItem>, usize, u64, HashSet<PathBuf>);
+pub(super) type PreparedPackages = (Vec<ManualModStageItem>, usize, u64, HashSet<PathBuf>);
+
+pub(super) fn prepare_online_mod_transaction(
+    target: &ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    transaction: &ManualModTransactionPaths,
+    runtime_dependencies: &[OnlineModIdentity],
+) -> Result<PreparedPackages, String> {
+    management::recover_management(target)?;
+    reject_untracked_downloads(&target.target_path, sources)?;
+    let mut manifest = read_manifest(&target.target_path.join(ONLINE_MOD_MANIFEST))?;
+    verify_dependencies(
+        &target.target_path,
+        &manifest,
+        &sources
+            .iter()
+            .map(|source| source.identity.clone())
+            .collect::<Vec<_>>(),
+        runtime_dependencies,
+    )?;
+    prepare_packages(target, sources, transaction, &mut manifest)
+}
 
 fn prepare_packages(
     target: &ResolvedManualModTarget,
@@ -127,6 +150,15 @@ fn prepare_packages(
         validate_manual_mod_source_destination(&source.path, &target.target_path)?;
         let key =
             package_key(&source.identity).map_err(|error| format!("{}: {error}", source.label))?;
+        if manifest
+            .packages
+            .get(&key)
+            .is_some_and(|package| !package.enabled)
+        {
+            return Err(format!(
+                "mod package `{key}` is disabled; enable it before reinstalling or updating so a duplicate cannot become active"
+            ));
+        }
         let target_name = if metadata.is_dir() {
             key.clone()
         } else {
@@ -176,8 +208,10 @@ fn prepare_packages(
             InstalledPackage {
                 target_name: target_name.clone(),
                 files: incoming,
+                routed_files: BTreeMap::new(),
                 version: Some(source.identity.version.clone()),
                 dependencies: Some(source.identity.dependencies.clone()),
+                enabled: true,
             },
         );
         file_count += staged.stats.file_count;
@@ -191,6 +225,7 @@ fn prepare_packages(
             total_bytes: staged.stats.total_bytes,
         });
     }
+    management::validate_management_manifest(manifest)?;
     let bytes = serde_json::to_vec(manifest).map_err(|error| error.to_string())?;
     if bytes.len() as u64 > MAX_MANIFEST_BYTES {
         return Err("online mod ownership record exceeds its size limit".into());
@@ -244,7 +279,12 @@ fn read_manifest(path: &Path) -> Result<InstalledPackages, String> {
     }
     let manifest: InstalledPackages = serde_json::from_slice(&bytes)
         .map_err(|error| format!("invalid online mod ownership record: {error}"))?;
-    for package in manifest.packages.values() {
+    let mut targets = HashSet::new();
+    for (key, package) in &manifest.packages {
+        if key.is_empty() || key.len() > 512 || !targets.insert(package.target_name.to_lowercase())
+        {
+            return Err("invalid or duplicate package in online mod ownership record".into());
+        }
         validate_manual_mod_windows_component(std::ffi::OsStr::new(&package.target_name))?;
         let mut components = Path::new(&package.target_name).components();
         if package.target_name.contains(['/', '\\'])
@@ -253,28 +293,33 @@ fn read_manifest(path: &Path) -> Result<InstalledPackages, String> {
         {
             return Err("invalid target in online mod ownership record".into());
         }
+        if package.files.len() > MAX_PACKAGE_FILES {
+            return Err("online mod ownership record exceeds its file limit".into());
+        }
+        let mut paths = ManualModStagingRegistry::default();
         for (relative, hash) in &package.files {
             if !relative.is_empty() {
                 let normalized = normalize_manual_mod_relative_path(Path::new(relative))?;
                 if normalized.to_string_lossy().replace('\\', "/") != *relative {
                     return Err("invalid path in online mod ownership record".into());
                 }
+                paths.register_file(&normalized)?;
+            } else if package.files.len() != 1 {
+                return Err(
+                    "file and directory paths conflict in online mod ownership record".into(),
+                );
             }
             if hash.len() != 64 || !hash.bytes().all(|byte| byte.is_ascii_hexdigit()) {
                 return Err("invalid hash in online mod ownership record".into());
             }
         }
     }
+    management::validate_management_manifest(&manifest)?;
     Ok(manifest)
 }
 
-fn fingerprint_tree(path: &Path) -> Result<BTreeMap<String, String>, String> {
-    fingerprint_tree_with_limits(
-        path,
-        MAX_PACKAGE_FILES,
-        MAX_PACKAGE_DEPTH,
-        MANUAL_MOD_ARCHIVE_MAX_UNCOMPRESSED_BYTES,
-    )
+pub(super) fn fingerprint_tree(path: &Path) -> Result<BTreeMap<String, String>, String> {
+    fingerprint_tree_with_limits(path, MAX_PACKAGE_FILES, MAX_PACKAGE_DEPTH, u64::MAX)
 }
 
 fn fingerprint_tree_with_limits(
@@ -356,12 +401,31 @@ fn preserve_user_files(
 ) -> Result<(), String> {
     let current = fingerprint_tree(destination)?;
     for (relative, hash) in &current {
-        if let Some(original) = previous.files.get(relative) {
+        let preserve = if let Some(original) = previous.files.get(relative) {
             if original != hash {
                 return Err(format!(
                     "online mod file {} was modified outside the manager; update stopped and existing files were preserved",
                     destination.join(relative).display()
                 ));
+            }
+            let candidate = if relative.is_empty() {
+                previous.target_name.as_str()
+            } else {
+                relative.as_str()
+            };
+            if management::protected_file(candidate) && !routed::is_metadata(candidate) {
+                if incoming
+                    .get(relative)
+                    .is_some_and(|incoming_hash| incoming_hash != hash)
+                {
+                    return Err(format!(
+                        "online mod update would overwrite configuration {}; existing files were preserved",
+                        destination.join(relative).display()
+                    ));
+                }
+                !incoming.contains_key(relative)
+            } else {
+                false
             }
         } else {
             if incoming.contains_key(relative) || relative.is_empty() {
@@ -370,12 +434,15 @@ fn preserve_user_files(
                     destination.join(relative).display()
                 ));
             }
+            true
+        };
+        if preserve {
             let output = staging.join(relative);
             if let Some(parent) = output.parent() {
                 fs::create_dir_all(parent)
                     .map_err(|error| format!("failed to preserve user mod file: {error}"))?;
             }
-            fs::copy(destination.join(relative), output)
+            copy_mod_payload(&destination.join(relative), &output)
                 .map_err(|error| format!("failed to preserve user mod file: {error}"))?;
         }
     }

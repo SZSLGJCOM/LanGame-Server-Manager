@@ -1,6 +1,7 @@
 import type { MessageCatalog } from "../../i18n-config";
 
 export const ZH_CN_ENSHROUDED_MESSAGES: MessageCatalog = {
+  "enshrouded.settings.customPresetRequirement": "在「世界节奏」中将「难度预设」设为「自定义」后，这些玩法参数才会生效。",
   "enshrouded.settings.sections.communication": "通信",
   "enshrouded.settings.sections.communicationDescription": "语音与文字聊天规则。",
   "enshrouded.settings.groups.customRoles": "自定义角色",
@@ -118,7 +119,7 @@ export const ZH_CN_ENSHROUDED_MESSAGES: MessageCatalog = {
   "settings.schema.enshrouded.aggro_pool_amount.option.many": "较多",
   "settings.schema.enshrouded.aggro_pool_amount.option.normal": "普通",
   "settings.schema.enshrouded.aggro_pool_amount.title": "同时攻击敌人数",
-  "settings.schema.enshrouded.banned_player_ids.description": "每行一个原生十进制账户哈希，或使用逗号分隔，范围为 0 至 18446744073709551615。请从游戏封禁记录获取哈希；不会转换 Steam64 ID。条目将在服务器下次启动时写入 Enshrouded 原生 bans 数组。",
+  "settings.schema.enshrouded.banned_player_ids.description": "每行一个原生十进制账户哈希，或使用逗号分隔，范围为 0 至 18446744073709551615。请从游戏封禁记录获取哈希；不会转换 Steam64 ID。玩家管理会保留 enshrouded_server.json 中已有的 bannedAccounts 封禁记录。更改封禁前需停服，重启后生效。",
   "settings.schema.enshrouded.banned_player_ids.title": "封禁原生账户哈希",
   "settings.schema.enshrouded.boss_damage_factor.description": "调整首领伤害倍率。",
   "settings.schema.enshrouded.boss_damage_factor.title": "首领伤害",
@@ -166,6 +167,8 @@ export const ZH_CN_ENSHROUDED_MESSAGES: MessageCatalog = {
   "settings.schema.enshrouded.fishing_difficulty.option.veryeasy": "非常简单",
   "settings.schema.enshrouded.fishing_difficulty.option.veryhard": "非常困难",
   "settings.schema.enshrouded.fishing_difficulty.title": "钓鱼难度",
+  "settings.schema.enshrouded.flame_level_fog_removal.description": "灵火祭坛驱散瘴气所需的最低灵火等级。默认值为 11；服务器接受 1 到 11。",
+  "settings.schema.enshrouded.flame_level_fog_removal.title": "驱散瘴气所需灵火等级",
   "settings.schema.enshrouded.food_buff_duration_factor.description": "调整食物增益持续时间。",
   "settings.schema.enshrouded.food_buff_duration_factor.title": "食物增益时长",
   "settings.schema.enshrouded.friend_can_access_inventories.description": "允许该角色打开箱子、容器和类似存储。",
@@ -233,7 +236,8 @@ export const ZH_CN_ENSHROUDED_MESSAGES: MessageCatalog = {
   "settings.schema.enshrouded.player_mana_factor.title": "玩家法力",
   "settings.schema.enshrouded.player_stamina_factor.description": "调整玩家最大耐力。游戏会按百分比展示。",
   "settings.schema.enshrouded.player_stamina_factor.title": "玩家耐力",
-  "settings.schema.enshrouded.random_spawner_amount.description": "控制世界中出现的敌人数量。",
+  "settings.schema.enshrouded.random_spawner_amount.description": "控制世界中出现的敌人数量。自动模式会根据附近实际参与的玩家人数调整遭遇中的敌人数量。",
+  "settings.schema.enshrouded.random_spawner_amount.option.automatic": "自动",
   "settings.schema.enshrouded.random_spawner_amount.option.extreme": "极高",
   "settings.schema.enshrouded.random_spawner_amount.option.few": "较少",
   "settings.schema.enshrouded.random_spawner_amount.option.many": "较多",

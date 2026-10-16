@@ -230,8 +230,27 @@ async fn receive_response(
     command: &str,
     pipe: &mut (impl tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin),
 ) -> Result<Value, String> {
-    let response: wire::Response = tokio::time::timeout(Duration::from_secs(1830), wire::read_frame(pipe))
-        .await.map_err(|_| "Runtime response timed out; the operation may still be running")?
+    receive_response_with_budget(command, pipe, Duration::from_secs(1830)).await
+}
+
+async fn receive_response_with_budget(
+    command: &str,
+    pipe: &mut (impl tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin),
+    observation_budget: Duration,
+) -> Result<Value, String> {
+    let owned = crate::command_registry::find(command).is_some_and(|registered| {
+        registered.completion == crate::command_registry::Completion::Owned
+    });
+    let received = if owned {
+        // The service owns long-running installs and transactions. Waiting for
+        // their receipt uses the same completion contract as server dispatch.
+        wire::read_frame(pipe).await
+    } else {
+        tokio::time::timeout(observation_budget, wire::read_frame(pipe))
+            .await
+            .map_err(|_| "Runtime response timed out; the operation may still be running")?
+    };
+    let response: wire::Response = received
         .map_err(|error| format!("Runtime connection ended after the request was sent ({error}); inspect task state before retrying"))?;
     if command == "runtime_service_shutdown" && response.result.is_ok() {
         // Reading the receipt proves saving/stopping completed. Losing its ACK

@@ -1,5 +1,5 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
+import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AiSettings } from "../../ai-settings";
 import type { ShellIconName } from "../../components/ShellIcon";
@@ -404,23 +404,23 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
         {error ? <ActivityNotice tone="error">{error}</ActivityNotice> : null}
         {!props.assistantCanRun ? <ActivityNotice tone="warning">{t("servers.broadcast.aiNotReady")}</ActivityNotice> : null}
         <div className="server-broadcast-compose">
-          <div className="server-broadcast-fields">
-            <label className="server-broadcast-field">
-              <span>{t("servers.broadcast.intentLabel")}</span>
+          <div className="settings-schema-grid server-broadcast-fields">
+            <label className="settings-schema-field server-broadcast-field">
+              <span className="detail-label">{t("servers.broadcast.intentLabel")}</span>
               <textarea name="broadcast-intent" value={intent} disabled={!instanceStateReady}
                 onChange={(event) => setIntent(event.target.value)} rows={3} maxLength={320}
                 placeholder={t("servers.broadcast.intentPlaceholder")} />
             </label>
-            <label className="server-broadcast-field">
-              <span>{t("servers.broadcast.messageLabel")}</span>
+            <label className="settings-schema-field server-broadcast-field">
+              <span className="detail-label">{t("servers.broadcast.messageLabel")}</span>
               <textarea name="broadcast-message" value={message} disabled={!instanceStateReady}
                 onChange={(event) => { setMessage(event.target.value); setGeneratedMeta(null); }}
                 rows={3} maxLength={240} placeholder={t("servers.broadcast.messagePlaceholder")} />
             </label>
           </div>
-          <div className="server-broadcast-actions">
-            <label className="server-broadcast-tone">
-              <span>{t("servers.broadcast.toneLabel")}</span>
+          <div className="settings-schema-grid server-broadcast-options">
+            <label className="settings-schema-field server-broadcast-tone">
+              <span className="detail-label">{t("servers.broadcast.toneLabel")}</span>
               <select name="broadcast-tone" value={activePolicy.rules.tone} disabled={!instanceStateReady}
                 onChange={(event) => updatePolicyRules({ ...activePolicy.rules, tone: event.target.value })}>
                 {(["short", "formal", "friendly"] as const).map((tone) => (
@@ -428,37 +428,44 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
                 ))}
               </select>
             </label>
+            <div className="server-broadcast-actions">
+            <ConfigurationActionHelp reason={!instanceStateReady || generating ? null : !props.assistantCanRun ? t("servers.broadcast.aiNotReady") : !intent.trim() ? t("servers.broadcast.reason.intent") : null}>
             <button type="button" className="secondary-button" disabled={!canGenerate}
               onClick={() => void handleGenerate()}>
               <ShellIcon name={generating ? "loader" : "zap"} className="server-broadcast-icon" />
               {t(generating ? "common.generating" : "servers.broadcast.generate")}
             </button>
+            </ConfigurationActionHelp>
+            <ConfigurationActionHelp reason={!instanceStateReady || sending ? null : !broadcastSupported ? t("servers.broadcast.unsupported") : !running ? t("servers.broadcast.reason.notRunning") : !generatedAvailable ? t("servers.broadcast.reason.noMessage") : null}>
             <button type="button" className="primary-button" disabled={!canSend}
               onClick={() => void handleSend()}>
               <ShellIcon name={sending ? "loader" : "send"} className="server-broadcast-icon" />
               {t(sending ? "common.sending" : "servers.broadcast.send")}
             </button>
+            </ConfigurationActionHelp>
+            </div>
           </div>
         </div>
         <section className="server-broadcast-rules" aria-label={t("servers.broadcast.policyTitle")}>
-          <div className="server-broadcast-policy-row">
+          <div className="settings-schema-grid server-broadcast-policy-row">
             <label className="server-broadcast-rule-toggle">
               <input name="broadcast-enabled" type="checkbox" checked={activePolicy.enabled} disabled={!instanceStateReady}
                 onChange={(event) => savePolicy({ ...activePolicy, enabled: event.target.checked })} />
               <span>{t("servers.broadcast.policyTitle")}</span>
             </label>
-            <label className="server-broadcast-cooldown">
-              <span>{t("servers.broadcast.cooldownMinutes")}</span>
+            <label className="settings-schema-field server-broadcast-cooldown">
+              <span className="detail-label">{t("servers.broadcast.cooldownMinutes")}</span>
               <input name="broadcast-cooldown" type="number" min={0} max={1440}
                 value={activePolicy.rules.cooldown_minutes} disabled={!instanceStateReady || !activePolicy.enabled}
                 onChange={(event) => updatePolicyRules({ ...activePolicy.rules,
                   cooldown_minutes: Number(event.target.value) || 0 })} />
             </label>
           </div>
+          <div className="settings-schema-grid server-broadcast-rule-grid">
           {(["startup", "shutdown"] as const).map((key) => {
             const rule = activePolicy.rules[key];
             const label = t(`servers.broadcast.rule.${key}`);
-            return <div className="server-broadcast-rule" key={key}>
+            return <div className="settings-schema-field server-broadcast-rule" key={key}>
               <label className="server-broadcast-rule-toggle">
                 <input name={`broadcast-${key}-enabled`} type="checkbox" checked={rule.enabled}
                   disabled={!instanceStateReady || !activePolicy.enabled}
@@ -474,10 +481,11 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
                   [key]: { ...rule, prompt: normalizePrompt(event.target.value) } })} />
             </div>;
           })}
+          </div>
         </section>
         <section className="server-broadcast-history" aria-label={t("servers.broadcast.historyTitle")}>
           <div className="server-broadcast-history-heading">
-            <h4>{t("servers.broadcast.historyTitle")}{events.length > 0 ? <span>{events.length}</span> : null}</h4>
+            <h4><ShellIcon name="history" className="server-workbench-section-icon" />{t("servers.broadcast.historyTitle")}{events.length > 0 ? <span>{events.length}</span> : null}</h4>
             <ConfigurationHelp description={t("common.refresh")}>{(help) =>
             <button type="button" className="ghost-button" disabled={!instanceStateReady}
               ref={help.anchorRef} {...help.interactionProps} aria-describedby={help.descriptionId}

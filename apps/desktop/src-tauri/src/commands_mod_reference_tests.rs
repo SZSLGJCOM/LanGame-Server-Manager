@@ -82,28 +82,28 @@ fn thunderstore_reference_parser_reads_package_urls() {
 }
 
 #[test]
-fn thunderstore_payload_prefix_prefers_installable_plugin_content() {
-    let names = vec![
-        String::from("manifest.json"),
-        String::from("README.md"),
-        String::from("plugins/Jotunn.dll"),
-    ];
-    assert_eq!(select_thunderstore_payload_prefix(&names), Some("plugins/"));
-
-    let bepinex_names = vec![
-        String::from("manifest.json"),
-        String::from("BepInEx/plugins/Example.dll"),
-    ];
-    assert_eq!(
-        select_thunderstore_payload_prefix(&bepinex_names),
-        Some("BepInEx/plugins/")
-    );
-
-    let root_names = vec![
-        String::from("PlacementPlus.dll"),
-        String::from("manifest.json"),
-    ];
-    assert_eq!(select_thunderstore_payload_prefix(&root_names), None);
+fn thunderstore_mod_manager_references_keep_the_pinned_identity_and_trusted_repository() {
+    let parsed = extract_thunderstore_package_reference(
+        "ror2mm://v1/install/thunderstore.io/BepInEx/BepInExPack_V_Rising/1.733.2/",
+    )
+    .unwrap();
+    assert_eq!(parsed.namespace, "BepInEx");
+    assert_eq!(parsed.package, "BepInExPack_V_Rising");
+    assert_eq!(parsed.version.as_deref(), Some("1.733.2"));
+    for invalid in [
+        "ror2mm://v1/install/evil.example/Author/Plugin/1.0.0/",
+        "ror2mm://v1/install/thunderstore.io/Author/Plugin/1.0.0/?url=https://evil.example",
+        "ror2mm://v1/install/thunderstore.io/Author/Plugin/not-a-version/",
+        "ror2mm://v1/install/thunderstore.io/Author/Plugin/4294967296.0.0/",
+        "ror2mm://user@v1/install/thunderstore.io/Author/Plugin/1.0.0/",
+        "ror2mm://v2/install/thunderstore.io/Author/Plugin/1.0.0/",
+        "ror2mm://v1/install//thunderstore.io/Author/Plugin/1.0.0/",
+    ] {
+        assert!(
+            extract_thunderstore_package_reference(invalid).is_none(),
+            "{invalid}"
+        );
+    }
 }
 
 #[test]

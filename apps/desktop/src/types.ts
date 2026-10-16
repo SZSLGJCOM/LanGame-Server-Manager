@@ -987,6 +987,16 @@ export interface ManualModStageResult {
   copied_total_bytes: number;
 }
 
+export type ManagedModAction = "enable" | "disable" | "delete" | "adopt";
+
+export interface ManagedModState {
+  package_id: string;
+  enabled: boolean;
+  dependencies: string[];
+  dependents: string[];
+  dependency_status: string;
+}
+
 export interface ManualModInventoryItem {
   name: string;
   path: string;
@@ -995,6 +1005,7 @@ export interface ManualModInventoryItem {
   file_count: number;
   total_bytes: number;
   modified_unix_ms?: number | null;
+  management?: ManagedModState | null;
 }
 
 export interface ManualModInventoryResult {
@@ -1005,6 +1016,13 @@ export interface ManualModInventoryResult {
   target_path: string;
   target_exists: boolean;
   items: ManualModInventoryItem[];
+}
+
+export interface ManagedModActionResult {
+  inventory: ManualModInventoryResult;
+  preserved_path: string | null;
+  removed_file_count: number;
+  warnings: string[];
 }
 
 export interface ManualModReferenceItem {

@@ -14,7 +14,7 @@ import type {
   SteamCmdPrepareSnapshot,
   SystemSnapshot
 } from "../types";
-import { countRunningInstances, formatInstanceStatus } from "../view-models";
+import { countRunningInstances, formatInstanceStatus, valheimCrossplayJoinGuidance } from "../view-models";
 import { resolveSystemPlayerCounts } from "../system-player-counts";
 import {
   SystemCoreDial,
@@ -490,12 +490,15 @@ function SystemDashboard(props: SystemViewProps) {
                 const normalizedStatus = normalizedInstanceStatus(instance.status);
                 const statusLabel = formatInstanceStatus(instance.status, t);
                 const connection = instanceConnections.connections[instance.id];
-                const endpoint = connection ? resolveInstanceConnection({
+                const connectionDetails = connection ? {
                   summary: { ...instance, bind_ip: connection.bind_ip },
                   ports: connection.ports,
                   settings_json: connection.settings_json
-                }, props.bindAddressCandidates, readPreferredJoinAddress(instance.id), locale, t) : null;
-                const connectionLabel = endpoint?.endpoint ?? (instanceConnections.failed
+                } : null;
+                const crossplay = valheimCrossplayJoinGuidance(connectionDetails, t);
+                const endpoint = connectionDetails ? resolveInstanceConnection(connectionDetails,
+                  props.bindAddressCandidates, readPreferredJoinAddress(instance.id), locale, t) : null;
+                const connectionLabel = crossplay?.summary ?? endpoint?.endpoint ?? (instanceConnections.failed
                   ? selectLocaleText(locale, "连接信息读取失败", "Connection unavailable")
                   : connection ? selectLocaleText(locale, "暂无可用连接地址", "No join address available")
                     : selectLocaleText(locale, "正在读取连接信息…", "Loading connection…"));
@@ -517,7 +520,7 @@ function SystemDashboard(props: SystemViewProps) {
                         {instance.autostart && <span className="instance-autostart-badge" title={copy.autostart}>{copy.autostartBadge}</span>}
                       </div>
                       <div className="system-instance-item-address"
-                        title={endpoint ? `${endpoint.label} · ${endpoint.endpoint}` : connectionLabel}>
+                        title={crossplay?.instructions ?? (endpoint ? `${endpoint.label} · ${endpoint.endpoint}` : connectionLabel)}>
                         {connectionLabel}
                       </div>
                     </div>

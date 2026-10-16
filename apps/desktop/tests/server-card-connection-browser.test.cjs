@@ -10,7 +10,7 @@ test("real instance cards show saved ports and copy fresh join addresses without
     const report = await runBrowserFixture({ fixturePath: "server-card-connection-browser.html", keyboard: true,
       viewport: { width, height: 900 }, screenshotPath });
     assert.equal(report.status, "passed");
-    assert.equal(report.checks, 12);
+    assert.equal(report.checks, 17);
     assert.equal(report.card_height, 194);
     assert.equal(report.card_shell_height, 192);
     assert.equal(report.start_width, 88);

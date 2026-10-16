@@ -3,6 +3,8 @@ import type { MessageCatalog } from "../../i18n-config";
 export const EN_US_VALHEIM_MESSAGES: MessageCatalog = {
   "servers.valheim.backendCrossplay": "Crossplay",
   "servers.valheim.backendSteamDirect": "Steam Direct",
+  "servers.valheim.crossplayJoinSummary": "Crossplay: join code or server list",
+  "servers.valheim.crossplayJoinInstructions": "Use the join code from this server's current startup log, or join through the in-game crossplay server list. LAN and Radmin IP addresses cannot be used in crossplay mode.",
   "servers.valheim.backupCountUnset": "Not set",
   "servers.valheim.durationDay": "{count} days",
   "servers.valheim.durationHour": "{count} hours",
@@ -72,7 +74,7 @@ export const EN_US_VALHEIM_MESSAGES: MessageCatalog = {
   "settings.schema.valheim.backup_short_seconds.title": "First Backup Interval (Seconds)",
   "settings.schema.valheim.banned_list.description": "One platform ID per line. LanGame renders bannedlist.txt and syncs it into the live Valheim save directory.",
   "settings.schema.valheim.banned_list.title": "Banned Platform IDs",
-  "settings.schema.valheim.crossplay_enabled.description": "Uses Valheim's crossplay backend so Steam and non-Steam players can join through the same room.",
+  "settings.schema.valheim.crossplay_enabled.description": "Steam and non-Steam players join through a crossplay join code or server list. Disable this for LAN or Radmin IP connections.",
   "settings.schema.valheim.crossplay_enabled.title": "Enable Crossplay",
   "settings.schema.valheim.permitted_list.description": "One platform ID per line. LanGame renders permittedlist.txt and syncs it into the live Valheim save directory for the dedicated server to read.",
   "settings.schema.valheim.permitted_list.title": "Permitted Platform IDs",

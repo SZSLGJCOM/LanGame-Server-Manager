@@ -29,6 +29,27 @@ test("Core Keeper preserves existing 32-character passwords through input, save 
   assert.equal(report.scratch_removed, true);
 });
 
+test("Enshrouded 1.0 Flame levels and Automatic enemy amount survive configuration saves", { timeout: 90000 }, async () => {
+  const report = await runBrowserFixture({
+    fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true, bundleWithMiddleware: true,
+    fixtureMiddleware: fixtureMode("enshrouded-1-0"),
+    screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
+      ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, "enshrouded-1-0-settings-1560x900.png")
+      : undefined
+  });
+  assert.equal(report.status, "passed", report.error);
+  assert.equal(report.default_flame_level, 11);
+  assert.deepEqual(report.mock_flame_level_readbacks, [1, 11]);
+  assert.equal(report.mock_enemy_amount_readback, "Automatic");
+  assert.equal(report.setting_save_readbacks, 3);
+  assert.equal(report.save_boundary, "synthetic onSave; no server files written");
+  assert.deepEqual(report.browser_errors, []);
+  assert.equal(report.browser_exited, true);
+  assert.equal(report.browser_processes_remaining, 0);
+  assert.equal(report.scratch_removed, true);
+  console.log(`ENSHROUDED_1_0_CONFIGURATION_BROWSER ${JSON.stringify(report)}`);
+});
+
 for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
   test(`all game configuration categories render at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
     const report = await runBrowserFixture({

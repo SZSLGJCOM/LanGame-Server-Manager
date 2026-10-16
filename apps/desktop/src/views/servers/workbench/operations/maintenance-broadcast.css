@@ -11,8 +11,7 @@
 
 .server-maintenance-card.server-broadcast-panel--unavailable { height: auto; }
 .server-broadcast-heading,
-.server-broadcast-history-heading,
-.server-broadcast-policy-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.server-broadcast-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .server-broadcast-heading { min-height: 28px; }
 .server-broadcast-heading h3,
 .server-broadcast-history-heading h4 {
@@ -39,8 +38,9 @@
 
 .server-broadcast-compose,
 .server-broadcast-rules { display: grid; gap: 8px; min-width: 0; }
-.server-broadcast-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.server-broadcast-field { display: grid; gap: 5px; min-width: 0; color: var(--shell-muted); font-size: var(--text-body); }
+/* Fields, options, policy and rules all sit on the shared .settings-schema-grid / .settings-schema-field. */
+.server-broadcast-options,
+.server-broadcast-policy-row { align-items: end; }
 .server-broadcast-panel :is(textarea, select, input[type="text"], input[type="number"]) {
   width: 100%;
   min-width: 0;
@@ -60,11 +60,9 @@
   outline: 2px solid var(--shell-accent, var(--shell-focus));
   outline-offset: 2px;
 }
-.server-broadcast-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; }
-.server-broadcast-tone { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--shell-muted); font-size: var(--text-body); }
-.server-broadcast-tone > span { flex-shrink: 0; }
-.server-broadcast-tone select { max-width: 104px; }
-.server-broadcast-panel .server-broadcast-actions > button {
+.server-broadcast-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; min-width: 0; }
+.server-broadcast-panel .server-broadcast-actions > button,
+.server-broadcast-panel .server-broadcast-actions > .configuration-action-help > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -77,12 +75,10 @@
 .server-broadcast-icon { width: 14px; height: 14px; flex-shrink: 0; }
 
 .server-broadcast-rules { padding-top: 10px; border-top: 1px solid var(--shell-line); }
-.server-broadcast-policy-row { flex-wrap: wrap; }
-.server-broadcast-rule-toggle { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--shell-text); font-size: var(--text-body); }
+.server-broadcast-rule-toggle { display: inline-flex; align-items: center; gap: 8px; min-width: 0; color: var(--shell-text); font-size: var(--text-body); }
 .server-broadcast-rule-toggle input { flex: 0 0 16px; width: 16px; height: 16px; margin: 0; accent-color: var(--shell-accent); }
-.server-broadcast-cooldown { display: inline-flex; align-items: center; gap: 6px; color: var(--shell-muted); font-size: var(--text-meta); }
-.server-broadcast-panel .server-broadcast-cooldown input { width: 58px; }
-.server-broadcast-rule { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: center; gap: 8px; }
+.server-broadcast-policy-row > .server-broadcast-rule-toggle { min-height: var(--settings-control-height); }
+.server-broadcast-rule .server-broadcast-rule-toggle { font-weight: var(--font-weight-medium); line-height: var(--leading-heading); }
 .server-broadcast-panel .server-broadcast-rule textarea { height: 32px; min-height: 32px; max-height: 100px; resize: vertical; }
 
 .server-broadcast-history { display: flex; flex: 1 1 100px; flex-direction: column; gap: 6px; min-width: 0; min-height: 100px; padding-top: 8px; border-top: 1px solid var(--shell-line); overflow: hidden; }

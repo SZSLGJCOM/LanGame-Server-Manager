@@ -10,6 +10,7 @@ interface MaintenanceSection {
   icon: ShellIconName;
   content: ReactNode;
   persistentContent?: ReactNode;
+  preserveAfterVisit?: boolean;
 }
 
 interface Props {
@@ -25,6 +26,7 @@ export function MaintenanceWorkspace({ active, sections, broadcast }: Props) {
   const content = useRef<HTMLDivElement>(null);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [selectedId, setSelectedId] = useState("backups");
+  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(["backups"]));
   const allSections: MaintenanceSection[] = [...sections, {
     id: "broadcast", title: t("servers.maintenance.broadcast"), icon: "message-square", content: broadcast
   }];
@@ -58,6 +60,7 @@ export function MaintenanceWorkspace({ active, sections, broadcast }: Props) {
           ariaLabel={t("servers.tabs.maintenance")}
           onSelectSection={(id) => {
             setSelectedId(id);
+            setVisited(previous => previous.has(id) ? previous : new Set([...previous, id]));
             setNavigationOpen(false);
             content.current?.scrollTo({ top: 0 });
             if (navigationToggle.current?.getClientRects().length) navigationToggle.current.focus();
@@ -70,7 +73,7 @@ export function MaintenanceWorkspace({ active, sections, broadcast }: Props) {
           {/* Keep immediate-save results across tabs without retaining expensive
               maintenance readers. The parent instance key owns this lifetime. */}
           {section.persistentContent}
-          {active || section.id === "broadcast" ? section.content : null}
+          {(section.preserveAfterVisit ? visited.has(section.id) : active || section.id === "broadcast") ? section.content : null}
         </div>)}
       </div>
     </div>

@@ -222,7 +222,102 @@ async function run() {
   check(!Object.hasOwn(window, "__TAURI_INTERNALS__"), "Catalogue acceptance must not access a native backend");
   await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
   const { mode } = await fetch("/__configuration_review_mode").then((response) => response.json()) as { mode: string };
-  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network"].includes(mode), "Unknown configuration review mode");
+  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network", "enshrouded-1-0", "enshrouded-sections"].includes(mode), "Unknown configuration review mode");
+  if (mode === "enshrouded-sections") {
+    const retainedBans = "00042\n18446744073709551615";
+    const { descriptor, schema, model } = await mount("enshrouded", {
+      game_settings_preset: "Default", banned_player_ids: retainedBans
+    });
+    check(Object.keys(JSON.parse(descriptor.schema_json!).properties).length === 75 && schema.fields.length === 74,
+      "Enshrouded must retain all 75 modeled fields and 74 configuration editors");
+    check(schema.fields.filter((field) => field.sourceKey?.startsWith("gameSettings.")).length === 38,
+      "All 38 native gameplay settings must remain configurable");
+    check(schema.presentationFields?.find((field) => field.key === "banned_player_ids")?.presentation.owner === "player_access",
+      "Concrete bans belong to Player Access");
+    check(!model.actionableSectionIds.includes("moderation") && !schema.fields.some((field) => field.key === "banned_player_ids"),
+      "Configuration must not duplicate the player ban editor");
+    check(descriptor.mods?.source?.provider === "nexus" && descriptor.mods?.manual_staging?.target_label === "mods",
+      "Enshrouded Mod staging belongs to the separate Mod workspace");
+    let configurationFields = 0;
+    for (const sectionId of model.actionableSectionIds) {
+      await selectSection(sectionId);
+      configurationFields += verifySection("enshrouded", sectionId, schema).fields;
+    }
+    check(configurationFields === 74, "Every configuration editor must appear once");
+    const gameplaySections = ["players", "survival", "world", "progression", "combat"];
+    for (const sectionId of gameplaySections) {
+      await selectSection(sectionId);
+      const toggle = fixture.querySelector<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
+      if (toggle?.getClientRects().length && toggle.getAttribute("aria-expanded") !== "true") {
+        await act(async () => { toggle.click(); });
+      }
+      const button = fixture.querySelector<HTMLButtonElement>(
+        `[data-configuration-section-id="${sectionId}"] > .configuration-section-navigation__button`);
+      check(button, `${sectionId}: category help must have a keyboard target`);
+      await act(async () => { button.focus(); });
+      const deadline = performance.now() + 5000;
+      while (![...document.querySelectorAll('[role="tooltip"]')].some((help) =>
+        help.textContent?.includes("难度预设") && help.textContent.includes("自定义"))) {
+        check(performance.now() < deadline, `${sectionId}: visible category help must explain the Custom preset requirement`);
+        await act(async () => { await frame(); });
+      }
+      await act(async () => { button.blur(); });
+    }
+    check(saves.length === 0, "Browsing configuration must not change the selected preset or stored data");
+    await verifySaveReadback("enshrouded", "game_settings_preset", "Custom");
+    for (const [key, value] of [["hunger_to_starving_minutes", 15], ["day_time_minutes", 45], ["night_time_minutes", 18]] as const) {
+      await verifySaveReadback("enshrouded", key, value);
+      check(fixture.querySelector(`[data-field-key="${key}"]`)?.textContent?.includes("分钟"),
+        `${key}: time editor must state minutes`);
+    }
+    await verifySaveReadback("enshrouded", "friend_password", "Enshrouded UI review password");
+    check(fixture.querySelector<HTMLInputElement>('[data-field-key="friend_password"] input')?.type === "password",
+      "Role passwords must remain concealed in the permissions configuration");
+    const stored = JSON.parse(persisted.get("enshrouded")!.settings_json);
+    check(stored.game_settings_preset === "Custom" && stored.banned_player_ids === retainedBans,
+      "Configuration saves must retain the explicit preset choice and exact player ban entries");
+    check(saves.length === 5, "Five edits must produce five debounced saves");
+    await selectSection("progression");
+    const toggle = fixture.querySelector<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
+    if (toggle?.getClientRects().length && toggle.getAttribute("aria-expanded") === "true") {
+      await act(async () => { toggle.click(); });
+    }
+    fixture.querySelector('[data-field-key="flame_level_fog_removal"]')?.scrollIntoView({ block: "center" });
+    await act(async () => { await frame(); });
+    check(errors.length === 0, "Browser and React must report no errors");
+    return { status: "passed", configuration_fields: configurationFields, gameplay_fields: 38,
+      custom_requirement_sections: gameplaySections, preset_requires_explicit_edit: true,
+      minute_value_readbacks: { hunger: 15, day: 45, night: 18 }, role_password_save_readback: true,
+      exact_bans_preserved: true, setting_save_readbacks: saves.length,
+      save_boundary: "synthetic onSave; no server files written", browser_errors: errors };
+  }
+  if (mode === "enshrouded-1-0") {
+    const { schema } = await mount("enshrouded", { game_settings_preset: "Custom" });
+    const flame = schema.fields.find((field) => field.key === "flame_level_fog_removal");
+    const amount = schema.fields.find((field) => field.key === "random_spawner_amount");
+    check(flame && amount, "Enshrouded 1.0 controls must be present");
+    await selectSection(flame.sectionId);
+    verifySection("enshrouded", flame.sectionId, schema);
+    const input = fixture.querySelector<HTMLInputElement>('[data-field-key="flame_level_fog_removal"] input');
+    check(input && !input.disabled && input.inputMode === "numeric", "Flame level must have an editable integer control");
+    check(input.value === "11" && flame.minimum === 1 && flame.maximum === 11,
+      "Flame level must initially display 11 with the native 1–11 bounds");
+    check(amount.defaultValue === "Normal", "Adding Automatic must preserve the existing enemy amount default");
+    await verifySaveReadback("enshrouded", "flame_level_fog_removal", 1);
+    await verifySaveReadback("enshrouded", "flame_level_fog_removal", 11);
+    await verifySaveReadback("enshrouded", "random_spawner_amount", "Automatic");
+    verifySection("enshrouded", amount.sectionId, schema);
+    const savedSettings = JSON.parse(persisted.get("enshrouded")!.settings_json);
+    check(savedSettings.flame_level_fog_removal === 11 && savedSettings.random_spawner_amount === "Automatic",
+      "Separate edits must preserve both Enshrouded 1.0 settings");
+    await selectSection(flame.sectionId);
+    fixture.querySelector('[data-field-key="flame_level_fog_removal"]')?.scrollIntoView({ block: "center" });
+    await act(async () => { await frame(); });
+    check(errors.length === 0, "Browser and React must report no errors");
+    return { status: "passed", default_flame_level: 11, mock_flame_level_readbacks: [1, 11],
+      mock_enemy_amount_readback: "Automatic", setting_save_readbacks: 3,
+      save_boundary: "synthetic onSave; no server files written", browser_errors: errors };
+  }
   if (mode === "corekeeper-password") {
     const generated = buildMockSettingsForModule("corekeeper", "Configuration review", "corekeeper-generated-default");
     check(typeof generated.join_password === "string" && generated.join_password.length === 28,

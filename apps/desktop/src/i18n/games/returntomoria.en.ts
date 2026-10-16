@@ -130,6 +130,7 @@ export const EN_US_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.workspace.save": "Save",
   "returntomoria.workspace.saved": "Saved. Applies on the next start.",
   "returntomoria.workspace.saveFailed": "The saved configuration could not be confirmed. Reload the instance before retrying.",
+  "returntomoria.workspace.upgradeWarningShort": "Upgrading cannot be undone. Back up the world first.",
   "returntomoria.workspace.upgradeWarning": "Upgrading cannot be undone. Back up the world first; players without the DLC cannot join after the upgrade.",
   "returntomoria.workspace.conflict": "This setting changed elsewhere. Discard edits and reload.",
   "returntomoria.workspace.schemaUnavailable": "Configuration definitions for this game are unavailable.",

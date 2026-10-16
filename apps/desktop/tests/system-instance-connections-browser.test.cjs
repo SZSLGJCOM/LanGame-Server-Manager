@@ -13,7 +13,7 @@ test("system instance overview displays saved join endpoints in Chinese and Engl
         response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({ locale }));
       } });
     assert.equal(report.status, "passed");
-    assert.equal(report.checks, 6);
+    assert.equal(report.checks, 7);
     assert.equal(report.locale, locale);
     assert.deepEqual(report.browser_errors, []);
     assert.equal(report.browser_exited, true);

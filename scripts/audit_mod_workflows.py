@@ -183,8 +183,8 @@ def classify(
     if frontend_tab and frontend_apply and workshop and source and staging and not enablement:
         return "supported", "Steam Workshop items can be downloaded and installed into the game's declared mod loading directory."
 
-    if frontend_tab and source and staging and not enablement:
-        return "manual_only", "Local file import and instance inventory are available; there is no generic enable/disable or removal action. Required server loaders are managed separately."
+    if frontend_tab and frontend_apply and source and staging and not enablement:
+        return "managed_files", "Imported packages and explicitly adopted existing files support enable/disable and ownership-based deletion with declared dependency checks. Configuration, modified and unowned files are retained. Loader and game compatibility require separate verification."
 
     if has_manifest or has_mod_fields or frontend_tab:
         return "partial", "Some Mod surface exists, but at least one of enablement, materialization evidence, or frontend apply support is missing."
@@ -235,10 +235,20 @@ def audit_rows() -> list[dict[str, str]]:
             frontend_apply,
             frontend_guardrail,
         )
+        if module_id in {"astroneer", "satisfactory"}:
+            status = "external_manager"
+            frontend_apply = False
+            note = (
+                "Inventory and directory access only. Mod list changes require AstroModLoader re-integration; generic mutations are blocked."
+                if module_id == "astroneer"
+                else "Inventory and directory access only. Use SMM/ficsit-cli for extracted .uplugin and GameFeature layouts; generic mutations are blocked."
+            )
         if status == "not_modelled":
             note = NOT_MODELLED_NOTES.get(module_id, note)
         workflow_kind = "not_modelled" if status == "not_modelled" else "steam_workshop" if workshop else "community_packages"
         package_installation = "none"
+        if status == "external_manager":
+            package_installation = "external_manager"
         if frontend_apply:
             package_installation = "steamcmd" if workshop else "local_files"
             if not workshop and enablement:
@@ -311,7 +321,8 @@ def write_markdown(rows: list[dict[str, str]]) -> None:
         "",
         "Status meanings:",
         "- supported: UI entry, settings write path, and game-specific enablement/materialization evidence are present.",
-        "- manual_only: local file import and inventory, without a generic enable/disable or removal action; some providers also support verified package links.",
+        "- managed_files: local file import, inventory and managed file enablement/removal with configuration preservation; some providers also support verified package links. This does not establish loader compatibility or real game loading.",
+        "- external_manager: inventory and directory access are available; package integration or loader layout requires the game's external manager, and generic mutations are blocked.",
         "- partial: some Mod surface exists, but a required link is missing.",
         "- not_modelled: no LanGame Mod/Workshop install or enablement workflow is declared; modules may still expose a guardrail panel that explains why LanGame will not write mod state.",
         "",

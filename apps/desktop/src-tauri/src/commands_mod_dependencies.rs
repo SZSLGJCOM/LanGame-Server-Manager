@@ -7,13 +7,14 @@ pub(super) fn verify_dependencies(
     target: &Path,
     manifest: &InstalledPackages,
     identities: &[OnlineModIdentity],
+    runtime_dependencies: &[OnlineModIdentity],
 ) -> Result<(), String> {
     let incoming = identities
         .iter()
         .filter(|identity| identity.provider == "thunderstore")
         .map(|identity| (identity.project.as_str(), identity))
         .collect::<BTreeMap<_, _>>();
-    let deadline = Instant::now() + Duration::from_secs(15);
+    let mut deadline = Instant::now() + Duration::from_secs(15);
     let mut pending = Vec::new();
     for identity in incoming.values() {
         queue_dependencies(&mut pending, &identity.dependencies, 0)?;
@@ -30,16 +31,33 @@ pub(super) fn verify_dependencies(
             return Err(graph_limit());
         }
         let (name, version) = parse_thunderstore_dependency(&dependency)?;
-        let dependencies = if let Some(identity) = incoming.get(name) {
+        let dependencies = if runtime_dependencies.iter().any(|identity| {
+            crate::commands::commands_mod_staging::reviewed_loader_satisfies(
+                identity, name, version,
+            )
+        }) {
+            Some(&[][..])
+        } else if let Some(identity) = incoming.get(name) {
             // A replacement masks the old record even when its version does not
             // match: using the old bytes here would validate a broken final state.
             (identity.version == version).then_some(identity.dependencies.as_slice())
         } else if let Some(package) = manifest.packages.get(&format!("thunderstore-{name}")) {
-            if package.version.as_deref() != Some(version) || package.dependencies.is_none() {
+            if !package.enabled
+                || package.version.as_deref() != Some(version)
+                || package.dependencies.is_none()
+            {
                 None
             } else {
+                // The graph has a CPU traversal budget. Streaming a large existing
+                // dependency must not consume it merely because disk I/O is slow.
+                let reading = Instant::now();
                 let current = fingerprint_tree(&target.join(&package.target_name))?;
-                if !package.files.is_empty()
+                let patchers_valid = routed::verify_patchers(package, target, None).is_ok();
+                deadline = deadline
+                    .checked_add(reading.elapsed())
+                    .ok_or("Thunderstore dependency verification clock overflowed")?;
+                if (!package.files.is_empty() || !package.routed_files.is_empty())
+                    && patchers_valid
                     && package
                         .files
                         .iter()
@@ -87,9 +105,10 @@ fn queue_affected_consumers(
     let mut reverse = BTreeMap::<&str, Vec<(&str, &InstalledPackage)>>::new();
     for (key, package) in &manifest.packages {
         check_deadline(deadline)?;
-        let Some(name) = key.strip_prefix("thunderstore-") else {
+        if !package.enabled {
             continue;
-        };
+        }
+        let name = key.strip_prefix("thunderstore-").unwrap_or(key);
         if incoming.contains_key(name) {
             continue;
         }
@@ -163,7 +182,7 @@ fn check_deadline(deadline: Instant) -> Result<(), String> {
     Ok(())
 }
 
-fn parse_thunderstore_dependency(value: &str) -> Result<(&str, &str), String> {
+pub(super) fn parse_thunderstore_dependency(value: &str) -> Result<(&str, &str), String> {
     let valid = value.len() <= 300
         && value.rsplit_once('-').is_some_and(|(name, version)| {
             let parts = name.split('-').collect::<Vec<_>>();

@@ -7,6 +7,7 @@ import {
 export const ZH_CN_SCUM_MESSAGES: MessageCatalog = {
   "scum.maintenance.title": "启动擦除开关",
   "scum.maintenance.persistenceNotice": "LanGame 保存的擦除开关会持续保留，直到手动关闭。每次启动前请检查，并关闭不再需要的擦除项。",
+  "scum.maintenance.warningShort": "擦除不可撤销，启用前请先备份。",
   "scum.maintenance.warning": "这些开关会在下次启动服务器时不可逆地擦除对应数据。启用并保存前，请确认已有可恢复的备份。",
   "scum.maintenance.requiresStop": "只有实例已停止且没有活动运行记录时才能修改。保存不会启动服务器。",
   "scum.maintenance.save": "保存擦除开关",

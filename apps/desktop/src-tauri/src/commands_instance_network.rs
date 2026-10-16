@@ -39,17 +39,38 @@ pub async fn read_instance_connection_info_from_storage(
             ports: projection.ports,
             settings_json: String::from("{}"),
         };
-        if projection.module_id == "corekeeper" {
+        if matches!(projection.module_id.as_str(), "corekeeper" | "valheim") {
             let details = read_instance_details(&storage.paths, &connection.instance_id)
                 .await
                 .map_err(|error| error.to_string())?;
-            connection.settings_json = corekeeper_connection_settings(&details.settings_json)?;
+            connection.settings_json = if projection.module_id == "valheim" {
+                valheim_connection_settings(&details.settings_json)?
+            } else {
+                corekeeper_connection_settings(&details.settings_json)?
+            };
             connection.bind_ip = details.summary.bind_ip;
             connection.ports = details.ports;
         }
         connections.push(connection);
     }
     Ok(connections)
+}
+
+fn valheim_connection_settings(settings_json: &str) -> Result<String, String> {
+    let settings: Value = serde_json::from_str(settings_json).map_err(|error| error.to_string())?;
+    let settings = settings
+        .as_object()
+        .ok_or("instance settings must be an object")?;
+    let mut connection = serde_json::Map::new();
+    if let Some(value) = settings.get("crossplay_enabled") {
+        if !value.is_boolean() {
+            return Err(String::from(
+                "invalid Valheim connection setting `crossplay_enabled`",
+            ));
+        }
+        connection.insert(String::from("crossplay_enabled"), value.clone());
+    }
+    serde_json::to_string(&connection).map_err(|error| error.to_string())
 }
 
 fn corekeeper_connection_settings(settings_json: &str) -> Result<String, String> {
@@ -75,6 +96,34 @@ fn corekeeper_connection_settings(settings_json: &str) -> Result<String, String>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn valheim_connection_info_only_exposes_typed_backend_selection() {
+        for enabled in [true, false] {
+            let input = json!({
+                "crossplay_enabled": enabled,
+                "server_password": "private",
+                "admin_list": "private",
+                "other": "private"
+            });
+            let settings = valheim_connection_settings(&input.to_string()).unwrap();
+            assert_eq!(
+                serde_json::from_str::<Value>(&settings).unwrap(),
+                json!({"crossplay_enabled": enabled})
+            );
+        }
+        assert_eq!(valheim_connection_settings("{}").unwrap(), "{}");
+        for input in [
+            r#"{"crossplay_enabled":"false"}"#,
+            r#"{"crossplay_enabled":1}"#,
+            r#"{"crossplay_enabled":null}"#,
+            "[]",
+            "null",
+            "invalid",
+        ] {
+            assert!(valheim_connection_settings(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn corekeeper_connection_info_only_exposes_typed_join_settings() {

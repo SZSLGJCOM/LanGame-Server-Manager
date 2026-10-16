@@ -67,7 +67,8 @@ function FieldFrame(props: {
   return (
     <div className="configuration-field settings-schema-field" data-field-key={scumVirtualFieldKey(props.setting)}
       data-scum-native-key={props.setting.nativeKey} ref={help.anchorRef} {...help.interactionProps}>
-      <label className="detail-label settings-field-label" htmlFor={props.inputId}>{props.title}</label>
+      {props.setting.type === "boolean" ? null
+        : <label className="detail-label settings-field-label" htmlFor={props.inputId}>{props.title}</label>}
       {help.helpNode}
       <div className="configuration-field-control">{props.children(help.descriptionId)}</div>
     </div>
@@ -102,11 +103,16 @@ function renderControl(
   inputId: string,
   describedBy: string | undefined,
   disabled: boolean,
-  onValue: (value: unknown) => void
+  onValue: (value: unknown) => void,
+  title?: string
 ) {
   if (setting.type === "boolean") {
-    return <input id={inputId} type="checkbox" checked={Boolean(value)} disabled={disabled}
-      aria-describedby={describedBy} onChange={(event) => onValue(event.target.checked)} />;
+    // Same toggle card as generic configuration booleans: title inside, switch at the right.
+    return <label className={setting.risk ? "settings-toggle-card is-danger" : "settings-toggle-card"} htmlFor={inputId}>
+      <span className="settings-toggle-copy"><span className="settings-field-title">{title}</span></span>
+      <input id={inputId} type="checkbox" checked={Boolean(value)} disabled={disabled}
+        aria-describedby={describedBy} onChange={(event) => onValue(event.target.checked)} />
+    </label>;
   }
   if (setting.type === "integer" || setting.type === "number") {
     return <input id={inputId} className="settings-schema-input" type="number"
@@ -221,7 +227,7 @@ export function ScumServerSettingsRenderer(props: ConfigurationSpecializedRender
                   title={settingTitle(t, setting)} description={settingDescription(t, setting)}>
                   {(descriptionId) => <>
                     {renderControl(setting, value, inputId, descriptionId, props.disabled || riskDisabled,
-                      (nextValue) => requestValue(setting, nextValue))}
+                      (nextValue) => requestValue(setting, nextValue), settingTitle(t, setting))}
                     {pendingConfirmationKey === setting.key ? (
                       <div className="configuration-workspace__notice scum-settings-confirmation" role="alert">
                         <strong>{riskCopy(t, setting)}</strong>

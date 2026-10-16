@@ -424,7 +424,7 @@ export function ConfigurationField(props: ConfigurationFieldProps) {
           </span></span>
           {control}
         </label>
-      ) : <div className="configuration-field-control">
+      ) : <div className={usesSecretInput ? "configuration-field-control configuration-field-control--secret" : "configuration-field-control"}>
         {control}
         {usesSecretInput ? (
           <button type="button" className="configuration-secret-toggle" disabled={props.disabled && !props.readOnly}

@@ -1,0 +1,37 @@
+{
+  "fixture_version": 1,
+  "module_id": "enshrouded",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-16",
+    "build": "Official build 25936466 README 1.0.0.0 plus effective native bounds; synthetic renderer assertions, native migration recorded separately",
+    "source_ids": ["native_1_0_gameplay_settings", "steamcmd_1_0_package_25936466"]
+  },
+  "coverage": {"editable": 1, "specialized": 0, "derived": 0, "generated": 0, "excluded": 0},
+  "classifications": {
+    "editable": ["native_1_0_gameplay_settings.gameSettings.flameLevelFogRemoval"],
+    "specialized": [], "derived": [], "generated": [], "excluded": []
+  },
+  "settings": {
+    "game_settings_preset": "Custom",
+    "random_spawner_amount": "Automatic",
+    "flame_level_fog_removal": 1
+  },
+  "initial": {
+    "files": [{"root": "install", "path": "enshrouded_server.json", "content": {"futureRoot": {"keep": true}, "gameSettings": {"futureSetting": "keep"}}}]
+  },
+  "expected": {
+    "files": [{
+      "root": "install", "path": "enshrouded_server.json", "format": "json",
+      "keys": {
+        "gameSettingsPreset": "Custom",
+        "gameSettings.randomSpawnerAmount": "Automatic",
+        "gameSettings.aggroPoolAmount": "Normal",
+        "gameSettings.flameLevelFogRemoval": 1,
+        "gameSettings.futureSetting": "keep",
+        "futureRoot.keep": true
+      }
+    }],
+    "launch": {"executable_suffix": "enshrouded_server.exe", "arguments": []}
+  }
+}

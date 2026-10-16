@@ -94,10 +94,12 @@ fn online_mod_replacement_respects_installed_consumers_and_preserves_rejected_st
     manifest.packages.insert(
         "thunderstore-Author-Unrelated".into(),
         InstalledPackage {
+            routed_files: BTreeMap::new(),
             target_name: "thunderstore-Author-Unrelated".into(),
             files: BTreeMap::new(),
             version: None,
             dependencies: None,
+            enabled: true,
         },
     );
     fs::write(&manifest_path, serde_json::to_vec(&manifest).unwrap()).unwrap();
@@ -321,6 +323,105 @@ fn online_mod_update_removes_old_payload_and_preserves_unowned_configuration() {
 }
 
 #[test]
+fn online_mod_update_preserves_previously_owned_configuration_omitted_by_new_packages() {
+    let fixture = Fixture::new();
+    let config = "\u{feff}operator-setting=true\r\n# retained bytes\r\n";
+    stage_online_mod_sources(
+        fixture.target(),
+        &[fixture.plugins(
+            "one",
+            &[
+                ("old.dll", "obsolete"),
+                ("plugin.dll", "original"),
+                ("operator.cfg", config),
+            ],
+        )],
+    )
+    .unwrap();
+    let installed = fixture.root.join("mods/thunderstore-Author-Plugin");
+    for version in ["two", "three"] {
+        stage_online_mod_sources(
+            fixture.target(),
+            &[fixture.plugins(version, &[("plugin.dll", version)])],
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(installed.join("operator.cfg")).unwrap(),
+            config.as_bytes()
+        );
+        assert_eq!(
+            fs::read_to_string(installed.join("plugin.dll")).unwrap(),
+            version
+        );
+        assert!(!installed.join("old.dll").exists());
+        let manifest = read_manifest(&fixture.root.join("mods").join(ONLINE_MOD_MANIFEST)).unwrap();
+        assert!(
+            !manifest.packages["thunderstore-Author-Plugin"]
+                .files
+                .contains_key("operator.cfg")
+        );
+    }
+}
+
+#[test]
+fn online_mod_configuration_conflicts_preserve_owned_and_user_modified_bytes_and_entire_batch() {
+    for user_modified in [false, true] {
+        let fixture = Fixture::new();
+        let config = "\u{feff}operator-setting=true\r\n";
+        stage_online_mod_sources(
+            fixture.target(),
+            &[fixture.plugins(
+                "one",
+                &[("plugin.dll", "original"), ("operator.cfg", config)],
+            )],
+        )
+        .unwrap();
+        let installed = fixture.root.join("mods/thunderstore-Author-Plugin");
+        if user_modified {
+            fs::write(
+                installed.join("operator.cfg"),
+                b"operator-setting=custom\r\n",
+            )
+            .unwrap();
+        }
+        let expected_config = fs::read(installed.join("operator.cfg")).unwrap();
+        let path = fixture.root.join("mods").join(ONLINE_MOD_MANIFEST);
+        let record = fs::read(&path).unwrap();
+        let before = fingerprint_tree(&fixture.root.join("mods")).unwrap();
+        let error = stage_online_mod_sources(
+            fixture.target(),
+            &[
+                fixture.jar("Independent", "one"),
+                fixture.plugins(
+                    "two",
+                    &[
+                        ("plugin.dll", "replacement"),
+                        ("operator.cfg", "vendor-default=false\n"),
+                    ],
+                ),
+            ],
+        )
+        .unwrap_err();
+        let expected_error = if user_modified {
+            "modified outside the manager"
+        } else {
+            "would overwrite configuration"
+        };
+        assert!(error.contains(expected_error), "{error}");
+        assert_eq!(
+            fs::read(installed.join("operator.cfg")).unwrap(),
+            expected_config
+        );
+        assert_eq!(fs::read(&path).unwrap(), record);
+        assert_eq!(
+            fingerprint_tree(&fixture.root.join("mods")).unwrap(),
+            before
+        );
+        assert!(!fixture.root.join("mods/modrinth-Independent.jar").exists());
+    }
+}
+
+#[test]
 fn online_mod_modified_owned_file_blocks_update_without_changing_record_or_payload() {
     let fixture = Fixture::new();
     stage_online_mod_sources(fixture.target(), &[fixture.jar("Example", "one")]).unwrap();
@@ -432,6 +533,66 @@ fn online_mod_historical_copy_of_another_package_does_not_block_installation() {
     stage_online_mod_sources(fixture.target(), &[fixture.jar("P7dR8mSH", "two")]).unwrap();
     assert_eq!(fs::read_to_string(unrelated).unwrap(), "other package");
     assert!(fixture.root.join("mods/modrinth-P7dR8mSH.jar").exists());
+}
+
+#[test]
+fn disabled_online_package_cannot_be_reinstalled_or_satisfy_dependencies() {
+    let fixture = Fixture::new();
+    let mut dependency = fixture.plugins("1.2.3", &[("dependency.dll", "original")]);
+    dependency.identity.project = "Author-Dependency".into();
+    stage_online_mod_sources(fixture.target(), &[dependency.clone()]).unwrap();
+    let path = fixture.target().target_path.join(ONLINE_MOD_MANIFEST);
+    let mut manifest = read_manifest(&path).unwrap();
+    manifest
+        .packages
+        .get_mut("thunderstore-Author-Dependency")
+        .unwrap()
+        .enabled = false;
+    fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    let previous = fingerprint_tree(&fixture.target().target_path).unwrap();
+    assert!(
+        stage_online_mod_sources(fixture.target(), &[dependency])
+            .unwrap_err()
+            .contains("disabled")
+    );
+    let mut consumer = fixture.plugins("2.0.0", &[("consumer.dll", "consumer")]);
+    consumer.identity.project = "Author-Consumer".into();
+    consumer.identity.dependencies = vec!["Author-Dependency-1.2.3".into()];
+    assert!(
+        stage_online_mod_sources(fixture.target(), &[consumer])
+            .unwrap_err()
+            .contains("Author-Dependency-1.2.3")
+    );
+    assert_eq!(
+        fingerprint_tree(&fixture.target().target_path).unwrap(),
+        previous
+    );
+}
+
+#[test]
+fn online_manifest_defaults_old_records_to_enabled_and_rejects_aliased_ownership() {
+    let fixture = Fixture::new();
+    let path = fixture.root.join(ONLINE_MOD_MANIFEST);
+    let digest = "0".repeat(64);
+    let original = serde_json::json!({"packages": {"local-Plugin": {
+        "target_name": "Plugin", "files": {"plugin.dll": digest}
+    }}});
+    fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+    assert!(read_manifest(&path).unwrap().packages["local-Plugin"].enabled);
+    let mut targets = original.clone();
+    targets["packages"]["local-Other"] = serde_json::json!({"target_name":"PLUGIN", "files":{}});
+    fs::write(&path, serde_json::to_vec(&targets).unwrap()).unwrap();
+    assert!(read_manifest(&path).is_err());
+    for files in [
+        serde_json::json!({"Plugin.dll": digest, "plugin.dll": digest}),
+        serde_json::json!({"nested": digest, "nested/plugin.dll": digest}),
+        serde_json::json!({"": digest, "plugin.dll": digest}),
+    ] {
+        let mut malformed = original.clone();
+        malformed["packages"]["local-Plugin"]["files"] = files;
+        fs::write(&path, serde_json::to_vec(&malformed).unwrap()).unwrap();
+        assert!(read_manifest(&path).is_err());
+    }
 }
 
 #[cfg(windows)]

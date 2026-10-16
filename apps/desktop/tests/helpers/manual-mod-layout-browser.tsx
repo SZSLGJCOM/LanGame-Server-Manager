@@ -307,9 +307,10 @@ async function run() {
   await render("valheim");
   let finishStage!: (value: ManualModStageResult) => void;
   stageGate = { promise: new Promise((resolve) => { finishStage = resolve; }), resolve: (value) => finishStage(value) };
-  await dropFiles();
+  await inputReference();
   await settle(() => element(".mw-dropzone").classList.contains("mw-dropzone--running"), "Pending installation did not render");
   layout("installing", true);
+  check(element(".mw-dropzone-title").textContent === "Installing...", "Online loader and plugin preparation shows installation progress instead of reference parsing");
   check(element<HTMLInputElement>(".mw-reference-input").disabled, "Pending installation disables reference input");
   await act(async () => { stageGate!.resolve(stageResult()); });
   stageGate = null;

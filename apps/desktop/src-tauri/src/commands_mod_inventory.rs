@@ -95,9 +95,14 @@ pub(in crate::commands) fn validate_root_chain(path: &Path) -> Result<(), String
     Ok(())
 }
 
-pub(super) fn read_inventory(
+pub(in crate::commands) fn read_inventory(
     target: ResolvedManualModTarget,
 ) -> Result<ManualModInventoryResult, String> {
+    let target_lock =
+        super::super::commands_mod_staging::manual_mod_target_lock(&target.target_path)?;
+    let _guard = target_lock
+        .lock()
+        .map_err(|_| "manual mod target lock poisoned")?;
     validate_root_chain(&target.target_path)?;
     let target_exists = match fs::symlink_metadata(&target.target_path) {
         Ok(metadata) => {
@@ -117,11 +122,12 @@ pub(super) fn read_inventory(
             ));
         }
     };
-    let items = if target_exists {
+    let mut items = if target_exists {
         read_manual_mod_inventory_items(target.id_strategy.as_deref(), &target.target_path)?
     } else {
         Vec::new()
     };
+    super::super::commands_mod_staging::decorate_inventory(&target, &mut items)?;
     Ok(ManualModInventoryResult {
         instance_id: target.instance_id,
         module_id: target.module_id,
@@ -195,6 +201,7 @@ fn read_items_with_budget(
                 .ok()
                 .and_then(|modified| modified.duration_since(UNIX_EPOCH).ok())
                 .map(|duration| duration.as_millis()),
+            management: None,
         });
     }
     Ok(items)

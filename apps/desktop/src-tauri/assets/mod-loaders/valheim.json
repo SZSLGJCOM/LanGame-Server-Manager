@@ -1,0 +1,29 @@
+{
+  "project": "denikson-BepInExPack_Valheim",
+  "version": "5.4.2351",
+  "archive_bytes": 702924,
+  "archive_sha256": "bce631497976a93977ceb08e166712e6c31d15244956f89f17df092a9b62e29f",
+  "prefix": "BepInExPack_Valheim",
+  "files": {
+    ".doorstop_version": "84fa42545c0993edf8a5559d2a0772260f85f4a7ed29ec75e6590be64ed98067",
+    "winhttp.dll": "93406d0a02e7c164b89828cbfe3b289930a112d2eca50bd4a52e72ece169e6a8",
+    "BepInEx/core/0Harmony.dll": "1a21cc03424fc82c3dd1346905d16494536b9595ae4162228d99fb7c285c1031",
+    "BepInEx/core/0Harmony.xml": "d1f02fc3ada3a13da307de421225bfe56ebe24064370980979391c4be021672f",
+    "BepInEx/core/0Harmony20.dll": "5708451a91eaecee71a49b1881fb081ee22142e11de04e8575f4f6832fa16d0e",
+    "BepInEx/core/BepInEx.Harmony.dll": "2f0270073e307095ce980f578bfc9489f7ac98d360b9d41f77370a84c33edd7a",
+    "BepInEx/core/BepInEx.Harmony.xml": "a04fedf08f7c81f5d01aba6f2840a7ffce50b79bbd24587d8dbe69ab73971d29",
+    "BepInEx/core/BepInEx.Preloader.dll": "c38f984772fdddc7f87ddd66c0326c6673cc6a4b4ea7beb5ab94edb3e59dbabe",
+    "BepInEx/core/BepInEx.Preloader.xml": "ab433415cb8f006f683c0c193d140b92f0244568e6e443d53a5c4c18a632dc98",
+    "BepInEx/core/BepInEx.dll": "36bdb9af2b8f2eda4c911d2a49c2a05a4f643637ad724b876d292a9a5fcd8ae6",
+    "BepInEx/core/BepInEx.xml": "65b9d6e40c8645e04cf1cf6342c2812f52766f2d0fc1b5736b03f17fb23df11e",
+    "BepInEx/core/HarmonyXInterop.dll": "dac1b52655f03ba00773eb63894bfd0da4d4df6d47041a64cfd4b1da757371ba",
+    "BepInEx/core/Mono.Cecil.Mdb.dll": "5896d1898f616701fff18f3b2c71e6b844d2390ef9f41e1c5fccce8cb27c698e",
+    "BepInEx/core/Mono.Cecil.Pdb.dll": "174db44a067f58561510af746f3caeb032037762c57a31c8d9ee32db25174984",
+    "BepInEx/core/Mono.Cecil.Rocks.dll": "54ac539fb5ddc8b44c0e9acd0fcb7324f89d1a072edf8ebc1b06dd691e3d3927",
+    "BepInEx/core/Mono.Cecil.dll": "7ae470288fff4a402899c254d0a76cefef55877f5c54f96e83c797cc5bb6e2f6",
+    "BepInEx/core/MonoMod.RuntimeDetour.dll": "40e49bb314391cd7bddc2644f8553eeba92c194b940836b103df16955c464e0c",
+    "BepInEx/core/MonoMod.RuntimeDetour.xml": "54887808960d156550b37d602d08847607aa9e908d039f2765fb0b5e79394aa4",
+    "BepInEx/core/MonoMod.Utils.dll": "9d1495f147ac93c4f81f84538c1a326e8f8a6aefc78d6289d798f3ce1162c5e9",
+    "BepInEx/core/MonoMod.Utils.xml": "0577b362023a3432d6e8d7934c5eddc3e08fdbb19e191af083e341562c5ede38"
+  }
+}

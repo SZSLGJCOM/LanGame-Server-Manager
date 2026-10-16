@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { ShellIcon } from "../../components/ShellIcon";
+import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
 import { useInstanceSettingsSaveCoordinator } from "../settings/InstanceSettingsSaveContext";
@@ -91,7 +93,9 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
 
   return <section className="server-workbench-surface server-maintenance-card" aria-labelledby={titleId}>
     <form className="server-save-policy-editor" onSubmit={(event) => void save(event)} aria-busy={saving}>
-      <h3 className="server-workbench-section-label" id={titleId}>{t("servers.programPolicy.title")}</h3>
+      <ConfigurationHelp description={t("servers.programPolicy.sharedHint")}>{(help) =>
+        <h3 className="server-workbench-section-label server-maintenance-card-label" id={titleId} ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>
+          <ShellIcon name="settings" className="server-workbench-section-icon" />{t("servers.programPolicy.title")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></h3>}</ConfigurationHelp>
       {readError && <ActivityNotice tone="error">{readError}</ActivityNotice>}
       {!ready ? <p className="form-note" role="status">{t("servers.programPolicy.loading")}</p>
         : !supported ? <p className="form-note">{t("servers.programPolicy.unsupported")}</p>
@@ -112,8 +116,7 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
                 <option value="pinned">{t("servers.programPolicy.pinned")}</option>
               </select>
             </label>
-            <p className="form-note" id={helpId}>{t(value === "pinned" ? "servers.programPolicy.pinnedHint" : "servers.programPolicy.automaticHint")}</p>
-            <p className="form-note">{t("servers.programPolicy.sharedHint")}</p>
+            <p className="form-note server-save-policy-note" id={helpId}>{t(value === "pinned" ? "servers.programPolicy.pinnedHint" : "servers.programPolicy.automaticHint")}</p>
             {!idle && !readOnly && <p className="form-note">{t("servers.programPolicy.stopFirst")}</p>}
           </>}
       {error && <ActivityNotice tone="error">{error}</ActivityNotice>}
@@ -127,7 +130,7 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
             setDraft(null); setError(null); setStatus("idle");
             if (!readError) void coordinator.runOperation(details.summary.id, async () => undefined, SAVE_OWNER);
           }}>{t("servers.savePolicy.reload")}</button>}
-        <button type="submit" className="secondary-button" disabled={disabled || !dirty}>{t("servers.backups.policySave")}</button>
+        <ConfigurationActionHelp reason={!idle ? t("servers.programPolicy.stopFirst") : readError ? readError : !dirty ? t("servers.maintenance.noChanges") : null}><button type="submit" className="secondary-button" disabled={disabled || !dirty}>{t("servers.backups.policySave")}</button></ConfigurationActionHelp>
       </div>}
     </form>
   </section>;

@@ -73,7 +73,7 @@ test("Enshrouded exposes native account hashes through its persistent player ros
     assert.deepEqual(declared[key], property[key]);
   }
   assert.match(declared.title, /Native Account Hashes/);
-  assert.equal(declared["x-lsgm-source-key"], "bans");
+  assert.equal(declared["x-lsgm-source-key"], "bannedAccounts");
 });
 
 test("configuration validation leaves account hashes to the player roster and still checks custom roles", () => {
