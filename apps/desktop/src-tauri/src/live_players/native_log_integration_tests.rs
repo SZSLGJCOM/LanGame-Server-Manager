@@ -23,28 +23,39 @@ impl Drop for Fixture {
 
 #[tokio::test]
 async fn enshrouded_anonymous_a2s_response_uses_current_run_names() {
+    check_current_run_names("enshrouded", "[server] Machine '1': Player '0(0)' logged in\n[server] Player '测试玩家' logged in with Permissions:\n").await;
+}
+
+#[tokio::test]
+async fn valheim_anonymous_a2s_response_uses_current_run_names() {
+    check_current_run_names("valheim", "10/16/2026 20:55:19: Player history entry with index 0: Historical (Steam_123, abc)\n10/16/2026 20:55:19: Server: New peer connected,sending global keys\n10/16/2026 20:55:39: Got character ZDOID from 测试玩家 : 42:1\n").await;
+}
+
+async fn check_current_run_names(module_id: &str, native_log: &str) {
     let fixture = Fixture::new();
     let log_path = fixture.0.join("managed-console/run-91-main.log");
     let log = app_storage::managed_console_log::ManagedConsoleLog::open(&log_path)
         .expect("managed current-run log");
-    log.write_all(
-        "[server] Machine '1': Player '0(0)' logged in\n[server] Player '测试玩家' logged in with Permissions:\n".as_bytes(),
-    ).expect("native join evidence");
+    log.write_all(native_log.as_bytes())
+        .expect("native join evidence");
     let socket = UdpSocket::bind("127.0.0.1:0").expect("query fixture");
     socket
         .set_read_timeout(Some(Duration::from_secs(5)))
         .expect("query timeout");
     let port = socket.local_addr().expect("query address").port();
+    let valheim = module_id == "valheim";
     let server = std::thread::spawn(move || {
         let mut bytes = [0_u8; 128];
         let (_, peer) = socket.recv_from(&mut bytes).expect("PLAYER request");
         assert_eq!(bytes[4], b'U');
-        // Enshrouded returns one anonymous player with score and duration.
+        // Valheim publishes no PLAYER rows; Enshrouded publishes an anonymous row.
+        let player_reply: &[u8] = if valheim {
+            b"\xff\xff\xff\xffD\x00"
+        } else {
+            b"\xff\xff\xff\xffD\x01\x00\x00\x00\x00\x00\x00\x55\x3f\x48\x43"
+        };
         socket
-            .send_to(
-                b"\xff\xff\xff\xffD\x01\x00\x00\x00\x00\x00\x00\x55\x3f\x48\x43",
-                peer,
-            )
+            .send_to(player_reply, peer)
             .expect("anonymous PLAYER response");
         let (_, peer) = socket.recv_from(&mut bytes).expect("INFO request");
         assert_eq!(bytes[4], b'T');
@@ -56,7 +67,7 @@ async fn enshrouded_anonymous_a2s_response_uses_current_run_names() {
             .expect("INFO count");
     });
     let details: InstanceDetails = serde_json::from_value(serde_json::json!({
-        "summary": { "id": "enshrouded-fixture", "name": "Fixture", "module_id": "enshrouded",
+        "summary": { "id": "enshrouded-fixture", "name": "Fixture", "module_id": module_id,
             "status": "Running", "bind_ip": "127.0.0.1", "port_count": 1, "autostart": false },
         "config_file_path": "", "saves_path": "", "auto_backup_on_stop": false,
         "backup_retention_count": 1, "settings_json": "{}",
@@ -75,16 +86,26 @@ async fn enshrouded_anonymous_a2s_response_uses_current_run_names() {
     .expect("production module declarations");
     let module = modules
         .iter()
-        .find(|module| module.summary.id == "enshrouded")
+        .find(|module| module.summary.id == module_id)
         .expect("Enshrouded declaration");
     let app = tauri::test::mock_builder()
         .manage(DesktopState::default())
         .build(tauri::test::mock_context(tauri::test::noop_assets()))
         .expect("test app");
-    let snapshot = collect_direct_players(&app.state::<DesktopState>(), &details, module, 1_000)
-        .await
-        .expect("player collection")
-        .public_snapshot;
+    let permit = app
+        .state::<DesktopState>()
+        .acquire_instance_mutation(&details.summary.id)
+        .await;
+    let snapshot = collect_direct_players(
+        &app.state::<DesktopState>(),
+        &details,
+        module,
+        1_000,
+        permit,
+    )
+    .await
+    .expect("player collection")
+    .public_snapshot;
     server.join().expect("query fixture completed");
     assert_eq!(snapshot.current_players, Some(1));
     assert_eq!(
@@ -94,7 +115,18 @@ async fn enshrouded_anonymous_a2s_response_uses_current_run_names() {
     );
     assert_eq!(snapshot.entries[0].display_name, "测试玩家");
     assert!(snapshot.complete);
-    assert!(snapshot.entries[0].identifiers.is_empty());
+    if module_id == "valheim" {
+        assert_eq!(snapshot.entries[0].identifiers.len(), 1);
+        let identity = &snapshot.entries[0].identifiers[0];
+        assert_eq!(
+            identity.kind,
+            app_core::RuntimePlayerIdentityKind::PlayerName
+        );
+        assert_eq!(identity.value, "测试玩家");
+        assert!(!identity.stable);
+    } else {
+        assert!(snapshot.entries[0].identifiers.is_empty());
+    }
     assert!(snapshot.entries[0].available_action_ids.is_empty());
     assert_eq!(snapshot.entries[0].session_started_at_unix_ms, None);
 }

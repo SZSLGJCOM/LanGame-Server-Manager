@@ -106,6 +106,7 @@ SUPPORTED_PLAYER_ACCESS_CODECS = {
     "barotrauma_account",
     "dst_klei_id",
     "valheim_platform_id",
+    "valheim_ban",
 }
 SUPPORTED_PLAYER_ACCESS_SYNC_MODES = {"direct", "reload", "restart"}
 DELIMITED_PLAYER_ACCESS_IDENTITY_FORMATS = {
@@ -117,6 +118,23 @@ DELIMITED_PLAYER_ACCESS_IDENTITY_FORMATS = {
 SUPPORTED_PLAYER_ACCESS_SEGMENT_FORMATS = {
     "steam64", "minecraft_uuid", "minecraft_name", "ip", "barotrauma_account",
     "text", "integer", "boolean",
+}
+
+# A native roster is a read channel only for these independently verified
+# module/transport/codec/identity contracts, never for arbitrary file IPC.
+NATIVE_PLAYER_CHANNELS = {
+    "enshrouded": ("enshrouded_native", "enshrouded_native_players", "enshrouded_account_id"),
+    "runescapedragonwilds": ("dragonwilds_native", "dragonwilds_players", "eos_id"),
+}
+NATIVE_PLAYER_ACTION_TEMPLATES = {
+    "kick_player": "kick {{target}}",
+    "ban_player": "ban {{target}}",
+    "unban_player": "unban {{target}}",
+}
+NATIVE_PLAYER_ACTION_FIELDS = {
+    "id", "label", "label_zh_cn", "transport", "command_template",
+    "target_required", "target_encoding", "destructive", "target_label",
+    "target_label_zh_cn", "target_placeholder", "target_placeholder_zh_cn",
 }
 
 
@@ -662,6 +680,49 @@ def runtime_player_action_dispatch_source_key(action: dict) -> tuple[str, str]:
     return transport, ""
 
 
+def native_player_action_matches_contract(action: dict, transport: str) -> bool:
+    return (
+        set(action) <= NATIVE_PLAYER_ACTION_FIELDS
+        and action.get("transport") == transport
+        and isinstance(action.get("id"), str)
+        and action.get("id") in NATIVE_PLAYER_ACTION_TEMPLATES
+        and action.get("command_template") == NATIVE_PLAYER_ACTION_TEMPLATES[action["id"]]
+        and action.get("target_required") is True
+        and action.get("target_encoding") == "raw"
+        and action.get("destructive") is True
+    )
+
+
+def native_player_list_source_key(module_toml: dict) -> tuple[str, str] | None:
+    channel = NATIVE_PLAYER_CHANNELS.get(module_toml.get("id"))
+    runtime = module_toml.get("runtime")
+    if channel is None or not isinstance(runtime, dict):
+        return None
+    transport, codec, identity = channel
+    player_list = runtime.get("player_list")
+    if not isinstance(player_list, dict) or (
+        player_list.get("scope", "online") != "online"
+        or player_list.get("source") != "file_ipc"
+        or player_list.get("response_codec") != codec
+        or player_list.get("identity_kind") != identity
+        or player_list.get("action_id") is not None
+    ):
+        return None
+    action_ids = player_list.get("player_action_ids")
+    if not isinstance(action_ids, list) or len(action_ids) != 2 or not all(
+        isinstance(action_id, str) for action_id in action_ids
+    ) or set(action_ids) != {"kick_player", "ban_player"}:
+        return None
+    actions = runtime.get("player_actions")
+    if not isinstance(actions, list):
+        return None
+    for action_id in action_ids:
+        matches = [action for action in actions if isinstance(action, dict) and action.get("id") == action_id]
+        if len(matches) != 1 or not native_player_action_matches_contract(matches[0], transport):
+            return None
+    return transport, ""
+
+
 def runtime_player_action_target_is_clear(action: dict) -> bool:
     text = " ".join(
         str(action.get(key) or "")
@@ -691,6 +752,11 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
         return failures
 
     actions = runtime.get("player_actions", [])
+    native_source = native_player_list_source_key(module_toml)
+    if module_id in NATIVE_PLAYER_CHANNELS and (
+        module_toml.get("id") != module_id or native_source is None
+    ):
+        failures.append(f"{module_id}: native moderation requires its verified online file_ipc roster contract")
     if actions in (None, []):
         return failures
     if not isinstance(actions, list):
@@ -706,6 +772,8 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
         for source_key in [runtime_player_action_targetless_read_source_key(action)]
         if source_key is not None
     }
+    if module_toml.get("id") == module_id and native_source is not None:
+        targetless_read_sources.add(native_source)
     for index, action in enumerate(actions, start=1):
         if not isinstance(action, dict):
             failures.append(f"{module_id}: runtime.player_actions[{index}] must be a table")
@@ -739,8 +807,15 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
             )
 
         transport = str(action.get("transport") or "stdin")
-        if transport not in {"stdin"} | PLAYER_ACTION_REMOTE_TRANSPORTS:
+        native_transports = {channel[0] for channel in NATIVE_PLAYER_CHANNELS.values()}
+        if transport not in {"stdin"} | PLAYER_ACTION_REMOTE_TRANSPORTS | native_transports:
             failures.append(f"{module_id}: runtime.player_actions[{action_id or index}] has unsupported transport {transport!r}")
+        if transport in native_transports and (
+            module_toml.get("id") != module_id
+            or native_source != (transport, "")
+            or not native_player_action_matches_contract(action, transport)
+        ):
+            failures.append(f"{module_id}: runtime.player_actions[{action_id or index}] must use its exact verified native moderation contract")
         allowed_transport_metadata = player_action_allowed_transport_metadata_keys(transport)
         stray_transport_metadata = [
             key
@@ -1143,9 +1218,13 @@ def validate_player_management_surface_transports(
     surface = str(player_management.get("planned_surface") or "").strip().lower()
     transports = runtime_player_action_transports(module_toml)
     failures: list[str] = []
+    surface_tokens = {
+        **PLAYER_ACTION_TRANSPORT_SURFACE_TOKENS,
+        **{channel[0]: (channel[0],) for channel in NATIVE_PLAYER_CHANNELS.values()},
+    }
 
     for transport in sorted(transports):
-        tokens = PLAYER_ACTION_TRANSPORT_SURFACE_TOKENS.get(transport)
+        tokens = surface_tokens.get(transport)
         if not tokens:
             continue
         if not any(token in surface for token in tokens):
@@ -1153,7 +1232,7 @@ def validate_player_management_surface_transports(
                 f"{module_id}: player_management.planned_surface {surface!r} does not mention runtime player action transport {transport!r}"
             )
 
-    for transport, tokens in PLAYER_ACTION_TRANSPORT_SURFACE_TOKENS.items():
+    for transport, tokens in surface_tokens.items():
         if transport in transports:
             continue
         if any(token in surface for token in tokens):
@@ -1165,6 +1244,8 @@ def validate_player_management_surface_transports(
 
 
 def module_has_runtime_player_read_action(module_toml: dict) -> bool:
+    if module_toml.get("id") in NATIVE_PLAYER_CHANNELS:
+        return native_player_list_source_key(module_toml) is not None
     runtime = module_toml.get("runtime", {})
     if not isinstance(runtime, dict):
         return False
@@ -1181,6 +1262,8 @@ def module_has_runtime_player_read_action(module_toml: dict) -> bool:
 
 
 def module_has_runtime_player_targetless_read_action(module_toml: dict) -> bool:
+    if module_toml.get("id") in NATIVE_PLAYER_CHANNELS:
+        return native_player_list_source_key(module_toml) is not None
     runtime = module_toml.get("runtime", {})
     if not isinstance(runtime, dict):
         return False
@@ -1214,6 +1297,8 @@ def module_has_runtime_player_mutating_action(module_toml: dict) -> bool:
 
 
 def module_has_online_player_list(module_toml: dict) -> bool:
+    if module_toml.get("id") in NATIVE_PLAYER_CHANNELS:
+        return native_player_list_source_key(module_toml) is not None
     runtime = module_toml.get("runtime", {})
     if not isinstance(runtime, dict):
         return False
@@ -2094,7 +2179,10 @@ def validate_valheim_roster_text_rendering() -> list[str]:
         "fn lookup_valheim_template_token(settings: &Map<String, Value>, path: &str) -> Option<String>",
         "fn normalize_valheim_platform_id(raw: &str) -> Option<String>",
         "fn render_valheim_platform_id_lines(settings: &Map<String, Value>, key: &str) -> String",
-        "fn valheim_roster_lists_filter_to_single_platform_id_tokens()",
+        "fn normalize_valheim_ban_entry(raw: &str) -> Option<String>",
+        "fn canonical_valheim_ban_identity(value: &str) -> String",
+        "fn render_valheim_ban_lines(settings: &Map<String, Value>, key: &str) -> String",
+        "fn valheim_roster_lists_preserve_platform_ids_and_exact_character_bans()",
     )
     for marker in required_markers:
         if marker not in source:
@@ -2106,7 +2194,7 @@ def validate_valheim_roster_text_rendering() -> list[str]:
     renderer_markers = (
         "parse_config_lines(settings, key)",
         "normalize_valheim_platform_id(&line)",
-        "seen.insert(line.to_ascii_lowercase())",
+        "seen.insert(line.clone())",
         '.join("\\n")',
     )
     for marker in renderer_markers:
@@ -2114,6 +2202,11 @@ def validate_valheim_roster_text_rendering() -> list[str]:
             failures.append(
                 f"valheim: platform roster renderer no longer filters/deduplicates through marker {marker!r}"
             )
+
+    ban_renderer_body = rust_function_body("render_valheim_ban_lines")
+    for marker in ("raw.lines()", "normalize_valheim_ban_entry", "canonical_valheim_ban_identity(line)", '.join("\\n")'):
+        if marker not in ban_renderer_body:
+            failures.append(f"valheim: ban renderer no longer preserves validated exact character names through marker {marker!r}")
 
     lookup_body = rust_function_body("lookup_valheim_template_token")
     for field, token in VALHEIM_ROSTER_TOKEN_COVERAGE.items():
@@ -2127,7 +2220,8 @@ def validate_valheim_roster_text_rendering() -> list[str]:
             failures.append(
                 f"valheim: {template_path.name} must render {field} through valheim.{token}, not raw settings text"
             )
-        if f'"{token}"' not in lookup_body or f'render_valheim_platform_id_lines(settings, "{field}")' not in lookup_body:
+        renderer = "render_valheim_ban_lines" if field == "banned_list" else "render_valheim_platform_id_lines"
+        if f'"{token}"' not in lookup_body or f'{renderer}(settings, "{field}")' not in lookup_body:
             failures.append(
                 f"valheim: lookup_valheim_template_token no longer maps {token} to schema field {field}"
             )

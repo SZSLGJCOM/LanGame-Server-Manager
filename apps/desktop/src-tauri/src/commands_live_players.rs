@@ -229,6 +229,32 @@ async fn execute_instance_player_action_inner(
             )
         })?;
 
+    if details.summary.module_id == "runescapedragonwilds" {
+        let resolved = super::commands_runtime_actions::resolve_declared_runtime_action(
+            &descriptor,
+            action_id,
+            Some(&canonical_target),
+            None,
+            None,
+            true,
+        )?;
+        state.live_player_registry.invalidate_instance(instance_id);
+        super::commands_dragonwilds_player_control::execute(
+            state,
+            details,
+            resolved.command,
+            _mutation,
+        )
+        .await?;
+        return Ok(ExecuteInstancePlayerActionResult {
+            action_id: action_id.to_owned(),
+            status: RuntimeLivePlayerActionStatus::Sent,
+            executed_at_unix_ms: state.live_player_registry.now_unix_ms(),
+            summary: "The native Dragonwilds action and its required effects were confirmed."
+                .into(),
+        });
+    }
+
     let dispatched = dispatch_after_live_player_authorization_revocation(
         &state.live_player_registry,
         instance_id,
@@ -247,7 +273,9 @@ async fn execute_instance_player_action_inner(
     )
     .await
     .map_err(|error| {
-        if details.summary.module_id == "sevendaystodie" && action_id == "ban_player" {
+        if details.summary.module_id == "enshrouded" {
+            error
+        } else if details.summary.module_id == "sevendaystodie" && action_id == "ban_player" {
             format!("The server could not complete or confirm the ban command: {error}")
         } else {
             String::from("The server could not complete the declared player action.")

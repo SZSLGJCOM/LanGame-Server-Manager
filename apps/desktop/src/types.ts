@@ -162,6 +162,7 @@ export type ModulePlayerListCodec =
   | "windrose_players"
   | "dragonwilds_players"
   | "scum_players"
+  | "enshrouded_native_players"
   | "a2s_players";
 
 export type RuntimePlayerIdentityKind =
@@ -174,7 +175,9 @@ export type RuntimePlayerIdentityKind =
   | "session_id"
   | "palworld_user_id"
   | "minecraft_uuid"
-  | "astroneer_guid";
+  | "astroneer_guid"
+  | "enshrouded_account_id"
+  | "valheim_platform_id";
 
 export interface ModulePlayerListSpec {
   scope: ModulePlayerListScope;

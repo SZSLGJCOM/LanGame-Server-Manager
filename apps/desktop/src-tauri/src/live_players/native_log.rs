@@ -4,8 +4,8 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use app_core::{
-    InstanceDetails, ModulePlayerQuerySpec, RuntimeLivePlayerEntry, RuntimeLivePlayerIssue,
-    RuntimeLivePlayerIssueCode,
+    InstanceDetails, ModulePlayerQuerySpec, RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier,
+    RuntimeLivePlayerIssue, RuntimeLivePlayerIssueCode, RuntimePlayerIdentityKind,
 };
 
 use super::cache::LivePlayerCollectionResult;
@@ -15,6 +15,15 @@ use crate::runtime_log_stream::{RuntimeLogTailState, read_runtime_log_delta_boun
 #[path = "enshrouded_roster.rs"]
 mod roster;
 use roster::NameRoster;
+#[path = "valheim_roster.rs"]
+mod valheim_roster;
+use valheim_roster::ValheimPeers;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Game {
+    Enshrouded,
+    Valheim,
+}
 
 const MAX_TRACKED_INSTANCES: usize = 128;
 const READ_BUDGET: usize = 4 * 1024 * 1024;
@@ -22,12 +31,13 @@ const READ_CHUNK: usize = 64 * 1024;
 const MAX_LINE: usize = 8 * 1024;
 
 #[derive(Clone, Default)]
-pub(crate) struct EnshroudedPlayerRegistry {
+pub(crate) struct NativePlayerLogRegistry {
     logs: Arc<Mutex<HashMap<String, TrackedLog>>>,
 }
 
 #[derive(Clone, PartialEq, Eq)]
 struct RunKey {
+    game: Game,
     run_id: i64,
     pid: u32,
     identity: Option<(u64, String)>,
@@ -39,6 +49,11 @@ impl RunKey {
         let run = details.active_run.as_ref()?;
         let process = run.processes.iter().find(|process| process.is_primary)?;
         Some(Self {
+            game: match details.summary.module_id.as_str() {
+                "enshrouded" => Game::Enshrouded,
+                "valheim" => Game::Valheim,
+                _ => return None,
+            },
             run_id: run.run_id,
             pid: process.pid?,
             identity: process
@@ -54,6 +69,7 @@ struct TrackedLog {
     key: RunKey,
     tail: RuntimeLogTailState,
     roster: NameRoster,
+    valheim_peers: ValheimPeers,
     caught_up: bool,
     needs_replay: bool,
     fault: Option<RuntimeLivePlayerIssueCode>,
@@ -66,6 +82,7 @@ impl TrackedLog {
             key,
             tail: RuntimeLogTailState::default(),
             roster: NameRoster::default(),
+            valheim_peers: ValheimPeers::default(),
             caught_up: false,
             needs_replay: false,
             fault: None,
@@ -117,7 +134,7 @@ impl TrackedLog {
             if delta.byte_offset != before.saturating_add(delta.bytes_read as u64)
                 || delta.stream_error.is_some()
             {
-                self.roster.invalidate();
+                self.invalidate();
                 self.fault = Some(RuntimeLivePlayerIssueCode::LogUnavailable);
             }
             // The reader enters discard mode at the end of the first chunk
@@ -126,11 +143,14 @@ impl TrackedLog {
             if self.tail.is_discarding_overlong_line()
                 || delta.lines.iter().any(|line| line.len() > MAX_LINE)
             {
-                self.roster.invalidate();
+                self.invalidate();
                 self.fault = Some(RuntimeLivePlayerIssueCode::CaptureLimit);
             }
             for line in delta.lines {
-                self.roster.apply(&line);
+                match self.key.game {
+                    Game::Enshrouded => self.roster.apply(&line),
+                    Game::Valheim => self.valheim_peers.apply(&mut self.roster, &line),
+                }
             }
             remaining = remaining.saturating_sub(delta.bytes_read);
             if !delta.limit_exhausted {
@@ -144,14 +164,19 @@ impl TrackedLog {
         self.fault = Some(RuntimeLivePlayerIssueCode::CaptureLimit);
     }
 
-    fn read_failed(&mut self) {
+    fn invalidate(&mut self) {
         self.roster.invalidate();
+        self.valheim_peers = ValheimPeers::default();
+    }
+
+    fn read_failed(&mut self) {
+        self.invalidate();
         self.fault = Some(RuntimeLivePlayerIssueCode::LogUnavailable);
         self.needs_replay = true;
     }
 }
 
-impl EnshroudedPlayerRegistry {
+impl NativePlayerLogRegistry {
     // The existing collection entry holds the instance mutation lease across
     // these reads and verifies the process identity before and after collection.
     fn take(&self, instance: &str, key: RunKey) -> Result<TrackedLog, ()> {
@@ -179,7 +204,7 @@ impl EnshroudedPlayerRegistry {
 }
 
 pub(crate) async fn collect(
-    registry: &EnshroudedPlayerRegistry,
+    registry: &NativePlayerLogRegistry,
     details: &InstanceDetails,
     query: &ModulePlayerQuerySpec,
     request_id: &str,
@@ -249,7 +274,12 @@ fn supplement(
 ) {
     let consistent_count = evidence
         .info
-        .filter(|count| count.current_players == evidence.returned_players)
+        .filter(|count| {
+            count.current_players == evidence.returned_players
+                // Valheim does not publish user-data rows to Steam's PLAYER query.
+                // Its names require the complete current-run character lifecycle below.
+                || (log.key.game == Game::Valheim && evidence.returned_players == 0)
+        })
         .map(|count| count.current_players);
     let stable_read = before_caught_up
         && log.caught_up
@@ -259,12 +289,7 @@ fn supplement(
     // continuous, unchanged cursor lets an actual empty server reset a gap.
     if stable_read && consistent_count == Some(0) {
         log.roster.establish_empty();
-    }
-    if evidence.snapshot.public_snapshot.complete {
-        if consistent_count == Some(0) && before_revision != log.roster.revision {
-            set_issue(evidence, RuntimeLivePlayerIssueCode::NamesUnavailable);
-        }
-        return;
+        log.valheim_peers = ValheimPeers::default();
     }
     let mut remaining = log.roster.names.clone();
     let known_names_match = evidence
@@ -282,28 +307,63 @@ fn supplement(
                 false
             }
         });
-    if stable_read
+    let complete_log = stable_read
         && !log.roster.incomplete
+        && log.valheim_peers.is_stable()
         && known_names_match
-        && consistent_count == Some(log.roster.count())
+        && consistent_count == Some(log.roster.count());
+    if evidence.snapshot.public_snapshot.complete
+        && (log.key.game != Game::Valheim || !complete_log)
     {
+        if consistent_count == Some(0) && before_revision != log.roster.revision {
+            set_issue(evidence, RuntimeLivePlayerIssueCode::NamesUnavailable);
+        }
+        // Complete query names remain useful when native character identity is
+        // unproven. Do not guess an owner or expose a name-ban identifier.
+        return;
+    }
+    if complete_log {
+        let valheim = log.key.game == Game::Valheim;
+        let make_entry = |player_key: String, name: &str| RuntimeLivePlayerEntry {
+            player_key,
+            display_name: name.to_owned(),
+            identifiers: if valheim {
+                vec![RuntimeLivePlayerIdentifier {
+                    kind: RuntimePlayerIdentityKind::PlayerName,
+                    value: name.to_owned(),
+                    stable: false,
+                }]
+            } else {
+                Vec::new()
+            },
+            available_action_ids: Vec::new(),
+            ping_ms: None,
+            session_started_at_unix_ms: None,
+            role: None,
+            attributes: Vec::new(),
+        };
         let mut entries = Vec::with_capacity(log.roster.count());
-        for (name, count) in &log.roster.names {
-            for _ in 0..*count {
-                entries.push(RuntimeLivePlayerEntry {
-                    player_key: format!(
-                        "{}:log:{}",
-                        evidence.snapshot.public_snapshot.snapshot_id,
-                        entries.len()
-                    ),
-                    display_name: name.clone(),
-                    identifiers: Vec::new(),
-                    available_action_ids: Vec::new(),
-                    ping_ms: None,
-                    session_started_at_unix_ms: None,
-                    role: None,
-                    attributes: Vec::new(),
-                });
+        if valheim {
+            for (key, name) in log.valheim_peers.entries() {
+                entries.push(make_entry(key.to_owned(), name));
+            }
+            entries.sort_by(|left, right| {
+                left.display_name
+                    .cmp(&right.display_name)
+                    .then_with(|| left.player_key.cmp(&right.player_key))
+            });
+        } else {
+            for (name, count) in &log.roster.names {
+                for _ in 0..*count {
+                    entries.push(make_entry(
+                        format!(
+                            "{}:log:{}",
+                            evidence.snapshot.public_snapshot.snapshot_id,
+                            entries.len()
+                        ),
+                        name,
+                    ));
+                }
             }
         }
         evidence.snapshot.public_snapshot.entries = entries;
@@ -330,5 +390,5 @@ fn set_issue(evidence: &mut A2sPlayerEvidence, code: RuntimeLivePlayerIssueCode)
 }
 
 #[cfg(test)]
-#[path = "enshrouded_tests.rs"]
+#[path = "native_log_tests.rs"]
 mod tests;

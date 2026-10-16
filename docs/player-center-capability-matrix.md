@@ -9,6 +9,7 @@
 - `manual_id`：尚无可靠的实时名单解析器，保留需要手工输入目标的既有管理操作。
 - `unsupported`：尚无可用的实时名单采集器和手工玩家操作；仍可显示有来源的在线人数。
 - 访问名单独立于在线名单。管理员、白名单、封禁记录均不用于生成在线玩家。
+- 在线玩家均可选中查看已取得的身份、会话及其他详情。选择只读记录不授予管理权限；不可用操作显示具体原因，并与对应按钮建立可访问说明关联。
 - 左侧选项卡只切换查看的名单；右侧共用一份模块支持的操作列表，未选择目标或目标不适用时按钮禁用。名单条目不会仅因保存了账号就获得在线动作权限，踢出等动作仍须匹配当前有效在线快照。
 - 手工操作可与实时列表共存；列表触发动作、已绑定的行操作、访问名单消费的动作和广播不会重复出现在手工操作区。`pending_adapter` 下的运行管理动作不开放。
 
@@ -22,7 +23,7 @@
 | `conanexiles` | structured | `unban_player` | — | `codec:conan_list_players` |
 | `corekeeper` | read_only | — | `admin`, `block` | `codec:a2s_players` |
 | `dontstarve` | structured | — | `admin`, `allow`, `block` | `codec:dst_client_table_v1` |
-| `enshrouded` | read_only | — | `block` | `codec:a2s_players` |
+| `enshrouded` | structured | `unban_player` | `block` | `codec:enshrouded_native_players` |
 | `humanitz` | read_only | `kick_player` | `admin`, `block`, `priority` | `codec:humanitz_players` |
 | `minecraft` | read_only | `kick_player`, `ban_player`, `unban_player`, `op_player`, `deop_player`, `whitelist_add`, `whitelist_remove` | `admin`, `allow`, `block` | `codec:minecraft_players` |
 | `necesse` | read_only | `check_permission`, `set_permission`, `ban_player`, `unban_player` | `admin` | `codec:necesse_players` |
@@ -32,7 +33,7 @@
 | `returntomoria` | read_only | — | — | `codec:return_to_moria_players` |
 | `rimworld` | manual_id | `kick_user`, `ban_user`, `unban_user`, `op_player`, `deop_player` | — | `unavailable:runtime_actions` |
 | `romestead` | read_only | — | — | `codec:romestead_players` |
-| `runescapedragonwilds` | read_only | — | — | `codec:dragonwilds_players` |
+| `runescapedragonwilds` | structured | `unban_player` | — | `codec:dragonwilds_players` |
 | `rust` | structured | — | `admin`, `block`, `priority` | `codec:rust_player_list` |
 | `satisfactory` | read_only | — | — | `codec:satisfactory_frm_players` |
 | `scum` | read_only | — | `admin` | `codec:scum_players` |
@@ -63,10 +64,12 @@
 - **Return to Moria**：`native_console` 采集器通过独立 Windows 辅助进程附着受管服务器控制台，执行[官方只读 `players` 命令](https://northbeachgames.freshdesk.com/support/solutions/articles/154000217148-commands-while-the-server-is-running)。辅助进程校验 PID、创建时间和可执行文件身份，并以请求的起止标记限定响应；人数、记录数和结束标记必须一致。保留原始玩家标签，不把括号内容猜成账号 ID，行无管理动作。需要 `console_enabled=true` 并重启服务器，配置不完整时提供配置入口。实服版本与验收范围见下方“证据与验收边界”。
 - **Satisfactory**：安装兼容的 [Ficsit Remote Monitoring](https://github.com/porisius/FicsitRemoteMonitoring/blob/main/docs/modules/ROOT/pages/dedicatedserver.adoc) 服务端扩展后，如果已开启 FRM HTTP 自动启动，管理器从本实例 `GameUserSettings.ini` 读取端口，经本机回环地址调用 `GET /api/getPlayer`；否则调用游戏 HTTPS API 的 `frm/getPlayer` 扩展。只取 `Online=true`，Actor ID 不当作账号。两个通道均不发送管理员令牌；缺少扩展、世界未就绪、鉴权失败或响应错误有独立状态。
 - **Windrose**：安装已验证的 UE4SS 加载器及专用配置后，启动准备部署独立的 `LgsmPlayerQuery` 只读脚本。脚本在游戏线程读取当前世界的 `GameNetDriver.ClientConnections`，逐项关联控制器、玩家状态并与完整 `PlayerArray` 对照；登录未完成、世界切换、无效身份或调度器未响应均不能生成完整名单。桌面通过实例运行目录中的随机请求标识交换读取结果；`PlayerId` 仅作会话标识，行只读。安装要求与版本证据见 `modules/windrose/extensions/`。Windrose+ 的缓存状态、角色回退、存档及邀请码不进入此数据源。
-- **RuneScape: Dragonwilds**：通过独立的 `LgsmPlayerQuery` 读取正式 `L_World` 的当前连接，逐项核对 Dominion 控制器、玩家状态、完整 `PlayerArray` 及游戏的只读 `IsPlayerReady` 检查。使用官方 UE4SS 固定源码自建的 `version.dll` 专服代理，无须复制 Nexus 或 Dev Kit 工具包。只有完整且匹配本轮请求的响应才能成为实时名单；`PlayerId` 仅作会话标识，行只读。安装和构建步骤见 `modules/runescapedragonwilds/extensions/README.md`；原生 A2S 与管理动作仍未接入。
+- **RuneScape: Dragonwilds**：独立运行副本在启动前准备固定 UE4SS 加载器，以及分别归属的只读名单和玩家控制扩展。控制名单要求正式 `L_World`、完整连接/玩家数组、就绪检查及原生 EOS 身份；踢出和封禁绑定当前启动与连接，解封按完整 EOS 账号操作。踢出确认离线，封禁确认离线及原生/INI 两份标志，解封确认两份标志。未知版本或扩展未准备时只读名单不授予动作。安装、构建和限制见 `modules/runescapedragonwilds/extensions/README.md`；原生 A2S 仍未接入。
 - **SCUM**：通过独立 `LgsmPlayerQuery` 扩展读取正式 `The_Island` 世界的当前连接，并与完整玩家状态数组交叉核对。官方 UE4SS 加载器需按 `modules/scum/extensions/README.md` 安装；未就绪或扩展不可用时显示错误。名称和会话 ID 只读，不作为 Steam64 或管理目标。原生 A2S 在已测试版本中仍无响应。
-- **Enshrouded**：A2S_PLAYER 可能只返回匿名记录。此时从当前受管服务器的连续日志读取玩家加入、退出事件，并与实时 A2S_PLAYER 和 A2S_INFO 人数核对后显示姓名。重名保留为独立记录；名称不作为账号 ID，也不推断在线时长或管理权限。日志缺段、记录不完整或人数不一致时保留可确认的人数，不将历史姓名当成当前完整名单。重新开服会重建名单。
-- **Core Keeper、Sons of the Forest、Unturned、Valheim、V Rising、The Forest、Abiotic Factor**：在已声明的查询端口尝试 A2S_PLAYER。协议只保证名称、分数和在线时长，不保证账号 ID，也不保证每款游戏、平台或服务器设置都会返回名字。返回匿名行、仅人数、拒绝或超时时明确展示对应状态，保留可确认的人数。特别是启用跨平台后，查询行为可能不同；不能把“已接入查询”写成“每服必有名单”。压缩分包暂不支持，失败时不生成空名单。
+- **Enshrouded**：已验证程序指纹的独占实例运行目录部署 [原生扩展](../modules/enshrouded/control/README.md)。扩展读取原生函数交给调用方的玩家身份深拷贝，以完整会话句柄、桥接代次和当前名称核对目标；不跨线程读取共享会话表，不根据日志顺序猜账号。完整名单还需与实时 A2S 人数吻合。原生账号 `accountId` 与 Steam64 属于不同命名空间，转换依据 [独立原生函数证据](../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json)。踢出和封禁在服务器自己的线程执行，保留原生保护；封禁必须确认玩家离开和原生 `bannedAccounts` 持久记录，解封必须确认原生删除后再同步管理器名单。未知程序版本、用户自有加载器或扩展不可用时回退到原有 A2S/连续日志名称，只读行仍可查看详情。扩展不提供会话开始时间，时长保持未知；不把采集开始时间当登录时间。协议模拟样本与 ABI 验证不代表完成了真实账号封禁、拒绝重连及解封恢复验收。
+  原生封禁使用 `bannedAccounts[].accountId`，不能直接填入 Steam64。2026-10-16 对官方可执行文件的独立静态取证及十组合成输入的原生纯函数差分确认了 Steam64 到原生哈希的算法，见[原生账号哈希证据](../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json)。同日 Windows 测试服已用一个测试账号验证管理员密码下受保护、普通玩家密码下可即时封禁、客户端重连被拒绝、解封后正常进入；另经 LGSM 在线行操作和手工解封入口核对了原生与管理器名单同步增删。该实测扩展 SHA256 为 `3e2dbca3aea16278f0a917244d54b96e21b76b9ae75c6130923fbb4e0e3a50bf`；不将这个运行产物的结果扩大为其他构建、多人场景或桌面 UI 实机验收。
+- **Valheim**：停服后显式启用账号管理，会为实例独立程序准备 [服务端管理扩展](../modules/valheim/control/README.md) 和已审核的 BepInEx；普通启动不自动安装加载器。已验证版本从同一当前原生 peer 获取完整 Platform User ID、角色名与管理员状态，保留账号大小写，以当前运行和原生会话 UUID 维持选择。选中玩家后的管理员、许可名单修改保存后重载原生权限，核对目标名单及在线管理员状态；失败保留已保存配置并明确报告未确认效果。非空许可名单仅允许列出的账号进入。扩展不可用时，A2S_INFO 人数和完整连续的当前运行日志仍可提供只读名称，存档历史不参与在线名单，会话 owner 和角色名不能猜成账号 ID。角色名封禁可能影响同名角色且可通过改名绕过，不能用于管理员或许可名单；保存封禁名单未核验即时踢出，游戏原生检查可能自动重读，重启保证使用新名单。当前不声明即时踢出或封禁动作。
+- **Core Keeper、Sons of the Forest、Unturned、V Rising、The Forest、Abiotic Factor**：在已声明的查询端口尝试 A2S_PLAYER。协议只保证名称、分数和在线时长，不保证账号 ID，也不保证每款游戏、平台或服务器设置都会返回名字。返回匿名行、仅人数、拒绝或超时时明确展示对应状态，保留可确认的人数。特别是启用跨平台后，查询行为可能不同；不能把“已接入查询”写成“每服必有名单”。压缩分包暂不支持，失败时不生成空名单。
 
 ## 尚不能建立实时名单的游戏
 

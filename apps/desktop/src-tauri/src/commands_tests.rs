@@ -779,6 +779,8 @@ mod assistant_plan_tests;
 mod assistant_prompt_tests;
 #[path = "commands_creation_lifecycle_tests.rs"]
 pub(super) mod creation_lifecycle_tests;
+#[path = "commands_dst_mod_configuration_tests.rs"]
+mod dst_mod_configuration_tests;
 #[path = "commands_dst_native_smoke_tests.rs"]
 mod dst_native_smoke_tests;
 #[path = "commands_instance_deletion_tests.rs"]

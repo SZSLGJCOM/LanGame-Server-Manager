@@ -11,6 +11,7 @@ export type PlayerAccessCodec =
   | "barotrauma_account"
   | "dst_klei_id"
   | "valheim_platform_id"
+  | "valheim_ban"
   | "object_identity";
 
 export type PlayerAccessSyncMode = "direct" | "reload" | "restart";
@@ -67,6 +68,7 @@ const PLAYER_ACCESS_CODECS = new Set<PlayerAccessCodec>([
   "barotrauma_account",
   "dst_klei_id",
   "valheim_platform_id",
+  "valheim_ban",
   "object_identity"
 ]);
 
@@ -646,6 +648,17 @@ function normalizeValheimPlatformId(rawValue: unknown): string | null {
   return value;
 }
 
+function normalizeValheimBanEntry(rawValue: unknown): string | null {
+  if (typeof rawValue !== "string" || Array.from(rawValue).some((character) => UNICODE_CONTROL_PATTERN.test(character))) return null;
+  const value = rawValue.trim();
+  return value && Array.from(value).length <= 256 && !value.startsWith("#") && !value.startsWith("//")
+    && !value.includes("{{") && !value.includes("}}") ? value : null;
+}
+
+export function isValheimPlatformAccountTarget(value: string): boolean {
+  return /^(?:Steam_|PlayFab_|Xbox_)[^\s]+$/i.test(value) || /^[0-9]+$/.test(value);
+}
+
 export function parsePlayerAccessCodec(property: PlayerAccessSchemaProperty): PlayerAccessCodec | null {
   const value = property["x-lsgm-player-access-codec"];
   return typeof value === "string" && PLAYER_ACCESS_CODECS.has(value as PlayerAccessCodec)
@@ -747,7 +760,11 @@ export function canonicalPlayerAccessIdentity(
 
   if (codec === "valheim_platform_id") {
     const value = normalizeValheimPlatformId(rawValue);
-    return value ? canonicalText(value) : null;
+    return value;
+  }
+  if (codec === "valheim_ban") {
+    const value = normalizeValheimBanEntry(rawValue);
+    return value;
   }
 
   if (codec === "terraria_banlist" && (
@@ -960,6 +977,10 @@ export function normalizePlayerAccessMutationEntry(
     const valid = HUMANITZ_NET_ID_PATTERN.test(value) || (requirement !== "add" && STEAM64_PATTERN.test(value));
     return valid ? { identity: value, stored: value } : null;
   }
+  if (codec === "valheim_ban") {
+    const stored = normalizeValheimBanEntry(rawValue);
+    return stored ? { identity: stored, stored } : null;
+  }
 
   let stored: string | null = value;
   if (codec === "steam64") {
@@ -976,6 +997,7 @@ export function normalizePlayerAccessMutationEntry(
     stored = normalizeDstKleiId(value);
   } else if (codec === "valheim_platform_id") {
     stored = normalizeValheimPlatformId(value);
+    return stored ? { identity: stored, stored } : null;
   }
   return stored ? { identity: canonicalText(stored), stored } : null;
 }

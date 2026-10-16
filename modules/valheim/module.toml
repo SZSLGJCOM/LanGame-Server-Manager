@@ -68,8 +68,8 @@ port_names = ["query"]
 [player_management]
 status = "persistent_roster"
 planned_surface = "adminlist.txt, bannedlist.txt, and permittedlist.txt"
-reason = "Valheim's official dedicated server guide documents the admin, ban, and permitted files under the save directory, but the live kick/ban/unban commands are in-game admin console commands rather than a verified server stdin/RCON surface. A2S_PLAYER can provide read-only names when supported by the active networking backend; crossplay or anonymous query replies may omit names."
-verification = "Create an instance, confirm LanGame copies the three list files into the active save root, start the server, and verify access behavior in-game. Runtime actions are unavailable because no verified server-side command channel is declared."
+reason = "Explicitly enabling account management on a stopped instance prepares an independent program and a reviewed BepInEx server extension. Supported native builds bind each current peer's character name, exact Platform User ID, and administrator state. Admin and permitted roster mutations reload native authority and verify the result. Without the extension, complete current-run logs may supplement read-only character names checked against A2S_INFO; names never become guessed platform identities. Ban rosters remain persistent operations and do not claim verified live moderation."
+verification = "Enable account management while stopped, start through the normal launcher, join a real client, and verify the native Platform User ID. Add and remove admin/permitted entries for the selected player and verify both persistent lists and native state. Preserve existing world metadata and rules. No runtime kick/ban action is declared."
 
 [runtime.shutdown]
 grace_period_ms = 30000
@@ -90,7 +90,7 @@ target_label = "BepInEx/plugins"
 accepts = ["dll", "folder", "zip"]
 
 [storage]
-runtime_copy_exclusions = ["BepInEx", "winhttp.dll", "doorstop_config.ini", ".doorstop_version", ".langame-valheim-loader.json"]
+runtime_copy_exclusions = ["BepInEx", "winhttp.dll", "doorstop_config.ini", ".doorstop_version", ".langame-valheim-loader.json", ".langame-valheim-control", ".langame-valheim-control.json"]
 saves_path_template = "{{paths.instance_root}}/saves"
 
 [[runtime.port_roles]]

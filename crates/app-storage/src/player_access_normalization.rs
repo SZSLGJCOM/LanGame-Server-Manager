@@ -353,6 +353,26 @@ pub(crate) fn normalize_valheim_platform_id(raw: &str) -> Option<String> {
     Some(String::from(value))
 }
 
+pub(crate) fn normalize_valheim_ban_entry(raw: &str) -> Option<String> {
+    let value = raw.trim();
+    if value.is_empty()
+        || value.chars().count() > 256
+        || raw.chars().any(char::is_control)
+        || value.contains("{{")
+        || value.contains("}}")
+        || value.starts_with('#')
+        || value.starts_with("//")
+    {
+        return None;
+    }
+    Some(value.to_owned())
+}
+
+/// Native SyncedList.Contains compares both names and platform IDs exactly.
+pub(crate) fn canonical_valheim_ban_identity(value: &str) -> String {
+    value.to_owned()
+}
+
 pub(crate) fn normalize_minecraft_uuid(raw: &str) -> Option<String> {
     let value = raw.trim().to_ascii_lowercase();
     let compact = match value.len() {

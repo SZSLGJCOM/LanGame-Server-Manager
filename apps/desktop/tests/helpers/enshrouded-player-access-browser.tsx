@@ -115,7 +115,7 @@ async function run() {
   await submit(maximum);
   check(calls.length === 1 && calls[0]?.value === maximum, "The maximum u64 reaches persistence as an exact string");
   check(JSON.parse(saved).banned_player_ids === `76561198000000001\n00042\n${maximum}`, "Saving preserves existing strings and the complete new hash");
-  check(fixture?.textContent?.includes("applies on the next server start") && !fixture?.textContent?.includes("applied live"), "A restart roster never claims verified live enforcement");
+  check(fixture?.textContent?.includes("the next server start will use this roster") && !fixture?.textContent?.includes("applied live"), "A restart roster never claims verified live enforcement");
   await submit("0");
   check(calls.length === 2 && calls[1]?.value === "0", "Zero is a valid string hash");
   await draw("reloaded");

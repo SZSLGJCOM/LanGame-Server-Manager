@@ -359,6 +359,41 @@
   width: 100%;
 }
 
+.player-center-action-reason,
+.player-center-detail-note {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-meta);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.player-center-details-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 58%, transparent);
+}
+
+.player-center-details-list > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.player-center-details-list dt {
+  color: var(--shell-text-muted, var(--shell-text));
+  font-size: var(--text-meta);
+}
+
+.player-center-details-list dd {
+  margin: 0;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
 .player-center-action-button {
   min-width: 0;
   width: 100%;

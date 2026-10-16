@@ -51,7 +51,7 @@ pub(crate) fn write_file_atomically(path: &Path, content: &[u8]) -> io::Result<(
 
 /// Publish a complete, synced file only if the destination is still absent.
 /// Unlike replacement/CAS, publication never overwrites an external creator.
-pub(crate) fn create_file_atomically(path: &Path, content: &[u8]) -> io::Result<()> {
+pub fn create_file_atomically(path: &Path, content: &[u8]) -> io::Result<()> {
     let _write_guard = CONFIG_FILE_ACCESS
         .write()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
@@ -71,7 +71,7 @@ pub(crate) fn write_file_atomically_with_fixed_sibling(
     write_file_atomically_locked(path, content, Some(temporary), replace_file)
 }
 
-pub(crate) fn compare_and_swap_file_atomically(
+pub fn compare_and_swap_file_atomically(
     path: &Path,
     expected: &[u8],
     replacement: &[u8],

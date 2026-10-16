@@ -25,3 +25,4 @@ target_include_directories(File PUBLIC
 set(UE4SS_PROXY_PATH "$ENV{WINDIR}/System32/version.dll" CACHE FILEPATH
     "Signed local Windows DLL whose exports the official generator forwards")
 add_subdirectory("${LGSM_PROXY_SOURCE_DIR}/UE4SS/proxy_generator" proxy_generator)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../control" dragonwilds_control)

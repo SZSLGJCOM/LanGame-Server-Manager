@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "valheim_player_roster_tests.rs"]
+mod valheim_player_roster;
+
 struct TextRosterCase {
     module_id: &'static str,
     field_key: &'static str,
@@ -85,7 +88,7 @@ async fn valheim_conflicting_rosters_reject_canonical_identity_without_partial_w
             instance_id: created.summary.id.clone(),
             field_key: String::from("banned_list"),
             operation: PlayerAccessMutationOperation::Add,
-            value: json!("steam_player_42"),
+            value: json!("Steam_Player_42"),
             expected_value: None,
         },
     )
@@ -117,7 +120,7 @@ async fn valheim_conflicting_rosters_reject_canonical_identity_without_partial_w
             instance_id: created.summary.id.clone(),
             field_key: String::from("admin_list"),
             operation: PlayerAccessMutationOperation::Add,
-            value: json!("xbox_banned_7"),
+            value: json!("Xbox_Banned_7"),
             expected_value: None,
         },
     )
@@ -129,6 +132,178 @@ async fn valheim_conflicting_rosters_reject_canonical_identity_without_partial_w
         .expect("read Valheim after rejected admin conflict");
     assert_eq!(after_admin_conflict.settings_json, before_admin_conflict);
 
+    cleanup_root(&root);
+}
+
+#[tokio::test]
+async fn valheim_character_bans_preserve_case_spaces_and_existing_platform_ids() {
+    let (root, paths, created) =
+        provision_real_module_instance("valheim", "Player Access Valheim Character Ban").await;
+    let initial_details = read_instance_details(&paths, &created.summary.id)
+        .await
+        .unwrap();
+    let mut initial: Value = serde_json::from_str(&initial_details.settings_json).unwrap();
+    initial["world_name"] = json!("Preserved Rules");
+    initial["world_preset"] = json!("hard");
+    initial["world_modifiers"] = json!("combat veryhard\nresources muchmore");
+    initial["world_set_keys"] = json!("nomap\nplayerevents");
+    initial["admin_list"] = json!("Steam_76561198000000001");
+    initial["permitted_list"] = json!("Xbox_1234567");
+    update_instance(
+        &paths,
+        UpdateInstanceInput {
+            id: initial_details.summary.id.clone(),
+            bind_ip: initial_details.summary.bind_ip.clone(),
+            auto_backup_on_stop: initial_details.auto_backup_on_stop,
+            backup_retention_count: initial_details.backup_retention_count,
+            settings_json: initial.to_string(),
+            ports: initial_details.ports.clone(),
+        },
+    )
+    .await
+    .expect("persist nondefault world rules and platform rosters");
+    initial.as_object_mut().unwrap().remove("banned_list");
+    let config_dir = Path::new(&initial_details.config_file_path)
+        .parent()
+        .unwrap();
+    let saves_dir = Path::new(&initial_details.saves_path);
+    let platform_rosters = ["adminlist.txt", "permittedlist.txt"]
+        .map(|name| (name, fs::read(config_dir.join(name)).unwrap()));
+    assert_eq!(
+        std::str::from_utf8(&platform_rosters[0].1).unwrap().trim(),
+        "Steam_76561198000000001"
+    );
+    assert_eq!(
+        std::str::from_utf8(&platform_rosters[1].1).unwrap().trim(),
+        "Xbox_1234567"
+    );
+    // Opaque retention probes: this test never starts the game or decodes the save.
+    let world_files = [
+        (
+            "_main.1.fwl2",
+            b"preserved world metadata\0rules".as_slice(),
+        ),
+        ("_main.1.db2", b"preserved world data\0progress".as_slice()),
+        ("_main.1.ok", b"".as_slice()),
+    ]
+    .map(|(name, bytes)| {
+        let path = saves_dir.join("worlds_local/Preserved Rules").join(name);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, bytes).unwrap();
+        (path, bytes)
+    });
+    let assert_preserved = |details: &InstanceDetails| {
+        let mut settings: Value = serde_json::from_str(&details.settings_json).unwrap();
+        settings.as_object_mut().unwrap().remove("banned_list");
+        assert_eq!(settings, initial, "only banned_list may change");
+        for (name, bytes) in &platform_rosters {
+            assert_eq!(fs::read(config_dir.join(name)).unwrap(), *bytes);
+        }
+        for (path, bytes) in &world_files {
+            assert_eq!(fs::read(path).unwrap().as_slice(), *bytes);
+        }
+    };
+    let assert_materialized_rosters = || {
+        for name in ["adminlist.txt", "bannedlist.txt", "permittedlist.txt"] {
+            assert_eq!(
+                fs::read(saves_dir.join(name)).unwrap(),
+                fs::read(config_dir.join(name)).unwrap(),
+                "native save-root roster must match rendered {name}"
+            );
+        }
+    };
+    for value in ["Steam_Previous_42", "Raven", "raven", "名字 有空格"] {
+        let added = apply_instance_player_access_mutation(
+            &paths,
+            ApplyInstancePlayerAccessMutationInput {
+                instance_id: created.summary.id.clone(),
+                field_key: String::from("banned_list"),
+                operation: PlayerAccessMutationOperation::Add,
+                value: json!(value),
+                expected_value: None,
+            },
+        )
+        .await
+        .expect("persist native platform ID or exact character-name ban");
+        assert_eq!(added.sync.mode, PlayerAccessSyncMode::Restart);
+        assert_preserved(&added.details);
+    }
+    let added = read_instance_details(&paths, &created.summary.id)
+        .await
+        .expect("read character bans");
+    let settings: Value = serde_json::from_str(&added.settings_json).unwrap();
+    assert_eq!(
+        settings["banned_list"],
+        json!("Steam_Previous_42\nRaven\nraven\n名字 有空格")
+    );
+    let rendered = Path::new(&added.config_file_path)
+        .parent()
+        .unwrap()
+        .join("bannedlist.txt");
+    let before = fs::read_to_string(&rendered).expect("render character bans");
+    assert!(before.contains("Steam_Previous_42\nRaven\nraven\n名字 有空格"));
+    let prepared = materialize_instance_configuration_for_start(&paths, &created.summary.id)
+        .await
+        .expect("materialize character bans before startup");
+    assert_eq!(
+        serde_json::from_str::<Value>(&prepared.settings_json).unwrap(),
+        settings
+    );
+    assert_preserved(&prepared);
+    assert_materialized_rosters();
+    for invalid in ["Raven\nOther", "{{Raven}}", "#Raven", "//Raven"] {
+        apply_instance_player_access_mutation(
+            &paths,
+            ApplyInstancePlayerAccessMutationInput {
+                instance_id: created.summary.id.clone(),
+                field_key: String::from("banned_list"),
+                operation: PlayerAccessMutationOperation::Add,
+                value: json!(invalid),
+                expected_value: None,
+            },
+        )
+        .await
+        .expect_err("reject unsafe entry before writing");
+        let unchanged = read_instance_details(&paths, &created.summary.id)
+            .await
+            .unwrap();
+        assert_eq!(unchanged.settings_json, added.settings_json);
+        assert_eq!(fs::read_to_string(&rendered).unwrap(), before);
+        assert_preserved(&unchanged);
+        assert_materialized_rosters();
+    }
+    let removed = apply_instance_player_access_mutation(
+        &paths,
+        ApplyInstancePlayerAccessMutationInput {
+            instance_id: created.summary.id.clone(),
+            field_key: String::from("banned_list"),
+            operation: PlayerAccessMutationOperation::Remove,
+            value: json!("Raven"),
+            expected_value: None,
+        },
+    )
+    .await
+    .expect("remove only the exact character name");
+    let settings: Value = serde_json::from_str(&removed.details.settings_json).unwrap();
+    assert_eq!(
+        settings["banned_list"],
+        json!("Steam_Previous_42\nraven\n名字 有空格")
+    );
+    assert_preserved(&removed.details);
+    assert!(
+        fs::read_to_string(&rendered)
+            .unwrap()
+            .contains("Steam_Previous_42\nraven\n名字 有空格")
+    );
+    let prepared = materialize_instance_configuration_for_start(&paths, &created.summary.id)
+        .await
+        .expect("materialize exact character-name removal before startup");
+    assert_eq!(
+        serde_json::from_str::<Value>(&prepared.settings_json).unwrap(),
+        settings
+    );
+    assert_preserved(&prepared);
+    assert_materialized_rosters();
     cleanup_root(&root);
 }
 

@@ -80,6 +80,17 @@ pub async fn apply_instance_player_access_mutation(
     reconcile_runtime_state(&state).await?;
     let _instance_lock = state.acquire_instance_mutation(&instance_id).await;
 
+    let current = read_instance_details(&storage.paths, &instance_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    if current.summary.module_id == "enshrouded"
+        && input.field_key == "banned_player_ids"
+        && input.operation == PlayerAccessMutationOperation::Remove
+        && current.active_run.is_some()
+    {
+        return remove_running_enshrouded_ban(&state, &storage, &current, &input).await;
+    }
+
     append_desktop_app_log(
         &storage,
         "info",
@@ -129,6 +140,35 @@ pub async fn apply_instance_player_access_mutation(
     }
 
     if !matches!(persistent.details.summary.status, InstanceStatus::Running) {
+        append_player_access_result_log(&storage, &result);
+        return Ok(result);
+    }
+    if persistent.details.summary.module_id == "valheim"
+        && matches!(
+            persistent.field_key.as_str(),
+            "admin_list" | "permitted_list"
+        )
+    {
+        let live_result = match super::commands_valheim_control::is_prepared(&persistent.details) {
+            Ok(false) => {
+                result.live_status = PlayerAccessLiveStatus::RestartRequired;
+                append_player_access_result_log(&storage, &result);
+                return Ok(result);
+            }
+            Ok(true) => super::commands_valheim_control::sync_roster(&storage, &persistent).await,
+            Err(error) => Err(error),
+        };
+        match live_result {
+            Ok(()) => {
+                result.live_status = PlayerAccessLiveStatus::Applied;
+                result.verification_status = PlayerAccessVerificationStatus::Verified;
+            }
+            Err(error) => {
+                result.live_status = PlayerAccessLiveStatus::Failed;
+                result.verification_status = PlayerAccessVerificationStatus::Failed;
+                result.live_error = Some(error);
+            }
+        }
         append_player_access_result_log(&storage, &result);
         return Ok(result);
     }
@@ -250,6 +290,117 @@ pub async fn apply_instance_player_access_mutation(
     }
     append_player_access_result_log(&storage, &result);
     Ok(result)
+}
+
+async fn remove_running_enshrouded_ban(
+    state: &tauri::State<'_, DesktopState>,
+    storage: &StorageBootstrap,
+    details: &InstanceDetails,
+    input: &ApplyInstancePlayerAccessMutationInput,
+) -> Result<ApplyInstancePlayerAccessMutationResult, String> {
+    let descriptors = discover_modules(&storage.paths.modules_root).map_err(|e| e.to_string())?;
+    let descriptor = find_descriptor(&descriptors, "enshrouded")?;
+    validate_native_unban_roster(descriptor)?;
+    let value = input
+        .value
+        .as_str()
+        .ok_or("A native accountId string is required.")?
+        .trim();
+    if value.is_empty() || value.len() > 20 || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("A native uint64 accountId is required to remove this ban.".into());
+    }
+    let account = value
+        .parse::<u64>()
+        .map_err(|_| "The native accountId is outside uint64.")?;
+    let target = account.to_string();
+    let run_id = details
+        .active_run
+        .as_ref()
+        .ok_or("The server is stopped.")?
+        .run_id;
+    state
+        .live_player_registry
+        .invalidate_instance(&details.summary.id);
+    super::commands_assistant_ops::dispatch_declared_runtime_action(
+        state,
+        super::commands_assistant_ops::DeclaredRuntimeActionRequest {
+            instance_id: &details.summary.id,
+            expected_run_id: run_id,
+            action_id: "unban_player",
+            target: Some(&target),
+            role: None,
+            request_id: None,
+            require_target_binding: false,
+        },
+    )
+    .await?;
+    match list_instances(&storage.paths).await {
+        Ok(instances) => update_state_instances(state, instances)?,
+        Err(error) => append_desktop_app_log(
+            storage,
+            "warning",
+            "instance.player_access.instance_refresh_failed",
+            "The native unban was confirmed, but refreshing the instance list failed.",
+            json!({"instance_id": details.summary.id, "error": error.to_string()}),
+        ),
+    }
+    let result = ApplyInstancePlayerAccessMutationResult {
+        instance_id: details.summary.id.clone(),
+        field_key: input.field_key.clone(),
+        operation: input.operation,
+        persistent_status: PlayerAccessPersistentStatus::Updated,
+        live_status: PlayerAccessLiveStatus::Applied,
+        verification_status: PlayerAccessVerificationStatus::Verified,
+        live_target: target,
+        sync: PlayerAccessSyncMetadata {
+            mode: PlayerAccessSyncMode::Direct,
+            add_action_id: None,
+            remove_action_id: Some("unban_player".into()),
+            action_id: None,
+            verify_action_id: None,
+            consume_action_ids: Vec::new(),
+        },
+        live_action_id: Some("unban_player".into()),
+        verification_action_id: None,
+        live_error: None,
+        verification_error: None,
+        verification_response: None,
+    };
+    append_player_access_result_log(storage, &result);
+    Ok(result)
+}
+
+fn validate_native_unban_roster(descriptor: &ModuleDescriptor) -> Result<(), String> {
+    let schema: Value = serde_json::from_str(
+        descriptor
+            .schema_json
+            .as_deref()
+            .ok_or("The native blacklist schema is unavailable.")?,
+    )
+    .map_err(|_| "The native blacklist schema is invalid.")?;
+    let field = schema
+        .get("properties")
+        .and_then(|properties| properties.get("banned_player_ids"))
+        .ok_or("The native blacklist is not declared by this module.")?;
+    if descriptor.summary.id != "enshrouded"
+        || field.get("type").and_then(Value::as_str) != Some("string")
+        || !field
+            .get("readOnly")
+            .is_none_or(|value| value.as_bool() == Some(false))
+        || field
+            .get("x-lsgm-player-access-kind")
+            .and_then(Value::as_str)
+            != Some("block")
+        || field
+            .get("x-lsgm-player-access-codec")
+            .and_then(Value::as_str)
+            != Some("uint64")
+        || field.get("x-lsgm-source").and_then(Value::as_str) != Some("ban_records")
+        || field.get("x-lsgm-source-key").and_then(Value::as_str) != Some("bannedAccounts")
+    {
+        return Err("This module does not expose a writable native Enshrouded blacklist.".into());
+    }
+    Ok(())
 }
 
 fn verify_player_access_response(

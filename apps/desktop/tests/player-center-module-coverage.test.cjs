@@ -49,7 +49,7 @@ const {
 } = require(path.join(desktopRoot, "src", "api-mock", "module-assets.ts"));
 
 const ALLOWED_TRANSPORTS = new Set([
-  "battleye_rcon", "source_rcon", "stdin", "telnet", "websocket_rcon", "humanitz_rcon", "palworld_rest"
+  "battleye_rcon", "source_rcon", "stdin", "telnet", "websocket_rcon", "humanitz_rcon", "palworld_rest", "enshrouded_native", "dragonwilds_native"
 ]);
 const ACCESS_KINDS = ["admin", "allow", "block", "priority"];
 
@@ -345,7 +345,8 @@ test("all remaining target-bound manual actions dispatch through mock module aut
         input: {
           instance_id: instance.summary.id,
           action_id: action.id,
-          target: "Player123",
+          target: moduleId === "runescapedragonwilds" && action.id === "unban_player"
+            ? "00000000000000000000000000000001" : "Player123",
           role: action.role_values?.[0] ?? null
         }
       });
@@ -410,7 +411,8 @@ test("manual REST mock dispatch rejects client metadata and validates target dat
 
 for (const [moduleId, actions] of [
   ["dontstarve", [["list_online_players", "KU_injected"], ["kick_userid", "KU_injected"]]],
-  ["palworld", [["kick_player", "Player123"], ["ban_player", "Player123"]]]
+  ["palworld", [["kick_player", "Player123"], ["ban_player", "Player123"]]],
+  ["runescapedragonwilds", [["kick_player", "00000000000000000000000000000001"], ["ban_player", "00000000000000000000000000000001"]]]
 ]) {
   test(`structured ${moduleId} actions cannot bypass snapshot authorization through the manual endpoint`, async () => {
     const instance = await invokeMock("create_instance_record", {
@@ -474,7 +476,8 @@ test("every deployed player-list codec has bounded fixtures and traceable eviden
     palworld_players: "palworld", nightingale_players: "nightingale", necesse_players: "necesse",
     romestead_players: "romestead", terraria_players: "terraria", astroneer_players: "astroneer",
     soulmask_players: "soulmask", satisfactory_frm_players: "satisfactory", barotrauma_players: "barotrauma",
-    return_to_moria_players: "returntomoria", windrose_players: "windrose", dragonwilds_players: "runescapedragonwilds", scum_players: "scum"
+    return_to_moria_players: "returntomoria", windrose_players: "windrose", dragonwilds_players: "runescapedragonwilds", scum_players: "scum",
+    enshrouded_native_players: "enshrouded-native"
   };
   for (const moduleId of moduleIds()) {
     const declared = /\[runtime\.player_list\]/.test(mockModuleTomlById[moduleId]);

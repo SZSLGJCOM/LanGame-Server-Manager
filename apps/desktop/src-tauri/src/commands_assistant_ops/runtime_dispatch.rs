@@ -80,7 +80,12 @@ async fn dispatch_rcon_command(
     enabled_setting_key: Option<&str>,
     execute: fn(&str, &str, &str) -> Result<String, String>,
 ) -> Result<String, String> {
-    let (endpoint, password) = prepare_rcon_command(details, port_name, password_setting_key, enabled_setting_key)?;
+    let (endpoint, password) = prepare_rcon_command(
+        details,
+        port_name,
+        password_setting_key,
+        enabled_setting_key,
+    )?;
     let command = command.to_string();
     tokio::task::spawn_blocking(move || execute(&endpoint, &password, &command))
         .await
@@ -95,14 +100,21 @@ pub(super) async fn dispatch_source_rcon_shutdown_command(
     enabled_setting_key: Option<&str>,
 ) -> Result<String, crate::runtime_transport::RconCommandFailure> {
     use crate::runtime_transport::{RconCommandFailure, source_rcon_shutdown_exec};
-    let (endpoint, password) = prepare_rcon_command(details, port_name, password_setting_key, enabled_setting_key)
-        .map_err(RconCommandFailure::before_send)?;
+    let (endpoint, password) = prepare_rcon_command(
+        details,
+        port_name,
+        password_setting_key,
+        enabled_setting_key,
+    )
+    .map_err(RconCommandFailure::before_send)?;
     let command = command.to_string();
     let module_id = details.summary.module_id.clone();
-    tokio::task::spawn_blocking(move || source_rcon_shutdown_exec(&module_id, &endpoint, &password, &command))
-        .await
-        // A task failure cannot establish that its command was never written.
-        .map_err(|error| RconCommandFailure::after_send_attempt(format!("RCON task failed: {error}")))?
+    tokio::task::spawn_blocking(move || {
+        source_rcon_shutdown_exec(&module_id, &endpoint, &password, &command)
+    })
+    .await
+    // A task failure cannot establish that its command was never written.
+    .map_err(|error| RconCommandFailure::after_send_attempt(format!("RCON task failed: {error}")))?
 }
 
 fn prepare_rcon_command(
@@ -760,12 +772,53 @@ async fn send_instance_runtime_command_inner(
         enabled_setting_key,
         runtime_action_id,
     } = resolved;
+    if normalized_transport.eq_ignore_ascii_case("dragonwilds_native") {
+        return Err("Dragonwilds moderation must use the player management service and its current identity checks.".into());
+    }
     ensure_expected_supervisor_state(state, &instance_id, expected_run_id)?;
     let audited_command = (!redact_audit_payload).then_some(normalized_command.as_str());
     let submitted_at_unix_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|_| String::from("failed to compute runtime command timestamp"))?
         .as_millis();
+    if normalized_transport.eq_ignore_ascii_case("enshrouded_native") {
+        if runtime_action_id.is_none() {
+            return Err("Native Enshrouded control requires a declared action.".into());
+        }
+        let details =
+            runtime_command_instance_details(&storage, &instance_id, &mut instance_details).await?;
+        let run_id = details
+            .active_run
+            .as_ref()
+            .ok_or("The server stopped before native dispatch.")?
+            .run_id;
+        let receipt =
+            crate::live_players::enshrouded_native::execute(details, &normalized_command).await?;
+        if let Some(banned) = receipt.banned {
+            app_storage::record_enshrouded_ban_from_native(&storage.paths, &instance_id, run_id, receipt.account_id, banned)
+                .await.map_err(|error| format!("The native action was confirmed, but synchronizing the stored blacklist failed: {error}"))?;
+        }
+        append_desktop_app_log(
+            &storage,
+            "info",
+            "instance.runtime_command.native_confirmed",
+            "Native moderation and its required effects were confirmed",
+            json!({
+                "instance_id": instance_id.as_str(), "transport": normalized_transport.as_str(),
+                "runtime_action_id": runtime_action_id.as_deref(),
+            }),
+        );
+        return Ok(InstanceRuntimeCommandResult {
+            instance_id,
+            process_key: normalized_transport,
+            display_name: "Enshrouded native control".into(),
+            pid: 0,
+            command: normalized_command,
+            response_text: None,
+            write_confirmation_pending: false,
+            submitted_at_unix_ms,
+        });
+    }
     if normalized_transport.eq_ignore_ascii_case("palworld_rest") {
         if runtime_action_id.is_none() {
             return Err(String::from(

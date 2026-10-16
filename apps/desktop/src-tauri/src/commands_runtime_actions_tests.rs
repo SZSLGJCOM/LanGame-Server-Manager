@@ -2,6 +2,115 @@ use super::super::commands_assistant_ops::InstanceRuntimeCommandInput;
 use super::*;
 use serde_json::json;
 
+#[test]
+fn dragonwilds_native_rows_cannot_bypass_snapshot_binding() {
+    let modules = app_modules::discover_modules(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules"),
+    )
+    .unwrap();
+    let mut native = modules
+        .into_iter()
+        .find(|module| module.summary.id == "runescapedragonwilds")
+        .unwrap();
+    let token = format!(
+        "{}:256:{}:{}",
+        "a".repeat(32),
+        "b".repeat(32),
+        "c".repeat(32)
+    );
+    for action in ["kick_player", "ban_player"] {
+        assert!(
+            resolve_declared_runtime_action(&native, action, Some(&token), None, None, true)
+                .is_ok()
+        );
+        assert!(
+            resolve_declared_runtime_action(&native, action, Some(&token), None, None, false)
+                .is_err()
+        );
+    }
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "unban_player",
+            Some(&"c".repeat(32)),
+            None,
+            None,
+            false
+        )
+        .is_ok()
+    );
+    native.summary.id = "other-game".into();
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "unban_player",
+            Some(&"c".repeat(32)),
+            None,
+            None,
+            false
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn enshrouded_native_rows_cannot_bypass_snapshot_binding() {
+    let modules = app_modules::discover_modules(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules"),
+    )
+    .unwrap();
+    let mut native = modules
+        .into_iter()
+        .find(|module| module.summary.id == "enshrouded")
+        .unwrap();
+    let target_binding = "0123456789abcdef0123456789abcdef:100:1000:65:1:7105925790711809417";
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "ban_player",
+            Some(target_binding),
+            None,
+            None,
+            true
+        )
+        .is_ok()
+    );
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "ban_player",
+            Some(target_binding),
+            None,
+            None,
+            false
+        )
+        .is_err()
+    );
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "unban_player",
+            Some("7105925790711809417"),
+            None,
+            None,
+            false
+        )
+        .is_ok()
+    );
+    native.summary.id = "other-game".into();
+    assert!(
+        resolve_declared_runtime_action(
+            &native,
+            "unban_player",
+            Some("7105925790711809417"),
+            None,
+            None,
+            false
+        )
+        .is_err()
+    );
+}
+
 fn action(id: &str, template: &str, target_encoding: Option<&str>) -> ModulePlayerActionSpec {
     ModulePlayerActionSpec {
         id: id.to_string(),

@@ -6,6 +6,20 @@ use super::Game;
 use super::probe_support::run_owned_empty_probe;
 
 #[test]
+#[ignore = "requires a marked bare LGSM_DRAGONWILDS_PROBE_ROOT and pinned LGSM_DRAGONWILDS_LOADER_ARCHIVE"]
+fn isolated_dragonwilds_automatic_loader_install_survives_native_restart() {
+    let root = PathBuf::from(std::env::var_os("LGSM_DRAGONWILDS_PROBE_ROOT").unwrap());
+    let archive = PathBuf::from(std::env::var_os("LGSM_DRAGONWILDS_LOADER_ARCHIVE").unwrap());
+    crate::commands::prepare_dragonwilds_player_query_probe(&root, &archive).unwrap();
+    isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process();
+    crate::commands::verify_dragonwilds_player_query_probe(&root).unwrap();
+    // The native server removes AdminPassword from its saved INI. Validate the
+    // initial isolated credentials once, then restart the native saved state.
+    run_dragonwilds_empty_probe(root.clone());
+    crate::commands::verify_dragonwilds_player_query_probe(&root).unwrap();
+}
+
+#[test]
 #[ignore = "requires LGSM_DRAGONWILDS_PROBE_ROOT pointing to a marked isolated Dragonwilds installation with the verified player-query extension"]
 fn isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process() {
     let root = PathBuf::from(std::env::var_os("LGSM_DRAGONWILDS_PROBE_ROOT").unwrap());
@@ -41,6 +55,10 @@ fn isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_
             assert!(values[0].encode_utf16().count() <= 32);
         }
     }
+    run_dragonwilds_empty_probe(root);
+}
+
+fn run_dragonwilds_empty_probe(root: PathBuf) {
     run_owned_empty_probe(
         Game::Dragonwilds,
         root,

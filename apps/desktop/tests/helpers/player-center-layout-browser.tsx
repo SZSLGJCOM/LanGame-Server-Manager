@@ -261,12 +261,14 @@ async function run() {
     "Snapshot permissions were confused with persistent roster identity"); checks++;
   const noIdentity = snapshot(2, false); noIdentity.entries = noIdentity.entries.map((entry) => ({ ...entry, identifiers: [] }));
   await scenario(noIdentity, { manual: false });
-  check(!document.querySelector(".player-center-player-select")
+  await selectPlayer();
+  check(document.querySelector(".player-center-details")
     && Array.from(document.querySelectorAll<HTMLButtonElement>(".player-access-selected-action")).every((button) => button.disabled),
-    "Missing account identity can trigger a roster operation"); checks++;
+    "Inspecting a player with no account identity authorized a roster operation"); checks++;
   await scenario(snapshot(2, false), { access: false, manual: false, sessionActions: false });
-  check(!document.querySelector(".player-center-controls") && Math.abs(select<HTMLElement>(".player-center-list-pane").getBoundingClientRect().width
-    - select<HTMLElement>(".player-center-member-layout").getBoundingClientRect().width) <= 1, "Read-only server reserves an empty controls column"); checks++;
+  await selectPlayer();
+  check(document.querySelector(".player-center-controls .player-center-details") && !document.querySelector(".player-center-member-action"),
+    "Read-only server cannot display details without granting runtime actions"); checks++;
   await scenario(snapshot(0)); verifyIdle();
   check(select<HTMLElement>('.player-center-list-tabs [data-list-key="online"]').textContent?.includes("0"), "Known zero count disappeared");
   await scenario({ ...snapshot(0), current_players: null, max_players: null, status: "unsupported", complete: false });
@@ -310,6 +312,9 @@ async function run() {
   await scenario({ ...snapshot(), stale: true }, { multiple: true });
   check(select<HTMLButtonElement>(".player-center-member-action").disabled && !select<HTMLButtonElement>(rosterAction("blocklist", "remove")).disabled,
     "Stale online authority was confused with an independently known persistent account"); checks++;
+  const staleReasonId = select<HTMLButtonElement>(".player-center-member-action").getAttribute("aria-describedby");
+  check(staleReasonId && document.getElementById(staleReasonId)?.textContent?.includes("快照尚未确认完整且有效"),
+    "A stale roster match is incorrectly described as a missing account identity");
   await listTab("online"); await size(720, 550); verifyIdle(); verifyColumns(); verifyScrollOwnership(); checks++;
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, browser_errors: errors };

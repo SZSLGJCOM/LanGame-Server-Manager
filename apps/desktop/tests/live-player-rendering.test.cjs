@@ -14,6 +14,7 @@ for (const extension of [".ts", ".tsx"]) {
 const playerCenterRoot = path.resolve(__dirname, "../src/views/servers/player-center");
 const { LivePlayerTable } = require(path.join(playerCenterRoot, "LivePlayerTable.tsx"));
 const { LivePlayerState } = require(path.join(playerCenterRoot, "LivePlayerState.tsx"));
+const { SelectedPlayerDetails, formatPlayerSession } = require(path.join(playerCenterRoot, "SelectedPlayerDetails.tsx"));
 const { deriveLivePlayerPresentation } = require(path.resolve(__dirname, "../src/domain/live-player-state.ts"));
 
 const player = {
@@ -21,12 +22,14 @@ const player = {
   ping_ms: null, session_started_at_unix_ms: null, role: null, attributes: []
 };
 
-test("query names render escaped and read-only without an account identity column", () => {
+test("read-only query names remain selectable for details without inventing account identities", () => {
   const html = renderToStaticMarkup(React.createElement(LivePlayerTable, {
     locale: "zh-CN", now: 1_000, onSelect() {}, rows: [player], selectedPlayerKey: null
   }));
   assert.match(html, /Alice &lt;script&gt;/);
-  assert.doesNotMatch(html, /<script>|<button|账号身份/);
+  assert.doesNotMatch(html, /<script>|账号身份/);
+  assert.match(html, /<button[^>]*aria-label="选择玩家 Alice &lt;script&gt;"/);
+  assert.match(html, /aria-pressed="false"/);
   assert.match(html, /在线/);
 });
 
@@ -38,6 +41,42 @@ test("actionable players remain selectable and retained rows identify their old 
   assert.match(html, /aria-pressed="true"/);
   assert.match(html, /账号身份/);
   assert.match(html, /上次在线/);
+});
+
+test("native moderation protection stays in labeled details and preserves other player subtitles", () => {
+  for (const value of ["true", "false"]) {
+    const protectedPlayer = { ...player, attributes: [{ key: "moderation_immune", value }] };
+    const table = (row) => renderToStaticMarkup(React.createElement(LivePlayerTable, {
+      locale: "zh-CN", now: 1_000, onSelect() {}, rows: [row], selectedPlayerKey: null
+    }));
+    assert.doesNotMatch(table(protectedPlayer), /server-player-cell--muted|>true<|>false</);
+    const withSubtitle = table({ ...protectedPlayer,
+      attributes: [...protectedPlayer.attributes, { key: "prefab", value: "wilson" }] });
+    assert.match(withSubtitle, /title="wilson">wilson</);
+    assert.doesNotMatch(withSubtitle, />true<|>false</);
+    const details = renderToStaticMarkup(React.createElement(SelectedPlayerDetails, {
+      locale: "zh-CN", now: 1_000, stale: false, player: protectedPlayer
+    }));
+    assert.match(details, new RegExp(`<dt>受服务器保护</dt><dd>${value === "true" ? "是" : "否"}</dd>`));
+  }
+});
+
+test("selected details preserve observed identity and metadata while explaining unknown session time", () => {
+  const html = renderToStaticMarkup(React.createElement(SelectedPlayerDetails, {
+    locale: "zh-CN", now: 1_000, stale: true, player: { ...player,
+      identifiers: [{ kind: "steam_id", value: "76561198000000001", stable: true }, { kind: "session_id", value: "session-42", stable: false },
+        { kind: "enshrouded_account_id", value: "18446744073709551615", stable: true }],
+      ping_ms: 24, role: "Guest", attributes: [{ key: "World", value: "世界 <one>" }] }
+  }));
+  for (const content of [/Alice &lt;script&gt;/, /Steam ID/, /76561198000000001/, /会话 ID（会话）/, /session-42/,
+    /原生 accountId/, /18446744073709551615/, /上次在线记录/, /未知/, /未提供本次会话的开始时间/, /24 ms/, /Guest/, /世界 &lt;one&gt;/]) assert.match(html, content);
+  assert.doesNotMatch(html, /<button|<script>|<one>/);
+});
+
+test("session formatting uses only the supplied session start and bounds clock differences", () => {
+  assert.equal(formatPlayerSession("zh-CN", null, 5_000_000), "未知");
+  assert.equal(formatPlayerSession("zh-CN", 120_000, 60_000), "0 分钟");
+  assert.equal(formatPlayerSession("en-US", 0, 3_660_000), "1h 1m");
 });
 
 test("capability and credential states provide distinct actionable Chinese copy", () => {
@@ -119,7 +158,7 @@ test("untracked running servers explain recovery without suggesting settings or 
   }
 });
 
-test("Moria native-console labels remain intact and read-only without inferred account identities", () => {
+test("Moria native-console labels remain selectable without inferred account identities or runtime authority", () => {
   const rows = ["Dwarf (opaque-one)", "Dwarf (opaque-two)", "矮人 (矿工) (<unverified-token>)"].map((display_name, index) => ({
     ...player, player_key: `returntomoria:fixture:${index}`, display_name
   }));
@@ -139,7 +178,8 @@ test("Moria native-console labels remain intact and read-only without inferred a
   assert.match(html, /Dwarf \(opaque-one\)/);
   assert.match(html, /Dwarf \(opaque-two\)/);
   assert.match(html, /矮人 \(矿工\) \(&lt;unverified-token&gt;\)/);
-  assert.doesNotMatch(html, /<button|<unverified-token>|账号身份/);
+  assert.equal((html.match(/<button/g) ?? []).length, rows.length);
+  assert.doesNotMatch(html, /<unverified-token>|账号身份/);
 });
 
 test("Moria disabled console exposes settings instead of an unsupported or empty roster", () => {
@@ -171,6 +211,11 @@ test(`${moduleId} missing extension names its loader and query mod without FRM i
   assert.match(html, /UE4SS/);
   assert.match(html, /LgsmPlayerQuery/);
   assert.doesNotMatch(html, /Ficsit|Satisfactory|当前没有在线玩家/);
-  if (moduleId === "runescapedragonwilds") assert.match(html, /Dragonwilds.*专服代理/);
+  if (moduleId === "runescapedragonwilds") {
+    assert.match(html, /Dragonwilds.*专服代理/);
+    assert.match(html, /下次启动时自动准备/);
+    assert.match(html, /启动日志/);
+    assert.match(html, /不表示游戏开服失败/);
+  }
 });
 }

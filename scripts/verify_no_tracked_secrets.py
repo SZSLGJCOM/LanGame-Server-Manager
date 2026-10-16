@@ -210,7 +210,8 @@ def _secret_value(match: re.Match[str]) -> tuple[str, int]:
                 value,
                 maxsplit=1,
             )[0]
-            return value, match.start(group_name)
+            leading_space = len(match.group(group_name)) - len(match.group(group_name).lstrip())
+            return value, match.start(group_name) + leading_space
     raise ValueError("secret match did not capture a value")
 
 
@@ -243,7 +244,7 @@ def _is_concrete_literal_secret(
             )
             and value in NATIVE_PASSWORD_FIXTURE_DIGESTS.get(path.as_posix(), ())
         )
-        and match_is_literal(path, line, value_index, literal_mask)
+        and match_is_literal(path, line, value_index, literal_mask, len(value))
     )
 
 
@@ -284,15 +285,17 @@ def scan_payload(path: Path, payload: bytes) -> list[Finding]:
 
     literal_state = SourceLiteralState()
     for line_number, line in enumerate(text.splitlines(), start=1):
-        literal_mask = source_literal_mask(path, line, literal_state)
+        scan_characters = list(line)
+        literal_mask = source_literal_mask(path, line, literal_state, scan_line=scan_characters)
+        literal_scan_line = "".join(scan_characters)
         if any(
-            _is_concrete_literal_secret(path, line, match, literal_mask)
-            for match in CLI_SECRET.finditer(line)
+            _is_concrete_literal_secret(path, literal_scan_line, match, literal_mask)
+            for match in CLI_SECRET.finditer(literal_scan_line)
         ):
             findings.append(Finding(path=path, line=line_number, rule="cli-secret"))
         elif any(
-            _is_concrete_literal_secret(path, line, match, literal_mask)
-            for match in ASSIGNED_SECRET.finditer(_assignment_scan_line(path, line))
+            _is_concrete_literal_secret(path, literal_scan_line, match, literal_mask)
+            for match in ASSIGNED_SECRET.finditer(_assignment_scan_line(path, literal_scan_line))
         ):
             findings.append(Finding(path=path, line=line_number, rule="assigned-secret"))
         if LAN_TOKEN.search(line):

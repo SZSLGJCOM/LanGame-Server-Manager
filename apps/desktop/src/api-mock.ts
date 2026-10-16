@@ -1289,6 +1289,15 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockLivePlayerStore.refresh(buildMockLivePlayerContext(instanceId)) as T;
     }
+    case "prepare_valheim_player_control": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
+      if (!mockBootstrap.state.instances.some((instance) => instance.id === instanceId)) throw new Error("Unknown Valheim instance.");
+      const details = ensureMockInstanceDetails(instanceId);
+      if (details.summary.module_id !== "valheim") throw new Error("Account management preparation requires a Valheim instance.");
+      if (details.summary.status !== "Stopped" || details.summary.active_process_count !== 0) throw new Error("Stop the server before preparing account management.");
+      mockInstancePrograms.set(instanceId, { mode: "independent", root: `${mockInstanceRootFromDetails(details)}/runtime` });
+      return clone(details) as T;
+    }
     case "execute_instance_player_action": {
       const input = (args?.input ?? {}) as ExecuteInstancePlayerActionInput & Record<string, unknown>;
       const context = buildMockLivePlayerContext(String(input.instance_id ?? ""));
@@ -1354,6 +1363,10 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       }
       if (mockSchemaConsumesAction(mockModuleSchemasById[details.summary.module_id], actionId)) {
         throw new Error("This action is owned by the persistent access-control workflow.");
+      }
+      if (details.summary.module_id === "runescapedragonwilds"
+        && (actionId !== "unban_player" || role !== "" || !/^[0-9a-f]{32}$/.test(target))) {
+        throw new Error("Dragonwilds unban requires a complete lowercase EOS account ID.");
       }
       resolveMockDeclaredRuntimeAction(
         moduleDetails.runtime.player_actions ?? [],

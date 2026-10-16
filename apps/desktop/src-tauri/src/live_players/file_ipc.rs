@@ -14,7 +14,7 @@ use super::service::failed_snapshot;
 #[path = "file_ipc_response.rs"]
 mod response;
 #[path = "file_ipc_transport.rs"]
-mod transport;
+pub(crate) mod transport;
 
 const MAX_BYTES: usize = 64 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(5);
@@ -77,7 +77,7 @@ impl Game {
             }
         }
     }
-    fn install_root(self, image: &Path) -> Result<PathBuf, BridgeError> {
+    pub(crate) fn install_root(self, image: &Path) -> Result<PathBuf, BridgeError> {
         let name = image
             .file_name()
             .and_then(|part| part.to_str())
@@ -107,7 +107,7 @@ impl Game {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum BridgeError {
+pub(crate) enum BridgeError {
     Missing,
     Busy,
     Io,

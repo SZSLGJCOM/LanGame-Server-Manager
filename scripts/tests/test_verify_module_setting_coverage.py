@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import json
 import re
 import tempfile
 import unittest
@@ -53,6 +54,37 @@ class UnsignedAccountHashMetadataTests(unittest.TestCase):
                 self.assertIn(marker, source)
                 with patch.object(verifier, "_APP_STORAGE_TEMPLATES_TEXT", source.replace(marker, "", 1)):
                     self.assertTrue(verifier.validate_json_account_roster_rendering())
+
+
+class ValheimBanRosterContractTests(unittest.TestCase):
+    def test_only_the_ban_roster_accepts_the_native_character_name_codec(self) -> None:
+        properties = json.loads((verifier.MODULES_DIR / "valheim" / "schema.json").read_text(encoding="utf-8"))["properties"]
+        self.assertEqual(properties["banned_list"]["x-lsgm-player-access-codec"], "valheim_ban")
+        for field in ("admin_list", "permitted_list"):
+            self.assertEqual(properties[field]["x-lsgm-player-access-codec"], "valheim_platform_id")
+        self.assertEqual(verifier.validate_player_access_metadata("valheim", properties), [])
+
+    def test_render_guard_preserves_exact_names_and_existing_platform_renderers(self) -> None:
+        self.assertEqual(verifier.validate_valheim_roster_text_rendering(), [])
+        source = verifier.read_app_storage_templates_rs()
+        for marker, replacement in (
+            ('Some(render_valheim_ban_lines(settings, "banned_list"))',
+             'Some(render_valheim_platform_id_lines(settings, "banned_list"))'),
+            ("canonical_valheim_ban_identity(line)", "line.to_ascii_lowercase()"),
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, source)
+                with patch.object(verifier, "_APP_STORAGE_TEMPLATES_TEXT", source.replace(marker, replacement, 1)):
+                    self.assertTrue(verifier.validate_valheim_roster_text_rendering())
+
+    def test_platform_synced_list_deduplication_must_preserve_case(self) -> None:
+        source = verifier.read_app_storage_templates_rs()
+        body = verifier.rust_function_body("render_valheim_platform_id_lines")
+        marker = "seen.insert(line.clone())"
+        self.assertIn(marker, body)
+        mutated_body = body.replace(marker, "seen.insert(line.to_ascii_lowercase())", 1)
+        with patch.object(verifier, "_APP_STORAGE_TEMPLATES_TEXT", source.replace(body, mutated_body, 1)):
+            self.assertTrue(verifier.validate_valheim_roster_text_rendering())
 
 
 class DesktopCommandSourceReaderTests(unittest.TestCase):
@@ -243,6 +275,134 @@ class IndependentPlayerCapabilitiesTests(unittest.TestCase):
         self.assertTrue(verifier.module_has_player_roster_management_fields(schema))
         self.assertFalse(verifier.module_has_runtime_player_mutating_action(module))
         self.assertEqual(verifier.validate_player_management_contract("barotrauma", module, schema), [])
+
+
+class NativePlayerChannelContractTests(unittest.TestCase):
+    channels = (
+        ("enshrouded", "enshrouded_native", "enshrouded_native_players", "enshrouded_account_id"),
+        ("runescapedragonwilds", "dragonwilds_native", "dragonwilds_players", "eos_id"),
+    )
+
+    def make_module(self, channel: tuple[str, str, str, str]) -> dict:
+        module_id, transport, codec, identity = channel
+        return {
+            "id": module_id,
+            "runtime": {
+                "player_list": {
+                    "scope": "online", "source": "file_ipc", "response_codec": codec,
+                    "identity_kind": identity, "player_action_ids": ["kick_player", "ban_player"],
+                },
+                "player_actions": [
+                    {
+                        "id": action_id, "label": action_id,
+                        "transport": transport, "command_template": command,
+                        "target_label": "Native account ID",
+                        "target_placeholder": "Account ID from the verified player list",
+                        "target_required": True, "target_encoding": "raw", "destructive": True,
+                    }
+                    for action_id, command in (
+                        ("kick_player", "kick {{target}}"), ("ban_player", "ban {{target}}"),
+                        ("unban_player", "unban {{target}}"),
+                    )
+                ],
+            },
+        }
+
+    def validate(self, module: dict, module_id: str | None = None) -> list[str]:
+        with patch.object(verifier, "read_schema_property_defs", return_value={}), \
+                patch.object(verifier, "referenced_ports", return_value=set()):
+            return verifier.validate_runtime_player_actions(module_id or module["id"], module)
+
+    def assert_channel_rejected(self, module: dict) -> None:
+        self.assertTrue(self.validate(module))
+        self.assertFalse(verifier.module_has_online_player_list(module))
+        self.assertFalse(verifier.module_has_runtime_player_read_action(module))
+        self.assertFalse(verifier.module_has_runtime_player_targetless_read_action(module))
+
+    def test_verified_file_ipc_provides_same_channel_readback_without_a_fake_list_command(self) -> None:
+        for channel in self.channels:
+            with self.subTest(module=channel[0]):
+                module = self.make_module(channel)
+                self.assertEqual(self.validate(module), [])
+                self.assertTrue(verifier.module_has_online_player_list(module))
+                self.assertTrue(verifier.module_has_runtime_player_read_action(module))
+                self.assertTrue(verifier.module_has_runtime_player_targetless_read_action(module))
+                self.assertEqual(len(module["runtime"]["player_actions"]), 3)
+                # Enshrouded uses the manifest's default online scope.
+                del module["runtime"]["player_list"]["scope"]
+                self.assertEqual(self.validate(module), [])
+
+    def test_native_read_channel_rejects_wrong_source_identity_codec_scope_or_row_actions(self) -> None:
+        mutations = (
+            ("scope", "historical"), ("source", "http_api"), ("source", "server_query"),
+            ("response_codec", "a2s_players"), ("identity_kind", "session_id"),
+            ("action_id", "show_players"), ("player_action_ids", []),
+            ("player_action_ids", ["kick_player", "kick_player"]),
+            ("player_action_ids", ["kick_player", "ban_player", "ban_player"]),
+            ("player_action_ids", ["kick_player", "unban_player"]),
+            ("player_action_ids", [["kick_player"], "ban_player"]),
+        )
+        for channel in self.channels:
+            for key, value in mutations:
+                with self.subTest(module=channel[0], key=key, value=value):
+                    module = self.make_module(channel)
+                    module["runtime"]["player_list"][key] = value
+                    self.assert_channel_rejected(module)
+
+    def test_native_channel_requires_its_own_module_and_all_current_row_bindings(self) -> None:
+        for channel in self.channels:
+            with self.subTest(module=channel[0]):
+                module = self.make_module(channel)
+                module["id"] = "scum"
+                self.assert_channel_rejected(module)
+                self.assertTrue(self.validate(self.make_module(channel), "scum"))
+                module = self.make_module(channel)
+                module["runtime"]["player_actions"].pop(0)
+                self.assert_channel_rejected(module)
+                module = self.make_module(channel)
+                module["runtime"]["player_actions"].append(module["runtime"]["player_actions"][0].copy())
+                self.assert_channel_rejected(module)
+
+    def test_native_actions_reject_changed_templates_encodings_effects_and_extra_metadata(self) -> None:
+        mutations = (
+            ("command_template", "kick fixed-account"), ("command_template", "kick {{target}} extra"),
+            ("target_encoding", "quoted_string"), ("target_required", False), ("destructive", False),
+            ("process_key", "main"), ("port_name", "rcon"), ("password_setting_key", "password"),
+            ("enabled_setting_key", "enabled"), ("role_values", []), ("kind", "broadcast"),
+            ("unexpected_metadata", True), ("id", "grant_admin"),
+            ("transport", "unverified_native"),
+        )
+        for channel in self.channels:
+            for key, value in mutations:
+                with self.subTest(module=channel[0], key=key, value=value):
+                    module = self.make_module(channel)
+                    module["runtime"]["player_actions"][0][key] = value
+                    self.assert_channel_rejected(module)
+            module = self.make_module(channel)
+            module["runtime"]["player_actions"][2]["command_template"] = "unban all"
+            self.assertTrue(self.validate(module))
+
+    def test_another_native_transport_or_a_fabricated_list_action_cannot_bypass_the_contract(self) -> None:
+        for index, channel in enumerate(self.channels):
+            module = self.make_module(channel)
+            module["runtime"]["player_actions"][0]["transport"] = self.channels[1 - index][1]
+            self.assert_channel_rejected(module)
+            module = self.make_module(channel)
+            module["runtime"]["player_actions"].append({
+                "id": "show_players", "label": "Show players", "transport": channel[1],
+                "command_template": "players",
+            })
+            self.assertTrue(self.validate(module))
+
+    def test_only_the_matching_native_surface_is_advertised(self) -> None:
+        for index, channel in enumerate(self.channels):
+            module = self.make_module(channel)
+            self.assertEqual(verifier.validate_player_management_surface_transports(
+                channel[0], {"planned_surface": channel[1]}, module
+            ), [])
+            self.assertTrue(verifier.validate_player_management_surface_transports(
+                channel[0], {"planned_surface": self.channels[1 - index][1]}, module
+            ))
 
 
 class RosterSettingsBackendSaveChainVerifierTests(unittest.TestCase):

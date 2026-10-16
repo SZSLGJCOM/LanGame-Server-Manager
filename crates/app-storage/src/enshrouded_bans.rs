@@ -16,6 +16,13 @@ const CONFIG_FILE: &str = "enshrouded_server.json";
 const NATIVE_KEY: &str = "bannedAccounts";
 const RETIRED_KEY: &str = "bans";
 
+pub(crate) fn parse_enshrouded_ban_records(
+    document: &Map<String, Value>,
+    path: &Path,
+) -> Result<std::collections::BTreeMap<u64, Value>, StorageError> {
+    entries::parse(document, path)
+}
+
 struct DocumentSnapshot {
     path: PathBuf,
     content: Option<Vec<u8>>,

@@ -2224,7 +2224,16 @@ mod tests {
             }),
             "runescapedragonwilds should expose the smoke-verified UDP query port"
         );
-        assert_eq!(player_management.status, "pending_adapter");
+        assert_eq!(player_management.status, "runtime_actions");
+        assert_eq!(
+            descriptor
+                .runtime
+                .player_list
+                .as_ref()
+                .unwrap()
+                .player_action_ids,
+            ["kick_player", "ban_player"]
+        );
     }
 
     #[test]

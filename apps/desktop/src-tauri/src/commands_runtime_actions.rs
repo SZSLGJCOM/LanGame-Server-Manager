@@ -106,6 +106,58 @@ pub(super) fn resolve_declared_runtime_action(
             "Palworld REST actions require the Palworld module.",
         ));
     }
+    if transport == "enshrouded_native" {
+        let expected = match action.id.as_str() {
+            "kick_player" => "kick {{target}}",
+            "ban_player" => "ban {{target}}",
+            "unban_player" => "unban {{target}}",
+            _ => return Err("Unsupported Enshrouded native action.".into()),
+        };
+        if descriptor.summary.id != "enshrouded"
+            || action.command_template != expected
+            || action.target_encoding.as_deref() != Some("raw")
+            || !action.target_required
+            || action.process_key.is_some()
+            || action.port_name.is_some()
+            || action.password_setting_key.is_some()
+            || action.enabled_setting_key.is_some()
+            || !action.destructive
+        {
+            return Err("Enshrouded native actions require their own verified contract.".into());
+        }
+        if action.id != "unban_player" && !require_target_binding {
+            return Err(
+                "Native moderation requires a current authoritative player selection.".into(),
+            );
+        }
+    }
+    if transport == "dragonwilds_native" {
+        let command = match action.id.as_str() {
+            "kick_player" => "kick {{target}}",
+            "ban_player" => "ban {{target}}",
+            "unban_player" => "unban {{target}}",
+            _ => return Err("Unsupported Dragonwilds moderation action.".into()),
+        };
+        if descriptor.summary.id != "runescapedragonwilds"
+            || action.command_template != command
+            || !action.target_required
+            || action.target_encoding.as_deref() != Some("raw")
+            || !action.destructive
+            || action.process_key.is_some()
+            || action.port_name.is_some()
+            || action.password_setting_key.is_some()
+            || action.enabled_setting_key.is_some()
+            || !action.role_values.is_empty()
+            || role.is_some()
+        {
+            return Err("Dragonwilds moderation requires its verified native contract.".into());
+        }
+        if action.id != "unban_player" && !require_target_binding {
+            return Err(
+                "Dragonwilds moderation requires a current authoritative player selection.".into(),
+            );
+        }
+    }
 
     if descriptor.summary.id == "humanitz"
         && matches!(

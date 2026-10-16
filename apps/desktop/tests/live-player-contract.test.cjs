@@ -18,6 +18,7 @@ const typesSource = fs.readFileSync(typesPath, "utf8");
 const apiSource = fs.readFileSync(apiPath, "utf8");
 const mockModuleDetailsSource = fs.readFileSync(mockModuleDetailsPath, "utf8");
 const livePlayerMockSource = fs.readFileSync(livePlayerMockPath, "utf8");
+const rustLivePlayerSource = fs.readFileSync(path.resolve(desktopRoot, "../../crates/app-core/src/live_players.rs"), "utf8");
 const typesFile = parseSource(typesSource, typesPath);
 const apiFile = parseSource(apiSource, apiPath);
 
@@ -61,6 +62,13 @@ function interfaceProperties(name) {
   });
 }
 
+function rustEnumJsonValues(name) {
+  const declaration = rustLivePlayerSource.match(new RegExp(`pub enum ${name} \\{([^}]+)\\}`));
+  assert.ok(declaration, `Rust enum ${name} is missing`);
+  return declaration[1].split(",").map((variant) => variant.trim()).filter(Boolean)
+    .map((variant) => variant.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase());
+}
+
 function apiFunctionSource(name) {
   const declaration = findDeclaration(
     apiFile,
@@ -76,11 +84,11 @@ test("TypeScript live-player unions mirror the Rust JSON vocabulary", () => {
   assert.deepEqual(typeAliasValues("ModulePlayerListCodec"), [
     "dst_client_table_v1", "rust_player_list", "ark_list_players", "conan_list_players",
     "humanitz_players", "zomboid_players", "seven_days_players",
-    "squad_list_players", "palworld_players", "minecraft_players", "nightingale_players", "necesse_players", "romestead_players", "terraria_players", "astroneer_players", "soulmask_players", "satisfactory_frm_players", "barotrauma_players", "return_to_moria_players", "windrose_players", "dragonwilds_players", "scum_players", "a2s_players"
+    "squad_list_players", "palworld_players", "minecraft_players", "nightingale_players", "necesse_players", "romestead_players", "terraria_players", "astroneer_players", "soulmask_players", "satisfactory_frm_players", "barotrauma_players", "return_to_moria_players", "windrose_players", "dragonwilds_players", "scum_players", "enshrouded_native_players", "a2s_players"
   ]);
   assert.deepEqual(typeAliasValues("RuntimePlayerIdentityKind"), [
     "klei_user_id", "steam_id", "ark_account_id", "conan_user_id", "eos_id", "player_name", "session_id",
-    "palworld_user_id", "minecraft_uuid", "astroneer_guid"
+    "palworld_user_id", "minecraft_uuid", "astroneer_guid", "enshrouded_account_id", "valheim_platform_id"
   ]);
   assert.deepEqual(typeAliasValues("RuntimeLivePlayerStatus"), [
     "ready",
@@ -161,6 +169,16 @@ test("snapshot, row, issue, and action DTO fields match the public Rust contract
   ]) {
     assert.ok(!interfaceProperties("ExecuteInstancePlayerActionInput").includes(forbidden));
   }
+});
+
+test("native extension codec and account namespace match the Rust enums without adding a source", () => {
+  for (const name of ["ModulePlayerListSource", "ModulePlayerListCodec", "RuntimePlayerIdentityKind"]) {
+    assert.deepEqual(typeAliasValues(name).sort(), rustEnumJsonValues(name).sort(), `${name} must agree across the IPC boundary`);
+  }
+  assert.ok(typeAliasValues("ModulePlayerListCodec").includes("enshrouded_native_players"));
+  assert.ok(typeAliasValues("RuntimePlayerIdentityKind").includes("enshrouded_account_id"));
+  assert.ok(typeAliasValues("ModulePlayerListSource").includes("file_ipc"));
+  assert.equal(typeAliasValues("ModulePlayerListSource").length, 8);
 });
 
 test("declared manual player actions keep backend descriptors authoritative", () => {

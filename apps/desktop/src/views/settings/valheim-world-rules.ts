@@ -85,6 +85,16 @@ export function valheimPresetKeys(preset: string): readonly string[] | null {
   return Object.prototype.hasOwnProperty.call(PRESET_KEYS, preset) ? PRESET_KEYS[preset] : null;
 }
 
+function applyNativeKeys(keys: string[], replacements: readonly string[]) {
+  for (const value of replacements) {
+    const name = value.split(" ")[0];
+    for (let index = keys.length - 1; index >= 0; index--) {
+      if (keys[index].split(" ")[0] === name) keys.splice(index, 1);
+    }
+    keys.push(value);
+  }
+}
+
 export function resolveSavedValheimKeys(keys: readonly string[]): string[] {
   const resolved = keys.map((key) => key.toLowerCase());
   const entries = resolved.filter((key) => key.startsWith("preset "));
@@ -94,24 +104,15 @@ export function resolveSavedValheimKeys(keys: readonly string[]): string[] {
   // Some imported metadata carries this tag without expanded concrete keys.
   // Native KeyButton/KeySlider add or replace only the keys they define; they
   // do not clear unrelated keys or turn off existing checkbox rules.
-  const apply = (values: readonly string[]) => {
-    for (const value of values) {
-      const name = value.split(" ")[0];
-      for (let index = resolved.length - 1; index >= 0; index--) {
-        if (resolved[index].split(" ")[0] === name) resolved.splice(index, 1);
-      }
-      resolved.push(value);
-    }
-  };
   const values = valheimPresetKeys(preset);
-  if (values) apply(values);
+  if (values) applyNativeKeys(resolved, values);
   else for (const segment of preset.split(":")) {
     const [name, choice, extra] = segment.split("_");
     const modifier = VALHEIM_MODIFIER_NAMES.find((candidate) => candidate === name);
     if (extra !== undefined || !modifier) continue;
     const options = MODIFIER_KEYS[modifier];
     const values = options[choice === "default" ? "normal" : choice];
-    if (values) apply(values);
+    if (values) applyNativeKeys(resolved, values);
   }
   return resolved;
 }
@@ -132,4 +133,27 @@ export function readSavedValheimModifier(keys: readonly string[], name: ValheimM
     if (rules.length === keys.length && keys.every((key) => rules.includes(key))) return value;
   }
   return "custom";
+}
+
+export function projectValheimModifier(base: readonly string[] | null, name: ValheimModifierName, modifiers: unknown): string | null {
+  if (modifiers !== undefined && typeof modifiers !== "string") return null;
+  const options = MODIFIER_KEYS[name];
+  // A saved preset tag has already contributed its keys to this effective
+  // baseline. Consume it here so classification cannot replay it after the
+  // explicit startup modifiers have been applied.
+  const projected = base ? resolveSavedValheimKeys(base).filter((key) => !key.startsWith("preset ")) : [];
+  const assigned = new Set<string>();
+  for (const entry of parseValheimRuleEntries(modifiers)) {
+    const [modifier, choice, extra] = entry.split(/\s+/);
+    if (modifier !== name) continue;
+    if (extra !== undefined || choice === "normal" || !Object.prototype.hasOwnProperty.call(options, choice)) return null;
+    const replacements = options[choice];
+    applyNativeKeys(projected, replacements);
+    replacements.forEach((value) => assigned.add(value.split(" ")[0]));
+  }
+  // KeySlider replaces only the keys present in the chosen option. Old keys
+  // may remain, so an unknown baseline is predictable only when all keys for
+  // this modifier are assigned by the explicit startup arguments.
+  if (base === null && Object.values(options).flat().some((value) => !assigned.has(value.split(" ")[0]))) return null;
+  return readSavedValheimModifier(projected, name);
 }

@@ -11,7 +11,7 @@ use super::commands_mod_staging::{
 use super::*;
 use crate::steam_workshop::validate_workshop_download_items;
 #[path = "commands_mod_download.rs"]
-mod mod_download;
+pub(super) mod mod_download;
 use mod_download::{
     ModDownloadIntegrity, ModDownloadRequest, download_mod_site_file_with_limit,
     fetch_modrinth_project_names,

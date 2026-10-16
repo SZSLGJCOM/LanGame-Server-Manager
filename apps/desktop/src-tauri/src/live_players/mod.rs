@@ -1,14 +1,17 @@
 pub(crate) mod astroneer;
 mod barotrauma;
 pub(crate) mod cache;
-pub(crate) mod enshrouded;
+pub(crate) mod enshrouded_native;
 pub(crate) mod file_ipc;
+pub(crate) mod native_log;
 pub(crate) mod returntomoria;
 pub(crate) mod satisfactory;
 pub(crate) mod soulmask;
+pub(crate) mod valheim_control;
 
 mod contract;
 mod dispatch_deadline;
+pub(crate) mod dragonwilds_control;
 mod log_capture;
 
 pub(crate) mod console_codecs;

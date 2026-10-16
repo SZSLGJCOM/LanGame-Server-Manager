@@ -1,7 +1,8 @@
 use super::*;
 use crate::player_access_normalization::{
-    normalize_ark_account_id, normalize_minecraft_banned_ip, normalize_minecraft_player_name,
-    normalize_minecraft_uuid, normalize_terraria_banlist_entry, normalize_valheim_platform_id,
+    canonical_valheim_ban_identity, normalize_ark_account_id, normalize_minecraft_banned_ip,
+    normalize_minecraft_player_name, normalize_minecraft_uuid, normalize_terraria_banlist_entry,
+    normalize_valheim_ban_entry, normalize_valheim_platform_id,
 };
 
 pub(super) fn render_minecraft_server_ip(settings: &Map<String, Value>) -> String {
@@ -371,12 +372,24 @@ pub(super) fn render_unturned_enabled_line(
     format!("{command} {value}")
 }
 
-pub(super) fn render_valheim_platform_id_lines(settings: &Map<String, Value>, key: &str) -> String {
+pub(crate) fn render_valheim_platform_id_lines(settings: &Map<String, Value>, key: &str) -> String {
     let mut seen = HashSet::new();
     parse_config_lines(settings, key)
         .into_iter()
         .filter_map(|line| normalize_valheim_platform_id(&line))
-        .filter(|line| seen.insert(line.to_ascii_lowercase()))
+        .filter(|line| seen.insert(line.clone()))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+pub(super) fn render_valheim_ban_lines(settings: &Map<String, Value>, key: &str) -> String {
+    let Some(raw) = lookup_materialized_setting_text(settings, key) else {
+        return String::new();
+    };
+    let mut seen = HashSet::new();
+    raw.lines()
+        .filter_map(normalize_valheim_ban_entry)
+        .filter(|line| seen.insert(canonical_valheim_ban_identity(line)))
         .collect::<Vec<_>>()
         .join("\n")
 }

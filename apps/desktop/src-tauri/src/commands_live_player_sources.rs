@@ -2,14 +2,15 @@ use super::*;
 use crate::live_players::cache::CachedLivePlayerSnapshot;
 
 #[cfg(test)]
-#[path = "live_players/enshrouded_integration_tests.rs"]
-mod enshrouded_integration_tests;
+#[path = "live_players/native_log_integration_tests.rs"]
+mod native_log_integration_tests;
 
 pub(super) async fn collect_direct_players(
     state: &tauri::State<'_, DesktopState>,
     details: &InstanceDetails,
     descriptor: &ModuleDescriptor,
     observed_at: u64,
+    mutation_permit: tokio::sync::OwnedMutexGuard<()>,
 ) -> LivePlayerCollectionResult {
     use app_core::ModulePlayerListSource as Source;
     let instance_id = &details.summary.id;
@@ -30,6 +31,37 @@ pub(super) async fn collect_direct_players(
         ))
     };
     match (list.source, list.response_codec) {
+        (Source::FileIpc, ModulePlayerListCodec::EnshroudedNativePlayers) => {
+            let query = descriptor.runtime.player_query.as_ref().filter(|query| query.protocol == "a2s_info")
+                .ok_or_else(|| failure(RuntimeLivePlayerIssueCode::QueryUnavailable, "The Enshrouded native identity collector requires its live A2S count contract.", false))?;
+            let native = crate::live_players::enshrouded_native::collect(
+                details,
+                query,
+                &request_id,
+                observed_at,
+            )
+            .await;
+            match native {
+                Ok(collected) => return Ok(collected),
+                Err(native_failure) => {
+                    let mut fallback = crate::live_players::native_log::collect(
+                        &state.native_player_logs,
+                        details,
+                        query,
+                        &request_id,
+                        observed_at,
+                    )
+                    .await?;
+                    fallback.public_snapshot.issue = native_failure.issue;
+                    // Query/log names never inherit the extension's action bindings.
+                    fallback.private_action_bindings.clear();
+                    for entry in &mut fallback.public_snapshot.entries {
+                        entry.available_action_ids.clear();
+                    }
+                    return Ok(fallback);
+                }
+            }
+        }
         (Source::FileIpc, ModulePlayerListCodec::ScumPlayers) => {
             return crate::live_players::file_ipc::collect(
                 crate::live_players::file_ipc::Game::Scum,
@@ -51,6 +83,25 @@ pub(super) async fn collect_direct_players(
             .await;
         }
         (Source::FileIpc, ModulePlayerListCodec::DragonwildsPlayers) => {
+            match crate::live_players::dragonwilds_control::is_prepared(details) {
+                Ok(true) => {
+                    return crate::live_players::dragonwilds_control::collect(
+                        details,
+                        &request_id,
+                        observed_at,
+                        mutation_permit,
+                    )
+                    .await;
+                }
+                Ok(false) => {}
+                Err(message) => {
+                    return Err(failure(
+                        RuntimeLivePlayerIssueCode::ExtensionUnavailable,
+                        &message,
+                        false,
+                    ));
+                }
+            }
             return crate::live_players::file_ipc::collect(
                 crate::live_players::file_ipc::Game::Dragonwilds,
                 details,
@@ -116,6 +167,15 @@ pub(super) async fn collect_direct_players(
             .await;
         }
         (Source::ServerQuery, ModulePlayerListCodec::A2sPlayers) => {
+            if descriptor.summary.id == "valheim"
+                && let Ok(native) =
+                    crate::live_players::valheim_control::collect(details, &request_id, observed_at)
+                        .await
+            {
+                return Ok(native);
+            }
+            // The existing query/log path remains read-only when explicit
+            // native account control has not been prepared or is unavailable.
             let query = descriptor
                 .runtime
                 .player_query
@@ -128,9 +188,9 @@ pub(super) async fn collect_direct_players(
                         false,
                     )
                 })?;
-            if descriptor.summary.id == "enshrouded" {
-                return crate::live_players::enshrouded::collect(
-                    &state.enshrouded_players,
+            if matches!(descriptor.summary.id.as_str(), "enshrouded" | "valheim") {
+                return crate::live_players::native_log::collect(
+                    &state.native_player_logs,
                     details,
                     query,
                     &request_id,

@@ -155,3 +155,47 @@ test("a live session ID and unknown namespaces cannot fill platform or IP roster
   assert.equal(resolve(player(id("steam_id", steamId)), field("minecraft", "banned_ip_entries")), null);
   assert.equal(resolve(player(id("steam_id", steamId)), field("valheim", "admin_list")), null);
 });
+
+test("Valheim character bans require an explicit native name and keep platform rosters separate", () => {
+  const ban = field("valheim", "banned_list");
+  assert.equal(ban.property["x-lsgm-player-access-codec"], "valheim_ban");
+  const named = player(id("session_id", "123", false), id("player_name", "Raven 北境", false));
+  assert.equal(resolve(named, ban).rawValue, "Raven 北境");
+  assert.equal(resolve(named, ban).identity, "Raven 北境");
+  for (const unsupported of [player(), player(id("session_id", "Raven", false)), player(id("steam_id", steamId)),
+    player(id("player_name", "Raven", false), id("player_name", "Other", false)), player(id("player_name", "bad\nname", false))]) {
+    assert.equal(resolve(unsupported, ban), null, "Labels, sessions, accounts and ambiguous names cannot become character bans");
+  }
+  for (const key of ["admin_list", "permitted_list"]) {
+    assert.equal(resolve(named, field("valheim", key)), null);
+    assert.equal(resolve(player(id("steam_id", steamId), id("player_name", "Raven", false)), field("valheim", key)), null);
+  }
+});
+
+test("Valheim verified native platform identities drive account rosters and take precedence over character names", () => {
+  for (const platformId of [`Steam_${steamId}`, "Xbox_NativeAccount_A7", "PlayFab_NativeAccount_B8"]) {
+    const account = player(id("player_name", "Raven", false), id("steam_id", "76561198000000009"),
+      id("valheim_platform_id", platformId));
+    for (const key of ["admin_list", "permitted_list", "banned_list"]) {
+      const target = resolve(account, field("valheim", key));
+      assert.equal(target.rawValue, platformId, `${key} preserves the native platform ID exactly`);
+      assert.equal(target.identity, platformId, `${key} preserves the native case-sensitive account identity`);
+    }
+  }
+});
+
+test("Valheim ambiguous or unstable native platform bindings cannot downgrade into a name ban", () => {
+  for (const identifiers of [
+    [id("valheim_platform_id", `Steam_${steamId}`), id("valheim_platform_id", "Xbox_Other")],
+    [id("valheim_platform_id", "Xbox_NativeAccount", false)],
+    [id("valheim_platform_id", "")],
+    [id("valheim_platform_id", "Xbox_Not A Native ID")],
+    [id("valheim_platform_id", "Xbox_Invalid\n")],
+    [id("valheim_platform_id", "Xbox_NativeAccount"), id("valheim_platform_id", "xbox_nativeaccount")]
+  ]) {
+    const account = player(...identifiers, id("player_name", "Raven", false));
+    for (const key of ["admin_list", "permitted_list", "banned_list"]) assert.equal(resolve(account, field("valheim", key)), null);
+  }
+  const repeated = player(id("valheim_platform_id", "Xbox_NativeAccount"), id("valheim_platform_id", "Xbox_NativeAccount"));
+  assert.equal(resolve(repeated, field("valheim", "admin_list")).rawValue, "Xbox_NativeAccount");
+});

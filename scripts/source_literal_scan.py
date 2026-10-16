@@ -10,6 +10,7 @@ from pathlib import Path
 SOURCE_CODE_SUFFIXES = {
     ".cjs",
     ".cpp",
+    ".cs",
     ".go",
     ".h",
     ".hpp",
@@ -17,6 +18,8 @@ SOURCE_CODE_SUFFIXES = {
     ".jsx",
     ".mjs",
     ".py",
+    ".ps1",
+    ".lua",
     ".rs",
     ".ts",
     ".tsx",
@@ -24,7 +27,7 @@ SOURCE_CODE_SUFFIXES = {
 JAVASCRIPT_SOURCE_SUFFIXES = {".cjs", ".js", ".jsx", ".mjs", ".ts", ".tsx"}
 CPP_SOURCE_SUFFIXES = {".cpp", ".h", ".hpp"}
 MULTILINE_LITERAL_SUFFIXES = (
-    JAVASCRIPT_SOURCE_SUFFIXES | CPP_SOURCE_SUFFIXES | {".go", ".py", ".rs"}
+    JAVASCRIPT_SOURCE_SUFFIXES | CPP_SOURCE_SUFFIXES | {".go", ".py", ".rs", ".cs", ".lua", ".ps1"}
 )
 
 RUST_RAW_STRING_START = re.compile(r'(?:br|r)(?P<hashes>#{0,255})"')
@@ -34,6 +37,9 @@ CPP_RAW_STRING_START = re.compile(
 C_LIKE_CHAR_LITERAL = re.compile(
     r"'(?:\\(?:x[0-9a-fA-F]{2}|u\{[0-9a-fA-F_]+\}|.)|[^\\'\r\n])'"
 )
+LUA_LONG_STRING_START = re.compile(r"\[(?P<equals>=*)\[")
+CSHARP_STRING_START = re.compile(r'(?:\$@|@\$|@|\$)?"')
+POWERSHELL_VARIABLE = re.compile(r"\$(?:\{[^}\r\n]*\}|(?:[\w]+:)?[\w?]+)")
 
 
 @dataclass
@@ -42,6 +48,192 @@ class SourceLiteralState:
     raw_closer: str | None = None
     block_comment_depth: int = 0
     escaped: bool = False
+    verbatim: bool = False
+    interpolated: bool = False
+    interpolation_depth: int = 0
+    interpolation_quote: str | None = None
+    interpolation_escaped: bool = False
+    raw_line_start: bool = False
+    raw_interpolated: bool = False
+
+
+def _control_source_literal_mask(
+    path: Path, line: str, state: SourceLiteralState, scan_line: list[str] | None
+) -> list[bool]:
+    """Recognize the control adapters' C# 5, Lua and PowerShell strings.
+
+    Comments remain scanned. PowerShell bare arguments remain literal candidates;
+    variable references are expressions even inside expandable strings.
+    """
+    is_csharp = path.suffix.casefold() == ".cs"
+    is_lua = path.suffix.casefold() == ".lua"
+    is_powershell = path.suffix.casefold() == ".ps1"
+    mask = [is_powershell] * len(line)
+    index = 0
+    while index < len(line):
+        if state.raw_closer is not None:
+            if line.startswith(state.raw_closer, index) and (
+                not state.raw_line_start or index == 0
+            ):
+                end = index + len(state.raw_closer)
+                mask[index:end] = [True] * (end - index)
+                state.raw_closer = None
+                state.raw_line_start = False
+                state.raw_interpolated = False
+                index = end
+            else:
+                mask[index] = True
+                if state.raw_interpolated:
+                    if state.escaped:
+                        state.escaped = False
+                    elif line[index] == "`":
+                        state.escaped = True
+                        if scan_line is not None:
+                            scan_line[index] = "\\"
+                    elif line[index] == "$":
+                        mask[index] = False
+                index += 1
+            continue
+
+        if state.interpolation_depth:
+            character = line[index]
+            if state.interpolation_quote is not None:
+                mask[index] = True
+                if state.interpolation_escaped:
+                    state.interpolation_escaped = False
+                elif character == ("`" if is_powershell else "\\"):
+                    state.interpolation_escaped = True
+                elif character == state.interpolation_quote:
+                    state.interpolation_quote = None
+            else:
+                if (is_powershell and character == "#") or (is_csharp and line.startswith("//", index)):
+                    mask[index:] = [True] * (len(line) - index)
+                    break
+                if (is_powershell and line.startswith("<#", index)) or (is_csharp and line.startswith("/*", index)):
+                    state.raw_closer = "#>" if is_powershell else "*/"
+                    mask[index:index + 2] = [True, True]
+                    index += 2
+                    continue
+                mask[index] = False
+                if character in ('"', "'"):
+                    state.interpolation_quote = character
+                elif character == ("(" if is_powershell else "{"):
+                    state.interpolation_depth += 1
+                elif character == (")" if is_powershell else "}"):
+                    state.interpolation_depth -= 1
+            index += 1
+            continue
+
+        if state.quote is not None:
+            character = line[index]
+            mask[index] = True
+            if state.escaped:
+                state.escaped = False
+            elif state.verbatim and line.startswith(state.quote * 2, index):
+                mask[index:index + 2] = [True, True]
+                if scan_line is not None:
+                    scan_line[index] = "\\"
+                index += 2
+                continue
+            elif not state.verbatim and character == ("`" if is_powershell else "\\"):
+                state.escaped = True
+                if scan_line is not None and is_powershell:
+                    scan_line[index] = "\\"
+            elif character == state.quote:
+                state.quote = None
+            elif state.interpolated and is_csharp and character == "{":
+                if line.startswith("{{", index):
+                    mask[index:index + 2] = [True, True]
+                    index += 2
+                    continue
+                mask[index] = False
+                state.interpolation_depth = 1
+            elif state.interpolated and is_powershell and character == "$":
+                mask[index] = False
+                if line.startswith("$(", index):
+                    mask[index + 1] = False
+                    state.interpolation_depth = 1
+                    index += 2
+                    continue
+            index += 1
+            continue
+
+        if is_lua and line.startswith("--", index):
+            long_start = LUA_LONG_STRING_START.match(line, index + 2)
+            if long_start is None:
+                mask[index:] = [True] * (len(line) - index)
+                break
+            state.raw_closer = "]" + long_start.group("equals") + "]"
+            end = long_start.end()
+            mask[index:end] = [True] * (end - index)
+            index = end
+            continue
+        if is_powershell and line[index] == "#" or is_csharp and line.startswith("//", index):
+            mask[index:] = [True] * (len(line) - index)
+            break
+        if is_powershell and line.startswith("<#", index) or is_csharp and line.startswith("/*", index):
+            state.raw_closer = "#>" if is_powershell else "*/"
+            mask[index:index + 2] = [True, True]
+            index += 2
+            continue
+
+        if is_lua:
+            long_start = LUA_LONG_STRING_START.match(line, index)
+            if long_start is not None:
+                state.raw_closer = "]" + long_start.group("equals") + "]"
+                end = long_start.end()
+                mask[index:end] = [True] * (end - index)
+                index = end
+                continue
+        if is_csharp:
+            string_start = CSHARP_STRING_START.match(line, index)
+            if string_start is not None:
+                end = string_start.end()
+                prefix = line[index:end - 1]
+                state.quote = '"'
+                state.verbatim = "@" in prefix
+                state.interpolated = "$" in prefix
+                mask[index:end] = [True] * (end - index)
+                if scan_line is not None:
+                    scan_line[index:end - 1] = [" "] * len(prefix)
+                index = end
+                continue
+            if line[index] == "'":
+                char_literal = C_LIKE_CHAR_LITERAL.match(line, index)
+                if char_literal is not None:
+                    index = char_literal.end()
+                    continue
+        if is_powershell:
+            if line[index:] in ("@'", '@"') or (
+                line[index:index + 2] in ("@'", '@"')
+                and not line[index + 2:].strip()
+            ):
+                state.raw_closer = line[index + 1] + "@"
+                state.raw_line_start = True
+                state.raw_interpolated = line[index + 1] == '"'
+                index = len(line)
+                continue
+            if line.startswith("$(", index):
+                mask[index:index + 2] = [False, False]
+                state.interpolation_depth = 1
+                index += 2
+                continue
+            variable = POWERSHELL_VARIABLE.match(line, index)
+            if variable is not None:
+                mask[index:variable.end()] = [False] * (variable.end() - index)
+                index = variable.end()
+                continue
+        if (is_lua or is_powershell) and line[index] in ('"', "'"):
+            state.quote = line[index]
+            state.verbatim = is_powershell and state.quote == "'"
+            state.interpolated = is_powershell and state.quote == '"'
+            mask[index] = True
+        index += 1
+
+    if (is_csharp or is_lua) and state.quote is not None and not state.verbatim and not state.escaped and not state.interpolation_depth:
+        state.quote = None
+    state.escaped = False
+    return mask
 
 
 def _inside_quoted_literal(line: str, index: int) -> bool:
@@ -61,9 +253,11 @@ def _inside_quoted_literal(line: str, index: int) -> bool:
 
 
 def source_literal_mask(
-    path: Path, line: str, state: SourceLiteralState
+    path: Path, line: str, state: SourceLiteralState, *, scan_line: list[str] | None = None
 ) -> list[bool]:
     suffix = path.suffix.casefold()
+    if suffix in {".cs", ".lua", ".ps1"}:
+        return _control_source_literal_mask(path, line, state, scan_line)
     mask = [False] * len(line)
     if suffix not in MULTILINE_LITERAL_SUFFIXES:
         return mask
@@ -189,11 +383,12 @@ def source_literal_mask(
 
 
 def match_is_literal(
-    path: Path, line: str, value_index: int, literal_mask: list[bool]
+    path: Path, line: str, value_index: int, literal_mask: list[bool], value_length: int = 1
 ) -> bool:
     suffix = path.suffix.casefold()
     if suffix not in SOURCE_CODE_SUFFIXES:
         return True
     if suffix in MULTILINE_LITERAL_SUFFIXES:
-        return value_index < len(literal_mask) and literal_mask[value_index]
+        end = value_index + value_length
+        return end <= len(literal_mask) and all(literal_mask[value_index:end])
     return _inside_quoted_literal(line, value_index)

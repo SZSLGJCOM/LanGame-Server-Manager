@@ -120,8 +120,8 @@ export function usePlayerAccess(props: PlayerAccessOptions) {
       } else if (result.liveStatus === "restart_required" || result.liveStatus === "not_running") {
         showFeedback(selectLocaleText(
           locale,
-          `${persistentText}；将在服务器下次启动时生效。`,
-          `${persistentText}; applies on the next server start.`
+          `${persistentText}；下次启动会使用此名单，即时状态未核验。`,
+          `${persistentText}; the next server start will use this roster. Live state was not verified.`
         ), "success");
       } else if (result.verificationStatus === "failed") {
         showFeedback(selectLocaleText(
@@ -152,6 +152,13 @@ export function usePlayerAccess(props: PlayerAccessOptions) {
     fields: snapshot.rosterFields,
     busyFieldKey: savingRosterKey,
     disabled: Boolean(props.readOnly || !props.onApplyPlayerAccessMutation || snapshot.settingsError),
+    disabledReason: props.readOnly
+      ? selectLocaleText(locale, "当前处于只读模式，无法修改名单。", "This workspace is read-only; rosters cannot be changed.")
+      : snapshot.settingsError
+        ? selectLocaleText(locale, "配置读取失败，请先修正配置再修改名单。", "Settings could not be read. Correct them before changing rosters.")
+        : !props.onApplyPlayerAccessMutation
+          ? selectLocaleText(locale, "当前连接未提供名单保存功能。", "Roster saving is unavailable in this connection.")
+          : null,
     onMutate: applyRosterMutation,
     feedback: <>
       {snapshot.settingsError ? <ActivityNotice tone="error">{snapshot.settingsError}</ActivityNotice> : null}

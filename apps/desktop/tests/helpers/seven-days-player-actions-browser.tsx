@@ -134,7 +134,7 @@ let initialActionInventory: string | null = null;
 function fixedTitle() {
   const headers = document.querySelectorAll<HTMLElement>(".player-center-controls .player-center-member-header");
   check(headers.length === 1 && headers[0].parentElement?.matches(".player-center-controls")
-    && headers[0].textContent?.trim() === "玩家操作", "Player action title is missing, duplicated, or replaced by a selected identity");
+    && headers[0].textContent?.trim() === "玩家详情与操作", "Player details and action title is missing, duplicated, or replaced by a selected identity");
   const inventory = Array.from(document.querySelectorAll<HTMLElement>(".player-center-member-action, .player-access-selected-action, .player-access-edit-selected"))
     .map((button) => button.textContent?.trim()).join("|");
   initialActionInventory ??= inventory;
@@ -183,10 +183,15 @@ async function run() {
   await list("online");
   const sessionOnly = { ...trustedPlayers[0], player_key: "native-session", available_action_ids: [], identifiers: [{ kind: "session_id" as const, value: "42", stable: false }] };
   await state(snapshot([sessionOnly])); fixedTitle(); personalActions(true);
-  check(!document.querySelector(".player-center-player-table .player-center-player-select"), "A session-only row became a persistent account target"); checks++;
+  await click(".player-center-player-table .player-center-player-select"); personalActions(true);
+  check(document.querySelector(".player-center-details") && select<HTMLButtonElement>(".player-center-member-action").disabled,
+    "Inspecting a session-only row authorized persistent or runtime actions"); checks++;
   await state(snapshot(trustedPlayers)); await click(".player-center-player-table tbody tr:first-child .player-center-player-select"); fixedTitle();
   check(!select<HTMLButtonElement>(action("blacklist_entries", "remove")).disabled, "Existing blacklist entry does not offer direct unban");
   check(banButton()?.disabled, "An already blacklisted online account is offered a second native ban");
+  const banReasonId = banButton()?.getAttribute("aria-describedby");
+  check(banReasonId && document.getElementById(banReasonId)?.textContent === "此玩家已在封禁名单中。",
+    "An already banned player is incorrectly described as missing identity or an invalid snapshot");
   check(!document.querySelector(".player-access-selected-sync, .player-access-roster-action-timing"),
     "Player actions retain redundant persistent timing labels");
   await click(action("blacklist_entries", "remove"));

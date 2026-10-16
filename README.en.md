@@ -77,7 +77,7 @@ Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)**.
 
 ## Run from source
 
-Requires Git, Rust `1.99.0` (MSVC), Node.js `>=26.10.0 <27`, npm `>=12.2.0 <13`, and Python 3.11 or later. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for C++ Build Tools and WebView2.
+Requires Git, Rust `1.99.0` (MSVC), Node.js `>=26.10.0 <27`, npm `>=12.2.0 <13`, and Python 3.11 or later. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for C++ Build Tools and WebView2. Building the embedded Dragonwilds player-query proxy also requires CMake 3.24 or later. The first build downloads and verifies pinned proxy sources; later builds reuse the build cache. Ordinary server hosts do not need these build tools.
 
 <details>
 <summary>Build, run, and package commands</summary>

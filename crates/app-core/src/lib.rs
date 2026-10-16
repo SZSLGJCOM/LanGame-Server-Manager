@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 mod live_players;
 pub use live_players::*;
+mod enshrouded_identity;
+pub use enshrouded_identity::enshrouded_steam_account_hash;
 mod install_progress;
 pub use install_progress::{
     InstallPhase, InstallProgress, InstallVerificationProgress, InstallVerificationStage,

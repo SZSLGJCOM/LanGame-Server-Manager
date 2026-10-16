@@ -1,4 +1,4 @@
-import { canonicalPlayerAccessIdentity, normalizePlayerAccessMutationEntry, parsePlayerAccessCodec, playerAccessObjectIdentityKeys } from "../../../domain/player-access";
+import { canonicalPlayerAccessIdentity, isValheimPlatformAccountTarget, normalizePlayerAccessMutationEntry, parsePlayerAccessCodec, playerAccessObjectIdentityKeys } from "../../../domain/player-access";
 import { isAuthoritativeLivePlayerSnapshot } from "../../../domain/live-player-state";
 import type { RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier, RuntimeLivePlayerSnapshot, RuntimePlayerIdentityKind } from "../../../types";
 import { isRosterRecord, type RosterEntry, type RosterField } from "./player-access-roster-model";
@@ -13,8 +13,8 @@ export function rosterEntryPlayer(selection: SelectedRosterEntry | null): Runtim
   const codec = parsePlayerAccessCodec(field.property);
   if (!codec || canonicalPlayerAccessIdentity(codec, entry.rawValue, field.property) !== entry.key) return null;
   const identifiers: RuntimeLivePlayerIdentifier[] = [];
-  const add = (kind: RuntimePlayerIdentityKind, value: unknown) => {
-    if (typeof value === "string" && value.trim()) identifiers.push({ kind, value: value.trim(), stable: true });
+  const add = (kind: RuntimePlayerIdentityKind, value: unknown, stable = true) => {
+    if (typeof value === "string" && value.trim()) identifiers.push({ kind, value: value.trim(), stable });
   };
   if (codec === "object_identity" && isRosterRecord(entry.rawValue)) {
     const values = entry.rawValue;
@@ -36,6 +36,11 @@ export function rosterEntryPlayer(selection: SelectedRosterEntry | null): Runtim
     add("minecraft_uuid", entry.key);
     if (typeof entry.rawValue === "string") add("player_name", entry.rawValue.split(",")[1]);
   } else if (codec === "terraria_banlist") add("player_name", entry.key);
+  else if (codec === "valheim_platform_id") add("valheim_platform_id", entry.rawValue);
+  else if (codec === "valheim_ban" && typeof entry.rawValue === "string") {
+    if (isValheimPlatformAccountTarget(entry.rawValue)) add("valheim_platform_id", entry.rawValue);
+    else add("player_name", entry.rawValue, false);
+  }
   else if (codec === "plain" && (field.property["x-lsgm-source-key"] === "-owner"
     || field.property["x-lsgm-source-key"] === "WhitelistedUsers")) add("player_name", entry.key);
   if (!identifiers.length) return null;
@@ -62,6 +67,10 @@ export function resolveRosterActionTarget(
 /** Match against real fresh rows only; duplicate accounts cannot acquire runtime authority. */
 export function matchRosterLivePlayer(selection: SelectedRosterEntry | null, snapshot: RuntimeLivePlayerSnapshot | null, now: number): RuntimeLivePlayerEntry | null {
   if (!selection || !isPlayerRosterCapability(selection.field) || !isAuthoritativeLivePlayerSnapshot(snapshot, now)) return null;
+  // Character names can collide or change. Only an exact platform identity may
+  // select an existing current row; its available actions remain authoritative.
+  if (parsePlayerAccessCodec(selection.field.property) === "valheim_ban"
+    && (typeof selection.entry.rawValue !== "string" || !isValheimPlatformAccountTarget(selection.entry.rawValue))) return null;
   const matches = snapshot.entries.filter((player) => resolveSelectedRosterIdentity(player, selection.field)?.identity === selection.entry.key);
   return matches.length === 1 ? matches[0] : null;
 }

@@ -343,7 +343,7 @@ test("renderer-specific roster codecs mirror accepted identity boundaries", () =
     assert.equal(api.canonicalPlayerAccessIdentity("dst_klei_id", invalid, property("dst_klei_id")), null);
   }
 
-  assert.equal(api.canonicalPlayerAccessIdentity("valheim_platform_id", "Steam_76561198000000001", property("valheim_platform_id")), "steam_76561198000000001");
+  assert.equal(api.canonicalPlayerAccessIdentity("valheim_platform_id", "Steam_76561198000000001", property("valheim_platform_id")), "Steam_76561198000000001");
   for (const invalid of ["", "Steam 42", "Steam,42", "Steam|42", "Steam\n42"]) {
     assert.equal(api.canonicalPlayerAccessIdentity("valheim_platform_id", invalid, property("valheim_platform_id")), null);
   }
@@ -360,7 +360,7 @@ test("renderer-specific roster modules declare the same explicit codec and sync 
     ["dontstarve", "whitelist", "dst_klei_id"],
     ["dontstarve", "blocklist", "dst_klei_id"],
     ["valheim", "admin_list", "valheim_platform_id"],
-    ["valheim", "banned_list", "valheim_platform_id"],
+    ["valheim", "banned_list", "valheim_ban"],
     ["valheim", "permitted_list", "valheim_platform_id"]
   ];
 
@@ -369,6 +369,28 @@ test("renderer-specific roster modules declare the same explicit codec and sync 
     assert.equal(api.parsePlayerAccessCodec(property), codec, `${moduleId}.${fieldKey} codec`);
     assert.equal(api.parsePlayerAccessSync(property)?.mode, "restart", `${moduleId}.${fieldKey} sync mode`);
   }
+});
+
+test("Valheim name bans retain native case, spaces and existing platform IDs", () => {
+  const api = loadPlayerAccessActions();
+  const property = moduleProperty("valheim", "banned_list");
+  for (const name of ["Raven", "raven", "Two Names", "角色名", "A,B|C"]) {
+    const entry = api.normalizePlayerAccessMutationEntry("valheim_ban", name, property, "add");
+    assert.equal(entry?.identity, name);
+    assert.equal(entry?.stored, name);
+  }
+  for (const invalid of ["", "\nRaven", "Raven\nOther", "{{Raven}}", "Raven}}", "#Raven", "//Raven", "名".repeat(257)]) {
+    assert.equal(api.normalizePlayerAccessMutationEntry("valheim_ban", invalid, property, "add"), null);
+    assert.equal(api.canonicalPlayerAccessIdentity("valheim_ban", invalid, property), null);
+  }
+  const account = "Steam_76561198000000001";
+  assert.equal(api.canonicalPlayerAccessIdentity("valheim_ban", account, property),
+    api.canonicalPlayerAccessIdentity("valheim_platform_id", account, moduleProperty("valheim", "admin_list")));
+  const original = `${account}\nRaven\nraven`;
+  const added = api.applyPlayerAccessMutation(property, original, "add", "Two Names");
+  assert.equal(added.value, `${original}\nTwo Names`);
+  assert.equal(api.applyPlayerAccessMutation(property, added.value, "remove", "Raven").value, `${account}\nraven\nTwo Names`);
+  assert.equal(api.applyPlayerAccessMutation(property, original, "add", "Raven").changed, false);
 });
 
 test("HumanitZ roster uses complete NetIDs for direct actions and retains existing Steam64 entries", () => {

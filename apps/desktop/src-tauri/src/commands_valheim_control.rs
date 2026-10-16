@@ -1,0 +1,380 @@
+//! Explicit, stopped-instance preparation. Ordinary startup never installs a loader.
+use super::*;
+use crate::live_players::valheim_control::io;
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Ownership {
+    protocol: u32,
+    module_id: String,
+    plugin_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pending_plugin_sha256: Option<String>,
+}
+
+#[tauri::command]
+pub async fn prepare_valheim_player_control(
+    state: tauri::State<'_, DesktopState>,
+    instance_id: String,
+) -> Result<InstanceDetails, String> {
+    let operation = state.begin_storage_context_operation("Valheim account control preparation")?;
+    let storage = state.bootstrap_storage()?;
+    initialize_database(&storage.paths)
+        .await
+        .map_err(|error| error.to_string())?;
+    let instance = read_instance_details(&storage.paths, &instance_id)
+        .await
+        .map_err(|error| error.to_string())?;
+    if instance.summary.module_id != "valheim" {
+        return Err("Account control preparation requires a Valheim instance.".into());
+    }
+    let original_root = app_storage::resolve_instance_runtime_root(
+        super::commands_program_storage::instance_root(&instance)?,
+    )
+    .map_err(|error| error.to_string())?;
+    tokio::task::spawn_blocking(move || verify_supported_game(&original_root))
+        .await
+        .map_err(|_| "Valheim build inspection worker failed.")??;
+    let lock =
+        super::commands_mods::acquire_stopped_instance_mod_mutation(&state, &storage, &instance_id)
+            .await?;
+    let program = super::commands_program_storage::prepare_instance_mod_program(
+        &state.install_locks,
+        &storage,
+        &operation,
+        &instance_id,
+        lock,
+    )
+    .await?;
+    let worker_operation = operation.clone();
+    // The worker retains both the instance and program guards until all writes
+    // settle, even if the UI closes while its explicit preparation is running.
+    spawn_storage_context_task(&operation, async move {
+        let _program = program;
+        let instance = read_instance_details(&storage.paths, &instance_id)
+            .await
+            .map_err(|error| error.to_string())?;
+        let root = independent_root(&instance)?;
+        let probe_root = root.clone();
+        tokio::task::spawn_blocking(move || verify_supported_game(&probe_root))
+            .await
+            .map_err(|_| "Valheim build inspection worker failed.")??;
+        let inspection_root = root.clone();
+        tokio::task::spawn_blocking(move || inspect_plugin_destination(&inspection_root))
+            .await
+            .map_err(|_| "Valheim plugin ownership inspection worker failed.")??;
+        let target =
+            super::commands_mods::resolve_manual_mod_target(&storage, instance_id.clone(), true)
+                .await?;
+        let descriptors =
+            discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
+        let descriptor = find_descriptor(&descriptors, "valheim")?;
+        let mods = module_mods_spec_from_manifest(&descriptor.manifest_toml)
+            .ok_or("Valheim Mod installation contract is missing.")?;
+        let source = mods
+            .source
+            .as_ref()
+            .ok_or("Valheim loader source is missing.")?;
+        let prepared = tokio::time::timeout(
+            Duration::from_secs(180),
+            super::commands_mods::mod_online::prepare_thunderstore_install(
+                "valheim",
+                source,
+                &["https://thunderstore.io/package/denikson/BepInExPack_Valheim/5.4.2351/".into()],
+                &root,
+            ),
+        )
+        .await
+        .map_err(|_| "Valheim loader preparation exceeded 180 seconds.")??;
+        spawn_blocking_storage_context_task(&worker_operation, move || {
+            super::commands_mod_staging::stage_thunderstore_online_mod_sources(
+                target,
+                prepared.sources(),
+                prepared.loader_archive(),
+            )?;
+            install_owned_plugin(&root, io::bundled_payload())
+        })
+        .await
+        .map_err(|error| format!("Valheim account control preparation failed: {error}"))??;
+        read_instance_details(&storage.paths, &instance_id)
+            .await
+            .map_err(|error| error.to_string())
+    })
+    .await
+    .map_err(|error| format!("Valheim account control worker failed: {error}"))?
+}
+
+fn independent_root(instance: &InstanceDetails) -> Result<PathBuf, String> {
+    let instance_root = super::commands_program_storage::instance_root(instance)?;
+    if app_storage::instance_program_mode(instance_root).map_err(|error| error.to_string())?
+        != app_storage::InstanceProgramMode::Independent
+    {
+        return Err(
+            "Valheim account control requires this instance's exclusive program directory.".into(),
+        );
+    }
+    app_storage::resolve_instance_runtime_root(instance_root).map_err(|error| error.to_string())
+}
+
+fn verify_supported_game(root: &Path) -> Result<(), String> {
+    let _root = io::pin_directories(root)?;
+    let managed = root.join("valheim_server_Data/Managed");
+    let _managed = io::pin_directory(&managed)?;
+    let main = io::digest(&io::read_regular(
+        &managed.join("assembly_valheim.dll"),
+        64 * 1024 * 1024,
+    )?);
+    let utils = io::digest(&io::read_regular(
+        &managed.join("assembly_utils.dll"),
+        16 * 1024 * 1024,
+    )?);
+    let platform = io::digest(&io::read_regular(
+        &managed.join("Splatform.dll"),
+        16 * 1024 * 1024,
+    )?);
+    let known = [
+        (
+            "ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3",
+            "0d66bd029bf753e2721304c775126b34af329bfcd6e632d8d38edaa96b5cf1a5",
+        ),
+        (
+            "0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad",
+            "63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18",
+        ),
+    ];
+    if platform != "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a"
+        || !known.iter().any(|(expected_main, expected_utils)| {
+            main == *expected_main && utils == *expected_utils
+        })
+    {
+        return Err("This Valheim server build has not been verified for native account control. Existing game files were preserved.".into());
+    }
+    Ok(())
+}
+
+fn read_owner(root: &Path) -> Result<Option<Ownership>, String> {
+    let path = root.join(io::OWNER);
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error.to_string()),
+    }
+    let owner: Ownership = serde_json::from_slice(&io::read_regular(&path, 4096)?)
+        .map_err(|_| "The Valheim account control ownership record is invalid.")?;
+    if owner.protocol != 1 || owner.module_id != "valheim" {
+        return Err(
+            "The Valheim account control ownership belongs to a different protocol or module."
+                .into(),
+        );
+    }
+    Ok(Some(owner))
+}
+
+fn inspect_plugin_destination(root: &Path) -> Result<Ownership, String> {
+    let mut guards = io::pin_directories(root)?;
+    let mut existing = root.to_owned();
+    for part in ["BepInEx", "plugins"] {
+        existing.push(part);
+        match std::fs::symlink_metadata(&existing) {
+            Ok(_) => guards.push(io::pin_directory(&existing)?),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => break,
+            Err(error) => return Err(error.to_string()),
+        }
+    }
+    let plugin = root.join(io::PLUGIN);
+    let directory = root.join(io::DIRECTORY);
+    let previous = read_owner(root)?;
+    // Missing targets do not make a dangling link an available destination.
+    let plugin_exists = match std::fs::symlink_metadata(&plugin) {
+        Ok(_) => true,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(error) => return Err(error.to_string()),
+    };
+    let directory_exists = match std::fs::symlink_metadata(&directory) {
+        Ok(_) => {
+            guards.push(io::pin_directory(&directory)?);
+            true
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => false,
+        Err(error) => return Err(error.to_string()),
+    };
+    if previous.is_none() && (plugin_exists || directory_exists) {
+        return Err(
+            "An unowned Valheim control plugin or directory already exists; it was preserved."
+                .into(),
+        );
+    }
+    let owner = previous.unwrap_or(Ownership {
+        protocol: 1,
+        module_id: "valheim".into(),
+        plugin_sha256: None,
+        pending_plugin_sha256: None,
+    });
+    if plugin_exists {
+        let current = io::digest(&io::read_regular(&plugin, 1024 * 1024)?);
+        if owner.plugin_sha256.as_deref() != Some(current.as_str())
+            && owner.pending_plugin_sha256.as_deref() != Some(current.as_str())
+        {
+            return Err(
+                "The Valheim control plugin was modified outside its installer; it was preserved."
+                    .into(),
+            );
+        }
+    }
+    Ok(owner)
+}
+
+fn install_owned_plugin(root: &Path, payload: &[u8]) -> Result<(), String> {
+    let _root = io::pin_directories(root)?;
+    let plugin = root.join(io::PLUGIN);
+    let mut owner = inspect_plugin_destination(root)?;
+    if payload.is_empty() {
+        return Err("The bundled Valheim control plugin is unavailable.".into());
+    }
+    let hash = io::digest(payload);
+    owner.pending_plugin_sha256 = Some(hash.clone());
+    io::publish(
+        &root.join(io::OWNER),
+        &serde_json::to_vec(&owner).map_err(|error| error.to_string())?,
+    )?;
+    let _plugins = create_plain_descendants(root, &["BepInEx", "plugins"])?;
+    io::publish(&plugin, payload)?;
+    let _control = create_plain_descendants(root, &[io::DIRECTORY])?;
+    owner.plugin_sha256 = Some(hash);
+    owner.pending_plugin_sha256 = None;
+    io::publish(
+        &root.join(io::OWNER),
+        &serde_json::to_vec(&owner).map_err(|error| error.to_string())?,
+    )
+}
+
+fn create_plain_descendants(root: &Path, parts: &[&str]) -> Result<Vec<std::fs::File>, String> {
+    let mut guards = io::pin_directories(root)?;
+    let mut path = root.to_owned();
+    for part in parts {
+        path.push(part);
+        match std::fs::create_dir(&path) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(error) => return Err(error.to_string()),
+        }
+        guards.push(io::pin_directory(&path)?);
+    }
+    Ok(guards)
+}
+
+/// Called only for explicitly prepared instances; it neither installs nor detaches.
+pub(super) fn startup_environment(
+    instance: &InstanceDetails,
+) -> Result<Option<(String, String)>, String> {
+    if instance.summary.module_id != "valheim" {
+        return Ok(None);
+    }
+    let root = app_storage::resolve_instance_runtime_root(
+        super::commands_program_storage::instance_root(instance)?,
+    )
+    .map_err(|error| error.to_string())?;
+    if read_owner(&root)?.is_none() {
+        return Ok(None);
+    }
+    let root = independent_root(instance)?;
+    let _root = io::pin_directories(&root)?;
+    let owner = read_owner(&root)?.ok_or("Valheim control ownership disappeared.")?;
+    let hash = io::digest(io::bundled_payload());
+    if owner.pending_plugin_sha256.is_some()
+        || owner.plugin_sha256.as_deref() != Some(hash.as_str())
+        || io::digest(&io::read_regular(&root.join(io::PLUGIN), 1024 * 1024)?) != hash
+    {
+        return Err("Valheim account control preparation is incomplete or belongs to another application build. Prepare it again while the server is stopped.".into());
+    }
+    if super::commands_mod_staging::runtime_loader_requires_archive("valheim", &root)? {
+        return Err("The prepared Valheim account control loader was changed or disabled. Prepare it again while the server is stopped.".into());
+    }
+    let directory = root.join(io::DIRECTORY);
+    let _control = io::pin_directory(&directory)?;
+    let session =
+        serde_json::json!({"protocol":1,"token":uuid::Uuid::new_v4().simple().to_string()});
+    io::publish(
+        &directory.join("session.json"),
+        &serde_json::to_vec(&session).map_err(|error| error.to_string())?,
+    )?;
+    Ok(Some((
+        "LGSM_VALHEIM_CONTROL_ROOT".into(),
+        directory.to_string_lossy().into_owned(),
+    )))
+}
+
+pub(super) fn is_prepared(instance: &InstanceDetails) -> Result<bool, String> {
+    if instance.summary.module_id != "valheim" {
+        return Ok(false);
+    }
+    let root = app_storage::resolve_instance_runtime_root(
+        super::commands_program_storage::instance_root(instance)?,
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(read_owner(&root)?.is_some())
+}
+
+pub(super) async fn sync_roster(
+    storage: &StorageBootstrap,
+    persistent: &app_storage::PlayerAccessPersistentMutationResult,
+) -> Result<(), String> {
+    // Authenticate availability before copying native role files. A failed
+    // exchange leaves the persistent change intact and reports partial success.
+    let available = crate::live_players::valheim_control::query(&persistent.details).await?;
+    if !available
+        .capabilities
+        .contains(&crate::live_players::valheim_control::Operation::Reload)
+    {
+        return Err("The native Valheim extension does not support role reload; the persistent change remains saved.".into());
+    }
+    let current = app_storage::materialize_valheim_player_roster(
+        &storage.paths,
+        &persistent.details.summary.id,
+        &persistent.field_key,
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+    let snapshot = crate::live_players::valheim_control::reload(&current).await?;
+    verify_role_state(
+        &persistent.field_key,
+        &persistent.live_target,
+        persistent.operation,
+        &snapshot,
+    )
+}
+
+fn verify_role_state(
+    field: &str,
+    target: &str,
+    operation: app_storage::PlayerAccessMutationOperation,
+    snapshot: &crate::live_players::valheim_control::ControlSnapshot,
+) -> Result<(), String> {
+    let expected = match operation {
+        app_storage::PlayerAccessMutationOperation::Add => true,
+        app_storage::PlayerAccessMutationOperation::Remove => false,
+    };
+    let entries = match field {
+        "admin_list" => &snapshot.access.admin,
+        "permitted_list" => &snapshot.access.permitted,
+        _ => return Err("This Valheim roster has no verified live role operation.".into()),
+    };
+    if entries.iter().any(|entry| entry == target) != expected {
+        return Err("The native Valheim role roster did not reach the requested state; the persistent change remains saved.".into());
+    }
+    if field == "admin_list"
+        && snapshot
+            .players
+            .iter()
+            .filter(|peer| peer.platform_id == target)
+            .any(|peer| peer.admin != expected)
+    {
+        return Err("The native Valheim player privilege did not reach the requested state; refresh before retrying.".into());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+#[path = "commands_valheim_control_tests.rs"]
+mod tests;

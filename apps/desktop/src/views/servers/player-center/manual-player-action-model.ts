@@ -30,6 +30,12 @@ export function readManualPlayerActions(
 export function manualPlayerActionTargetError(
   moduleId: string, action: ModulePlayerActionDetails, target: string, locale: string
 ): string | null {
+  if (moduleId === "runescapedragonwilds" && action.id === "unban_player") {
+    if (/^[0-9a-f]{32}$/.test(target)) return null;
+    return locale === "zh-CN"
+      ? "请输入完整的 32 位小写十六进制 EOS 账号 ID，可从在线玩家详情复制。玩家名、Steam64 ID 和会话 ID 不能用于解封。"
+      : "Enter the complete 32-digit lowercase hexadecimal EOS account ID, copied from player details. Player names, Steam64 IDs and session IDs cannot be used to unban.";
+  }
   if (moduleId !== "humanitz" || !["kick_player", "ban_player", "unban_player"].includes(action.id)
     || isHumanitzNetId(target)) return null;
   return locale === "zh-CN"

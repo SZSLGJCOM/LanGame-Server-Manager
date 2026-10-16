@@ -1,5 +1,6 @@
 import type { TranslateFn } from "../../../i18n";
 import { ValheimWorldRulesPanel } from "../ValheimWorldRulesPanel";
+import { ValheimWorldRulesReadback } from "../ValheimWorldRulesReadback";
 import { ValheimWorldRulesProvider } from "../ValheimWorldRulesContext";
 import { VALHEIM_MODIFIER_NAMES, VALHEIM_WORLD_KEYS } from "../valheim-world-rules";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
@@ -120,9 +121,9 @@ const VALHEIM_FIELD_COPY: Record<
   },
   banned_list: {
     titleKey: "settings.schema.valheim.banned_list.title",
-    fallbackTitle: "Banned Platform IDs",
+    fallbackTitle: "Banned Platform IDs or Character Names",
     descriptionKey: "settings.schema.valheim.banned_list.description",
-    fallbackDescription: "One platform ID per line. LanGame renders bannedlist.txt and syncs it into the live Valheim save directory."
+    fallbackDescription: "One platform ID or exact character name per line. Name bans are case-sensitive, affect duplicate names and can be bypassed by renaming. LanGame writes bannedlist.txt; changes apply at the next server start."
   }
 };
 
@@ -394,7 +395,7 @@ export const valheimSettingsDefinition: SettingsModuleDefinition = {
       restartScope: "server" as const
     }])
   ),
-  specializedRenderers: Object.fromEntries(
+  specializedRenderers: { ...Object.fromEntries(
     ["world_preset", "world_modifiers", "world_set_keys"].map((fieldKey) => [`valheim-${fieldKey}`, {
       kind: "module-addon" as const,
       placement: "before-fields" as const,
@@ -402,7 +403,12 @@ export const valheimSettingsDefinition: SettingsModuleDefinition = {
       fieldKey,
       Renderer: ValheimWorldRulesPanel
     }])
-  ),
+  ), "valheim-world-readback": {
+    kind: "module-addon",
+    placement: "after-fields",
+    sectionId: "world",
+    Renderer: ValheimWorldRulesReadback
+  } },
   getSections: buildValheimSections,
   buildFieldGroups: (sectionId, fields, _locale, t) => buildValheimFieldGroups(sectionId, fields, t),
   getFieldCopy: (key, t) => buildFieldCopy(key, t),

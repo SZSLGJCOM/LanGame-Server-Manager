@@ -98,3 +98,50 @@ test("unrelated plain-text rosters cannot invent a shared account namespace", ()
   assert.equal(api.resolveRosterActionTarget(null, selected, target), null);
   assert.equal(api.resolveRosterActionTarget(null, selected, source).rawValue, "Alice");
 });
+
+test("Valheim character bans never fill platform rosters or grant runtime authority", () => {
+  const properties = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../../modules/valheim/schema.json"), "utf8")).properties;
+  const valheimField = (key, value = "") => ({ key, title: key, kind: "string-lines", lane: key === "banned_list" ? "block" : "admin",
+    property: properties[key], currentValue: value, entries: domain.decodePlayerAccessEntries(key, properties[key], value) });
+  for (const value of ["Raven 北境", "raven"]) {
+    const source = valheimField("banned_list", value);
+    assert.equal(source.entries.length, 1);
+    const selected = { field: source, entry: source.entries[0] };
+    const account = api.rosterEntryPlayer(selected);
+    assert.equal(account.identifiers[0].kind, "player_name");
+    assert.equal(account.identifiers[0].stable, false);
+    assert.deepEqual(Array.from(account.available_action_ids), []);
+    assert.equal(api.resolveRosterActionTarget(account, selected, source).rawValue, value);
+    for (const key of ["admin_list", "permitted_list"]) {
+      assert.equal(api.resolveRosterActionTarget(account, selected, valheimField(key)), null);
+    }
+    const row = { ...live(), display_name: value, identifiers: [{ kind: "player_name", value, stable: false }] };
+    assert.equal(api.matchRosterLivePlayer(selected, snapshot([row]), 100), null,
+      "Even a unique name match cannot authorize a live player command");
+  }
+});
+
+test("Valheim platform rosters share only the exact native account namespace without inventing actions", () => {
+  const properties = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../../modules/valheim/schema.json"), "utf8")).properties;
+  const valheimField = (key, value = "") => ({ key, title: key, kind: "string-lines", lane: key === "banned_list" ? "block" : "admin",
+    property: properties[key], currentValue: value, entries: domain.decodePlayerAccessEntries(key, properties[key], value) });
+  for (const value of [`Steam_${steamId}`, "Xbox_NativeAccount_A7", "PlayFab_NativeAccount_B8"]) {
+    for (const key of ["admin_list", "permitted_list", "banned_list"]) {
+      const source = valheimField(key, value);
+      const selected = { field: source, entry: source.entries[0] };
+      const account = api.rosterEntryPlayer(selected);
+      assert.equal(account.identifiers[0].kind, "valheim_platform_id");
+      assert.equal(account.identifiers[0].value, value);
+      assert.deepEqual(Array.from(account.available_action_ids), []);
+      for (const targetKey of ["admin_list", "permitted_list", "banned_list"]) {
+        assert.equal(api.resolveRosterActionTarget(account, selected, valheimField(targetKey)).rawValue, value);
+      }
+      const current = { ...live(), available_action_ids: [], identifiers: [{ kind: "valheim_platform_id", value, stable: true }] };
+      assert.ok(Object.is(api.matchRosterLivePlayer(selected, snapshot([current]), 100), current));
+      assert.deepEqual(Array.from(api.matchRosterLivePlayer(selected, snapshot([current]), 100).available_action_ids), []);
+      assert.equal(api.matchRosterLivePlayer(selected, snapshot([current, { ...current, player_key: "duplicate" }]), 100), null);
+      assert.equal(api.matchRosterLivePlayer(selected, snapshot([{ ...current, identifiers: [{ kind: "valheim_platform_id", value: value.toLowerCase(), stable: true }] }]), 100), null);
+      assert.equal(api.matchRosterLivePlayer(selected, snapshot([{ ...current, identifiers: [{ kind: "steam_id", value: steamId, stable: true }] }]), 100), null);
+    }
+  }
+});
