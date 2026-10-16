@@ -3,9 +3,6 @@ use std::{env, fs};
 
 use app_core::ProcessSpec;
 
-#[cfg(windows)]
-use super::xna_framework_is_installed;
-
 pub(super) fn resolve_probe_process_executable(
     install_root: &Path,
     process: &ProcessSpec,
@@ -153,13 +150,7 @@ fn executable_candidate_rank(path: &Path) -> (u8, u8, u8) {
 
     #[cfg(windows)]
     {
-        let requires_runtime_fallback =
-            is_terraria_windows_candidate(path) && !xna_framework_is_installed();
-        (
-            requires_runtime_fallback as u8,
-            (has_linux || has_macos) as u8,
-            (!has_windows) as u8,
-        )
+        ((has_linux || has_macos) as u8, (!has_windows) as u8, 0)
     }
 
     #[cfg(target_os = "macos")]
@@ -183,21 +174,6 @@ fn is_linux_component(value: &str) -> bool {
 
 fn is_macos_component(value: &str) -> bool {
     matches!(value, "mac" | "macos" | "osx")
-}
-
-#[cfg(windows)]
-fn is_terraria_windows_candidate(path: &Path) -> bool {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .map(|name| name.eq_ignore_ascii_case("TerrariaServer.exe"))
-        .unwrap_or(false)
-        && path
-            .parent()
-            .into_iter()
-            .flat_map(|parent| parent.components())
-            .filter_map(|component| component.as_os_str().to_str())
-            .map(|value| value.to_ascii_lowercase())
-            .any(|value| is_windows_component(&value))
 }
 
 fn is_path_resolved_runtime(file_name: &str) -> bool {

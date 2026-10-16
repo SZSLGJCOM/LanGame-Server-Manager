@@ -1077,55 +1077,6 @@ fn known_incomplete_byte_progress(expected: Option<u64>, actual: Option<u64>) ->
     matches!((expected, actual), (Some(expected), Some(actual)) if expected > 0 && actual < expected)
 }
 
-#[cfg(windows)]
-fn xna_framework_is_installed() -> bool {
-    const XNA_DLL_NAME: &str = "Microsoft.Xna.Framework.dll";
-    const XNA_BASE_PATHS: [&str; 2] = [
-        r"C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Xna.Framework",
-        r"C:\Windows\assembly\GAC_MSIL\Microsoft.Xna.Framework",
-    ];
-
-    XNA_BASE_PATHS
-        .iter()
-        .any(|path| windows_xna_framework_is_present(Path::new(path), XNA_DLL_NAME, 0))
-}
-
-#[cfg(windows)]
-fn windows_xna_framework_is_present(base_path: &Path, file_name: &str, depth: usize) -> bool {
-    if !base_path.exists() || depth > 4 {
-        return false;
-    }
-
-    let entries = match fs::read_dir(base_path) {
-        Ok(entries) => entries,
-        Err(_) => return false,
-    };
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-            continue;
-        };
-
-        if let Ok(file_type) = entry.file_type() {
-            if file_type.is_file() && name.eq_ignore_ascii_case(file_name) {
-                return true;
-            }
-
-            if file_type.is_dir() && windows_xna_framework_is_present(&path, file_name, depth + 1) {
-                return true;
-            }
-        }
-    }
-
-    false
-}
-
-#[cfg(not(windows))]
-fn xna_framework_is_installed() -> bool {
-    true
-}
-
 fn parse_u64_field(fields: &HashMap<String, String>, key: &str) -> Option<u64> {
     fields.get(key).and_then(|value| value.parse::<u64>().ok())
 }

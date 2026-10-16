@@ -1176,11 +1176,7 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
 
     #[cfg(windows)]
     {
-        let expected_suffix = if xna_framework_is_installed() {
-            r"\Windows\TerrariaServer.exe"
-        } else {
-            r"\Linux\TerrariaServer.exe"
-        };
+        let expected_suffix = r"\Windows\TerrariaServer.exe";
         assert!(
             launch_plan.executable_path.ends_with(expected_suffix)
                 || launch_plan
@@ -1216,6 +1212,25 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
     assert_eq!(launch_plan.args[3], "0.0.0.0");
     assert_eq!(launch_plan.window_policy, ProcessWindowPolicy::Background);
     assert!(!launch_plan.uses_script_entrypoint);
+
+    #[cfg(windows)]
+    {
+        let mut module = module;
+        let process = module.process.as_mut().expect("Terraria process");
+        process.executable = String::from("{{terraria.server_executable}}");
+        process.args_template = vec![String::from("{{terraria.launch_args}}")];
+        process.working_directory_template = Some(String::from("{{terraria.working_directory}}"));
+        let templated_plan = build_launch_plan(&settings, &module, &instance).expect("template plan");
+        assert_eq!(
+            PathBuf::from(&templated_plan.executable_path),
+            windows_executable
+        );
+        assert_eq!(
+            PathBuf::from(&templated_plan.working_directory),
+            windows_executable.parent().expect("Windows executable parent")
+        );
+    }
+
     let _ = std::fs::remove_dir_all(temp_root);
 }
 
