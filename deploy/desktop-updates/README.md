@@ -128,6 +128,10 @@ GitCode classic 令牌实际授予账户级“项目读写”，不能描述为�
 匿名读取。GitHub 请求沿用明确配置的本机代理，GitCode API、下载和上传显式绕过代理，
 避免国内附件绕境外上传；这只是网络路径策略，不能代替实际地区和速度验收。
 
+遇到已确认的 TLS 握手兼容问题时，可仅为发布器进程设置 `LGSM_GITCODE_TLS_MAX=1.2`，
+将 GitCode API、下载及 urllib/curl 上传的 TLS 上限设为 1.2；未设置时沿用默认协商，
+其他值一律拒绝。此选项保留默认 CA、主机名和证书校验，不改变 GitHub 或系统网络配置。
+
 GitHub 的 `sync-gitcode-release.yml` 工作流须保持 `disabled_manually`。本机每次新发布
 前检查它已禁用且无待运行或运行中的任务，再读取令牌；原有云端 Secret 不会被读取或
 自动撤销。切换发布位置前先停当前发布者，并确认没有在途上传。
