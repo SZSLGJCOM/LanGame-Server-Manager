@@ -374,14 +374,14 @@ class ReleaseSyncTests(unittest.TestCase):
         for proxy in ("", "http://127.0.0.1", "http://127.0.0.1:0", "http://127.0.0.1:65536",
                       "http://127.0.0.1:abc", "https://127.0.0.1:443", "http://localhost:80",
                       "http://127.0.0.2:80", "http://[::1]:80", "http://example.org:80",
-                      "http://user:secret@127.0.0.1:80", "http://127.0.0.1:80/",
+                      "http://user:fixture@127.0.0.1:80", "http://127.0.0.1:80/",
                       "http://127.0.0.1:80/path", "http://127.0.0.1:80?query", "http://127.0.0.1:80#fragment",
                       " http://127.0.0.1:80", "http://127.0.0.1:80\n"):
             with self.subTest(proxy=proxy), patch.dict(sync.os.environ, {"LGSM_GITCODE_PROXY": proxy}):
                 with patch.object(sync.urllib.request, "build_opener") as build:
                     with self.assertRaisesRegex(sync.SyncError, "LGSM_GITCODE_PROXY") as error:
                         sync.Transport()
-                    self.assertNotIn("secret", str(error.exception))
+                    self.assertNotIn("fixture", str(error.exception))
                     build.assert_not_called()
 
     def test_unrelated_upload_origin_or_credential_headers_are_rejected(self):
