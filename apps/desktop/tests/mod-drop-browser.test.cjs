@@ -5,7 +5,7 @@ test("Mod drop entry accepts file, link and selected text payloads across declar
   const report = await runBrowserFixture({ fixturePath: "mod-drop-browser.html", viewport: { width: 1560, height: 900 } });
   assert.equal(report.status, "passed", report.error);
   assert.equal(report.covered.length, 15);
-  assert.equal(report.stages, 15);
+  assert.equal(report.stages, 21);
   assert.ok(report.references >= 6);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);

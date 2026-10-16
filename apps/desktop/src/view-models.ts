@@ -42,6 +42,34 @@ export interface ShareEndpoint {
   label: string;
 }
 
+function isValheimCrossplayEnabled(
+  details: Pick<InstanceDetails, "summary" | "settings_json"> | null | undefined
+): boolean {
+  if (details?.summary.module_id !== "valheim") return false;
+  try {
+    const settings: unknown = JSON.parse(details.settings_json);
+    return typeof settings === "object" && settings !== null
+      && "crossplay_enabled" in settings && settings.crossplay_enabled === true;
+  } catch {
+    return false;
+  }
+}
+
+export function valheimCrossplayJoinGuidance(
+  details: Pick<InstanceDetails, "summary" | "settings_json"> | null | undefined,
+  t: TranslateFn
+): { summary: string; instructions: string } | null {
+  if (!isValheimCrossplayEnabled(details)) return null;
+  return {
+    summary: t("servers.valheim.crossplayJoinSummary", undefined, "Crossplay: join code or server list"),
+    instructions: t(
+      "servers.valheim.crossplayJoinInstructions",
+      undefined,
+      "Use the join code from this server's current startup log, or join through the in-game crossplay server list. LAN and Radmin IP addresses cannot be used in crossplay mode."
+    )
+  };
+}
+
 export function normalizeStatus(status: string | null | undefined): string {
   const value = String(status ?? "").trim().toLowerCase();
   if (!value) return "unknown";
@@ -201,6 +229,8 @@ export function buildShareEndpoints(
   locale: LocaleCode,
   t: TranslateFn
 ): ShareEndpoint[] {
+  if (isValheimCrossplayEnabled(details)) return [];
+
   if (details?.summary.module_id === "corekeeper") {
     const settings = parseCoreKeeperSettingsJson(details.settings_json);
     if (!isCoreKeeperDirectConnectionEnabled(settings)) {
@@ -324,6 +354,9 @@ export function buildInviteText(
   const port = primaryPort(details);
   const shareEndpoints = buildShareEndpoints(details, bindAddressCandidates, locale, t);
   const game = moduleNameFromId(details.summary.module_id, modules);
+  const crossplay = valheimCrossplayJoinGuidance(details, t);
+  if (crossplay) return [`${game}: ${details.summary.name}`, crossplay.instructions].join("\n");
+
   const moduleNotes = details.summary.module_id === "vrising"
     ? buildVrisingInviteNotes(details, locale)
     : [];
@@ -352,6 +385,8 @@ export function buildJoinEndpoint(
   locale: LocaleCode,
   t: TranslateFn
 ): string {
+  if (isValheimCrossplayEnabled(details)) return "";
+
   const primaryEndpoint = buildShareEndpoints(details, bindAddressCandidates, locale, t)[0];
   if (primaryEndpoint) {
     return primaryEndpoint.endpoint;

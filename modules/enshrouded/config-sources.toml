@@ -1,6 +1,54 @@
 status = "best_effort_verified"
-last_verified = "2026-09-08"
-notes = "Enshrouded Dedicated Server app 2278520 public build 23178631 and the installed enshrouded_server_readme.txt Version 0.9.0.0 were verified on 2026-07-13. The generated clean configuration still matches LanGame's 74 modeled root, gameSettings, preset userGroup, custom-userGroup, and bans fields, so no schema or launch change was required. On 2026-09-29 the same installed build's Version 0.9.0.0 README was rechecked: all 19 documented tags match the schema checklist and native-output allowlist. Player bans remain owned by Player Access, not Configuration. On 2026-09-30 static inspection of the same current executable established bans.accountId as uint64 and bans.banDate.value as sint64. AccountAction carries a HashKey64 into the native ban table; the player editor therefore accepts native decimal account hashes without converting platform IDs. This evidence does not establish a Steam64-to-hash algorithm or native ban/rejoin enforcement and does not renew historical native-launch evidence. Refreshed public metadata at 2026-10-15 13:09 +08:00 still matched installed build 23178631, before the announced 1.0 release at 23:00 Asia/Shanghai. The 1.0 native keys for Automatic enemy amount, Updraft charge duration and the Shroud-clearing flame-level requirement, together with save migration compatibility, await the released package and isolated native verification."
+last_verified = "2026-10-16"
+notes = "Official Enshrouded 1.0.0.1 app 2278520 build 25967645, depot 2278521 manifest 3715394091293008757 and native SVN 1267041 were verified in isolation on 2026-10-16. LanGame models 75 fields: 74 in Configuration and one ban roster owned by Player Access. The packaged Version 1.0.0.0 README covers all 38 modeled gameSettings. Flame Level for Shroud Removal is validated at effective integer 1-11 (default 11), and Automatic belongs only to randomSpawnerAmount; build 25936466 previously clamped README inputs 0 and 20 to 1 and 11, while the final hotfix probe directly accepted 1 and 11. Updraft charge duration has no verified dedicated-server key. Five native cycles passed old-world upgrade, restart, post-migration manual restore, pre-migration manual restore and re-upgrade, and native rotating-backup restore; every fresh log reached world deserialization and Run, matched all 38 requested gameplay values, and retained all four role groups. Production saves preserve synthetic nonempty bannedAccounts records and unknown metadata in managed JSON through native typed rewrite; only an explicit target removal unbans that account. Production DLL/folder/ZIP staging retained exact payloads and removed them before native launch. Original saves, configurations, executable and verified recovery copies remained unchanged; owned processes and the disposable fixture were released. The old-world sample is three files totaling 3634 bytes with no persisted entities. Complex worlds, real clients, native ban enforcement, Steam64 conversion, community loader execution and the full 1.0.0.1 Tauri/AutoStop lifecycle remain outside this evidence; historical sources retain their original build and scope."
+
+[[sources]]
+id = "native_1_0_0_1_five_cycle_25967645"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/commands_enshrouded_compatibility_tests.rs: isolated_enshrouded_old_world_upgrade_restart_and_backup_restore"
+authority = "isolated_official_native_with_production_storage_backup_restore_and_mod_staging"
+description = "2026-10-16, official 1.0.0.1 build 25967645, depot 2278521 manifest 3715394091293008757, executable SHA256 4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba, SVN 1267041. The managed test exited 0 with five tests and unchanged hashes for all 47 bound inputs. Its five real native phases were upgrade, restart, restored-restart, premigration-restored-upgrade and native-backup-restored-restart. Each fresh launch log established successful world deserialization and LoadEcsScene to Run, all 38 requested effective Custom gameplay values matched, and all four role groups survived native typed rewrite. Flame inputs 1 and 11 and randomSpawnerAmount=Automatic were directly accepted. The first 330-second observation captured a 42833-byte running world and ten native backup generations with ten distinct SHA256 values. Original old-format payloads remained byte-identical under migrated/. Production Manual backups matched every stopped save byte; production post-migration and pre-migration restores retained exact safeguards, and an actual native rotating backup loaded on the fifth cycle. Synthetic nonempty canonical bannedAccounts records retained exact uint64 IDs, names and dates; unknown metadata survived in managed JSON after native serialization removed it, and explicit Player Access removal affected only added target 42. Real production staging imported exact synthetic DLL/folder/ZIP payloads, rejected EXE, preserved existing files and removed owned payloads before native launch; no loader or third-party Mod was executed. A separate loopback A2S observation verified an empty player roster and closed its socket. Query and TCP listeners stayed loopback; two wildcard UDP transport ports were explicitly authorized for temporary testing. Final SHA256 audit confirmed all six original save/configuration files, their six recovery copies, three immutable golden save files and the original installed executable unchanged, with zero owned native processes and the disposable fixture removed. Evidence is retained under <validation-root>/validation-final/report.json, <validation-root>/native-run.json, <validation-root>/original-data-final-audit.json and <validation-root>/player-query-nativefull.json. The three-file 3634-byte source world has no persisted entities: complex-world preservation, real clients/gameplay, native ban/rejoin enforcement, Steam64 conversion, community loaders, the Tauri start/stop path and AutoStop backups are not established."
+
+[[sources]]
+id = "native_ban_contract_build_25967645"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/commands_enshrouded_contract_tests.rs"
+authority = "isolated_official_native_parsed_and_reserialized_nonempty_records"
+description = "2026-10-16, official 1.0.0.1 Steam build 25967645, depot 2278521 manifest 3715394091293008757, executable SHA256 4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba, actual engine SVN 1267041. Fresh world deserialization/Run, loopback A2S and graceful exit 0 were observed independently for legacy and canonical inputs. Legacy bans objects became bannedAccounts:[], losing both synthetic IDs. Canonical bannedAccounts objects retained exactly accountId 9007199254740993 and 18446744073709551615 plus names and banDate.value. Unknown root and per-record sentinels disappeared under native typed rewrite, excluding mere input-file retention as a positive result. The canonical array had exactly two objects and no legacy key. Both owned process trees and disposable fixture were released. This establishes parsing/serialization, not actual player rejection or a Steam64 conversion algorithm."
+
+[[sources]]
+id = "steamcmd_1_0_0_1_package_25967645"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_2278520.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-10-16 official public package acquired and validated in isolation: app 2278520 build/TargetBuildID 25967645, StateFlags 4, UpdateResult 0; depot 2278521 manifest 3715394091293008757. Runtime executable SHA256 4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba and SVN 1267041 agree with this hotfix package. Packaged README remains Version 1.0.0.0, SHA256 187bbb490ff1b9138bc46ede8655a769c42a690c9c4ee2ffae7a84cc529bf33d. Original installations and user data were not updated."
+
+[[sources]]
+id = "native_1_0_gameplay_settings"
+kind = "config_file"
+path = "enshrouded_server.json"
+authority = "official_1_0_package_and_effective_native_settings"
+description = "Official public build 25936466, depot 2278521 manifest 2604594815733070859, acquired anonymously with SteamCMD validate on 2026-10-15 after release (StateFlags 4, UpdateResult 0). Packaged README Version 1.0.0.0 SHA256 187bbb490ff1b9138bc46ede8655a769c42a690c9c4ee2ffae7a84cc529bf33d documents flameLevelFogRemoval default 11, range 0-20, and Automatic for randomSpawnerAmount only. Effective Custom game-setting logs from the actual server clamp input 0 to 1 and input 20 to 11; LanGame therefore validates the effective 1-11 range rather than silently accepting values that are not applied. The input JSON retains the requested value even after clamping, so input-file readback is not runtime evidence. The existing aggroPoolAmount options remain Few/Normal/Many/Extreme. The public web gameplay reference still identifies 0.9.0.0; the package is the source for these additions. Updraft charge duration has no documented dedicated-server setting in this README and is not modeled without native evidence. Native launch and old-world migration evidence is recorded separately."
+
+[[items]]
+source = "native_1_0_gameplay_settings"
+key = "gameSettings.flameLevelFogRemoval"
+schema_key = "flame_level_fog_removal"
+surface = "config_file"
+
+[[sources]]
+id = "native_1_0_save_conversion_25936466"
+kind = "runtime_probe"
+path = "apps/desktop/src-tauri/src/commands_enshrouded_compatibility_tests.rs: isolated_enshrouded_old_world_upgrade_restart_and_backup_restore"
+authority = "isolated_official_1_0_native_observation"
+description = "2026-10-15/16, public build 25936466 / engine SVN 1265863. An immutable three-file, 3634-byte old-world copy was launched in an isolated lower-level native probe. Native savedata2-migration selected its index/container and logged Read result:ok; the initial world0.ksd and native backup were both 598 bytes (SHA256 bbee7db91a2067d428dd7ef72cd36c5227a8b8f9bfdf491ac477377ab9791fb7). All three prior payloads remain byte-identical under migrated/. Current logs from upgrade, restart and restored-restart each show successful savegame deserialization followed by LoadEcsScene to Run and orderly Run/Shutdown/Destroy/Invalid/CloseLog. A live world checkpoint was 42833 bytes; its hash reappears in the rotating native backups, and all ten native backup generations were retained. Production manual backups match every stopped save byte; production restore removed a post-backup sentinel and preserved an exact safeguard. Each native launch exited 0 and its complete owned process tree was released; the disposable fixture was removed. The native effective setting echoes accept Automatic, clamp Flame input 0 to 1 and 20 to 11. Two additional wildcard UDP transport ports were explicitly authorized; query and TCP listeners stayed loopback. Steam interface warnings and a Benchmark component error were present, with no observed save-load, migration, write or checksum failure. This tiny empty-entity sample is not evidence of complex-world preservation, gameplay/client compatibility, or the full Tauri/AutoStop lifecycle (scoped firewall admission required administrator rights)."
+
+[[sources]]
+id = "steamcmd_1_0_package_25936466"
+kind = "install_probe"
+path = "<validated-install-root>/steamapps/appmanifest_2278520.acf"
+authority = "steamcmd_anonymous_app_update_validate"
+description = "2026-10-15 after 23:00 Asia/Shanghai: refreshed public metadata and fully installed isolated package agree on build 25936466 and depot 2278521 manifest 2604594815733070859; StateFlags 4, UpdateResult 0, SizeOnDisk 8102037819. Executable SHA256 d28e95971c6b2fa6a39e3d2ffdd309fd2c43fb34dc8144dc7424cf22fc660545. The previous installed production package and operator saves were not updated."
 
 [[sources]]
 id = "current_public_native_lifecycle_2026_10_15"
@@ -58,7 +106,7 @@ id = "gameplay_settings"
 kind = "config_file"
 path = "enshrouded_server.json"
 authority = "official_enshrouded_gameplay_settings"
-description = "Official gameplay and difficulty settings under gameSettings, plus the current default JSON example that includes tags and userGroups."
+description = "Official gameplay and difficulty settings under gameSettings, plus the default JSON example that includes tags and userGroups. The web example still identifies 0.9.0.0. The 1.0.0.0 README in verified official build 25936466 additionally documents Automatic for randomSpawnerAmount; see native_1_0_gameplay_settings for package identity and checksum. The previous Normal default remains unchanged for existing configurations."
 url = "https://enshrouded.zendesk.com/hc/en-us/articles/20453241249821-Server-Gameplay-Settings"
 
 [[sources]]
@@ -80,8 +128,8 @@ description = "Seven isolated native launches on 2026-09-08 with public build 23
 id = "ban_records"
 kind = "generated_roster"
 path = "enshrouded_server.json"
-authority = "official_enshrouded_bans_array"
-description = "The official default JSON includes bans, owned by Player Access. The packaged Version 0.9.0.0 README describes accountIDHash and a Unix banDate semantically. Static inspection of build 23178631 confirms numeric uint64 accountId and object-shaped banDate with sint64 value; native account hashes are entered as exact decimal strings, with no Steam64 conversion. Existing numeric text is not reinterpreted as a platform ID. Enforcement after a real player ban/rejoin remains untested."
+authority = "official_native_banned_accounts"
+description = "Player Access owns the canonical bannedAccounts array. A strict isolated build 25967645 / SVN 1267041 probe confirmed numeric uint64 accountId, displayName, characterName and banDate.value by native parsing and reserialization of two synthetic wide identities. The old bans root was ignored and rewritten as an empty canonical list. Managed saves union native and old managed records, retain metadata and unknown members, and preserve raw recovery copies before alias migration. Only explicit Player Access removal unbans a target. Decimal spellings are canonicalized as uint64 without Steam-ID conversion. Real-client ban/rejoin enforcement remains untested."
 url = "https://enshrouded.zendesk.com/hc/en-us/articles/20453241249821-Server-Gameplay-Settings"
 
 [[sources]]
@@ -570,7 +618,7 @@ surface = "materializer"
 
 [[items]]
 source = "ban_records"
-key = "bans"
+key = "bannedAccounts"
 schema_key = "banned_player_ids"
 surface = "generated_roster"
 

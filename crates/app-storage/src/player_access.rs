@@ -7,7 +7,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
 use crate::instance_settings_lock::acquire_instance_settings_mutation_lock;
-use crate::instances::{materialize_instance_configuration_locked, update_instance_locked};
+use crate::instances::{
+    materialize_instance_configuration_locked, update_instance_locked,
+    update_instance_with_ban_removal_locked,
+};
 use crate::player_access_delimited::{
     DelimitedEntryRequirement, normalize_delimited_player_access_entry,
     player_access_text_accepts_comma, split_player_access_text_entries,
@@ -280,19 +283,28 @@ pub async fn apply_instance_player_access_mutation(
     let (details, persistent_status) = if patched.changed {
         settings.insert(field_key.to_string(), patched.value);
         let settings_json = serde_json::to_string_pretty(&Value::Object(settings.clone()))?;
-        let updated = update_instance_locked(
-            paths,
-            UpdateInstanceInput {
-                id: details.summary.id.clone(),
-                bind_ip: details.summary.bind_ip.clone(),
-                auto_backup_on_stop: details.auto_backup_on_stop,
-                backup_retention_count: details.backup_retention_count,
-                settings_json,
-                ports: details.ports.clone(),
-            },
-            &settings_lock,
-        )
-        .await?;
+        let update = UpdateInstanceInput {
+            id: details.summary.id.clone(),
+            bind_ip: details.summary.bind_ip.clone(),
+            auto_backup_on_stop: details.auto_backup_on_stop,
+            backup_retention_count: details.backup_retention_count,
+            settings_json,
+            ports: details.ports.clone(),
+        };
+        let updated = if module_id == "enshrouded"
+            && matches!(input.operation, PlayerAccessMutationOperation::Remove)
+        {
+            let removed = live_target.parse::<u64>().map_err(|_| {
+                invalid_player_access_input(
+                    &module_id,
+                    field_key,
+                    "native account removal requires an exact uint64 hash",
+                )
+            })?;
+            update_instance_with_ban_removal_locked(paths, update, &settings_lock, removed).await?
+        } else {
+            update_instance_locked(paths, update, &settings_lock).await?
+        };
         (updated, PlayerAccessPersistentStatus::Updated)
     } else if matches!(sync.mode, PlayerAccessSyncMode::Reload) {
         let materialized =
@@ -848,6 +860,19 @@ fn normalize_entry(
                     "value must contain only decimal digits in 0..18446744073709551615",
                 )
             })?;
+            let id = if module_id == "enshrouded" {
+                id.parse::<u64>()
+                    .map_err(|_| {
+                        invalid_player_access_input(
+                            module_id,
+                            field_key,
+                            "native account hash is outside uint64",
+                        )
+                    })?
+                    .to_string()
+            } else {
+                id
+            };
             Ok(normalized_string_entry(&id, &id))
         }
         PlayerAccessCodec::PipeSteam64

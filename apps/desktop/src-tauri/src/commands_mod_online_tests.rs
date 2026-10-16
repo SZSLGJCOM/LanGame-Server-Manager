@@ -14,10 +14,98 @@ impl Fixture {
         fs::write(path, bytes).unwrap();
     }
 }
+
+#[test]
+fn online_mod_corekeeper_requires_native_manifest_evidence_instead_of_thunderstore_metadata() {
+    let fixture = Fixture::new();
+    fixture.write("Plugin.dll", b"MZold-bepinex-plugin");
+    fixture.write("manifest.json", br#"{"name":"ThunderstoreMetadata"}"#);
+    assert!(validate_corekeeper_native_payload(&fixture.0).is_err());
+    for invalid in [b"{}".as_slice(), b"[]", b"not-json"] {
+        fixture.write("ModManifest.json", invalid);
+        assert!(validate_corekeeper_native_payload(&fixture.0).is_err());
+    }
+    fixture.write(
+        "ModManifest.json",
+        br#"{"name":"NativePlugin","version":"1.0.0"}"#,
+    );
+    validate_corekeeper_native_payload(&fixture.0).unwrap();
+}
+
+#[tokio::test]
+async fn online_mod_corekeeper_native_layout_uses_its_unique_manifest_root_and_cleans_rejected_payload()
+ {
+    let fixture = Fixture::new();
+    let package = format!("FixtureNative{}", uuid::Uuid::new_v4().simple());
+    for valid in [true, false] {
+        let archive_path = fixture
+            .0
+            .join(if valid { "valid.zip" } else { "invalid.zip" });
+        let mut zip = zip::ZipWriter::new(fs::File::create(&archive_path).unwrap());
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        for (path, bytes) in [
+            (
+                "manifest.json",
+                b"{\"name\":\"distribution metadata\"}".as_slice(),
+            ),
+            (
+                "Native/ModManifest.json",
+                if valid {
+                    b"{\"name\":\"Native\"}".as_slice()
+                } else {
+                    b"[]"
+                },
+            ),
+            ("Native/Plugin.dll", b"MZplugin"),
+        ] {
+            zip.start_file(path, options).unwrap();
+            zip.write_all(bytes).unwrap();
+        }
+        zip.finish().unwrap();
+        let prepared = prepare_downloaded_thunderstore_archive(
+            archive_path.clone(),
+            &package,
+            "1.0.0",
+            "corekeeper",
+        )
+        .await;
+        if valid {
+            let prepared = prepared.unwrap();
+            assert!(prepared.join("ModManifest.json").is_file());
+            assert!(prepared.join("Plugin.dll").is_file());
+            assert!(!prepared.join("Native").exists());
+            assert!(!prepared.join("manifest.json").exists());
+            cleanup_downloaded_mod_source(&prepared);
+        } else {
+            assert!(prepared.is_err());
+        }
+        assert!(!archive_path.exists());
+        let prefix = format!("langame-mod-{package}-1.0.0-");
+        assert!(!fs::read_dir(std::env::temp_dir()).unwrap().any(|entry| {
+            entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .starts_with(&prefix)
+        }));
+    }
+}
 impl Drop for Fixture {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
     }
+}
+
+#[test]
+fn online_mod_loader_inspection_preflights_zip_directory_before_parser_allocation() {
+    let fixture = Fixture::new();
+    let mut eocd = [0u8; 22];
+    eocd[..4].copy_from_slice(b"PK\x05\x06");
+    eocd[12..16].copy_from_slice(&(64u32 * 1024 * 1024 + 1).to_le_bytes());
+    fixture.write("oversize-directory.zip", &eocd);
+    let error = reject_loader_archive(&fixture.0.join("oversize-directory.zip")).unwrap_err();
+    assert!(error.contains("central directory"), "{error}");
 }
 
 #[test]

@@ -59,3 +59,23 @@ test("mod workbench unwraps common redirect links from copied web markup", () =>
     ]
   );
 });
+
+test("Thunderstore Mod Manager buttons become pinned package references without launching a protocol", () => {
+  for (const [owner, name, version] of [
+    ["ValheimModding", "Jotunn", "2.30.2"],
+    ["deca", "VampireCommandFramework", "0.11.0"],
+    ["BepInEx", "BepInExPack_V_Rising", "1.733.2"]
+  ]) {
+    const protocol = `ror2mm://v1/install/thunderstore.io/${owner}/${name}/${version}/`;
+    const canonical = `https://thunderstore.io/package/${owner}/${name}/${version}/`;
+    assert.deepEqual(referenceCandidatesFromText(`${protocol}\n<a href="${protocol}">Install with Mod Manager</a>`), [canonical]);
+  }
+  for (const invalid of [
+    "ror2mm://v1/install/evil.example/Author/Plugin/1.0.0/",
+    "ror2mm://v1/install/thunderstore.io/Author/Plugin/1.0.0/?url=https://evil.example",
+    "ror2mm://v1/install/thunderstore.io/Author/Plugin/not-a-version/",
+    "ror2mm://v1/install/thunderstore.io/Author/Plugin/4294967296.0.0/",
+    "ror2mm://user@v1/install/thunderstore.io/Author/Plugin/1.0.0/",
+    "ror2mm://v2/install/thunderstore.io/Author/Plugin/1.0.0/"
+  ]) assert.deepEqual(referenceCandidatesFromText(invalid), []);
+});

@@ -5,7 +5,7 @@ const test = require("node:test");
 const { runBrowserFixture } = require("./helpers/runtime-browser-process.cjs");
 
 const preview = process.env.LANGAME_MAINTENANCE_PREVIEW;
-assert.ok(!preview || ["backups", "save-policy", "runtime", "storage", "broadcast"].includes(preview),
+assert.ok(!preview || ["backups", "save-import", "save-policy", "runtime", "storage", "broadcast"].includes(preview),
   "LANGAME_MAINTENANCE_PREVIEW must name an existing maintenance category");
 
 function previewMiddleware() {

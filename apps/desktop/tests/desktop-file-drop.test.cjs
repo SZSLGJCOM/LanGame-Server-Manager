@@ -19,8 +19,10 @@ test("Mod drop effects negotiate copy or reference-only link without moving the 
     for (const type of ["text/plain", "text/uri-list", "text/html"])
       assert.equal(modDropEffect(protectedTransfer(mask, [type]), true), "link");
     assert.equal(modDropEffect(protectedTransfer(mask, ["text/uri-list"]), false), "none");
-    assert.equal(modDropEffect(protectedTransfer(mask, ["Files", "text/uri-list"]), true), "none");
-    assert.equal(modDropEffect(protectedTransfer(mask, ["text/uri-list"], [{ kind: "file" }]), true), "none");
+    assert.equal(modDropEffect(protectedTransfer(mask, ["Files", "text/uri-list"]), true), "link");
+    assert.equal(modDropEffect(protectedTransfer(mask, ["text/uri-list"], [{ kind: "file" }]), true), "link");
+    assert.equal(modDropEffect(protectedTransfer(mask, ["Files"]), true), "none");
+    assert.equal(modDropEffect(protectedTransfer(mask, ["Files", "text/uri-list"]), false), "none");
   }
   for (const mask of ["none", "move", "unexpected"]) {
     assert.equal(modDropEffect(protectedTransfer(mask, ["text/plain"]), true), "none");

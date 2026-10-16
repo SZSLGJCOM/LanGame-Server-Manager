@@ -86,10 +86,10 @@ export function InstanceConnectionSettingsPanel(props: InstanceConnectionSetting
         </p>
       ) : null}
       <section className="settings-schema-section">
-        <div className="settings-schema-grid instance-connection-settings__grid">
+        <div className="instance-connection-settings__grid">
           <div className={supportsStrictBindAddress
-            ? "instance-connection-settings__listener-row"
-            : "instance-connection-settings__listener-row is-bind-fixed"}
+            ? "settings-schema-grid instance-connection-settings__listener-row"
+            : "settings-schema-grid instance-connection-settings__listener-row is-bind-fixed"}
           >
             {supportsStrictBindAddress ? (
               <label className="settings-schema-field">
@@ -106,10 +106,10 @@ export function InstanceConnectionSettingsPanel(props: InstanceConnectionSetting
               ? "instance-connection-settings__ports"
               : "instance-connection-settings__ports is-pending"}
             >
-              <span className="detail-label">{t("settings.network.playerPorts", undefined, "Player ports")}</span>
               <InstancePortFields
                 ports={partitionedPorts.player}
                 role="player"
+                caption={t("settings.network.playerPorts", undefined, "Player ports")}
                 disabled={controlState.portsDisabled}
                 onPortChange={handlePortChange}
                 onPortDraftDirtyChange={handlePlayerPortDraftDirtyChange}
@@ -135,7 +135,7 @@ export function InstanceConnectionSettingsPanel(props: InstanceConnectionSetting
 
       {partitionedPorts.service.length > 0 ? (
         <section className="settings-schema-section instance-connection-settings__port-group">
-          <span className="detail-label">{t("settings.network.servicePorts", undefined, "Management service ports")}</span>
+          <h4 className="guided-field-group-title">{t("settings.network.servicePorts", undefined, "Management service ports")}</h4>
           <div className="instance-connection-settings__ports">
             <InstancePortFields
               ports={partitionedPorts.service}
@@ -150,7 +150,7 @@ export function InstanceConnectionSettingsPanel(props: InstanceConnectionSetting
 
       {partitionedPorts.unclassified.length > 0 ? (
         <section className="settings-schema-section instance-connection-settings__port-group">
-          <span className="detail-label">{t("settings.network.otherPorts", undefined, "Other ports")}</span>
+          <h4 className="guided-field-group-title">{t("settings.network.otherPorts", undefined, "Other ports")}</h4>
           <div className="instance-connection-settings__ports">
             <InstancePortFields
               ports={partitionedPorts.unclassified}

@@ -410,6 +410,8 @@ mod admission_tests {
     #[tokio::test]
     async fn aggregate_maintenance_finishes_after_the_ipc_observation_deadline() {
         for command in [
+            "install_manual_mod_references",
+            "manage_manual_mod",
             "operate_ark_cluster",
             "create_ark_cluster_backup",
             "list_ark_cluster_backups",

@@ -12,7 +12,7 @@
 | `conanexiles` | best_effort_verified | 305 | 305 | 47 | 33 |
 | `corekeeper` | verified_with_direct_connection | 15 | 24 | 19 | 24 |
 | `dontstarve` | best_effort_verified | 331 | 331 | 32 | 24 |
-| `enshrouded` | best_effort_verified | 74 | 74 | 9 | 19 |
+| `enshrouded` | best_effort_verified | 75 | 75 | 9 | 25 |
 | `humanitz` | best_effort_verified | 95 | 95 | 27 | 29 |
 | `minecraft` | exhaustive_verified | 73 | 73 | 5 | 20 |
 | `necesse` | best_effort_verified | 19 | 19 | 41 | 12 |

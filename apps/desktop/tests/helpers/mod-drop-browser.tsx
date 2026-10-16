@@ -19,6 +19,8 @@ const checks: string[] = [], errors: string[] = [], covered: string[] = [];
 let details: InstanceDetails, moduleDetails: ModuleDetails, inventory: ManualModInventoryResult;
 let epoch = 0, stages = 0, references = 0, saves = 0, inventoryReads = 0;
 let lastReferences: string[] = [];
+let referenceFailure: string | null = null;
+let expectedSourcePaths = ["C:\\Fixture\\mod.zip", "C:\\Fixture\\Folder\u3000"];
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
 addEventListener("error", (event) => errors.push(event.message));
@@ -77,11 +79,16 @@ async function run() {
     if (["stage_manual_mod_files", "install_manual_mod_references", "resolve_manual_mod_references"].includes(command)) {
       check(args.instanceId === details.summary.id, "Drop mutation stays scoped to its current instance");
       if (command === "stage_manual_mod_files") {
-        check(args.sourcePaths?.length === 2 && args.sourcePaths[0] === "C:\\Fixture\\mod.zip" &&
-          args.sourcePaths[1] === "C:\\Fixture\\Folder\u3000", "Native paths preserve significant trailing Unicode spaces");
+        check(args.sourcePaths?.length === expectedSourcePaths.length &&
+          args.sourcePaths.every((path, index) => path === expectedSourcePaths[index]),
+          "Native paths preserve the selected files, directories and significant trailing Unicode spaces");
         stages++; return stageResult();
       }
       references++; lastReferences = args.references;
+      if (referenceFailure) {
+        const message = referenceFailure; referenceFailure = null;
+        throw new Error(message);
+      }
       if (command === "install_manual_mod_references") return stageResult();
       return { instance_id: details.summary.id, module_id: details.summary.module_id, source_label: "Fixture",
         setting_key: moduleDetails.mods!.enablement!.setting_key, setting_label: "Mod IDs", items: [], resolved_ids: ["424242"] };
@@ -127,11 +134,83 @@ async function run() {
         await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
         await drop(link, true, "link", "link"); await settle(() => references === previous + 1);
         check(lastReferences[0] === "https://example.invalid/mod/515151", "A link-only source reaches the reference provider");
+        if (moduleDetails.mods?.source?.provider === "thunderstore") {
+          const packageUrl = `${moduleDetails.mods.source.url}p/FixtureAuthor/FixturePlugin/`;
+          for (const format of ["text/uri-list", "text/html"]) {
+            const protocol = "ror2mm://v1/install/thunderstore.io/FixtureAuthor/FixturePlugin/1.2.3/";
+            const button = new DataTransfer();
+            button.setData(format, format === "text/html" ? `<a href="${protocol}">Install with Mod Manager</a>` : protocol);
+            const before = references, stagedBefore = stages;
+            await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+            await drop(button, true, "link", "link");
+            await settle(() => references === before + 1);
+            check(stages === stagedBefore && lastReferences.length === 1
+              && lastReferences[0] === "https://thunderstore.io/package/FixtureAuthor/FixturePlugin/1.2.3/",
+            `${id}: Mod Manager button ${format} reaches the shared pinned package installer`);
+          }
+          for (const [name, type, mask, format] of [
+            ["Jotunn.url", "application/internet-shortcut", "link", "text/uri-list"],
+            ["Jotunn.url", "", "copyLink", "text/plain"],
+            ["icon.png", "image/png", "copyLink", "text/uri-list"]
+          ]) {
+            const mixed = new DataTransfer();
+            mixed.items.add(new File(["browser link artifact"], name, { type }));
+            mixed.setData(format, packageUrl);
+            if (format === "text/uri-list") mixed.setData("text/plain", "https://example.invalid/incidental-thumbnail.png");
+            mixed.setData("text/html", `<a href="${packageUrl}"><img src="https://example.invalid/icon.png"></a>`);
+            const before = references, stagedBefore = stages;
+            await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+            await drop(mixed, true, mask, mask === "link" ? "link" : "copy");
+            await settle(() => references === before + 1);
+            check(stages === stagedBefore && lastReferences.length === 1 && lastReferences[0] === packageUrl,
+              `Browser ${name} with a package URL reaches Thunderstore without importing its virtual file`);
+          }
+          const htmlLink = new DataTransfer();
+          htmlLink.setData("text/html", `<a href="${packageUrl}"><img src="https://example.invalid/icon.png"></a>`);
+          const before = references;
+          await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+          await drop(htmlLink); await settle(() => references === before + 1);
+          check(lastReferences.length === 1 && lastReferences[0] === packageUrl,
+            "HTML-only package links exclude thumbnail URLs from the installation request");
+          {
+            const directory = new File([], "Directory.url");
+            Object.defineProperty(directory, "path", { value: "C:\\Fixture\\Directory.url" });
+            const directoryDrop = new DataTransfer(); directoryDrop.items.add(directory);
+            Object.defineProperty(directoryDrop, "items", { value: [{ kind: "file", type: "",
+              getAsFile: () => directory, webkitGetAsEntry: () => ({ isDirectory: true }) }] });
+            const image = new File(["image"], "icon.png", { type: "image/png" });
+            Object.defineProperty(image, "path", { value: "C:\\Fixture\\icon.png" });
+            const packageDrop = new DataTransfer(); packageDrop.items.add(file); packageDrop.items.add(image);
+            for (const [selection, paths] of [
+              [directoryDrop, ["C:\\Fixture\\Directory.url"]],
+              [packageDrop, ["C:\\Fixture\\mod.zip", "C:\\Fixture\\icon.png"]]
+            ] as const) {
+              expectedSourcePaths = [...paths]; selection.setData("text/uri-list", packageUrl);
+              const referencesBefore = references, stagesBefore = stages;
+              await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+              await drop(selection);
+              check(references === referencesBefore, "Local directories and packages retain file import despite accompanying URLs or images");
+              await settle(() => stages === stagesBefore + 1);
+            }
+            expectedSourcePaths = ["C:\\Fixture\\mod.zip", "C:\\Fixture\\Folder\u3000"];
+            referenceFailure = "Fixture dependency download failed";
+            const retryLink = new DataTransfer(); retryLink.setData("text/uri-list", packageUrl);
+            await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+            await drop(retryLink);
+            await settle(() => Boolean(fixture.textContent?.includes("Mod installation failed:")));
+            check(fixture.textContent?.includes("Fixture dependency download failed"), `${id}: dependency preparation errors appear as actionable installation failures`);
+            const beforeRetry = references;
+            await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+            await drop(retryLink); await settle(() => references === beforeRetry + 1);
+            check(!fixture.textContent?.includes("Mod installation failed:"), `${id}: a later installation can recover after dependency preparation fails`);
+          }
+        }
         await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
         const writesBefore = stages + references + saves;
         await drop(link, false, "move");
         await drop(link, false, "none");
-        await drop(fileDrop, false, "link");
+        const filesOnly = new DataTransfer(); filesOnly.items.add(file);
+        await drop(filesOnly, false, "link");
         check(stages + references + saves === writesBefore, "Move-only, none and link-only Files make no mutation");
         if (id === "arksurvivalascended") {
           const normalDetails = details;

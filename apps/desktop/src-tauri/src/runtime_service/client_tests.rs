@@ -2,6 +2,45 @@ use super::*;
 use std::future::poll_fn;
 use std::task::Poll;
 
+#[tokio::test]
+async fn owned_mod_install_receipt_outlives_the_ipc_observation_budget() {
+    let (mut reader, mut writer) = tokio::io::duplex(4096);
+    let mut response = Box::pin(receive_response_with_budget(
+        "install_manual_mod_references",
+        &mut reader,
+        Duration::ZERO,
+    ));
+    assert!(
+        poll_fn(|cx| Poll::Ready(response.as_mut().poll(cx)))
+            .await
+            .is_pending()
+    );
+    wire::write_response(
+        &mut writer,
+        &wire::Response {
+            result: Ok(serde_json::json!({"installed":true})),
+        },
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        response.await.unwrap(),
+        serde_json::json!({"installed":true})
+    );
+
+    let (mut reader, _writer) = tokio::io::duplex(4096);
+    assert!(
+        receive_response_with_budget(
+            "read_instance_details_from_storage",
+            &mut reader,
+            Duration::ZERO,
+        )
+        .await
+        .unwrap_err()
+        .contains("timed out")
+    );
+}
+
 #[test]
 fn committed_exit_request_keeps_the_single_flight_claim() {
     let endpoint = security::Endpoint::isolated(&uuid::Uuid::new_v4().to_string()).unwrap();

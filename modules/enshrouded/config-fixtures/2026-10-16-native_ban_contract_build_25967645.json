@@ -1,0 +1,121 @@
+{
+  "fixture_version": 1,
+  "module_id": "enshrouded",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-16",
+    "build": "Build 25967645 canonical parsed/reserialized native contract; synthetic production storage alias union and metadata preservation fixture, not client enforcement",
+    "source_ids": [
+      "ban_records",
+      "native_ban_contract_build_25967645",
+      "steamcmd_1_0_0_1_package_25967645"
+    ]
+  },
+  "coverage": {
+    "editable": 0,
+    "specialized": 1,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [],
+    "specialized": [
+      "ban_records.bannedAccounts"
+    ],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "banned_player_ids": "7\n9007199254740993"
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "enshrouded_server.json",
+        "content": {
+          "bannedAccounts": [
+            {
+              "accountId": 9007199254740993,
+              "displayName": "既有名字",
+              "characterName": "守护者",
+              "banDate": {
+                "value": 1700000001
+              },
+              "futureMetadata": {
+                "retain": true
+              }
+            },
+            {
+              "accountId": 18446744073709551615,
+              "displayName": "Existing B",
+              "characterName": "Synthetic B",
+              "banDate": {
+                "value": 1700000002
+              }
+            }
+          ],
+          "bans": [
+            {
+              "accountId": 42,
+              "displayName": "Legacy record",
+              "characterName": "旧记录",
+              "banDate": {
+                "value": 1700000003
+              }
+            }
+          ],
+          "futureRoot": {
+            "keep": true
+          }
+        }
+      }
+    ]
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "enshrouded_server.json",
+        "format": "json",
+        "keys": {
+          "/bannedAccounts/0/accountId": 7,
+          "/bannedAccounts/1": {
+            "accountId": 42,
+            "displayName": "Legacy record",
+            "characterName": "旧记录",
+            "banDate": {
+              "value": 1700000003
+            }
+          },
+          "/bannedAccounts/2": {
+            "accountId": 9007199254740993,
+            "displayName": "既有名字",
+            "characterName": "守护者",
+            "banDate": {
+              "value": 1700000001
+            },
+            "futureMetadata": {
+              "retain": true
+            }
+          },
+          "/bannedAccounts/3": {
+            "accountId": 18446744073709551615,
+            "displayName": "Existing B",
+            "characterName": "Synthetic B",
+            "banDate": {
+              "value": 1700000002
+            }
+          },
+          "futureRoot.keep": true
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "enshrouded_server.exe",
+      "arguments": []
+    }
+  }
+}

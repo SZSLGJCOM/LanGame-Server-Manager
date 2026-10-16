@@ -9,7 +9,7 @@
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 64%, transparent);
-  border-radius: 10px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--theme-card-muted) 74%, transparent);
   box-shadow: none;
 }
@@ -30,7 +30,7 @@
 .dst-world-import :is(.primary-button, .secondary-button) {
   min-height: 28px;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: var(--text-body);
   line-height: var(--leading-compact);
   box-shadow: none;
@@ -45,7 +45,7 @@
 .server-file-backup-stat span { font-size: var(--text-meta); font-weight: var(--font-weight-regular); font-variant-numeric: tabular-nums; }
 .server-file-backup-stat small { font-size: var(--text-meta); font-weight: var(--font-weight-regular); color: var(--shell-muted); }
 .server-backup-stop-note { font-size: var(--text-secondary); color: var(--shell-muted); }
-.server-backup-warning { display: grid; gap: 4px; padding: 6px 8px; border-radius: 6px; background: var(--theme-warning-bg); color: var(--theme-warning-text); }
+.server-backup-warning { display: grid; gap: 4px; padding: 8px 10px; border-radius: 8px; background: var(--theme-warning-bg); color: var(--theme-warning-text); }
 .server-backup-warning .form-note { color: inherit; }
 .server-backup-list-scroll { min-width: 0; }
 .server-file-backup-table { display: grid; min-width: 0; }
@@ -57,7 +57,7 @@
 .server-file-backup-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; color: var(--shell-muted); font-size: var(--text-meta); line-height: var(--leading-compact); font-variant-numeric: tabular-nums; }
 .server-file-backup-kind { color: var(--shell-text); }
 .server-file-backup-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
-.server-file-backup-empty { padding: 14px 0; color: var(--shell-muted); font-size: var(--text-secondary); }
+.server-file-backup-empty { padding: 14px 0; color: var(--shell-muted); font-size: var(--text-secondary); text-align: center; }
 
 .dst-world-import-header { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 24px; padding: 0; border: 0; font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .dst-world-import-form { display: grid; gap: 8px; }
@@ -75,10 +75,10 @@
 .server-save-policy-editor { display: grid; gap: 8px; min-width: 0; }
 .server-native-save-policies { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr)); gap: 10px 12px; min-width: 0; }
 .server-save-policy-group { min-width: 0; margin: 0; padding: 0; border: 0; }
-.server-save-policy-group legend { padding: 0 0 6px; font-size: var(--text-body); font-weight: var(--font-weight-medium); color: var(--shell-text); }
+.server-save-policy-group legend { padding: 0 0 6px; font-size: var(--text-body); font-weight: var(--font-weight-medium); line-height: var(--leading-heading); color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); }
 .server-save-policy-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .server-save-policy-fields .configuration-field { min-width: 0; padding: 0; gap: 4px; }
-.server-save-policy-fields .configuration-field-label { font-size: var(--text-body); line-height: var(--leading-compact); }
+.server-save-policy-fields .configuration-field-label { font-size: var(--text-body); line-height: var(--leading-heading); }
 .server-native-save-policies .form-note { margin-top: 6px; font-size: var(--text-secondary); }
 .server-autosave-mechanism { display: grid; gap: 6px; margin: 0; }
 .server-autosave-mechanism > div { display: grid; gap: 2px; min-width: 0; }
@@ -87,10 +87,10 @@
 .server-save-policy-editor > .form-note { font-size: var(--text-secondary); }
 .server-backup-policy-editor { display: grid; grid-template-columns: minmax(0, 1fr) 100px; align-items: end; gap: 8px 12px; min-width: 0; }
 .server-backup-policy-field { display: grid; gap: 4px; min-width: 0; }
-.server-backup-policy-field .detail-label { font-size: var(--text-body); line-height: var(--leading-compact); letter-spacing: normal; text-transform: none; }
+.server-backup-policy-field .detail-label { color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); font-size: var(--text-body); font-weight: var(--font-weight-medium); line-height: var(--leading-heading); letter-spacing: normal; text-transform: none; }
 .server-backup-policy-toggle { margin: 0; }
 .server-backup-policy-toggle .settings-toggle-copy { flex: 1; }
-.server-backup-policy-toggle .settings-field-title { font-size: var(--text-body); line-height: var(--leading-compact); }
+.server-backup-policy-toggle .settings-field-title { font-size: var(--text-body); line-height: var(--leading-heading); }
 .server-backup-policy-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; font-size: var(--text-meta); }
 .server-backup-policy-status { max-width: 100%; overflow-wrap: anywhere; font-size: var(--text-meta); color: var(--shell-muted); }
 .server-backup-policy-status:empty { display: none; }

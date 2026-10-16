@@ -33,6 +33,11 @@ mod ark_clusters;
 mod ark_maps;
 mod atomic_file;
 mod backups;
+pub use backups::save_import::{
+    InstanceSaveImportChange, InstanceSaveImportPreview, InstanceSaveImportResult,
+    InstanceSaveImportSupport, import_instance_save, preview_instance_save_import,
+    read_instance_save_import_support,
+};
 mod broadcast;
 mod install_save_paths;
 mod instance_archive;
@@ -54,6 +59,7 @@ mod instance_retirement_paths;
 mod instance_stored_settings;
 pub use instance_reconciliation::{list_missing_instance_candidates, reconcile_missing_instance};
 pub use instance_stored_settings::read_instance_stored_settings;
+mod enshrouded_bans;
 mod instance_native_settings;
 pub use instance_archive::{
     InstanceArchiveDetails, InstanceRemovalPlan, ensure_program_archive_dependencies,

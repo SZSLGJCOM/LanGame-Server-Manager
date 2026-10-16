@@ -91,7 +91,7 @@ async function run() {
     measureControl("generic input", element('[data-field-key="fixture_name"] input'), 38),
     measureControl("generic select", element('[data-field-key="fixture_mode"] select'), 38),
     measureControl("secret input", element('[data-field-key="fixture_secret"] input'), 38),
-    measureControl("secret visibility action", element(".configuration-secret-toggle"), 28, "action"),
+    measureControl("secret visibility action", element(".configuration-secret-toggle"), 38, "action"),
     measureControl("generic toggle", element('[data-field-key="fixture_public"] .settings-toggle-card'), 38),
     measureControl("listen address", element('.instance-connection-settings__listener-row select'), 38),
     measureControl("player port", element('.instance-port-fields__input'), 38),

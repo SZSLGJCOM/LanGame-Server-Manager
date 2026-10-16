@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { ShellIcon } from "../../components/ShellIcon";
 import { selectLocaleText, useI18n } from "../../i18n";
 import type { BindAddressCandidate, InstanceDetails } from "../../types";
-import { buildShareEndpoints } from "../../view-models";
+import { buildShareEndpoints, valheimCrossplayJoinGuidance } from "../../view-models";
 import { resolveSelectedJoinEndpoint } from "./instance-connectivity-selection";
 import { useConfigurationFieldHelp } from "./ConfigurationFieldHelp";
 
@@ -34,6 +34,7 @@ function storeAddress(instanceId: string, address: string) {
 export function PlayerJoinAddressSelect(props: PlayerJoinAddressSelectProps) {
   const { locale, t } = useI18n();
   const instanceId = props.details.summary.id;
+  const crossplay = valheimCrossplayJoinGuidance(props.details, t);
   const endpoints = useMemo(
     () => buildShareEndpoints(props.details, props.candidates, locale, t),
     [locale, props.candidates, props.details, t]
@@ -76,6 +77,10 @@ export function PlayerJoinAddressSelect(props: PlayerJoinAddressSelectProps) {
     } catch {
       setCopyState("failed");
     }
+  }
+
+  if (crossplay) {
+    return <p className="player-join-address__instructions" role="note">{crossplay.instructions}</p>;
   }
 
   return (

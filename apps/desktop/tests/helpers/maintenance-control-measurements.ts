@@ -34,8 +34,8 @@ export async function measureMaintenanceControls(
   await navigate("broadcast");
   measure("broadcast tone", "select[name=broadcast-tone]", 38);
   measure("broadcast cooldown", "input[name=broadcast-cooldown]", 38);
-  measure("broadcast generate action", ".server-broadcast-actions > .secondary-button", 38, "action");
-  measure("broadcast send action", ".server-broadcast-actions > .primary-button", 38, "action");
+  measure("broadcast generate action", ".server-broadcast-actions .secondary-button", 38, "action");
+  measure("broadcast send action", ".server-broadcast-actions .primary-button", 38, "action");
   measure("broadcast refresh action", ".server-broadcast-history-heading > button", 28, "action");
   const checkbox = fixture.querySelector<HTMLInputElement>("input[name=broadcast-enabled]")!;
   const style = getComputedStyle(checkbox);

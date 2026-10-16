@@ -97,6 +97,8 @@ impl Drop for NativeSettingsFixture {
 
 #[path = "tests_dragonwilds_owner.rs"]
 mod dragonwilds_owner;
+#[path = "enshrouded_bans_integration_tests.rs"]
+mod enshrouded_bans;
 #[path = "tests_program_update_policy.rs"]
 mod program_update_policy;
 

@@ -1,4 +1,5 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import type { LocaleCode, TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
@@ -268,9 +269,8 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
         <NativeSavePolicyFields instanceId={scope.instanceId} moduleId={moduleId} fields={schema.fields} settings={settings}
           issues={props.readOnly ? [] : issues} readOnly={props.readOnly} disabled={saving || Boolean(props.readOnly)} t={props.t} onChange={editNative} />
       </div>
-      {schema.fields.length > 0 && <p className="form-note">{props.t(moduleId === "unturned"
-        ? "servers.savePolicy.managedEffective" : "servers.savePolicy.nativeEffective")}</p>}
       <fieldset className="server-save-policy-group server-managed-backup-policy" disabled={saving || Boolean(props.readOnly)} aria-label={props.t("servers.savePolicy.stopBackups")}>
+      <legend>{props.locale === "zh-CN" ? "\u5907\u4efd" : "Backups"}</legend>
       <div className="server-backup-policy-editor">
       <label className="settings-toggle-card server-backup-policy-toggle">
         <span className="settings-toggle-copy">
@@ -304,9 +304,9 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
             setDraft(initialDraft(props.details, scope));
             if (!policyError) void coordinator.runOperation(scope.instanceId, async () => undefined, "save-policy");
           }}>{props.t("servers.savePolicy.reload")}</button>}
-        <button className="secondary-button" type="submit" disabled={props.readOnly || !dirty || saving || !valid}>
+        <ConfigurationActionHelp reason={props.readOnly ? null : !dirty ? props.t("servers.maintenance.noChanges") : null}><button className="secondary-button" type="submit" disabled={props.readOnly || !dirty || saving || !valid}>
           {props.t("servers.backups.policySave", undefined, "Save policy")}
-        </button>
+        </button></ConfigurationActionHelp>
       </div>
     </form>
   );

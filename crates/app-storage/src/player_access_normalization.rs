@@ -42,8 +42,17 @@ pub(crate) fn normalize_module_player_access_settings(
         }
     }
     if module_id == "enshrouded" {
-        parse_enshrouded_banned_account_ids(settings)
+        let ids = parse_enshrouded_banned_account_ids(settings)
             .map_err(|message| vec![normalization_diagnostic("banned_player_ids", &message)])?;
+        let normalized = Value::String(
+            ids.iter()
+                .map(u64::to_string)
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
+        let changed = settings.get("banned_player_ids") != Some(&normalized);
+        settings.insert("banned_player_ids".to_owned(), normalized);
+        return Ok(changed);
     }
     if module_id == SEVEN_DAYS_MODULE_ID {
         return normalize_sevendaystodie_player_access_settings(settings);

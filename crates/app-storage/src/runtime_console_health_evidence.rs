@@ -14,6 +14,7 @@ const CHECK_BYTES: u64 = 64;
 #[derive(Clone, Copy)]
 pub(super) enum SessionKind {
     Enshrouded,
+    Dragonwilds,
     Unturned,
     Squad,
     Soulmask,
@@ -27,6 +28,7 @@ impl SessionKind {
     fn checkpoint_name(self) -> &'static str {
         match self {
             Self::Enshrouded => ".enshrouded-session.json",
+            Self::Dragonwilds => ".dragonwilds-session.json",
             Self::Unturned => ".unturned-session.json",
             Self::Squad => ".squad-session.json",
             Self::Soulmask => ".soulmask-session.json",
@@ -38,7 +40,47 @@ impl SessionKind {
     }
 
     fn valid(self, state: &Checkpoint) -> bool {
+        if !matches!(self, Self::Dragonwilds)
+            && (state.native_process.is_some()
+                || state.fatal.is_some()
+                || !state.native_head.is_empty()
+                || state.native_latest_end.is_some()
+                || state.native_fatal_end.is_some())
+        {
+            return false;
+        }
         match self {
+            Self::Dragonwilds => {
+                state.latest.is_some() == state.native_latest_end.is_some()
+                    && state.fatal.is_some() == state.native_fatal_end.is_some()
+                    && state.native_latest_end.is_none_or(|end| {
+                        end <= state.offset
+                            && state
+                                .latest
+                                .as_ref()
+                                .is_some_and(|line| end >= line.len() as u64)
+                    })
+                    && state.native_fatal_end.is_none_or(|end| {
+                        end <= state.offset
+                            && state
+                                .fatal
+                                .as_ref()
+                                .is_some_and(|line| end >= line.len() as u64)
+                    })
+                    && state.steam.is_none()
+                    && state.online_session.is_none()
+                    && state.engine_initialized.is_none()
+                    && state
+                        .latest
+                        .as_deref()
+                        .is_none_or(|line| super::dragonwilds_health::event(line).is_some())
+                    && state.fatal.as_deref().is_none_or(|line| {
+                        matches!(
+                            super::dragonwilds_health::event(line),
+                            Some(super::dragonwilds_health::Event::Fatal)
+                        )
+                    })
+            }
             Self::Enshrouded => {
                 state.steam.is_none()
                     && state.online_session.is_none()
@@ -143,6 +185,11 @@ impl SessionKind {
 
     fn consume(self, state: &mut Checkpoint, line: &str) {
         match self {
+            Self::Dragonwilds => match super::dragonwilds_health::event(line) {
+                Some(super::dragonwilds_health::Event::Fatal) => state.fatal = Some(line.into()),
+                Some(_) => state.latest = Some(line.into()),
+                None => {}
+            },
             Self::Enshrouded if super::enshrouded_session_state(line).is_some() => {
                 state.latest = Some(line.into())
             }
@@ -206,10 +253,22 @@ impl SessionKind {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ObservedProcess {
+    pid: u32,
+    session_id: Option<String>,
+    identity: app_core::ProcessIdentity,
+}
+
 #[derive(Default, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Checkpoint {
     run_id: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    native_process: Option<ObservedProcess>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    fatal: Option<String>,
     source: String,
     offset: u64,
     partial: Vec<u8>,
@@ -218,6 +277,12 @@ struct Checkpoint {
     anchor_segment: u64,
     anchor_identity: Option<FileIdentity>,
     anchor: Vec<u8>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    native_head: Vec<u8>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    native_latest_end: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    native_fatal_end: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     steam: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -229,6 +294,55 @@ struct Checkpoint {
 /// One derived checkpoint per instance log directory, bounded independently of
 /// transcript length. It follows logical managed offsets across segment rotation.
 pub(super) fn observe(kind: SessionKind, path: &Path, run_id: i64) -> io::Result<Vec<String>> {
+    observe_with_process(kind, path, run_id, None, false)
+}
+
+/// Shared native files need the current OS creation identity in addition to the
+/// recorded run. Immutable managed transcripts already belong to one run.
+pub(super) fn observe_dragonwilds(
+    path: &Path,
+    run: &app_core::ActiveInstanceRun,
+) -> io::Result<Vec<String>> {
+    let shared_native = run
+        .log_path
+        .as_deref()
+        .is_none_or(|source| Path::new(source) != path);
+    if !shared_native {
+        return observe_with_process(SessionKind::Dragonwilds, path, run.run_id, None, false);
+    }
+    let Some(process) = super::health_evidence::dragonwilds_primary(run) else {
+        return Ok(Vec::new());
+    };
+    observe_with_process(
+        SessionKind::Dragonwilds,
+        path,
+        run.run_id,
+        Some(process),
+        shared_native,
+    )
+}
+
+fn observe_with_process(
+    kind: SessionKind,
+    path: &Path,
+    run_id: i64,
+    process: Option<&app_core::InstanceProcessState>,
+    shared_native: bool,
+) -> io::Result<Vec<String>> {
+    let observed_process = process
+        .map(|process| {
+            Ok::<_, io::Error>(ObservedProcess {
+                pid: process
+                    .pid
+                    .ok_or_else(|| io::Error::other("process PID is missing"))?,
+                session_id: process.session_id.clone(),
+                identity: process
+                    .process_identity
+                    .clone()
+                    .ok_or_else(|| io::Error::other("process identity is missing"))?,
+            })
+        })
+        .transpose()?;
     if run_id <= 0 {
         return Err(io::Error::other("invalid session run ID"));
     }
@@ -257,7 +371,12 @@ pub(super) fn observe(kind: SessionKind, path: &Path, run_id: i64) -> io::Result
             .transpose()
             .map_err(io::Error::other)?
             .unwrap_or_default();
-        if state.partial.len() > LINE_BYTES
+        if state.native_head.len() as u64 > CHECK_BYTES
+            || state
+                .fatal
+                .as_ref()
+                .is_some_and(|line| line.len() > LINE_BYTES)
+            || state.partial.len() > LINE_BYTES
             || state.anchor.len() as u64 > CHECK_BYTES
             || state
                 .latest
@@ -280,13 +399,26 @@ pub(super) fn observe(kind: SessionKind, path: &Path, run_id: i64) -> io::Result
             return Err(io::Error::other("invalid session checkpoint"));
         }
         // A concurrent request for an older run must not replace newer evidence.
-        if state.run_id > run_id {
+        if state.run_id > run_id
+            || (state.run_id == run_id
+                && state
+                    .native_process
+                    .as_ref()
+                    .zip(observed_process.as_ref())
+                    .is_some_and(|(stored, observed)| {
+                        stored.identity.creation_time > observed.identity.creation_time
+                    }))
+        {
             return Ok(Vec::new());
         }
         let source = path.to_string_lossy();
-        if state.run_id != run_id || state.source != source {
+        if state.run_id != run_id
+            || state.source != source
+            || state.native_process != observed_process
+        {
             state = Checkpoint {
                 run_id,
+                native_process: observed_process.clone(),
                 source: source.into_owned(),
                 ..Default::default()
             };
@@ -299,18 +431,27 @@ pub(super) fn observe(kind: SessionKind, path: &Path, run_id: i64) -> io::Result
                 start_offset: 0,
             }],
         };
-        let caught_up = advance(kind, &mut segments, &mut state)?;
+        let caught_up = advance(kind, &mut segments, &mut state, process, shared_native)?;
+        // A shared native file can be replaced while its old handle is scanned.
+        // Never publish readiness for the displaced generation.
+        if shared_native {
+            reject_links(path)?;
+            if state.anchor_identity.as_ref() != Some(&identity(&File::open(path)?)?) {
+                return Ok(Vec::new());
+            }
+        }
         let result = if caught_up {
             state
-                .steam
+                .fatal
                 .iter()
+                .chain(state.steam.iter())
                 .chain(state.latest.iter())
                 .chain(state.online_session.iter())
                 .chain(state.engine_initialized.iter())
                 .cloned()
                 .collect()
         } else {
-            Vec::new()
+            state.fatal.iter().cloned().collect()
         };
         let replacement = serde_json::to_vec(&state).map_err(io::Error::other)?;
         if replacement.len() as u64 > STATE_BYTES {
@@ -335,6 +476,8 @@ fn advance(
     kind: SessionKind,
     segments: &mut [ManagedLogSegment],
     state: &mut Checkpoint,
+    process: Option<&app_core::InstanceProcessState>,
+    shared_native: bool,
 ) -> io::Result<bool> {
     let first = segments
         .first()
@@ -346,6 +489,21 @@ fn advance(
         .checked_add(last.file.metadata()?.len())
         .ok_or_else(|| io::Error::other("session log offset overflow"))?;
     let mut reset = state.offset < first || state.offset > end;
+    if shared_native && let Some(first) = segments.first_mut() {
+        reset |= region(&mut first.file, 0, state.native_head.len() as u64)? != state.native_head;
+        for (line, end) in [
+            (state.latest.as_ref(), state.native_latest_end),
+            (state.fatal.as_ref(), state.native_fatal_end),
+        ] {
+            if let (Some(line), Some(end)) = (line, end) {
+                reset |= region(
+                    &mut first.file,
+                    end.saturating_sub(line.len() as u64),
+                    line.len() as u64,
+                )? != line.as_bytes();
+            }
+        }
+    }
     if let Some(expected) = &state.anchor_identity {
         if let Some(segment) = segments
             .iter_mut()
@@ -367,6 +525,10 @@ fn advance(
         state.partial.clear();
         state.overlong = false;
         state.latest = None;
+        state.fatal = None;
+        state.native_latest_end = None;
+        state.native_fatal_end = None;
+        state.native_head.clear();
         state.steam = None;
         state.online_session = None;
         state.engine_initialized = None;
@@ -374,7 +536,7 @@ fn advance(
         state.anchor_identity = None;
     }
     let mut remaining = SCAN_BYTES;
-    for segment in segments {
+    for segment in segments.iter_mut() {
         let length = segment.file.metadata()?.len();
         let segment_end = segment
             .start_offset
@@ -387,6 +549,10 @@ fn advance(
             // A gap may have contained an offline transition; never retain ready.
             state.offset = segment.start_offset;
             state.latest = None;
+            state.fatal = None;
+            state.native_latest_end = None;
+            state.native_fatal_end = None;
+            state.native_head.clear();
             state.steam = None;
             state.online_session = None;
             state.engine_initialized = None;
@@ -401,11 +567,34 @@ fn advance(
         )?;
         remaining -= bytes.len() as u64;
         state.offset += bytes.len() as u64;
-        for byte in bytes {
+        let chunk_start = state.offset - bytes.len() as u64;
+        for (index, byte) in bytes.into_iter().enumerate() {
             if byte == b'\n' || byte == b'\r' {
                 if !state.overlong {
                     let line = String::from_utf8_lossy(&state.partial).into_owned();
-                    kind.consume(state, &line);
+                    let is_current = !shared_native
+                        || process.is_some_and(|process| {
+                            super::ark_readiness::native_line_is_current(process, &line)
+                                || (super::ark_readiness::native_line_timestamp(&line).is_none()
+                                    && matches!(
+                                        super::dragonwilds_health::event(&line),
+                                        Some(super::dragonwilds_health::Event::Fatal)
+                                    ))
+                        });
+                    if is_current {
+                        kind.consume(state, &line);
+                        if matches!(kind, SessionKind::Dragonwilds) {
+                            match super::dragonwilds_health::event(&line) {
+                                Some(super::dragonwilds_health::Event::Fatal) => {
+                                    state.native_fatal_end = Some(chunk_start + index as u64)
+                                }
+                                Some(_) => {
+                                    state.native_latest_end = Some(chunk_start + index as u64)
+                                }
+                                None => {}
+                            }
+                        }
+                    }
                 }
                 state.partial.clear();
                 state.overlong = false;
@@ -427,6 +616,9 @@ fn advance(
         if remaining == 0 {
             break;
         }
+    }
+    if shared_native && let Some(first) = segments.first_mut() {
+        state.native_head = region(&mut first.file, 0, CHECK_BYTES)?;
     }
     // Readiness requires a complete transition and no unread later log bytes.
     Ok(state.offset == end && state.partial.is_empty() && !state.overlong)

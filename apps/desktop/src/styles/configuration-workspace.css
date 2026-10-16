@@ -499,9 +499,17 @@
   min-width: 0;
 }
 
+.configuration-workspace .configuration-field-control--secret {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 8px;
+}
+
+/* Inline beside the input with the same height, like the join-address copy action. */
 .configuration-workspace .configuration-secret-toggle {
-  margin-top: 6px;
-  min-height: var(--control-height-compact);
+  min-height: var(--settings-control-height);
+  white-space: nowrap;
   padding: 4px var(--control-padding-inline-compact);
   border: 1px solid var(--shell-line);
   border-radius: 8px;
@@ -587,3 +595,12 @@
     transition: none;
   }
 }
+
+/* Danger-styled boolean (irreversible wipes); enabling still goes through the inline confirm. */
+.configuration-workspace .settings-toggle-card.is-danger,
+.settings-toggle-card.is-danger {
+  border-color: color-mix(in srgb, var(--theme-danger-text) 45%, var(--shell-line));
+}
+.settings-toggle-card.is-danger .settings-field-title { color: var(--theme-danger-text); }
+.configuration-action-help { display: inline-flex; }
+.configuration-action-help > button:disabled { pointer-events: none; }

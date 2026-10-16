@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { selectLocaleText, useI18n } from "../../i18n";
+import { ConfigurationHelp } from "./ConfigurationFieldHelp";
 import type { ModulePortRole, PortBinding } from "../../types";
 import {
   formatInstancePortName,
@@ -13,6 +14,8 @@ import {
 interface InstancePortFieldsProps {
   ports: PortBinding[];
   role?: ModulePortRole;
+  /** Group caption shown in the shared help tooltip when it adds context. */
+  caption?: string;
   nonzeroPortNames?: readonly string[];
   disabled?: boolean;
   onPortChange: (port: number, binding: PortBinding) => void;
@@ -64,11 +67,11 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
   }
 
   if (portsToEdit.length === 0) {
-    return <span className="instance-port-fields__empty">{selectLocaleText(locale, "未声明", "Not declared")}</span>;
+    return <div className="settings-schema-field instance-port-fields__item">{props.caption ? <span className="detail-label">{props.caption}</span> : null}<span className="instance-port-fields__empty">{selectLocaleText(locale, "未声明", "Not declared")}</span></div>;
   }
 
   return (
-    <div className="instance-port-fields">
+    <div className="settings-schema-grid instance-port-fields">
       {portsToEdit.map((port) => {
         const key = instancePortBindingKey(port);
         const isPrimaryPort = key === primaryPortKey;
@@ -77,30 +80,36 @@ export function InstancePortFields(props: InstancePortFieldsProps) {
         const minimumPort = minimumInstancePortValue(props.role ?? null, isPrimaryPort, props.nonzeroPortNames?.includes(port.name));
         const invalid = parseInstancePortDraft(value, minimumPort) === null;
 
+        // Tooltip only when the group caption adds information beyond the field label.
+        const helpText = props.caption
+          ? props.role === "player" && !isPrimaryPlayerPort
+            ? `${props.caption} \u00B7 ${selectLocaleText(locale, "\u8865\u5145", "Extra")}`
+            : props.caption
+          : undefined;
+
         return (
-          <label key={key} className={isPrimaryPlayerPort ? "instance-port-fields__item is-primary" : "instance-port-fields__item"}>
-            <span className="instance-port-fields__label">
-              {isPrimaryPlayerPort
-                ? selectLocaleText(locale, "端口", "Host Port")
-                : props.role === "player"
-                  ? selectLocaleText(locale, "补充", "Extra")
-                  : selectLocaleText(locale, "端口", "Port")}
-            </span>
-            <input
-              className="instance-port-fields__input settings-schema-input"
-              type="number"
-              min={minimumPort}
-              max={65535}
-              value={value}
-              aria-invalid={invalid || undefined}
-              aria-describedby={invalid ? validationId : undefined}
-              disabled={props.disabled}
-              onChange={(event) => changePortDraft(port, event.target.value)}
-            />
-            <span className="instance-port-fields__name">
-              {formatInstancePortName(port.name)} / {String(port.protocol).toUpperCase()}
-            </span>
-          </label>
+          <ConfigurationHelp key={key} description={helpText}>
+            {(help) => (
+              <label ref={help.anchorRef} {...help.interactionProps} className={isPrimaryPlayerPort
+                ? "settings-schema-field instance-port-fields__item is-primary"
+                : "settings-schema-field instance-port-fields__item"}>
+                <span className="detail-label instance-port-fields__name">
+                  {formatInstancePortName(port.name)} / {String(port.protocol).toUpperCase()}
+                </span>
+                <input
+                  className="instance-port-fields__input settings-schema-input"
+                  type="number"
+                  min={minimumPort}
+                  max={65535}
+                  value={value}
+                  aria-invalid={invalid || undefined}
+                  aria-describedby={[invalid ? validationId : undefined, help.descriptionId].filter(Boolean).join(" ") || undefined}
+                  disabled={props.disabled}
+                  onChange={(event) => changePortDraft(port, event.target.value)}
+                />
+              </label>
+            )}
+          </ConfigurationHelp>
         );
       })}
       {hasInvalidDrafts ? <p id={validationId} className="instance-port-fields__error" role="alert">

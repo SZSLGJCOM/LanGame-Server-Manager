@@ -13,6 +13,11 @@ use std::ffi::OsString;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tauri::Manager;
 
+#[path = "commands_file_mods_integration_tests.rs"]
+mod file_mods_integration_tests;
+#[path = "commands_mod_game_boundaries_integration_tests.rs"]
+mod mod_game_boundaries_integration_tests;
+
 #[path = "commands_ark_tools_tests.rs"]
 mod ark_tools_tests;
 

@@ -1,9 +1,11 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { useEffect, useId, useRef, useState } from "react";
 import type { ArkClusterBackupSummary, ArkClusterRestoreResult, CreateArkClusterBackupInput, RestoreArkClusterBackupInput } from "../../ark-cluster-backups";
-import type { ArkClusterReport } from "../../ark-clusters";
+import { displayLocalPath, type ArkClusterReport } from "../../ark-clusters";
 import { describeError } from "../../app-state";
 import { useI18n, selectLocaleText } from "../../i18n";
+import { ShellIcon } from "../../components/ShellIcon";
+import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
 import "./ark-cluster-backups.css";
 
 interface ArkClusterBackupPanelProps {
@@ -119,17 +121,16 @@ export function ArkClusterBackupPanel({ report, busy, listBackups, createBackup,
   }
 
   return <section className="ark-cluster-backups" aria-labelledby={titleId} aria-busy={loading || !!action}>
-    <div className="ark-cluster-heading"><h4 id={titleId}>{text("集群备份与恢复", "Cluster backup and restore")}</h4>
+    <div className="ark-cluster-heading server-workbench-section-label server-maintenance-card-label"><ShellIcon name="history" className="server-workbench-section-icon" /><ConfigurationHelp description={text("完整快照包含所有成员的世界、配置和整个共享传输目录。备份及恢复期间必须停止全部成员；恢复前会自动保存保护快照。", "A complete snapshot includes every member's world, configuration, and the entire shared transfer directory. All members must be stopped. Restore creates a safeguard snapshot first.")}>{(help) =><h4 id={titleId} ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{text("集群备份与恢复", "Cluster backup and restore")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></h4>}</ConfigurationHelp>
       <button type="button" className="secondary-button" disabled={locked} onClick={() => void refreshList()}>{t("common.refresh")}</button>
     </div>
-    <p>{text("完整快照包含所有成员的世界、配置和整个共享传输目录。备份及恢复期间必须停止全部成员；恢复前会自动保存保护快照。", "A complete snapshot includes every member's world, configuration, and the entire shared transfer directory. All members must be stopped. Restore creates a safeguard snapshot first.")}</p>
     {!allStopped ? <p className="ark-cluster-note">{text("请先停止集群全部成员。", "Stop every cluster member first.")}</p> : null}
     {report.issues.length ? <p className="ark-cluster-error">{text("请先解决上方全部集群检查问题。", "Resolve all cluster inspection issues above first.")}</p> : null}
     <label className="ark-cluster-exclusive"><input type="checkbox" checked={exclusive} disabled={locked || !safe} onChange={(event) => setExclusive(event.target.checked)} />
       <span>{text("我已确认此共享目录专用于当前集群，且没有其他程序向其中写入。", "I confirm this shared directory belongs exclusively to this cluster and no other program writes to it.")}
-        <code>{report.cluster_directory || "—"}</code></span>
+        <code>{displayLocalPath(report.cluster_directory) || "—"}</code></span>
     </label>
-    <div><button type="button" className="secondary-button" disabled={!canMutate} onClick={() => void run("create")}>
+    <div className="ark-cluster-actions"><button type="button" className="secondary-button" disabled={!canMutate} onClick={() => void run("create")}>
       {action === "create" ? text("正在备份集群…", "Backing up cluster…") : text("创建集群快照", "Create cluster snapshot")}
     </button></div>
     {error ? <ActivityNotice tone="error">{error}</ActivityNotice> : null}

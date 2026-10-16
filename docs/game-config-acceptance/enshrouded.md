@@ -82,10 +82,73 @@
 }
 ```
 
-## `2026-09-30-native_ban_contract_build_23178631.json`
+## `2026-10-16-native_1_0_gameplay_settings.json`
 
-- Evidence: `best_effort_verified` at `2026-09-30` (build `Build 23178631 static type/serialization evidence; synthetic exact uint64 storage/output fixture, not a native ban/rejoin probe.`)
-- Sources: `ban_records`, `native_ban_contract_build_23178631`
+- Evidence: `best_effort_verified` at `2026-10-16` (build `Official build 25936466 README 1.0.0.0 plus effective native bounds; synthetic renderer assertions, native migration recorded separately`)
+- Sources: `native_1_0_gameplay_settings`, `steamcmd_1_0_package_25936466`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": {
+        "futureRoot": {
+          "keep": true
+        },
+        "gameSettings": {
+          "futureSetting": "keep"
+        }
+      },
+      "path": "enshrouded_server.json",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "flame_level_fog_removal": 1,
+  "game_settings_preset": "Custom",
+  "random_spawner_amount": "Automatic"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "futureRoot.keep": true,
+        "gameSettings.aggroPoolAmount": "Normal",
+        "gameSettings.flameLevelFogRemoval": 1,
+        "gameSettings.futureSetting": "keep",
+        "gameSettings.randomSpawnerAmount": "Automatic",
+        "gameSettingsPreset": "Custom"
+      },
+      "path": "enshrouded_server.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "enshrouded_server.exe"
+  }
+}
+```
+
+## `2026-10-16-native_ban_contract_build_23178631.json`
+
+- Evidence: `best_effort_verified` at `2026-10-16` (build `Historical build 23178631 record-type fixture, routed through the current bannedAccounts root independently confirmed by build 25967645; exact synthetic uint64 output, not client enforcement`)
+- Sources: `ban_records`, `native_ban_contract_build_23178631`, `native_ban_contract_build_25967645`
 - Coverage: editable `0`, specialized `1`, derived `0`, generated `0`, excluded `0`
 
 ### Settings
@@ -104,13 +167,125 @@
     {
       "format": "json",
       "keys": {
-        "/bans/0/accountId": 0,
-        "/bans/1/accountId": 9007199254740993,
-        "/bans/2/accountId": 76561198000000001,
-        "/bans/3/accountId": 18446744073709551615,
-        "/bans/3/banDate/value": 0,
-        "/bans/3/characterName": "",
-        "/bans/3/displayName": ""
+        "/bannedAccounts/0/accountId": 0,
+        "/bannedAccounts/1/accountId": 9007199254740993,
+        "/bannedAccounts/2/accountId": 76561198000000001,
+        "/bannedAccounts/3/accountId": 18446744073709551615,
+        "/bannedAccounts/3/banDate/value": 0,
+        "/bannedAccounts/3/characterName": "",
+        "/bannedAccounts/3/displayName": ""
+      },
+      "path": "enshrouded_server.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "enshrouded_server.exe"
+  }
+}
+```
+
+## `2026-10-16-native_ban_contract_build_25967645.json`
+
+- Evidence: `best_effort_verified` at `2026-10-16` (build `Build 25967645 canonical parsed/reserialized native contract; synthetic production storage alias union and metadata preservation fixture, not client enforcement`)
+- Sources: `ban_records`, `native_ban_contract_build_25967645`, `steamcmd_1_0_0_1_package_25967645`
+- Coverage: editable `0`, specialized `1`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": {
+        "bannedAccounts": [
+          {
+            "accountId": 9007199254740993,
+            "banDate": {
+              "value": 1700000001
+            },
+            "characterName": "守护者",
+            "displayName": "既有名字",
+            "futureMetadata": {
+              "retain": true
+            }
+          },
+          {
+            "accountId": 18446744073709551615,
+            "banDate": {
+              "value": 1700000002
+            },
+            "characterName": "Synthetic B",
+            "displayName": "Existing B"
+          }
+        ],
+        "bans": [
+          {
+            "accountId": 42,
+            "banDate": {
+              "value": 1700000003
+            },
+            "characterName": "旧记录",
+            "displayName": "Legacy record"
+          }
+        ],
+        "futureRoot": {
+          "keep": true
+        }
+      },
+      "path": "enshrouded_server.json",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "banned_player_ids": "7\n9007199254740993"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "/bannedAccounts/0/accountId": 7,
+        "/bannedAccounts/1": {
+          "accountId": 42,
+          "banDate": {
+            "value": 1700000003
+          },
+          "characterName": "旧记录",
+          "displayName": "Legacy record"
+        },
+        "/bannedAccounts/2": {
+          "accountId": 9007199254740993,
+          "banDate": {
+            "value": 1700000001
+          },
+          "characterName": "守护者",
+          "displayName": "既有名字",
+          "futureMetadata": {
+            "retain": true
+          }
+        },
+        "/bannedAccounts/3": {
+          "accountId": 18446744073709551615,
+          "banDate": {
+            "value": 1700000002
+          },
+          "characterName": "Synthetic B",
+          "displayName": "Existing B"
+        },
+        "futureRoot.keep": true
       },
       "path": "enshrouded_server.json",
       "root": "install"

@@ -20,7 +20,7 @@ use crate::storage_db::{connect_pool, fetch_instance_record};
 use crate::{InstanceStatus, StorageError, StoragePaths};
 
 #[path = "dragonwilds_world_io.rs"]
-mod io;
+pub(crate) mod io;
 use io::{invalid, latest_world, read_world, world_file_name};
 
 #[derive(Deserialize)]

@@ -323,6 +323,52 @@ def validate_instance_settings_lock_contract(source: str) -> list[str]:
     return failures
 
 
+def validate_player_access_storage_lock_chain(source: str) -> list[str]:
+    body = re.sub(r"\s+", "", rust_function_body_from_source(
+        rust_executable_source(source), "apply_instance_player_access_mutation"
+    ))
+    lock = body.find("letsettings_lock=acquire_instance_settings_mutation_lock(paths,instance_id)?;")
+    read = body.find("letdetails=read_instance_details(paths,instance_id).await?;")
+    patch = body.find("letpatched=patch_field_value(")
+    writes = [re.search(pattern, body) for pattern in (
+        r"\bupdate_instance_locked\(paths,update,&settings_lock,?\)\.await\?",
+        r"\bupdate_instance_with_ban_removal_locked\(paths,update,&settings_lock,removed,?\)\.await\?",
+    )]
+    calls = list(re.finditer(r"\bupdate_instance(?:_with_ban_removal)?_locked\(", body))
+    if (
+        len(calls) != 2
+        or any(write is None for write in writes)
+        or not (0 <= lock < read < patch < min(write.start() for write in writes if write))
+        or "drop(settings_lock)" in body[:max((write.end() for write in writes if write), default=0)]
+    ):
+        return [
+            "backend: player-access read/patch/write must remain inside one per-instance storage mutation lock"
+        ]
+    return []
+
+
+def validate_settings_precondition_storage_lock_chain(source: str) -> list[str]:
+    body = re.sub(r"\s+", "", rust_function_body_from_source(
+        rust_executable_source(source), "update_instance_if_current"
+    ))
+    lock = body.find("acquire_instance_settings_mutation_lock(paths,&input.id)?")
+    read = body.find("read_instance_details(paths,&input.id).await?")
+    compare = body.find("settings_json_matches(&current.settings_json,expected_settings_json)")
+    write = re.search(
+        r"\bupdate_instance_with_baseline_locked\(paths,input,&settings_lock,"
+        r"Some\(current\.settings_json\),None,?\)\.await\b",
+        body,
+    )
+    if (
+        not (write and 0 <= lock < read < compare < write.start())
+        or "drop(settings_lock)" in body[:write.end() if write else 0]
+    ):
+        return [
+            "backend: ordinary settings precondition read/compare/write must remain inside one per-instance storage mutation lock"
+        ]
+    return []
+
+
 def rust_function_body(function_name: str) -> str:
     return rust_function_body_from_source(read_app_storage_templates_rs(), function_name)
 
@@ -2438,7 +2484,8 @@ def validate_frontend_coverage() -> list[str]:
         ("backend", player_access_storage_source, "let settings_lock = acquire_instance_settings_mutation_lock(paths, instance_id)?;"),
         ("backend", player_access_storage_source, "let details = read_instance_details(paths, instance_id).await?;"),
         ("backend", player_access_storage_source, "let patched = patch_field_value("),
-        ("backend", player_access_storage_source, "let updated = update_instance_locked("),
+        ("backend", player_access_storage_source, "update_instance_locked("),
+        ("backend", player_access_storage_source, "update_instance_with_ban_removal_locked("),
         ("backend", player_access_storage_source, '"expectedValue is required for scalar player-access fields"'),
         ("backend", player_access_storage_source, '"expectedValue is only valid for scalar player-access fields"'),
     )
@@ -2457,65 +2504,9 @@ def validate_frontend_coverage() -> list[str]:
         failures.append(
             "backend: player-access orchestration must persist/materialize before dispatching any live action"
         )
-    player_access_lock_index = player_access_storage_source.find(
-        "let settings_lock = acquire_instance_settings_mutation_lock(paths, instance_id)?;"
-    )
-    player_access_read_index = player_access_storage_source.find(
-        "let details = read_instance_details(paths, instance_id).await?;",
-        player_access_lock_index,
-    )
-    player_access_patch_index = player_access_storage_source.find(
-        "let patched = patch_field_value(", player_access_read_index
-    )
-    player_access_write_index = player_access_storage_source.find(
-        "let updated = update_instance_locked(", player_access_patch_index
-    )
-    if not (
-        0
-        <= player_access_lock_index
-        < player_access_read_index
-        < player_access_patch_index
-        < player_access_write_index
-    ):
-        failures.append(
-            "backend: player-access read/patch/write must remain inside one per-instance storage mutation lock"
-        )
+    failures.extend(validate_player_access_storage_lock_chain(player_access_storage_source))
     failures.extend(validate_instance_settings_lock_contract(instance_settings_lock_source))
-    settings_cas_start = storage_instances_source.find(
-        "pub async fn update_instance_if_current("
-    )
-    settings_cas_end = storage_instances_source.find(
-        "fn settings_json_matches(", settings_cas_start
-    )
-    settings_cas_source = (
-        storage_instances_source[settings_cas_start:settings_cas_end]
-        if settings_cas_start >= 0 and settings_cas_end > settings_cas_start
-        else ""
-    )
-    settings_cas_lock_index = settings_cas_source.find(
-        "acquire_instance_settings_mutation_lock(paths, &input.id)?"
-    )
-    settings_cas_read_index = settings_cas_source.find(
-        "read_instance_details(paths, &input.id).await?"
-    )
-    settings_cas_compare_index = settings_cas_source.find(
-        "settings_json_matches(&current.settings_json, expected_settings_json)"
-    )
-    settings_cas_write = re.search(
-        r"\bupdate_instance_with_baseline_locked\(paths, input, &settings_lock, Some\(current\.settings_json\)\)\s*\.await",
-        settings_cas_source,
-    )
-    settings_cas_write_index = settings_cas_write.start() if settings_cas_write else -1
-    if not (
-        0
-        <= settings_cas_lock_index
-        < settings_cas_read_index
-        < settings_cas_compare_index
-        < settings_cas_write_index
-    ):
-        failures.append(
-            "backend: ordinary settings precondition read/compare/write must remain inside one per-instance storage mutation lock"
-        )
+    failures.extend(validate_settings_precondition_storage_lock_chain(storage_instances_source))
     lifecycle_mutation_lock_markers = (
         "start_instance_process_after_reconcile_reserved(",
         "stop_instance_process(",

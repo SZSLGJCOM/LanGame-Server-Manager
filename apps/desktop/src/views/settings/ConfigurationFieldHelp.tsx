@@ -271,3 +271,11 @@ export function ConfigurationHelp(props: {
   const help = useConfigurationFieldHelp(useId(), props.description, undefined, undefined, "instructions");
   return <>{props.children(help)}{help.helpNode}</>;
 }
+
+/** Explains why an action is unavailable, using the same help bubble; disabled buttons ignore pointer events, so the wrapper anchors it. */
+export function ConfigurationActionHelp(props: { reason?: string | null; children: ReactNode }) {
+  return <ConfigurationHelp description={props.reason}>{(help) => props.reason
+    ? <span className="configuration-action-help" ref={help.anchorRef} {...help.interactionProps}
+      tabIndex={0} aria-describedby={help.descriptionId}>{props.children}</span>
+    : <>{props.children}</>}</ConfigurationHelp>;
+}

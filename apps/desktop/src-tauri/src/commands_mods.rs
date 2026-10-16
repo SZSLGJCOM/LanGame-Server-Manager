@@ -3,12 +3,10 @@ use super::commands_install_progress::{
     complete_install_progress, fail_install_progress, finish_install_error,
     queued_install_progress,
 };
-#[cfg(test)]
-pub(super) use super::commands_mod_staging::select_thunderstore_payload_prefix;
 use super::commands_mod_staging::{
-    ONLINE_MOD_MANIFEST, stage_downloaded_workshop_items_into_manual_target,
-    stage_manual_mod_sources, stage_online_mod_sources, stage_thunderstore_archive_to_directory,
-    verify_online_mod_dependencies,
+    ManualModArchiveLayout, ONLINE_MOD_MANIFEST,
+    stage_downloaded_workshop_items_into_manual_target, stage_manual_mod_sources,
+    stage_online_mod_sources, stage_thunderstore_archive_to_directory,
 };
 use super::*;
 use crate::steam_workshop::validate_workshop_download_items;
@@ -19,10 +17,10 @@ use mod_download::{
     fetch_modrinth_project_names,
 };
 #[path = "commands_mod_inventory.rs"]
-mod mod_inventory;
+pub(super) mod mod_inventory;
 pub(super) use mod_inventory::validate_root_chain as validate_mod_inventory_root_chain;
 #[path = "commands_mod_online.rs"]
-mod mod_online;
+pub(super) mod mod_online;
 #[cfg(test)]
 pub(super) use mod_inventory::{manual_mod_path_stats, read_manual_mod_inventory_items};
 #[path = "commands_dst_workshop.rs"]
@@ -809,7 +807,7 @@ pub(super) async fn download_steam_workshop_items_inner(
     }
 }
 
-async fn acquire_stopped_instance_mod_mutation(
+pub(super) async fn acquire_stopped_instance_mod_mutation(
     state: &tauri::State<'_, DesktopState>,
     storage: &StorageBootstrap,
     instance_id: &str,
@@ -824,9 +822,7 @@ async fn acquire_stopped_instance_mod_mutation(
         .map_err(|_| String::from("runtime supervisor lock poisoned"))?
         .is_tracked(instance_id);
     if active_run.is_some() || tracked {
-        return Err(format!(
-            "Stop instance {instance_id} before installing mods."
-        ));
+        return Err(format!("Stop instance {instance_id} before changing mods."));
     }
     Ok(instance_lock)
 }
@@ -841,6 +837,10 @@ pub(super) async fn stage_manual_mod_files_inner(
     initialize_database(&storage.paths)
         .await
         .map_err(|error| error.to_string())?;
+    let instance = read_instance_details(&storage.paths, &instance_id)
+        .await
+        .map_err(|error| error.to_string())?;
+    super::commands_mod_staging::validate_game_mod_mutation(&instance.summary.module_id)?;
     let instance_lock =
         acquire_stopped_instance_mod_mutation(state, &storage, &instance_id).await?;
     let instance_lock = super::commands_program_storage::prepare_instance_mod_program(
@@ -874,6 +874,7 @@ pub(super) async fn install_manual_mod_references_inner(
     let instance = read_instance_details(&storage.paths, &instance_id)
         .await
         .map_err(|error| error.to_string())?;
+    super::commands_mod_staging::validate_game_mod_mutation(&instance.summary.module_id)?;
     let descriptors =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
@@ -920,6 +921,37 @@ pub(super) async fn install_manual_mod_references_inner(
         .map(|source| source.provider.trim().to_ascii_lowercase())
         .unwrap_or_default();
     let runtime_target = target.target_path.clone();
+    if runtime_provider == "thunderstore" {
+        let profile = super::commands_mod_staging::thunderstore_game_profile(&runtime_module)?;
+        if runtime_target != runtime_root.join(profile.target_relative) {
+            return Err("Thunderstore Mod target does not match the current instance's verified server directory".into());
+        }
+        let source = mods
+            .source
+            .as_ref()
+            .ok_or("This module does not declare a Thunderstore source")?;
+        let prepared = tokio::select! {
+            biased;
+            _ = storage_context_operation.cancelled() => return Err("Thunderstore Mod installation preparation was cancelled".into()),
+            result = mod_online::prepare_thunderstore_install(&runtime_module, source, &references, &runtime_root) => result?,
+        };
+        let cancellation = storage_context_operation.cancellation_token();
+        return spawn_blocking_storage_context_task(storage_context_operation, move || {
+            let _instance_lock = instance_lock;
+            if cancellation.load(std::sync::atomic::Ordering::Acquire) {
+                return Err(
+                    "Thunderstore Mod installation was cancelled before publication".into(),
+                );
+            }
+            super::commands_mod_staging::stage_thunderstore_online_mod_sources(
+                target,
+                prepared.sources(),
+                prepared.loader_archive(),
+            )
+        })
+        .await
+        .map_err(|error| format!("Thunderstore Mod installation worker failed: {error}"))?;
+    }
     let instance_lock = spawn_blocking_storage_context_task(storage_context_operation, move || {
         mod_online::validate_runtime(
             &runtime_module,
@@ -934,7 +966,7 @@ pub(super) async fn install_manual_mod_references_inner(
     let downloaded_sources = DownloadedManualModSourcesCleanup::from_sources(
         tokio::time::timeout(
             Duration::from_secs(180),
-            download_manual_mod_sources_for_staging(&mods, &references, &target.target_path),
+            download_manual_mod_sources_for_staging(&mods, &references),
         )
         .await
         .map_err(|_| "Online Mod installation preparation exceeded its 180-second limit")??,
@@ -1234,23 +1266,15 @@ pub(super) fn split_manual_mod_source_path_inputs(
 pub(super) async fn download_manual_mod_sources_for_staging(
     mods: &ModuleModsSpec,
     references: &[String],
-    target: &Path,
 ) -> Result<Vec<DownloadedManualModSource>, String> {
     let source = mods
         .source
         .as_ref()
         .ok_or_else(|| String::from("this module does not declare a mod source"))?;
     let provider = source.provider.trim().to_ascii_lowercase();
-    let client = reqwest::Client::builder()
-        .user_agent(concat!("LanGameServerManager/", env!("CARGO_PKG_VERSION")))
-        .timeout(Duration::from_secs(45))
-        .build()
-        .map_err(|error| format!("failed to build mod package downloader: {error}"))?;
+    let client = mod_download::mod_package_client()?;
 
     match provider.as_str() {
-        "thunderstore" => {
-            mod_online::download_thunderstore_mod_sources(&client, source, references, target).await
-        }
         "modrinth" => download_modrinth_mod_sources(&client, source, references).await,
         "nexus" => Err(String::from(
             "Nexus Mods downloads require an authenticated browser/API session; download the archive first and provide the local file path.",
@@ -1265,7 +1289,9 @@ async fn prepare_downloaded_thunderstore_archive(
     archive_path: PathBuf,
     package_name: &str,
     version: &str,
+    module_id: &str,
 ) -> Result<PathBuf, String> {
+    let native = module_id == "corekeeper";
     let target_path = std::env::temp_dir().join(format!(
         "langame-mod-{}-{}-{}",
         sanitize_mod_site_filename(package_name),
@@ -1277,10 +1303,28 @@ async fn prepare_downloaded_thunderstore_archive(
     tokio::task::spawn_blocking(move || {
         let result = mod_online::reject_loader_archive(&archive_path)
             .and_then(|_| {
-                stage_thunderstore_archive_to_directory(archive_path.clone(), target_path.clone())
+                stage_thunderstore_archive_to_directory(
+                    archive_path.clone(),
+                    target_path.clone(),
+                    if native {
+                        ManualModArchiveLayout::CoreKeeperNative
+                    } else {
+                        ManualModArchiveLayout::ThunderstorePayload
+                    },
+                )
+            })
+            .and_then(|_| {
+                if native {
+                    mod_online::validate_corekeeper_native_payload(&target_path)
+                } else {
+                    Ok(())
+                }
             })
             .map(|_| target_path.clone());
         let _ = fs::remove_file(&archive_path);
+        if result.is_err() {
+            cleanup_downloaded_mod_source(&target_path);
+        }
         if result_sender.send(result).is_err() {
             cleanup_downloaded_mod_source(&cancellation_target);
         }
@@ -1462,14 +1506,18 @@ pub(super) async fn download_mod_site_archive(
     package_name: &str,
     version: &str,
 ) -> Result<PathBuf, String> {
-    download_mod_site_file(
+    download_mod_site_file_with_limit(
         client,
-        download_url,
-        package_name,
-        version,
-        None,
-        "zip",
-        None,
+        ModDownloadRequest {
+            download_url,
+            package_name,
+            version,
+            preferred_filename: None,
+            fallback_extension: "zip",
+            integrity: None,
+            max_bytes: None,
+            download_root: &std::env::temp_dir(),
+        },
     )
     .await
 }
@@ -1492,7 +1540,7 @@ async fn download_mod_site_file(
             preferred_filename,
             fallback_extension,
             integrity,
-            max_bytes: MANUAL_MOD_SITE_DOWNLOAD_MAX_BYTES,
+            max_bytes: Some(MANUAL_MOD_SITE_DOWNLOAD_MAX_BYTES),
             download_root: &std::env::temp_dir(),
         },
     )
@@ -1961,10 +2009,48 @@ pub(super) fn is_modrinth_project_token(value: &str) -> bool {
             .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
 }
 
+fn valid_thunderstore_package_name(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+}
+
 pub(super) fn extract_thunderstore_package_reference(
     reference: &str,
 ) -> Option<ThunderstorePackageReference> {
     let url = reqwest::Url::parse(reference).ok()?;
+    if url.scheme() == "ror2mm" {
+        if !url.host_str()?.eq_ignore_ascii_case("v1")
+            || !url.username().is_empty()
+            || url.password().is_some()
+            || url.port().is_some()
+            || url.query().is_some()
+            || url.fragment().is_some()
+        {
+            return None;
+        }
+        let route = url.path().strip_prefix('/')?;
+        let route = route.strip_suffix('/').unwrap_or(route);
+        let fields = route.split('/').collect::<Vec<_>>();
+        let [action, repository, namespace, package, version] = fields.as_slice() else {
+            return None;
+        };
+        if !action.eq_ignore_ascii_case("install")
+            || !repository.eq_ignore_ascii_case("thunderstore.io")
+            || !valid_thunderstore_package_name(namespace)
+            || !valid_thunderstore_package_name(package)
+            || !mod_online::valid_thunderstore_version(version)
+        {
+            return None;
+        }
+        return Some(ThunderstorePackageReference {
+            namespace: (*namespace).into(),
+            package: (*package).into(),
+            version: Some((*version).into()),
+        });
+    }
     let host = url.host_str()?.to_ascii_lowercase();
     if host != "thunderstore.io" && !host.ends_with(".thunderstore.io") {
         return None;
@@ -1979,13 +2065,10 @@ pub(super) fn extract_thunderstore_package_reference(
             && index + 2 < segments.len()
             && !segments[index + 1].eq_ignore_ascii_case("download")
         {
-            if !segments[index + 1..=index + 2].iter().all(|value| {
-                !value.is_empty()
-                    && value.len() <= 128
-                    && value
-                        .bytes()
-                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
-            }) {
+            if !segments[index + 1..=index + 2]
+                .iter()
+                .all(|value| valid_thunderstore_package_name(value))
+            {
                 return None;
             }
             let suffix = &segments[index + 3..];

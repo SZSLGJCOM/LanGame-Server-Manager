@@ -120,7 +120,7 @@ function buildEnshroudedFieldGroups(
           undefined,
           "Gathering, production, rune, and XP multipliers."
         ),
-        keys: ["mining_damage_factor", "plant_growth_speed_factor", "resource_drop_stack_amount_factor", "factory_production_speed_factor", "perk_upgrade_recycling_factor", "perk_cost_factor", "experience_combat_factor", "experience_mining_factor", "experience_exploration_quests_factor", "taming_startle_repercussion"]
+        keys: ["mining_damage_factor", "plant_growth_speed_factor", "resource_drop_stack_amount_factor", "factory_production_speed_factor", "perk_upgrade_recycling_factor", "perk_cost_factor", "experience_combat_factor", "experience_mining_factor", "experience_exploration_quests_factor", "taming_startle_repercussion", "flame_level_fog_removal"]
       }
     ],
     combat: [
@@ -190,7 +190,7 @@ function buildEnshroudedFieldGroups(
         description: t(
           "enshrouded.settings.groups.moderationDescription",
           undefined,
-          "Player identities denied by the native bans array."
+          "Player identities denied by the native ban list."
         ),
         keys: ["banned_player_ids"]
       }
@@ -226,7 +226,7 @@ function buildEnshroudedFieldGroups(
 }
 
 function buildEnshroudedSections(t: TranslateFn): GuidedSettingsSection[] {
-  return [
+  const sections: GuidedSettingsSection[] = [
     {
       id: "communication",
       title: t("enshrouded.settings.sections.communication", undefined, "Communication"),
@@ -323,10 +323,18 @@ function buildEnshroudedSections(t: TranslateFn): GuidedSettingsSection[] {
       description: t(
         "enshrouded.settings.sections.moderationDescription",
         undefined,
-        "Player identities denied by the native bans array."
+        "Player identities denied by the native ban list."
       )
     }
   ];
+  const customPresetRequirement = t(
+    "enshrouded.settings.customPresetRequirement",
+    undefined,
+    "Custom gameplay values apply only when Difficulty Preset is set to Custom in World Pace."
+  );
+  return sections.map((section) => ["players", "survival", "world", "progression", "combat"].includes(section.id)
+    ? { ...section, description: [customPresetRequirement, section.description].filter(Boolean).join(" ") }
+    : section);
 }
 
 export const enshroudedSettingsDefinition: SettingsModuleDefinition = {

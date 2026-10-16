@@ -7,6 +7,7 @@ import {
 export const EN_US_SCUM_MESSAGES: MessageCatalog = {
   "scum.maintenance.title": "Startup wipe switches",
   "scum.maintenance.persistenceNotice": "LanGame keeps these saved switches enabled until you turn them off. Check them before every start and disable any wipe you no longer need.",
+  "scum.maintenance.warningShort": "Wipes cannot be undone. Back up before enabling.",
   "scum.maintenance.warning": "These switches schedule irreversible data removal on the next server start. Check your backups before enabling and saving them.",
   "scum.maintenance.requiresStop": "Changes require a stopped instance with no active run. Saving does not start the server.",
   "scum.maintenance.save": "Save wipe switches",

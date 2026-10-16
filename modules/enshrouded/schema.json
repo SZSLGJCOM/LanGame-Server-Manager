@@ -542,22 +542,37 @@
       "x-lsgm-source-key": "gameSettings.tamingStartleRepercussion",
       "x-lsgm-source-surface": "config_file"
     },
+    "flame_level_fog_removal": {
+      "type": "integer",
+      "title": "Flame Level for Shroud Removal",
+      "description": "Minimum Flame level required for Flame Altars to push back the Shroud. The default is 11; the server accepts levels from 1 to 11.",
+      "default": 11,
+      "minimum": 1,
+      "maximum": 11,
+      "x-lsgm-section": "progression",
+      "x-lsgm-order": 410,
+      "x-lsgm-source": "native_1_0_gameplay_settings",
+      "x-lsgm-source-key": "gameSettings.flameLevelFogRemoval",
+      "x-lsgm-source-surface": "config_file"
+    },
     "random_spawner_amount": {
       "type": "string",
       "title": "Enemy Amount",
-      "description": "Controls how many enemies appear in the world.",
+      "description": "Controls how many enemies appear in the world. Automatic scales encounters to the number of nearby active players.",
       "default": "Normal",
       "enum": [
         "Few",
         "Normal",
         "Many",
-        "Extreme"
+        "Extreme",
+        "Automatic"
       ],
       "enum_labels": [
         "Few",
         "Normal",
         "Many",
-        "Extreme"
+        "Extreme",
+        "Automatic"
       ],
       "x-lsgm-section": "combat",
       "x-lsgm-order": 500,
@@ -1029,7 +1044,7 @@
     "banned_player_ids": {
       "type": "string",
       "title": "Banned Native Account Hashes",
-      "description": "One native account hash from Enshrouded's bans accountId per line or comma-separated (0..18446744073709551615). Steam IDs are not converted. Entries are written to the native bans array at launch.",
+      "description": "One native accountId hash per line or comma-separated (0..18446744073709551615). Numeric spellings are canonicalized without converting Steam IDs. Player Access preserves existing bannedAccounts records in enshrouded_server.json; stop the server before adding or removing a ban.",
       "format": "textarea",
       "default": "",
       "x-lsgm-section": "moderation",
@@ -1044,7 +1059,7 @@
         "mode": "restart"
       },
       "x-lsgm-source": "ban_records",
-      "x-lsgm-source-key": "bans",
+      "x-lsgm-source-key": "bannedAccounts",
       "x-lsgm-source-surface": "generated_roster"
     }
   },

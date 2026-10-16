@@ -7,6 +7,7 @@ import { selectLocaleText, useI18n } from "../../i18n";
 import type { BindAddressCandidate, InstanceConnectionInfo, InstanceSummary } from "../../types";
 import { useInstanceSettingsSaveCoordinator } from "../settings/InstanceSettingsSaveContext";
 import { readPreferredJoinAddress, resolveInstanceConnection } from "../../instance-connections";
+import { valheimCrossplayJoinGuidance } from "../../view-models";
 
 interface Props {
   instance: InstanceSummary;
@@ -30,11 +31,14 @@ export function ServerCardConnection(props: Props) {
   }, []);
 
   const connection = props.connection;
-  const endpoint = connection ? resolveInstanceConnection({
+  const connectionDetails = connection ? {
     summary: { ...props.instance, bind_ip: connection.bind_ip },
     ports: connection.ports,
     settings_json: connection.settings_json
-  }, props.candidates, readPreferredJoinAddress(props.instance.id), locale, t) : null;
+  } : null;
+  const crossplay = valheimCrossplayJoinGuidance(connectionDetails, t);
+  const endpoint = connectionDetails ? resolveInstanceConnection(connectionDetails,
+    props.candidates, readPreferredJoinAddress(props.instance.id), locale, t) : null;
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const copied = result?.state === "copied" && result.endpoint === endpoint?.endpoint;
   const failed = result?.state === "failed";
@@ -43,7 +47,7 @@ export function ServerCardConnection(props: Props) {
     : failed ? text("复制失败，请重试", "Copy failed. Try again")
       : copied ? text("已复制", "Copied") : "";
   const label = text("复制连接地址", "Copy join address");
-  const summary = endpoint?.endpoint ?? (props.failed
+  const summary = crossplay?.summary ?? endpoint?.endpoint ?? (props.failed
     ? text("连接信息读取失败", "Connection unavailable")
     : connection ? unavailable : text("正在读取连接信息…", "Loading connection…"));
   const portSeparator = endpoint && endpoint.kind !== "relay" ? endpoint.endpoint.lastIndexOf(":") : -1;
@@ -62,7 +66,7 @@ export function ServerCardConnection(props: Props) {
         readPreferredJoinAddress(props.instance.id), locale, t);
       props.onRead({ instance_id: details.summary.id, bind_ip: details.summary.bind_ip,
         ports: details.ports, settings_json: details.settings_json });
-      if (!fresh) throw new Error(unavailable);
+      if (!fresh) throw new Error(valheimCrossplayJoinGuidance(details, t)?.instructions ?? unavailable);
       if (!navigator.clipboard?.writeText) throw new Error(t("activity.clipboardUnsupported"));
       await navigator.clipboard.writeText(fresh.endpoint);
       if (mounted.current) setResult({ state: "copied", endpoint: fresh.endpoint });
@@ -79,7 +83,7 @@ export function ServerCardConnection(props: Props) {
 
   return (
     <div className="server-list-card-network">
-      <div className="server-list-card-meta" title={endpoint ? `${endpoint.label} · ${endpoint.endpoint}` : summary}>
+      <div className="server-list-card-meta" title={crossplay?.instructions ?? (endpoint ? `${endpoint.label} · ${endpoint.endpoint}` : summary)}>
         {portSeparator >= 0 ? <>
           <span className="server-list-card-address">{summary.slice(0, portSeparator + 1)}</span>
           <span>{summary.slice(portSeparator + 1)}</span>
@@ -90,7 +94,7 @@ export function ServerCardConnection(props: Props) {
         disabled={busy || (!endpoint && !props.failed)}
         aria-busy={busy}
         aria-label={`${status || label}: ${props.instance.name}`}
-        title={status || (endpoint ? `${label} · ${endpoint.label} · ${endpoint.endpoint}` : summary)}
+        title={status || crossplay?.instructions || (endpoint ? `${label} · ${endpoint.label} · ${endpoint.endpoint}` : summary)}
         onClick={() => void copy()}
       >
         <ShellIcon name={busy ? "loader" : copied ? "check" : failed ? "alert-circle" : "copy"} className="server-list-card-action-icon" />

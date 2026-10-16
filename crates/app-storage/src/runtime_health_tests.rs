@@ -172,7 +172,7 @@ fn runtime_health_regression_dragonwilds_native_log_requires_current_process_out
     let evaluate = |run: Option<&ActiveInstanceRun>, lines: &[&str], source: &str| {
         let mut snapshot = log_snapshot(lines);
         snapshot.source_path = Some(source.into());
-        analyze_runtime_health_with_startup_evidence(
+        analyze_runtime_health(
             "runescapedragonwilds",
             &InstanceStatus::Running,
             &snapshot,
@@ -247,7 +247,7 @@ fn runtime_health_regression_dragonwilds_native_log_requires_current_process_out
     assert_eq!(evaluate(Some(&run), &[current], native), "starting");
 }
 
-fn dragonwilds_health_run() -> ActiveInstanceRun {
+pub(super) fn dragonwilds_health_run() -> ActiveInstanceRun {
     ActiveInstanceRun {
         run_id: 1,
         session_id: Some("current-session".into()),

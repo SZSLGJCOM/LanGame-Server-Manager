@@ -16,6 +16,8 @@ pub use game_log::{
 };
 #[path = "runtime_console_health_evidence.rs"]
 mod console_health_evidence;
+#[path = "runtime_dragonwilds_health.rs"]
+mod dragonwilds_health;
 #[path = "runtime_enshrouded_health.rs"]
 mod enshrouded_health;
 #[path = "runtime_health_evidence.rs"]
@@ -636,6 +638,49 @@ fn analyze_runtime_health_with_startup_evidence(
     ports: &[PortBinding],
 ) -> app_core::RuntimeHealth {
     let recent_health = analyze_runtime_health(module_id, status, recent_log, active_run, ports);
+    if module_id == "runescapedragonwilds"
+        && matches!(status, InstanceStatus::Running | InstanceStatus::Starting)
+        && recent_log.read_error.is_none()
+        && let Some(run) = active_run
+        && let Some(path) = recent_log.source_path.as_deref()
+    {
+        // The native log is shared across runs. Observe all current-process
+        // transitions, even when the UI tail already contains a ready line.
+        let mut evidence = LogTailSnapshot {
+            source_path: recent_log.source_path.clone(),
+            lines: Vec::new(),
+            total_lines: 0,
+            truncated: false,
+            read_error: None,
+        };
+        match console_health_evidence::observe_dragonwilds(Path::new(path), run) {
+            Ok(lines) => {
+                evidence.total_lines = lines.len();
+                evidence.lines = lines;
+            }
+            Err(error) => evidence.read_error = Some(error.to_string()),
+        }
+        // Preserve the existing map detail while it remains in the UI window;
+        // state transitions still come exclusively from the caught-up observer.
+        evidence.lines.extend(
+            recent_log
+                .lines
+                .iter()
+                .filter(|line| {
+                    line.contains("MapName[") && dragonwilds_health::event(line).is_none()
+                })
+                .cloned(),
+        );
+        evidence.total_lines = evidence.lines.len();
+        // Preserve immediate fatal diagnostics while also retaining them in the
+        // derived checkpoint before they leave the recent log window.
+        return if recent_health.status == "error" {
+            recent_health
+        } else {
+            analyze_runtime_health(module_id, status, &evidence, active_run, ports)
+        };
+    }
+
     if matches!(
         module_id,
         "enshrouded"
@@ -811,6 +856,11 @@ fn analyze_runtime_health(
 
     let diagnostic_lines =
         health_evidence::current_run_lines(&module_id, status, log_snapshot, active_run, true);
+    let diagnostic_lines = if module_id == "runescapedragonwilds" {
+        health_evidence::readiness_lines(diagnostic_lines.as_ref())
+    } else {
+        std::borrow::Cow::Borrowed(diagnostic_lines.as_ref())
+    };
     let lines = diagnostic_lines.as_ref();
 
     let world_dictionary_failure = if module_id == "projectzomboid" {
@@ -845,7 +895,7 @@ fn analyze_runtime_health(
     }
 
     if module_id == "runescapedragonwilds"
-        && let Some(health) = analyze_runescape_dragonwilds_runtime_health(lines)
+        && let Some(health) = dragonwilds_health::analyze(lines)
         && (health.status == "error" || !matches!(status, InstanceStatus::Error))
     {
         return health;
@@ -1149,60 +1199,6 @@ fn analyze_abiotic_factor_runtime_health(lines: &[String]) -> Option<app_core::R
     }
 
     None
-}
-
-fn analyze_runescape_dragonwilds_runtime_health(
-    lines: &[String],
-) -> Option<app_core::RuntimeHealth> {
-    for line in lines.iter().rev() {
-        let normalized = line.to_ascii_lowercase();
-        if normalized.contains("readytojoin") && normalized.contains("value[1]") {
-            let map_name = latest_runescape_dragonwilds_map_name(lines);
-            let summary = if let Some(map_name) = map_name.as_deref() {
-                format!(
-                    "RuneScape: Dragonwilds reported ReadyToJoin after creating the GameSession on map {map_name}."
-                )
-            } else {
-                String::from(
-                    "RuneScape: Dragonwilds reported ReadyToJoin after creating the GameSession.",
-                )
-            };
-            return Some(app_core::RuntimeHealth {
-                status: String::from("ready"),
-                summary,
-                reason: if let Some(map_name) = map_name {
-                    runtime_health_reason("dragonwilds_ready_map", &[("map", map_name)])
-                } else {
-                    runtime_health_reason("dragonwilds_ready", &[])
-                },
-                matched_line: Some(line.clone()),
-            });
-        }
-
-        if normalized.contains("dedicatedserver.ini configuration")
-            && normalized.contains("ownerid")
-        {
-            return Some(app_core::RuntimeHealth {
-                status: String::from("error"),
-                summary: String::from(
-                    "RuneScape: Dragonwilds stopped at DedicatedServer.ini validation because OwnerId is missing or invalid.",
-                ),
-                reason: runtime_health_reason("dragonwilds_owner_invalid", &[]),
-                matched_line: Some(line.clone()),
-            });
-        }
-    }
-
-    None
-}
-
-fn latest_runescape_dragonwilds_map_name(lines: &[String]) -> Option<String> {
-    lines.iter().rev().find_map(|line| {
-        let (_, rest) = line.split_once("MapName[")?;
-        let (map_name, _) = rest.split_once(']')?;
-        let trimmed = map_name.trim();
-        (!trimmed.is_empty()).then(|| String::from(trimmed))
-    })
 }
 
 fn ark_evolved_required_udp_ports(ports: &[PortBinding]) -> Vec<u16> {
@@ -2602,6 +2598,10 @@ fn map_process_identity(row: &SqliteRow) -> Option<ProcessIdentity> {
 #[cfg(test)]
 #[path = "runtime_health_tests.rs"]
 mod health_tests;
+
+#[cfg(test)]
+#[path = "runtime_dragonwilds_health_tests.rs"]
+mod dragonwilds_health_tests;
 
 #[cfg(test)]
 #[path = "runtime_palworld_health_tests.rs"]

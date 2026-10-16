@@ -165,7 +165,7 @@ fn scan_slots(root: &Path) -> Result<Vec<AstroneerSaveEntry>, StorageError> {
     Ok(result)
 }
 
-fn parse_save_filename(filename: &str) -> Option<(&str, &str)> {
+pub(crate) fn parse_save_filename(filename: &str) -> Option<(&str, &str)> {
     let (stem, extension) = filename.rsplit_once('.')?;
     if !extension.eq_ignore_ascii_case("savegame") {
         return None;

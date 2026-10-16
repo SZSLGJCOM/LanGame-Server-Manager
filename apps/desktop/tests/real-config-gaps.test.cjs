@@ -109,7 +109,7 @@ test("mod workflow audit reads shared capability catalog and keeps guardrails no
   assert.match(auditScript, /self-hosted mod/);
 });
 
-test("Astroneer community server mods stage pak packages into Astro Saved Paks", () => {
+test("Astroneer inventory retains its declared pak path while mutations require AML reintegration", () => {
   const moduleToml = read(path.join(astroneerRoot, "module.toml"));
 
   assert.match(moduleToml, /\[mods\.source\][\s\S]*provider = "manual"/);
@@ -119,6 +119,8 @@ test("Astroneer community server mods stage pak packages into Astro Saved Paks",
   assert.match(moduleToml, /\[mods\.manual_staging\][\s\S]*target_label = "Astro\/Saved\/Paks"/);
   assert.match(moduleToml, /\[mods\.manual_staging\][\s\S]*accepts = \["pak", "zip"\]/);
   assert.doesNotMatch(moduleToml, /\[mods\.enablement\]/);
+  assert.match(moduleToml, /generic file changes are blocked/);
+  assert.match(moduleToml, /999-AstroModIntegrator_P\.pak/);
 });
 
 test("Enshrouded community server mods stage Nexus packages into the loader mods directory", () => {
@@ -641,7 +643,7 @@ test("Satisfactory anonymous dedicated package validate keeps INI materializatio
   assert.match(ledger, /networking, logging, and local API settings materialized before launch/);
 });
 
-test("Satisfactory server mods stage into FactoryGame Mods without assuming SMM", () => {
+test("Satisfactory inventory retains its declared path while mutations require SMM layout integration", () => {
   const moduleToml = read(path.join(satisfactoryRoot, "module.toml"));
 
   assert.match(moduleToml, /\[mods\.source\][\s\S]*provider = "manual"/);
@@ -654,6 +656,8 @@ test("Satisfactory server mods stage into FactoryGame Mods without assuming SMM"
   assert.match(moduleToml, /\[mods\.manual_staging\][\s\S]*target_label = "FactoryGame\/Mods"/);
   assert.match(moduleToml, /\[mods\.manual_staging\][\s\S]*accepts = \["smod", "zip", "folder"\]/);
   assert.doesNotMatch(moduleToml, /\[mods\.enablement\]/);
+  assert.match(moduleToml, /blocks generic file changes/);
+  assert.match(moduleToml, /GameFeature/);
 });
 
 test("Windrose anonymous dedicated package validate still matches ServerDescription coverage", () => {
@@ -1421,7 +1425,7 @@ test("Abiotic Factor UE4SS server mods stage into the Win64 ue4ss Mods directory
 test("Enshrouded records the current validated package and installed readme config evidence", () => {
   const ledger = read(path.join(enshroudedRoot, "config-sources.toml"));
 
-  assert.match(ledger, /last_verified = "2026-09-08"/);
+  assert.match(ledger, /last_verified = "2026-10-16"/);
   assert.match(ledger, /Official role password[\s\S]*reverified 2026-09-08/);
   assert.match(ledger, /steamcmd_anonymous_probe_2278520/);
   assert.match(ledger, /StateFlags 4/);

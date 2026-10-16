@@ -66,7 +66,7 @@ retained_paths = ["Astro/Saved/Config/WindowsServer"]
 provider = "manual"
 label = "AstroModLoader Classic"
 url = "https://astroneermodding.readthedocs.io/en/latest/guides/faq.html"
-install_note = "Astroneer community server mods require AstroModLoader Classic or UE4SS integration; LanGame stages .pak packages into Astro/Saved/Paks but does not manage loader execution."
+install_note = "Astroneer requires re-integration after every Mod list change. Use AstroModLoader Classic to install, enable, disable or remove Mods and regenerate 999-AstroModIntegrator_P.pak. LanGame currently provides inventory and directory access only; generic file changes are blocked because they cannot update the integrated package."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/Astro/Saved/Paks"

@@ -1,8 +1,12 @@
 use super::*;
 
+#[path = "commands_mod_thunderstore_plan.rs"]
+mod thunderstore_plan;
+pub(super) use thunderstore_plan::prepare_thunderstore_install;
+
 const MAX_ONLINE_PACKAGES: usize = 32;
 
-pub(super) fn validate_runtime(
+pub(in crate::commands) fn validate_runtime(
     module_id: &str,
     provider: &str,
     install_root: &Path,
@@ -85,7 +89,7 @@ fn verify_bepinex(root: &Path) -> Result<(), String> {
     require_binary(&root.join(assembly))
 }
 
-fn doorstop_assembly(config: &str) -> Result<PathBuf, String> {
+pub(in crate::commands) fn doorstop_assembly(config: &str) -> Result<PathBuf, String> {
     let mut relevant = false;
     let mut enabled = None;
     let mut assembly = None;
@@ -142,88 +146,6 @@ fn doorstop_assembly(config: &str) -> Result<PathBuf, String> {
         return Err("Doorstop does not target a BepInEx/core loader assembly".into());
     }
     Ok(PathBuf::from(value))
-}
-
-pub(super) async fn download_thunderstore_mod_sources(
-    client: &reqwest::Client,
-    source: &app_core::ModuleModSourceSpec,
-    references: &[String],
-    target: &Path,
-) -> Result<Vec<DownloadedManualModSource>, String> {
-    if references.len() > MAX_ONLINE_PACKAGES {
-        return Err("An online installation supports at most 32 packages".into());
-    }
-    let community = thunderstore_community(&source.url)?;
-    let mut packages = Vec::new();
-    let mut seen = HashMap::new();
-    for reference in references {
-        let package = extract_thunderstore_package_reference(reference)
-            .ok_or_else(|| format!("Thunderstore link did not identify a package: {reference}"))?;
-        let mut metadata =
-            fetch_thunderstore_package_metadata(client, &package.namespace, &package.package)
-                .await?;
-        if let Some(version) = package.version.as_deref() {
-            metadata.latest = fetch_thunderstore_version(client, &package, version).await?;
-        }
-        validate_thunderstore_metadata(
-            &metadata,
-            &community,
-            &format!("{}-{}", package.namespace, package.package),
-        )?;
-        if let Some(version) = seen.get(&metadata.full_name) {
-            if version != &metadata.latest.version_number {
-                return Err(
-                    "The online request selects conflicting versions of one Thunderstore package"
-                        .into(),
-                );
-            }
-        } else {
-            seen.insert(
-                metadata.full_name.clone(),
-                metadata.latest.version_number.clone(),
-            );
-            packages.push(metadata);
-        }
-    }
-    let identities = packages
-        .iter()
-        .map(|metadata| OnlineModIdentity {
-            provider: "thunderstore".into(),
-            project: metadata.full_name.clone(),
-            historical_names: vec![metadata.full_name.clone()],
-            version: metadata.latest.version_number.clone(),
-            dependencies: metadata.latest.dependencies.clone(),
-        })
-        .collect::<Vec<_>>();
-    let verification_target = target.to_path_buf();
-    let verification_identities = identities.clone();
-    tokio::task::spawn_blocking(move || {
-        verify_online_mod_dependencies(&verification_target, &verification_identities)
-    })
-    .await
-    .map_err(|error| format!("Mod dependency inspection worker failed: {error}"))??;
-    let mut sources = DownloadedManualModSourcesCleanup::default();
-    for (metadata, identity) in packages.into_iter().zip(identities) {
-        let archive_path = download_mod_site_archive(
-            client,
-            &metadata.latest.download_url,
-            &metadata.full_name,
-            &metadata.latest.version_number,
-        )
-        .await?;
-        let path = prepare_downloaded_thunderstore_archive(
-            archive_path,
-            &metadata.full_name,
-            &metadata.latest.version_number,
-        )
-        .await?;
-        sources.push(DownloadedManualModSource {
-            path,
-            identity,
-            label: metadata.full_name,
-        });
-    }
-    Ok(sources.into_sources())
 }
 
 fn thunderstore_community(url: &str) -> Result<String, String> {
@@ -306,10 +228,38 @@ async fn fetch_thunderstore_version(
     Ok(selected)
 }
 
+pub(in crate::commands) fn validate_corekeeper_native_payload(root: &Path) -> Result<(), String> {
+    let path = root.join("ModManifest.json");
+    mod_inventory::validate_root_chain(&path)?;
+    let file = fs::File::open(&path).map_err(|_| "Core Keeper requires a native ModManifest.json. Old Thunderstore BepInEx plugins cannot be installed into its native Mod directory.")?;
+    if !file
+        .metadata()
+        .map_err(|error| error.to_string())?
+        .is_file()
+    {
+        return Err("Core Keeper ModManifest.json is not a regular file".into());
+    }
+    let mut bytes = Vec::new();
+    file.take(64 * 1024 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
+    if bytes.len() > 64 * 1024 {
+        return Err("Core Keeper native ModManifest.json exceeds the metadata limit".into());
+    }
+    let manifest: Value = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("Invalid Core Keeper native ModManifest.json: {error}"))?;
+    if !manifest
+        .as_object()
+        .is_some_and(|fields| !fields.is_empty())
+    {
+        return Err("Core Keeper native ModManifest.json must be a nonempty JSON object".into());
+    }
+    Ok(())
+}
+
 // Root loaders require a different installation transaction from a plugin payload.
-pub(super) fn reject_loader_archive(path: &Path) -> Result<(), String> {
-    let file = fs::File::open(path)
-        .map_err(|error| format!("cannot inspect Thunderstore archive: {error}"))?;
+pub(in crate::commands) fn reject_loader_archive(path: &Path) -> Result<(), String> {
+    let file = crate::commands::commands_mod_staging::open_preflighted_mod_archive(path)?;
     let mut archive = zip::ZipArchive::new(file)
         .map_err(|error| format!("invalid Thunderstore archive: {error}"))?;
     if archive.len() > 20_000 {

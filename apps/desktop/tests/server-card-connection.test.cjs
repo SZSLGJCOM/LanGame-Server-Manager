@@ -9,6 +9,7 @@ for (const extension of [".ts", ".tsx"]) {
   };
 }
 const { resolveInstanceConnection, readPreferredJoinAddress } = require("../src/instance-connections.ts");
+const { buildShareEndpoints, buildJoinEndpoint, buildInviteText, valheimCrossplayJoinGuidance } = require("../src/view-models.ts");
 const t = (key, _params, fallback) => fallback ?? key;
 const candidates = [
   { address: "0.0.0.0", kind: "all" },
@@ -41,6 +42,37 @@ test("card connection preserves preferred join address and falls back when that 
   assert.equal(resolve(details(), candidates.filter((item) => item.kind !== "public")).endpoint, "198.51.100.4:28000");
   assert.equal(resolve(details({ summary: { id: "bound", module_id: "valheim", bind_ip: "192.0.2.55" } }),
     candidates, "203.0.113.8").endpoint, "192.0.2.55:28000");
+});
+
+test("Valheim crossplay never shares an adapter address, including a saved direct-connect preference", () => {
+  for (const bind_ip of ["0.0.0.0", "198.51.100.4"]) {
+    const value = details({ summary: { id: "crossplay", name: "Crossplay room", module_id: "valheim", bind_ip },
+      settings_json: '{"crossplay_enabled":true}' });
+    assert.deepEqual(buildShareEndpoints(value, candidates, "en-US", t), []);
+    assert.equal(resolve(value, candidates, "198.51.100.4"), null);
+    assert.equal(buildJoinEndpoint(value, candidates, "en-US", t), "");
+    const invitation = buildInviteText(value, [], "en-US", t, candidates);
+    assert.match(invitation, /current startup log/);
+    assert.match(invitation, /crossplay server list/);
+    assert.doesNotMatch(invitation, /198\.51\.100\.4|203\.0\.113\.8|:28000/);
+  }
+});
+
+test("Valheim direct mode keeps adapter addresses and crossplay guidance is localized", () => {
+  const direct = details({ settings_json: '{"crossplay_enabled":false}' });
+  assert.deepEqual(buildShareEndpoints(direct, candidates, "zh-CN", t), buildShareEndpoints(details(), candidates, "zh-CN", t));
+  assert.equal(resolve(direct, candidates, "198.51.100.4").endpoint, "198.51.100.4:28000");
+  assert.equal(valheimCrossplayJoinGuidance(direct, t), null);
+  const catalogs = [require("../src/i18n/games/valheim.zh-cn.ts").ZH_CN_VALHEIM_MESSAGES,
+    require("../src/i18n/games/valheim.en.ts").EN_US_VALHEIM_MESSAGES];
+  for (const [index, catalog] of catalogs.entries()) {
+    const guidance = valheimCrossplayJoinGuidance(details({ settings_json: '{"crossplay_enabled":true}' }),
+      (key, _params, fallback) => catalog[key] ?? fallback ?? key);
+    assert.ok(guidance);
+    assert.match(guidance.summary, index === 0 ? /跨平台.*加入码/ : /Crossplay: join code/);
+    assert.match(guidance.instructions, index === 0 ? /本次启动日志.*跨平台服务器列表/ : /current startup log.*crossplay server list/);
+    assert.match(guidance.instructions, /Radmin/);
+  }
 });
 
 test("a wildcard or proxy-only fallback never becomes a copyable join endpoint", () => {

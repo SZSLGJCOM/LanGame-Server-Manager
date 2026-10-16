@@ -15,7 +15,7 @@ pub(super) fn invalid(path: &Path, message: impl Into<String>) -> StorageError {
     }
 }
 
-pub(super) fn latest_world(
+pub(crate) fn latest_world(
     root: &Path,
     default_world_name: &str,
 ) -> Result<Option<PathBuf>, StorageError> {
@@ -171,7 +171,7 @@ fn open_world(path: &Path) -> Result<File, StorageError> {
     Ok(file)
 }
 
-pub(super) fn read_world(path: &Path) -> Result<Vec<u8>, StorageError> {
+pub(crate) fn read_world(path: &Path) -> Result<Vec<u8>, StorageError> {
     let parent = path
         .parent()
         .ok_or_else(|| invalid(path, "World save has no parent directory."))?;

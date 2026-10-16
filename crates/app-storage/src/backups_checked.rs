@@ -144,6 +144,12 @@ fn backup_restore_scope(
     backup: &InstanceBackupResult,
 ) -> PathBuf {
     let historical = Path::new(&backup.saves_path);
+    // Imported 7DTD generated maps have a separate, exact owned backup scope.
+    // Never accept arbitrary destinations supplied by backup metadata.
+    if record.summary.module_id == "sevendaystodie"
+        && historical == instance_root(record).join("GeneratedWorlds") {
+        return historical.to_owned();
+    }
     let is_saved = |path: &Path| path.file_name().is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case("Saved"));
     if app_core::ark_maps::is_ark(&record.summary.module_id)
         && is_saved(saves_dir)

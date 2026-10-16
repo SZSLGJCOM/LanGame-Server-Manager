@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { ShellIcon } from "../../components/ShellIcon";
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import type { LocaleCode, TranslateFn } from "../../i18n";
 import { instanceHasRunningProcess } from "../../runtime-action-state";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
@@ -101,10 +103,14 @@ function MoriaFieldEditor(props: MoriaNativeSettingsEditorProps) {
   return <section className="server-workbench-surface server-maintenance-card"
     aria-label={t(props.kind === "permissions" ? "returntomoria.workspace.permissionsTitle" : "returntomoria.workspace.worldUpgradeTitle")}>
     <form className="server-save-policy-editor" onSubmit={(event) => void save(event)} noValidate>
-      <h3 className="server-workbench-section-label">{t(props.kind === "permissions"
-        ? "returntomoria.workspace.permissionsTitle" : "returntomoria.workspace.worldUpgradeTitle")}</h3>
+      <ConfigurationHelp description={props.kind === "world-upgrade"
+        ? `${t("returntomoria.workspace.upgradeWarning")} ${t("returntomoria.workspace.requiresStop")}`
+        : t("returntomoria.workspace.requiresStop")}>{(help) =>
+        <h3 className="server-workbench-section-label server-maintenance-card-label" ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}><ShellIcon name="database" className="server-workbench-section-icon" />{t(props.kind === "permissions"
+          ? "returntomoria.workspace.permissionsTitle" : "returntomoria.workspace.worldUpgradeTitle")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></h3>}</ConfigurationHelp>
       {schemaError && <ActivityNotice tone="error">{schemaError}</ActivityNotice>}
-      {props.kind === "world-upgrade" && <p className="form-note" role="note">{t("returntomoria.workspace.upgradeWarning")}</p>}
+      {props.kind === "world-upgrade" && <p className="form-note form-note--error" role="note">{t("returntomoria.workspace.upgradeWarningShort")}</p>}
+
       {field && <ConfigurationField field={field} copy={buildConfigurationFieldCopy(t)}
         className="settings-schema-field--full" disabled={disabled} readOnly={props.readOnly}
         idPrefix={`returntomoria-${props.kind}`} settings={settings}
@@ -116,7 +122,6 @@ function MoriaFieldEditor(props: MoriaNativeSettingsEditorProps) {
           setError(null);
           setStatus("idle");
         }} />}
-      <p className="form-note">{t("returntomoria.workspace.requiresStop")}</p>
       <ActivityNotice tone={status === "failed" ? "error" : status === "saving" ? "info" : "success"}>
         {error ?? (status === "saved" ? t("returntomoria.workspace.saved")
           : status === "saving" ? t("settings.configuration.save.saving") : "")}
@@ -130,9 +135,9 @@ function MoriaFieldEditor(props: MoriaNativeSettingsEditorProps) {
           }}>
           {t("servers.savePolicy.reload")}
         </button>}
-        <button type="submit" className="secondary-button" disabled={disabled || !dirty || issues.length > 0}>
+        <ConfigurationActionHelp reason={!stopped ? t("returntomoria.workspace.requiresStop") : schemaError ? schemaError : issues[0]?.message ?? (!dirty ? t("servers.maintenance.noChanges") : null)}><button type="submit" className="secondary-button" disabled={disabled || !dirty || issues.length > 0}>
           {t("returntomoria.workspace.save")}
-        </button>
+        </button></ConfigurationActionHelp>
       </div>}
     </form>
   </section>;

@@ -18,6 +18,36 @@ pub(super) fn dispatch<'a>(
     // Box each construction separately, as in the shared dispatcher. Large
     // native command futures must not accumulate on a connection worker's stack.
     match command {
+        "read_instance_save_import_support" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_save_import::read_instance_save_import_support(
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "instanceId")?,
+                )
+                .await?,
+            )
+        })),
+        "preview_instance_save_import" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_save_import::preview_instance_save_import(
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "instanceId")?,
+                    string_argument(&args, "sourcePath")?,
+                )
+                .await?,
+            )
+        })),
+        "import_instance_save" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_save_import::import_instance_save(
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "instanceId")?,
+                    string_argument(&args, "sourcePath")?,
+                    string_argument(&args, "expectedFingerprint")?,
+                )
+                .await?,
+            )
+        })),
         "uninstall_steamcmd" => Some(Box::pin(async move {
             to_json(crate::commands::uninstall_steamcmd(app.state::<DesktopState>()).await?)
         })),
@@ -162,6 +192,13 @@ pub(super) fn dispatch<'a>(
         })),
         _ => None,
     }
+}
+
+fn string_argument(args: &Value, name: &str) -> Result<String, String> {
+    args.get(name)
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| format!("Missing or invalid {name}"))
 }
 
 fn input<T: serde::de::DeserializeOwned>(mut args: Value) -> Result<T, String> {

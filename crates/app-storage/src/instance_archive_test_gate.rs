@@ -12,8 +12,10 @@ pub(crate) enum Point {
     Packages,
     PackagesReady,
     NativeSettingsReady,
+    EnshroudedBanRendered,
     BackupPreparing,
     BackupPublishing,
+    SaveImportReadback,
     BackupCleanup,
     BackupRollback,
 }

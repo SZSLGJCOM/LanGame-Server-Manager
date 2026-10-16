@@ -3,6 +3,8 @@ import type { MessageCatalog } from "../../i18n-config";
 export const ZH_CN_VALHEIM_MESSAGES: MessageCatalog = {
   "servers.valheim.backendCrossplay": "跨平台联机",
   "servers.valheim.backendSteamDirect": "Steam 直连",
+  "servers.valheim.crossplayJoinSummary": "跨平台：加入码或服务器列表",
+  "servers.valheim.crossplayJoinInstructions": "请从服务器本次启动日志获取加入码，或通过游戏内跨平台服务器列表加入。跨平台模式不支持使用局域网、Radmin 等本地 IP 地址加入。",
   "servers.valheim.backupCountUnset": "未设置",
   "servers.valheim.durationDay": "{count} 天",
   "servers.valheim.durationHour": "{count} 小时",
@@ -72,7 +74,7 @@ export const ZH_CN_VALHEIM_MESSAGES: MessageCatalog = {
   "settings.schema.valheim.backup_short_seconds.title": "首份备份间隔（秒）",
   "settings.schema.valheim.banned_list.description": "每行一个平台 ID。LanGame 会渲染 bannedlist.txt，并同步到实时 Valheim 存档目录。",
   "settings.schema.valheim.banned_list.title": "封禁平台 ID",
-  "settings.schema.valheim.crossplay_enabled.description": "使用 Valheim 的跨平台后端，让 Steam 和非 Steam 玩家通过同一房间加入。",
+  "settings.schema.valheim.crossplay_enabled.description": "Steam 和非 Steam 玩家通过跨平台加入码或服务器列表加入。使用局域网或 Radmin IP 连接时请关闭。",
   "settings.schema.valheim.crossplay_enabled.title": "启用跨平台联机",
   "settings.schema.valheim.permitted_list.description": "每行一个平台 ID。LanGame 会渲染 permittedlist.txt，并同步到实时 Valheim 存档目录供专用服务器读取。",
   "settings.schema.valheim.permitted_list.title": "允许平台 ID",

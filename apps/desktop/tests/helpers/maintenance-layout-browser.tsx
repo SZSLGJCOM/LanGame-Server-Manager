@@ -91,8 +91,8 @@ function verifyHorizontalFit(container: HTMLElement, label: string) {
       `${label} clips a control or path: ${element.className || element.tagName}`);
   }
 }
-type MaintenanceSection = "backups" | "save-policy" | "runtime" | "storage" | "broadcast";
-const sectionIds: MaintenanceSection[] = ["backups", "save-policy", "runtime", "storage", "broadcast"];
+type MaintenanceSection = "backups" | "save-import" | "save-policy" | "runtime" | "storage" | "broadcast";
+const sectionIds: MaintenanceSection[] = ["backups", "save-import", "save-policy", "runtime", "storage", "broadcast"];
 const workspaceSelector = ".server-detail-scroll--maintenance .configuration-workspace";
 function navigationButton(id: MaintenanceSection) {
   return `${workspaceSelector} [data-configuration-section-id="${id}"] > button`;
@@ -234,7 +234,9 @@ async function run() {
   const isolation = select<HTMLElement>(".instance-isolation-panel");
   let outer = select<HTMLElement>(".server-detail-scroll--maintenance");
   const initialHeight = outer.scrollHeight;
+  await maintenanceSection("save-import");
   const importPanel = select<HTMLElement>(".dst-world-import");
+  await maintenanceSection("backups");
   const policyPanel = select<HTMLElement>(".server-backup-policy-card");
   const navigation = select<HTMLElement>(`${workspaceSelector} .configuration-workspace__sidebar`);
   const content = select<HTMLElement>(`${workspaceSelector} .configuration-workspace__main`);
@@ -270,6 +272,7 @@ async function run() {
   check(backupWrites.length === 1 && backupWrites[0] === instance.id, "Immediate backup lost its instance callback");
   checks++;
 
+  await maintenanceSection("save-import");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled, "Import without a source is enabled");
   await click(".dst-world-import-source-row .secondary-button");
   check(importPanel.textContent?.includes("fixture/import/Cluster_1"), "Selected import source is not displayed");
@@ -290,7 +293,7 @@ async function run() {
   await maintenanceSection("save-policy");
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "7");
   await maintenanceSection("storage");
-  await maintenanceSection("backups");
+  await maintenanceSection("save-import");
   check(importPanel.textContent?.includes("fixture/import/Cluster_1"), "Navigation discarded the selected import source");
   await maintenanceSection("save-policy");
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "7",
@@ -440,11 +443,12 @@ async function run() {
   await maintenanceSection("broadcast");
   check(select<HTMLTextAreaElement>("textarea[name=broadcast-intent]").value === "保留广播草稿",
     "Category navigation discarded the broadcast draft");
-  await maintenanceSection("backups");
+  await maintenanceSection("save-import");
   await click(".dst-world-import-source-row .secondary-button");
   verifyWorkspaceBounds();
   checks++;
 
+  await maintenanceSection("backups");
   const manyBackups = Array.from({ length: 30 }, (_, index) => ({ ...backup, backup_id: `history-${index}`,
     display_name: `联机备份 ${index + 1}`, backup_path: `fixture/backups/history-${index}` }));
   await act(async () => { props = { ...props, selectedBackups: manyBackups }; render(); });
@@ -466,6 +470,7 @@ async function run() {
   await act(async () => { props = { ...props, selectedBackups: [backup] }; render(); });
   checks++;
 
+  await maintenanceSection("save-import");
   holdNextImport = true;
   await click(".dst-world-import-actions .primary-button");
   check(resolveImport && importedSources.length === 2, "Pending import did not reach its storage boundary");
@@ -474,7 +479,7 @@ async function run() {
   await click(".dst-world-import-actions .primary-button");
   check(importedSources.length === 2, "A repeated click dispatched a second import");
   await maintenanceSection("runtime");
-  await maintenanceSection("backups");
+  await maintenanceSection("save-import");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled
     && importedSources.length === 2, "Navigation discarded an in-flight import or allowed duplicate dispatch");
   const firstDetails = props.selectedDetails!;
@@ -490,6 +495,7 @@ async function run() {
     render();
   });
   await waitFor(() => fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "alternate instance directories");
+  await maintenanceSection("save-import");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled
     && !select(".dst-world-import").textContent?.includes("fixture/import/Cluster_1"), "Changing instances leaked the previous import source");
   await act(async () => { resolveImport!({ instance_id: instance.id, source_cluster_path: "fixture/import/Cluster_1",
@@ -536,7 +542,7 @@ async function run() {
       "Keyboard focus entered a hidden maintenance category");
   }
   for (const [id, selector] of [
-    ["backups", ".dst-world-import-source-row .secondary-button"], ["save-policy", ".server-backup-policy-card button[type=submit]"],
+    ["save-import", ".dst-world-import-source-row .secondary-button"], ["save-policy", ".server-backup-policy-card button[type=submit]"],
     ["runtime", '.server-runtime-recovery-editor input[name="enabled"]'], ["runtime", ".server-resource-policy input[name=cpu]"],
     ["storage", ".instance-isolation-paths button"], ["broadcast", "textarea[name=broadcast-intent]"]
   ] as const) {

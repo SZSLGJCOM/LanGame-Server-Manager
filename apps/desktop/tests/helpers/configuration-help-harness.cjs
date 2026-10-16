@@ -10,4 +10,8 @@ function ConfigurationHelp({ description, children }) {
   const help = useConfigurationFieldHelp(`help-${String(description).replace(/[^a-z0-9]/gi, "-")}`, description);
   return React.createElement(React.Fragment, null, children(help), help.helpNode);
 }
-module.exports = { useConfigurationFieldHelp, ConfigurationHelp };
+function ConfigurationActionHelp({ children }) {
+  return children;
+}
+
+module.exports = { useConfigurationFieldHelp, ConfigurationHelp, ConfigurationActionHelp };

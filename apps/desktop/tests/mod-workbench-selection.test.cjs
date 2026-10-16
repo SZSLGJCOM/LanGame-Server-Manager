@@ -124,7 +124,11 @@ function renderList(overrides = {}) {
   const context = {
     ...workshopControls, ...workshopInventory, settings: {}, pzSnapshot: null, readOnly: false,
     moduleId: "unturned", enabledRows: configuredRows, isManualEnablementModule: false,
-    showsManualInventory: false, unconfiguredInventoryItems: [], selectedInventoryItem: null,
+    showsManualInventory: false, usesFileModManagement: false, unconfiguredInventoryItems: [], selectedInventoryItem: null,
+    managedManualMods: {
+      change: (item, action) => actions.push(["managed", item.path, action]),
+      requestDelete: (item) => actions.push(["review-delete", item.path])
+    },
     manualInventory: { items: [], target_exists: true, target_path: "instance/mods" }, manualInventoryError: null,
     activeDetailSource: "enabled", selectedEnabledRow: configuredRows[0], lookupMap: {},
     draggedEnabledRow: null, enabledDropTargetKey: null,

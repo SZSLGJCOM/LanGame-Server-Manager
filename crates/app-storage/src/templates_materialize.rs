@@ -11,7 +11,8 @@ mod configuration;
 #[path = "templates_materialize/prepared_workshop.rs"]
 mod prepared_workshop;
 pub(crate) use configuration::{
-    write_pending_instance_configuration, write_pending_instance_configuration_in_worker,
+    NativeConfigurationSnapshots, write_pending_instance_configuration,
+    write_pending_instance_configuration_in_worker,
 };
 pub(crate) use prepared_workshop::{
     PreparedWorkshopConfiguration, prepare_workshop_configuration_in_worker,
@@ -81,6 +82,7 @@ fn materialize_module_support_files_pending(
 
     files: &mut ManagedConfigMutation,
     prepared: Option<PreparedWorkshopConfiguration>,
+    native_bans: Option<&crate::enshrouded_bans::EnshroudedBansSnapshot>,
 ) -> Result<(), StorageError> {
     match context.module_id {
         "abioticfactor" | "conanexiles" | "humanitz" | "soulmask" => {
@@ -95,7 +97,7 @@ fn materialize_module_support_files_pending(
         },
         "corekeeper" => materialize_corekeeper_support_files(context, files)?,
         "dontstarve" => sync_dst_mod_setup(context, files)?,
-        "enshrouded" => materialize_enshrouded_support_files(context, files)?,
+        "enshrouded" => materialize_enshrouded_support_files(context, files, native_bans)?,
         "minecraft" => materialize_minecraft_support_files(context, files)?,
         "necesse" => materialize_necesse_support_dirs(context, files)?,
         "nightingale" => materialize_nightingale_support_files(context, files)?,
@@ -127,7 +129,7 @@ pub(crate) fn materialize_module_support_files(
     context: &ModuleSupportMaterializationContext<'_>,
 ) -> Result<(), StorageError> {
     let mut files = ManagedConfigMutation::new(context.module_id);
-    match materialize_module_support_files_pending(context, &mut files, None) {
+    match materialize_module_support_files_pending(context, &mut files, None, None) {
         Ok(()) => {
             files.commit();
             Ok(())
@@ -289,17 +291,29 @@ fn materialize_enshrouded_support_files(
     context: &ModuleSupportMaterializationContext<'_>,
 
     files: &mut ManagedConfigMutation,
+    snapshot: Option<&crate::enshrouded_bans::EnshroudedBansSnapshot>,
 ) -> Result<(), StorageError> {
     if !context.install_root.exists() {
         return Ok(());
     }
 
-    merge_rendered_json_object_file(
-        &context.config_dir.join(ENSHROUDED_SERVER_CONFIG_FILE),
-        &context.install_root.join(ENSHROUDED_SERVER_CONFIG_FILE),
-        "enshrouded",
-        files,
-    )
+    let source = context.config_dir.join(ENSHROUDED_SERVER_CONFIG_FILE);
+    if let Some(snapshot) = snapshot {
+        return snapshot.materialize(&source, context.settings, files);
+    }
+    let snapshot = crate::enshrouded_bans::EnshroudedBansSnapshot::read(
+        context.module_id,
+        context.install_root,
+        context.config_dir,
+    )?
+    .ok_or_else(|| StorageError::ModuleSupportMaterialization {
+        module_id: "enshrouded".to_owned(),
+        path: source.clone(),
+        message: "Native ban snapshot is unavailable".to_owned(),
+    })?;
+    let mut settings = context.settings.clone();
+    snapshot.project(&mut settings)?;
+    snapshot.materialize(&source, &settings, files)
 }
 
 fn materialize_minecraft_support_files(

@@ -18,10 +18,10 @@ class ModWorkflowAuditTests(unittest.TestCase):
             "steam_workshop": 10, "community_packages": 15, "not_modelled": 7,
         })
         self.assertEqual(Counter(row["status"] for row in self.rows.values()), {
-            "supported": 11, "manual_only": 14, "not_modelled": 7,
+            "supported": 11, "managed_files": 12, "external_manager": 2, "not_modelled": 7,
         })
         self.assertEqual(sum(row["frontend_tab"] == "True" for row in self.rows.values()), 26)
-        self.assertEqual(sum(row["frontend_apply"] == "True" for row in self.rows.values()), 25)
+        self.assertEqual(sum(row["frontend_apply"] == "True" for row in self.rows.values()), 23)
 
     def test_client_dependencies_and_hidden_catalog_entries_do_not_become_install_support(self) -> None:
         rimworld = self.rows["rimworld"]
@@ -32,15 +32,31 @@ class ModWorkflowAuditTests(unittest.TestCase):
         self.assertEqual(hidden, {"nightingale", "returntomoria", "romestead", "runescapedragonwilds", "scum", "theforest"})
         self.assertEqual(self.rows["runescapedragonwilds"]["frontend_guardrail"], "False")
 
-    def test_local_file_support_does_not_claim_enablement_or_automatic_modrinth_installation(self) -> None:
-        file_only = [row for row in self.rows.values() if row["status"] == "manual_only"]
-        self.assertEqual(len(file_only), 14)
+    def test_managed_file_support_preserves_native_enablement_and_modrinth_boundaries(self) -> None:
+        file_only = [row for row in self.rows.values() if row["status"] == "managed_files"]
+        self.assertEqual(len(file_only), 12)
+        self.assertEqual({row["module_id"] for row in file_only}, {
+            "abioticfactor", "corekeeper", "enshrouded", "humanitz", "minecraft",
+            "necesse", "rust", "sevendaystodie", "sonsoftheforest", "valheim",
+            "vrising", "windrose",
+        })
         self.assertTrue(all(row["manual_staging"] and not row["enablement"] for row in file_only))
+        self.assertTrue(all("ownership-based deletion" in row["note"] for row in file_only))
+        self.assertTrue(all("Configuration, modified and unowned files are retained" in row["note"] for row in file_only))
         self.assertTrue(all(row["collections"] == "False" for row in file_only))
         self.assertEqual({row["module_id"] for row in file_only if row["package_installation"] == "verified_thunderstore_and_local_files"},
                          {"corekeeper", "valheim", "vrising"})
         self.assertEqual(self.rows["minecraft"]["package_installation"], "local_files")
         self.assertEqual(self.rows["arksurvivalascended"]["package_installation"], "reference_ids_and_local_files")
+
+    def test_external_integration_is_not_reported_as_safe_file_enablement(self) -> None:
+        for module_id in ("astroneer", "satisfactory"):
+            row = self.rows[module_id]
+            self.assertEqual(row["status"], "external_manager")
+            self.assertEqual(row["frontend_tab"], "True")
+            self.assertEqual(row["frontend_apply"], "False")
+            self.assertEqual(row["package_installation"], "external_manager")
+            self.assertIn("generic mutations are blocked", row["note"])
 
     def test_apply_coverage_reads_the_domain_plan_including_grouped_cases(self) -> None:
         self.assertEqual(audit.mod_workbench_apply_ids(), {

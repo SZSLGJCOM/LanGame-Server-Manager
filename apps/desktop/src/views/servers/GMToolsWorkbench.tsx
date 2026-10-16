@@ -1,4 +1,6 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
+import { InlineConfirmAction } from "../../components/InlineConfirmAction";
+import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { useEffect, useMemo, useState } from "react";
 import { describeError } from "../../app-state";
 import { sendInstanceGmCommand } from "../../api";
@@ -738,9 +740,28 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
               </div>
             )}
 
-            {availabilityIssue ? <p className="gmt-tool-availability" role="status">{availabilityIssue}</p> : null}
             <div className="gmt-actions-row">
               {feedback ? <ActivityNotice tone={feedbackTone} onDismiss={() => setFeedback(null)}>{feedback}</ActivityNotice> : null}
+              <ConfigurationActionHelp reason={availabilityIssue || null}>
+              {activeTool.id === "ark_destroy_wild_dinos" ? (
+                <InlineConfirmAction
+                  scopeKey={`gmt:${activeTool.id}`}
+                  className="gmt-btn gmt-btn--danger"
+                  disabled={Boolean(availabilityIssue) || execution.busy}
+                  confirmation={selectLocaleText(locale, "将清除所有野生生物，无法撤销。确认执行？", "This removes every wild creature and cannot be undone. Continue?")}
+                  onConfirm={() => sendActiveTool()}
+                >
+                <ShellIcon
+                  name={sendingToolId === activeTool.id ? "loader" : "send"}
+                  className={sendingToolId === activeTool.id ? "gmt-btn-icon gmt-btn-icon--spin" : "gmt-btn-icon"}
+                />
+                {execution.busy && !sendingToolId
+                  ? selectLocaleText(locale, "等待上一条请求…", "Waiting for the earlier request…")
+                  : sendingToolId === activeTool.id
+                  ? t("servers.gmTools.sendingShort", undefined, "Sending...")
+                  : localizedToolSubmitLabel(t, activeTool)}
+                </InlineConfirmAction>
+              ) : (
               <button
                 type="submit"
                 className="gmt-btn gmt-btn--primary"
@@ -756,27 +777,15 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                   ? t("servers.gmTools.sendingShort", undefined, "Sending...")
                   : localizedToolSubmitLabel(t, activeTool)}
               </button>
+              )}
+              </ConfigurationActionHelp>
             </div>
             {execution.result ? (
-              <section className="gmt-command-results" aria-label={selectLocaleText(locale, "工具执行记录", "Tool dispatch results")}>
-                <h5>{selectLocaleText(locale, "工具执行记录", "Tool dispatch results")}</h5>
-                <p role={execution.result.error ? "alert" : "status"}>{gmExecutionText(locale, execution.result)}</p>
-                {execution.result.responses.length > 0 ? (
-                  <ol>
-                    {execution.result.responses.map((response, index) => (
-                      <li key={`${response.submitted_at_unix_ms}:${index}`}>
-                        <code>{response.command}</code>
-                        <small>{response.write_confirmation_pending
-                          ? selectLocaleText(locale, "等待写入确认", "Awaiting write confirmation")
-                          : selectLocaleText(locale, "已发送", "Sent")}</small>
-                        <pre>{response.response_text || selectLocaleText(locale,
-                          "服务器没有返回响应文本，请查看运行日志或游戏内结果。",
-                          "The server returned no response text. Check the runtime log or in-game result.")}</pre>
-                      </li>
-                    ))}
-                  </ol>
-                ) : null}
-              </section>
+              <ActivityNotice tone={execution.result.error ? "error" : "success"}>
+                {[gmExecutionText(locale, execution.result),
+                  ...execution.result.responses.map((response) => response.response_text?.replace(/\s+/g, " ").trim()).filter(Boolean)
+                ].join(" · ")}
+              </ActivityNotice>
             ) : null}
           </form>
         ) : (

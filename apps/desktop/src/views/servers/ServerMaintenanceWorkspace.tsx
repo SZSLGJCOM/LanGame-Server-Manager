@@ -2,6 +2,7 @@ import { operateArkCluster, readArkCluster } from "../../api";
 import { isArkModule } from "../../ark-clusters";
 import type { AiSettings } from "../../ai-settings";
 import { ShellIcon } from "../../components/ShellIcon";
+import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
 import type { LocaleCode, TranslateFn } from "../../i18n";
 import type { InstancePanelLoadState } from "../../instance-panel-loader";
 import { instanceHasRunningProcess } from "../../runtime-action-state";
@@ -14,7 +15,6 @@ import { AiBroadcastWorkbench } from "./AiBroadcastWorkbench";
 import { ArkClusterMaintenance } from "./ArkClusterMaintenance";
 import { ArkClusterPanel } from "./ArkClusterPanel";
 import { BackupTable } from "./BackupTable";
-import { DstWorldImportPanel } from "./DstWorldImportPanel";
 import { ImmediateWorldSave } from "./ImmediateWorldSave";
 import { InstanceAutostartEditor } from "./InstanceAutostartEditor";
 import { InstanceIsolationPanel } from "./InstanceIsolationPanel";
@@ -26,6 +26,7 @@ import { ProgramUpdatePolicyEditor } from "./ProgramUpdatePolicyEditor";
 import { RuntimePerformanceEditor } from "./RuntimePerformanceEditor";
 import { RuntimeRecoveryEditor } from "./RuntimeRecoveryEditor";
 import { SavePolicyEditor } from "./SavePolicyEditor";
+import { SaveImportPanel } from "./SaveImportPanel";
 import { ScumWipeSettingsEditor } from "./ScumWipeSettingsEditor";
 
 export interface ServerMaintenanceWorkspaceProps {
@@ -103,10 +104,9 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
             </div>
             {readOnly ? unavailable : !canRestoreBackup ? <div className="server-backup-stop-note">{t("servers.backups.restoreRequiresStop")}</div> : null}
             {!props.details.backup_uses_declared_saves_path ? (
-              <div className="server-backup-warning" role="note">
-                <div className="detail-label">{t("servers.backups.scopeWarningTitle")}</div>
-                <div className="form-note">{t("servers.backups.scopeWarningBody")}</div>
-              </div>
+              <ConfigurationHelp description={t("servers.backups.scopeWarningBody")}>{(help) =>
+                <p className="form-note server-backup-warning" role="note" ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>
+                  <ShellIcon name="alert-triangle" className="maintenance-help-icon" />{t("servers.backups.scopeWarningTitle")}</p>}</ConfigurationHelp>
             ) : null}
             {!readOnly && props.onResumeAutoRefresh ? <InstancePanelReadStatus state={panelLoadState} part="backups" onRetry={props.onResumeAutoRefresh} /> : null}
             {props.archive?.backups.issues.map((issue, index) => <p key={index} className="form-note form-note--error" role="status">{issue}</p>)}
@@ -119,16 +119,18 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
               /> : null}
             </div>
           </section>
-          {!readOnly && props.details.summary.module_id === "dontstarve" && props.onPickDirectory && props.onImportDontStarveWorldData ? (
-            <DstWorldImportPanel key={`import-${props.details.summary.id}`} details={props.details}
-              onPickDirectory={props.onPickDirectory} onImportWorldData={props.onImportDontStarveWorldData} />
-          ) : null}
         </> },
+        { id: "save-import", title: locale === "zh-CN" ? "导入存档" : "Import save", icon: "folder", preserveAfterVisit: true,
+          content: <SaveImportPanel key={`import-${props.details.summary.id}`} details={props.details} readOnly={readOnly}
+            onPickDirectory={props.onPickDirectory} onImportDontStarveWorldData={props.onImportDontStarveWorldData}
+            onChanged={onChanged} /> },
         { id: "save-policy", title: t("servers.maintenance.savePolicy"), icon: "database", content: <>
           <section aria-label={t("servers.maintenance.savePolicy")} className="server-workbench-surface server-maintenance-card server-backup-policy-card">
             <div className="server-workbench-section-label server-maintenance-card-label">
               <ShellIcon name="database" className="server-workbench-section-icon" />
-              <span>{t("servers.maintenance.savePolicy")}</span>
+              <ConfigurationHelp description={t(props.details.summary.module_id === "unturned"
+                ? "servers.savePolicy.managedEffective" : "servers.savePolicy.nativeEffective")}>{(help) =>
+                <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{t("servers.maintenance.savePolicy")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
             </div>
             <SavePolicyEditor details={props.details} moduleDetails={props.moduleDetails}
               locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />

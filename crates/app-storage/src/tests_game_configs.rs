@@ -1534,7 +1534,7 @@ async fn enshrouded_instance_renders_full_server_config_and_roles() {
     assert_eq!(config_json["userGroups"][4]["password"], "helper-pass");
     assert_eq!(config_json["userGroups"][4]["reservedSlots"], 1);
     assert_eq!(
-        config_json["bans"],
+        config_json["bannedAccounts"],
         serde_json::json!([
             {
                 "accountId": 76561198000000001u64,
@@ -1551,8 +1551,8 @@ async fn enshrouded_instance_renders_full_server_config_and_roles() {
         ])
     );
     assert!(
-        config_json.get("bannedAccounts").is_none(),
-        "Current official Enshrouded config examples use the top-level bans array"
+        config_json.get("bans").is_none(),
+        "Native 1.0.0.1 consumes bannedAccounts; the ignored bans alias must be absent"
     );
 
     let live_config_json: Value =

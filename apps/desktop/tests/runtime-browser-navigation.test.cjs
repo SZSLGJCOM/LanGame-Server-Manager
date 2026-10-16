@@ -30,11 +30,28 @@ function heldDocument(t, release, milliseconds) {
 
 function verifiedFailureCleanup(error) {
   assert.ok(error instanceof AggregateError);
-  assert.equal(error.errors.length, 1, "A fixture timeout must not introduce cleanup failures");
+  assert.equal(error.errors.length, 1, "A fixture failure must not introduce cleanup failures");
   assert.equal(error.browserExited, true);
   assert.equal(error.retainedScratch, null, "Verified tree exit must release the owned profile");
   assert.throws(() => process.kill(error.browserPid, 0), { code: "ESRCH" });
 }
+
+test("startup failure before fixture navigation does not invoke React cleanup", { timeout: 90000 }, async (t) => {
+  const NativeWebSocket = globalThis.WebSocket;
+  let connections = 0;
+  t.mock.method(globalThis, "WebSocket", class extends NativeWebSocket {
+    constructor(...args) {
+      if (++connections === 1) throw new Error("Controlled initial CDP connection failure");
+      super(...args);
+    }
+  });
+  await assert.rejects(runBrowserFixture({ viewport: { width: 960, height: 600 }, fixtureCleanup: true }), (error) => {
+    verifiedFailureCleanup(error);
+    assert.equal(error.errors[0].message, "Controlled initial CDP connection failure");
+    assert.equal(error.browserStartup.fixture_requested_ms, null);
+    return true;
+  });
+});
 
 test("real fixture navigation can use its existing budget after a slow HTML response", { timeout: 90000 }, async (t) => {
   const document = heldDocument(t, (_request, _response, next) => next(), 3500);

@@ -73,11 +73,13 @@ test("DST import belongs only to Maintenance and configuration retains world-gen
   assert.match(source, /<ServerMaintenanceWorkspace active=\{activeDetailTab === "maintenance"\}/);
   const maintenance = read("views/servers/ServerMaintenanceWorkspace.tsx");
   assert.match(maintenance, /<MaintenanceWorkspace active=\{props\.active\}/, "the shared Maintenance workspace must own the import panel");
-  assert.match(maintenance, /summary\.module_id === "dontstarve"[\s\S]*<DstWorldImportPanel/);
-  assert.match(maintenance, /onImportWorldData=\{props\.onImportDontStarveWorldData\}/);
-  assert.equal((maintenance.match(/<DstWorldImportPanel\b/g) ?? []).length, 1);
+  const panel = read("views/servers/SaveImportPanel.tsx");
+  assert.match(maintenance, /id: "save-import"[\s\S]*<SaveImportPanel/);
+  assert.match(panel, /module_id === "dontstarve"/);
+  assert.match(panel, /onImportWorldData=\{props\.onImportDontStarveWorldData\}/);
+  assert.equal((panel.match(/<DstWorldImportPanel\b/g) ?? []).length, 1);
   assert.doesNotMatch(source, /<DstWorldImportPanel\b/, "the normal instance view must not duplicate the shared import panel");
-  assert.match(maintenance, /!readOnly && props\.details\.summary\.module_id === "dontstarve"/);
+  assert.match(panel, /props\.readOnly[\s\S]*: dst && props\.onPickDirectory/);
   assert.doesNotMatch(read("views/settings/modules/dontstarve.ts"), /dst-world-bootstrap|DstWorldBootstrap/);
   assert.doesNotMatch(read("views/settings/ConfigurationWorkspace.tsx"), /ConfigurationRendererOperations|onPickDirectory|onImportDontStarveWorldData/);
   assert.match(read("views/settings/modules/dontstarve-preset-notice.tsx"), /dst\.settings\.generation\.appliesToNew/);

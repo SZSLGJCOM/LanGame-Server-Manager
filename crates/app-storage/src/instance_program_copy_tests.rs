@@ -13,6 +13,114 @@ fn copy_owner(fixture: &AdoptionFixture) -> PendingInstanceDirectory {
 }
 
 #[test]
+fn valheim_local_program_copy_keeps_new_runtime_native_and_source_mods_unchanged() {
+    assert_modded_program_copy_keeps_new_runtime_native(
+        "valheim",
+        &[
+            ("valheim_server.exe", "native server"),
+            (
+                "valheim_server_Data/Managed/assembly_valheim.dll",
+                "native game",
+            ),
+        ],
+        &[
+            ("BepInEx/core/BepInEx.Preloader.dll", "loader"),
+            (".langame-valheim-loader.json", "existing loader ownership"),
+        ],
+    );
+}
+
+#[test]
+fn vrising_local_program_copy_keeps_new_runtime_native_and_source_mods_unchanged() {
+    assert_modded_program_copy_keeps_new_runtime_native(
+        "vrising",
+        &[
+            ("VRisingServer.exe", "native server"),
+            (
+                "VRisingServer_Data/il2cpp_data/Metadata/global-metadata.dat",
+                "native game",
+            ),
+            ("GameAssembly.dll", "native game assembly"),
+        ],
+        &[
+            ("BepInEx/core/BepInEx.Unity.IL2CPP.dll", "IL2CPP loader"),
+            ("BepInEx/interop/Assembly-CSharp.dll", "generated interop"),
+            ("dotnet/coreclr.dll", "loader dotnet runtime"),
+            (".langame-vrising-loader.json", "existing loader ownership"),
+        ],
+    );
+}
+
+fn assert_modded_program_copy_keeps_new_runtime_native(
+    module_id: &str,
+    native_files: &[(&str, &str)],
+    loader_specific_files: &[(&str, &str)],
+) {
+    let descriptor = app_modules::discover_modules(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../modules"),
+    )
+    .unwrap()
+    .into_iter()
+    .find(|descriptor| descriptor.summary.id == module_id)
+    .unwrap();
+    for selection in [ProgramFileSelection::Local, ProgramFileSelection::Automatic] {
+        let fixture = AdoptionFixture::new();
+        let mut loader_files = vec![
+            ("BepInEx/plugins/ServerMod.dll", "existing plugin"),
+            ("BepInEx/config/ServerMod.cfg", "existing plugin settings"),
+            ("BepInEx/patchers/ServerPatcher.dll", "existing patcher"),
+            ("BepInEx/cache/runtime.dat", "existing cache"),
+            ("winhttp.dll", "doorstop loader"),
+            ("doorstop_config.ini", "[UnityDoorstop]\nenabled=true\n"),
+            (".doorstop_version", "existing doorstop version"),
+        ];
+        loader_files.extend_from_slice(loader_specific_files);
+        for (relative, content) in native_files.iter().chain(&loader_files) {
+            let path = fixture.source.join(relative);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, content).unwrap();
+        }
+        let source_before = crate::test_file_snapshot::tree_snapshot(&fixture.source).unwrap();
+        let mut exclusions = fixture.exclusions();
+        exclusions.extend(
+            descriptor
+                .storage
+                .runtime_copy_exclusions
+                .iter()
+                .map(|relative| fixture.source.join(relative)),
+        );
+        let runtime = prepare_private_runtime_root(
+            &fixture.source,
+            &fixture.instance,
+            &exclusions,
+            None,
+            false,
+            selection,
+            None,
+        )
+        .unwrap();
+        for (relative, content) in native_files {
+            assert_eq!(
+                fs::read(runtime.join(relative)).unwrap(),
+                content.as_bytes()
+            );
+        }
+        assert!(!runtime.join("BepInEx").exists());
+        for (relative, _) in loader_files {
+            assert!(
+                !runtime.join(relative).exists(),
+                "new native runtime inherited {relative}"
+            );
+        }
+        assert_eq!(
+            crate::test_file_snapshot::tree_snapshot(&fixture.source).unwrap(),
+            source_before,
+            "creating a native runtime changed the existing modded source"
+        );
+    }
+}
+
+#[test]
 fn official_copy_records_only_its_filtered_program_and_preserves_empty_directories() {
     let fixture = AdoptionFixture::new();
     fs::create_dir(fixture.source.join("optional")).unwrap();

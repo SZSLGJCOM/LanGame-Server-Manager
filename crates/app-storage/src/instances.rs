@@ -1,5 +1,6 @@
 use super::*;
 use crate::atomic_file::read_optional_file_to_string;
+use crate::enshrouded_bans::EnshroudedBansSnapshot;
 use crate::instance_creation_io::check_creation_cancelled;
 #[cfg(test)]
 use crate::instance_creation_io::{copy_creation_file, publish_creation_directory};
@@ -36,8 +37,8 @@ use crate::storage_db::{
     resolve_module_install_root_from_executor, resolve_module_install_root_from_pool,
 };
 use crate::templates::{
-    PreparedWorkshopConfiguration, prepare_workshop_configuration_in_worker,
-    write_pending_instance_configuration_in_worker,
+    NativeConfigurationSnapshots, PreparedWorkshopConfiguration,
+    prepare_workshop_configuration_in_worker, write_pending_instance_configuration_in_worker,
 };
 #[path = "instance_configuration_packages.rs"]
 mod configuration_packages;
@@ -190,6 +191,17 @@ pub(crate) fn project_instance_details(
         MoriaPermissionsSnapshot::read(&record.summary.module_id, &install_root)?
     {
         snapshot.project(&mut settings);
+    }
+    if active_run.is_none()
+        && record.summary.active_process_count == 0
+        && matches!(record.summary.status, InstanceStatus::Stopped)
+        && let Some(snapshot) = EnshroudedBansSnapshot::read(
+            &record.summary.module_id,
+            &install_root,
+            &record.config_dir,
+        )?
+    {
+        snapshot.project(&mut settings)?;
     }
     let settings_json = serde_json::to_string_pretty(&Value::Object(settings))?;
     let backup_uses_declared_saves_path = module_declares_saves_path(descriptor.as_ref());
@@ -1161,8 +1173,14 @@ pub async fn update_instance_if_current(
             id: input.id.clone(),
         });
     }
-    update_instance_with_baseline_locked(paths, input, &settings_lock, Some(current.settings_json))
-        .await
+    update_instance_with_baseline_locked(
+        paths,
+        input,
+        &settings_lock,
+        Some(current.settings_json),
+        None,
+    )
+    .await
 }
 
 fn settings_json_matches(current: &str, expected: &str) -> bool {
@@ -1201,7 +1219,16 @@ pub(crate) async fn update_instance_locked(
     input: UpdateInstanceInput,
     settings_lock: &InstanceSettingsLock,
 ) -> Result<InstanceDetails, StorageError> {
-    update_instance_with_baseline_locked(paths, input, settings_lock, None).await
+    update_instance_with_baseline_locked(paths, input, settings_lock, None, None).await
+}
+
+pub(crate) async fn update_instance_with_ban_removal_locked(
+    paths: &StoragePaths,
+    input: UpdateInstanceInput,
+    settings_lock: &InstanceSettingsLock,
+    removed: u64,
+) -> Result<InstanceDetails, StorageError> {
+    update_instance_with_baseline_locked(paths, input, settings_lock, None, Some(removed)).await
 }
 
 async fn update_instance_with_baseline_locked(
@@ -1209,13 +1236,20 @@ async fn update_instance_with_baseline_locked(
     input: UpdateInstanceInput,
     settings_lock: &InstanceSettingsLock,
     expected_settings_json: Option<String>,
+    removed_enshrouded_ban: Option<u64>,
 ) -> Result<InstanceDetails, StorageError> {
     let paths = paths.clone();
     let transaction_lock = settings_lock.clone();
     settings_lock
         .complete_mutation("updating instance", async move {
-            update_instance_transaction(&paths, input, &transaction_lock, expected_settings_json)
-                .await
+            update_instance_transaction(
+                &paths,
+                input,
+                &transaction_lock,
+                expected_settings_json,
+                removed_enshrouded_ban,
+            )
+            .await
         })
         .await
 }
@@ -1225,6 +1259,7 @@ async fn update_instance_transaction(
     input: UpdateInstanceInput,
     settings_lock: &InstanceSettingsLock,
     expected_settings_json: Option<String>,
+    removed_enshrouded_ban: Option<u64>,
 ) -> Result<InstanceDetails, StorageError> {
     let pool = connect_pool(paths).await?;
     let result = async {
@@ -1268,6 +1303,39 @@ async fn update_instance_transaction(
         let has_active_run = load_active_instance_run(&mut *tx, &input.id)
             .await?
             .is_some();
+        let native_bans = if !has_active_run
+            && record.summary.active_process_count == 0
+            && matches!(record.summary.status, InstanceStatus::Stopped)
+        {
+            EnshroudedBansSnapshot::read(
+                &record.summary.module_id,
+                &template_install_root,
+                &record.config_dir,
+            )?
+        } else {
+            if record.summary.module_id == "enshrouded"
+                && (removed_enshrouded_ban.is_some()
+                    || EnshroudedBansSnapshot::selected_ids(&persisted_settings)?
+                        != EnshroudedBansSnapshot::selected_ids(&incoming_settings)?)
+            {
+                return Err(StorageError::InvalidModuleSetting {
+                    module_id: "enshrouded".to_owned(),
+                    field: "banned_player_ids".to_owned(),
+                    message: "Stop the server before changing its native banned accounts"
+                        .to_owned(),
+                });
+            }
+            None
+        };
+        if let Some(snapshot) = &native_bans {
+            snapshot.reconcile(
+                &record.summary.id,
+                &persisted_settings,
+                &mut incoming_settings,
+                expected_settings_json.as_deref(),
+                removed_enshrouded_ban,
+            )?;
+        }
         if record.summary.module_id == "arksurvivalascended"
             && persisted_settings
                 .get("asa_mod_configurations")
@@ -1448,7 +1516,7 @@ async fn update_instance_transaction(
         )
         .await?;
         #[cfg(test)]
-        if sensitive_baseline.is_some() {
+        if sensitive_baseline.is_some() || native_bans.is_some() {
             let database = paths.database_path.clone();
             settings_lock
                 .spawn_blocking(move || {
@@ -1554,7 +1622,10 @@ async fn update_instance_transaction(
             config_input,
             settings_lock,
             prepared_packages,
-            native_permissions,
+            NativeConfigurationSnapshots {
+                moria_permissions: native_permissions,
+                enshrouded_bans: native_bans,
+            },
         )
         .await?;
         let active_run = load_active_instance_run(&mut *tx, &input.id).await?;
@@ -1739,6 +1810,23 @@ async fn materialize_instance_configuration_transaction(
         if let Some(snapshot) = &native_permissions {
             snapshot.project(&mut persisted_settings);
         }
+        let native_bans = if record.summary.active_process_count == 0
+            && matches!(record.summary.status, InstanceStatus::Stopped)
+            && load_active_instance_run(&mut *tx, instance_id)
+                .await?
+                .is_none()
+        {
+            EnshroudedBansSnapshot::read(
+                &record.summary.module_id,
+                &template_install_root,
+                &record.config_dir,
+            )?
+        } else {
+            None
+        };
+        if let Some(snapshot) = &native_bans {
+            snapshot.project(&mut persisted_settings)?;
+        }
         let settings = normalize_complete_instance_settings(
             descriptor.as_ref(),
             persisted_settings,
@@ -1846,7 +1934,10 @@ async fn materialize_instance_configuration_transaction(
             },
             settings_lock,
             prepared_packages,
-            native_permissions,
+            NativeConfigurationSnapshots {
+                moria_permissions: native_permissions,
+                enshrouded_bans: native_bans,
+            },
         )
         .await?;
 

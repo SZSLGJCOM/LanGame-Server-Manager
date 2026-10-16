@@ -113,8 +113,8 @@ export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
   await selectTab("a", "maintenance");
   const maintenance = element(`${workspace("a")} .maintenance-workspace`);
   check([...maintenance.querySelectorAll<HTMLElement>("[data-maintenance-section]")]
-    .map((section) => section.dataset.maintenanceSection).join("|") === "backups|save-policy|runtime|storage|broadcast",
-    "Archived Maintenance reuses the normal saves, policy, runtime, storage and broadcast categories");
+    .map((section) => section.dataset.maintenanceSection).join("|") === "backups|save-import|save-policy|runtime|storage|broadcast",
+    "Archived Maintenance reuses the normal saves, import, policy, runtime, storage and broadcast categories");
   const backup = element(`${workspace("a")} .server-file-backup-row`);
   check(backup.querySelector(".server-file-backup-name")?.textContent === "ARCHIVE_BACKUP_a"
     && backup.querySelector(".server-file-backup-meta")?.textContent?.includes("4 KB")
@@ -130,6 +130,11 @@ export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
     await hooks.click(`${workspace("a")} .maintenance-workspace [data-configuration-section-id="${id}"] > button`);
     check(!element(`${workspace("a")} [data-maintenance-section="${id}"]`).hidden, `Shared archived maintenance selects its ${id} category`);
   }
+  await maintenanceSection("save-import");
+  check(element(`${workspace("a")} .save-import`).textContent?.includes("Restore this instance before importing")
+    && !maintenance.querySelector(".save-import__source-row, .dst-world-import"),
+    "Archived save import displays guidance without a file picker or mutation action");
+  readOnly("a");
   await maintenanceSection("save-policy");
   check(!element<HTMLInputElement>(`${workspace("a")} .server-managed-backup-policy input[type="checkbox"]`).checked
     && element<HTMLInputElement>(`${workspace("a")} .server-managed-backup-policy input[type="number"]`).value === "7",

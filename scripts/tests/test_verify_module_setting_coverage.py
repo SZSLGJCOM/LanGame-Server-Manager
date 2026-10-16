@@ -605,6 +605,80 @@ export function buildServerDetailTabSpecs(input: { moduleId: string }): TabSpec[
                     )
 
 
+class StorageRosterLockChainVerifierTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.instances = verifier.APP_STORAGE_INSTANCES_RS.read_text(encoding="utf-8-sig")
+        cls.access = (verifier.APP_STORAGE_INSTANCES_RS.parent / "player_access.rs").read_text(
+            encoding="utf-8-sig"
+        )
+
+    def test_accepts_both_locked_player_access_branches_and_multiline_settings_cas(self) -> None:
+        self.assertEqual(verifier.validate_player_access_storage_lock_chain(self.access), [])
+        self.assertEqual(verifier.validate_settings_precondition_storage_lock_chain(self.instances), [])
+
+    def test_rejects_either_player_access_branch_without_its_awaited_lock(self) -> None:
+        for call in (
+            "update_instance_locked(paths, update, &settings_lock).await?",
+            "update_instance_with_ban_removal_locked(paths, update, &settings_lock, removed).await?",
+        ):
+            self.assertIn(call, self.access)
+            for replacement in (
+                call.replace("&settings_lock", "&other_lock"),
+                call.replace(".await?", "?"),
+                f"/* {call} */ removed_write()",
+            ):
+                with self.subTest(replacement=replacement):
+                    self.assertTrue(verifier.validate_player_access_storage_lock_chain(
+                        self.access.replace(call, replacement, 1)
+                    ))
+
+    def test_rejects_player_access_read_before_lock_or_early_lock_release(self) -> None:
+        lock = "let settings_lock = acquire_instance_settings_mutation_lock(paths, instance_id)?;"
+        read = "let details = read_instance_details(paths, instance_id).await?;"
+        self.assertIn(lock, self.access)
+        self.assertIn(read, self.access)
+        for changed in (
+            self.access.replace(lock, "", 1).replace(read, f"{read}\n{lock}", 1),
+            self.access.replace(read, f"{read}\ndrop(settings_lock);", 1),
+        ):
+            self.assertTrue(verifier.validate_player_access_storage_lock_chain(changed))
+
+    def test_rejects_unrelated_calls_as_player_access_lock_evidence(self) -> None:
+        body = verifier.rust_function_body_from_source(self.access, "apply_instance_player_access_mutation")
+        changed = self.access.replace(body, " removed_mutation(); ", 1)
+        changed += "\nasync fn unrelated() {" + body + "}\n"
+        self.assertTrue(verifier.validate_player_access_storage_lock_chain(changed))
+
+    def test_rejects_settings_cas_with_a_missing_baseline_or_unban_intent(self) -> None:
+        body = verifier.rust_function_body_from_source(self.instances, "update_instance_if_current")
+        variants = (
+            body.replace("Some(current.settings_json)", "None", 1),
+            re.sub(r"(Some\(current\.settings_json\),\s*)None", r"\g<1>Some(1)", body, count=1),
+            re.sub(r"\.await(?=\s*$)", "", body, count=1),
+        )
+        for changed in variants:
+            with self.subTest(body=changed):
+                self.assertNotEqual(changed, body)
+                self.assertTrue(verifier.validate_settings_precondition_storage_lock_chain(
+                    self.instances.replace(body, changed, 1)
+                ))
+
+    def test_rejects_settings_read_before_lock_or_lock_release_before_write(self) -> None:
+        body = verifier.rust_function_body_from_source(self.instances, "update_instance_if_current")
+        lock = "let settings_lock = acquire_instance_settings_mutation_lock(paths, &input.id)?;"
+        read = "let current = read_instance_details(paths, &input.id).await?;"
+        self.assertIn(lock, body)
+        self.assertIn(read, body)
+        for changed in (
+            body.replace(lock, "", 1).replace(read, f"{read}\n{lock}", 1),
+            body.replace(read, f"{read}\ndrop(settings_lock);", 1),
+        ):
+            self.assertTrue(verifier.validate_settings_precondition_storage_lock_chain(
+                self.instances.replace(body, changed, 1)
+            ))
+
+
 class InstanceSettingsLockCoverageVerifierTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -862,13 +936,39 @@ class DstNativeSettingsCoverageVerifierTests(unittest.TestCase):
                 ), ["dontstarve: support dispatcher must propagate private setup failures"])
 
     def test_rejects_running_instance_support_file_rewrites(self) -> None:
-        marker = "if !context.instance_running {\n            materialize_module_support_files_pending(context, &mut files, prepared)?;\n        }"
+        function = "write_pending_configuration_with_native_snapshot"
+        body = verifier.rust_function_body_from_source(self.storage_templates_source, function)
+        call = body.index("materialize_module_support_files_pending(")
+        marker = "if !context.instance_running {"
+        guard = body.rfind(marker, 0, call)
+        self.assertGreaterEqual(guard, 0)
+        changed = body[:guard] + body[guard:].replace(marker, "if context.instance_running {", 1)
         mutated = self.mutate_template_function(
-            "write_pending_configuration_with_native_snapshot", lambda body: body.replace(marker, marker.replace("!context.instance_running", "context.instance_running"), 1)
+            function, lambda _: changed
         )
         self.assertEqual(verifier.validate_dst_native_settings_contract(
             verifier.ROOT, storage_templates_source=mutated
         ), ["dontstarve: support files must stay in the stopped-instance file transaction"])
+
+    def test_rejects_support_call_moved_outside_its_stopped_guard(self) -> None:
+        function = "write_pending_configuration_with_native_snapshot"
+        body = verifier.rust_function_body_from_source(self.storage_templates_source, function)
+        match = re.search(r"\bmaterialize_module_support_files_pending\s*\(", body)
+        self.assertIsNotNone(match)
+        arguments = verifier.extract_ts_balanced_block(body, match.end() - 1, "(", ")")
+        self.assertTrue(arguments)
+        call = body[match.start():match.end() - 1] + arguments + "?;"
+        self.assertIn(call, body)
+        for changed in (
+            body.replace(call, "", 1) + "\n" + call,
+            body.replace(call, "if other_instance_condition {" + call + "}", 1),
+            body.replace(call, call + "\n" + call, 1),
+        ):
+            with self.subTest(body=changed):
+                mutated = self.mutate_template_function(function, lambda _: changed)
+                self.assertEqual(verifier.validate_dst_native_settings_contract(
+                    verifier.ROOT, storage_templates_source=mutated
+                ), ["dontstarve: support files must stay in the stopped-instance file transaction"])
 
     def test_rejects_commented_transaction_commit_or_compensation(self) -> None:
         for marker in ("config_mutation.commit();", "config_mutation.rollback_after(original)"):

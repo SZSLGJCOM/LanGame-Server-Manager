@@ -1014,6 +1014,17 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "manage_manual_mod" => boxed_command(|| async move {
+            to_json(
+                commands::commands_file_mods::manage_manual_mod(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "packageId", "package_id")?,
+                    arg(&args, "action", "action")?,
+                )
+                .await?,
+            )
+        }),
         "read_manual_mod_inventory" => boxed_command(|| async move {
             to_json(
                 commands::read_manual_mod_inventory(

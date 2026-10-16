@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "rea
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
 import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
-import { useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
+import { useConfigurationFieldHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { parseSettingsObject, serializeSettingsObject } from "../settings/guided-settings";
 import type { SettingsObject } from "../settings/settings-schema";
 import { mergeRecoveryPolicy, parseRecoveryDraft, readRecoveryPolicy, recoveryDraft,
@@ -181,8 +181,8 @@ export function RuntimeRecoveryEditor(props: Props) {
       </ActivityNotice>
       {(dirty || active.status === "failed") && <button type="button" className="ghost-button" disabled={saving || Boolean(props.readOnly)}
         onClick={() => setDraft(initial(scope, latestJson))}>{props.t("servers.savePolicy.reload")}</button>}
-      <button type="submit" className="secondary-button" disabled={props.readOnly || saving || !dirty || !parsed.value || !latest.value}>
-        {props.t("servers.backups.policySave")}</button>
+      <ConfigurationActionHelp reason={props.readOnly ? null : !dirty ? props.t("servers.maintenance.noChanges") : null}><button type="submit" className="secondary-button" disabled={props.readOnly || saving || !dirty || !parsed.value || !latest.value}>
+        {props.t("servers.backups.policySave")}</button></ConfigurationActionHelp>
     </div>
   </form>;
 }

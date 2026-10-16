@@ -5,6 +5,24 @@ use std::time::Instant;
 
 const HTTP_TEST_TIMEOUT: Duration = Duration::from_secs(5);
 
+#[test]
+fn mod_download_progress_budget_scales_with_bytes_instead_of_package_size() {
+    assert_eq!(
+        download_read_budget(Duration::from_secs(60), 0).unwrap(),
+        Duration::from_secs(30)
+    );
+    assert!(download_read_budget(Duration::from_secs(121), 0).is_err());
+    assert_eq!(
+        download_read_budget(Duration::from_secs(3600), 8 * 1024 * 1024 * 1024).unwrap(),
+        Duration::from_secs(30)
+    );
+    assert!(download_read_budget(Duration::from_secs(140), 64 * 1024).is_err());
+}
+
+#[cfg(windows)]
+#[path = "commands_mod_large_archive_tests.rs"]
+mod large_archives;
+
 fn download_test_client() -> reqwest::Client {
     reqwest::Client::builder()
         .no_proxy()
@@ -77,7 +95,7 @@ async fn header_failures_do_not_multiply_the_shared_retry_limit() {
                 preferred_filename: None,
                 fallback_extension: "zip",
                 integrity: None,
-                max_bytes: 20,
+                max_bytes: Some(20),
                 download_root: &root,
             },
         )
@@ -148,7 +166,7 @@ async fn interrupted_download_restarts_with_a_clean_file() {
             preferred_filename: None,
             fallback_extension: "zip",
             integrity: None,
-            max_bytes: 20,
+            max_bytes: Some(20),
             download_root: &root,
         },
     )
@@ -177,7 +195,7 @@ async fn a_rate_limited_download_does_not_restart_or_publish() {
             preferred_filename: None,
             fallback_extension: "zip",
             integrity: None,
-            max_bytes: 20,
+            max_bytes: Some(20),
             download_root: &root,
         },
     )
@@ -226,7 +244,7 @@ async fn chunked_download_is_stopped_at_the_streaming_limit() {
             preferred_filename: None,
             fallback_extension: "zip",
             integrity: None,
-            max_bytes: 8,
+            max_bytes: Some(8),
             download_root: &root,
         },
     )
@@ -255,7 +273,7 @@ async fn false_oversize_content_length_is_rejected_without_a_partial_file() {
             preferred_filename: None,
             fallback_extension: "zip",
             integrity: None,
-            max_bytes: 8,
+            max_bytes: Some(8),
             download_root: &root,
         },
     )
@@ -276,7 +294,7 @@ async fn cancelled_download_writer_removes_its_unique_file() {
     let (ready_sender, ready_receiver) = tokio::sync::oneshot::channel();
     let writer_path = path.clone();
     let writer = tokio::task::spawn_blocking(move || {
-        write_downloaded_mod_file(writer_path, receiver, ready_sender, None)
+        write_downloaded_mod_file(writer_path, receiver, ready_sender, None, None)
     });
     ready_receiver.await.unwrap().unwrap();
     messages

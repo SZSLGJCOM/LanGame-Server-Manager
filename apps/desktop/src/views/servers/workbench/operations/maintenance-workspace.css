@@ -37,6 +37,16 @@
 }
 
 .maintenance-workspace .form-note { line-height: var(--leading-body); }
+/* Helper copy is muted; warnings (role=note) keep the warning tone. */
+.maintenance-workspace .server-maintenance-card .form-note { color: var(--shell-muted); font-weight: var(--font-weight-regular); }
+.maintenance-workspace .server-maintenance-card .form-note[role="note"] { color: var(--theme-warning-text); }
+/* Game-controlled autosave facts render as read-only fields on the two-column grid. */
+.maintenance-workspace .server-autosave-mechanism { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.maintenance-workspace .server-autosave-mechanism > div { gap: 6px; }
+.maintenance-workspace .server-autosave-mechanism dt { color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); font-size: var(--text-body);
+  font-weight: var(--font-weight-medium); line-height: var(--leading-heading); }
+.maintenance-workspace .server-autosave-mechanism dd { display: flex; align-items: center; min-height: var(--settings-control-height); padding: 8px 10px;
+  border: 1px solid var(--settings-control-border); border-radius: 8px; background: var(--settings-control-bg); font-size: var(--text-body); }
 .maintenance-workspace :is(.primary-button, .secondary-button, .ghost-button) {
   min-height: var(--control-height);
   padding: 4px var(--control-padding-inline);
@@ -50,13 +60,22 @@
 .maintenance-workspace :is(.server-native-save-policies, .server-backup-policy-editor, .server-resource-fields) {
   gap: 12px;
 }
-.maintenance-workspace .server-native-save-policies { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.maintenance-workspace .server-backup-policy-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Save policy: groups stack; each group lays its fields on the standard two-column grid. */
+.maintenance-workspace .server-native-save-policies { grid-template-columns: minmax(0, 1fr); }
+.maintenance-workspace .server-save-policy-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 12px; }
+.maintenance-workspace .server-save-policy-fields > :only-child { grid-column: 1 / -1; }
+.maintenance-workspace :is(.server-save-policy-note, .server-native-save-policies .form-note) {
+  margin-top: -4px;
+  color: var(--shell-muted);
+  font-size: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
+}
+.maintenance-workspace .server-backup-policy-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
 .maintenance-workspace .server-save-policy-group legend { padding-bottom: 12px; }
 .maintenance-workspace :is(.server-backup-policy-field, .server-save-policy-fields .configuration-field) { gap: 6px; }
 .maintenance-workspace .server-autostart-policy-editor > .settings-toggle-card { width: 100%; }
-.maintenance-workspace .server-backup-policy-field .detail-label { color: var(--shell-text); font-weight: var(--font-weight-medium); }
-.maintenance-workspace .server-backup-policy-footer { padding-top: 4px; }
+
+.maintenance-workspace .server-backup-policy-footer { padding-top: 12px; border-top: 1px solid var(--shell-line); }
 .maintenance-workspace .server-autostart-policy-editor {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--shell-line);
@@ -66,7 +85,8 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 14px 0;
+  padding: 14px 10px;
+  border-radius: 8px;
 }
 .maintenance-workspace .server-file-backup-main { gap: 6px; }
 .maintenance-workspace .server-file-backup-row:has(.backup-rename-action) { grid-template-columns: minmax(0, 1fr); }
@@ -83,20 +103,35 @@
 .maintenance-workspace .server-file-backup-name { font-size: var(--text-body); }
 .maintenance-workspace .server-file-backup-summary { gap: 8px 20px; }
 .maintenance-workspace .server-file-backup-stat span { color: var(--shell-text); font-size: var(--text-body); }
-.maintenance-workspace .server-file-backup-empty { padding: 24px 0; }
+.maintenance-workspace .server-file-backup-empty {
+  padding: 24px 12px;
+  border: 1px dashed var(--shell-line-strong, var(--shell-line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-card-muted) 72%, transparent);
+}
 .maintenance-workspace :is(.instance-isolation-content, .instance-isolation-paths) { gap: 12px; }
+/* Directory entries: label above a wrapping monospace path, like a read-only settings field. */
+.maintenance-workspace .instance-isolation-paths { gap: 12px; }
 .maintenance-workspace .instance-isolation-path {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  height: 100%;
   min-height: var(--settings-control-height);
   padding: 8px 10px;
   border-radius: var(--settings-control-radius);
   border-color: var(--settings-control-border);
   background: var(--settings-control-bg);
 }
-.maintenance-workspace .instance-isolation-path > span { font-size: var(--text-body); }
+.maintenance-workspace .instance-isolation-path > span { font-size: var(--text-body); color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); }
+.maintenance-workspace .instance-isolation-path > code { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.maintenance-workspace .instance-isolation-content > .button-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.maintenance-workspace :is(.server-workbench-section-label.server-maintenance-card-label) { display: flex; align-items: center; gap: 7px; margin: 0; }
 
 .maintenance-workspace :is(.server-broadcast-compose, .server-broadcast-fields, .server-broadcast-rules) { gap: 12px; }
 .maintenance-workspace .server-broadcast-actions { gap: 8px; }
-.maintenance-workspace .server-broadcast-panel .server-broadcast-actions > button { min-height: var(--settings-control-height); }
+.maintenance-workspace .server-broadcast-panel .server-broadcast-actions > button,
+.maintenance-workspace .server-broadcast-panel .server-broadcast-actions > .configuration-action-help > button { min-height: var(--settings-control-height); }
 .maintenance-workspace .server-broadcast-panel .server-broadcast-history-heading > button {
   width: var(--control-height-compact);
   min-height: var(--control-height-compact);
@@ -111,9 +146,8 @@
 }
 .maintenance-workspace .server-broadcast-panel .server-broadcast-field textarea { height: 110px; }
 .maintenance-workspace .server-broadcast-panel .server-broadcast-tone select { padding-right: 32px; }
+.maintenance-workspace .server-broadcast-rules { gap: 12px; }
 .maintenance-workspace .server-broadcast-panel .server-broadcast-rule textarea { height: 60px; }
-.maintenance-workspace .server-broadcast-rule { grid-template-columns: 100px minmax(0, 1fr); }
-.maintenance-workspace .server-broadcast-panel .server-broadcast-cooldown input { width: 80px; }
 .maintenance-workspace :is(.server-broadcast-rules, .server-broadcast-history) { padding-top: 20px; }
 .maintenance-workspace .server-broadcast-history { flex: initial; min-height: 0; overflow: visible; }
 .maintenance-workspace .server-broadcast-events { overflow: visible; }
@@ -121,9 +155,34 @@
 .maintenance-workspace .server-maintenance-card > .shell-activity-notice { flex: 0 0 auto; }
 
 @container configuration-fields (max-width: 560px) {
-  .maintenance-workspace :is(.server-native-save-policies, .instance-isolation-paths, .server-broadcast-fields,
+  .maintenance-workspace :is(.server-native-save-policies, .server-save-policy-fields, .server-backup-policy-editor, .instance-isolation-paths, .server-broadcast-fields,
+    .server-broadcast-options, .server-broadcast-policy-row, .server-broadcast-rule-grid,
     .server-file-backup-row) { grid-template-columns: minmax(0, 1fr); }
   .maintenance-workspace .server-file-backup-actions { justify-content: flex-start; }
-  .maintenance-workspace .server-broadcast-actions { display: flex; flex-wrap: wrap; }
-  .maintenance-workspace .server-broadcast-tone { flex: 1 1 100%; }
+  .maintenance-workspace .server-broadcast-actions { justify-content: flex-start; }
 }
+
+/* Section titles carrying a ConfigurationHelp tooltip (caveats live there, not in body copy). */
+.server-maintenance-card [aria-describedby] > .maintenance-help-icon,
+.ark-cluster-backups [aria-describedby] > .maintenance-help-icon,
+.maintenance-help-icon {
+  width: 13px;
+  height: 13px;
+  margin-left: 4px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  vertical-align: -2px;
+}
+.server-maintenance-card [tabindex="0"][aria-describedby],
+.ark-cluster-backups h4[tabindex="0"] { cursor: help; }
+.maintenance-workspace .server-backup-warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--theme-warning-text);
+}
+.maintenance-workspace .server-backup-warning .maintenance-help-icon { margin-left: 0; color: currentColor; }

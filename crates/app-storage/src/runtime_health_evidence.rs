@@ -19,16 +19,7 @@ pub(super) fn current_run_lines<'a>(
         return Cow::Borrowed(&snapshot.lines);
     }
 
-    let primary = active_run.and_then(|run| {
-        run.processes.iter().find(|process| {
-            process.is_primary
-                && process.run_id == run.run_id
-                && process.pid.is_some()
-                && process.pid == run.pid
-                && process.session_id == run.session_id
-                && process.status == "running"
-        })
-    });
+    let primary = active_run.and_then(dragonwilds_primary);
     Cow::Owned(
         snapshot
             .lines
@@ -62,4 +53,21 @@ pub(super) fn readiness_lines(lines: &[String]) -> Cow<'_, [String]> {
                 .collect(),
         )
     }
+}
+
+/// Readiness from a reused native file belongs to one registered OS process.
+pub(super) fn dragonwilds_primary(
+    run: &ActiveInstanceRun,
+) -> Option<&app_core::InstanceProcessState> {
+    run.processes.iter().find(|process| {
+        process.is_primary
+            && process.run_id == run.run_id
+            && process.pid.is_some_and(|pid| pid > 0)
+            && process.pid == run.pid
+            && process.session_id == run.session_id
+            && process.status == "running"
+            && process.process_identity.as_ref().is_some_and(|identity| {
+                identity.creation_time > 0 && !identity.image_path.trim().is_empty()
+            })
+    })
 }
