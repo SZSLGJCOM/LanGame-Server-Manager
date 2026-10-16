@@ -30,7 +30,7 @@
 | `sonsoftheforest` | exhaustive_verified | 44 | 44 | 4 | 19 |
 | `soulmask` | best_effort_verified | 292 | 292 | 5 | 12 |
 | `squad` | best_effort_verified | 62 | 62 | 5 | 36 |
-| `terraria` | best_effort_verified | 40 | 40 | 9 | 12 |
+| `terraria` | best_effort_verified | 40 | 40 | 9 | 13 |
 | `theforest` | exhaustive_verified | 22 | 22 | 6 | 15 |
 | `unturned` | best_effort_verified | 301 | 301 | 13 | 58 |
 | `valheim` | best_effort_verified | 18 | 18 | 7 | 43 |

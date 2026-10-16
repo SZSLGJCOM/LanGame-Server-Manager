@@ -1,6 +1,6 @@
 status = "best_effort_verified"
-last_verified = "2026-09-28"
-notes = "Current install pin: official Terraria 1.4.5.8, verified 2026-09-28; the configuration sample remains byte-identical to 1.4.5.6. Historical evidence follows. Official Terraria Wiki server documentation, the downloaded 1.4.5.6 dedicated package, tModLoader dedicated-server utilities, and the tModLoader Steam Workshop are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist, and modpack surfaces currently exposed by this module. 2026-07-13 download verification: https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip returned the 45635619-byte archive; SHA256 D75C455AC217FD3434448C8F8251C1347F0875A85C438589DC71B557777E9155. Its Windows serverconfig.txt is byte-identical to the 1.4.5.5 sample. Steam Workshop verification: tModLoader Workshop app 1281930 is exposed at https://steamcommunity.com/app/1281930/workshop/. Some command-line switches and serverconfig path keys are intentionally managed by LanGame instance/port state rather than duplicated as schema fields."
+last_verified = "2026-10-16"
+notes = "The module uses official Terraria 1.4.5.8. Its Windows server was verified on one isolated host with XNA 4.0 and Windows ConPTY for console commands, world saving and normal shutdown. Package and configuration provenance remains recorded separately below; these checks do not establish client joins or tModLoader runtime behavior. The configuration sample remains byte-identical to 1.4.5.6. Terraria Wiki documentation, official packages and tModLoader utilities are crosswalked for the Windows serverconfig.txt, launch arguments, console commands, banlist and modpack surfaces. Launch and path values owned by instance state are not duplicated as schema fields."
 
 [[sources]]
 id = "configuration_review_20260930"
@@ -22,14 +22,22 @@ id = "official_dedicated_zip_1456"
 kind = "documentation"
 path = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip"
 authority = "official_terraria_dedicated_server_download"
-description = "Official Terraria 1.4.5.6 dedicated server package. Downloaded on 2026-07-13; archive contains 1456/Windows/TerrariaServer.exe, 1456/Windows/serverconfig.txt, and changelog Version 1.4.5.6."
+description = "Official Terraria 1.4.5.6 dedicated server package. Downloaded on 2026-07-13: 45635619 bytes, SHA256 D75C455AC217FD3434448C8F8251C1347F0875A85C438589DC71B557777E9155. The archive contains 1456/Windows/TerrariaServer.exe, 1456/Windows/serverconfig.txt, and changelog Version 1.4.5.6."
+
+[[sources]]
+id = "native_console_1458"
+kind = "runtime_probe"
+path = "TerrariaServer.exe 1.4.5.8 / Windows ConPTY"
+authority = "isolated_official_terraria_windows_server_probe"
+description = "2026-10-16: On one isolated Windows host with XNA 4.0, the official 1.4.5.8 server reached readiness but did not respond to redirected stdin. With the same LanGame executable and only the module host surface changed to managed_pseudo_console, playing returned No players connected; save emitted Saving world data and Validating world save and produced a non-empty world.wld. Normal instance stop completed with Stopped state and no active run; both game and runtime service processes exited. This verifies the empty-player response and native save/stop path on this host, not client joins, populated player lists or tModLoader."
+url = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1458.zip"
 
 [[sources]]
 id = "installed_online_player_command"
 kind = "install_probe"
 path = "TerrariaServer.exe: Main.startDedInputCallBack / Main.ReadLineInput / LocalizedText.EqualsCommand / CLI localization resources"
 authority = "official_terraria_dedicated_server_download"
-description = "Read-only IL/resource inspection of installed 1.4.5.6 confirms piped Console.ReadLine input, playing output as name (remote address) followed by a complete 0/1/N connected-player count, and English command acceptance in every locale. LanGame recognizes all twelve shipped count localizations and exposes only names from a fresh complete response."
+description = "Historical read-only IL/resource inspection of 1.4.5.6 identified playing output as name (remote address) followed by a complete 0/1/N connected-player count, and English command acceptance in every locale. It did not establish Windows redirected-stdin compatibility for 1.4.5.8; native_console_1458 records the current terminal verification. LanGame recognizes all twelve shipped count localizations and exposes only names from a fresh complete response."
 url = "https://terraria.org/api/download/pc-dedicated-server/terraria-server-1456.zip"
 
 [[sources]]

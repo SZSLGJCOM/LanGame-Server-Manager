@@ -25,8 +25,8 @@ args_template = [
 ]
 working_directory_template = "{{terraria.working_directory}}"
 window_policy = "background"
-host_surface = "managed_terminal"
-host_notes = "The vanilla Windows server requires Microsoft XNA Framework 4.0 (https://www.microsoft.com/en-us/download/details.aspx?id=20914). Install the official runtime before first launch. Terraria and tModLoader servers are console-driven; LanGame captures that console interaction without leaving a separate terminal window on the Windows desktop."
+host_surface = "managed_pseudo_console"
+host_notes = "The vanilla Windows server requires Microsoft XNA Framework 4.0 (https://www.microsoft.com/en-us/download/details.aspx?id=20914). Install the official runtime before first launch. LanGame hosts the server in a managed pseudo console so console commands and graceful shutdown use the same input channel without a separate desktop window."
 
 [[default_ports]]
 name = "game"
