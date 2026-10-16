@@ -52,10 +52,10 @@
 }
 ```
 
-## `2026-09-28-official_dedicated_zip_1458.json`
+## `2026-10-16-native_console_1458.json`
 
-- Evidence: `best_effort_verified` at `2026-09-28` (build `Official Terraria 1.4.5.8 ZIP; static archive and configuration comparison only, no server launch`)
-- Sources: `official_dedicated_zip_1458`
+- Evidence: `best_effort_verified` at `2026-10-16` (build `Official Terraria 1.4.5.8 Windows with XNA 4.0; single-host ConPTY readiness, empty-player query, world save and normal stop; no client join or tModLoader acceptance`)
+- Sources: `official_dedicated_zip_1458`, `native_console_1458`
 - Coverage: editable `0`, specialized `0`, derived `0`, generated `0`, excluded `0`
 
 ### Settings

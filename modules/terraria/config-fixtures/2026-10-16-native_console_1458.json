@@ -3,10 +3,11 @@
   "module_id": "terraria",
   "evidence": {
     "status": "best_effort_verified",
-    "verified_at": "2026-09-28",
-    "build": "Official Terraria 1.4.5.8 ZIP; static archive and configuration comparison only, no server launch",
+    "verified_at": "2026-10-16",
+    "build": "Official Terraria 1.4.5.8 Windows with XNA 4.0; single-host ConPTY readiness, empty-player query, world save and normal stop; no client join or tModLoader acceptance",
     "source_ids": [
-      "official_dedicated_zip_1458"
+      "official_dedicated_zip_1458",
+      "native_console_1458"
     ]
   },
   "coverage": {
