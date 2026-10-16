@@ -43,7 +43,7 @@ Before manual installation or removal, choose **Exit** from the system tray and 
 
 ## Requirements
 
-Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Public connections still need suitable ports and firewall rules. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter. Some settings take effect only after a server restart.
+Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. The vanilla Terraria Windows server also requires [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914); install the official Microsoft runtime before starting it for the first time. Public connections still need suitable ports and firewall rules. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter. Some settings take effect only after a server restart.
 
 ## Use and permissions
 

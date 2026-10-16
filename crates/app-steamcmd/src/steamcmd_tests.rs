@@ -511,11 +511,7 @@ fn probe_module_install_state_prefers_platform_specific_executable_directory() {
 
     #[cfg(windows)]
     {
-        let expected_suffix = if xna_framework_is_installed() {
-            r"\Windows\TerrariaServer.exe"
-        } else {
-            r"\Linux\TerrariaServer.exe"
-        };
+        let expected_suffix = r"\Windows\TerrariaServer.exe";
         assert!(
             probe.executable_path.ends_with(expected_suffix)
                 || probe
@@ -551,6 +547,14 @@ fn probe_terraria_cold_install_resolves_template_process_from_verification_paylo
     std::fs::create_dir_all(windows_executable.parent().expect("windows parent"))
         .expect("create windows parent");
     std::fs::write(&windows_executable, []).expect("write windows placeholder");
+
+    #[cfg(windows)]
+    {
+        let linux_directory = install_root.join("1458").join("Linux");
+        std::fs::create_dir_all(&linux_directory).expect("create Linux payload directory");
+        std::fs::write(linux_directory.join("TerrariaServer.exe"), [])
+            .expect("write Linux payload placeholder");
+    }
 
     let settings = AppSettings {
         archives_root: String::new(),

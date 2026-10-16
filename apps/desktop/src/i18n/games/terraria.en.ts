@@ -127,7 +127,7 @@ export const EN_US_TERRARIA_MESSAGES: MessageCatalog = {
   "settings.schema.terraria.secure.title": "Secure Mode",
   "settings.schema.terraria.seed.description": "Optional seed text for freshly generated worlds. Leave blank to let Terraria pick one.",
   "settings.schema.terraria.seed.title": "World Seed",
-  "settings.schema.terraria.server_runtime.description": "Use vanilla Terraria for normal worlds, or tModLoader when this instance has a tModLoader runtime and staged .tmod files.",
+  "settings.schema.terraria.server_runtime.description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0; install it from Microsoft before starting. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
   "settings.schema.terraria.server_runtime.option.tmodloader": "tModLoader",
   "settings.schema.terraria.server_runtime.option.vanilla": "Vanilla Terraria",
   "settings.schema.terraria.server_runtime.title": "Server Runtime",

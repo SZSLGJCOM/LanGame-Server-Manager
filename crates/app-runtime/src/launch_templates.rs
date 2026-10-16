@@ -1602,13 +1602,7 @@ pub(super) fn executable_candidate_rank(path: &Path) -> (u8, u8, u8) {
 
     #[cfg(windows)]
     {
-        let requires_runtime_fallback =
-            is_terraria_windows_candidate(path) && !xna_framework_is_installed();
-        (
-            requires_runtime_fallback as u8,
-            (has_linux || has_macos) as u8,
-            (!has_windows) as u8,
-        )
+        ((has_linux || has_macos) as u8, (!has_windows) as u8, 0)
     }
 
     #[cfg(target_os = "macos")]
@@ -1632,35 +1626,6 @@ pub(super) fn is_linux_component(value: &str) -> bool {
 
 pub(super) fn is_macos_component(value: &str) -> bool {
     matches!(value, "mac" | "macos" | "osx")
-}
-
-pub(super) fn is_terraria_windows_candidate(path: &Path) -> bool {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .map(|name| name.eq_ignore_ascii_case("TerrariaServer.exe"))
-        .unwrap_or(false)
-        && path
-            .parent()
-            .into_iter()
-            .flat_map(|parent| parent.components())
-            .filter_map(|component| component.as_os_str().to_str())
-            .map(|value| value.to_ascii_lowercase())
-            .any(|value| is_windows_component(&value))
-}
-
-#[cfg(windows)]
-pub(super) fn xna_framework_is_installed() -> bool {
-    [
-        r"C:\Windows\Microsoft.NET\assembly\GAC_MSIL\Microsoft.Xna.Framework",
-        r"C:\Windows\assembly\GAC_MSIL\Microsoft.Xna.Framework",
-    ]
-    .iter()
-    .any(|path| Path::new(path).exists())
-}
-
-#[cfg(not(windows))]
-pub(super) fn xna_framework_is_installed() -> bool {
-    true
 }
 
 pub(super) fn is_path_resolved_runtime(file_name: &str) -> bool {
