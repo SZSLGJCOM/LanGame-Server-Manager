@@ -125,12 +125,18 @@ Release，以当前用户、非管理员权限运行，需要开机、登录和�
 GitCode classic 令牌实际授予账户级“项目读写”，不能描述为单仓库权限；发布器在代码中
 限制目标仓库。令牌以 Windows CurrentUser DPAPI 加密，目录与文件仅当前用户和 SYSTEM
 可访问，解密值只传入本次 Python 子进程环境，不放进参数、日志或仓库。服务器刷新仍为
-匿名读取。GitHub 请求沿用明确配置的本机代理，GitCode API、下载和上传显式绕过代理，
+匿名读取。GitHub 请求沿用明确配置的本机代理，GitCode API、下载和上传默认显式绕过代理，
 避免国内附件绕境外上传；这只是网络路径策略，不能代替实际地区和速度验收。
 
 遇到已确认的 TLS 握手兼容问题时，可仅为发布器进程设置 `LGSM_GITCODE_TLS_MAX=1.2`，
 将 GitCode API、下载及 urllib/curl 上传的 TLS 上限设为 1.2；未设置时沿用默认协商，
 其他值一律拒绝。此选项保留默认 CA、主机名和证书校验，不改变 GitHub 或系统网络配置。
+
+GitCode 需要经已审查的本机 CONNECT 中继时，可仅为发布器进程设置
+`LGSM_GITCODE_PROXY=http://127.0.0.1:PORT`，统一用于 API、附件下载和 urllib/curl 上传。
+必须指定有效端口，不能包含用户信息、路径（包括末尾 `/`）、查询或片段；未设置时保持
+直连。此选项不影响 GitHub，不改变上述 TLS 设置、证书或来源校验；GitCode 令牌仍只在
+到 API 的 HTTPS 请求中传送，中继只转发加密流量。
 
 GitHub 的 `sync-gitcode-release.yml` 工作流须保持 `disabled_manually`。本机每次新发布
 前检查它已禁用且无待运行或运行中的任务，再读取令牌；原有云端 Secret 不会被读取或

@@ -84,14 +84,14 @@ def _curl_quote(value):
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\t", "\\t") + '"'
 
 
-def _curl_command(source, tls_max=None):
+def _curl_command(source, tls_max=None, proxy=None):
     # -q must be first: a runner/user curlrc must not add redirects, retries,
     # tracing, credential headers or a second transfer. HTTPS is not configurable.
     return ["curl", "-q", "--config", "-", "--proto", "=https", "--proto-redir", "=https",
-            "--http1.1", "--globoff", "--noproxy", "*", "--request", "PUT", "--upload-file", str(source.resolve()),
+            "--http1.1", "--globoff", "--noproxy", "" if proxy else "*", "--request", "PUT", "--upload-file", str(source.resolve()),
             "--retry", "0", "--max-redirs", "0", "--connect-timeout", "15", "--max-time", "1800",
             "--speed-limit", "32768", "--speed-time", "60", "--silent", "--show-error",
-            "--output", os.devnull, "--write-out", CURL_WRITE_OUT] + (["--tls-max", tls_max] if tls_max else [])
+            "--output", os.devnull, "--write-out", CURL_WRITE_OUT] + (["--tls-max", tls_max] if tls_max else []) + (["--proxy", proxy] if proxy else [])
 
 
 def _curl_statistics(raw):
@@ -113,7 +113,7 @@ def _curl_statistics(raw):
         raise SyncError("Invalid curl statistics; upload outcome unknown, inspect remote state") from None
 
 
-def _curl_upload(url, headers, source, size, tls_max=None):
+def _curl_upload(url, headers, source, size, tls_max=None, proxy=None):
     # Called only after upload() has admitted the official HTTPS ticket. Tests
     # replace only _curl_command's protocol with loopback HTTP; production has
     # no HTTP flag. Sensitive URL/headers travel only through stdin, never argv.
@@ -121,7 +121,7 @@ def _curl_upload(url, headers, source, size, tls_max=None):
     for name, value in {**headers, "Content-Length": str(size)}.items():
         config += "header = " + _curl_quote(f"{name}: {value}" if value else f"{name};") + "\n"
     try:
-        completed = subprocess.run(_curl_command(source, tls_max), input=config.encode("utf-8"),
+        completed = subprocess.run(_curl_command(source, tls_max, proxy), input=config.encode("utf-8"),
                                    capture_output=True, timeout=1815, check=False)
     except (OSError, subprocess.SubprocessError):
         raise SyncError("curl upload outcome unknown; inspect remote state, do not replay blindly") from None
@@ -200,10 +200,10 @@ class PublicRedirect(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def provider_opener(provider, redirect, tls_max=None):
-    # Domestic GitCode transfers must not inherit an overseas system proxy.
+def provider_opener(provider, redirect, tls_max=None, proxy=None):
+    # GitCode uses direct connections unless an explicit local relay is selected.
     # Preserve the existing GitHub route: direct mainland downloads can stall.
-    handlers = [urllib.request.ProxyHandler({})] if provider == "gitcode" else []
+    handlers = [urllib.request.ProxyHandler({"https": proxy} if proxy else {})] if provider == "gitcode" else []
     if provider == "gitcode" and tls_max == "1.2":
         context = ssl.create_default_context()
         context.maximum_version = ssl.TLSVersion.TLSv1_2
@@ -216,6 +216,11 @@ class Transport:
         self.tokens = {"github": github_token, "gitcode": gitcode_token}
         self.gitcode_tls_max = os.environ.get("LGSM_GITCODE_TLS_MAX")
         require(self.gitcode_tls_max in (None, "1.2"), "LGSM_GITCODE_TLS_MAX must be unset or 1.2")
+        self.gitcode_proxy = os.environ.get("LGSM_GITCODE_PROXY")
+        if self.gitcode_proxy is not None:
+            match = re.fullmatch(r"http://127\.0\.0\.1:([0-9]{1,5})", self.gitcode_proxy)
+            require(match is not None and 1 <= int(match[1]) <= 65535,
+                    "LGSM_GITCODE_PROXY must be an explicit http://127.0.0.1:PORT address")
         # Keep urllib as the baseline until the explicit runner comparison is
         # complete; selecting curl changes no global/user proxy configuration.
         self.upload_transport = os.environ.get("LGSM_GITCODE_UPLOAD_TRANSPORT", "urllib")
@@ -233,7 +238,7 @@ class Transport:
             headers["Content-Type"] = "application/json"
         req = urllib.request.Request(base + suffix, data=data, headers=headers, method=method)
         try:
-            with provider_opener(provider, NoRedirect(), self.gitcode_tls_max).open(req, timeout=timeout) as response:
+            with provider_opener(provider, NoRedirect(), self.gitcode_tls_max, self.gitcode_proxy).open(req, timeout=timeout) as response:
                 raw = response.read(2 * 1024 * 1024 + 1)
                 require(len(raw) <= 2 * 1024 * 1024, "API response exceeds limit")
                 return parse_json(raw)
@@ -259,7 +264,7 @@ class Transport:
             req = urllib.request.Request(url, headers={"User-Agent": "LGSM-release-mirror"})
             with partial.open("xb") as output:
                 created_partial = True
-                with provider_opener(provider, PublicRedirect(provider), self.gitcode_tls_max).open(req, timeout=60) as response:
+                with provider_opener(provider, PublicRedirect(provider), self.gitcode_tls_max, self.gitcode_proxy).open(req, timeout=60) as response:
                     require(response.status == 200, "Expected complete public artifact response")
                     received = 0
                     while chunk := response.read(1024 * 1024):
@@ -291,7 +296,7 @@ class Transport:
             size = os.fstat(stream.fileno()).st_size
             require(0 < size <= MAX_ASSET, "Invalid upload file size")
             if self.upload_transport == "curl":
-                _curl_upload(ticket["url"], headers, source, size, self.gitcode_tls_max)
+                _curl_upload(ticket["url"], headers, source, size, self.gitcode_tls_max, self.gitcode_proxy)
                 return
             body = UploadBody(stream, size)
             # Fixed Content-Length still sends an ordinary PUT, without chunked
@@ -304,7 +309,7 @@ class Transport:
                 # urllib's timeout bounds a blocked socket operation, not the
                 # entire upload. SSL sendall may use all 60 seconds for one
                 # write even while bytes progress; this is not an idle timer.
-                with provider_opener("gitcode", NoRedirect(), self.gitcode_tls_max).open(request, timeout=UPLOAD_WRITE_TIMEOUT) as response:
+                with provider_opener("gitcode", NoRedirect(), self.gitcode_tls_max, self.gitcode_proxy).open(request, timeout=UPLOAD_WRITE_TIMEOUT) as response:
                     require(response.status in (200, 201, 204), "Upload returned an unexpected status")
             except (urllib.error.URLError, TimeoutError, OSError):
                 raise SyncError("GitCode upload outcome unknown; next run must inspect the release, not replay blindly") from None
