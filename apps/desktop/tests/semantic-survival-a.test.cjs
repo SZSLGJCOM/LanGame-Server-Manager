@@ -21,7 +21,7 @@ const roomInventory = {
   barotrauma: ["server_name", "server_message", "server_password", "max_players", "public_server", "play_style", "language"],
   conanexiles: ["server_name", "server_message_of_the_day", "excluded_regions", "max_players", "server_region", "public_server", "server_password", "show_online_players"],
   corekeeper: ["server_name", "game_id", "max_players", "world_index", "join_password"],
-  enshrouded: ["server_name", "max_players", "server_tags"],
+  enshrouded: ["server_name", "max_players", "admin_password", "friend_password", "guest_password", "visitor_password", "server_tags"],
   humanitz: ["server_name", "max_players", "search_id", "welcome_message", "server_password", "save_name"],
   minecraft: ["motd", "max_players", "enable_status", "hide_online_players", "level_name", "bug_report_link"],
   necesse: ["world_name", "max_slots", "motd", "password", "language"],
