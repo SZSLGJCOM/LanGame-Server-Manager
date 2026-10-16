@@ -1220,14 +1220,17 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
         process.executable = String::from("{{terraria.server_executable}}");
         process.args_template = vec![String::from("{{terraria.launch_args}}")];
         process.working_directory_template = Some(String::from("{{terraria.working_directory}}"));
-        let templated_plan = build_launch_plan(&settings, &module, &instance).expect("template plan");
+        let templated_plan =
+            build_launch_plan(&settings, &module, &instance).expect("template plan");
         assert_eq!(
             PathBuf::from(&templated_plan.executable_path),
             windows_executable
         );
         assert_eq!(
             PathBuf::from(&templated_plan.working_directory),
-            windows_executable.parent().expect("Windows executable parent")
+            windows_executable
+                .parent()
+                .expect("Windows executable parent")
         );
     }
 
