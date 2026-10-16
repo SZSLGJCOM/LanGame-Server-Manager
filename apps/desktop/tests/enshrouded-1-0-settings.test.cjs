@@ -15,7 +15,7 @@ const {
   parseGuidedSettingsSchema, validateGuidedSettingsObject
 } = require("../src/views/settings/guided-settings.ts");
 const { enshroudedSettingsDefinition } = require("../src/views/settings/modules/enshrouded.ts");
-const { buildConfigurationWorkspaceModel } = require("../src/views/settings/configuration-workspace-model.ts");
+const { buildConfigurationWorkspaceModel, searchConfigurationItems } = require("../src/views/settings/configuration-workspace-model.ts");
 const { EN_US_MESSAGES } = require("../src/i18n-messages.ts");
 const { ZH_CN_MESSAGES } = require("../src/i18n-messages-zh-cn.ts");
 const schemaJson = fs.readFileSync(path.resolve(__dirname, "../../../modules/enshrouded/schema.json"), "utf8");
@@ -124,8 +124,27 @@ test("Enshrouded keeps one editor per setting and player bans outside configurat
   assert.equal(model.actionableSectionIds.includes("moderation"), false);
   for (const role of ["admin", "friend", "guest", "visitor"]) {
     const fields = schema.fields.filter((field) => field.sectionId === `${role}_role`);
-    assert.equal(fields.length, 7);
+    assert.equal(fields.length, 6);
+    assert.equal(schema.fields.find((field) => field.key === `${role}_password`)?.sectionId, "room");
     assert.equal(schema.sections.find((section) => section.id === `${role}_role`)?.parentId, "access");
+  }
+});
+
+test("Enshrouded room passwords are discoverable without changing their native role mapping", () => {
+  const { schema } = settingsSchema("zh-CN", ZH_CN_MESSAGES);
+  const model = buildConfigurationWorkspaceModel(schema);
+  const roles = ["admin", "friend", "guest", "visitor"];
+  for (const query of ["房间密码", "服务器密码", "加入密码"]) {
+    const matches = searchConfigurationItems(model, query, "zh-CN");
+    for (const role of roles) {
+      assert.ok(matches.some((item) => item.fieldKey === `${role}_password` && item.sectionId === "room"),
+        `${query}: find ${role} join password in room settings`);
+    }
+  }
+  for (const role of roles) {
+    const field = schema.fields.find((entry) => entry.key === `${role}_password`);
+    assert.equal(field.sourceKey, `userGroups.${role[0].toUpperCase()}${role.slice(1)}.password`);
+    assert.match(field.title, /加入密码$/);
   }
 });
 

@@ -561,7 +561,11 @@ async function run() {
   if (previewSection) await maintenanceSection(previewSection);
   check(fixture.querySelectorAll('[role="tab"]').length === tabsBefore
     && fixture.querySelectorAll('[role="tablist"]').length === 1, "Maintenance introduced additional navigation tabs");
-  check(!select(".server-detail-scroll--maintenance").querySelector("details"), "Maintenance still contains a disclosure after interactions");
+  const disclosures = [...select(".server-detail-scroll--maintenance").querySelectorAll("details")];
+  check(disclosures.length === 1 && disclosures[0].matches(".save-import__format")
+    && disclosures[0].closest('[data-maintenance-section="save-import"]')
+    && !disclosures[0].querySelector("button, input, select, textarea"),
+    "Only save format guidance may be collapsed; maintenance operations must remain directly accessible");
   verifyWorkspaceBounds();
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   checks++;

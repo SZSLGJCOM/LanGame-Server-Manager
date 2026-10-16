@@ -81,6 +81,7 @@ async function input(node: HTMLInputElement | HTMLSelectElement, value: string) 
   });
 }
 const submit = () => element<HTMLButtonElement>('button[type="submit"]');
+const resultSelector = ".ark-creature-spawner > .shell-activity-notice.is-success";
 async function coordinates() {
   const fields = fixture.querySelectorAll<HTMLInputElement>(".ark-creature-spawner__coordinates input");
   for (const [index, value] of ["100", "200", "300"].entries()) await input(fields[index], value);
@@ -111,7 +112,7 @@ async function run() {
     && spawnCalls[0].creature.endsWith("/Rex_Character_BP.Rex_Character_BP_C") && !spawnCalls[0].tamed,
     "One-click wild spawning must send typed native parameters with world coordinates");
   check(/^[a-f0-9]{32}$/.test(spawnCalls[0].requestId), "Spawn requests must have a unique correlation ID");
-  check(element(".ark-creature-spawner__result").textContent?.includes("ID 123:456"), "Native entity identity must be visible");
+  check(element(resultSelector).textContent?.includes("ID 123:456"), "Native entity identity must be visible");
   check(clipboardCalls === 0, "One-click spawning must never copy an in-game command");
   await input(element<HTMLSelectElement>(".ark-creature-spawner__coordinates select"), "true");
   await click(submit());
@@ -122,7 +123,7 @@ async function run() {
     "Tamed creatures must send the selected player target");
   mode = "invalid";
   await click(submit());
-  check(!fixture.querySelector(".ark-creature-spawner__result") && element("[role=alert]").textContent?.includes("Invalid ARK creature read-back"),
+  check(!fixture.querySelector(resultSelector) && element("[role=alert]").textContent?.includes("Invalid ARK creature read-back"),
     "Mismatched native read-back must never display a verified creature");
   mode = "failure";
   await click(submit());
@@ -134,9 +135,9 @@ async function run() {
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), ui_refresh: true }) });
   check(submit().disabled && spawnCalls.length === 5, "Settings refresh must not release a native spawn lock");
   await render({ instanceId: "ark-b" });
-  check(submit().disabled && !fixture.querySelector(".ark-creature-spawner__result"), "Instance switch must keep the in-flight lock and clear prior results");
+  check(submit().disabled && !fixture.querySelector(resultSelector), "Instance switch must keep the in-flight lock and clear prior results");
   await act(async () => resolveSpawn!(result(pending)));
-  check(!submit().disabled && !fixture.querySelector(".ark-creature-spawner__result"), "Late results must not pollute the selected instance");
+  check(!submit().disabled && !fixture.querySelector(resultSelector), "Late results must not pollute the selected instance");
   holdStatus = true;
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), status_revision: 1 }) });
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), status_revision: 2 }) });
@@ -152,7 +153,7 @@ async function run() {
   await coordinates();
   await input(element<HTMLInputElement>('input[type="search"]'), "rex");
   await click(submit());
-  const feedback = element(".ark-creature-spawner__result");
+  const feedback = element(resultSelector);
   feedback.scrollIntoView({ block: "nearest" });
   check(feedback.textContent?.includes("已生成并读回确认") && feedback.textContent?.includes("ID 123:456"), "Verified result must remain inspectable");
   check(document.documentElement.scrollWidth <= innerWidth + 1, "ARK spawning must not overflow horizontally");

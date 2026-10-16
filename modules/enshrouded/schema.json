@@ -55,7 +55,7 @@
         "Roleplay"
       ],
       "x-lsgm-section": "room",
-      "x-lsgm-order": 2,
+      "x-lsgm-order": 6,
       "x-lsgm-source": "gameplay_settings",
       "x-lsgm-source-key": "tags",
       "x-lsgm-source-surface": "materializer"
@@ -714,11 +714,11 @@
     },
     "admin_password": {
       "type": "string",
-      "title": "Admin Password",
-      "description": "Players using this password join with the Admin role. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
+      "title": "Admin Join Password",
+      "description": "This room password grants the Admin role when joining the server. Configure the role's permissions under Administration & Permissions. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
       "x-lsgm-default-source": "generated_secret",
-      "x-lsgm-section": "admin_role",
-      "x-lsgm-order": 600,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 2,
       "x-lsgm-source": "role_groups",
       "x-lsgm-source-key": "userGroups.Admin.password",
       "x-lsgm-source-surface": "config_file"
@@ -793,11 +793,11 @@
     },
     "friend_password": {
       "type": "string",
-      "title": "Friend Password",
-      "description": "Players using this password join with the Friend role. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
+      "title": "Friend Join Password",
+      "description": "This room password grants the Friend role when joining the server. Configure the role's permissions under Administration & Permissions. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
       "x-lsgm-default-source": "generated_secret",
-      "x-lsgm-section": "friend_role",
-      "x-lsgm-order": 700,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 3,
       "x-lsgm-source": "role_groups",
       "x-lsgm-source-key": "userGroups.Friend.password",
       "x-lsgm-source-surface": "config_file"
@@ -872,11 +872,11 @@
     },
     "guest_password": {
       "type": "string",
-      "title": "Guest Password",
-      "description": "Players using this password join with the Guest role. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
+      "title": "Guest Join Password",
+      "description": "This room password grants the Guest role when joining the server. Configure the role's permissions under Administration & Permissions. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
       "x-lsgm-default-source": "generated_secret",
-      "x-lsgm-section": "guest_role",
-      "x-lsgm-order": 800,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 4,
       "x-lsgm-source": "role_groups",
       "x-lsgm-source-key": "userGroups.Guest.password",
       "x-lsgm-source-surface": "config_file"
@@ -951,11 +951,11 @@
     },
     "visitor_password": {
       "type": "string",
-      "title": "Visitor Password",
-      "description": "Players using this password join with the Visitor role. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
+      "title": "Visitor Join Password",
+      "description": "This room password grants the Visitor role when joining the server. Configure the role's permissions under Administration & Permissions. An empty password permits public access. A public role cannot enable more permissions than any password-protected role.",
       "x-lsgm-default-source": "generated_secret",
-      "x-lsgm-section": "visitor_role",
-      "x-lsgm-order": 900,
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 5,
       "x-lsgm-source": "role_groups",
       "x-lsgm-source-key": "userGroups.Visitor.password",
       "x-lsgm-source-surface": "config_file"

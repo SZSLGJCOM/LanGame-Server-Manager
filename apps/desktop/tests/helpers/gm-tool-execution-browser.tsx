@@ -67,6 +67,7 @@ async function render(next: InstanceDetails) {
   if (details.summary.module_id.startsWith("arksurvival")) await choose("ark_set_time");
 }
 const button = () => element<HTMLButtonElement>('.gmt-form button[type="submit"]');
+const resultSelector = ".gmt-form > .shell-activity-notice";
 async function submit() { await act(async () => { button().click(); }); }
 async function choose(toolId: string) {
   const index = getGmToolCatalog(details.summary.module_id)!.tools.findIndex((tool) => tool.id === toolId);
@@ -118,8 +119,9 @@ async function run() {
   await submit();
   check(calls.length === 1 && calls[0].command === "SetTimeOfDay 12:00" && calls[0].transport === "source_rcon",
     "Real ARK time form must dispatch its builder command through the production API envelope");
-  check(element(".gmt-command-results").textContent?.includes("Unknown command: native diagnostic"),
-    "Native game rejection text must remain visible");
+  check(element(resultSelector).textContent?.includes("Unknown command: native diagnostic")
+    && element(resultSelector).textContent?.includes(calls[0].command),
+    "Native game rejection text must retain its command identity");
   check(!fixture.querySelector(".shell-activity-notice.is-success"), "A transport response must not become a game success toast");
 
   mode = "deferred";
@@ -129,7 +131,7 @@ async function run() {
   await submit();
   check(calls.length === 2 && button().disabled, "Settings refresh must not release the in-flight lock");
   await moduleDetails("arksurvivalascended", "ark-b");
-  check(button().disabled && !fixture.querySelector(".gmt-command-results"), "Other instance must not inherit the old response");
+  check(button().disabled && !fixture.querySelector(resultSelector), "Other instance must not inherit the old response");
   const previous = deferred.shift()!;
   await act(async () => previous.resolve(response(previous.request, "OLD INSTANCE RESPONSE")));
   check(!button().disabled && !fixture.textContent?.includes("OLD INSTANCE RESPONSE"), "Late native result must not pollute the selected instance");
@@ -137,21 +139,22 @@ async function run() {
   mode = "pending";
   await moduleDetails("dontstarve", "dst-pending");
   await submit();
-  check(element(".gmt-command-results").textContent?.includes("仍等待写入确认"), "Pending stdin must not be described as sent");
-  check(element(".gmt-command-results small").textContent === "等待写入确认", "Per-command pending state must be visible");
+  check(element(resultSelector).textContent?.includes("仍等待写入确认"), "Pending stdin must not be described as sent");
+  check(element(resultSelector).getAttribute("role") === "status"
+    && element(resultSelector).classList.contains("is-info"), "Pending write confirmation must remain informational");
 
   await moduleDetails("arksurvivalascended", "ark-invalid");
   await input("gm-ark_set_time-time-input", "99:99");
   const beforeInvalid = calls.length;
   await submit();
-  check(button().disabled && calls.length === beforeInvalid && Boolean(fixture.querySelector(".gmt-tool-availability")),
+  check(button().disabled && calls.length === beforeInvalid && Boolean(fixture.querySelector(".configuration-action-help[aria-describedby]")),
     "Invalid time must explain its error before native dispatch");
 
   await moduleDetails("dontstarve", "dst-a");
   await input("gm-dst_give_item_to_player-shard-input", "caves");
   check(button().disabled && fixture.textContent?.includes("caves 未运行"), "Unavailable shard must show why dispatch is disabled");
   await moduleDetails("arksurvivalascended", "ark-stopped", false);
-  check(button().disabled && Boolean(fixture.querySelector(".gmt-tool-availability")), "Stopped server must show why its tool is unavailable");
+  check(button().disabled && Boolean(fixture.querySelector(".configuration-action-help[aria-describedby]")), "Stopped server must show why its tool is unavailable");
 
   await moduleDetails("arksurvivalascended", "ark-b");
   await choose("ark_give_item_to_player");
@@ -162,9 +165,10 @@ async function run() {
   const beforeBatch = calls.length;
   await submit();
   check(calls.length === beforeBatch + 2, "Batch must stop at the first unconfirmed command");
-  check(element(".gmt-command-results").textContent?.includes("First reward accepted")
-    && element(".gmt-command-results [role=alert]").textContent?.includes("已发送 1/3 条"), "Partial batch must retain delivered responses and the failure count");
-  check(element(".gmt-command-results [role=alert]").textContent?.includes("native connection lost"), "Original transport error must remain visible");
+  check(element(resultSelector).textContent?.includes("First reward accepted")
+    && element(resultSelector).textContent?.includes(calls[beforeBatch].command)
+    && element(`${resultSelector}[role=alert]`).textContent?.includes("已发送 1/3 条"), "Partial batch must retain delivered responses and the failure count");
+  check(element(`${resultSelector}[role=alert]`).textContent?.includes("native connection lost"), "Original transport error must remain visible");
 
   mode = "deferred";
   await submit();
@@ -176,8 +180,14 @@ async function run() {
 
   mode = "response";
   await choose("ark_destroy_wild_dinos");
-  await submit();
-  const results = element(".gmt-command-results");
+  const beforeDestructive = calls.length;
+  await act(async () => element<HTMLButtonElement>(".inline-confirm-action > button").click());
+  check(calls.length === beforeDestructive && Boolean(fixture.querySelector(".inline-confirm-review")),
+    "Destructive GM commands must wait for explicit confirmation");
+  await act(async () => element<HTMLButtonElement>(".inline-confirm-submit").click());
+  check(calls.length === beforeDestructive + 1 && calls.at(-1)?.command === "DestroyWildDinos",
+    "Confirming the destructive action must dispatch exactly once");
+  const results = element(resultSelector);
   results.scrollIntoView({ block: "nearest" });
   const bounds = results.getBoundingClientRect();
   check(bounds.width > 0 && bounds.left >= 0 && bounds.right <= innerWidth + 1,

@@ -35,9 +35,9 @@ Archive SHA-256 后按 gzip tar 归档解压，即可取得上游源码及其声
 LanGame 项目许可不限制接收者依 MPL 获得的源码权利。
 条款见 Mozilla Public License 2.0 第 3.1-3.3 节：https://www.mozilla.org/MPL/2.0/
 
-Locked external crates / 锁定外部 crate: 649
+Locked external crates / 锁定外部 crate: 646
 Reviewed missing-file rules / 缺失文件审计规则: 47
-Unique legal texts / 唯一法律文本: 385
+Unique legal texts / 唯一法律文本: 383
 
 PACKAGE INVENTORY / 软件包清单
 ================================================================================
@@ -171,17 +171,6 @@ VCS commit / 版本提交: 78cdfff31e8a6579119b75ff7cbfeae7d4fc7d0a
 Authors metadata / 作者元数据: Daniel Brotsky <dev@brotsky.com>
 Legal text / 法律文本: 157cc607717b1b372a69f6b4526f6ad18c1279af9f3267835cca2943f37bc07d — checksum-verified crate file apple-native-keyring-store-1.0.2/LICENSE-MIT
 Legal text / 法律文本: 78ebc2ea2a1cec9cbec2e1a6fc15e73474fe22bdad7575518e7f4628651d49c4 — checksum-verified crate file apple-native-keyring-store-1.0.2/LICENSE-APACHE
---------------------------------------------------------------------------------
-Package / 软件包: arbitrary@1.5.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 3bc62ac97cc33321f50863d514c3bc38a453947a8f9e781137e47c7401020aed
-Source archive / 源码归档: https://static.crates.io/crates/arbitrary/arbitrary-1.5.0.crate
-Repository / 仓库: https://github.com/rust-fuzz/arbitrary/
-VCS commit / 版本提交: 9807b599146c301a67e20692635352c9db70bff2
-Authors metadata / 作者元数据: The Rust-Fuzz Project Developers; Nick Fitzgerald <fitzgen@gmail.com>; Manish Goregaokar <manishsmail@gmail.com>; Simonas Kazlauskas <arbitrary@kazlauskas.me>; Brian L. Troutwine <brian@troutwine.us>; Corey Farwell <coreyf@rwell.org>
-Legal text / 法律文本: 15656cc11a8331f28c0986b8ab97220d3e76f98e60ed388b5ffad37dfac4710c — checksum-verified crate file arbitrary-1.5.0/LICENSE-MIT
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file arbitrary-1.5.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: async-broadcast@0.7.2
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -1287,17 +1276,6 @@ VCS commit / 版本提交: 7d0c671e8c806b96d582af197df3c620e09cb33b
 Authors metadata / 作者元数据: Jacob Pratt <jacob@jhpratt.dev>
 Legal text / 法律文本: 231c837c45eb53f108fb48929e488965bc4fcc14e9ea21d35f50e6b99d98685b — checksum-verified crate file deranged-0.5.8/LICENSE-MIT
 Legal text / 法律文本: edd65bdd88957a205c47d53fa499eed8865a70320f0f03f6391668cb304ea376 — checksum-verified crate file deranged-0.5.8/LICENSE-Apache
---------------------------------------------------------------------------------
-Package / 软件包: derive_arbitrary@1.5.0
-Declared license / 声明许可证: MIT OR Apache-2.0
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 1b034bd7d5f032402a2479444dcc6f74e36a03f31854d41680fb240ef682a1ac
-Source archive / 源码归档: https://static.crates.io/crates/derive_arbitrary/derive_arbitrary-1.5.0.crate
-Repository / 仓库: https://github.com/rust-fuzz/arbitrary
-VCS commit / 版本提交: 9807b599146c301a67e20692635352c9db70bff2
-Authors metadata / 作者元数据: The Rust-Fuzz Project Developers; Nick Fitzgerald <fitzgen@gmail.com>; Manish Goregaokar <manishsmail@gmail.com>; Andre Bogus <bogusandre@gmail.com>; Corey Farwell <coreyf@rwell.org>
-Legal text / 法律文本: 15656cc11a8331f28c0986b8ab97220d3e76f98e60ed388b5ffad37dfac4710c — checksum-verified crate file derive_arbitrary-1.5.0/LICENSE-MIT
-Legal text / 法律文本: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2 — checksum-verified crate file derive_arbitrary-1.5.0/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: derive_builder@0.20.2
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -6885,25 +6863,15 @@ VCS commit / 版本提交: c56bbb5a7b47409759113903764c456f13b418e5
 Authors metadata / 作者元数据: The ICU4X Project Developers
 Legal text / 法律文本: f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2 — checksum-verified crate file zerovec-0.11.8/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: zip@4.6.1
+Package / 软件包: zip@9.0.3
 Declared license / 声明许可证: MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: caa8cd6af31c3b31c6631b8f483848b91589021b28fffe50adada48d4f4d2ed1
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-4.6.1.crate
-Repository / 仓库: https://github.com/zip-rs/zip2.git
-VCS commit / 版本提交: 56fa5f6e1f3e29d747e5875867e7a647aa612b8c
-Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 04dc52136d82400b11df5f474949863a70a5d05d2278dec45b99c479494450a6 — checksum-verified crate file zip-4.6.1/LICENSE
---------------------------------------------------------------------------------
-Package / 软件包: zip@9.0.2
-Declared license / 声明许可证: MIT
-Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 9e2fc56a6707efb066c40aead2409ebb1224e6dde24a074e9fbc78ced500507b
-Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.0.2.crate
+Archive SHA-256: c2d98561b612a84ae525331a7a094429ef8a5772514ed507ff6db5f54badc971
+Source archive / 源码归档: https://static.crates.io/crates/zip/zip-9.0.3.crate
 Repository / 仓库: https://github.com/zip-rs/zip2
-VCS commit / 版本提交: d4baac67d5d4fd5a4f25a6f43860fc3034180bd1
+VCS commit / 版本提交: 06b1fe7d51842772cbc31bd020e0a925428ecc22
 Authors metadata / 作者元数据: Mathijs van de Nes <git@mathijs.vd-nes.nl>; Marli Frost <marli@frost.red>; Ryan Levick <ryan.levick@gmail.com>; Chris Hennick <hennickc@amazon.com>
-Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.0.2/LICENSE
+Legal text / 法律文本: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79 — checksum-verified crate file zip-9.0.3/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: zlib-rs@0.6.8
 Declared license / 声明许可证: Zlib
@@ -7882,34 +7850,6 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Text SHA-256 / 文本 SHA-256: 04dc52136d82400b11df5f474949863a70a5d05d2278dec45b99c479494450a6
-Source / 来源: checksum-verified crate file zip-4.6.1/LICENSE
---------------------------------------------------------------------------------
-The MIT License (MIT)
-
-Copyright (c) 2014 Mathijs van de Nes
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Some files in the "tests/data" subdirectory of this repository are under other
-licences; see files named LICENSE.*.txt for details.
 
 Text SHA-256 / 文本 SHA-256: 0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720
 Source / 来源: checksum-verified crate file rayon-1.12.0/LICENSE-MIT
@@ -9050,38 +8990,6 @@ Source / 来源: checksum-verified crate file powerfmt-0.2.1/LICENSE-Apache
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-Text SHA-256 / 文本 SHA-256: 15656cc11a8331f28c0986b8ab97220d3e76f98e60ed388b5ffad37dfac4710c
-Source / 来源: checksum-verified crate file arbitrary-1.5.0/LICENSE-MIT
-Source / 来源: checksum-verified crate file derive_arbitrary-1.5.0/LICENSE-MIT
---------------------------------------------------------------------------------
-MIT License
-
-Copyright (c) 2019 Manish Goregaokar
-
-Permission is hereby granted, free of charge, to any
-person obtaining a copy of this software and associated
-documentation files (the "Software"), to deal in the
-Software without restriction, including without
-limitation the rights to use, copy, modify, merge,
-publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software
-is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice
-shall be included in all copies or substantial portions
-of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
-ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
-IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 157cc607717b1b372a69f6b4526f6ad18c1279af9f3267835cca2943f37bc07d
 Source / 来源: checksum-verified crate file apple-native-keyring-store-1.0.2/LICENSE-MIT
@@ -15352,7 +15260,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79
 Source / 来源: checksum-verified crate file tracing-core-0.1.36/src/spin/LICENSE
-Source / 来源: checksum-verified crate file zip-9.0.2/LICENSE
+Source / 来源: checksum-verified crate file zip-9.0.3/LICENSE
 --------------------------------------------------------------------------------
 The MIT License (MIT)
 
@@ -23851,7 +23759,6 @@ Apache License
 
 Text SHA-256 / 文本 SHA-256: a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2
 Source / 来源: checksum-verified crate file ahash-0.8.12/LICENSE-APACHE
-Source / 来源: checksum-verified crate file arbitrary-1.5.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file async-channel-2.5.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file async-executor-1.14.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file async-io-2.6.0/LICENSE-APACHE
@@ -23887,7 +23794,6 @@ Source / 来源: checksum-verified crate file crossbeam-deque-0.8.8/LICENSE-APAC
 Source / 来源: checksum-verified crate file crossbeam-epoch-0.9.21/LICENSE-APACHE
 Source / 来源: checksum-verified crate file crossbeam-queue-0.3.14/LICENSE-APACHE
 Source / 来源: checksum-verified crate file crossbeam-utils-0.8.23/LICENSE-APACHE
-Source / 来源: checksum-verified crate file derive_arbitrary-1.5.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file displaydoc-0.2.7/LICENSE-APACHE
 Source / 来源: checksum-verified crate file either-1.19.0/LICENSE-APACHE
 Source / 来源: checksum-verified crate file equivalent-1.0.2/LICENSE-APACHE

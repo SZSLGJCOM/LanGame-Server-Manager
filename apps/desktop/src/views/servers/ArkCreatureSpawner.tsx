@@ -161,6 +161,6 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
       </fieldset>
     </form>
     <ActivityNotice tone="error">{error ?? ""}</ActivityNotice>
-    <ActivityNotice tone="success">{result?.instanceId === instanceId ? `${text("已生成并读回确认", "Spawned and verified")} · ${result.creature.className} · ${text("实际等级", "Actual level")} ${result.creature.level} · X ${result.creature.x.toFixed(1)} Y ${result.creature.y.toFixed(1)} Z ${result.creature.z.toFixed(1)}` : ""}</ActivityNotice>
+    <ActivityNotice tone="success">{result?.instanceId === instanceId ? `${text("已生成并读回确认", "Spawned and verified")} · ${result.creature.className} · ${text("实际等级", "Actual level")} ${result.creature.level} · ID ${result.creature.id1}:${result.creature.id2} · X ${result.creature.x.toFixed(1)} Y ${result.creature.y.toFixed(1)} Z ${result.creature.z.toFixed(1)}` : ""}</ActivityNotice>
   </section>;
 }
