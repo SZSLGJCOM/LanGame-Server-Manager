@@ -84,6 +84,7 @@ test("start rejection refreshes installation state, keeps the localized error an
     "../app-ui": { message: (key, params) => ({ key, params }) },
     "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
     "../installation-cancellation": {},
+    "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../install-state-presentation": {},
     "../instance-panel-refresh": {},

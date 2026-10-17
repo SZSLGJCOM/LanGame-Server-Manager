@@ -26,6 +26,9 @@ loaded.require = (id) => {
   if (id === "../../api") return { readInstanceLogDocument: async () => { throw new Error("Unexpected log request in static render"); } };
   if (id === "../../app-state") return { describeError: String };
   if (id === "../../components/ShellIcon") return { ShellIcon: () => null };
+  if (id === "./SteamWorkshopAccountConsole") return {
+    SteamWorkshopAccountConsole: () => assert.fail("Health rendering must stay on the game console")
+  };
   return originalRequire(id);
 };
 loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);

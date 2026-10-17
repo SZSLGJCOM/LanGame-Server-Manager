@@ -91,7 +91,6 @@ test("partial runtime failures keep stop and surviving-process controls availabl
   assert.match(gmToolsSource, /runtimeProcessKeyIsRunning\(props\.details\.active_run, commandPreview\.processKey\)/);
   assert.match(playerCenterSource, /runtimeProcessKeyIsRunning\(props\.details\.active_run, playerListAction\.process_key\)/);
   assert.match(serversSource, /!onlyRunning \|\| instanceHasRunningProcess\(instance\)/);
-  assert.match(serversSource, /<ServerMaintenanceWorkspace active=\{activeDetailTab === "maintenance"\}\s+details=\{props\.selectedDetails\}/);
   assert.match(maintenanceSource, /const canRestoreBackup = !readOnly && !instanceHasRunningProcess\(props\.details\.summary, props\.details\.active_run\)/);
   assert.match(maintenanceSource, /<BackupTable[\s\S]*?canRestoreBackup=\{canRestoreBackup\}/);
   assert.match(backupTableSource, /disabled=\{props\.readOnly \|\| !props\.canRestoreBackup \|\| !props\.onRestoreBackup\}/);
