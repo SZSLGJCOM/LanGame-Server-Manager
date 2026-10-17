@@ -4,7 +4,7 @@ import { buildMockModuleDetails } from "../../src/api-mock/module-details";
 import { MockLivePlayerStore, type MockLivePlayerContext } from "../../src/api-mock/live-players";
 import { I18nProvider, type LocaleCode } from "../../src/i18n";
 import { PlayerCenterWorkbench } from "../../src/views/servers/PlayerCenterWorkbench";
-import type { ExecuteInstanceManualPlayerActionInput, ExecuteInstancePlayerActionInput, ExecuteInstancePlayerActionResult,
+import type { DragonwildsBanEntry, ExecuteInstanceManualPlayerActionInput, ExecuteInstancePlayerActionInput, ExecuteInstancePlayerActionResult,
   InstanceDetails, RuntimeLivePlayerEntry, RuntimeLivePlayerSnapshot } from "../../src/types";
 import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import "../../src/app.css";
@@ -31,6 +31,8 @@ const instance: InstanceDetails = {
 };
 const requests: ExecuteInstancePlayerActionInput[] = [];
 const manualRequests: ExecuteInstanceManualPlayerActionInput[] = [];
+const knownBannedAccount = "00000000000000000000000000000001";
+let savedBanEntries: DragonwildsBanEntry[] = [];
 let mode: "ready" | "fallback" | "stale" | "stopped" = "ready";
 let behavior: "complete" | "deferred" | "failure" = "complete";
 let rows: RuntimeLivePlayerEntry[] = [];
@@ -51,7 +53,7 @@ function snapshot(refresh: boolean): RuntimeLivePlayerSnapshot {
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: Record<string, unknown> = {}) => {
   if (command === "read_instance_live_players") return snapshot(false);
   if (command === "read_instance_dragonwilds_bans") return { instance_id: instance.summary.id,
-    observed_at_unix_ms: Date.now(), entries: [] };
+    observed_at_unix_ms: Date.now(), entries: structuredClone(savedBanEntries) };
   if (command === "refresh_instance_live_players") return snapshot(true);
   if (command === "execute_instance_player_action") {
     const input = args.input as ExecuteInstancePlayerActionInput;
@@ -62,6 +64,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
       if (!selected) throw new Error("Synthetic target not current");
       const account = selected.identifiers.find((identity) => identity.kind === "eos_id")?.value;
       const result = store.execute(context(), input);
+      if (input.action_id === "ban_player" && account) savedBanEntries.push({ account_id: account, display_name: selected.display_name });
       rows = rows.filter((entry) => !entry.identifiers.some((identity) => identity.kind === "eos_id" && identity.value === account));
       return result;
     };
@@ -74,7 +77,9 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
     const input = args.input as ExecuteInstanceManualPlayerActionInput;
     if (input.action_id !== "unban_player" || input.instance_id !== instance.summary.id
       || !/^[0-9a-f]{32}$/.test(input.target) || input.role) throw new Error("Unexpected manual native target");
+    if (!savedBanEntries.some((entry) => entry.account_id === input.target)) throw new Error("Synthetic EOS is not in the persisted ban roster");
     manualRequests.push(structuredClone(input));
+    savedBanEntries = savedBanEntries.filter((entry) => entry.account_id !== input.target);
     return { action_id: input.action_id, status: "sent", executed_at_unix_ms: Date.now(), summary: "Synthetic unban confirmed" };
   }
   throw new Error(`Unexpected native command ${command}`);
@@ -96,8 +101,9 @@ async function settle(predicate: () => boolean, description: string) {
     await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
   }
 }
-async function draw(locale: LocaleCode, nextMode: typeof mode = "ready") {
+async function draw(locale: LocaleCode, nextMode: typeof mode = "ready", bannedAccountId?: string) {
   mode = nextMode; behavior = "complete";
+  savedBanEntries = bannedAccountId ? [{ account_id: bannedAccountId, display_name: "Synthetic banned account" }] : [];
   const sample = new MockLivePlayerStore().refresh({ ...context(), current_players: 2, running: true }).entries;
   rows = mode === "fallback" ? sample.map((entry) => ({ ...entry,
     identifiers: entry.identifiers.filter((identity) => identity.kind === "session_id"), available_action_ids: [] })) : sample;
@@ -114,7 +120,7 @@ async function draw(locale: LocaleCode, nextMode: typeof mode = "ready") {
         moduleDetails={moduleDetails} runtime={null} /></div>
     </div></section></main></I18nProvider>);
   });
-  await settle(() => Boolean(fixture?.querySelector(mode === "stopped" ? ".player-center-manual-actions" : ".player-center-player-select")), "Player workspace failed to mount");
+  await settle(() => Boolean(fixture?.querySelector(mode === "stopped" ? ".dragonwilds-unban-action" : ".player-center-player-select")), "Player workspace failed to mount");
 }
 function liveAction(index: number): HTMLButtonElement {
   const buttons = fixture?.querySelectorAll<HTMLButtonElement>(".player-center-member-action");
@@ -193,27 +199,41 @@ async function run() {
     await openManual();
     check(element<HTMLInputElement>('input[id^="manual-player-target-"]').disabled,
       `${locale}: stopped server cannot accept manual native operations`);
-    await draw(locale);
-    await openManual(); const manual = element<HTMLElement>(".player-center-manual-actions");
-    check(!manual.querySelector("select"), `${locale}: manual route contains only unban and cannot bypass current row authorization`);
+    await draw(locale, "ready", knownBannedAccount);
+    const commonUnban = element<HTMLButtonElement>(".dragonwilds-unban-action");
+    await openManual();
+    check(element(".dragonwilds-unban-action") === commonUnban
+      && fixture?.querySelectorAll(".dragonwilds-unban-action").length === 1
+      && !fixture?.querySelector(".player-center-manual-actions")
+      && [liveAction(0), liveAction(1)].every((button) => button.disabled),
+      `${locale}: manual lookup shares one persistent unban action without granting live authority`);
     await enterTarget("76561198000000001");
     check(element<HTMLInputElement>('input[id^="manual-player-target-"]').getAttribute("aria-invalid") === "true"
-      && element<HTMLButtonElement>(".player-center-manual-actions button").disabled,
+      && element<HTMLButtonElement>(".dragonwilds-unban-action").disabled,
       `${locale}: Steam64 and session-like targets cannot submit an EOS unban`);
-    await enterTarget("00000000000000000000000000000001");
-    check(!element<HTMLButtonElement>(".player-center-manual-actions button").disabled, `${locale}: exact known EOS account enables manual unban`);
+    await enterTarget("00000000000000000000000000000002");
+    check(commonUnban.disabled && [liveAction(0), liveAction(1)].every((button) => button.disabled),
+      `${locale}: a valid unbanned EOS cannot authorize unban or live operations`);
+    await enterTarget(knownBannedAccount);
+    check(element(".dragonwilds-unban-action") === commonUnban && !commonUnban.disabled
+      && [liveAction(0), liveAction(1)].every((button) => button.disabled),
+      `${locale}: exact persisted EOS enables only the same common unban button`);
     const manualBefore = manualRequests.length;
-    await act(async () => { element<HTMLButtonElement>(".player-center-manual-actions button").click(); });
-    check(manualRequests.length === manualBefore, `${locale}: manual unban requires explicit confirmation`);
+    await act(async () => { commonUnban.click(); });
+    check(manualRequests.length === manualBefore && element(".inline-confirm-message").textContent?.includes(knownBannedAccount),
+      `${locale}: manual unban requires explicit confirmation`);
     await confirm();
     check(manualRequests.length === manualBefore + 1 && manualRequests.at(-1)?.action_id === "unban_player"
-      && manualRequests.at(-1)?.target === "00000000000000000000000000000001" && manualRequests.at(-1)?.role === null,
+      && manualRequests.at(-1)?.target === knownBannedAccount && manualRequests.at(-1)?.role === null,
       `${locale}: manual unban dispatches only the exact EOS account and declared operation`);
     check(Boolean(fixture?.querySelector(".shell-activity-notice.is-success")), `${locale}: confirmed unban reports its result in accessible feedback`);
+    check(savedBanEntries.length === 0 && element<HTMLButtonElement>(".dragonwilds-unban-action").disabled
+      && fixture?.querySelectorAll(".dragonwilds-unban-action").length === 1,
+      `${locale}: successful unban refresh removes its saved authorization without duplicating the action`);
   }
-  await draw("zh-CN"); await selectFirst();
+  await draw("zh-CN", "ready", knownBannedAccount); await selectFirst();
   await openManual();
-  await enterTarget("00000000000000000000000000000001");
+  await enterTarget(knownBannedAccount);
   const panel = element<HTMLElement>(".player-center-controls");
   check(panel.scrollWidth <= panel.clientWidth + 1, "Native action pane fits the desktop viewport without horizontal overflow");
   check(errors.length === 0, "Browser and React report no errors");

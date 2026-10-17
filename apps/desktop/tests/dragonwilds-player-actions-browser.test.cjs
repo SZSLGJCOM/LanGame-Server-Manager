@@ -22,17 +22,20 @@ test("Dragonwilds real player workspace connects verified native actions and man
     "unavailable identity exposes accessible disabled reasons",
     "stale snapshot disables live moderation",
     "stopped server cannot accept manual native operations",
-    "manual route contains only unban and cannot bypass current row authorization",
+    "manual lookup shares one persistent unban action without granting live authority",
     "Steam64 and session-like targets cannot submit an EOS unban",
-    "exact known EOS account enables manual unban",
+    "a valid unbanned EOS cannot authorize unban or live operations",
+    "exact persisted EOS enables only the same common unban button",
     "manual unban requires explicit confirmation",
     "manual unban dispatches only the exact EOS account and declared operation",
     "confirmed unban reports its result in accessible feedback",
+    "successful unban refresh removes its saved authorization without duplicating the action",
   ]) assert.ok(report.checks.includes(`${locale}: ${description}`), `Missing ${locale}: ${description}`);
   assert.deepEqual(report.browser_errors, []);
   assert.deepEqual(report.fixture_cleanup.browser_errors, []);
   assert.equal(report.browser_exited, true);
   assert.equal(report.browser_processes_remaining, 0);
   assert.equal(report.scratch_removed, true);
-  console.log(`DRAGONWILDS_PLAYERS_BROWSER ${JSON.stringify({ status: report.status, checks: report.checks.length })}`);
+  console.log(`DRAGONWILDS_PLAYERS_BROWSER ${JSON.stringify({ status: report.status, checks: report.checks.length,
+    browser_product: report.browser_product, browser_processes_remaining: report.browser_processes_remaining })}`);
 });
