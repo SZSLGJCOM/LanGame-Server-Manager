@@ -164,6 +164,8 @@ pub(super) mod commands_module_mutation_locks;
 #[path = "commands_program_storage.rs"]
 pub(crate) mod commands_program_storage;
 pub use commands_program_storage::update_instance_program;
+#[path = "commands_dragonwilds_bans.rs"]
+pub(crate) mod commands_dragonwilds_bans;
 #[path = "commands_dragonwilds_player_control.rs"]
 mod commands_dragonwilds_player_control;
 #[path = "commands_dragonwilds_player_query.rs"]

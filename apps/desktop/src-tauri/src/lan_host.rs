@@ -713,6 +713,15 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "read_instance_dragonwilds_bans" => boxed_command(|| async move {
+            to_json(
+                commands::commands_dragonwilds_bans::read_instance_dragonwilds_bans(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
         "read_dragonwilds_world_settings" => boxed_command(|| async move {
             to_json(
                 commands::commands_dragonwilds_world::read_dragonwilds_world_settings(

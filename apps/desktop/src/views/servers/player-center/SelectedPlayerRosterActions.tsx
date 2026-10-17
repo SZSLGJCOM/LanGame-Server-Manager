@@ -103,7 +103,8 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
               `Run “${label}” for character name “${String(target?.rawValue ?? "")}”? ${nameBanHelp}`)
               : selectLocaleText(props.locale, `确认对「${playerLabel}」执行「${label}」？`, `Run “${label}” for “${playerLabel}”?`)
                 + (allowlistHelp ? ` ${allowlistHelp}` : "");
-            const className = "secondary-button player-center-action-button player-access-selected-action";
+            // Adding to a block/ban roster is a moderation action and uses the same danger variant as kick and ban.
+            const className = `secondary-button player-center-action-button player-access-selected-action${operation === "add" && field.lane === "block" ? " danger" : ""}`;
             return <ConfigurationHelp key={operation} description={helpText}>{(help) => <div className="player-access-total-action" data-roster-operation={operation}
               ref={help.anchorRef} {...help.interactionProps} tabIndex={unavailable ? 0 : undefined}
               role={unavailable ? "group" : undefined} aria-label={unavailable ? `${label} · ${field.title}` : undefined}

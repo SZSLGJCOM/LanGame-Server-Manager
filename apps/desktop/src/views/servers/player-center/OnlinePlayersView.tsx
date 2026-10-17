@@ -1,4 +1,5 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { executeInstancePlayerAction } from "../../../api";
 import { ShellIcon } from "../../../components/ShellIcon";
 import type { LivePlayerPresentation } from "../../../domain/live-player-state";
 import type { LocaleCode, TranslateFn } from "../../../i18n";
@@ -17,11 +18,14 @@ import { LivePlayerTable } from "./LivePlayerTable";
 import type { PlayerAccessRosterCapability } from "./player-access-roster-model";
 import { PlayerAccessRosterList } from "./PlayerAccessRosterList";
 import { SelectedPlayerRosterActions } from "./SelectedPlayerRosterActions";
-import { SelectedPlayerDetails } from "./SelectedPlayerDetails";
+import { SelectedPlayerExtraDetails } from "./SelectedPlayerDetails";
 import { ValheimAccountControlSetup } from "./ValheimAccountControlSetup";
+import { ManualPlayerHostContext } from "./ManualPlayerActions";
 import { isEnshroudedNativeBanRoster, resolveSelectedRosterIdentity } from "./player-access-selected-target";
-import { matchRosterLivePlayer, rosterEntryPlayer } from "./player-center-selection";
+import { dragonwildsAccountId, dragonwildsBanPlayer, matchDragonwildsBanLivePlayer, matchRosterLivePlayer, rosterEntryPlayer } from "./player-center-selection";
 import type { PlayerAccessState } from "./use-player-access";
+import { DragonwildsBanRosterActions, DragonwildsBanRosterList } from "./DragonwildsBanRoster";
+import { useDragonwildsBanRoster } from "./use-dragonwilds-ban-roster";
 
 interface OnlinePlayersViewProps {
   readOnly?: boolean;
@@ -32,7 +36,7 @@ interface OnlinePlayersViewProps {
   loading: boolean;
   locale: LocaleCode;
   moduleId?: string;
-  manualActions?: (active: boolean) => ReactNode;
+  manualActions?: (active: boolean, onActionCompleted?: () => Promise<void>, onActionFailed?: () => void) => ReactNode;
   now: number;
   onOpenSettings?: () => void;
   onRefresh: () => Promise<void>;
@@ -65,28 +69,71 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const [rosterSelection, setRosterSelection] = useState<{ fieldKey: string; entryKey: string } | null>(null);
   const [createFieldKey, setCreateFieldKey] = useState<string | undefined>();
   const [selectionVersion, setSelectionVersion] = useState(0);
+  const [selectedBannedAccountId, setSelectedBannedAccountId] = useState<string | null>(null);
+  const [nativeUnbanBusy, setNativeUnbanBusy] = useState(false);
+  const [manualLookupHost, setManualLookupHost] = useState<HTMLElement | null>(null);
+  const [manualActionsHost, setManualActionsHost] = useState<HTMLElement | null>(null);
+  const [manualTarget, setManualTarget] = useState("");
+  const dragonwilds = props.moduleId === "runescapedragonwilds";
+  const dragonwildsUnban = dragonwilds && props.declaredActions.some((action) => action.id === "unban_player");
+  // Dragonwilds has one native unban action shared by list and manual selections.
+  // Its existing lookup still reports a target; it must not portal a duplicate action.
+  const manualHosts = useMemo(() => ({ lookup: manualLookupHost, actions: dragonwildsUnban ? null : manualActionsHost, onTarget: setManualTarget }),
+    [manualLookupHost, manualActionsHost, dragonwildsUnban]);
+  const bans = useDragonwildsBanRoster(dragonwilds ? props.instanceDetails?.summary.id ?? null : null);
+  const bannedTab = dragonwilds && activeListKey === "dragonwilds-banned";
+  const selectedBan = bans.roster?.entries.find((entry) => entry.account_id === selectedBannedAccountId) ?? null;
   const fields = props.access?.fields ?? [];
   const activeField = fields.find((field) => field.key === activeListKey);
-  const online = !activeField;
-  const activeKey = activeField?.key ?? "online";
-  const saving = Boolean(props.access?.busyFieldKey);
+  const manualTab = Boolean(props.manualActions) && activeListKey === "manual";
+  const online = !activeField && !bannedTab && !manualTab;
+  const activeKey = manualTab ? "manual" : bannedTab ? "dragonwilds-banned" : activeField?.key ?? "online";
+  const saving = Boolean(props.access?.busyFieldKey) || nativeUnbanBusy;
   const tabs = [{ key: "online", title: props.t("servers.playerCenter.online.title", undefined, "Online members") },
-    ...fields.map((field) => ({ key: field.key, title: field.title }))];
+    ...fields.map((field) => ({ key: field.key, title: field.title })),
+    ...(dragonwilds ? [{ key: "dragonwilds-banned", title: selectBanText("被封禁", "Banned") }] : []),
+    // 手动查询: the ID lookup is its own category; its actions use the shared right-side controls.
+    ...(props.manualActions ? [{ key: "manual", title: props.t("servers.playerCenter.manual.tab", undefined, "Manual lookup") }] : [])];
+  function selectBanText(zh: string, en: string) { return props.locale === "zh-CN" ? zh : en; }
   function selectList(key: string) {
     if (!saving) { clearSelection(); setActiveListKey(key); }
   }
   function clearSelection() {
     setRosterSelection(null);
+    setSelectedBannedAccountId(null);
     props.onSelectPlayer(null);
     setCreateFieldKey(undefined);
     setSelectionVersion((current) => current + 1);
   }
   useEffect(() => { clearSelection(); }, [props.snapshot?.instance_id]);
+  useEffect(() => { setNativeUnbanBusy(false); }, [props.instanceDetails?.summary.id]);
+  useEffect(() => {
+    if (!bans.stale && bans.roster && selectedBannedAccountId && !selectedBan) setSelectedBannedAccountId(null);
+  }, [bans.roster, bans.stale, selectedBannedAccountId, selectedBan]);
+  async function refreshAfterModeration() {
+    const results = await Promise.allSettled([props.onRefresh(), ...(dragonwilds ? [bans.refreshAfterMutation()] : [])]);
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed?.status === "rejected") throw failed.reason;
+    if (results.some((result) => result.status === "fulfilled" && result.value === false)) {
+      throw new Error(selectBanText("封禁名单刷新失败，请重试。", "Could not refresh the ban roster. Retry the refresh."));
+    }
+  }
+  async function executeLiveAction(input: ExecuteInstancePlayerActionInput) {
+    try { return await (props.onExecutePlayerAction ?? executeInstancePlayerAction)(input); }
+    catch (cause) { if (dragonwilds && input.action_id === "ban_player") bans.invalidate(); throw cause; }
+  }
   const selectedField = fields.find((field) => field.key === rosterSelection?.fieldKey);
   const selectedEntry = selectedField?.entries.find((entry) => entry.key === rosterSelection?.entryKey);
   const selectedRoster = selectedField && selectedEntry ? { field: selectedField, entry: selectedEntry } : null;
-  const selectedPlayer = rosterSelection ? rosterEntryPlayer(selectedRoster) : props.presentation.selectedPlayer;
-  const matchedLivePlayer = rosterSelection ? matchRosterLivePlayer(selectedRoster, props.snapshot, props.now) : props.presentation.selectedPlayer;
+  const selectedPlayer = bannedTab ? dragonwildsBanPlayer(selectedBan)
+    : manualTab ? null : rosterSelection ? rosterEntryPlayer(selectedRoster) : props.presentation.selectedPlayer;
+  const matchedLivePlayer = bannedTab ? !bans.stale && !bans.loading && !bans.error
+    ? matchDragonwildsBanLivePlayer(selectedBan, props.snapshot, props.now) : null
+    : manualTab ? null : rosterSelection ? matchRosterLivePlayer(selectedRoster, props.snapshot, props.now) : props.presentation.selectedPlayer;
+  const unbanAccountId = bannedTab ? selectedBan?.account_id : manualTab ? manualTarget
+    : props.presentation.authoritative && !props.error ? dragonwildsAccountId(selectedPlayer) : null;
+  const unbanEntry = bans.roster?.entries.find((entry) => entry.account_id === unbanAccountId) ?? null;
+  const selectedDragonwildsBanned = dragonwilds && Boolean(unbanEntry);
   const currentPlayers = props.snapshot?.current_players ?? props.runtime?.players.current_players ?? null;
   const maxPlayers = props.snapshot?.max_players ?? props.runtime?.players.max_players ?? null;
   const countLabel = currentPlayers === null
@@ -124,25 +171,27 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const protectedPlayerReason = props.t("servers.playerCenter.enshrouded.moderationProtected", undefined,
     "The server protects this player; native permissions do not allow kicking or banning them.");
   const disabledActionReasons = {
-    ...(selectedPlayerBanned ? { ban_player: props.t("servers.playerCenter.actions.alreadyBanned", undefined, "This player is already in the ban roster.") } : {}),
+    ...(selectedPlayerBanned || selectedDragonwildsBanned ? { ban_player: props.t("servers.playerCenter.actions.alreadyBanned", undefined, "This player is already in the ban roster.") } : {}),
     ...(enshroudedModerationProtected ? { kick_player: protectedPlayerReason, ban_player: protectedPlayerReason } : {})
   };
-  const runtimePlayer = matchedLivePlayer && (selectedPlayerBanned || missingEnshroudedExtensionIdentity || enshroudedModerationProtected)
+  const runtimePlayer = matchedLivePlayer && (selectedPlayerBanned || selectedDragonwildsBanned || missingEnshroudedExtensionIdentity || enshroudedModerationProtected)
     ? { ...matchedLivePlayer, available_action_ids: matchedLivePlayer.available_action_ids.filter((id) =>
-      !missingEnshroudedExtensionIdentity && (!selectedPlayerBanned || id !== "ban_player")
+      !missingEnshroudedExtensionIdentity && (!(selectedPlayerBanned || selectedDragonwildsBanned) || id !== "ban_player")
       && (!enshroudedModerationProtected || (id !== "kick_player" && id !== "ban_player"))) } : matchedLivePlayer;
   const showPlayerPanel = actionIds.length > 0;
-  const hasControls = Boolean(showPlayerPanel || props.manualActions || fields.length > 0);
+  const hasControls = Boolean(showPlayerPanel || props.manualActions || fields.length > 0 || dragonwilds);
   const showMemberPane = hasControls || props.presentation.tableVisible;
   const runtimeUnavailableReason = props.readOnly
     ? props.t("servers.playerCenter.actions.readOnly", undefined, "This workspace is read-only.")
+    : nativeUnbanBusy
+      ? props.t("servers.playerCenter.actions.waitForPending", undefined, "A player action is in progress. Wait for it to finish.")
     : !props.runtimeAvailable
       ? props.t("servers.playerCenter.actions.serverStopped", undefined, "The server is not running; live actions are unavailable.")
       : props.error
         ? props.t("servers.playerCenter.actions.listReadFailed", undefined, "The player list could not be read. Refresh it before retrying.")
         : !props.presentation.authoritative
           ? props.t("servers.playerCenter.actions.snapshotNotCurrent", undefined, "The player snapshot is not complete and current. Refresh it before retrying.")
-          : rosterSelection && !runtimePlayer
+          : (rosterSelection || bannedTab) && !runtimePlayer
             ? props.t("servers.playerCenter.actions.noUniqueOnlineMatch", undefined, "This entry does not uniquely match a current online player.")
             : missingEnshroudedExtensionIdentity && inspectedPlayer
               ? props.t("servers.playerCenter.enshrouded.extensionIdentityUnavailable", undefined,
@@ -150,8 +199,9 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
               : null;
 
   return (
+    <ManualPlayerHostContext.Provider value={manualHosts}>
     <div className={`player-center-member-layout${showMemberPane ? "" : " is-read-only"}`}>
-      <section className="player-center-list-pane" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")} aria-busy={online && props.loading}>
+      <section className="player-center-list-pane" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")} aria-busy={online ? props.loading : bannedTab && bans.loading}>
         <header className="player-center-pane-header">
           <div className="player-center-list-tabs" role="tablist" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")}
             onKeyDown={(event) => {
@@ -165,7 +215,9 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
               event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[nextIndex]?.focus();
             }}>
             {tabs.map((tab) => {
-              const count = tab.key === "online" ? countLabel : fields.find((field) => field.key === tab.key)?.entries.length;
+              const count = tab.key === "online" ? countLabel : tab.key === "manual" ? null : tab.key === "dragonwilds-banned"
+                ? !bans.stale && !bans.loading && !bans.error ? bans.roster?.entries.length : null
+                : fields.find((field) => field.key === tab.key)?.entries.length;
               return <button key={tab.key} id={`${tabId}-${tab.key}`} type="button" role="tab"
                 data-list-key={tab.key} aria-selected={activeKey === tab.key} aria-controls={`${tabId}-panel`}
                 tabIndex={activeKey === tab.key ? 0 : -1} disabled={saving}
@@ -189,13 +241,23 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
                 ? props.t("servers.playerCenter.online.refreshing", undefined, "Refreshing")
                 : props.t("servers.playerCenter.online.refresh", undefined, "Refresh")}
             </button>
-          </div> : <button type="button" className="secondary-button player-access-roster-create"
+          </div> : bannedTab ? <button type="button" className="secondary-button player-center-refresh-button"
+            disabled={saving || bans.loading} onClick={() => void bans.refresh()}>
+            <ShellIcon name="refresh" className={bans.loading ? "is-spinning" : ""} />
+            {bans.loading ? selectBanText("正在刷新", "Refreshing") : selectBanText("刷新", "Refresh")}
+          </button> : manualTab ? null : activeField ? <button type="button" className="secondary-button player-access-roster-create"
             disabled={saving || props.access?.disabled || activeField.property.readOnly === true} onClick={() => { clearSelection(); setCreateFieldKey(activeField.key); }}>
             <ShellIcon name="plus" />{props.t("servers.playerCenter.lists.add", undefined, "Add entry")}
-          </button>}
+          </button> : null}
         </header>
         <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${activeKey}`} className="player-center-list-content">
-        {activeField ? <PlayerAccessRosterList field={activeField} locale={props.locale}
+        {/* 手动查询 page host. ManualPlayerActions stays mounted below, so a typed ID survives category switches. */}
+        {manualTab ? <div className="player-center-manual-slot" ref={setManualLookupHost} /> : null}
+        {manualTab ? null : bannedTab ? <DragonwildsBanRosterList state={bans} selectedAccountId={selectedBannedAccountId}
+          disabled={saving} locale={props.locale} onSelect={(accountId) => {
+            const next = selectedBannedAccountId === accountId ? null : accountId;
+            clearSelection(); setSelectedBannedAccountId(next);
+          }} /> : activeField ? <PlayerAccessRosterList field={activeField} locale={props.locale}
           disabled={saving} selectedEntryKey={selectedRoster?.field.key === activeField.key ? selectedRoster.entry.key : null}
           onSelect={(entry) => { clearSelection(); setRosterSelection(rosterSelection?.fieldKey === activeField.key && rosterSelection.entryKey === entry.key
             ? null : { fieldKey: activeField.key, entryKey: entry.key }); }} /> : <>
@@ -247,12 +309,12 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
           <strong>{props.t("servers.playerCenter.member.detailsAndActions", undefined, "Player details and actions")}</strong>
         </header>
         <div className="player-center-total-controls">
-        {selectedRoster ? <div className="player-center-member-heading"><strong>{selectedRoster.entry.label}</strong></div>
-          : selectedPlayer ? <SelectedPlayerDetails locale={props.locale} now={props.now} player={selectedPlayer}
+        {/* The selected left row already shows name, primary ID, session, ping, role and status; only extras appear here. */}
+        {selectedPlayer && !selectedRoster ? <SelectedPlayerExtraDetails locale={props.locale} player={selectedPlayer}
             sessionUnknownReason={props.moduleId === "enshrouded" && props.snapshot?.source === "server_query" ? props.t("servers.playerCenter.enshrouded.sessionUnknown", undefined,
-              "Anonymous query durations cannot be reliably matched to player names, and this roster has no usable join time for this player.") : undefined}
-            stale={!props.presentation.authoritative || Boolean(props.error)} />
-          : <p className="player-center-capability-note">{props.t("servers.playerCenter.member.selectForDetails", undefined, "Select a player or roster entry to view details.")}</p>}
+              "Anonymous query durations cannot be reliably matched to player names, and this roster has no usable join time for this player.") : undefined} />
+          : manualTab && manualTarget ? <p className="player-center-target-line">
+            {props.t("servers.playerCenter.manual.targetLine", { target: manualTarget }, "Target: {target}")}</p> : null}
         {props.moduleId === "enshrouded" ? <p className="player-center-capability-note">
           {!enshroudedNativeActionsDeclared
             ? props.t("servers.playerCenter.enshrouded.managementUnavailable", undefined,
@@ -270,29 +332,39 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
         {showPlayerPanel ? (
           <LivePlayerActionPanel
             actionIds={actionIds}
-            actionsEnabled={!props.readOnly && props.runtimeAvailable && !props.error && (rosterSelection ? Boolean(runtimePlayer) : props.presentation.actionsEnabled)}
+            actionsEnabled={!props.readOnly && !nativeUnbanBusy && props.runtimeAvailable && !props.error
+              && (rosterSelection || bannedTab ? Boolean(runtimePlayer) : props.presentation.actionsEnabled)}
             declaredActions={props.declaredActions}
             disabledReason={runtimeUnavailableReason}
             disabledActionReasons={disabledActionReasons}
             locale={props.locale}
-            onActionCompleted={props.onRefresh}
-            onExecute={props.onExecutePlayerAction}
+            onActionCompleted={dragonwilds ? refreshAfterModeration : props.onRefresh}
+            onExecute={executeLiveAction}
             player={runtimePlayer}
             snapshot={props.snapshot}
             t={props.t}
           />
         ) : null}
-        {props.access ? <SelectedPlayerRosterActions key={JSON.stringify([activeKey, selectionVersion, selectedPlayer?.player_key, selectedPlayer?.identifiers])}
+        {props.access && fields.length > 0 ? <SelectedPlayerRosterActions key={JSON.stringify([activeKey, selectionVersion, selectedPlayer?.player_key, selectedPlayer?.identifiers])}
           selectedPlayer={selectedPlayer} selectedRoster={selectedRoster} createFieldKey={createFieldKey} onClearSelection={clearSelection}
           suppressedAddFieldKeys={nativeBanField ? [nativeBanField.key] : undefined}
           fields={fields} busyFieldKey={props.access.busyFieldKey}
-          disabled={props.access.disabled} locale={props.locale} onMutate={props.access.onMutate}
+          disabled={props.access.disabled || nativeUnbanBusy} locale={props.locale} onMutate={props.access.onMutate}
           disabledReason={props.access.disabledReason}
           /> : null}
-        {props.manualActions?.(true)}
+        {dragonwildsUnban && props.instanceDetails ? <DragonwildsBanRosterActions key={props.instanceDetails.summary.id} instanceId={props.instanceDetails.summary.id}
+          entry={unbanEntry} hasSelection={Boolean(selectedPlayer || manualTab && manualTarget)} state={bans}
+          readOnly={Boolean(props.readOnly)} running={props.runtimeAvailable} locale={props.locale}
+          onBusyChange={setNativeUnbanBusy} onCompleted={async () => {
+            setSelectedBannedAccountId(null); await refreshAfterModeration();
+          }} /> : null}
+        {/* Identity actions sit with every other action; they need a 手动查询 target and stay disabled otherwise. */}
+        {props.manualActions && !dragonwildsUnban ? <div className="player-center-manual-host" ref={setManualActionsHost} /> : null}
         </div>
         {props.access?.feedback}
       </div> : null}
+      {props.manualActions?.(manualTab, dragonwilds ? refreshAfterModeration : undefined, dragonwilds ? bans.invalidate : undefined)}
     </div>
+    </ManualPlayerHostContext.Provider>
   );
 }

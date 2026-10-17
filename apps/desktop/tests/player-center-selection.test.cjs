@@ -39,6 +39,31 @@ function live(playerKey = "live-alice", value = steamId) {
 }
 function snapshot(entries) { return { status: "ready", complete: true, truncated: false, stale: false, expires_at_unix_ms: 200, entries }; }
 
+test("Dragonwilds persisted ban identities never authorize runtime actions by themselves", () => {
+  const banned = { account_id: "11111111111111111111111111111111", display_name: "Same Name" };
+  const projected = api.dragonwildsBanPlayer(banned);
+  assert.equal(api.dragonwildsAccountId(projected), banned.account_id);
+  assert.deepEqual(Array.from(projected.available_action_ids), []);
+  assert.equal(api.matchDragonwildsBanLivePlayer(banned, snapshot([]), 100), null);
+  const row = { ...live(), identifiers: [{ kind: "eos_id", value: banned.account_id, stable: true }] };
+  assert.equal(api.matchDragonwildsBanLivePlayer(banned, snapshot([row]), 100), row);
+  assert.equal(api.matchDragonwildsBanLivePlayer(banned, snapshot([row, { ...row, player_key: "duplicate" }]), 100), null);
+  assert.equal(api.matchDragonwildsBanLivePlayer(banned, { ...snapshot([row]), stale: true }, 100), null);
+  assert.equal(api.matchDragonwildsBanLivePlayer(banned, snapshot([row]), 200), null);
+});
+
+test("Dragonwilds common controls reject ambiguous EOS identities and never match by name", () => {
+  const account = "11111111111111111111111111111111";
+  const row = { ...live(), identifiers: [{ kind: "eos_id", value: account, stable: true }] };
+  for (const identities of [[], [{ kind: "steam_id", value: account, stable: true }],
+    [{ kind: "eos_id", value: account, stable: false }],
+    [{ kind: "eos_id", value: "EOS Player", stable: true }], [row.identifiers[0], row.identifiers[0]]]) {
+    assert.equal(api.dragonwildsAccountId({ ...row, identifiers: identities }), null);
+  }
+  const differentAccount = { account_id: "22222222222222222222222222222222", display_name: row.display_name };
+  assert.equal(api.matchDragonwildsBanLivePlayer(differentAccount, snapshot([row]), 100), null);
+});
+
 test("offline roster account fills other declared personal rosters without runtime authority", () => {
   const selected = selection();
   const account = api.rosterEntryPlayer(selected);

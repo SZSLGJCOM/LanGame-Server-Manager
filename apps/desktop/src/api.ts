@@ -77,6 +77,7 @@ import type {
   StorageStatus,
   DstWorldImportResult,
   DstWorldStartPreview,
+  DragonwildsBanRoster,
   ExecuteInstanceManualPlayerActionInput,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
@@ -343,6 +344,8 @@ export const readInstanceLivePlayers = (instanceId: string) =>
   invokeOrMock<RuntimeLivePlayerSnapshot>("read_instance_live_players", {
     instanceId
   });
+export const readInstanceDragonwildsBans = (instanceId: string) =>
+  invokeOrMock<DragonwildsBanRoster>("read_instance_dragonwilds_bans", { instanceId });
 export const refreshInstanceLivePlayers = (instanceId: string) =>
   invokeOrMock<RuntimeLivePlayerSnapshot>("refresh_instance_live_players", {
     instanceId

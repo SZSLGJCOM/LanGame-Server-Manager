@@ -263,6 +263,17 @@ export interface ExecuteInstancePlayerActionInput {
   action_id: string;
 }
 
+export interface DragonwildsBanEntry {
+  account_id: string;
+  display_name: string | null;
+}
+
+export interface DragonwildsBanRoster {
+  instance_id: string;
+  observed_at_unix_ms: number;
+  entries: DragonwildsBanEntry[];
+}
+
 export interface ExecuteInstanceManualPlayerActionInput {
   instance_id: string;
   action_id: string;

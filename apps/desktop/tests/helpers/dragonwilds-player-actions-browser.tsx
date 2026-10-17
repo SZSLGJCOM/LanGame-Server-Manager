@@ -50,6 +50,8 @@ function snapshot(refresh: boolean): RuntimeLivePlayerSnapshot {
 // live polling hook, API envelope, action form and confirmation stay intact.
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args: Record<string, unknown> = {}) => {
   if (command === "read_instance_live_players") return snapshot(false);
+  if (command === "read_instance_dragonwilds_bans") return { instance_id: instance.summary.id,
+    observed_at_unix_ms: Date.now(), entries: [] };
   if (command === "refresh_instance_live_players") return snapshot(true);
   if (command === "execute_instance_player_action") {
     const input = args.input as ExecuteInstancePlayerActionInput;
@@ -126,13 +128,24 @@ async function selectFirst() {
   check(button.getAttribute("aria-pressed") === "true", "Keyboard-focusable player selection is announced");
 }
 async function enterTarget(value: string) {
-  const input = element<HTMLInputElement>('.player-center-manual-actions input[type="text"]');
+  const input = element<HTMLInputElement>('input[id^="manual-player-target-"]');
   const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   if (!setter) throw new Error("Input value setter missing");
   await act(async () => { setter.call(input, value); input.dispatchEvent(new Event("input", { bubbles: true })); });
+  const lookup = element<HTMLButtonElement>(".player-center-manual-use");
+  if (!lookup.disabled) await act(async () => { lookup.click(); });
+}
+async function openManual() {
+  // 手动查询 category: the ID lookup fills the list area and its actions use the right-side controls.
+  await act(async () => { element<HTMLButtonElement>('[role="tab"][data-list-key="manual"]').click(); });
 }
 async function confirm() {
   await act(async () => { element<HTMLButtonElement>(".inline-confirm-submit").click(); });
+}
+// The right panel no longer repeats the selected identity; the highlighted left row is the target.
+function selectedRowText() {
+  const pressed = document.querySelector('.player-center-list-pane [aria-pressed="true"]');
+  return (pressed?.closest('tr, [role="listitem"]') ?? pressed)?.textContent ?? "";
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
@@ -144,7 +157,7 @@ async function run() {
     check(!liveAction(0).disabled && !liveAction(1).disabled, `${locale}: verified native EOS and session enable kick and ban`);
     check(liveAction(0).textContent?.trim() === (locale === "zh-CN" ? "踢出玩家" : "Kick player")
       && liveAction(1).textContent?.trim() === (locale === "zh-CN" ? "封禁玩家" : "Ban player"), `${locale}: current manifest supplies localized action labels`);
-    check(element<HTMLElement>(".player-center-details").textContent?.includes("00000000000000000000000000000001"), `${locale}: native EOS identity remains inspectable`);
+    check(selectedRowText().includes("00000000000000000000000000000001"), `${locale}: native EOS identity remains inspectable`);
     const start = requests.length;
     await act(async () => { liveAction(0).click(); });
     check(requests.length === start && Boolean(fixture?.querySelector(".inline-confirm-review")), `${locale}: opening kick confirmation sends no command`);
@@ -177,14 +190,14 @@ async function run() {
     await draw(locale, "stale"); await selectFirst();
     check([liveAction(0), liveAction(1)].every((button) => button.disabled), `${locale}: stale snapshot disables live moderation`);
     await draw(locale, "stopped");
-    const stoppedManual = element<HTMLDetailsElement>(".player-center-manual-actions"); stoppedManual.open = true;
-    check(element<HTMLInputElement>('.player-center-manual-actions input[type="text"]').disabled,
+    await openManual();
+    check(element<HTMLInputElement>('input[id^="manual-player-target-"]').disabled,
       `${locale}: stopped server cannot accept manual native operations`);
     await draw(locale);
-    const manual = element<HTMLDetailsElement>(".player-center-manual-actions"); manual.open = true;
+    await openManual(); const manual = element<HTMLElement>(".player-center-manual-actions");
     check(!manual.querySelector("select"), `${locale}: manual route contains only unban and cannot bypass current row authorization`);
     await enterTarget("76561198000000001");
-    check(element<HTMLInputElement>('.player-center-manual-actions input[type="text"]').getAttribute("aria-invalid") === "true"
+    check(element<HTMLInputElement>('input[id^="manual-player-target-"]').getAttribute("aria-invalid") === "true"
       && element<HTMLButtonElement>(".player-center-manual-actions button").disabled,
       `${locale}: Steam64 and session-like targets cannot submit an EOS unban`);
     await enterTarget("00000000000000000000000000000001");
@@ -199,7 +212,7 @@ async function run() {
     check(Boolean(fixture?.querySelector(".shell-activity-notice.is-success")), `${locale}: confirmed unban reports its result in accessible feedback`);
   }
   await draw("zh-CN"); await selectFirst();
-  element<HTMLDetailsElement>(".player-center-manual-actions").open = true;
+  await openManual();
   await enterTarget("00000000000000000000000000000001");
   const panel = element<HTMLElement>(".player-center-controls");
   check(panel.scrollWidth <= panel.clientWidth + 1, "Native action pane fits the desktop viewport without horizontal overflow");

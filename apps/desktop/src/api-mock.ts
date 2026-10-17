@@ -1285,6 +1285,10 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockLivePlayerStore.read(buildMockLivePlayerContext(instanceId)) as T;
     }
+    case "read_instance_dragonwilds_bans": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
+      return mockLivePlayerStore.readDragonwildsBans(buildMockLivePlayerContext(instanceId)) as T;
+    }
     case "refresh_instance_live_players": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockLivePlayerStore.refresh(buildMockLivePlayerContext(instanceId)) as T;
@@ -1377,6 +1381,9 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
           runtimeActionRole: role
         }
       );
+      if (details.summary.module_id === "runescapedragonwilds") {
+        mockLivePlayerStore.unbanDragonwilds(buildMockLivePlayerContext(instanceId), target);
+      }
       const result: ExecuteInstancePlayerActionResult = {
         action_id: actionId,
         status: "sent",
@@ -2222,7 +2229,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         ports: nextPorts
       };
       mockInstanceDetailsStore.set(input.id, clone(updatedDetails));
-      mockLivePlayerStore.delete(input.id);
+      mockLivePlayerStore.invalidate(input.id);
       return updatedDetails as T;
     }
     case "apply_instance_player_access_mutation": {
@@ -2308,7 +2315,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
           processes: activeProcesses
         }
       });
-      mockLivePlayerStore.delete(instanceId);
+      mockLivePlayerStore.invalidate(instanceId);
       const log = ensureMockLogDocument(instanceId, 200);
       log.lines = [...log.lines, `[info] ${summary.name} start command accepted`];
       log.total_lines = log.lines.length;
@@ -2326,7 +2333,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
         summary,
         active_run: null
       });
-      mockLivePlayerStore.delete(instanceId);
+      mockLivePlayerStore.invalidate(instanceId);
       if (current.auto_backup_on_stop) {
         const createdAt = Date.now();
         const backup: InstanceBackupResult = {

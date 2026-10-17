@@ -394,13 +394,36 @@
   overflow-wrap: anywhere;
 }
 
+/* Every player action (session, roster, manual ID, native unban) shares one size and shape. */
 .player-center-action-button {
   min-width: 0;
   width: 100%;
-  min-height: 32px;
+  min-height: var(--settings-control-height, 38px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--settings-control-radius, 8px);
   text-align: center;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* A cleared target must immediately share the neutral disabled appearance,
+   including controls that stayed mounted while other roster controls changed. */
+.player-center-action-button:disabled {
+  transition: none;
+}
+
+/* Kick, ban and block-roster adds: same danger tint as other destructive tools; disabled buttons stay neutral. */
+.player-center-action-button.danger:not(:disabled) {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+.player-center-action-button.danger:not(:disabled):hover {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
 }
 
 .player-center-state {
@@ -474,23 +497,50 @@
   line-height: var(--leading-body);
 }
 
-.player-center-manual-actions {
-  min-width: 0;
-  border-top: 1px solid var(--shell-line);
+/* 手动查询 category: the list area holds only the ID field and lookup button. */
+.player-center-manual-lookup {
+  padding: 12px;
+  align-items: start;
 }
 
-.player-center-manual-entry {
-  padding: 10px 12px;
+.player-center-manual-lookup .detail-label { cursor: help; }
+
+.player-center-manual-lookup-action {
+  display: flex;
+  /* Sit level with the input, below the field label row. */
+  padding-top: 22px;
+}
+
+.player-center-manual-use {
+  min-height: var(--settings-control-height, 38px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--settings-control-radius, 8px);
+  white-space: nowrap;
+}
+
+.player-center-manual-use svg { width: 14px; height: 14px; }
+
+/* Manual-ID actions continue the same action stack instead of starting a new block. */
+.player-center-manual-host .player-center-action-group { padding: 0 12px 12px; gap: 6px; }
+.player-access-selected-actions + .player-center-manual-host { margin-top: -6px; }
+
+/* Single muted line naming a 手动查询 target; list selections need none (the row is highlighted). */
+.player-center-target-line {
+  margin: 0;
+  padding: 10px 12px 0;
+  overflow: hidden;
   color: var(--shell-text-muted, var(--shell-text));
-  font-size: var(--text-body);
-  cursor: pointer;
+  font-size: var(--text-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.player-center-manual-body {
-  display: grid;
-  gap: 8px;
-  padding: 0 12px 12px;
-}
+.player-center-details.is-compact .player-center-details-list { padding: 10px 12px; }
+.player-center-details.is-compact > .player-center-detail-note { margin: 0; padding: 10px 12px 0; }
+
+.player-center-manual-actions .player-center-manual-role { align-self: end; }
 
 .player-access-feedback {
   padding: 8px 10px;

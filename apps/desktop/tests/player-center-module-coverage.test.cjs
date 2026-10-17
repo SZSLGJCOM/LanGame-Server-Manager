@@ -339,14 +339,21 @@ test("all remaining target-bound manual actions dispatch through mock module aut
       instanceId: instance.summary.id,
       instance_id: instance.summary.id
     });
+    let manualTarget = "Player123";
+    if (moduleId === "runescapedragonwilds") {
+      const online = await invokeMock("refresh_instance_live_players", { instanceId: instance.summary.id });
+      const player = online.entries[0];
+      manualTarget = player.identifiers.find((identity) => identity.kind === "eos_id").value;
+      await invokeMock("execute_instance_player_action", { input: { instance_id: instance.summary.id,
+        snapshot_id: online.snapshot_id, player_key: player.player_key, action_id: "ban_player" } });
+    }
     for (const actionId of manualIds) {
       const action = details.runtime.player_actions.find((candidate) => candidate.id === actionId);
       const result = await invokeMock("execute_instance_manual_player_action", {
         input: {
           instance_id: instance.summary.id,
           action_id: action.id,
-          target: moduleId === "runescapedragonwilds" && action.id === "unban_player"
-            ? "00000000000000000000000000000001" : "Player123",
+          target: manualTarget,
           role: action.role_values?.[0] ?? null
         }
       });

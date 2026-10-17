@@ -107,6 +107,7 @@ register_commands! {
     (prepare_ark_tools, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (spawn_ark_creature, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (read_instance_live_players, [crate::commands::commands_live_players], Runtime, Allowed, Bounded),
+    (read_instance_dragonwilds_bans, [crate::commands::commands_dragonwilds_bans], Runtime, Allowed, Bounded),
     (refresh_instance_live_players, [crate::commands::commands_live_players], Runtime, Allowed, Bounded),
     (execute_instance_player_action, [crate::commands::commands_live_players], Runtime, Allowed, Bounded),
     (execute_instance_manual_player_action, [crate::commands::commands_manual_player_actions], Runtime, Allowed, Bounded),

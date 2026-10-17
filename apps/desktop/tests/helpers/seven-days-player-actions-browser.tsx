@@ -152,6 +152,11 @@ function personalActions(disabled: boolean) {
   }
   check(!document.querySelector(".player-center-total-controls")?.textContent?.includes("管理…"), "Controls still use generic management buttons");
 }
+// The right panel no longer repeats the selected identity; the highlighted left row is the target.
+function selectedRowText() {
+  const pressed = document.querySelector('.player-center-list-pane [aria-pressed="true"]');
+  return (pressed?.closest('tr, [role="listitem"]') ?? pressed)?.textContent ?? "";
+}
 async function run() {
   const root = createRoot(select<HTMLDivElement>("#fixture"));
   await act(async () => { await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
@@ -172,7 +177,7 @@ async function run() {
   check(manualActions.length === 0 && !document.querySelector(".player-center-manual-actions"), "7DTD retains a redundant manual player-action list");
   await list("admin_groups"); fixedTitle(); await list("blacklist_entries"); fixedTitle();
   await click(".player-center-list-pane .player-access-roster-select"); fixedTitle();
-  check(select<HTMLElement>(".player-center-member-heading").textContent?.includes(steamId),
+  check(selectedRowText().includes(steamId),
     "Selecting the existing blacklist entry lost its offline identity");
   check(!select<HTMLButtonElement>(action("blacklist_entries", "remove")).disabled,
     "Stopped server cannot remove a persistent blacklist entry");
@@ -184,7 +189,7 @@ async function run() {
   const sessionOnly = { ...trustedPlayers[0], player_key: "native-session", available_action_ids: [], identifiers: [{ kind: "session_id" as const, value: "42", stable: false }] };
   await state(snapshot([sessionOnly])); fixedTitle(); personalActions(true);
   await click(".player-center-player-table .player-center-player-select"); personalActions(true);
-  check(document.querySelector(".player-center-details") && select<HTMLButtonElement>(".player-center-member-action").disabled,
+  check(selectedRowText() && select<HTMLButtonElement>(".player-center-member-action").disabled,
     "Inspecting a session-only row authorized persistent or runtime actions"); checks++;
   await state(snapshot(trustedPlayers)); await click(".player-center-player-table tbody tr:first-child .player-center-player-select"); fixedTitle();
   check(!select<HTMLButtonElement>(action("blacklist_entries", "remove")).disabled, "Existing blacklist entry does not offer direct unban");
