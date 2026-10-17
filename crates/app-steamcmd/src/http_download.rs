@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use sha1::{Digest, Sha1};
-use sha2::Sha256;
+use sha2::{Sha256, Sha512};
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 
 use super::{InstallDeadline, SteamCmdError, create_minecraft_staging_file, operation_timeout};
@@ -16,6 +16,7 @@ const REQUEST_BUDGET: Duration = Duration::from_secs(45);
 pub(super) struct DownloadIntegrity<'a> {
     pub sha1: Option<&'a str>,
     pub sha256: Option<&'a str>,
+    pub sha512: Option<&'a str>,
     pub size: Option<u64>,
 }
 
@@ -74,6 +75,7 @@ fn download_error(url: &str, error: impl std::fmt::Display) -> SteamCmdError {
         url: safe_url,
         detail: error.to_string(),
         permits_source_fallback: true,
+        source_unavailable: false,
     }
 }
 
@@ -99,13 +101,22 @@ async fn response(
         .map_err(|_| operation_timeout(deadline))?
         .map_err(|error| {
             let permits = error.permits_source_fallback();
+            let unavailable = matches!(
+                &error,
+                app_network::NetworkError::Transport { .. }
+                    | app_network::NetworkError::Deadline { .. }
+                    | app_network::NetworkError::Status { .. }
+                    | app_network::NetworkError::RetryDeferred { .. }
+            );
             let mut failure = download_error(url, error);
             if let SteamCmdError::HttpDownload {
                 permits_source_fallback,
+                source_unavailable,
                 ..
             } = &mut failure
             {
                 *permits_source_fallback = permits;
+                *source_unavailable = unavailable;
             }
             failure
         })?;
@@ -176,6 +187,28 @@ fn permits_source_fallback(error: &SteamCmdError) -> bool {
             ..
         } | SteamCmdError::HttpDownloadInterrupted { .. }
     )
+}
+
+pub(super) fn source_unavailable(error: &SteamCmdError) -> bool {
+    matches!(
+        error,
+        SteamCmdError::HttpDownload {
+            source_unavailable: true,
+            ..
+        } | SteamCmdError::HttpDownloadInterrupted { .. }
+    )
+}
+
+fn prefer_source_failure(previous: Option<SteamCmdError>, current: SteamCmdError) -> SteamCmdError {
+    // Another healthy official source may recover a bad payload. If all fail,
+    // a later outage must not hide an earlier validation/storage failure and
+    // incorrectly enable offline runtime reuse.
+    match previous {
+        Some(previous) if !source_unavailable(&previous) && source_unavailable(&current) => {
+            previous
+        }
+        _ => current,
+    }
 }
 
 async fn next_chunk(
@@ -295,7 +328,7 @@ where
     };
     let mut file = tokio::fs::File::from_std(file);
     let result = async {
-        let mut last_error = download_error("download source", "no source was available");
+        let mut last_error = None;
         for (index, candidate) in candidates.iter().enumerate() {
             let source_deadline = candidate_deadline(deadline, candidates.len() - index);
             for retry in 0..if candidates.len() == 1 { 2 } else { 1 } {
@@ -328,18 +361,21 @@ where
                             .map_err(|error| download_error(candidate, error))?;
                         deadline.check_cancelled()?;
                         downloaded.source = candidate.clone();
-                        if integrity.sha1.is_some() || integrity.sha256.is_some() {
+                        if integrity.sha1.is_some()
+                            || integrity.sha256.is_some()
+                            || integrity.sha512.is_some()
+                        {
                             downloaded.record_success();
                         }
                         return Ok(());
                     }
                     Err(error) => {
                         if !permits_source_fallback(&error) {
-                            return Err(error);
+                            return Err(prefer_source_failure(last_error.take(), error));
                         }
                         app_network::record_failure(candidate);
                         let restart = retry == 0 && is_interrupted(&error);
-                        last_error = error;
+                        last_error = Some(prefer_source_failure(last_error.take(), error));
                         if !restart {
                             break;
                         }
@@ -347,7 +383,8 @@ where
                 }
             }
         }
-        Err(last_error)
+        Err(last_error
+            .unwrap_or_else(|| download_error("download source", "no source was available")))
     }
     .await;
     // Tokio file writes run on its blocking pool. Dropping the async wrapper
@@ -386,6 +423,7 @@ where
     let mut last_progress = tokio::time::Instant::now();
     let mut sha1 = Sha1::new();
     let mut sha256 = Sha256::new();
+    let mut sha512 = integrity.sha512.map(|_| Sha512::new());
     while let Some(chunk) = next_chunk(&mut response, url, deadline).await? {
         size = size.saturating_add(chunk.len() as u64);
         if size > limit {
@@ -396,6 +434,9 @@ where
         }
         sha1.update(&chunk);
         sha256.update(&chunk);
+        if let Some(hasher) = &mut sha512 {
+            hasher.update(&chunk);
+        }
         deadline.check_cancelled()?;
         file.write_all(&chunk)
             .await
@@ -433,9 +474,19 @@ where
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect();
+    let actual_sha512 = sha512
+        .map(|hasher| {
+            hasher
+                .finalize()
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        })
+        .unwrap_or_default();
     for (algorithm, expected, actual) in [
         ("SHA-1", integrity.sha1, &actual_sha1),
         ("SHA-256", integrity.sha256, &actual_sha256),
+        ("SHA-512", integrity.sha512, &actual_sha512),
     ] {
         if let Some(expected) = expected.filter(|expected| !expected.eq_ignore_ascii_case(actual)) {
             return Err(download_error(

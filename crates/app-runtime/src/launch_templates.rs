@@ -432,6 +432,10 @@ pub(super) fn collect_dontstarve_launch_setting_issues(
 #[path = "dst_shard_launch_tests.rs"]
 mod dst_shard_tests;
 
+#[cfg(test)]
+#[path = "launch_templates_soulmask_tests.rs"]
+mod soulmask_tests;
+
 pub(super) fn lookup_json_path(value: &Value, path: &str) -> Option<String> {
     let current = lookup_json_value(value, path)?;
 
@@ -643,6 +647,17 @@ pub(super) fn lookup_soulmask_launch_token(
 ) -> Option<String> {
     match path {
         "workshop_mods_arg" => Some(render_soulmask_workshop_mods_arg(context.settings)),
+        "default_server_permissions_arg" => {
+            let explicit_mode = lookup_json_text(context.settings, "extra_launch_args")
+                .is_some_and(|raw| {
+                    custom_launch_flags_contain_managed_option(&raw, &["-serverpm"])
+                });
+            Some(if explicit_mode {
+                String::new()
+            } else {
+                String::from("-serverpm=2")
+            })
+        }
         _ => None,
     }
 }

@@ -1,6 +1,7 @@
 import { useId, useRef, useState } from "react";
-import { updateInstanceProgram } from "../../api";
-import { describeError } from "../../app-state";
+import { updateInstanceProgram, updateAuthenticatedInstanceProgram } from "../../api";
+import { formatDesktopError } from "../../desktop-error-message";
+import { runSteamInstallationWithAccount, type SteamInstallationAccountContext } from "../../steam-installation-account";
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { InlineConfirmAction } from "../../components/InlineConfirmAction";
 import { useI18n } from "../../i18n";
@@ -14,9 +15,11 @@ interface Props {
   report: InstanceIsolationReport;
   jobs: BackgroundJob[];
   onChanged: () => void;
+  account?: SteamInstallationAccountContext;
+  accountBusy?: boolean;
 }
 
-export function InstanceProgramMaintenance({ details, report, jobs, onChanged }: Props) {
+export function InstanceProgramMaintenance({ details, report, jobs, onChanged, account, accountBusy }: Props) {
   const { t } = useI18n();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export function InstanceProgramMaintenance({ details, report, jobs, onChanged }:
     try { if (readProgramUpdatePolicy(settings.value) === "pinned") policyIssue = t("servers.programPolicy.manualPinned"); }
     catch { policyIssue = t("servers.programPolicy.invalid"); }
   }
-  const disabled = busy || !stopped || report.mode === "damaged" || Boolean(policyIssue);
+  const disabled = busy || accountBusy || !stopped || report.mode === "damaged" || Boolean(policyIssue);
   const help = useConfigurationFieldHelp(useId(), policyIssue ?? (!stopped ? t("servers.program.stopFirst") : undefined),
     undefined, undefined, "instructions");
 
@@ -44,11 +47,12 @@ export function InstanceProgramMaintenance({ details, report, jobs, onChanged }:
     setMessage(null);
     setFailure(null);
     try {
-      await updateInstanceProgram(details.summary.id, validate);
+      await runSteamInstallationWithAccount(() => updateInstanceProgram(details.summary.id, validate),
+        (accountName) => updateAuthenticatedInstanceProgram(details.summary.id, validate, accountName), account);
       setMessage(t("servers.program.completed"));
       onChanged();
     } catch (error) {
-      setFailure({ message: describeError(error), validate });
+      setFailure({ message: formatDesktopError(t, error), validate });
     } finally {
       setPending(false);
       inFlight.current = false;

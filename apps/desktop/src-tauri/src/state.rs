@@ -86,6 +86,8 @@ pub struct DesktopState {
     app_shutdown: Mutex<()>,
     pub shutdown_completed: AtomicBool,
     pub(crate) steamcmd_preparation: Arc<crate::steamcmd_preparation::SteamCmdPreparationTracker>,
+    pub(crate) steam_workshop_account_sessions:
+        Arc<crate::steam_workshop_account_sessions::SteamWorkshopAccountSessions>,
     pub(crate) install_operations: Arc<InstallOperationRegistry>,
     pub(crate) install_locks: app_steamcmd::InstallLockContext,
     pub(crate) storage_management: Arc<StorageManagement>,
@@ -159,6 +161,9 @@ impl Default for DesktopState {
             assistant_sessions: crate::assistant_sessions::AssistantSessionStore::default(),
             booted_at: SystemTime::now(),
             install_operations: Arc::new(InstallOperationRegistry::default()),
+            steam_workshop_account_sessions: Arc::new(
+                crate::steam_workshop_account_sessions::SteamWorkshopAccountSessions::default(),
+            ),
             install_locks: app_steamcmd::InstallLockContext::new(
                 default_paths.app_data_root.clone(),
             ),

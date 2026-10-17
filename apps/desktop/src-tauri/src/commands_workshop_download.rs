@@ -132,6 +132,7 @@ pub(super) async fn prepare_locked_dst_import_items(
         WorkshopOperation {
             storage: operation,
             mutation: mutation.clone(),
+            account_name: None,
         },
         |_| {},
     )
@@ -145,6 +146,7 @@ pub(super) async fn prepare_locked_dst_import_items(
 pub(super) struct WorkshopOperation<'a> {
     pub storage: &'a StorageContextOperationGuard,
     pub mutation: std::sync::Arc<WorkshopMutation>,
+    pub account_name: Option<&'a str>,
 }
 
 pub(super) async fn prepare_workshop_items(
@@ -157,11 +159,14 @@ pub(super) async fn prepare_workshop_items(
     mut on_progress: impl FnMut(InstallProgressUpdate),
 ) -> Result<SteamWorkshopDownloadResult, WorkshopDownloadFailure> {
     if !missing_only {
-        return app_steamcmd::download_workshop_items_with_progress(
+        return app_steamcmd::download_workshop_items_with_login_and_progress(
             settings,
-            consumer_app_id,
-            install_root,
-            ids,
+            app_steamcmd::SteamWorkshopDownloadRequest {
+                consumer_app_id,
+                install_root,
+                ids,
+                account_name: operation.account_name,
+            },
             operation.mutation.install(),
             &operation.mutation.steamcmd,
             on_progress,
@@ -187,11 +192,14 @@ pub(super) async fn prepare_workshop_items(
     let output_excerpt = if plan.download_ids.is_empty() {
         reuse_note
     } else {
-        let downloaded = app_steamcmd::download_workshop_items_with_progress(
+        let downloaded = app_steamcmd::download_workshop_items_with_login_and_progress(
             settings,
-            consumer_app_id,
-            install_root,
-            &plan.download_ids,
+            app_steamcmd::SteamWorkshopDownloadRequest {
+                consumer_app_id,
+                install_root,
+                ids: &plan.download_ids,
+                account_name: operation.account_name,
+            },
             operation.mutation.install(),
             &operation.mutation.steamcmd,
             &mut on_progress,

@@ -131,6 +131,25 @@ target_required = true
 process_key = "main"
 destructive = true
 
+# RTServer 26.8.31.1 CMD_Modlist prints Configs/ModConfig.json required and
+# optional Mods; CMD_ToggleModBypass flips and saves AllowAllMods.
+[[runtime.player_actions]]
+id = "list_mods"
+label = "Mod list"
+label_zh_cn = "Mod 列表"
+transport = "stdin"
+command_template = "modlist"
+process_key = "main"
+
+[[runtime.player_actions]]
+id = "toggle_mod_bypass"
+label = "Toggle Mod bypass"
+label_zh_cn = "切换 Mod 校验跳过"
+transport = "stdin"
+command_template = "togglemodbypass"
+process_key = "main"
+destructive = true
+
 [runtime.shutdown]
 grace_period_ms = 12000
 

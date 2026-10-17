@@ -1,4 +1,5 @@
 use super::install_progress::SteamInstallOutput;
+use super::steamcmd_account::AccountLoginEvidence;
 use super::steamcmd_content_evidence::ContentLogEvidence;
 use super::steamcmd_manifest_recovery::ManifestDenial;
 use super::*;
@@ -8,6 +9,7 @@ mod logs;
 use logs::{LogSource, StreamLogs};
 #[path = "steamcmd_content_log.rs"]
 mod content_log;
+use content_log::WorkshopLogExcerpt;
 pub(super) use content_log::read_steamcmd_content_log_excerpt;
 
 #[derive(Debug)]
@@ -16,7 +18,27 @@ pub(super) struct StreamingCommandResult {
     pub(super) exit_code: Option<i32>,
     pub(super) excerpt: String,
     pub(super) content_log_excerpt: Option<String>,
+    pub(super) workshop_log_excerpt: Option<String>,
+    pub(super) workshop_download_failed: bool,
+    pub(super) app_command_evidence: super::steam_app_access::SteamAppCommandEvidence,
+    pub(super) authenticated_account_name: Option<String>,
     pub(super) denied_manifests: Vec<ManifestDenial>,
+}
+
+#[derive(Default)]
+struct CommandEvidence {
+    workshop_download_failed: bool,
+    app: super::steam_app_access::SteamAppCommandEvidence,
+    account: AccountLoginEvidence,
+}
+
+impl CommandEvidence {
+    fn observe_line(&mut self, line: &str) {
+        self.workshop_download_failed |=
+            super::workshop_download::is_workshop_download_failure_line(line);
+        self.app.observe_line(line);
+        self.account.observe_line(line);
+    }
 }
 
 pub(super) async fn run_steamcmd_script_with_progress<F>(
@@ -96,6 +118,12 @@ where
         )))
         .await
         .map_err(|_| operation_timeout(deadline))?;
+    let workshop_log = deadline
+        .run(WorkshopLogExcerpt::before_spawn(Path::new(
+            working_directory,
+        )))
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
     let mut logs = deadline
         .run(StreamLogs::before_spawn(Path::new(working_directory)))
         .await
@@ -135,6 +163,7 @@ where
     drop(tx);
 
     let mut excerpt_lines = VecDeque::new();
+    let mut evidence = CommandEvidence::default();
     let mut progress = SteamInstallOutput::new();
     let mut status = None;
     let mut channel_closed = false;
@@ -147,6 +176,7 @@ where
                 &mut logs,
                 &mut progress,
                 &mut excerpt_lines,
+                &mut evidence,
                 deadline,
                 &mut on_progress,
             )
@@ -173,7 +203,7 @@ where
                 return Err(operation_timeout(deadline));
             }
             _ = log_tick.tick() => {
-                if let Err(error) = publish_log_progress(&mut logs, &mut progress, &mut excerpt_lines, deadline, &mut on_progress).await {
+                if let Err(error) = publish_log_progress(&mut logs, &mut progress, &mut excerpt_lines, &mut evidence, deadline, &mut on_progress).await {
                     let cleanup = terminate_and_reap_child(&mut child, &mut process_guard, deadline).await;
                     abort_line_forwarders(&mut stdout_forwarder, &mut stderr_forwarder).await;
                     cleanup?;
@@ -187,6 +217,7 @@ where
                         if trimmed.is_empty() {
                             continue;
                         }
+                        evidence.observe_line(trimmed);
                         push_excerpt_line(&mut excerpt_lines, trimmed);
                         if let Some(update) = progress.stdout_line(trimmed, join_excerpt_lines(&excerpt_lines)) {
                             on_progress(update);
@@ -240,6 +271,10 @@ where
         )))
         .await
         .map_err(|_| operation_timeout(deadline))?;
+    let workshop_log_excerpt = deadline
+        .run(workshop_log.finish())
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
     Ok(StreamingCommandResult {
         success,
         exit_code,
@@ -248,6 +283,13 @@ where
             content_log_before.as_deref(),
             content_log_after.as_deref(),
         ),
+        workshop_log_excerpt,
+        workshop_download_failed: evidence.workshop_download_failed,
+        app_command_evidence: evidence.app,
+        authenticated_account_name: evidence
+            .account
+            .authenticated_account_name()
+            .map(String::from),
         denied_manifests,
     })
 }
@@ -256,6 +298,7 @@ async fn publish_log_progress<F: FnMut(InstallProgressUpdate)>(
     logs: &mut StreamLogs,
     progress: &mut SteamInstallOutput,
     excerpt: &mut VecDeque<String>,
+    evidence: &mut CommandEvidence,
     deadline: InstallDeadline,
     on_progress: &mut F,
 ) -> Result<bool, SteamCmdError> {
@@ -268,6 +311,9 @@ async fn publish_log_progress<F: FnMut(InstallProgressUpdate)>(
         let line = line.trim();
         if line.is_empty() {
             continue;
+        }
+        if matches!(source, LogSource::Console) {
+            evidence.observe_line(line);
         }
         push_excerpt_line(excerpt, line);
         let excerpt = join_excerpt_lines(excerpt);

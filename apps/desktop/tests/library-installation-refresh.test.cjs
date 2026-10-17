@@ -324,6 +324,7 @@ function loadDesktopActions(api) {
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../install-state-presentation": { formatInstallState: (value) => value },
     "../installation-cancellation": require("../src/installation-cancellation.ts"),
+    "../steam-installation-account": require("../src/steam-installation-account.ts"),
     "../instance-panel-refresh": {},
     "../server-start-error": require("../src/server-start-error.ts"),
     "../library-installation-refresh": {},
@@ -425,6 +426,26 @@ test("backend cancellation reports a normal stopped result and still refreshes i
   assert.equal(events.includes("activity.installCompleted"), false);
   assert.ok(events.includes("refresh"));
   assert.equal(events.at(-1), "polling:false");
+});
+
+test("account-required installation waits for authentication without reporting failure or completion", async () => {
+  const login = deferred(), calls = [], events = [];
+  const target = { kind: "module", id: "pz" };
+  const { useLibraryActions } = loadDesktopActions({
+    installModule: async (moduleId, validate) => { calls.push({ moduleId, validate, anonymous: true });
+      throw new Error(JSON.stringify({ code: "steam_app_account_required", app_id: 1234, message: "Access required", output_excerpt: "No subscription" })); },
+    installAuthenticatedModule: async (moduleId, validate, account, scope) => { calls.push({ moduleId, validate, account, scope }); return { install_state: "Installed" }; }
+  });
+  const actions = useLibraryActions({ setActivity: (value) => events.push(value.key), setLibraryTaskPolling: () => {},
+    reloadBootstrap: async () => { events.push("refresh"); }, refreshInstallationState: async () => installedSnapshot(), refreshSteamCmdStatus: async () => {} });
+  const pending = actions.handleInstallModule("pz", true, { target, expectedAppId: 1234, isCurrentOwner: () => true, requestAccount: () => login.promise });
+  await flush();
+  assert.equal(calls.length, 1); assert.equal(events.includes("refresh"), false);
+  assert.equal(events.includes("activity.validationFailed"), false); assert.equal(events.includes("activity.validationCompleted"), false);
+  login.resolve("Confirmed_Account"); await pending;
+  assert.deepEqual(calls[1], { moduleId: "pz", validate: true, account: "Confirmed_Account", scope: target });
+  assert.equal(events.filter((value) => value === "activity.validationCompleted").length, 1);
+  assert.equal(events.filter((value) => value === "refresh").length, 1);
 });
 
 test("details polling skips unchanged summaries but reloads schema and process fields for a new summary snapshot", async () => {

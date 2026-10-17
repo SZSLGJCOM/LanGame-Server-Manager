@@ -2,7 +2,7 @@ use app_steamcmd::SteamCmdError;
 use serde_json::json;
 
 /// Keep application-owned failure reasons structured at the desktop/LAN boundary.
-pub(super) fn steamcmd_error_message(error: &SteamCmdError) -> String {
+pub(crate) fn steamcmd_error_message(error: &SteamCmdError) -> String {
     if matches!(error, SteamCmdError::InstallCancelled { .. }) {
         return String::from("installation_cancelled");
     }
@@ -63,6 +63,26 @@ pub(super) fn steamcmd_error_message(error: &SteamCmdError) -> String {
             "code": "module_process_spec_missing", "module_id": module_id,
         }),
         SteamCmdError::SteamCmdCommandFailed { .. } => json!({"code": "steamcmd_command_failed"}),
+        SteamCmdError::InvalidSteamAccountName => json!({"code": "steam_account_name_invalid"}),
+        SteamCmdError::SteamAccountAuthenticationFailed { .. } => {
+            json!({"code": "steam_account_authentication_failed"})
+        }
+        SteamCmdError::SteamAccountInteractiveUnsupported => {
+            json!({"code": "steam_account_interactive_unsupported"})
+        }
+        SteamCmdError::WorkshopDecryptionKeyMissing {
+            consumer_app_id, ..
+        } => json!({
+            "code": "steam_workshop_decryption_key_missing", "consumer_app_id": consumer_app_id,
+        }),
+        SteamCmdError::WorkshopAccountRequired {
+            consumer_app_id, ..
+        } => json!({
+            "code": "steam_workshop_account_required", "consumer_app_id": consumer_app_id,
+        }),
+        SteamCmdError::SteamAppAccountRequired { app_id, .. } => json!({
+            "code": "steam_app_account_required", "app_id": app_id,
+        }),
         SteamCmdError::PrepareSteamCmd { .. } => json!({"code": "steamcmd_prepare_failed"}),
         SteamCmdError::SteamCmdPreparationCleanupFailed { .. }
         | SteamCmdError::SteamCmdPreparationLogRead { .. } => {
@@ -83,6 +103,10 @@ pub(super) fn steamcmd_error_excerpt(error: &SteamCmdError) -> Option<String> {
         | SteamCmdError::SteamCmdPreparationTimedOut { output_excerpt, .. }
         | SteamCmdError::SteamCmdPreparationCleanupFailed { output_excerpt }
         | SteamCmdError::SteamCmdCommandFailed { output_excerpt }
+        | SteamCmdError::SteamAccountAuthenticationFailed { output_excerpt }
+        | SteamCmdError::WorkshopDecryptionKeyMissing { output_excerpt, .. }
+        | SteamCmdError::WorkshopAccountRequired { output_excerpt, .. }
+        | SteamCmdError::SteamAppAccountRequired { output_excerpt, .. }
         | SteamCmdError::DirectDownloadFailed { output_excerpt } => Some(output_excerpt.clone()),
         SteamCmdError::SteamCmdPreparationLogRead {
             source,

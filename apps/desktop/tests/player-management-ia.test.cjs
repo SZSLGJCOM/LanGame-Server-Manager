@@ -109,7 +109,7 @@ test("snapshot actions submit only instance, snapshot, player, and action refere
   }
   assert.match(onlinePlayers, /onExecute=\{executeLiveAction\}/);
   assert.match(onlinePlayers, /\(props\.onExecutePlayerAction \?\? executeInstancePlayerAction\)\(input\)/);
-  assert.match(onlinePlayers, /input\.action_id === "ban_player"\) bans\.invalidate\(\)/);
+  assert.match(onlinePlayers, /input\.action_id === "ban_player" \|\| input\.action_id === "ban_user"\)\) bans\.invalidate\(\)/);
   assert.match(actionPanel, /!props\.actionIds\.includes\(actionId\) \|\| !player\.available_action_ids\.includes\(actionId\)/);
   assert.match(actionPanel, /const disabled = !props\.actionsEnabled \|\| hasPendingRequest \|\| !props\.player\?\.available_action_ids\.includes\(actionId\)/);
   assert.match(actionPanel, /return <ConfigurationHelp[\s\S]*?\{danger \? \([\s\S]*?<InlineConfirmAction/);
@@ -159,7 +159,7 @@ test("Player Center static copy resolves through complete en-US and zh-CN catalo
 
 test("Player Center keeps locale selection only at dynamic metadata and date boundaries", () => {
   assert.match(manualActions, /locale === "zh-CN" && action\.label_zh_cn/);
-  assert.match(manualActions, /locale === "zh-CN" && action\.target_label_zh_cn/);
+  assert.match(manualActions, /locale === "zh-CN" && action\?\.target_label_zh_cn/);
   assert.match(manualActions, /locale === "zh-CN" && action\.target_placeholder_zh_cn/);
   assert.match(actionPanel, /locale === "zh-CN" && action\?\.label_zh_cn/);
   assert.match(onlinePlayers, /Intl\.DateTimeFormat\(locale === "zh-CN" \? "zh-CN" : "en-US"/);

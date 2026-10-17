@@ -251,6 +251,11 @@ async fn wrong_hash_and_size_never_publish_or_leave_partial_files() {
             ..Default::default()
         },
         DownloadIntegrity {
+            sha512: Some("incorrect"),
+            size: Some(7),
+            ..Default::default()
+        },
+        DownloadIntegrity {
             size: Some(6),
             ..Default::default()
         },
@@ -260,7 +265,13 @@ async fn wrong_hash_and_size_never_publish_or_leave_partial_files() {
         std::fs::write(&path, b"old verified artifact").unwrap();
         let result =
             download_file(&fixture_client(), &source.url, &path, integrity, deadline()).await;
-        assert!(matches!(result, Err(SteamCmdError::HttpDownload { .. })));
+        assert!(matches!(
+            result,
+            Err(SteamCmdError::HttpDownload {
+                source_unavailable: false,
+                ..
+            })
+        ));
         assert_eq!(std::fs::read(&path).unwrap(), b"old verified artifact");
         assert_eq!(
             std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
@@ -268,6 +279,121 @@ async fn wrong_hash_and_size_never_publish_or_leave_partial_files() {
         );
         std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
+}
+
+#[tokio::test]
+async fn unexpected_partial_responses_are_validation_failures() {
+    let source = fixture(vec![reply(206, b"unsolicited partial artifact")]).await;
+    let path = destination();
+    let result = download_file(
+        &fixture_client(),
+        &source.url,
+        &path,
+        DownloadIntegrity::default(),
+        deadline(),
+    )
+    .await;
+    assert!(matches!(
+        result,
+        Err(SteamCmdError::HttpDownload {
+            source_unavailable: false,
+            ..
+        })
+    ));
+    assert!(!path.exists());
+    std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+}
+
+#[tokio::test]
+async fn exhausted_network_streams_preserve_the_existing_artifact_and_report_unavailability() {
+    let interrupted =
+        b"HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\npartial".to_vec();
+    let source = fixture(vec![interrupted.clone(), interrupted]).await;
+    let path = destination();
+    std::fs::write(&path, b"old verified artifact").unwrap();
+    let result = download_file(
+        &fixture_client(),
+        &source.url,
+        &path,
+        DownloadIntegrity::default(),
+        deadline(),
+    )
+    .await;
+    assert!(matches!(
+        result,
+        Err(SteamCmdError::HttpDownloadInterrupted { .. })
+    ));
+    assert_eq!(std::fs::read(&path).unwrap(), b"old verified artifact");
+    assert_eq!(
+        std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
+        1
+    );
+    std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+}
+
+#[tokio::test]
+async fn later_source_outages_cannot_hide_an_earlier_integrity_failure() {
+    for alternate_response in [reply(403, b"forbidden"), reply(200, b"also invalid")] {
+        let primary = fixture(vec![reply(200, b"invalid artifact")]).await;
+        let alternate = fixture(vec![alternate_response]).await;
+        let path = destination();
+        let result = download_file_from_candidates(
+            &fixture_client(),
+            &[primary.url.clone(), alternate.url.clone()],
+            &path,
+            DownloadIntegrity {
+                sha512: Some("invalid expected hash"),
+                ..Default::default()
+            },
+            deadline(),
+        )
+        .await;
+        assert!(matches!(
+            result,
+            Err(SteamCmdError::HttpDownload {
+                source_unavailable: false,
+                ..
+            })
+        ));
+        assert!(!path.exists());
+        assert_eq!(
+            std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
+            0
+        );
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
+    }
+}
+
+#[tokio::test]
+async fn official_dotnet_sha512_is_checked_before_publication() {
+    // SHA-512("abc"), from the standard SHA-512 test vector.
+    let checksum = concat!(
+        "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a",
+        "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+    );
+    let source = fixture(vec![reply(200, b"abc")]).await;
+    let path = destination();
+    let downloaded = download_file(
+        &fixture_client(),
+        &source.url,
+        &path,
+        DownloadIntegrity {
+            sha512: Some(checksum),
+            size: Some(3),
+            ..Default::default()
+        },
+        deadline(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(std::fs::read(downloaded.path()).unwrap(), b"abc");
+    assert!(!path.exists());
+    drop(downloaded);
+    assert_eq!(
+        std::fs::read_dir(path.parent().unwrap()).unwrap().count(),
+        0
+    );
+    std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
 }
 
 #[tokio::test]
@@ -284,7 +410,7 @@ async fn terminal_access_and_retry_after_responses_never_switch_sources() {
             &fixture_client(), &[primary.url.clone(), alternate.url.clone()], &path,
             DownloadIntegrity::default(), deadline(),
         ).await;
-        assert!(matches!(result, Err(SteamCmdError::HttpDownload { permits_source_fallback: false, .. })));
+        assert!(matches!(result, Err(SteamCmdError::HttpDownload { permits_source_fallback: false, source_unavailable: true, .. })));
         assert_eq!(alternate.requests.load(Ordering::Relaxed), 0);
         assert_eq!(std::fs::read_dir(path.parent().unwrap()).unwrap().count(), 0);
         std::fs::remove_dir_all(path.parent().unwrap()).unwrap();

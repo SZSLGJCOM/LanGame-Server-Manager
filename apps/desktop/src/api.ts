@@ -1,6 +1,6 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
 import { readPreferredLocale } from "./locale-preference";
-import { invokeOrMock, shouldUseLanApi } from "./api-transport";
+import { canUseLocalDesktopApi, invokeOrMock, shouldUseLanApi } from "./api-transport";
 import { storageManagementRequests } from "./storage-management-requests";
 import { parseInstanceArkMapAvailability } from "./ark-map-availability";
 import type { ArkClusterReport, ArkClusterOperationResult, OperateArkClusterInput } from "./ark-clusters";
@@ -78,6 +78,7 @@ import type {
   DstWorldImportResult,
   DstWorldStartPreview,
   DragonwildsBanRoster,
+  NativeBanRoster,
   ExecuteInstanceManualPlayerActionInput,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
@@ -186,13 +187,28 @@ export const installModule = (moduleId: string, validate = false) => invokeOrMoc
 export const uninstallModule = (moduleId: string) => invokeOrMock<ModuleUninstallResult>("uninstall_module_game", { moduleId });
 export const updateInstanceProgram = (instanceId: string, validate: boolean) =>
   invokeOrMock<ModuleInstallResult>("update_instance_program", { instanceId, validate });
-export const downloadSteamWorkshopItems = (instanceId: string, ids: string[], missingOnly = false) =>
-  invokeOrMock<SteamWorkshopDownloadResult>("download_steam_workshop_items", {
+export const installAuthenticatedModule = (moduleId: string, validate: boolean, accountName: string,
+  target: import("./steam-workshop-account-api").SteamWorkshopAccountTarget) => {
+  if (!canUseLocalDesktopApi()) return Promise.reject(new Error(JSON.stringify({ code: "steam_account_interactive_unsupported", message: "Steam account downloads require the local desktop." })));
+  return invokeOrMock<ModuleInstallResult>("install_authenticated_module_game", { moduleId, validate, accountName, target });
+};
+export const updateAuthenticatedInstanceProgram = (instanceId: string, validate: boolean, accountName: string) => {
+  if (!canUseLocalDesktopApi()) return Promise.reject(new Error(JSON.stringify({ code: "steam_account_interactive_unsupported", message: "Steam account downloads require the local desktop." })));
+  return invokeOrMock<ModuleInstallResult>("update_authenticated_instance_program", { instanceId, validate, accountName });
+};
+export const downloadSteamWorkshopItems = (instanceId: string, ids: string[], missingOnly = false, loginAccount?: string) => {
+  if (loginAccount !== undefined && !canUseLocalDesktopApi()) {
+    return Promise.reject(new Error(JSON.stringify({ code: "steam_account_interactive_unsupported", message: "Steam account downloads require the local desktop." })));
+  }
+  return invokeOrMock<SteamWorkshopDownloadResult>(loginAccount === undefined
+    ? "download_steam_workshop_items" : "download_authenticated_steam_workshop_items", {
     instanceId,
     ids,
     missingOnly,
-    locale: readPreferredLocale()
+    locale: readPreferredLocale(),
+    ...(loginAccount === undefined ? {} : { accountName: loginAccount })
   });
+};
 export const stageManualModFiles = (instanceId: string, sourcePaths: string[]) =>
   invokeOrMock<ManualModStageResult>("stage_manual_mod_files", {
     instanceId,
@@ -346,6 +362,10 @@ export const readInstanceLivePlayers = (instanceId: string) =>
   });
 export const readInstanceDragonwildsBans = (instanceId: string) =>
   invokeOrMock<DragonwildsBanRoster>("read_instance_dragonwilds_bans", { instanceId });
+export const readInstanceNativeBans = (instanceId: string) =>
+  invokeOrMock<NativeBanRoster>("read_instance_native_bans", { instanceId });
+export const unbanInstanceNativeBan = (instanceId: string, accountId: string) =>
+  invokeOrMock<ExecuteInstancePlayerActionResult>("unban_instance_native_ban", { instanceId, accountId });
 export const refreshInstanceLivePlayers = (instanceId: string) =>
   invokeOrMock<RuntimeLivePlayerSnapshot>("refresh_instance_live_players", {
     instanceId

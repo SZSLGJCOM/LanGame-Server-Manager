@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { describeError } from "../../app-state";
+import { moduleRequiresSteamCmd } from "../../module-installation-dependency";
 import { readInstanceLogDocument } from "../../api";
 import { createRuntimeLogRefresh } from "../../runtime-log-refresh";
 import { runtimeConsoleHistory } from "../../runtime-console-history";
@@ -19,6 +20,8 @@ import {
   type RuntimeLogStartupBoundary
 } from "../../runtime-log-stream";
 import { ShellIcon } from "../../components/ShellIcon";
+import { SteamWorkshopAccountConsole } from "./SteamWorkshopAccountConsole";
+import type { SteamWorkshopAccountState } from "./useSteamWorkshopAccount";
 import { localizeRuntimeHealthSummary } from "../../runtime-health-message";
 import { isArkModule } from "../../ark-clusters";
 import { resolveRuntimeConsoleTransport } from "../../runtime-console-transport";
@@ -40,6 +43,9 @@ import {
 } from "../../runtime-action-state";
 
 interface RuntimeSurfaceWorkbenchProps {
+  steamAccount?: SteamWorkshopAccountState;
+  steamCmdSelected?: boolean;
+  onSteamCmdSelected?: (selected: boolean) => void;
   details: InstanceDetails;
   moduleDetails?: ModuleDetails | null;
   runtime: InstanceRuntimeOverview | null;
@@ -211,6 +217,14 @@ function buildRuntimeConsoleTabs(
 }
 
 export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
+  return !props.archive && (props.moduleDetails?.workshop?.provider === "steam"
+    || moduleRequiresSteamCmd(props.moduleDetails?.summary ?? {}, props.moduleDetails?.install)) && props.steamAccount?.available
+    && props.steamCmdSelected && props.onSteamCmdSelected
+    ? <SteamWorkshopAccountConsole account={props.steamAccount} onShowServer={() => props.onSteamCmdSelected?.(false)} />
+    : <GameRuntimeSurfaceWorkbench {...props} />;
+}
+
+function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const { t, locale } = useI18n();
   const targetTooltipId = useId();
   const ark = isArkModule(props.details.summary.module_id);
@@ -784,6 +798,12 @@ export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
               />
             </div>
             <div className="server-runtime-terminal-actions">
+              {props.steamAccount?.available && (props.moduleDetails?.workshop?.provider === "steam"
+                || moduleRequiresSteamCmd(props.moduleDetails?.summary ?? {}, props.moduleDetails?.install)) && props.onSteamCmdSelected ? <select
+                className="server-runtime-console-target-select server-steamcmd-source" value="server"
+                aria-label={t("servers.mods.steamAccount.consoleSource")} onChange={() => props.onSteamCmdSelected?.(true)}>
+                <option value="server">{t("servers.mods.steamAccount.serverConsole")}</option><option value="steamcmd">SteamCMD</option>
+              </select> : null}
               {ark && !readOnly && !startupPending && selectedConsoleRunId !== null ? (
                 <select className="server-runtime-console-source-select"
                   aria-label={selectLocaleText(locale, "日志来源", "Log source")}

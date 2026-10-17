@@ -25,7 +25,6 @@ const errors: string[] = [];
 const failures: string[] = [];
 const checks: string[] = [];
 const measurements: Record<string, unknown>[] = [];
-const helpMeasurements: Record<string, unknown>[] = [];
 addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 const originalError = console.error;
@@ -35,6 +34,7 @@ let moduleDetails: ModuleDetails;
 let epoch = 0;
 let writes = 0;
 let inventoryReads = 0;
+let installed = false, sourceOpens = 0;
 let stageGate: { promise: Promise<ManualModStageResult>; resolve: (value: ManualModStageResult) => void } | null = null;
 
 function assert(condition: unknown, label: string): asserts condition {
@@ -86,6 +86,7 @@ async function render(moduleId: string, options: { running?: boolean; longNote?:
     status: options.running ? "Running" : "Stopped", active_process_count: options.running ? 1 : 0 },
     active_run: null, settings_json: "{}" };
   const readsBefore = inventoryReads;
+  installed = false;
   epoch += 1;
   await act(async () => {
     root.render(<I18nProvider><InstanceSettingsSaveProvider key={epoch}><Harness /></InstanceSettingsSaveProvider></I18nProvider>);
@@ -98,44 +99,26 @@ function visibleIn(target: HTMLElement, container: HTMLElement) {
   return rect.width > 0 && rect.height > 0 && rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 &&
     rect.top >= Math.max(0, bounds.top) - 1 && rect.bottom <= Math.min(innerHeight, bounds.bottom) + 1;
 }
-function helpDialog() { return document.querySelector<HTMLDialogElement>(".mw-install-help-dialog"); }
-async function nativeKey(name: "Tab" | "Escape" | "Enter") {
-  await act(async () => {
-    const nonce = new URLSearchParams(location.search).get("nonce");
-    const response = await fetch(`/__reliability_key/${nonce}/${name}`, { method: "POST" });
-    assert(response.ok, `Native ${name} dispatch failed`);
-  });
-}
 function layout(state: string, hasReferences: boolean) {
   const outer = element(".server-detail-scroll--mods");
   const workbench = element(".mw-workbench");
   const workspace = element(".mw-community-workspace");
   const toolbar = element(".mw-community-workspace > .mw-workspace-toolbar");
-  const pane = element(".mw-manual-pane");
+  const pane = element(".mw-config-pane");
   const drop = element(".mw-dropzone");
   const bounds = pane.getBoundingClientRect();
   const dropBounds = drop.getBoundingClientRect();
-  const icon = fixture.querySelector<SVGSVGElement>(".mw-dropzone-icon");
-  assert(icon, "Drop target icon is missing");
-  const iconBounds = icon.getBoundingClientRect();
-  const styles = getComputedStyle(pane);
-  const auxiliary = [...pane.children].filter((child) => child !== drop) as HTMLElement[];
-  const gap = parseFloat(styles.rowGap) || 0;
-  const contentHeight = bounds.height - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom);
-  const remainder = contentHeight - auxiliary.reduce((sum, child) => sum + child.getBoundingClientRect().height, 0) - gap * auxiliary.length;
+  const listBounds = element(".mw-detail-layout").getBoundingClientRect();
   const label = `${moduleDetails.summary.id}/${state}`;
-  const note = moduleDetails.mods?.source?.install_note?.trim();
-  check(!fixture.querySelector(".mw-install-note"), `${label}: installation guidance occupies no permanent workspace row`);
-  check(Boolean(fixture.querySelector(".mw-install-help-button")) === Boolean(note), `${label}: help entry exists only for authored guidance`);
-  check(!helpDialog()?.open && (!helpDialog() || helpDialog()!.getBoundingClientRect().height === 0),
-    `${label}: installation guidance stays hidden by default`);
-  check(Math.abs(bounds.top - toolbar.getBoundingClientRect().bottom) <= 2 &&
-    Math.abs(bounds.bottom - workspace.getBoundingClientRect().bottom) <= 2, `${label}: manual pane fills the area below tabs`);
-  check(Math.abs(dropBounds.height - remainder) <= 3, `${label}: drop target consumes the remaining height after auxiliary controls`);
-  check(dropBounds.height >= Math.min(100, contentHeight / 3), `${label}: guidance does not collapse the drop target`);
-  check(iconBounds.width > 0 && iconBounds.height > 0 &&
-    Math.abs(iconBounds.width / iconBounds.height - icon.viewBox.baseVal.width / icon.viewBox.baseVal.height) < 0.05,
-    `${label}: package icon preserves its original aspect ratio`);
+  check(!fixture.querySelector(".mw-install-help-button, .mw-install-help-dialog, .mw-install-note"), `${label}: installation notes and their entry are absent`);
+  check(drop.classList.contains("mw-detail-list-col") && pane.contains(drop), `${label}: the actual Mod list receives drops`);
+  check(!fixture.querySelector(".mw-dropzone-copy,.mw-dropzone-title,.mw-dropzone-icon,.mw-dropzone-open-btn,.mw-manual-pane--has-dropzone"),
+    `${label}: permanent drag guidance is absent`);
+  check(bounds.top >= toolbar.getBoundingClientRect().bottom - 1 && Math.abs(bounds.bottom - workspace.getBoundingClientRect().bottom) <= 2,
+    `${label}: the Mod list fills the workspace below the existing controls`);
+  check(dropBounds.height >= 120 && Math.abs(dropBounds.height - listBounds.height) <= 3 && listBounds.bottom <= bounds.bottom + 1,
+    `${label}: the full list stays visible and usable as its drop target`);
+  check(Boolean(fixture.querySelector(".mw-dropzone-feedback")) === state.includes("drag-active"), `${label}: drag guidance exists only during a valid drag`);
   check(outer.scrollHeight <= outer.clientHeight + 1 && workbench.scrollHeight <= workbench.clientHeight + 1,
     `${label}: outer workspace has no vertical overflow`);
   outer.scrollTop = 100;
@@ -143,88 +126,15 @@ function layout(state: string, hasReferences: boolean) {
   check(outer.scrollTop === 0 && workbench.scrollTop === 0, `${label}: outer workspace remains at its original scroll position`);
   check(document.documentElement.scrollWidth <= innerWidth + 1 && document.documentElement.scrollHeight <= innerHeight + 1,
     `${label}: workspace stays within the desktop viewport`);
-  check(visibleIn(element(".mw-dropzone-open-btn"), drop), `${label}: source button is visible inside the drop target`);
-  check(visibleIn(element(".mw-dropzone-copy"), drop), `${label}: drop instructions remain readable inside the target`);
+  if (fixture.querySelector(".mw-manual-actions")) check(visibleIn(element(".mw-source-open-btn"), workspace), `${label}: source access remains visible outside the list`);
   if (hasReferences) {
-    check(visibleIn(element(".mw-reference-row"), pane), `${label}: bottom reference controls remain visible`);
+    check(visibleIn(element(".mw-reference-row"), workspace), `${label}: keyboard reference controls remain visible`);
   } else check(!fixture.querySelector(".mw-reference-row"), `${label}: file-only source does not display unsupported reference controls`);
   measurements.push({ module: moduleDetails.summary.id, state, pane_height: bounds.height, drop_height: dropBounds.height,
-    icon_width: iconBounds.width, icon_height: iconBounds.height,
-    available_drop_height: remainder, pane_scroll_height: pane.scrollHeight, pane_client_height: pane.clientHeight,
+    list_height: listBounds.height, pane_scroll_height: pane.scrollHeight, pane_client_height: pane.clientHeight,
     outer_scroll_height: outer.scrollHeight, outer_client_height: outer.clientHeight,
     workbench_scroll_height: workbench.scrollHeight, workbench_client_height: workbench.clientHeight,
-    reference_visible: !hasReferences || visibleIn(element(".mw-reference-row"), pane) });
-}
-async function verifyHelp(options: { long?: boolean; leaveOpen?: boolean } = {}) {
-  const label = moduleDetails.summary.id;
-  const before = element(".mw-dropzone").getBoundingClientRect();
-  const writesBefore = writes;
-  const trigger = element<HTMLButtonElement>(".mw-install-help-button");
-  check(!trigger.disabled, `${label}: installation help remains available as a read-only action`);
-  await act(async () => { trigger.focus(); trigger.click(); });
-  await settle(() => helpDialog()?.open === true, "Installation help did not open");
-  const dialog = helpDialog()!;
-  const body = dialog.querySelector<HTMLElement>(".mw-install-help-body")!;
-  const close = dialog.querySelector<HTMLButtonElement>(".mw-install-help-close")!;
-  assert(body && close, "Installation help content and close control are required");
-  check(dialog.matches(":modal"), `${label}: help uses the native modal layer`);
-  const backgroundControl = element<HTMLButtonElement>(".mw-sort-pill");
-  await act(async () => { backgroundControl.focus(); });
-  check(document.activeElement !== backgroundControl, `${label}: native help prevents focus on background controls`);
-  check(body.textContent?.trim() === moduleDetails.mods!.source!.install_note!.trim(), `${label}: help preserves the exact module installation prerequisite`);
-  check(Boolean(dialog.getAttribute("aria-labelledby") && document.getElementById(dialog.getAttribute("aria-labelledby")!)?.textContent?.trim()),
-    `${label}: help dialog has an accessible title`);
-  check(visibleIn(close, dialog), `${label}: help close control stays visible`);
-  const bounds = dialog.getBoundingClientRect();
-  check(bounds.left >= 0 && bounds.top >= 0 && bounds.right <= innerWidth && bounds.bottom <= innerHeight,
-    `${label}: help dialog remains inside the desktop viewport`);
-  const after = element(".mw-dropzone").getBoundingClientRect();
-  check(["top", "left", "width", "height"].every((key) =>
-    Math.abs(before[key as keyof DOMRect] as number - (after[key as keyof DOMRect] as number)) <= 1),
-    `${label}: opening help does not resize or reposition the drop target`);
-  if (options.long) {
-    check(body.scrollHeight > body.clientHeight + 1, `${label}: long guidance scrolls inside the help body`);
-    body.scrollTop = body.scrollHeight;
-    check(body.scrollTop > 0 && body.scrollTop + body.clientHeight >= body.scrollHeight - 1,
-      `${label}: the end of long installation guidance is reachable`);
-    check(visibleIn(close, dialog), `${label}: scrolling long guidance keeps the close control visible`);
-  }
-  const focusSequence: { tag: string | undefined; className: string | undefined; documentFocused: boolean }[] = [];
-  for (let index = 0; index < 3; index++) {
-    await nativeKey("Tab");
-    focusSequence.push({ tag: document.activeElement?.tagName, className: document.activeElement?.className,
-      documentFocused: document.hasFocus() });
-    // Chromium may hand Tab to browser chrome (represented by BODY); it must
-    // never reach the inert application's controls, and the next Tab returns.
-    check(document.activeElement === document.body || dialog.contains(document.activeElement),
-      `${label}: native keyboard navigation never reaches background application controls`);
-  }
-  check(dialog.contains(document.activeElement), `${label}: native Tab returns from browser chrome to help`);
-  const bodyGeometry = { scrollHeight: body.scrollHeight, clientHeight: body.clientHeight };
-  const bodyFontWeight = getComputedStyle(body).fontWeight;
-  await act(async () => { close.click(); });
-  await settle(() => !helpDialog()?.open, "Installation help did not close");
-  check(document.activeElement === trigger, `${label}: closing help restores focus to its trigger`);
-  await nativeKey("Enter");
-  await settle(() => helpDialog()?.open === true, "Native Enter did not open installation help");
-  await nativeKey("Escape");
-  await settle(() => !helpDialog()?.open, "Native Escape did not close installation help");
-  check(document.activeElement === trigger, `${label}: Escape restores focus to the help trigger`);
-  check(writes === writesBefore, `${label}: reading installation help never installs or saves anything`);
-  const outer = element(".server-detail-scroll--mods");
-  const workbench = element(".mw-workbench");
-  check(outer.scrollHeight <= outer.clientHeight + 1 && workbench.scrollHeight <= workbench.clientHeight + 1 &&
-    outer.scrollTop === 0 && workbench.scrollTop === 0, `${label}: help interaction never scrolls the outer workspace`);
-  helpMeasurements.push({ module: label, long: Boolean(options.long), drop_height_before: before.height,
-    drop_height_open: after.height, dialog_height: bounds.height, body_scroll_height: bodyGeometry.scrollHeight,
-    body_client_height: bodyGeometry.clientHeight, body_font_weight: bodyFontWeight,
-    focus_restored: document.activeElement === trigger, focus_sequence: focusSequence });
-  if (options.leaveOpen) {
-    await nativeKey("Enter");
-    await settle(() => helpDialog()?.open === true, "Final help screenshot did not open");
-    const finalBody = helpDialog()!.querySelector<HTMLElement>(".mw-install-help-body")!;
-    finalBody.scrollTop = 0;
-  }
+    reference_visible: !hasReferences || visibleIn(element(".mw-reference-row"), workspace) });
 }
 function stageResult(): ManualModStageResult {
   return { instance_id: details.summary.id, module_id: details.summary.module_id,
@@ -252,7 +162,7 @@ async function inputReference() {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(target, "https://thunderstore.io/c/valheim/p/FixtureAuthor/FixturePlugin/");
     target.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await act(async () => { element<HTMLButtonElement>(".mw-reference-row button").click(); });
+  await act(async () => { element<HTMLInputElement>(".mw-reference-input").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })); });
 }
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
@@ -264,7 +174,8 @@ async function run() {
         inventoryReads += 1;
         return { instance_id: details.summary.id, module_id: details.summary.module_id,
           source_label: moduleDetails.mods!.source!.label, target_label: moduleDetails.mods!.manual_staging!.target_label,
-          target_path: "fixture://manual-mods/target", target_exists: false, items: [] };
+          target_path: "fixture://manual-mods/target", target_exists: installed, items: installed ? [{ name: "FixtureMod", path: "fixture://manual-mods/target/FixtureMod",
+            item_type: "directory", inferred_id: null, file_count: 3, total_bytes: 4096 }] : [] };
       case "stage_manual_mod_files":
       case "install_manual_mod_references":
         assert(args && typeof args === "object" && "instanceId" in args && args.instanceId === "fixture-manual-mods",
@@ -275,7 +186,9 @@ async function run() {
           "Online installation uses the supported Thunderstore contract");
         }
         writes += 1;
-        return stageGate ? stageGate.promise : stageResult();
+        if (stageGate) { const result = await stageGate.promise; installed = true; return result; }
+        installed = true; return stageResult();
+      case "open_external_url": sourceOpens += 1; return;
       case "read_background_jobs": return [];
       default: throw new Error(`Unexpected native command ${command}`);
     }
@@ -289,8 +202,20 @@ async function run() {
   })); });
   check(element(".mw-dropzone").classList.contains("mw-dropzone--active"), "File drag enters the real drop target");
   layout("drag-active", false);
+  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragleave", {
+    bubbles: true, relatedTarget: element(".mw-detail-panel")
+  })); });
+  check(Boolean(fixture.querySelector(".mw-dropzone-feedback")), "Moving across children keeps the list drag feedback");
+  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragleave", { bubbles: true, relatedTarget: fixture })); });
+  check(!fixture.querySelector(".mw-dropzone-feedback"), "Leaving the list removes its temporary feedback");
+  await act(async () => {
+    element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", { bubbles: true, cancelable: true, dataTransfer: fileTransfer() }));
+  });
+  await act(async () => { window.dispatchEvent(new DragEvent("dragend")); });
+  check(!fixture.querySelector(".mw-dropzone-feedback"), "Cancelling a drag removes temporary list feedback");
   await dropFiles();
   await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "File installation result did not render");
+  await settle(() => fixture.textContent?.includes("FixtureMod") === true, "The imported file did not appear in the real inventory list");
   layout("installed", false);
 
   await render("minecraft");
@@ -301,6 +226,8 @@ async function run() {
 
   await render("valheim");
   layout("empty", true);
+  await act(async () => { element<HTMLButtonElement>(".mw-source-open-btn").click(); });
+  check(sourceOpens === 1, "The existing community source action remains connected");
   await inputReference();
   await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "Thunderstore installation result did not render");
   layout("reference-installed", true);
@@ -310,8 +237,10 @@ async function run() {
   await inputReference();
   await settle(() => element(".mw-dropzone").classList.contains("mw-dropzone--running"), "Pending installation did not render");
   layout("installing", true);
-  check(element(".mw-dropzone-title").textContent === "Installing...", "Online loader and plugin preparation shows installation progress instead of reference parsing");
+  check(fixture.textContent?.includes("Installing..."), "Online loader and plugin preparation still shows installation progress");
   check(element<HTMLInputElement>(".mw-reference-input").disabled, "Pending installation disables reference input");
+  const busyWrites = writes; await dropFiles();
+  check(writes === busyWrites && !fixture.querySelector(".mw-dropzone-feedback"), "A busy list rejects a concurrent file drop without showing a false drop invitation");
   await act(async () => { stageGate!.resolve(stageResult()); });
   stageGate = null;
   await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "Pending installation did not finish");
@@ -319,11 +248,9 @@ async function run() {
 
   await render("vrising", { longNote: true });
   layout("long-install-note", true);
-  await verifyHelp({ long: true });
 
   await render("astroneer");
   layout("loader-prerequisite", false);
-  await verifyHelp();
 
   await render("minecraft", { running: true });
   layout("server-running", false);
@@ -331,7 +258,6 @@ async function run() {
   const beforeMinecraft = writes;
   await dropFiles();
   check(writes === beforeMinecraft, "Dropping onto running Minecraft does not dispatch an installation");
-  await verifyHelp();
 
   await render("valheim", { running: true });
   layout("server-running", true);
@@ -343,16 +269,26 @@ async function run() {
 
   if (innerWidth < 1000) {
     await render("vrising", { longNote: true });
-    layout("final-long-install-note", true);
-    await verifyHelp({ long: true, leaveOpen: true });
+    await act(async () => { [...fixture.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((button) => button.textContent === "My Mods")!.click(); });
+    layout("final-my-mods", false);
   } else {
     await render("astroneer");
-    layout("final-empty", false);
+    await act(async () => { [...fixture.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((button) => button.textContent === "My Mods")!.click(); });
+    layout("final-my-mods", false);
   }
+  check(!fixture.querySelector(".mw-manual-actions") && Boolean(fixture.querySelector(".mw-dropzone .mw-empty")), "My Mods is a clean empty list that remains a file drop target");
+  const finalWrites = writes; await dropFiles();
+  await settle(() => writes === finalWrites + 1 && fixture.textContent?.includes("FixtureMod") === true, "Dropping directly into empty My Mods did not refresh its list");
+  layout("final-imported-my-mods", false);
+  await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", {
+    bubbles: true, cancelable: true, dataTransfer: fileTransfer()
+  })); });
+  layout("final-drag-active", false);
+  check(element(".mw-dropzone-feedback").textContent?.includes("Drop downloaded mods here"), "Local files receive a file-import hint even when the provider also supports links");
   check(errors.length === 0, "Browser console and uncaught errors remain empty");
   // Report a completed fixture so the runner captures evidence before the Node
   // test evaluates the separately collected geometry failures.
-  return { status: "passed", checks, failures, measurements, help_measurements: helpMeasurements, writes, browser_errors: errors,
+  return { status: "passed", checks, failures, measurements, writes, browser_errors: errors,
     viewport: { width: innerWidth, height: innerHeight } };
 }
 

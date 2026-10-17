@@ -6,6 +6,20 @@ server runtime and must be enabled explicitly; it is not a vanilla server
 console or RCON endpoint. It adds no network RPC or client plugin requirement.
 Client compatibility must still be verified with the target server build.
 
+## Enabling and updates
+
+First-time account management remains an explicit, stopped-instance operation
+that prepares an independent server program and the reviewed loader. On normal
+startup of an already enabled instance, the manager holds the existing instance
+and program locks, verifies the installed loader and known native assembly
+profile, then refreshes the owned management DLL to the current bundled payload.
+The installed DLL hash must match its ownership record's previous payload or a
+recognized pending update; recognized interrupted updates can be recovered.
+Updating LanGame therefore does not require manually enabling account management
+again. Startup does not install a loader for the first time or detach a shared
+program. This DLL refresh does not write world rules or saves. Externally changed
+and unknown files are preserved and reported instead of being overwritten.
+
 ## Build
 
 `scripts/build_valheim_control.ps1 -OutDir <absolute-build-directory> -RunTests`
@@ -62,6 +76,16 @@ read back through native reload, then removed and confirmed empty. Ctrl+C produc
 native shutdown and exit code zero. All twenty immutable loader files and the
 three native assembly hashes remained unchanged. This smoke does not verify an
 online client's identity/admin flag, client compatibility, or build 25909431.
+
+Build 25909431 was also verified on Windows through the normal desktop BAT
+entry with an unmodified Steam client. One connected native peer retained the
+same authoritative platform identity and session throughout six live admin and
+permitted-list changes. Native lists and the online admin flag confirmed each
+addition and removal; all six rendered/native roster files were restored to
+their original hashes. Existing settings and version-42 saved rules were
+preserved. Normal startup also upgraded the previously enabled owned plugin
+without invoking account-management preparation again. A normal client departure
+returned a complete zero-player native snapshot with no remaining player entries.
 
 For direct Steam sockets, the native bare host is passed to
 `Splatform.PlatformUserID("Steam", host)`. PlayFab sockets already return a full

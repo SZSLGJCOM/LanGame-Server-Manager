@@ -971,6 +971,17 @@ fn configured_steamcmd_status_ignores_discovered_runtime_for_managed_execution()
 }
 
 #[test]
+fn workshop_download_rejects_native_failure_even_when_cached_content_exists() {
+    let items = [SteamWorkshopDownloadItemResult {
+        item_id: String::from("3816899969"),
+        expected_path: String::from("cached/3816899969"),
+        expected_path_exists: true,
+    }];
+    let output = "ERROR! Download item 3816899969 failed (Failure).quit";
+    assert!(verify_downloaded_workshop_items(&items, output).is_err());
+}
+
+#[test]
 fn workshop_download_does_not_report_success_when_content_is_missing() {
     let root = unique_test_root();
     let primary = root.join("primary/steamapps/workshop/content/322330");

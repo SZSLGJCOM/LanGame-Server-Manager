@@ -323,7 +323,7 @@ async function run() {
     preserveActionInventory(locale)("stopped banned selection", [false, false, false]);
     check(rosterCount() === "3" && element<HTMLButtonElement>(unban).disabled
       && !element<HTMLButtonElement>(".player-center-refresh-button").disabled
-      && fixture?.textContent?.includes(locale === "zh-CN" ? "启动服务器" : "Start the server"),
+      && fixture?.textContent?.includes(locale === "zh-CN" ? "启动后可解封" : "start it to unban"),
       label("stopped server retains persisted bans and explains disabled unban"));
     await draw(locale, { read: "failure" }); await click(banTab);
     check(!rosterCount() && !bannedRows() && Boolean(fixture?.querySelector('[role="alert"]'))

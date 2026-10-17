@@ -127,7 +127,8 @@ async function refresh() {
   if (currentList && currentList !== "online") await listTab(currentList);
 }
 function verifyDrafts() {
-  check(select<HTMLInputElement>(".player-access-roster-input").value === "76561198000000009", "Roster draft was lost");
+  // Simple ID lists take their ID from 手动查询; no separate add form may reappear on refresh.
+  check(!document.querySelector(".player-access-roster-input"), "Simple roster regained a separate add form");
 }
 // The right panel no longer repeats the selected identity; the highlighted left row is the target.
 function selectedRowText() {
@@ -154,8 +155,6 @@ async function run() {
   await listTab("manual");
   await input("input[id^='manual-player-target-']", "manual-draft");
   await listTab("blocklist");
-  await click(".player-access-roster-create");
-  await input(".player-access-roster-input", "76561198000000009");
   for (let index = 0; index < 20; index++) {
     await act(async () => { updateProps(); }); verifyOneControlOfEachKind(`draft refresh ${index}`); verifyDrafts();
   }
@@ -182,9 +181,8 @@ async function run() {
   verifyOneControlOfEachKind("player panel unselected again");
   check(!document.querySelector(".player-access-roster-editor"), "Removing the online target reopened a stale roster form"); checks++;
 
-  await listTab("blocklist"); await click(".player-access-roster-create");
-  await input(".player-access-roster-input", "76561198000000009");
-  const oldRoster = select<HTMLInputElement>(".player-access-roster-input");
+  await listTab("manual"); await input("input[id^='manual-player-target-']", "76561198000000009");
+  const oldRoster = select<HTMLInputElement>("input[id^='manual-player-target-']");
   const oldManual = select<HTMLDetailsElement>(".player-center-manual-actions");
   await act(async () => { switchInstance("refresh-two"); });
   await waitFor(() => !oldManual.isConnected && Boolean(document.querySelector(".player-center-manual-actions")), "new instance controls");
@@ -193,8 +191,6 @@ async function run() {
   check(select<HTMLElement>('.player-center-list-tabs [data-list-key="online"]').getAttribute("aria-selected") === "true"
     && !select<HTMLDetailsElement>(".player-center-manual-actions").open, "New instance view was not reset");
   verifyOnlineActionsDisabled();
-  await listTab("blocklist"); await click(".player-access-roster-create");
-  check(select<HTMLInputElement>(".player-access-roster-input").value === "", "Roster draft leaked across instances");
   await listTab("manual");
   check(select<HTMLInputElement>("#manual-player-target-refresh-two").value === "", "Manual draft leaked across instances"); checks++;
 

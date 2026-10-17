@@ -22,7 +22,7 @@ import {
 } from "../../runtime-action-state";
 import { usePlayerAccess } from "./player-center/use-player-access";
 import { ManualPlayerActions } from "./player-center/ManualPlayerActions";
-import { readManualPlayerActions } from "./player-center/manual-player-action-model";
+import { actionNeedsManualTarget, manualPlayerActionTargetError, readManualPlayerActions } from "./player-center/manual-player-action-model";
 import { readPlayerAccessRosterCapabilities } from "./player-center/player-access-roster-model";
 import { OnlinePlayersView } from "./player-center/OnlinePlayersView";
 import { useLivePlayers } from "./player-center/use-live-players";
@@ -93,11 +93,26 @@ function PlayerCenterInstance(props: PlayerCenterWorkbenchProps) {
     () => readManualPlayerActions(props.moduleDetails, rosterCapabilities),
     [props.moduleDetails, rosterCapabilities]
   );
-  return (
+  // 手动查询 accepts an ID when at least one manual action accepts it (rosters check their own codecs).
+  const manualTargetFormat = useMemo(() => {
+    const eligible = manualActions.filter(actionNeedsManualTarget);
+    if (eligible.length === 0) return undefined;
+    const moduleId = props.details.summary.module_id;
+    const hints = Array.from(new Set(eligible.map((action) => manualPlayerActionTargetError(moduleId, action, "", locale)).filter(Boolean)));
+    return {
+      hint: hints.join(" ") || null,
+      validate: (target: string) => {
+        let first: string | null = null;
+        for (const action of eligible) {
+          const error = manualPlayerActionTargetError(moduleId, action, target, locale);
+          if (!error) return null;
+          first ??= error;
+        }
+        return first;
+      }
+    };
+  }, [manualActions, props.details.summary.module_id, locale]);  return (
     <section className="player-access-workbench" aria-label={t("servers.playerCenter.workspaceLabel", undefined, "Player workspace")}>
-      {props.details.summary.module_id === "returntomoria" && <MoriaNativeSettingsEditor
-        details={props.details} moduleDetails={props.moduleDetails} kind="permissions"
-        locale={locale} t={t} readOnly={props.readOnly} onSaveSettings={props.onSaveSettings} />}
       <OnlinePlayersView
         instanceDetails={props.details}
         onPrepareValheimControl={props.onPrepareValheimControl}
@@ -110,6 +125,13 @@ function PlayerCenterInstance(props: PlayerCenterWorkbenchProps) {
         loading={!props.readOnly && livePlayers.loading}
         locale={locale}
         access={access}
+        manualTargetFormat={manualTargetFormat}
+        extraLists={props.details.summary.module_id === "returntomoria" ? [{
+          key: "moria-permissions", title: t("servers.playerCenter.moria.permissionsTab", undefined, "Player permissions"),
+          // The native permissions file is a category of the players list, not a separate card above it.
+          content: <MoriaNativeSettingsEditor details={props.details} moduleDetails={props.moduleDetails} kind="permissions" embedded
+            locale={locale} t={t} readOnly={props.readOnly} onSaveSettings={props.onSaveSettings} />
+        }] : undefined}
         manualActions={manualActions.length > 0 ? (active, onActionCompleted, onActionFailed) => (
           <ManualPlayerActions
             key={`manual:${props.details.summary.id}`}

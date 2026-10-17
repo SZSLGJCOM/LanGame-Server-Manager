@@ -722,6 +722,26 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "read_instance_native_bans" => boxed_command(|| async move {
+            to_json(
+                commands::commands_native_bans::read_instance_native_bans(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "unban_instance_native_ban" => boxed_command(|| async move {
+            to_json(
+                commands::commands_native_bans::unban_instance_native_ban(
+                    app_handle.clone(),
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "accountId", "account_id")?,
+                )
+                .await?,
+            )
+        }),
         "read_dragonwilds_world_settings" => boxed_command(|| async move {
             to_json(
                 commands::commands_dragonwilds_world::read_dragonwilds_world_settings(

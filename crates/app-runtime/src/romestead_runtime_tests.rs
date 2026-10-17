@@ -194,3 +194,35 @@ fn romestead_runtime_does_not_override_other_modules_or_exact_patch_policy() {
     fs::remove_file(fixture.runtime.join("host/fxr/8.0.0/hostfxr.dll")).unwrap();
     assert!(fixture.environment().contains_key("DOTNET_ROOT_X64"));
 }
+
+#[test]
+fn romestead_preview_uses_host_patch_and_case_insensitive_policy_rules() {
+    let fixture = Fixture::new();
+    for options in [
+        serde_json::json!({
+            "framework": {"name": "Microsoft.NETCore.App", "version": "8.0.2"},
+            "applyPatches": false
+        }),
+        serde_json::json!({
+            "framework": {"name": "Microsoft.NETCore.App", "version": "8.0.2", "rollForward": "minor"},
+            "rollForward": "Disable"
+        }),
+    ] {
+        fs::write(
+            fixture.install.join("Server.runtimeconfig.json"),
+            serde_json::json!({"runtimeOptions": options}).to_string(),
+        )
+        .unwrap();
+        assert!(fixture.environment().contains_key("DOTNET_ROOT_X64"));
+    }
+    fs::write(
+        fixture.install.join("Server.runtimeconfig.json"),
+        serde_json::json!({"runtimeOptions": {
+            "framework": {"name": "Microsoft.NETCore.App", "version": "8.0.2"},
+            "rollForward": "disable"
+        }})
+        .to_string(),
+    )
+    .unwrap();
+    assert!(fixture.environment().is_empty());
+}

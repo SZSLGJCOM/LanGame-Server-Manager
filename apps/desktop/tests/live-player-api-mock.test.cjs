@@ -69,6 +69,54 @@ test("Dragonwilds ban-roster API retains offline bans and removes only the exact
   await invokeMock("stop_instance_process", { instanceId });
 });
 
+test("native preview bans persist independently of settings and unban only the selected account", async () => {
+  const moduleId = "palworld";
+  await invokeMock("install_module_game", { moduleId });
+  const created = await invokeMock("create_instance_record", { input: { module_id: moduleId, name: "Native ban roster API fixture" } });
+  const instanceId = created.summary.id;
+  const read = () => invokeMock("read_instance_native_bans", { instanceId });
+  assert.deepEqual((await read()).entries, []);
+  await invokeMock("start_instance_process", { instanceId });
+  const online = await invokeMock("refresh_instance_live_players", { instanceId });
+  const player = online.entries[0];
+  const identity = player.identifiers.find((entry) => entry.kind === "palworld_user_id");
+  assert.ok(identity);
+  await invokeMock("execute_instance_player_action", { input: { instance_id: instanceId, snapshot_id: online.snapshot_id,
+    player_key: player.player_key, action_id: "ban_player" } });
+  await invokeMock("stop_instance_process", { instanceId });
+  const roster = await read();
+  assert.equal(roster.instance_id, instanceId);
+  assert.equal(roster.module_id, moduleId);
+  assert.deepEqual(roster.entries, [{ account_id: identity.value, display_name: player.display_name, identity_kind: identity.kind }]);
+  roster.entries.length = 0;
+  assert.equal((await read()).entries.length, 1, "Reads must not mutate preview state");
+  await assert.rejects(invokeMock("unban_instance_native_ban", { instanceId, accountId: identity.value }), /Start the server/);
+  await invokeMock("start_instance_process", { instanceId });
+  await assert.rejects(invokeMock("unban_instance_native_ban", { instanceId, accountId: "other-account" }), /not in the native ban roster/);
+  await invokeMock("unban_instance_native_ban", { instanceId, accountId: identity.value });
+  assert.deepEqual((await read()).entries, []);
+  await invokeMock("stop_instance_process", { instanceId });
+});
+
+test("Squad preview removes persisted bans while stopped and reports restart is required", async () => {
+  const moduleId = "squad";
+  await invokeMock("install_module_game", { moduleId });
+  const created = await invokeMock("create_instance_record", { input: { module_id: moduleId, name: "Squad restart-only native bans" } });
+  const instanceId = created.summary.id;
+  await invokeMock("start_instance_process", { instanceId });
+  const online = await invokeMock("refresh_instance_live_players", { instanceId });
+  const player = online.entries[0];
+  const accountId = player.identifiers.find((entry) => entry.kind === "eos_id").value;
+  await invokeMock("execute_instance_player_action", { input: { instance_id: instanceId, snapshot_id: online.snapshot_id,
+    player_key: player.player_key, action_id: "ban_player" } });
+  await invokeMock("stop_instance_process", { instanceId });
+  const result = await invokeMock("unban_instance_native_ban", { instanceId, accountId });
+  assert.equal(result.action_id, "unban_player");
+  assert.equal(result.status, "sent");
+  assert.match(result.summary, /persisted ban removed.*restart/);
+  assert.deepEqual((await invokeMock("read_instance_native_bans", { instanceId })).entries, []);
+});
+
 async function updatePlayerCountSettings(instanceId, patch) {
   const details = await invokeMock("read_instance_details_from_storage", { instanceId });
   return invokeMock("update_instance_record_if_current", {

@@ -48,6 +48,28 @@ function fixture(transport) {
 }
 
 for (const transport of ["tauri", "lan"]) {
+  test(`${transport}: authenticated Steam downloads retain native-first local admission`, async () => {
+    const { api, calls } = fixture(transport);
+    const target = { kind: "module", id: "fixture-module" };
+    const operations = [
+      () => api.installAuthenticatedModule("fixture-module", true, "Fixture_Account", target),
+      () => api.updateAuthenticatedInstanceProgram("fixture-instance", true, "Fixture_Account"),
+      () => api.downloadSteamWorkshopItems("fixture-instance", ["3766499200"], true, "Fixture_Account")
+    ];
+    for (const operation of operations) {
+      if (transport === "tauri") await operation();
+      else await assert.rejects(operation(), (error) => JSON.parse(error.message).code === "steam_account_interactive_unsupported");
+    }
+    assert.deepEqual(calls.map((call) => call.command), transport === "tauri" ? ["install_authenticated_module_game",
+      "update_authenticated_instance_program", "download_authenticated_steam_workshop_items"] : []);
+    if (transport === "tauri") {
+      assert.deepEqual(JSON.parse(JSON.stringify(calls[0].args)), { moduleId: "fixture-module", validate: true, accountName: "Fixture_Account", target });
+      assert.equal(calls[1].args.accountName, "Fixture_Account");
+      assert.equal(calls[2].args.accountName, "Fixture_Account");
+      assert.equal(calls[2].args.missingOnly, true);
+    }
+  });
+
   test(`${transport}: displayed Workshop details carry the selected item and explicit interface language`, async () => {
     const { api, calls } = fixture(transport);
     await api.readSteamWorkshopItemDetails("666155465", "zh-CN");

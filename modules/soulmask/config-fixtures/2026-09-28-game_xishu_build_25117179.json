@@ -111,7 +111,8 @@
         "-adminpsw=acceptance-admin",
         "-saving=300",
         "-backup=900",
-        "-online=Steam"
+        "-online=Steam",
+        "-serverpm=2"
       ]
     }
   },

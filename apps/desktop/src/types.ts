@@ -174,10 +174,13 @@ export type RuntimePlayerIdentityKind =
   | "player_name"
   | "session_id"
   | "palworld_user_id"
+  | "palworld_player_uid"
   | "minecraft_uuid"
   | "astroneer_guid"
   | "enshrouded_account_id"
-  | "valheim_platform_id";
+  | "valheim_platform_id"
+  | "necesse_ban_id"
+  | "soulmask_account_id";
 
 export interface ModulePlayerListSpec {
   scope: ModulePlayerListScope;
@@ -272,6 +275,19 @@ export interface DragonwildsBanRoster {
   instance_id: string;
   observed_at_unix_ms: number;
   entries: DragonwildsBanEntry[];
+}
+
+export interface NativeBanEntry {
+  account_id: string;
+  display_name: string | null;
+  identity_kind: RuntimePlayerIdentityKind;
+}
+
+export interface NativeBanRoster {
+  instance_id: string;
+  module_id: string;
+  observed_at_unix_ms: number;
+  entries: NativeBanEntry[];
 }
 
 export interface ExecuteInstanceManualPlayerActionInput {

@@ -134,7 +134,7 @@ let initialActionInventory: string | null = null;
 function fixedTitle() {
   const headers = document.querySelectorAll<HTMLElement>(".player-center-controls .player-center-member-header");
   check(headers.length === 1 && headers[0].parentElement?.matches(".player-center-controls")
-    && headers[0].textContent?.trim() === "玩家详情与操作", "Player details and action title is missing, duplicated, or replaced by a selected identity");
+    && headers[0].textContent?.trim() === "玩家管理", "Player management title is missing, duplicated, or replaced by a selected identity");
   const inventory = Array.from(document.querySelectorAll<HTMLElement>(".player-center-member-action, .player-access-selected-action, .player-access-edit-selected"))
     .map((button) => button.textContent?.trim()).join("|");
   initialActionInventory ??= inventory;
@@ -208,18 +208,19 @@ async function run() {
   check(liveTargets[0] === `Steam_${steamId}`, "Mock unban did not use the fully qualified 7DTD account target");
   check(!document.querySelector(action("blacklist_entries")) && banButton() && !banButton()!.disabled,
     "Removing a stored ban did not restore exactly one native online ban entry");
-  await click(action("admin_users")); fixedTitle();
+  fixedTitle(); await click(action("admin_users"));
+  // The form opens in place of its stack button, so only its confirm button carries the action label.
+  check(!document.querySelector(action("admin_users")) && document.querySelector('.player-center-total-controls [data-roster-field="admin_users"] .player-access-selected-editor.is-inline'),
+    "Opening the admin form left a duplicate stack button or rendered the form elsewhere");
   check(select<HTMLElement>('.player-center-list-tabs [data-list-key="online"]').getAttribute("aria-selected") === "true", "Admin action navigated away from the online player");
-  const identity = select<HTMLInputElement>(".player-access-selected-editor #player-access-quick-admin_users-userid");
-  const platform = select<HTMLSelectElement>(".player-access-selected-editor #player-access-quick-admin_users-platform");
-  check(identity.value === steamId && identity.disabled && platform.value === "Steam" && platform.disabled,
-    "Trusted account identity was not automatically filled and locked");
+  // The target identity comes from the left selection; the inline form shows only extra fields.
+  check(!document.querySelector(".player-access-selected-editor #player-access-quick-admin_users-userid, .player-access-selected-editor #player-access-quick-admin_users-platform"),
+    "Inline admin form repeated the selected account identity");
   await input(".player-access-selected-editor #player-access-quick-admin_users-permission_level", "250"); checks++;
   await click(".player-center-player-table tbody tr:nth-child(2) .player-center-player-select");
   check(!document.querySelector(".player-access-selected-editor, .inline-confirm-review"), "Changing online target retained the previous account form");
   await click(action("admin_users"));
-  check(select<HTMLInputElement>(".player-access-selected-editor #player-access-quick-admin_users-userid").value === trustedPlayers[1].identifiers[0].value
-    && select<HTMLInputElement>(".player-access-selected-editor #player-access-quick-admin_users-permission_level").value === "0",
+  check(select<HTMLInputElement>(".player-access-selected-editor #player-access-quick-admin_users-permission_level").value === "0",
     "New target inherited the previous identity or permission draft");
   await list("whitelist_users"); await list("online");
   check(!document.querySelector(".player-access-selected-editor, .inline-confirm-review"), "Changing lists retained an online account draft"); checks++;
@@ -269,7 +270,9 @@ async function run() {
   check(mutations.length === 3 && mutations[2].fieldKey === "blacklist_entries" && mutations[2].operation === "remove"
     && JSON.stringify(mutations[2].value) === JSON.stringify(syntheticBanReceipt) && liveTargets[2] === `Steam_${steamId}`
     && !document.querySelector(".player-center-list-pane .player-access-roster-entry"), "Left-list unban did not remove the exact native receipt and fully qualified target");
-  await click(".player-access-roster-create");
+  // Persistent add takes its ID from 手动查询 and opens the blacklist's inline form from the shared stack.
+  await list("manual"); await input('input[id^="manual-player-target-"]', steamId); await click(".player-center-manual-use");
+  await click(action("blacklist_entries", "add"));
   check(select<HTMLInputElement>('.player-access-selected-editor input[id$="-unbandate"]').value === "9999-12-31"
     && !select<HTMLElement>(".player-access-selected-editor .player-access-roster-editor").textContent?.includes("下次启动生效"),
     "Online action deduplication removed the left blacklist's independent persistent-add editor"); checks++;

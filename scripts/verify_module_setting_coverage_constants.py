@@ -717,7 +717,9 @@ PLAYER_ACTION_READ_IDS = {
     "check_permission",
 }
 PLAYER_ACTION_NON_MUTATING_IDS = PLAYER_ACTION_READ_IDS
-PLAYER_ACTION_TARGETLESS_MUTATING_IDS = {"reload_banlist", "writecfg", "save_world"}
+# toggle_mod_bypass: RimWorld Together `togglemodbypass` flips and saves AllowAllMods,
+# which disables login Mod checks, so it is targetless yet must ask for confirmation.
+PLAYER_ACTION_TARGETLESS_MUTATING_IDS = {"reload_banlist", "writecfg", "save_world", "toggle_mod_bypass"}
 PLAYER_ACTION_MUTATING_PREFIXES = (
     "add_",
     "allow_",

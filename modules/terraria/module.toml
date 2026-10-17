@@ -26,7 +26,7 @@ args_template = [
 working_directory_template = "{{terraria.working_directory}}"
 window_policy = "background"
 host_surface = "managed_pseudo_console"
-host_notes = "The vanilla Windows server requires Microsoft XNA Framework 4.0 (https://www.microsoft.com/en-us/download/details.aspx?id=20914). Install the official runtime before first launch. LanGame hosts the server in a managed pseudo console so console commands and graceful shutdown use the same input channel without a separate desktop window."
+host_notes = "The vanilla Windows server requires Microsoft XNA Framework 4.0. LanGame verifies assembly loading before launch and prepares the verified official Microsoft runtime when missing; system installation may require Windows elevation. LanGame hosts the server in a managed pseudo console so console commands and graceful shutdown use the same input channel without a separate desktop window."
 
 [[default_ports]]
 name = "game"

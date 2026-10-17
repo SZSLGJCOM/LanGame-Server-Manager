@@ -9,6 +9,9 @@ mod shared_dependency_tests;
 #[path = "steam_install_manifest_recovery_tests.rs"]
 mod manifest_recovery_tests;
 
+#[path = "steam_install_account_tests.rs"]
+mod account_tests;
+
 struct Fixture {
     root: PathBuf,
     settings: AppSettings,
@@ -86,11 +89,25 @@ public static class Installer {
       return 0;
     }
     if (args.Length != 2 || args[0] != "+runscript") return 80;
-    string root = null;
+    string root = null, login = null;
     foreach (string line in File.ReadAllLines(args[1])) {
       if (line.StartsWith("force_install_dir ")) root = line.Substring(18).Trim().Trim('"');
+      if (line.StartsWith("login ")) login = line.Trim();
     }
     if (root == null) return 81;
+    File.AppendAllText("login-commands", login + "\n");
+    string accountMode = File.Exists("account-mode") ? File.ReadAllText("account-mode").Trim() : "";
+    if (accountMode == "denied" || accountMode == "failure") {
+      Console.WriteLine("ERROR! Failed to install app '42' (" + (accountMode == "denied" ? "No subscription" : "Failure") + ")");
+      for (int i = 0; i < 48; i++) Console.WriteLine("native shutdown diagnostic " + i);
+      return 0;
+    }
+    if (accountMode == "authenticated" || accountMode == "wrong-account") {
+      if (login != "login selected_account") return 83;
+      string name = accountMode == "authenticated" ? "selected_account" : "other_account";
+      Console.WriteLine("Logging in user '" + name + "' to Steam Public...OK");
+      Console.WriteLine("Waiting for user info...OK");
+    }
     File.WriteAllText("destination.txt", root);
     Directory.CreateDirectory(Path.Combine(root, "ServerConfig"));
     File.WriteAllText(Path.Combine(root, "ServerConfig/Server.cfg"), "depot defaults");

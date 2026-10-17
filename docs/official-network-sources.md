@@ -93,7 +93,9 @@ Installer metadata reads share a 45-second budget across headers, bodies, valida
 
 Install downloads use unique temporary files, bounded streaming, and the existing verification and publication/rollback transactions. A restart truncates the temporary file before receiving a fresh complete response. A failed or cancelled download cannot publish a partial package. Archive contents still must pass the module's executable check. A source's presence in the policy does not promise that every resource or region is available or faster.
 
-Archive modules can declare `[install.download_integrity_windows]` with a 64-digit hexadecimal `sha256` and a positive byte `size`. Both fields are required when the table is present; update them together with the pinned release URL using publisher-provided metadata. A mismatch rejects the download before extraction and leaves existing installation data intact. Sources without a publisher digest, including the current Terraria archive and Thunderstore package metadata, retain their existing bounded download and installation checks without claiming digest verification.
+Archive modules can declare `[install.download_integrity_windows]` with a 64-digit hexadecimal `sha256` and a positive byte `size`. Both fields are required when the table is present; update them together with the pinned release URL. A mismatch rejects the download before extraction and leaves existing installation data intact. Terraria and RimWorld Together currently pin both fields. Sources without a digest, including Thunderstore package metadata, retain their existing bounded download and installation checks without claiming digest verification.
+
+Instance startup also prepares required runtimes. Temurin Java uses the existing Adoptium metadata and SHA-256/size verification. Framework-dependent .NET uses Microsoft's `builds.dotnet.microsoft.com/dotnet/release-metadata/<channel>/releases.json` and `dotnetcli.blob.core.windows.net` metadata with the package SHA-512 checked before extraction. Windows runtime installers come only from an allowlisted Microsoft Download Center / Visual C++ catalog (`download.microsoft.com`, `download.visualstudio.microsoft.com`, and `aka.ms/vc14/`); Microsoft Authenticode verification is required before execution, and XNA additionally pins SHA-256. Rolling VC++ packages are checked at most daily. No runtime installer is selected from arbitrary game scripts. Offline reuse requires a successful installed-runtime probe and an explicit startup-log message; missing environments cannot bypass preparation.
 
 Store catalog generation accepts HLS playlists or native MP4/WebM trailer files. It prefers HLS and selects a native file when HLS is unavailable; DASH-only entries are excluded. Unsupported entries do not consume the catalog's playable-trailer limit.
 
@@ -221,6 +223,8 @@ Java 元数据备用入口只读取公开的 [Adoptium Temurin 官方仓库](htt
 
 安装包以流式方式写入独立临时文件，中断重试从头重新写入；保留校验、原子替换和回滚流程。下载失败或取消不会发布半成品，解压后仍检查模块声明的服务器文件。清单中的来源经过公开官方配置与同资源样本核对，不能据此保证所有地区、所有资源始终可用或更快。来源依据和维护要求见英文部分；这些探测不会在程序启动时自动运行。
 
-归档模块可通过 `[install.download_integrity_windows]` 声明 64 位十六进制 `sha256` 与正整数的字节数 `size`；声明此表时两个字段均必需。RimWorld Together 已固定官方发行包的摘要与大小，更新发行 URL 时必须依据发布方元数据同步更新这两个值。校验失败会在解压前拒绝下载，保留已有安装数据。当前 Terraria 归档与 Thunderstore 包元数据没有可用的发布方摘要，仍采用既有有界下载与安装检查，不宣称具备摘要验证。
+归档模块可通过 `[install.download_integrity_windows]` 声明 64 位十六进制 `sha256` 与正整数的字节数 `size`；声明此表时两个字段均必需。Terraria 与 RimWorld Together 已固定官方发行包的摘要与大小，更新发行 URL 时同步更新这两个值。校验失败会在解压前拒绝下载，保留已有安装数据。Thunderstore 等未提供摘要的来源仍采用既有有界下载与安装检查，不宣称具备摘要验证。
+
+实例启动还会检查并准备所需运行库。Temurin Java 沿用 Adoptium 元数据及 SHA-256／大小校验；.NET 使用微软对应版本通道的发布元数据，并在解压前验证官方包的 SHA-512。Windows 运行库安装器仅从固定微软目录选择，执行前必须通过 Microsoft Authenticode 签名校验，XNA 另外固定 SHA-256；滚动更新的 VC++ 包至多每日检查一次。不会执行游戏包内的任意安装脚本。离线复用必须通过实际运行库探针并记录到启动日志，缺失环境不能跳过准备。
 
 商店素材采集只接受 HLS 清单及原生 MP4/WebM 文件，优先 HLS，不可用时选择原生视频；只有 DASH 的条目不会进入目录。不支持的条目不占用可播放视频数量上限。

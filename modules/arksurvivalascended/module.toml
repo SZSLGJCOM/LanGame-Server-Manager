@@ -30,11 +30,12 @@ host_surface = "managed_terminal"
 host_notes = "The dedicated server runs in the instance's private runtime. Native configuration, access lists, and cluster storage are prepared before launch; Unreal logs are written to the instance log directory."
 
 [storage]
-runtime_copy_exclusions = ["ShooterGame/Saved", "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt", "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt", "ShooterGame/Binaries/Win64/ShooterGame/Mods/83374"]
+runtime_copy_exclusions = ["ShooterGame/Saved", "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt", "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt", "ShooterGame/Binaries/Win64/BanList.txt", "ShooterGame/Binaries/Win64/ShooterGame/Mods/83374"]
 saves_path_template = "{{paths.install_root}}/ShooterGame/Saved/{{instance.id}}"
 retained_paths = [
   "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt",
   "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt",
+  "ShooterGame/Binaries/Win64/BanList.txt",
 ]
 
 [[default_ports]]

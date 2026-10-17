@@ -36,6 +36,17 @@
   border-bottom: 0;
 }
 
+/* Opened in place of its stack button: fields expand at that spot, framed like the button they replace. */
+.player-access-selected-editor.is-inline {
+  padding: 10px;
+  border: 1px solid var(--shell-line);
+  border-radius: var(--settings-control-radius, 8px);
+}
+
+.player-access-selected-editor.is-inline .player-access-roster-editor {
+  padding: 0;
+}
+
 .player-access-roster-selected {
   display: grid;
   padding: 8px 14px;
@@ -178,13 +189,21 @@
   opacity: 0.7;
 }
 
+/* Same width and 38px/8px buttons as the shared right-side action stack. */
 .player-access-roster-action-pair {
   min-width: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  justify-self: end;
-  width: min(100%, 300px);
+  width: 100%;
+}
+
+.player-access-object-roster-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  cursor: help;
 }
 
 .server-workbench-warning {

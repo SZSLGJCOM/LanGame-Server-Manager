@@ -160,7 +160,11 @@ fn read_owner(root: &Path) -> Result<Option<Ownership>, String> {
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
         Err(error) => return Err(error.to_string()),
     }
-    let owner: Ownership = serde_json::from_slice(&io::read_regular(&path, 4096)?)
+    decode_owner(&io::read_regular(&path, 4096)?).map(Some)
+}
+
+fn decode_owner(bytes: &[u8]) -> Result<Ownership, String> {
+    let owner: Ownership = serde_json::from_slice(bytes)
         .map_err(|_| "The Valheim account control ownership record is invalid.")?;
     if owner.protocol != 1 || owner.module_id != "valheim" {
         return Err(
@@ -168,7 +172,7 @@ fn read_owner(root: &Path) -> Result<Option<Ownership>, String> {
                 .into(),
         );
     }
-    Ok(Some(owner))
+    Ok(owner)
 }
 
 fn inspect_plugin_destination(root: &Path) -> Result<Ownership, String> {
@@ -211,28 +215,39 @@ fn inspect_plugin_destination(root: &Path) -> Result<Ownership, String> {
         plugin_sha256: None,
         pending_plugin_sha256: None,
     });
-    if plugin_exists {
-        let current = io::digest(&io::read_regular(&plugin, 1024 * 1024)?);
-        if owner.plugin_sha256.as_deref() != Some(current.as_str())
-            && owner.pending_plugin_sha256.as_deref() != Some(current.as_str())
-        {
-            return Err(
-                "The Valheim control plugin was modified outside its installer; it was preserved."
-                    .into(),
-            );
-        }
-    }
+    verified_plugin_hash(root, &owner)?;
     Ok(owner)
+}
+
+fn verified_plugin_hash(root: &Path, owner: &Ownership) -> Result<Option<String>, String> {
+    let current =
+        io::read_optional(&root.join(io::PLUGIN), 1024 * 1024)?.map(|bytes| io::digest(&bytes));
+    if let Some(hash) = &current
+        && owner.plugin_sha256.as_ref() != Some(hash)
+        && owner.pending_plugin_sha256.as_ref() != Some(hash)
+    {
+        return Err(
+            "The Valheim control plugin was modified outside its installer; it was preserved."
+                .into(),
+        );
+    }
+    Ok(current)
 }
 
 fn install_owned_plugin(root: &Path, payload: &[u8]) -> Result<(), String> {
     let _root = io::pin_directories(root)?;
     let plugin = root.join(io::PLUGIN);
     let mut owner = inspect_plugin_destination(root)?;
-    if payload.is_empty() {
-        return Err("The bundled Valheim control plugin is unavailable.".into());
+    if payload.is_empty() || payload.len() > 1024 * 1024 {
+        return Err(
+            "The bundled Valheim control plugin is unavailable or exceeds its size limit.".into(),
+        );
     }
     let hash = io::digest(payload);
+    // A previous publication may already have installed its pending payload.
+    // Keep those verified bytes as the rollback identity before recording a
+    // different pending payload, including an application update after a crash.
+    owner.plugin_sha256 = verified_plugin_hash(root, &owner)?;
     owner.pending_plugin_sha256 = Some(hash.clone());
     io::publish(
         &root.join(io::OWNER),
@@ -264,7 +279,69 @@ fn create_plain_descendants(root: &Path, parts: &[&str]) -> Result<Vec<std::fs::
     Ok(guards)
 }
 
-/// Called only for explicitly prepared instances; it neither installs nor detaches.
+/// Refresh only a previously enabled plugin with known old/pending bytes.
+/// This also finishes interrupted owned updates without a manual repair step.
+fn refresh_prepared_plugin(root: &Path, payload: &[u8]) -> Result<(), String> {
+    let _root = io::pin_directories(root)?;
+    let _plugins = io::pin_directories(&root.join("BepInEx/plugins"))?;
+    let _control = io::pin_directory(&root.join(io::DIRECTORY))?;
+    let owner_path = root.join(io::OWNER);
+    let original_owner = io::read_regular(&owner_path, 4096)?;
+    let mut owner = decode_owner(&original_owner)?;
+    let plugin_path = root.join(io::PLUGIN);
+    let installed = io::read_regular(&plugin_path, 1024 * 1024)?;
+    let installed_hash = io::digest(&installed);
+    if owner.plugin_sha256.as_deref() != Some(installed_hash.as_str())
+        && owner.pending_plugin_sha256.as_deref() != Some(installed_hash.as_str())
+    {
+        return Err(
+            "The Valheim control plugin was modified outside its installer; it was preserved."
+                .into(),
+        );
+    }
+    if payload.is_empty() || payload.len() > 1024 * 1024 {
+        return Err(
+            "The bundled Valheim control plugin is unavailable or exceeds its size limit.".into(),
+        );
+    }
+    if installed != payload || owner.pending_plugin_sha256.is_some() {
+        let mut expected_owner = original_owner;
+        if installed != payload {
+            owner.plugin_sha256 = Some(installed_hash);
+            owner.pending_plugin_sha256 = Some(io::digest(payload));
+            let intent = serde_json::to_vec(&owner).map_err(|error| error.to_string())?;
+            replace_prepared_file(&owner_path, &expected_owner, &intent)?;
+            expected_owner = intent;
+            replace_prepared_file(&plugin_path, &installed, payload)?;
+        }
+        owner.plugin_sha256 = Some(io::digest(payload));
+        owner.pending_plugin_sha256 = None;
+        let complete = serde_json::to_vec(&owner).map_err(|error| error.to_string())?;
+        replace_prepared_file(&owner_path, &expected_owner, &complete)?;
+    }
+    io::verify_owner(&io::read_regular(&root.join(io::OWNER), 4096)?, payload)?;
+    if io::read_regular(&root.join(io::PLUGIN), 1024 * 1024)? != payload {
+        return Err("The refreshed Valheim control plugin could not be verified.".into());
+    }
+    Ok(())
+}
+
+fn replace_prepared_file(path: &Path, expected: &[u8], replacement: &[u8]) -> Result<(), String> {
+    // Recheck the bounded ordinary leaf before the existing storage CAS. A
+    // missing or changed destination is a conflict, never a fresh installation.
+    if io::read_regular(path, 1024 * 1024)? != expected {
+        return Err("A Valheim control file changed during its update; it was preserved.".into());
+    }
+    if !app_storage::compare_and_swap_file_atomically(path, expected, replacement)
+        .map_err(|error| format!("Cannot update the prepared Valheim control file: {error}"))?
+    {
+        return Err("A Valheim control file changed during its update; it was preserved.".into());
+    }
+    Ok(())
+}
+
+/// Called under the stopped-instance and program startup guards. Already enabled
+/// plugins follow application updates; this never installs a loader or detaches.
 pub(super) fn startup_environment(
     instance: &InstanceDetails,
 ) -> Result<Option<(String, String)>, String> {
@@ -278,19 +355,26 @@ pub(super) fn startup_environment(
     if read_owner(&root)?.is_none() {
         return Ok(None);
     }
+    if !matches!(
+        instance.summary.status,
+        InstanceStatus::Stopped | InstanceStatus::Error
+    ) || instance.summary.active_process_count != 0
+        || instance
+            .active_run
+            .as_ref()
+            .is_some_and(|run| run.process_count != 0)
+    {
+        return Err(
+            "Valheim account control may only be refreshed before the server starts.".into(),
+        );
+    }
     let root = independent_root(instance)?;
     let _root = io::pin_directories(&root)?;
-    let owner = read_owner(&root)?.ok_or("Valheim control ownership disappeared.")?;
-    let hash = io::digest(io::bundled_payload());
-    if owner.pending_plugin_sha256.is_some()
-        || owner.plugin_sha256.as_deref() != Some(hash.as_str())
-        || io::digest(&io::read_regular(&root.join(io::PLUGIN), 1024 * 1024)?) != hash
-    {
-        return Err("Valheim account control preparation is incomplete or belongs to another application build. Prepare it again while the server is stopped.".into());
-    }
     if super::commands_mod_staging::runtime_loader_requires_archive("valheim", &root)? {
         return Err("The prepared Valheim account control loader was changed or disabled. Prepare it again while the server is stopped.".into());
     }
+    verify_supported_game(&root)?;
+    refresh_prepared_plugin(&root, io::bundled_payload())?;
     let directory = root.join(io::DIRECTORY);
     let _control = io::pin_directory(&directory)?;
     let session =

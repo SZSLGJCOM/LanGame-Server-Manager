@@ -27,6 +27,7 @@ import type {
 } from "../types";
 import { ServersView } from "./ServersView";
 import type { ServerModuleInstallation } from "../server-primary-action";
+import type { SteamInstallationAccountContext } from "../steam-installation-account";
 
 interface ServerWorkspaceViewProps {
   aiSettings: AiSettings;
@@ -80,7 +81,7 @@ interface ServerWorkspaceViewProps {
   onSelectInstance: (instanceId: string) => void;
   onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
   onStopServer: (instanceId: string) => void | Promise<void>;
-  onInstallModule: (moduleId: string, validate: boolean) => Promise<void>;
+  onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onOpenModuleLibrary: (moduleId: string) => void;
 }
 

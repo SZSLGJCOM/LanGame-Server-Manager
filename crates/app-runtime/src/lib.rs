@@ -32,7 +32,9 @@ mod elevated_launcher;
 pub mod native_player_console;
 #[cfg(windows)]
 pub use elevated_launcher::run_elevated_launcher_if_requested;
+mod interactive_console;
 mod runtime_launch;
+pub use interactive_console::EphemeralConsole;
 pub use runtime_launch::{
     spawn_launch_plan, spawn_launch_plan_in_resource_group, spawn_launch_plan_with_log_writer,
 };
@@ -42,6 +44,12 @@ pub use resource_admission::{
 };
 mod spawned_process_lifecycle;
 mod startup_console;
+mod windows_runtime_requirements;
+/// Inspect native runtime imports without loading or running game binaries.
+pub use windows_runtime_requirements::{
+    WindowsRuntimeArchitecture, WindowsRuntimeFamily, WindowsRuntimeRequirement,
+    inspect_windows_runtime_requirements,
+};
 #[cfg(all(test, windows))]
 mod windows_resource_limits_tests;
 pub use spawned_process_lifecycle::{

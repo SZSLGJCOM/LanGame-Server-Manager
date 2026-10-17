@@ -12,12 +12,14 @@ const RECORD: &str = ".langame-steamcmd-ready.json";
 const RECORD_LIMIT: u64 = 16 * 1024;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 struct RuntimeFingerprint {
     root: String,
     files: Vec<FileFingerprint>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 struct FileFingerprint {
     name: String,
     length: u64,
@@ -66,17 +68,55 @@ pub(super) fn ready(root: &Path, ownership: SteamCmdOwnership) -> bool {
             .and_then(|cache| cache.get(&current.root).cloned())
             .is_some_and(|record| record == current);
     }
+    read_record(root).is_some_and(|record| record == current)
+}
+
+fn read_record(root: &Path) -> Option<RuntimeFingerprint> {
     let path = root.join(RECORD);
     let Ok(metadata) = fs::symlink_metadata(&path) else {
-        return false;
+        return None;
     };
     if !metadata.is_file() || metadata.file_type().is_symlink() || metadata.len() > RECORD_LIMIT {
-        return false;
+        return None;
     }
     fs::read(&path)
         .ok()
+        .filter(|bytes| bytes.len() <= RECORD_LIMIT as usize)
         .and_then(|bytes| serde_json::from_slice::<RuntimeFingerprint>(&bytes).ok())
-        .is_some_and(|record| record == current)
+        .filter(valid_record)
+}
+
+fn valid_record(record: &RuntimeFingerprint) -> bool {
+    let mut previous = None;
+    for file in &record.files {
+        let index = match file.name.as_str() {
+            "steamcmd.exe" => 0,
+            "steamclient.dll" => 1,
+            "steamclient64.dll" => 2,
+            _ => return false,
+        };
+        if file.length == 0 || file.modified_ns == 0 || previous.is_some_and(|last| index <= last) {
+            return false;
+        }
+        previous = Some(index);
+    }
+    record
+        .files
+        .first()
+        .is_some_and(|file| file.name == "steamcmd.exe")
+}
+
+/// A known managed runtime may have updated itself since its last verification.
+/// Missing, foreign, malformed and external records still require the explicit
+/// dependency action; this predicate never establishes readiness on its own.
+pub(super) fn needs_reverification(root: &Path, ownership: SteamCmdOwnership) -> bool {
+    if ownership != SteamCmdOwnership::Managed {
+        return false;
+    }
+    let (Some(current), Some(record)) = (fingerprint(root), read_record(root)) else {
+        return false;
+    };
+    record.root == current.root && record != current
 }
 
 pub(super) fn invalidate(status: &SteamCmdStatus) -> Result<(), SteamCmdError> {
@@ -152,13 +192,18 @@ mod tests {
         let status = managed_steamcmd_status(&settings);
         assert!(status.executable_exists);
         assert!(!status.ready);
+        assert!(!needs_reverification(&root, status.ownership));
         record_verified(&status).unwrap();
         assert!(managed_steamcmd_status(&settings).ready);
+        assert!(!needs_reverification(&root, status.ownership));
         fs::write(root.join("steamclient64.dll"), b"changed runtime").unwrap();
         assert!(!managed_steamcmd_status(&settings).ready);
+        assert!(needs_reverification(&root, status.ownership));
+        assert!(!needs_reverification(&root, SteamCmdOwnership::External));
         record_verified(&managed_steamcmd_status(&settings)).unwrap();
         invalidate(&managed_steamcmd_status(&settings)).unwrap();
         assert!(!managed_steamcmd_status(&settings).ready);
+        assert!(!needs_reverification(&root, status.ownership));
         fs::remove_dir_all(root).unwrap();
     }
 }

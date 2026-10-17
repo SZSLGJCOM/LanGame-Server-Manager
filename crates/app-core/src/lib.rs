@@ -19,6 +19,8 @@ pub mod ark_maps;
 pub mod ark_mods;
 pub mod astroneer_saves;
 mod dragonwilds_bans;
+mod native_bans;
+pub use native_bans::{NativeBanEntry, NativeBanRoster};
 pub mod dragonwilds_world;
 pub use dragonwilds_bans::{DragonwildsBanEntry, DragonwildsBanRoster};
 pub mod dst_shards;

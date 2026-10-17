@@ -15,6 +15,7 @@ pub(super) struct SharedDependencyCompletion<'a> {
     pub root: &'a Path,
     pub script: &'a Path,
     pub deadline: InstallDeadline,
+    pub account_name: Option<&'a str>,
 }
 
 pub(super) async fn complete_shared_dependencies(
@@ -29,6 +30,7 @@ pub(super) async fn complete_shared_dependencies(
         root,
         script,
         deadline,
+        account_name,
     } = request;
     let failed = |detail| SteamCmdError::InstallationVerificationFailed {
         module_id: module.summary.id.clone(),
@@ -49,7 +51,8 @@ pub(super) async fn complete_shared_dependencies(
     deadline.check_cancelled()?;
     // Repeat the trusted main app's validation, never arbitrary app IDs taken
     // from metadata. This keeps platform selection, destination and locks intact.
-    let lines = steamcmd_install_script_lines(module, app_id, root, true);
+    let lines =
+        super::steamcmd_install_script_lines_with_login(module, app_id, root, true, account_name);
     fs::write(script, lines.join("\r\n")).map_err(|source| SteamCmdError::WriteScript {
         path: script.to_owned(),
         source,
@@ -62,15 +65,7 @@ pub(super) async fn complete_shared_dependencies(
         on_progress,
     )
     .await?;
-    if !output.success {
-        return Err(SteamCmdError::SteamCmdCommandFailed {
-            output_excerpt: steamcmd_failure_context(
-                &output.excerpt,
-                output.exit_code,
-                output.content_log_excerpt.as_deref(),
-            ),
-        });
-    }
+    crate::steam_app_access::verify_command_result(app_id, account_name, &output)?;
     let inspected = inspect_dependencies(root, app_id, deadline).await;
     deadline.check_cancelled()?;
     let missing = inspected.map_err(|error| failed(error.to_string()))?;

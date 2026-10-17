@@ -1,4 +1,6 @@
 import { selectLocaleText, type LocaleCode } from "../../../i18n";
+import { ShellIcon } from "../../../components/ShellIcon";
+import { ConfigurationHelp } from "../../settings/ConfigurationFieldHelp";
 import type { RuntimeLivePlayerEntry, RuntimePlayerIdentityKind } from "../../../types";
 
 export function formatPlayerSession(locale: LocaleCode, startedAt: number | null, now: number): string {
@@ -47,7 +49,7 @@ export function SelectedPlayerExtraDetails({ locale, player, sessionUnknownReaso
   const sessionNote = player.session_started_at_unix_ms === null ? sessionUnknownReason ?? null : null;
   if (identities.length === 0 && attributes.length === 0 && !sessionNote) return null;
   return <section className="player-center-details is-compact" aria-label={selectLocaleText(locale, "\u5176\u4ed6\u8be6\u60c5", "More details")}>
-    {identities.length > 0 || attributes.length > 0 ? <dl className="player-center-details-list">
+    {identities.length > 0 || attributes.length > 0 || sessionNote ? <dl className="player-center-details-list">
       {identities.map((identity, index) => <div key={`${identity.kind}:${identity.value}:${index}`}>
         <dt>{identityLabel(identity.kind, locale)}{!identity.stable ? selectLocaleText(locale, "\uff08\u4f1a\u8bdd\uff09", " (session)") : ""}</dt>
         <dd className="server-player-cell--code">{identity.value}</dd>
@@ -57,8 +59,8 @@ export function SelectedPlayerExtraDetails({ locale, player, sessionUnknownReaso
         <dd>{attribute.key === "moderation_immune" && (attribute.value === "true" || attribute.value === "false")
           ? attribute.value === "true" ? selectLocaleText(locale, "\u662f", "Yes") : selectLocaleText(locale, "\u5426", "No") : attribute.value}</dd>
       </div>)}
+      {sessionNote ? <div><dt>{selectLocaleText(locale, "\u5728\u7ebf\u65f6\u957f", "Session")}</dt><dd>{selectLocaleText(locale, "\u672a\u77e5", "Unknown")}<InfoTip text={sessionNote} /></dd></div> : null}
     </dl> : null}
-    {sessionNote ? <p className="player-center-detail-note">{sessionNote}</p> : null}
   </section>;
 }
 
@@ -78,9 +80,7 @@ export function SelectedPlayerDetails({ locale, now, player, stale, sessionUnkno
       {!hideSession ? <div>
         <dt>{selectLocaleText(locale, "在线时长", "Session")}</dt>
         <dd>{formatPlayerSession(locale, player.session_started_at_unix_ms, now)}
-          {player.session_started_at_unix_ms === null ? <span className="player-center-detail-note">
-            {sessionUnknownReason ?? selectLocaleText(locale, "玩家数据未提供本次会话的开始时间。", "Player data does not include the start of this session.")}
-          </span> : null}
+          {player.session_started_at_unix_ms === null ? <InfoTip text={sessionUnknownReason ?? selectLocaleText(locale, "玩家数据未提供本次会话的开始时间。", "Player data does not include the start of this session.")} /> : null}
         </dd>
       </div> : null}
       {player.ping_ms !== null ? <div><dt>{selectLocaleText(locale, "延迟", "Ping")}</dt><dd>{player.ping_ms} ms</dd></div> : null}
@@ -92,4 +92,10 @@ export function SelectedPlayerDetails({ locale, now, player, stale, sessionUnkno
       </div>)}
     </dl>
   </section>;
+}
+
+/** Explanations live in the shared help bubble behind a muted ⓘ instead of standing text. */
+function InfoTip({ text }: { text: string }) {
+  return <ConfigurationHelp description={text}>{(help) => <span className="player-center-list-info" ref={help.anchorRef} {...help.interactionProps}
+    tabIndex={0} aria-describedby={help.descriptionId}><ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>;
 }

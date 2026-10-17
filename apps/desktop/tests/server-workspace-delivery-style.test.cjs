@@ -322,8 +322,14 @@ test("mod store reports persistent local installation status", () => {
 });
 
 test("mods tab uses the shared workbench without game-specific context", () => {
-  const modsTabBlock = serversView.match(/\{activeDetailTab === "mods"[\s\S]*?\) : null\}/)?.[0] ?? "";
+  const modsTabBlock = serversView.match(/\{\(activeDetailTab === "mods" \|\| retainedSteamModInstanceId === selectedDetailsId\)[\s\S]*?<ModWorkbench[\s\S]*?<\/div>\s*\) : null\}/)?.[0] ?? "";
   assert.match(modsTabBlock, /<ModWorkbench/);
+  assert.match(modsTabBlock, /hidden=\{activeDetailTab !== "mods"\}/, "The original Mod operation survives navigation to login");
+  assert.match(modsTabBlock, /steamAccount=\{steamAccount\}/);
+  assert.match(modsTabBlock, /onSteamAccountRequired[\s\S]*?await steamAccount\.requestAccount\(\)[\s\S]*?return await retry\(accountName\)/);
+  assert.match(runtimeSurfaceWorkbench, /<SteamWorkshopAccountConsole account=\{props\.steamAccount\}/);
+  const accountConsole = fs.readFileSync(path.join(desktopRoot, "src/views/servers/SteamWorkshopAccountConsole.tsx"), "utf8");
+  assert.doesNotMatch(accountConsole, /runtimeConsoleHistory|onSendRuntimeCommand/, "Login input has its own console and never enters game command history");
   assert.doesNotMatch(modsTabBlock, /Minecraft/);
   assert.doesNotMatch(operationsCss, /server-detail-scroll--minecraft-context|minecraft-mod-context/);
 });
@@ -346,9 +352,13 @@ test("mod workbench lists enabled rows and installs store selections as one oper
   );
   assert.match(
     modWorkbench,
-    /function handleInstallWorkshopItems[\s\S]*?runModMutation\("install"[\s\S]*?await downloadSteamWorkshopItems[\s\S]*?if \(nextSettings\) \{[\s\S]*?await persistSettings\(nextSettings\);/,
+    /function handleInstallWorkshopItems[\s\S]*?runModMutation\("install"[\s\S]*?await download\(steamAccount\?\.loginAccount\)[\s\S]*?if \(nextSettings\) \{[\s\S]*?await persistSettings\(nextSettings\);/,
     "Store installation should await the download before persisting instance enablement"
   );
+  assert.match(modWorkbenchView, /const preparationIds = downloadableIds;[\s\S]*?const download = \(accountName\?: string\) => downloadSteamWorkshopItems\(props\.details\.summary\.id, preparationIds, true, accountName\)/,
+    "Both attempts retain the original instance and selected items; the optional identity defaults to anonymous");
+  assert.match(modWorkbenchView, /await download\(steamAccount\?\.loginAccount\)[\s\S]*?catch \(error\) \{[\s\S]*?steamAccount\?\.loginAccount !== undefined \|\| !requiresSteamWorkshopAccount\(error\)[\s\S]*?!steamAccount\?\.available \|\| !props\.onSteamAccountRequired[\s\S]*?await props\.onSteamAccountRequired\(download\)/,
+    "Only an anonymous verified access failure may recover, and the authenticated retry uses the same download callback");
   assert.doesNotMatch(modWorkbench, /function handleApplySelectedToSettings/);
   assert.doesNotMatch(modWorkbench, /function handleDownloadSteamWorkshopItems/);
   assert.match(
@@ -381,15 +391,17 @@ test("mod workbench lists enabled rows and installs store selections as one oper
 });
 
 test("mod mutations serialize and rebase writes onto current instance settings", () => {
-  assert.match(modWorkbenchView, /useModWorkbenchMutations\(\s*props\.details\.summary\.id, moduleId, modChangesBlockedRef, latestSettingsRef, t\s*\)/);
+  const mutationArguments = modWorkbenchView.match(/useModWorkbenchMutations\(([\s\S]*?)\);/)?.[1] ?? "";
+  for (const input of ["props.details.summary.id", "moduleId", "modChangesBlockedRef", "latestSettingsRef", "props.steamAccount?.isBusy"]) assert.ok(mutationArguments.includes(input), input);
   assert.match(modWorkbenchMutations, /const mutationToken = useRef<symbol \| null>\(null\)/);
-  assert.match(modWorkbenchMutations, /if \(mutationToken\.current\)[\s\S]*?throw new Error\(t\("servers\.mods\.mutationBusy"/);
+  assert.match(modWorkbenchMutations, /if \(blocked\.current\)[\s\S]*?throw new Error\(t\("servers\.mods\.stopBeforeChanges"/);
+  assert.match(modWorkbenchMutations, /mutationToken\.current \|\| externalBusy\?\.\(\)[\s\S]*?throw new Error\(t\("servers\.mods\.mutationBusy"/);
   assert.match(modWorkbenchMutations, /await coordinator\.runOperation\(instanceId/);
   assert.match(modWorkbench, /runModMutation\("install"/);
   assert.match(modWorkbench, /const latestDetails = await readInstanceDetails\(props\.details\.summary\.id\)/);
   assert.match(modWorkbench, /instanceBlocksModChanges\(latestDetails\) \|\| modChangesBlockedRef\.current/);
   assert.match(modWorkbench, /mergeSettingPatch\(latestState\.settings, nextSettings, dirtyKeys\)/);
-  assert.match(modWorkbench, /inventoryBefore = await readManualModInventory[\s\S]*?await downloadSteamWorkshopItems/);
+  assert.match(modWorkbench, /inventoryBefore = await readManualModInventory[\s\S]*?await download\(steamAccount\?\.loginAccount\)/);
   assert.match(modWorkbench, /enablementPlan\.unresolvedWorkshopItemIds\.length > 0/);
 });
 
@@ -403,9 +415,11 @@ test("mod configuration does not duplicate instance settings", () => {
 test("RimWorld Workshop dependencies cannot enter the server install flow", () => {
   assert.match(modWorkbenchCapability, /rimworld:\s*\{[\s\S]*?installScope:\s*"client_only"/);
   assert.match(modWorkbench, /workflow\.installScope === "client_only"/);
-  assert.match(modWorkbench, /servers\.mods\.unsupported\.clientOnlyTitle/);
-  assert.match(enExtraMessages, /"servers\.mods\.unsupported\.clientOnlyBody":/);
-  assert.match(zhExtraMessages, /"servers\.mods\.unsupported\.clientOnlyBody":/);
+  assert.match(tabSpecs, /disabled: modAvailability !== "available"/);
+  assert.match(tabSpecs, /servers\.tabs\.modsClientOnly/);
+  assert.match(enExtraMessages, /"servers\.tabs\.modsClientOnly":/);
+  assert.match(zhExtraMessages, /"servers\.tabs\.modsClientOnly":/);
+  assert.doesNotMatch(`${modWorkbench}\n${enExtraMessages}\n${zhExtraMessages}`, /servers\.mods\.unsupported\.clientOnly/);
 });
 
 test("mod workbench owns DST options through its focused configuration component", () => {
@@ -535,32 +549,24 @@ test("mod workbench sends Steam failures and operation feedback to the activity 
   assert.match(zhExtraMessages, /"servers\.mods\.workshopUnavailable":/);
 });
 
-test("mod workbench exposes explicit unsupported state for unverified Dragonwilds mods", () => {
+test("mod workbench disables the Mods tab for unverified Dragonwilds mods", () => {
   assert.match(modWorkbenchCapability, /runescapedragonwilds:\s*\{/);
   assert.match(modWorkbenchCapability, /supportStatus:\s*"not_modelled"/);
   assert.match(modWorkbenchCapability, /unsupportedReason:/);
   assert.match(modWorkbenchCapability, /Shockbyte-hosted mod management/);
   assert.match(modWorkbenchCapability, /moduleHasModWorkbench[\s\S]*MOD_WORKFLOW_CATALOG\[moduleId\]/);
 
-  assert.match(modWorkbench, /const modWorkflowUnsupported =/);
-  assert.match(modWorkbench, /function renderUnsupportedModWorkflowPane\(\)/);
-  assert.match(modWorkbench, /className="mw-unsupported-pane"/);
-  assert.match(modWorkbench, /servers\.mods\.unsupported\.title/);
-  assert.match(modWorkbench, /servers\.mods\.unsupported\.body/);
-  assert.match(modWorkbench, /servers\.mods\.unsupported\.guardrail/);
-  assert.match(
-    modWorkbench,
-    /\{modWorkflowUnsupported \? \([\s\S]*?renderUnsupportedModWorkflowPane\(\)[\s\S]*?: \(/,
-    "Unsupported modules should render a guardrail panel before any empty community source workspace"
-  );
+  assert.match(modWorkbenchCapability, /export function modWorkbenchAvailability\(/);
+  assert.match(tabSpecs, /modAvailability === "unsupported"[\s\S]*?servers\.tabs\.modsUnsupported/);
+  assert.match(enExtraMessages, /"servers\.tabs\.modsUnsupported":/);
+  assert.match(zhExtraMessages, /"servers\.tabs\.modsUnsupported":/);
 
-  assert.match(enExtraMessages, /"servers\.mods\.unsupported\.title":/);
-  assert.match(enExtraMessages, /"servers\.mods\.unsupported\.body":/);
-  assert.match(enExtraMessages, /"servers\.mods\.unsupported\.guardrail":/);
-  assert.match(zhExtraMessages, /"servers\.mods\.unsupported\.title":/);
-  assert.match(zhExtraMessages, /"servers\.mods\.unsupported\.body":/);
-  assert.match(zhExtraMessages, /"servers\.mods\.unsupported\.guardrail":/);
-  assert.match(operationsCss, /\.mw-unsupported-pane\s*\{/);
+  // Unsupported modules never reach the workbench, so no explanation-only pane remains.
+  assert.match(modWorkbench, /const modWorkflowUnsupported =/);
+  assert.match(modWorkbench, /\{modWorkflowUnsupported \? null : /);
+  assert.doesNotMatch(modWorkbench, /renderUnsupportedModWorkflowPane|mw-unsupported-pane/);
+  assert.doesNotMatch(`${enExtraMessages}\n${zhExtraMessages}`, /"servers\.mods\.unsupported\./);
+  assert.doesNotMatch(operationsCss, /\.mw-unsupported-/);
 });
 
 test("mod configuration page fills the workspace with independently scrolling columns", () => {

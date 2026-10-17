@@ -12,7 +12,8 @@ export function useModWorkbenchMutations(
   moduleId: string,
   blocked: RefObject<boolean>,
   settings: RefObject<SettingsObject>,
-  t: TranslateFn
+  t: TranslateFn,
+  externalBusy?: () => boolean
 ) {
   const coordinator = useInstanceSettingsSaveCoordinator();
   const [mutationBusy, setMutationBusy] = useState(false);
@@ -23,7 +24,7 @@ export function useModWorkbenchMutations(
     if (blocked.current) {
       throw new Error(t("servers.mods.stopBeforeChanges", undefined, "Stop the instance before changing Mods."));
     }
-    if (mutationToken.current) {
+    if (mutationToken.current || externalBusy?.()) {
       throw new Error(t("servers.mods.mutationBusy", undefined, "Another Mod change is still in progress."));
     }
     const token = Symbol(kind);
@@ -44,7 +45,7 @@ export function useModWorkbenchMutations(
         setMutationBusy(false);
       }
     }
-  }, [blocked, coordinator, instanceId, moduleId, settings, t]);
+  }, [blocked, coordinator, instanceId, moduleId, settings, t, externalBusy]);
 
   const launchModMutation = useCallback((kind: ModMutationKind, operation: () => Promise<void>) => {
     void runModMutation(kind, operation).catch((error) => {

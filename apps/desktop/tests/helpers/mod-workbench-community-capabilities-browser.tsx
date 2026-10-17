@@ -5,7 +5,10 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { readInstanceDetails } from "../../src/api";
 import { buildMockModuleDetails } from "../../src/api-mock/module-details";
 import type { InstanceDetails, ManualModInventoryResult, ModuleDetails } from "../../src/types";
-import { moduleHasModWorkbench } from "../../src/views/servers/mod-workbench-capability";
+import { I18nProvider, useI18n } from "../../src/i18n";
+import { modWorkbenchAvailability, moduleHasModWorkbench } from "../../src/views/servers/mod-workbench-capability";
+import { ServerDetailTabs, type ServerDetailTabSpec } from "../../src/views/servers/ServerDetailTabs";
+import { buildServerDetailTabSpecs } from "../../src/views/servers/server-detail-tab-specs";
 import { createModWorkbenchFixtureIpc, ModWorkbenchBrowserHost } from "./mod-workbench-browser-support";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -53,6 +56,18 @@ async function mount() {
   epoch += 1;
   await act(async () => root.render(<ModWorkbenchBrowserHost details={details} moduleDetails={moduleDetails}
     epoch={epoch} onSaved={() => { throw new Error("Capability review must not save settings"); }} />));
+}
+function DetailTabsProbe(props: { moduleId: string; moduleDetails: ModuleDetails; onSelect(tab: ServerDetailTabSpec): void }) {
+  const { t } = useI18n();
+  return <ServerDetailTabs tabs={buildServerDetailTabSpecs({ moduleId: props.moduleId, moduleDetails: props.moduleDetails, t })}
+    activeTab="runtime" panelId="probe" label="Instance detail sections" onSelect={props.onSelect} />;
+}
+async function mountTabs(id: string, details: ModuleDetails, selected: string[]) {
+  await act(async () => root.render(<I18nProvider>
+    <DetailTabsProbe moduleId={id} moduleDetails={details} onSelect={(tab) => selected.push(tab.id)} />
+  </I18nProvider>));
+  await settle(() => Boolean(fixture.querySelector("#probe-mods")), "Detail tabs did not render");
+  return fixture.querySelector<HTMLButtonElement>("#probe-mods")!;
 }
 function prepare(template: InstanceDetails, id: string) {
   game = id; moduleDetails = buildMockModuleDetails(id);
@@ -133,11 +148,23 @@ async function run() {
     reports.push({ module: id, gate: false });
   }
   prepare(template, "rimworld");
-  check(moduleHasModWorkbench(game, moduleDetails), "Client-only workflow retains its explanation entry");
-  await mount(); await settle(() => Boolean(fixture.querySelector(".mw-unsupported-pane")), "Client-only explanation did not render");
-  check(fixture.textContent?.includes("No server-side Mod installation"), "RimWorld explains the client/server boundary");
-  check(!fixture.querySelector(".mw-dropzone,.mw-reference-input,.mw-entry-enabled-toggle,.mw-entry-remove-button"), "Client-only page has no install or mutation control");
-  reports.push({ module: game, gate: true, client_only_explanation: true });
+  check(!moduleHasModWorkbench(game, moduleDetails), "Client-only Workshop dependencies expose no server Mod workbench");
+  check(modWorkbenchAvailability(game, moduleDetails) === "client_only", "The capability catalog marks RimWorld Workshop content as client-only");
+  const selected: string[] = [];
+  const modsTab = await mountTabs(game, moduleDetails, selected);
+  const tabRect = modsTab.getBoundingClientRect();
+  check(tabRect.width > 0 && tabRect.height > 0 && modsTab.textContent?.includes("Mods"), "RimWorld Mods tab stays visible");
+  check(modsTab.disabled && modsTab.getAttribute("aria-disabled") === "true" && modsTab.classList.contains("is-disabled"),
+    "RimWorld Mods tab is disabled with an accessible disabled state");
+  const describedBy = modsTab.closest<HTMLElement>(".server-detail-tab-help")?.getAttribute("aria-describedby");
+  check(describedBy && document.getElementById(describedBy)?.textContent?.includes("installed on each player's game client"),
+    "Disabled Mods tab explains the client-only reason");
+  await act(async () => { modsTab.click(); });
+  check(selected.length === 0, "Clicking the disabled Mods tab does not select it");
+  check(!fixture.querySelector(".mw-workspace-panel,.mw-dropzone,.mw-reference-input"), "No Mod workspace or install control renders");
+  const supportedTab = await mountTabs("valheim", buildMockModuleDetails("valheim"), selected);
+  check(!supportedTab.disabled && !supportedTab.closest(".server-detail-tab-help"), "A module with a real Mod workflow keeps an enabled Mods tab");
+  reports.push({ module: game, gate: false, mods_tab_disabled: true, disabled_reason: true });
   for (const id of community) await runCommunity(template, id);
   check(errors.length === 0, "No browser console or uncaught errors");
   return { status: "passed", checks, modules: reports, browser_errors: errors, viewport: { width: innerWidth, height: innerHeight } };

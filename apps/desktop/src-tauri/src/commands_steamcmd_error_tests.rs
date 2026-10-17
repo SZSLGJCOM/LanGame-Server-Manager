@@ -2,6 +2,21 @@ use super::*;
 use std::path::PathBuf;
 
 #[test]
+fn server_account_requirement_keeps_only_the_explicit_application_permission_contract() {
+    let output = "ERROR! Failed to install app '223350' (No subscription)\r\n";
+    let error = SteamCmdError::SteamAppAccountRequired {
+        app_id: 223350,
+        output_excerpt: output.into(),
+    };
+    let payload: serde_json::Value = serde_json::from_str(&steamcmd_error_message(&error)).unwrap();
+    assert_eq!(payload["code"], "steam_app_account_required");
+    assert_eq!(payload["app_id"], 223350);
+    assert_eq!(payload["message"], error.to_string());
+    assert_eq!(payload["output_excerpt"], output);
+    assert_eq!(steamcmd_error_excerpt(&error).as_deref(), Some(output));
+}
+
+#[test]
 fn only_confirmed_cancellation_uses_the_stopped_result() {
     assert_eq!(
         steamcmd_error_message(&SteamCmdError::InstallCancelled {
@@ -146,6 +161,68 @@ fn steamcmd_command_failures_preserve_output_without_rewriting_it() {
         assert_eq!(payload["output_excerpt"], output);
         assert_eq!(payload["message"], error.to_string());
         assert_eq!(steamcmd_error_excerpt(&error).as_deref(), Some(output));
+    }
+}
+
+#[test]
+fn workshop_decryption_key_error_preserves_the_application_and_original_output() {
+    let output = "Download item failed (Failure).\r\nWorkshop: Missing decryption key\n";
+    let error = SteamCmdError::WorkshopDecryptionKeyMissing {
+        consumer_app_id: 1623730,
+        output_excerpt: output.into(),
+    };
+    let payload: serde_json::Value = serde_json::from_str(&steamcmd_error_message(&error))
+        .expect("Workshop access failure must use the JSON contract");
+    assert_eq!(payload["code"], "steam_workshop_decryption_key_missing");
+    assert_eq!(payload["consumer_app_id"], 1623730);
+    assert_eq!(payload["message"], error.to_string());
+    assert_eq!(payload["output_excerpt"], output);
+    assert_eq!(steamcmd_error_excerpt(&error).as_deref(), Some(output));
+}
+
+#[test]
+fn workshop_account_requirement_preserves_the_application_and_original_output() {
+    let output = "ERROR! Download item 3816899969 failed (No subscription).\r\n";
+    let error = SteamCmdError::WorkshopAccountRequired {
+        consumer_app_id: 1623730,
+        output_excerpt: output.into(),
+    };
+    let payload: serde_json::Value = serde_json::from_str(&steamcmd_error_message(&error))
+        .expect("Workshop account requirement must use the JSON contract");
+    assert_eq!(payload["code"], "steam_workshop_account_required");
+    assert_eq!(payload["consumer_app_id"], 1623730);
+    assert_eq!(payload["message"], error.to_string());
+    assert_eq!(payload["output_excerpt"], output);
+    assert_eq!(steamcmd_error_excerpt(&error).as_deref(), Some(output));
+}
+
+#[test]
+fn steam_account_errors_preserve_the_local_ui_contract() {
+    for (error, code, output) in [
+        (
+            SteamCmdError::InvalidSteamAccountName,
+            "steam_account_name_invalid",
+            None,
+        ),
+        (
+            SteamCmdError::SteamAccountInteractiveUnsupported,
+            "steam_account_interactive_unsupported",
+            None,
+        ),
+        (
+            SteamCmdError::SteamAccountAuthenticationFailed {
+                output_excerpt: "Cached login identity was not confirmed.".into(),
+            },
+            "steam_account_authentication_failed",
+            Some("Cached login identity was not confirmed."),
+        ),
+    ] {
+        let payload: serde_json::Value =
+            serde_json::from_str(&steamcmd_error_message(&error)).unwrap();
+        assert_eq!(payload["code"], code);
+        assert_eq!(payload["message"], error.to_string());
+        assert_eq!(payload["output_excerpt"], json!(output));
+        assert_eq!(steamcmd_error_excerpt(&error).as_deref(), output);
     }
 }
 

@@ -226,15 +226,15 @@ async function run() {
     && inventory() === initialInventory && !select<HTMLButtonElement>(rosterAction("blocklist", "add")).disabled, "Removal changed action inventory or used a different target"); checks++;
   await listTab("blocklist"); verifyRosterLocation(); verifyIdle();
   check(inventory() === initialInventory && document.querySelector(".player-center-manual-actions"), "Switching lists replaced the total action inventory"); checks++;
-  await click(".player-access-roster-create"); await input("#player-access-roster-blocklist", "76561198000000002");
-  await click(".player-access-roster-add-button"); verifyReview(); await click(".inline-confirm-buttons button:first-child");
+  await listTab("manual"); await input("#manual-player-target-layout-server", "76561198000000002"); await click(".player-center-manual-use");
+  await click(rosterAction("blocklist", "add")); verifyReview(); await click(".inline-confirm-buttons button:first-child");
   check(mutations.length === 1, "Manual roster cancellation changed data"); checks++;
-  await click(".player-access-roster-add-button"); await click(".inline-confirm-submit");
+  await click(rosterAction("blocklist", "add")); await click(".inline-confirm-submit"); await listTab("blocklist");
   check(mutations.length === 2 && mutations[1].value === "76561198000000002"
     && document.querySelectorAll(".player-center-list-pane .player-access-roster-entry").length === 1 && !document.querySelector(".player-access-selected-editor"),
     "Explicit add failed to update the left roster or close its form"); checks++;
-  await click(".player-access-roster-create"); await input("#player-access-roster-blocklist", "76561198000000077");
-  await click(".player-access-roster-add-button"); await listTab("online"); verifyIdle();
+  await listTab("manual"); await input("#manual-player-target-layout-server", "76561198000000077"); await click(".player-center-manual-use");
+  await click(rosterAction("blocklist", "add")); await listTab("online"); verifyIdle();
   check(inventory() === initialInventory && mutations.length === 2, "Changing tabs retained a pending editor mutation"); checks++;
   await listTab("manual"); await input("#manual-player-target-layout-server", "offline-account");
   await scenario(snapshot(3));
@@ -292,8 +292,7 @@ async function run() {
   await act(async () => { document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true })); });
   check(document.activeElement === tabs[0] && tabs.filter((tab) => tab.tabIndex === 0).length === 1, "List tabs lost roving focus"); checks++;
   await selectPlayer(); const beforeObject = mutations.length; await click(rosterAction("admins", "add"));
-  check(select<HTMLInputElement>("#player-access-quick-admins-steam_id").value === "76561198000000001"
-    && select<HTMLInputElement>("#player-access-quick-admins-steam_id").disabled, "Explicit roster add did not lock trusted account identity");
+  check(!document.querySelector("#player-access-quick-admins-steam_id"), "Explicit roster add repeated the selected account identity");
   await input("#player-access-quick-admins-permission", "250"); await click(".player-access-selected-editor .player-access-roster-action-pair > button");
   check(!document.querySelector(".player-access-selected-editor") && mutations.length === beforeObject, "Cancelling account parameters changed data"); checks++;
   await act(async () => { setFixtureLocale("en-US"); });

@@ -32,6 +32,29 @@ async fn manifest_parse_or_request_failure_uses_the_next_candidate() {
 }
 
 #[tokio::test]
+async fn a_later_outage_cannot_hide_invalid_runtime_metadata() {
+    let primary = fixture(vec![reply(200, b"invalid manifest")]).await;
+    let alternate = fixture(vec![reply(403, b"unavailable")]).await;
+    let result = fetch_text_from_candidates(
+        &fixture_client(),
+        &[primary.url.clone(), alternate.url.clone()],
+        deadline(),
+        1024,
+        parse_manifest,
+    )
+    .await;
+    assert!(matches!(
+        result,
+        Err(SteamCmdError::HttpDownload {
+            source_unavailable: false,
+            ..
+        })
+    ));
+    assert_eq!(primary.requests.load(Ordering::Relaxed), 1);
+    assert_eq!(alternate.requests.load(Ordering::Relaxed), 1);
+}
+
+#[tokio::test]
 async fn invalid_utf8_and_oversized_text_never_reach_the_parser() {
     for response in [
         reply(200, &[0xff, 0xfe]),
@@ -47,7 +70,13 @@ async fn invalid_utf8_and_oversized_text_never_reach_the_parser() {
             |_| panic!("untrusted bytes must be checked before parsing"),
         )
         .await;
-        assert!(matches!(result, Err(SteamCmdError::HttpDownload { .. })));
+        assert!(matches!(
+            result,
+            Err(SteamCmdError::HttpDownload {
+                source_unavailable: false,
+                ..
+            })
+        ));
         assert_eq!(source.requests.load(Ordering::Relaxed), 1);
     }
 }

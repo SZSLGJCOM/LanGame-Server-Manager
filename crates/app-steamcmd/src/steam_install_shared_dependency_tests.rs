@@ -21,19 +21,27 @@ public static class SharedDependencyInstaller {
       return 0;
     }
     if (args.Length != 2 || args[0] != "+runscript") return 80;
-    string root = null, update = null;
+    string root = null, update = null, login = null;
     foreach (string line in File.ReadAllLines(args[1])) {
       if (line.StartsWith("force_install_dir ")) root = line.Substring(18).Trim().Trim('"');
       if (line.StartsWith("app_update ")) update = line.Trim();
+      if (line.StartsWith("login ")) login = line.Trim();
     }
     if (root == null || update == null) return 81;
     int calls = File.Exists("dependency-calls") ? Int32.Parse(File.ReadAllText("dependency-calls")) : 0;
     calls++;
     File.WriteAllText("dependency-calls", calls.ToString());
     File.AppendAllText("dependency-commands", update + "\n");
+    File.AppendAllText("dependency-logins", login + "\n");
     File.AppendAllText("dependency-destinations", root + "\n");
     if (calls > 1 && update != "app_update 42 validate") return 82;
     string mode = File.ReadAllText("dependency-mode").Trim();
+    if (mode == "accountRepair" || mode == "wrongRepairAccount") {
+      if (login != "login selected_account") return 83;
+      string name = mode == "wrongRepairAccount" && calls > 1 ? "other_account" : "selected_account";
+      Console.WriteLine("Logging in user '" + name + "' to Steam Public...OK");
+      Console.WriteLine("Waiting for user info...OK");
+    }
     Directory.CreateDirectory(Path.Combine(root, "bin"));
     Directory.CreateDirectory(Path.Combine(root, "ServerConfig"));
     Directory.CreateDirectory(Path.Combine(root, "steamapps"));
@@ -126,6 +134,15 @@ async fn install_with_dependencies(
     validate: bool,
     cancellation_point: CancellationPoint,
 ) -> (Result<ModuleInstallResult, SteamCmdError>, usize, bool) {
+    install_with_dependencies_and_account(fixture, validate, cancellation_point, None).await
+}
+
+async fn install_with_dependencies_and_account(
+    fixture: &Fixture,
+    validate: bool,
+    cancellation_point: CancellationPoint,
+    account_name: Option<&str>,
+) -> (Result<ModuleInstallResult, SteamCmdError>, usize, bool) {
     let target = fixture.install_root();
     let guard = acquire_game_install_lifecycle(
         crate::test_install_lock_context(),
@@ -137,13 +154,16 @@ async fn install_with_dependencies(
     let cancellation = InstallCancellation::new();
     let mut callbacks = 0;
     let mut ready = false;
-    let result = install_or_update_module_at_with_callbacks(
-        &fixture.settings,
-        &fixture.module,
-        &target,
-        &guard,
-        validate,
-        &cancellation,
+    let result = install_or_update_module_at_with_login_and_callbacks(
+        SteamModuleInstallRequest {
+            settings: &fixture.settings,
+            module: &fixture.module,
+            install_root: &target,
+            guard: &guard,
+            validate,
+            cancellation: &cancellation,
+            account_name,
+        },
         ModuleInstallCallbacks {
             on_progress: |update: InstallProgressUpdate| {
                 ready |= update
@@ -186,6 +206,40 @@ async fn install_with_dependencies(
     )
     .await;
     (result, callbacks, ready)
+}
+
+#[tokio::test]
+async fn shared_dependency_repair_reuses_and_reverifies_the_selected_server_account() {
+    for mode in ["accountRepair", "wrongRepairAccount"] {
+        let fixture = dependency_fixture(mode).await;
+        let (result, callbacks, ready) = install_with_dependencies_and_account(
+            &fixture,
+            false,
+            CancellationPoint::None,
+            Some("selected_account"),
+        )
+        .await;
+        assert_eq!(native_calls(&fixture), 2);
+        assert_eq!(
+            native_records(&fixture, "dependency-logins"),
+            ["login selected_account", "login selected_account"]
+        );
+        if mode == "accountRepair" {
+            result.unwrap();
+            assert_eq!(callbacks, 1);
+            assert!(ready);
+            fixture.assert_retained(false);
+        } else {
+            assert!(matches!(
+                result,
+                Err(SteamCmdError::SteamAccountAuthenticationFailed { .. })
+            ));
+            assert_eq!(callbacks, 0);
+            assert!(!ready);
+            fixture.assert_retained(true);
+        }
+        fixture.assert_clean().await;
+    }
 }
 
 #[tokio::test]

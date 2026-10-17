@@ -127,7 +127,7 @@ export const ZH_CN_TERRARIA_MESSAGES: MessageCatalog = {
   "settings.schema.terraria.secure.title": "Secure 模式",
   "settings.schema.terraria.seed.description": "新生成世界时使用的可选种子文本。留空则让 Terraria 自行生成。",
   "settings.schema.terraria.seed.title": "世界种子",
-  "settings.schema.terraria.server_runtime.description": "Windows 原版 Terraria 需要 Microsoft XNA Framework Redistributable 4.0，请先从微软下载并安装，再启动服务器。使用 tModLoader 前，请先准备此实例的 tModLoader 运行时与 .tmod 文件。",
+  "settings.schema.terraria.server_runtime.description": "Windows 原版 Terraria 需要 Microsoft XNA Framework Redistributable 4.0。LanGame 会在启动前检查并自动补齐经校验的微软官方运行库，系统可能要求提权。使用 tModLoader 前，请先准备此实例的 tModLoader 运行时与 .tmod 文件。",
   "settings.schema.terraria.server_runtime.option.tmodloader": "tModLoader 模组运行时",
   "settings.schema.terraria.server_runtime.option.vanilla": "原版 Terraria",
   "settings.schema.terraria.server_runtime.title": "服务器运行时",

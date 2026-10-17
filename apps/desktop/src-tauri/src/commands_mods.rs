@@ -464,6 +464,14 @@ pub(super) async fn install_module_game_inner(
     state: tauri::State<'_, DesktopState>,
     module_id: String,
 ) -> Result<ModuleInstallResult, String> {
+    install_module_game_with_account_inner(state, module_id, None).await
+}
+
+pub(super) async fn install_module_game_with_account_inner(
+    state: tauri::State<'_, DesktopState>,
+    module_id: String,
+    account_name: Option<String>,
+) -> Result<ModuleInstallResult, String> {
     let _storage_context_operation =
         state.begin_storage_context_operation("module installation")?;
     let storage = state.bootstrap_storage()?;
@@ -550,6 +558,7 @@ pub(super) async fn install_module_game_inner(
             guard: program_guard,
             validate: false,
             cancellation: operation.cancellation(),
+            account_name: account_name.as_deref(),
         },
         |update: InstallProgressUpdate| {
             let _ = update_background_job(&state, &job_id, |job| {
@@ -627,7 +636,13 @@ pub(super) async fn download_steam_workshop_items_inner(
     ids: Vec<String>,
     missing_only: bool,
     preference: app_network::SourcePreference,
+    account_name: Option<String>,
 ) -> Result<SteamWorkshopDownloadResult, String> {
+    let account_name = account_name
+        .as_deref()
+        .map(app_steamcmd::normalize_workshop_account_name)
+        .transpose()
+        .map_err(|error| steamcmd_error_message(&error))?;
     let storage_context_operation =
         state.begin_storage_context_operation("Steam Workshop download")?;
     let storage = state.bootstrap_storage()?;
@@ -718,6 +733,7 @@ pub(super) async fn download_steam_workshop_items_inner(
         workshop_download::WorkshopOperation {
             storage: &storage_context_operation,
             mutation: mutation.clone(),
+            account_name: account_name.as_deref(),
         },
         |update: InstallProgressUpdate| {
             let _ = update_background_job(&state, &job_id, |job| {
@@ -2259,6 +2275,14 @@ pub(super) async fn validate_module_game_inner(
     state: tauri::State<'_, DesktopState>,
     module_id: String,
 ) -> Result<ModuleInstallResult, String> {
+    validate_module_game_with_account_inner(state, module_id, None).await
+}
+
+pub(super) async fn validate_module_game_with_account_inner(
+    state: tauri::State<'_, DesktopState>,
+    module_id: String,
+    account_name: Option<String>,
+) -> Result<ModuleInstallResult, String> {
     let _storage_context_operation = state.begin_storage_context_operation("module validation")?;
     let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
@@ -2341,6 +2365,7 @@ pub(super) async fn validate_module_game_inner(
             guard: program_guard,
             validate: true,
             cancellation: operation.cancellation(),
+            account_name: account_name.as_deref(),
         },
         |update: InstallProgressUpdate| {
             let _ = update_background_job(&state, &job_id, |job| {

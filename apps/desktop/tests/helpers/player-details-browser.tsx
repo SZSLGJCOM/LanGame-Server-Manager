@@ -151,7 +151,7 @@ async function run() {
   await act(prepareBrowserLocaleCatalogs);
   await draw("enshrouded"); await selectWithKeyboard(); verifyDisabledDescriptions();
   check(fixture?.textContent?.includes("匿名查询记录的时长无法可靠对应到玩家姓名"), "Unknown duration explains anonymous player records");
-  check(fixture?.textContent?.includes("Steam ID 不能替代") && fixture.textContent.includes("先停服编辑，再启动生效"), "Native bans explain their exact identity and lifecycle");
+  check(fixture?.textContent?.includes("Steam ID 不能替代") && fixture.textContent.includes("停服编辑，启动后生效"), "Native bans explain their exact identity and lifecycle");
   check(!fixture?.querySelector(".player-center-member-action") && mutations === 0,
     "Keyboard selects an Enshrouded name without granting native account authority");
   await draw("read-only"); await selectWithKeyboard();
@@ -171,8 +171,8 @@ async function run() {
   check(["76561198000000001", "1 小时 1 分", "34 ms", "Guest", "测试世界"].every((value) => selectedRowText().includes(value)),
     "Selected details preserve every supplied player field");
   await draw("enshrouded-native-unknown"); await selectWithKeyboard(); verifyDisabledDescriptions();
-  check(fixture?.textContent?.includes("尚未取得雾锁王国扩展提供的有效原生玩家身份")
-    && !fixture.textContent.includes("尚未接入可验证的实时管理接口") && commands === 0,
+  check(fixture?.textContent?.includes("扩展未提供有效玩家身份")
+    && !fixture.textContent.includes("未连接原生管理接口") && commands === 0,
     "Unknown native extension preserves read-only fallback despite declared actions");
   await draw("enshrouded-steam-only"); await selectWithKeyboard(); verifyDisabledDescriptions();
   await act(async () => { nativeAction("封禁玩家").click(); });
@@ -196,9 +196,10 @@ async function run() {
     && fixture?.querySelector(".player-center-details")?.textContent?.includes("受服务器保护否"),
     "Unprotected native players use labeled details without a raw false subtitle");
   check(fixture?.querySelector(".player-center-details")?.textContent?.includes(`原生 accountId${nativeAccountId}`)
-    && !fixture.textContent?.includes("尚未接入可验证的实时管理接口")
+    && !fixture.textContent?.includes("未连接原生管理接口")
     && !fixture.textContent?.includes("匿名查询记录的时长无法可靠对应到玩家姓名")
-    && fixture.textContent?.includes("封禁和解封可即时生效"),
+    // Connected state needs no standing note; no read-only explanation remains.
+    && !fixture.textContent?.includes("扩展未提供有效玩家身份"),
     "Verified native identity replaces unavailable-adapter and anonymous-duration copy");
   check(!fixture?.querySelector('[data-roster-field="banned_player_ids"] [data-operation="add"]')
     && !nativeAction("封禁玩家").disabled, "Native live ban replaces the duplicate persistent add operation");

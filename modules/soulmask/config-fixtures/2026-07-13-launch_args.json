@@ -863,7 +863,7 @@
     "specialized": 1,
     "derived": 0,
     "generated": 0,
-    "excluded": 5
+    "excluded": 6
   },
   "classifications": {
     "editable": [
@@ -1163,7 +1163,8 @@
       "launch_args.-MULTIHOME",
       "launch_args.-Port/-QueryPort/-EchoPort/-rconport",
       "launch_args.-UTF8Output/-forcepassthrough/-online=Steam",
-      "runtime_rcon.broadcast/List_OnlinePlayers/kick/ban/unban"
+      "launch_args.-serverpm",
+      "runtime_rcon.broadcast/List_OnlinePlayers/kick/usp"
     ]
   },
   "settings": {
@@ -1221,6 +1222,7 @@
         "-backup=60",
         "-online=Steam",
         "-mod=\"123456789,987654321\"",
+        "-serverpm=2",
         "-NoCrashDialog",
         "-log"
       ]

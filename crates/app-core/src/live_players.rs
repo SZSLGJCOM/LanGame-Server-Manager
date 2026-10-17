@@ -80,6 +80,12 @@ pub enum RuntimePlayerIdentityKind {
     AstroneerGuid,
     EnshroudedAccountId,
     ValheimPlatformId,
+    /// Native Necesse banned.cfg subject, either a username or authentication ID.
+    NecesseBanId,
+    /// Persisted Palworld player GUID without a platform UserID moderation target.
+    PalworldPlayerUid,
+    /// Native Soulmask Epic account and product identity, both required.
+    SoulmaskAccountId,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

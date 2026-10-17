@@ -5,6 +5,15 @@ use app_core::InstallPhase;
 #[path = "minecraft_java_metadata.rs"]
 mod metadata;
 
+pub(super) async fn latest_runtime_package(
+    client: &reqwest::Client,
+    major: u16,
+    deadline: InstallDeadline,
+) -> Result<(String, String, u64), SteamCmdError> {
+    let package = metadata::fetch_java_package(client, major, deadline).await?;
+    Ok((package.link, package.checksum, package.size))
+}
+
 pub(super) async fn ensure_minecraft_jre<F>(
     client: &reqwest::Client,
     install_root: &Path,

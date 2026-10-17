@@ -280,6 +280,7 @@ pub async fn update_instance_program<R: tauri::Runtime>(
             instance_id,
             validate,
             worker_operation,
+            None,
         )
         .await
     })
@@ -287,11 +288,12 @@ pub async fn update_instance_program<R: tauri::Runtime>(
     .map_err(|error| format!("instance program update task failed: {error}"))?
 }
 
-async fn update_instance_program_inner(
+pub(super) async fn update_instance_program_inner(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
     validate: bool,
     _operation: StorageContextOperationGuard,
+    account_name: Option<String>,
 ) -> Result<ModuleInstallResult, String> {
     let storage = state.bootstrap_storage()?;
     initialize_database(&storage.paths)
@@ -428,6 +430,7 @@ async fn update_instance_program_inner(
             guard,
             validate,
             cancellation: lease.cancellation(),
+            account_name: account_name.as_deref(),
         },
         |update| {
             let _ =

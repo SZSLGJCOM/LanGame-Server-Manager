@@ -36,8 +36,8 @@ description = "2026-09-28 read-only comparison of installed Steam app 3017310 bu
 id = "runtime_rcon"
 kind = "runtime_rcon"
 path = "Soulmask RCON"
-authority = "module_runtime_surface"
-description = "Soulmask RCON endpoint and player-management commands declared in module.toml."
+authority = "isolated_installed_server_protocol_probe"
+description = "2026-10-17, Steam app 3017310 build 25361728: isolated Source RCON usp 1 1 and usp 1 0 with quoted synthetic Steam64 and complete EpicAccountId|ProductUserId added and removed the exact account in WS/Saved/BlackAccountList.txt. Legacy unban returned Not Found and left the file unchanged. lsp confirmed the account blacklist is disabled without -serverpm and enabled by bit 2. Real-player admission and kick behavior were not part of this probe."
 
 [[sources]]
 id = "echo_online_players_25117179"
@@ -1845,8 +1845,13 @@ reason = "Fixed by LanGame for managed Windows hosting."
 
 [[exclusions]]
 source = "runtime_rcon"
-key = "broadcast/List_OnlinePlayers/kick/ban/unban"
+key = "broadcast/List_OnlinePlayers/kick/usp"
 reason = "Runtime player actions are declared in module.toml instead of schema fields."
+
+[[exclusions]]
+source = "launch_args"
+key = "-serverpm"
+reason = "LanGame defaults the native permission mode to account-blacklist bit 2 only when extra launch arguments do not explicitly select a mode, preserving operator-selected permission combinations."
 
 [[sources]]
 id = "semantic_review_20260930"

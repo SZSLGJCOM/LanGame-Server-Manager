@@ -253,8 +253,8 @@ async function run() {
 
   await click(select<HTMLButtonElement>(".player-access-roster-select"));
   await click(select<HTMLButtonElement>(".player-access-edit-selected"));
-  check(select<HTMLInputElement>("#player-access-roster-admin_permissions-name").disabled,
-    "Editing an existing entry permits silent identity replacement");
+  check(!document.querySelector("#player-access-roster-admin_permissions-name"),
+    "Editing an existing entry exposes its identity for replacement");
   await input("#player-access-roster-admin_permissions-permission", "250");
   await key("Enter");
   check(review()?.textContent?.includes("Offline") && mutations.length === 4, "Offline object update skipped confirmation");

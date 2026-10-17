@@ -18,6 +18,68 @@ pub(super) fn dispatch<'a>(
     // Box each construction separately, as in the shared dispatcher. Large
     // native command futures must not accumulate on a connection worker's stack.
     match command {
+        "start_steam_workshop_account_login" => Some(Box::pin(async move {
+            to_json(crate::commands::commands_steam_workshop_account::start_steam_workshop_account_login(
+                app.state::<DesktopState>(), steam_login_target_argument(&args)?, string_argument(&args, "sessionId")?,
+            ).await?)
+        })),
+        "read_steam_workshop_account_login" => Some(Box::pin(async move {
+            to_json(crate::commands::commands_steam_workshop_account::read_steam_workshop_account_login(
+                app.state::<DesktopState>(), steam_login_target_argument(&args)?, string_argument(&args, "sessionId")?,
+            )?)
+        })),
+        "send_steam_workshop_account_input" => Some(Box::pin(async move {
+            // Never include a rejected credential value in decoding errors.
+            let revision = args
+                .get("expectedRevision")
+                .and_then(Value::as_u64)
+                .ok_or("Missing or invalid expectedRevision")?;
+            to_json(crate::commands::commands_steam_workshop_account::send_steam_workshop_account_input(
+                app.state::<DesktopState>(), steam_login_target_argument(&args)?,
+                string_argument(&args, "sessionId")?, revision, string_argument(&args, "input")?,
+            )?)
+        })),
+        "cancel_steam_workshop_account_login" => Some(Box::pin(async move {
+            to_json(crate::commands::commands_steam_workshop_account::cancel_steam_workshop_account_login(
+                app.state::<DesktopState>(), steam_login_target_argument(&args)?, string_argument(&args, "sessionId")?,
+            )?)
+        })),
+        "download_authenticated_steam_workshop_items" => Some(Box::pin(async move {
+            let request: WorkshopAccountDownloadInput = serde_json::from_value(args)
+                .map_err(|error| format!("Invalid Workshop account download input: {error}"))?;
+            to_json(crate::commands::commands_steam_workshop_account::download_authenticated_steam_workshop_items(
+                app.clone(), request.instance_id, request.ids, request.account_name,
+                request.missing_only, request.locale,
+            ).await?)
+        })),
+        "install_authenticated_module_game" => Some(Box::pin(async move {
+            let request: SteamModuleAccountInstallInput = serde_json::from_value(args)
+                .map_err(|_| String::from("Invalid authenticated server installation input."))?;
+            to_json(
+                crate::commands::commands_steam_app_account::install_authenticated_module_game(
+                    app.clone(),
+                    request.module_id,
+                    request.validate,
+                    request.account_name,
+                    request.target,
+                )
+                .await?,
+            )
+        })),
+        "clear_steam_server_account_authorization" => Some(Box::pin(async move {
+            to_json(crate::commands::commands_steam_app_account::clear_steam_server_account_authorization(
+                app.state::<DesktopState>(), steam_login_target_argument(&args)?,
+            )?)
+        })),
+        "update_authenticated_instance_program" => {
+            Some(Box::pin(async move {
+                let request: SteamInstanceAccountUpdateInput = serde_json::from_value(args)
+                    .map_err(|_| String::from("Invalid authenticated instance update input."))?;
+                to_json(crate::commands::commands_steam_app_account::update_authenticated_instance_program(
+                app.clone(), request.instance_id, request.validate, request.account_name,
+            ).await?)
+            }))
+        }
         "read_instance_save_import_support" => Some(Box::pin(async move {
             to_json(
                 crate::commands::commands_save_import::read_instance_save_import_support(
@@ -199,6 +261,44 @@ fn string_argument(args: &Value, name: &str) -> Result<String, String> {
         .and_then(Value::as_str)
         .map(str::to_owned)
         .ok_or_else(|| format!("Missing or invalid {name}"))
+}
+
+fn steam_login_target_argument(
+    args: &Value,
+) -> Result<crate::steam_workshop_account_sessions::SteamAccountLoginTarget, String> {
+    serde_json::from_value(
+        args.get("target")
+            .cloned()
+            .ok_or("Missing SteamCMD login target")?,
+    )
+    .map_err(|_| String::from("Invalid SteamCMD login target."))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SteamModuleAccountInstallInput {
+    module_id: String,
+    validate: bool,
+    account_name: String,
+    target: crate::steam_workshop_account_sessions::SteamAccountLoginTarget,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SteamInstanceAccountUpdateInput {
+    instance_id: String,
+    validate: bool,
+    account_name: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkshopAccountDownloadInput {
+    instance_id: String,
+    ids: Vec<String>,
+    account_name: String,
+    missing_only: Option<bool>,
+    locale: Option<String>,
 }
 
 fn input<T: serde::de::DeserializeOwned>(mut args: Value) -> Result<T, String> {

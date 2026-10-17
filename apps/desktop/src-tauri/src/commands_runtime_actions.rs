@@ -171,6 +171,15 @@ pub(super) fn resolve_declared_runtime_action(
         ));
     }
 
+    if descriptor.summary.id == "soulmask"
+        && matches!(action.id.as_str(), "ban_player" | "unban_player")
+        && !target.is_some_and(is_soulmask_permission_account_id)
+    {
+        return Err(String::from(
+            "Soulmask ban actions require a 17-digit positive Steam64 ID or the complete EpicAccountId|ProductUserId, with both Epic components containing exactly 32 hexadecimal characters.",
+        ));
+    }
+
     Ok(ResolvedRuntimeCommand {
         command: render_runtime_action_command_with_request_id(
             action,
@@ -185,6 +194,17 @@ pub(super) fn resolve_declared_runtime_action(
         password_setting_key: normalized_optional_metadata(action.password_setting_key.as_deref()),
         enabled_setting_key: normalized_optional_metadata(action.enabled_setting_key.as_deref()),
         runtime_action_id: Some(action.id.clone()),
+    })
+}
+
+fn is_soulmask_permission_account_id(value: &str) -> bool {
+    if value.len() == 17 && value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return value.parse::<u64>().is_ok_and(|id| id > 0);
+    }
+    value.split_once('|').is_some_and(|(epic, product)| {
+        [epic, product]
+            .into_iter()
+            .all(|part| part.len() == 32 && part.bytes().all(|byte| byte.is_ascii_hexdigit()))
     })
 }
 
@@ -403,3 +423,7 @@ fn normalized_optional_metadata(value: Option<&str>) -> Option<String> {
 #[cfg(test)]
 #[path = "commands_runtime_actions_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "commands_runtime_actions_soulmask_tests.rs"]
+mod soulmask_tests;
