@@ -223,7 +223,8 @@ fn future_fields_credentials_and_suspicious_names_never_become_display_labels() 
         let json = serde_json::to_string(&roster).unwrap();
         assert!(!json.contains("synthetic-test-only") && !json.contains("Password"));
     }
-    let fixture = Fixture::new(format!("{SECTION}\nKnownPlayerList=synthetic-test-only\n").as_bytes());
+    let fixture =
+        Fixture::new(format!("{SECTION}\nKnownPlayerList=synthetic-test-only\n").as_bytes());
     assert!(
         !fixture
             .read()

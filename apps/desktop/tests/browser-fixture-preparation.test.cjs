@@ -106,10 +106,13 @@ test("a missing transformed entry fails before browser launch", async () => {
 test("bundled preparation waits for the initial build and rejects missing output", async (t) => {
   const { server, client, calls } = boundary();
   server.config.experimental.bundledDev = true;
+  server.config.server = { port: 0 };
+  server.httpServer = { address: () => ({ address: "127.0.0.1", port: 43123 }) };
   let release;
   const built = new Promise((resolve) => { release = resolve; });
   t.after(() => release());
-  client.bundledDev = { waitForInitialBuildFinish: () => built, hasBuildOutput: true };
+  client.bundledDev = { waitForInitialBuildFinish: () => built, hasBuildOutput: true,
+    async storeStaticFiles() { calls.push(["static-client", server.config.server.port]); } };
   let completed = false;
   const preparation = prepareFixtureServer(server, "runtime-browser.html", []);
   preparation.then(() => { completed = true; });
@@ -117,9 +120,42 @@ test("bundled preparation waits for the initial build and rejects missing output
   assert.equal(completed, false);
   release();
   await preparation;
-  assert.deepEqual(calls, [["listen"]], "Bundled preparation must not use native ESM transforms");
+  assert.deepEqual(calls, [["listen"], ["static-client", 43123]],
+    "Bundled preparation must bind its client after initial output, without native ESM transforms");
   client.bundledDev.hasBuildOutput = false;
   await assert.rejects(prepareFixtureServer(server, "runtime-browser.html", []), /must produce initial output/);
+});
+
+test("bundled preparation rejects missing TCP binding or a changed client generation hook", async () => {
+  const { server, client } = boundary();
+  server.config.experimental.bundledDev = true;
+  server.config.server = { port: 0 };
+  client.bundledDev = { async waitForInitialBuildFinish() {}, hasBuildOutput: true };
+  await assert.rejects(prepareFixtureServer(server, "runtime-browser.html", []), /bound TCP port/);
+  server.httpServer = { address: () => ({ port: 43123 }) };
+  await assert.rejects(prepareFixtureServer(server, "runtime-browser.html", []), /client generation hook changed/);
+  assert.equal(server.config.server.port, 0, "A rejected hook cannot claim its client was rebound");
+});
+
+test("bundled preparation retains ownership until static client generation finishes", async (t) => {
+  const { server, client } = boundary();
+  server.config.experimental.bundledDev = true;
+  server.config.server = { port: 0 };
+  server.httpServer = { address: () => ({ port: 43123 }) };
+  let enter, release;
+  const entered = new Promise((resolve) => { enter = resolve; });
+  const generated = new Promise((resolve) => { release = resolve; });
+  t.after(() => release());
+  client.bundledDev = { async waitForInitialBuildFinish() {}, hasBuildOutput: true,
+    async storeStaticFiles() { enter(); await generated; } };
+  let completed = false;
+  const preparation = prepareFixtureServer(server, "runtime-browser.html", []);
+  preparation.then(() => { completed = true; });
+  await entered;
+  await nextTurn();
+  assert.equal(completed, false, "A browser must not launch with the old static client");
+  release();
+  await preparation;
 });
 
 async function createBundledFixture(t, files, { fixtureMiddleware, bundleWithMiddleware } = {}) {
@@ -162,6 +198,26 @@ test("real bundled Vite prepares only the selected entry with lazy, raw and CSS 
   const response = await fetch(`http://127.0.0.1:${server.httpServer.address().port}/tests/helpers/runtime-browser.html`);
   assert.equal(response.status, 200);
   assert.match(await response.text(), /<script/);
+});
+
+test("bundled client fallback and websocket token match its listening server", { timeout: 15000 }, async (t) => {
+  const { server, errors } = await createBundledFixture(t, { "entry.js": "export const ready = true;" });
+  await prepareFixtureServer(server, "runtime-browser.html", errors);
+  const port = server.httpServer.address().port;
+  assert.ok(Number.isSafeInteger(port) && port > 0, "The fixture must have a bound TCP port");
+  const response = await fetch(`http://127.0.0.1:${port}/bundledDevClient.mjs`);
+  assert.equal(response.status, 200);
+  const source = await response.text();
+  const value = (name) => {
+    const match = source.match(new RegExp(`const ${name} = ("[^"\\r\\n]*");`));
+    assert.ok(match, `The locked Vite bundled client ${name} declaration changed`);
+    return JSON.parse(match[1]);
+  };
+  assert.equal(value("serverHost"), `127.0.0.1:${port}/`);
+  assert.equal(value("directSocketHost"), `127.0.0.1:${port}/`);
+  // Compare only a boolean so a failed contract never logs the WebSocket token.
+  assert.equal(value("wsToken") === server.config.webSocketToken, true,
+    "The bundled client must use this server's current WebSocket token");
 });
 
 test("data-only archive middleware can serve its preference alongside real bundled fixture scripts", { timeout: 15000 }, async (t) => {

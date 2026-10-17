@@ -4,6 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { spawn, execFile, execFileSync } = require("node:child_process");
 const { promisify } = require("node:util");
+const { setTimeout: delay } = require("node:timers/promises");
 const { randomUUID } = require("node:crypto");
 const { after } = require("node:test");
 const { preProcessFile } = require("@typescript/typescript6");
@@ -51,6 +52,26 @@ function browserTimeBudgets({ fixtureTimeoutMs = 45000, browserStartupTimeoutMs 
   // Preparation, startup and cleanup share the existing command ceiling.
   // A larger startup phase limit does not grant extra total execution time.
   return { fixtureTimeoutMs, browserStartupTimeoutMs, commandTimeoutMs: fixtureTimeoutMs + 35000 };
+}
+
+/** Endpoint discovery, CDP connection and viewport setup share one startup phase. */
+function browserStartupBudget(startedAt, timeoutMs, commandDeadlineMs, exited) {
+  const expires = Math.min(startedAt + timeoutMs, commandDeadlineMs);
+  const controller = new AbortController();
+  let active = true;
+  exited.then((exit) => {
+    if (active) controller.abort(new Error(`Browser exited during startup: ${JSON.stringify(exit)}`));
+  });
+  return {
+    signal: controller.signal,
+    remaining() {
+      controller.signal.throwIfAborted();
+      const remaining = Math.floor(expires - performance.now());
+      assert.ok(remaining > 0, "Browser DevTools startup exhausted its total time budget");
+      return remaining;
+    },
+    dispose() { active = false; },
+  };
 }
 
 function sampleHostResources() {
@@ -136,6 +157,15 @@ async function prepareFixtureServer(server, fixturePath, compilationErrors) {
     await bundled.waitForInitialBuildFinish();
     if (compilationErrors.length) throw new Error(`Fixture compilation failed: ${compilationErrors.join("; ")}`);
     assert.ok(bundled.hasBuildOutput, "Bundled fixture must produce initial output");
+    const address = server.httpServer?.address();
+    assert.ok(address && typeof address !== "string" && Number.isSafeInteger(address.port)
+      && address.port > 0 && address.port <= 65535, "Bundled fixture must have a bound TCP port");
+    // Locked Vite 8.3.4 generates its static client before port:0 is bound.
+    // Regenerate its fallback address with the actual port; a failed initial
+    // WebSocket must never fall back to :0 and then send through an unset socket.
+    assert.equal(typeof bundled.storeStaticFiles, "function", "Vite bundled-dev client generation hook changed");
+    server.config.server.port = address.port;
+    await bundled.storeStaticFiles();
     return;
   }
   const entryUrl = `/tests/helpers/${fixturePath}`;
@@ -225,29 +255,51 @@ async function browserExecutable() {
   throw new Error("Chrome/Edge is required; set LANGAME_RELIABILITY_BROWSER to an installed executable");
 }
 
-async function browserCommand(endpoint, method, params = {}) {
+async function browserCommand(endpoint, method, params = {}, timeoutMs = 3000, signal) {
+  signal?.throwIfAborted();
+  assert.ok(timeoutMs > 0, "CDP command requires a remaining time budget");
   const startedAt = performance.now();
   const progress = { socket_open_ms: null, command_sent_ms: null };
   const socket = new WebSocket(endpoint);
+  let removeListeners = () => {};
   try {
     return await deadline(new Promise((resolve, reject) => {
-      socket.addEventListener("error", () => reject(new Error(`${method} connection failed`)));
-      socket.addEventListener("open", () => {
-        progress.socket_open_ms = Math.round(performance.now() - startedAt);
-        socket.send(JSON.stringify({ id: 1, method, params }));
-        progress.command_sent_ms = Math.round(performance.now() - startedAt);
-      }, { once: true });
-      socket.addEventListener("message", ({ data }) => {
-        const message = JSON.parse(data);
-        if (message.id !== 1) return;
-        if (message.error) reject(new Error(JSON.stringify(message.error)));
-        else resolve(message.result);
-      });
-    }), 3000, method);
+      const failed = () => reject(new Error(`${method} connection failed`));
+      const closed = () => reject(new Error(`${method} connection closed before response`));
+      const aborted = () => reject(signal.reason);
+      const opened = () => {
+        try {
+          progress.socket_open_ms = Math.round(performance.now() - startedAt);
+          socket.send(JSON.stringify({ id: 1, method, params }));
+          progress.command_sent_ms = Math.round(performance.now() - startedAt);
+        } catch (error) { reject(error); }
+      };
+      const received = ({ data }) => {
+        try {
+          const message = JSON.parse(data);
+          if (message.id !== 1) return;
+          if (message.error) reject(new Error(JSON.stringify(message.error)));
+          else resolve(message.result);
+        } catch (error) { reject(error); }
+      };
+      socket.addEventListener("error", failed);
+      socket.addEventListener("close", closed);
+      socket.addEventListener("open", opened);
+      socket.addEventListener("message", received);
+      signal?.addEventListener("abort", aborted, { once: true });
+      removeListeners = () => {
+        socket.removeEventListener("error", failed);
+        socket.removeEventListener("close", closed);
+        socket.removeEventListener("open", opened);
+        socket.removeEventListener("message", received);
+        signal?.removeEventListener("abort", aborted);
+      };
+    }), timeoutMs, method);
   } catch (error) {
     error.message += `; CDP progress: ${JSON.stringify(progress)}`;
     throw error;
   } finally {
+    removeListeners();
     socket.close();
   }
 }
@@ -273,7 +325,9 @@ async function readBrowserLog(scratch) {
   }
 }
 
-async function openViewportSession(endpoint) {
+async function openViewportSession(endpoint, timeoutMs = 3000, signal) {
+  signal?.throwIfAborted();
+  assert.ok(timeoutMs > 0, "Viewport connection requires a remaining time budget");
   const socket = new WebSocket(endpoint);
   let sequence = 0;
   let pending = false;
@@ -282,15 +336,18 @@ async function openViewportSession(endpoint) {
     await deadline(new Promise((resolve, reject) => {
       const opened = () => resolve();
       const failed = () => reject(new Error("Viewport DevTools connection failed"));
+      const aborted = () => reject(signal.reason);
       socket.addEventListener("open", opened);
       socket.addEventListener("error", failed);
       socket.addEventListener("close", failed);
+      signal?.addEventListener("abort", aborted, { once: true });
       removeListeners = () => {
         socket.removeEventListener("open", opened);
         socket.removeEventListener("error", failed);
         socket.removeEventListener("close", failed);
+        signal?.removeEventListener("abort", aborted);
       };
-    }), 3000, "Viewport DevTools connection");
+    }), timeoutMs, "Viewport DevTools connection");
   } catch (error) {
     socket.close();
     throw error;
@@ -298,7 +355,9 @@ async function openViewportSession(endpoint) {
     removeListeners();
   }
   return {
-    async command(method, params = {}, timeoutMs = 3000) {
+    async command(method, params = {}, timeoutMs = 3000, signal) {
+      signal?.throwIfAborted();
+      assert.ok(timeoutMs > 0, "Viewport command requires a remaining time budget");
       assert.equal(pending, false, "Viewport DevTools commands must remain sequential");
       assert.equal(socket.readyState, WebSocket.OPEN, "Viewport DevTools connection is closed");
       pending = true;
@@ -306,6 +365,7 @@ async function openViewportSession(endpoint) {
       try {
         return await deadline(new Promise((resolve, reject) => {
           const failed = () => reject(new Error(`${method} connection closed`));
+          const aborted = () => reject(signal.reason);
           const received = ({ data }) => {
             try {
               const message = JSON.parse(data);
@@ -317,10 +377,12 @@ async function openViewportSession(endpoint) {
           socket.addEventListener("message", received);
           socket.addEventListener("error", failed);
           socket.addEventListener("close", failed);
+          signal?.addEventListener("abort", aborted, { once: true });
           removeListeners = () => {
             socket.removeEventListener("message", received);
             socket.removeEventListener("error", failed);
             socket.removeEventListener("close", failed);
+            signal?.removeEventListener("abort", aborted);
           };
           socket.send(JSON.stringify({ id, method, params }));
         }), timeoutMs, method);
@@ -336,7 +398,7 @@ async function openViewportSession(endpoint) {
   };
 }
 
-async function verifyViewport(session, expected, waitForResize = false) {
+async function verifyViewport(session, expected, waitForResize = false, timeoutMs = 3000, signal) {
   const evaluated = await session.command("Runtime.evaluate", {
     expression: waitForResize ? `new Promise(resolve => {
       const measure = () => {
@@ -348,7 +410,7 @@ async function verifyViewport(session, expected, waitForResize = false) {
       measure();
     })` : "({ width: innerWidth, height: innerHeight })",
     awaitPromise: waitForResize, returnByValue: true,
-  });
+  }, timeoutMs, signal);
   assert.equal(evaluated.exceptionDetails, undefined, "CSS viewport inspection failed");
   const actual = evaluated.result?.value;
   assert.deepEqual(actual, expected, "Browser CSS viewport must match the requested dimensions");
@@ -508,18 +570,22 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let processSnapshotKnown = false;
   let retainedScratch = null;
   const cleanupErrors = [];
-  async function pageEndpoint(waitForTarget = false) {
+  async function pageEndpoint(waitForTarget = false, startupBudget = null) {
     assert.ok(endpoint, "Browser DevTools endpoint is not ready");
     const browserUrl = new URL(endpoint);
-    const expires = Date.now() + 5000;
+    const expires = performance.now() + 5000;
     do {
-      const response = await fetch(`http://${browserUrl.host}/json/list`, { signal: AbortSignal.timeout(3000) });
+      const timeoutMs = startupBudget ? startupBudget.remaining() : 3000;
+      const timeoutSignal = AbortSignal.timeout(timeoutMs);
+      const signal = startupBudget ? AbortSignal.any([startupBudget.signal, timeoutSignal]) : timeoutSignal;
+      const response = await fetch(`http://${browserUrl.host}/json/list`, { signal });
       assert.equal(response.ok, true);
       const target = (await response.json()).find((page) => page.type === "page"
         && (pageTargetId ? page.id === pageTargetId : page.url.includes(nonce)));
       if (target?.webSocketDebuggerUrl) return target.webSocketDebuggerUrl;
-      assert.ok(waitForTarget && Date.now() < expires, "Owned fixture page was not found");
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      assert.ok(waitForTarget && (startupBudget || performance.now() < expires), "Owned fixture page was not found");
+      await delay(startupBudget ? Math.min(25, startupBudget.remaining()) : 25, undefined,
+        startupBudget ? { signal: startupBudget.signal } : undefined);
     } while (true);
   }
   // This is a hard bound even if a library retains an open handle after an error.
@@ -710,36 +776,41 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
       const value = stderr.match(/DevTools listening on (ws:\/\/127\.0\.0\.1:\d+\/devtools\/browser\/[\w-]+)/)?.[1];
       if (value) publishEndpoint(value, "stderr");
     });
-    await waitForBrowserEndpoint(endpointReady, exited, browserStartupTimeoutMs, {
-      profileDirectory: path.join(scratch, "profile"),
-      onObservation: (observation) => { startup.devtools_port_file = observation; },
-      onEndpoint: (value) => publishEndpoint(value, "port-file"),
-    });
-    if (viewport) {
-      // A CDP-created blank target needs no HTTP request before emulation is set.
-      const target = await browserCommand(endpoint, "Target.createTarget", { url: "about:blank" });
-      assert.ok(typeof target.targetId === "string" && target.targetId.length > 0, "Viewport target was not created");
-      pageTargetId = target.targetId;
-      viewportSession = await openViewportSession(await pageEndpoint(true));
-      // Window size includes browser chrome. Keep this session connected because
-      // Chromium clears device metrics when its owning DevTools client detaches.
-      await viewportSession.command("Emulation.setDeviceMetricsOverride", {
-        width: viewport.width, height: viewport.height, deviceScaleFactor, mobile: false,
+    const startupBudget = browserStartupBudget(browserStartedAt, browserStartupTimeoutMs, browserCleanupDeadlineMs, exited);
+    try {
+      await waitForBrowserEndpoint(endpointReady, exited, startupBudget.remaining(), {
+        profileDirectory: path.join(scratch, "profile"),
+        onObservation: (observation) => { startup.devtools_port_file = observation; },
+        onEndpoint: (value) => publishEndpoint(value, "port-file"),
       });
-      await verifyViewport(viewportSession, viewport, true);
-      if (reducedMotion !== undefined) {
-        await viewportSession.command("Emulation.setEmulatedMedia", {
-          features: [{ name: "prefers-reduced-motion", value: reducedMotion }],
-        });
-        const motion = await viewportSession.command("Runtime.evaluate", {
-          expression: "matchMedia('(prefers-reduced-motion: reduce)').matches", returnByValue: true,
-        });
-        assert.equal(motion.exceptionDetails, undefined, "Motion preference inspection failed");
-        assert.equal(motion.result?.value, reducedMotion === "reduce", "Browser motion preference must match the scenario");
+      if (viewport) {
+        // A CDP-created blank target needs no HTTP request before emulation is set.
+        const target = await browserCommand(endpoint, "Target.createTarget", { url: "about:blank" },
+          startupBudget.remaining(), startupBudget.signal);
+        assert.ok(typeof target.targetId === "string" && target.targetId.length > 0, "Viewport target was not created");
+        pageTargetId = target.targetId;
+        const targetEndpoint = await pageEndpoint(true, startupBudget);
+        viewportSession = await openViewportSession(targetEndpoint, startupBudget.remaining(), startupBudget.signal);
+        // Window size includes browser chrome. Keep this session connected because
+        // Chromium clears device metrics when its owning DevTools client detaches.
+        await viewportSession.command("Emulation.setDeviceMetricsOverride", {
+          width: viewport.width, height: viewport.height, deviceScaleFactor, mobile: false,
+        }, startupBudget.remaining(), startupBudget.signal);
+        await verifyViewport(viewportSession, viewport, true, startupBudget.remaining(), startupBudget.signal);
+        if (reducedMotion !== undefined) {
+          await viewportSession.command("Emulation.setEmulatedMedia", {
+            features: [{ name: "prefers-reduced-motion", value: reducedMotion }],
+          }, startupBudget.remaining(), startupBudget.signal);
+          const motion = await viewportSession.command("Runtime.evaluate", {
+            expression: "matchMedia('(prefers-reduced-motion: reduce)').matches", returnByValue: true,
+          }, startupBudget.remaining(), startupBudget.signal);
+          assert.equal(motion.exceptionDetails, undefined, "Motion preference inspection failed");
+          assert.equal(motion.result?.value, reducedMotion === "reduce", "Browser motion preference must match the scenario");
+        }
+        startup.viewport_ready_ms = Math.round(performance.now() - browserStartedAt);
+        finishStartupObservation();
       }
-      startup.viewport_ready_ms = Math.round(performance.now() - browserStartedAt);
-      finishStartupObservation();
-    }
+    } finally { startupBudget.dispose(); }
     report = await waitForFixtureReport({ session: viewportSession, url, result, exited, timeoutMs: fixtureTimeoutMs });
     assert.equal(report.status, "passed", report.error || JSON.stringify(report));
     assert.ok(endpoint, "Browser did not publish its isolated DevTools endpoint");
@@ -881,5 +952,5 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 }
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
-  browserTimeBudgets, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer,
+  browserTimeBudgets, browserStartupBudget, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer, openViewportSession,
   fixtureUsesBundledDev, fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog };
