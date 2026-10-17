@@ -23,6 +23,17 @@ from scripts.verify_open_source_boundary import (
     is_unapproved_asset_path,
 )
 
+# Reviewed synthetic credentials and embedded console prompts in ca33c10.
+# Current fixtures use recognized placeholders. Historical exceptions apply only
+# to these immutable blobs and assigned-secret locations, never other findings.
+SYNTHETIC_FIXTURE_ASSIGNMENTS = {
+    ("apps/desktop/src-tauri/src/steam_workshop_account_sessions_tests.rs", "a485bf8b0e406cd02ed2ee87727a2d9a79eb5b45"): {287},
+    ("crates/app-runtime/src/interactive_console_tests.rs", "06624529f340dc9687ebc02b0534beee06cf9e8d"): {100},
+    ("crates/app-steamcmd/src/steamcmd_account_bridge_tests.rs", "77ea25a15d1fe4383604702a5918fc20c6b1a943"): {81},
+    ("crates/app-steamcmd/src/steamcmd_account_session_tests.rs", "491c0bc06d77359ee4d69e934954ab9401e3e716"): {20, 94, 479},
+    ("crates/app-storage/src/native_bans_tests.rs", "13fc79752771f262e3287237c4b261d7562b9ab2"): {411},
+}
+
 
 @dataclass(frozen=True)
 class HistoricalFileVersion:
@@ -267,6 +278,9 @@ def _scan_file_version(
             )
 
     for secret_finding in scan_payload(path, payload):
+        if (secret_finding.rule == "assigned-secret" and secret_finding.line in
+                SYNTHETIC_FIXTURE_ASSIGNMENTS.get((normalized_path, version.object_id), ())):
+            continue
         findings.append(
             HistoryFinding(
                 version.commit,

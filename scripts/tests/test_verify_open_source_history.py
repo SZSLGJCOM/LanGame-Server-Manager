@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import io
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from scripts.open_source_product_policy import scan_product_payload
 from scripts.verify_open_source_history import (
@@ -17,6 +19,23 @@ from scripts.verify_open_source_history import (
 
 
 class OpenSourceHistoryScannerTests(unittest.TestCase):
+    def test_reviewed_assignment_exception_cannot_hide_changed_or_relocated_content(self) -> None:
+        path = Path("tests/console_tests.rs")
+        payload = b'let ' + b'password' + b' = "HistoricalSyntheticPassword";\n'
+
+        def blob_id(content: bytes) -> str:
+            return hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+
+        object_id = blob_id(payload)
+        with patch("scripts.verify_open_source_history.SYNTHETIC_FIXTURE_ASSIGNMENTS", {(path.as_posix(), object_id): {1}}):
+            self.assertEqual(_scan_file_version(HistoricalFileVersion("fixture", path, object_id), payload, frozenset()), ())
+            for candidate_path, candidate_payload in (
+                (path, payload + b'let ' + b'password' + b' = "UnreviewedCredentialValue";\n'),
+                (Path("src/console.rs"), payload),
+            ):
+                findings = _scan_file_version(HistoricalFileVersion("fixture", candidate_path, blob_id(candidate_payload)), candidate_payload, frozenset())
+                self.assertTrue(any(item.rule == "history-secret:assigned-secret" for item in findings))
+
     def _initialize_repository(self, repository: Path) -> None:
         self._git(repository, "init", "--quiet")
         self._git(repository, "config", "user.name", "History Scanner Test")

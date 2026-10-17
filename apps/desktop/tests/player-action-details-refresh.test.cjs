@@ -40,6 +40,7 @@ function harness() {
     } },
     "../app-ui": { message: (key, params) => ({ key, params }) },
     "./useSteamCmdActions": {}, "../installation-cancellation": {}, "../install-state-presentation": {}, "../server-start-error": {},
+    "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key, params) => `${key}: ${params.error}` }) },
     "../instance-panel-refresh": loadModule("instance-panel-refresh.ts"),
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({}) }

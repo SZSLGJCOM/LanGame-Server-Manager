@@ -66,7 +66,7 @@ function fixture() {
   const noOp = () => {};
   const context = {
     ...model, ...plans, ...collections, ...patch, parseSettingsObject, exports, Set, Map,
-    moduleId: "projectzomboid", expectedAppId: 108600, locale: "en-US", readOnly: false,
+    moduleId: "projectzomboid", expectedAppId: 108600, locale: "en-US", readOnly: false, steamAccount: undefined,
     workflow: { steamDownloadMode: "steamcmd-cache" },
     modMutationsDisabled: false, modWorkflowUnsupported: false,
     modChangesBlockedRef: { current: false },
@@ -133,7 +133,7 @@ function fixture() {
   };
 }
 
-test("PZ collection install preserves unrelated changes arriving while its local metadata scan is pending", async () => {
+test("PZ collection install preserves unrelated changes arriving while its local metadata scan is pending", { timeout: 10000 }, async () => {
   const f = fixture();
   const installation = f.install();
   await f.scanStarted;
@@ -153,7 +153,7 @@ test("PZ collection install preserves unrelated changes arriving while its local
   ]);
 });
 
-test("PZ collection install reports a source conflict instead of replacing a collection added during its scan", async () => {
+test("PZ collection install reports a source conflict instead of replacing a collection added during its scan", { timeout: 10000 }, async () => {
   const f = fixture();
   const installation = f.install();
   await f.scanStarted;
@@ -230,7 +230,7 @@ function dstFixture() {
   };
 }
 
-test("DST member enable, disable and remove refuse newly introduced raw Lua at the final settings read", async () => {
+test("DST member enable, disable and remove refuse newly introduced raw Lua at the final settings read", { timeout: 10000 }, async () => {
   for (const action of ["enable", "disable", "remove"]) {
     for (const shard of ["master", "caves"]) {
       const f = dstFixture();
@@ -247,7 +247,7 @@ test("DST member enable, disable and remove refuse newly introduced raw Lua at t
   }
 });
 
-test("DST member enable, disable and remove cannot revive ownership removed during the final settings read", async () => {
+test("DST member enable, disable and remove cannot revive ownership removed during the final settings read", { timeout: 10000 }, async () => {
   for (const action of ["enable", "disable", "remove"]) {
     const f = dstFixture();
     const operation = f.start(action);
@@ -262,7 +262,7 @@ test("DST member enable, disable and remove cannot revive ownership removed duri
   }
 });
 
-test("DST member controls still merge unrelated settings changed during the final read", async () => {
+test("DST member controls still merge unrelated settings changed during the final read", { timeout: 10000 }, async () => {
   for (const action of ["enable", "disable", "remove"]) {
     const f = dstFixture();
     const operation = f.start(action);
@@ -350,7 +350,7 @@ function controlFixture(moduleId, enabled) {
 }
 
 for (const moduleId of ["barotrauma", "conanexiles", "soulmask"]) {
-  test(`${moduleId}: removal rejects both enablement migrations at its final read without saving`, async () => {
+  test(`${moduleId}: removal rejects both enablement migrations at its final read without saving`, { timeout: 10000 }, async () => {
     for (const enabled of [false, true]) {
       const f = controlFixture(moduleId, enabled);
       const operation = f.start("remove");
@@ -363,7 +363,7 @@ for (const moduleId of ["barotrauma", "conanexiles", "soulmask"]) {
       assert.deepEqual(f.persisted(), external);
     }
   });
-  test(`${moduleId}: removing either enabled or disabled members merges unrelated changes once`, async () => {
+  test(`${moduleId}: removing either enabled or disabled members merges unrelated changes once`, { timeout: 10000 }, async () => {
     for (const enabled of [false, true]) {
       const f = controlFixture(moduleId, enabled), operation = f.start("remove");
       await f.secondReadStarted;
@@ -379,7 +379,7 @@ for (const moduleId of ["barotrauma", "conanexiles", "soulmask"]) {
 }
 
 for (const moduleId of ["projectzomboid", "palworld"]) {
-  test(`${moduleId}: actual enable, disable and remove handlers reject changed control settings at the final read`, async () => {
+  test(`${moduleId}: actual enable, disable and remove handlers reject changed control settings at the final read`, { timeout: 10000 }, async () => {
     for (const action of ["enable", "disable", "remove"]) {
       const f = controlFixture(moduleId, action !== "enable"), operation = f.start(action);
       const rejected = assert.rejects(operation, /collections changed elsewhere/i);
@@ -391,7 +391,7 @@ for (const moduleId of ["projectzomboid", "palworld"]) {
       assert.deepEqual(f.persisted(), external);
     }
   });
-  test(`${moduleId}: actual member controls preserve unrelated final-read changes in one save`, async () => {
+  test(`${moduleId}: actual member controls preserve unrelated final-read changes in one save`, { timeout: 10000 }, async () => {
     for (const action of ["enable", "disable", "remove"]) {
       const f = controlFixture(moduleId, action !== "enable"), operation = f.start(action);
       await f.secondReadStarted;
@@ -407,7 +407,7 @@ for (const moduleId of ["projectzomboid", "palworld"]) {
   });
 }
 
-test("Squad member removal reaches its dedicated transaction with unchanged settings and a fresh CAS token", async () => {
+test("Squad member removal reaches its dedicated transaction with unchanged settings and a fresh CAS token", { timeout: 10000 }, async () => {
   const f = controlFixture("squad", true), operation = f.start("remove");
   await f.secondReadStarted;
   const external = { ...f.initial, public_name: "External name", independent_setting: 42 };

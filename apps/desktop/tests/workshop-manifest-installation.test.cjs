@@ -14,6 +14,7 @@ const plans = require("../src/views/servers/mod-workbench-plans.ts");
 const enablement = require("../src/views/servers/steam-workshop-enablement-plan.ts");
 const dstPolicy = require("../src/views/servers/mod-workbench-dst-policy.ts");
 const collections = require("../src/views/servers/mod-workbench-collections.ts");
+const { requiresSteamWorkshopAccount } = require("../src/views/servers/steam-workshop-access-error.ts");
 const { restoreRemovedWorkshopIds } = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
 const filename = path.resolve(__dirname, "../src/views/servers/ModWorkbench.tsx");
 const source = fs.readFileSync(filename, "utf8");
@@ -35,7 +36,7 @@ function harness(moduleId, settings, installedIds = [], options = {}) {
   const exports = {};
   const context = {
     ...model, ...plans, ...enablement, ...dstPolicy, ...collections, restoreRemovedWorkshopIds, exports, Set, Map, Error,
-    moduleId, settings, latestSettingsRef, expectedAppId: appId,
+    moduleId, settings, latestSettingsRef, expectedAppId: appId, steamAccount: undefined, requiresSteamWorkshopAccount,
     workflow: { steamDownloadMode: "steamcmd-cache" },
     modMutationsDisabled: false, modWorkflowUnsupported: false,
     lookupMap: items, props: { details: { summary: { id: "fixture-instance" } } },
