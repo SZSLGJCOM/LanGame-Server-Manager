@@ -10,7 +10,8 @@ from unittest.mock import patch
 from scripts.verify_desktop_runtime_dependencies import PeFormatError, main, read_imports, verify_binary
 
 
-def pe_fixture(import_name=b"KERNEL32.dll", delay_name=b"msvcrt.dll", *, pe32=False, delay_va=False):
+def pe_fixture(import_name=b"KERNEL32.dll", delay_name=b"msvcrt.dll", *, pe32=False, delay_va=False,
+               subsystem=2):
     data = bytearray(1536)
     data[:2] = b"MZ"
     struct.pack_into("<I", data, 60, 128)
@@ -23,6 +24,7 @@ def pe_fixture(import_name=b"KERNEL32.dll", delay_name=b"msvcrt.dll", *, pe32=Fa
     struct.pack_into("<I" if pe32 else "<Q", data, optional + (28 if pe32 else 24),
                      0x400000 if pe32 else 0x140000000)
     struct.pack_into("<I", data, optional + 60, 512)
+    struct.pack_into("<H", data, optional + 68, subsystem)
     struct.pack_into("<I", data, optional + directory_start - 4, 16)
     struct.pack_into("<II", data, optional + directory_start + 8, 0x1000, 40)
     struct.pack_into("<II", data, optional + directory_start + 13 * 8, 0x1040, 64)
@@ -42,7 +44,37 @@ class DesktopRuntimeDependencyTests(unittest.TestCase):
         for pe32, delay_va in ((False, False), (True, False), (True, True)):
             with self.subTest(pe32=pe32, delay_va=delay_va):
                 self.assertEqual(read_imports(pe_fixture(pe32=pe32, delay_va=delay_va)),
-                                 {"imports": ["KERNEL32.dll"], "delayImports": ["msvcrt.dll"]})
+                                 {"imports": ["KERNEL32.dll"], "delayImports": ["msvcrt.dll"],
+                                  "subsystem": 2})
+
+    def test_requires_gui_for_main_and_allows_console_helpers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            main_path, helper = Path(directory) / "langame-desktop.exe", Path(directory) / "install_catalog.exe"
+            for pe32 in (False, True):
+                with self.subTest(pe32=pe32):
+                    main_path.write_bytes(pe_fixture(pe32=pe32, subsystem=2))
+                    helper.write_bytes(pe_fixture(pe32=pe32, subsystem=3))
+                    self.assertEqual(verify_binary(main_path, require_gui=True)["subsystem"], 2)
+                    self.assertEqual(verify_binary(helper)["subsystem"], 3)
+                    main_path.write_bytes(pe_fixture(pe32=pe32, subsystem=3))
+                    with self.assertRaisesRegex(PeFormatError, "Expected Windows GUI subsystem.*found 3"):
+                        verify_binary(main_path, require_gui=True)
+
+    def test_cli_applies_gui_requirement_only_to_the_explicit_main(self):
+        with tempfile.TemporaryDirectory() as directory:
+            main_path, helper = Path(directory) / "main.exe", Path(directory) / "helper.exe"
+            helper.write_bytes(pe_fixture(subsystem=3))
+            for subsystem, expected_exit in ((2, 0), (3, 1)):
+                main_path.write_bytes(pe_fixture(subsystem=subsystem))
+                output = io.StringIO()
+                with patch("sys.argv", ["verify", "--require-gui", str(main_path), str(helper)]), contextlib.redirect_stdout(output):
+                    self.assertEqual(main(), expected_exit)
+                report = json.loads(output.getvalue())
+                self.assertEqual(len(report["files"]), 2)
+                self.assertEqual(report["files"][1]["subsystem"], 3)
+                self.assertNotIn("error", report["files"][1])
+                if expected_exit:
+                    self.assertIn("found 3", report["files"][0]["error"])
 
     def test_rejects_separate_vc_runtime_in_both_import_tables(self):
         names = (b"VCRUNTIME140.dll", b"vcruntime140_1.dll", b"MSVCP140.dll", b"msvcr120.dll", b"concrt140.dll")

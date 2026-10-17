@@ -1,4 +1,4 @@
-"""Reject desktop PE imports that require a separately installed Visual C++ runtime."""
+"""Check desktop PE runtime imports and explicitly required GUI executables."""
 
 import argparse
 import hashlib
@@ -17,7 +17,7 @@ class PeFormatError(ValueError):
     """A required PE structure cannot be read within its declared file bounds."""
 
 
-def read_imports(data: bytes | mmap.mmap) -> dict[str, list[str]]:
+def read_imports(data: bytes | mmap.mmap) -> dict[str, list[str] | int]:
     if not 64 <= len(data) <= MAX_FILE_BYTES:
         raise PeFormatError("PE file size is outside the supported bounds")
 
@@ -45,6 +45,7 @@ def read_imports(data: bytes | mmap.mmap) -> dict[str, list[str]]:
         raise PeFormatError("Expected a PE32 or PE32+ optional header")
     if optional_size < directory_start:
         raise PeFormatError("Truncated optional header")
+    subsystem = unpack("<H", optional + 68)[0]
     directory_count = unpack("<I", optional + directory_start - 4)[0]
     if directory_count > 16 or directory_start + directory_count * 8 > optional_size:
         raise PeFormatError("Invalid data-directory table")
@@ -116,10 +117,10 @@ def read_imports(data: bytes | mmap.mmap) -> dict[str, list[str]]:
             names.append(dll_name(name))
         raise PeFormatError("Import directory has no bounded null terminator")
 
-    return {"imports": imports(1, False), "delayImports": imports(13, True)}
+    return {"imports": imports(1, False), "delayImports": imports(13, True), "subsystem": subsystem}
 
 
-def verify_binary(path: Path) -> dict[str, object]:
+def verify_binary(path: Path, *, require_gui: bool = False) -> dict[str, object]:
     with path.open("rb") as stream:
         size = stream.seek(0, 2)
         if not 64 <= size <= MAX_FILE_BYTES:
@@ -127,18 +128,26 @@ def verify_binary(path: Path) -> dict[str, object]:
         with mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as data:
             imports = read_imports(data)
             sha = hashlib.sha256(data).hexdigest()
-    forbidden = sorted({name for names in imports.values() for name in names if VC_RUNTIME.fullmatch(name)})
+    if require_gui and imports["subsystem"] != 2:
+        raise PeFormatError(f"Expected Windows GUI subsystem (2), found {imports['subsystem']}")
+    forbidden = sorted({name for key in ("imports", "delayImports")
+                        for name in imports[key] if VC_RUNTIME.fullmatch(name)})
     return {"path": str(path), "sha256": sha, **imports, "forbiddenRuntimeImports": forbidden}
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("executables", nargs="+", type=Path)
+    parser.add_argument("--require-gui", action="append", type=Path, default=[], metavar="EXE",
+                        help="Check this executable and require its PE subsystem to be Windows GUI (2)")
+    parser.add_argument("executables", nargs="*", type=Path)
     args = parser.parse_args()
+    executables = list(dict.fromkeys([*args.require_gui, *args.executables]))
+    if not executables:
+        parser.error("at least one executable or --require-gui EXE is required")
     results = []
-    for path in args.executables:
+    for path in executables:
         try:
-            results.append(verify_binary(path))
+            results.append(verify_binary(path, require_gui=path in args.require_gui))
         except (OSError, PeFormatError) as error:
             results.append({"path": str(path), "error": str(error)})
     failed = any(item.get("error") or item.get("forbiddenRuntimeImports") for item in results)

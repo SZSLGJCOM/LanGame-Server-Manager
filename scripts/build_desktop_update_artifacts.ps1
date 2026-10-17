@@ -258,7 +258,7 @@ if ($BuildManaged) {
     }
     $executable = @($verified.receipt.artifacts | Where-Object { $_.targetRelativePath -ceq 'release/langame-desktop.exe' })
     if ($executable.Count -ne 1) { throw 'Build receipt does not contain exactly one desktop executable.' }
-    & python -B (Join-Path $PSScriptRoot 'verify_desktop_runtime_dependencies.py') $executable[0].path
+    & python -B (Join-Path $PSScriptRoot 'verify_desktop_runtime_dependencies.py') --require-gui $executable[0].path
     if ($LASTEXITCODE -ne 0) { throw 'Desktop executable runtime dependency verification failed.' }
     $installer = @($verified.receipt.artifacts | Where-Object { $_.targetRelativePath -ceq "release/bundle/nsis/$artifactName" })
     if ($installer.Count -ne 1) { throw 'Build receipt does not contain the expected installer.' }
@@ -316,7 +316,7 @@ if ($BuildPortable) {
         }
         $binaryRoot = Join-Path $cargoTargetRoot 'x86_64-pc-windows-msvc/release'
         & python -B (Join-Path $PSScriptRoot 'verify_desktop_runtime_dependencies.py') `
-            (Join-Path $binaryRoot 'langame-desktop.exe') (Join-Path $binaryRoot 'install_catalog.exe')
+            --require-gui (Join-Path $binaryRoot 'langame-desktop.exe') (Join-Path $binaryRoot 'install_catalog.exe')
         if ($LASTEXITCODE -ne 0) { throw 'Desktop executable runtime dependency verification failed.' }
     }
     finally {
