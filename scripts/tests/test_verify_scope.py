@@ -73,7 +73,7 @@ class RustScopeTests(unittest.TestCase):
 
     def test_storage_production_changes_keep_its_real_consumers_and_process_evidence(self):
         packages = scope.rust_selection(["crates/app-storage/src/lib.rs"])
-        self.assertEqual(packages, ["app-platform-win", "app-runtime", "app-storage", "langame-desktop"])
+        self.assertEqual(packages, ["app-platform-win", "app-runtime", "app-steamcmd", "app-storage", "langame-desktop"])
         core, storage, workspace = stages(full_workspace=True, include_web=False, packages=packages)
         self.assertIn("--test-threads=2", storage.command)
         self.assertNotIn("--lib", storage.command)

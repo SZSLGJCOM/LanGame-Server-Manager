@@ -36,6 +36,12 @@ class VerificationSelectionTests(unittest.TestCase):
         selected = frontend_selection(["apps/desktop/src/views/servers/RuntimeSurfaceWorkbench.tsx"])
         for name in ("ark-cluster-maps", "dst-four-shards", "instance-retirement", "desktop-layout"):
             self.assertIn(f"apps/desktop/tests/{name}-browser.test.cjs", selected)
+        for component in ("ModWorkbench", "RuntimeSurfaceWorkbench"):
+            selected = frontend_selection([f"apps/desktop/src/views/servers/{component}.tsx"])
+            self.assertIn("apps/desktop/tests/steam-workshop-account-browser.test.cjs", selected)
+        for component in ("BackupTable", "ProgramUpdatePolicyEditor"):
+            selected = frontend_selection([f"apps/desktop/src/views/servers/{component}.tsx"])
+            self.assertIn("apps/desktop/tests/steam-server-install-account-browser.test.cjs", selected)
 
     def test_library_changes_keep_full_coverage_for_shared_installation_consumers(self):
         for path in ("apps/desktop/src/views/library/LibraryServerActions.tsx", "apps/desktop/src/views/LibraryView.tsx"):

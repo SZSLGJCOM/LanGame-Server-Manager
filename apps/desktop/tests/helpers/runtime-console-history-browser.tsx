@@ -315,6 +315,39 @@ async function run() {
     "Command routing must pass the password setting key, not copy its secret into dispatch options");
   scenarios++;
 
+  const commandProps = { details: props.details, moduleDetails: props.moduleDetails,
+    onSendRuntimeCommand: props.onSendRuntimeCommand };
+  const blockedCommandStates: string[] = [];
+  const unavailableStates: Array<[string, Partial<ComponentProps<typeof RuntimeSurfaceWorkbench>>]> = [
+    ["module-unavailable", { moduleDetails: null }],
+    ["instance-stopped", { details: { ...props.details, active_run: null,
+      summary: { ...props.details.summary, status: "Stopped", active_process_count: 0 } } }],
+    ["dispatch-unavailable", { onSendRuntimeCommand: undefined }]
+  ];
+  for (const [label, patch] of unavailableStates) {
+    Object.assign(props, commandProps);
+    await act(async () => { render(); });
+    const draft = fixture.querySelector<HTMLInputElement>(".server-runtime-console-command-input")!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(draft, "guard-probe");
+      draft.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    Object.assign(props, patch);
+    await act(async () => { render(); });
+    check(fixture.querySelector<HTMLInputElement>(".server-runtime-console-command-input")!.disabled,
+      `${label} must disable command input`);
+    const before = dispatches.length;
+    await act(async () => {
+      fixture.querySelector<HTMLFormElement>(".server-runtime-console-command-form")!
+        .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+    check(dispatches.length === before, `${label} must reject a direct form submission`);
+    blockedCommandStates.push(label);
+    scenarios++;
+  }
+  Object.assign(props, commandProps);
+  await act(async () => { render(); });
+
   separateNativeSource = false;
   processDocuments.set(43, snapshot("fixture/shard.log", lines("SHARD", 200)));
   props.details = { ...props.details, active_run: { ...props.details.active_run!, processes: [
@@ -445,7 +478,7 @@ async function run() {
   scenarios++;
   await act(async () => { root.unmount(); });
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", scenarios, reads, browser_errors: errors };
+  return { status: "passed", scenarios, reads, blocked_command_states: blockedCommandStates, browser_errors: errors };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

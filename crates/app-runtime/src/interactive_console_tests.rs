@@ -97,7 +97,11 @@ mod windows {
         let fixture = Fixture::new();
         let output = MemoryOutput::default();
         let mut console = fixture.spawn(
-            "[Console]::Write('redirected:'+ [Console]::IsInputRedirected+':'+[Console]::IsOutputRedirected+' Password: '); $line=[Console]::ReadLine(); if($line -cne 'synthetic-玩家'){exit 9}; [Console]::WriteLine('accepted-length:'+$line.Length); exit 23",
+            r#"[Console]::Write('redirected:'+ [Console]::IsInputRedirected+':'+[Console]::IsOutputRedirected+' Password: ')
+$line=[Console]::ReadLine()
+if($line -cne 'synthetic-玩家'){exit 9}
+[Console]::WriteLine('accepted-length:'+$line.Length)
+exit 23"#,
             output.clone(),
         );
         await_text(&mut console, &output, "Password:");

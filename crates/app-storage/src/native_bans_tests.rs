@@ -408,7 +408,7 @@ fn necesse_reads_instance_data_root_and_uses_its_own_native_subject_namespace() 
 #[test]
 fn rimworld_projects_username_and_boolean_ban_without_credentials_or_ip() {
     let fixture = Fixture::new();
-    let banned = br#"{"Username":"FormerVisitor","IsBanned":true,"Password":"synthetic-private-password","LatestIP":"synthetic-private-ip","Hash":"synthetic-private-hash"}"#;
+    let banned = br#"{"Username":"FormerVisitor","IsBanned":true,"Password":"fixture-password","LatestIP":"synthetic-private-ip","Hash":"synthetic-private-hash"}"#;
     let path = fixture.write("Assets/Users/FormerVisitor.json", banned);
     fixture.write(
         "Assets/Users/Allowed.json",
@@ -423,11 +423,14 @@ fn rimworld_projects_username_and_boolean_ban_without_credentials_or_ip() {
             identity_kind: RuntimePlayerIdentityKind::PlayerName,
         }]
     );
-    assert!(
-        !serde_json::to_string(&roster)
-            .unwrap()
-            .contains("synthetic-private")
-    );
+    let serialized = serde_json::to_string(&roster).unwrap();
+    for private_value in [
+        "fixture-password",
+        "synthetic-private-ip",
+        "synthetic-private-hash",
+    ] {
+        assert!(!serialized.contains(private_value));
+    }
     assert_eq!(fs::read(path).unwrap(), banned);
     assert_eq!(fixture.read("rimworld").unwrap().entries, roster.entries);
 }

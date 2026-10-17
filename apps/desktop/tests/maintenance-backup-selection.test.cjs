@@ -28,6 +28,7 @@ function loadActions(api) {
     "../app-ui": { message: (key, params, extra) => ({ key, params, ...extra }), programCleanupDetails },
     "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
     "../installation-cancellation": {},
+    "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../install-state-presentation": {},
     "../instance-panel-refresh": {},

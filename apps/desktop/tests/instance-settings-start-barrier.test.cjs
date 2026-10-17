@@ -82,6 +82,7 @@ function actions(owner) {
     "../app-ui": { message: (key, params) => ({ key, params }) },
     "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
     "../installation-cancellation": {},
+    "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../server-start-error": { readModuleNotReadyError: () => null, serverStartFailureMessage: (error) => ({ error: error.message }) },
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => owner },

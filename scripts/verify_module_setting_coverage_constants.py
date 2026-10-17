@@ -339,6 +339,7 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("satisfactory", "disable_seasonal_events_flag"): {"disable_seasonal_events"},
     ("satisfactory", "external_reliable_port_flag"): {"external_reliable_port"},
     ("satisfactory", "insecure_local_api_flag"): {"allow_insecure_local_api"},
+    ("soulmask", "default_server_permissions_arg"): {"extra_launch_args"},
     ("soulmask", "workshop_mods_arg"): {"mod_workshop_ids"},
     ("terraria", "launch_args"): {"server_runtime", "tmodloader_runtime_dir"},
     ("terraria", "server_executable"): {"server_runtime", "tmodloader_runtime_dir"},

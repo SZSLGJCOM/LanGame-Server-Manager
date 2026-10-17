@@ -430,7 +430,6 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         descriptor,
         Some(private_root.as_str()),
     );
-    let package_module = module.clone();
     let startup_log_stamp = current_unix_ms();
     let prestart_update_log_path = {
         let mut update_log_plans =
@@ -466,7 +465,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             storage,
             PrestartUpdateRequest {
                 descriptor,
-                module: &package_module,
+                module: &module,
                 instance: &instance,
                 install_guard,
                 reservation: runtime_start_reservation,

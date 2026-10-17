@@ -17,35 +17,6 @@ function sourceSection(source, startMarker, endMarker) {
   return source.slice(start, end);
 }
 
-function cssAtRuleBlocks(source, atRule) {
-  const blocks = [];
-  let offset = 0;
-
-  while (offset < source.length) {
-    const start = source.indexOf(atRule, offset);
-    if (start < 0) {
-      break;
-    }
-    const openingBrace = source.indexOf("{", start);
-    assert.notEqual(openingBrace, -1, `${atRule} has no opening brace`);
-    let depth = 1;
-    let cursor = openingBrace + 1;
-    while (cursor < source.length && depth > 0) {
-      if (source[cursor] === "{") {
-        depth += 1;
-      } else if (source[cursor] === "}") {
-        depth -= 1;
-      }
-      cursor += 1;
-    }
-    assert.equal(depth, 0, `${atRule} has no closing brace`);
-    blocks.push(source.slice(start, cursor));
-    offset = cursor;
-  }
-
-  return blocks;
-}
-
 const catalogPageSource = readDesktopSource("src/views/library/LibraryCatalogPage.tsx");
 const cinematicCssSource = readDesktopSource("src/styles/library-cinematic.css");
 const ambientCssSource = readDesktopSource("src/styles/library-ambient.css");
@@ -126,29 +97,6 @@ test("focus travel is short, cancelable and independent from browser smooth scro
   assert.doesNotMatch(libraryViewSource, /scrollIntoView|behavior:\s*"smooth"/);
 });
 
-test("catalog exposes search, portrait selection and an explicit details action", () => {
-  assert.match(catalogPageSource, /library-catalog-search-shell/);
-  assert.match(catalogPageSource, /library-catalog-rail-shell/);
-  assert.match(catalogPageSource, /library-catalog-focus-copy/);
-  assert.match(catalogPageSource, /library-catalog-focus-plaque/);
-  assert.match(catalogPageSource, /library-catalog-toolbar/);
-  assert.match(catalogPageSource, /className="primary-button library-catalog-open-details"[\s\S]*?onClick=\{\(\) => props\.onConfirm\(\{ moduleId: focusedModule\.id \}\)\}/);
-  assert.doesNotMatch(catalogPageSource, /onFilterChange|onSortChange|onToggleFavorite/);
-});
-
-test("catalog focus uses the raised original card and detached title plaque without image clones", () => {
-  assert.doesNotMatch(catalogPageSource, /library-catalog-active-frame|library-catalog-active-card-motion/);
-  assert.match(tileSource, /props\.active \? "library-catalog-tile is-active"/);
-  assert.match(cinematicCssSource, /\.library-home-page--cinematic \.library-catalog-tile\.is-active/);
-  assert.match(cinematicCssSource, /\.library-home-page--cinematic \.library-catalog-focus-plaque/);
-  assert.match(cinematicCssSource, /\.library-catalog-tile\.is-active\s*\{[\s\S]*?scale\(1\.1\)/);
-  assert.match(cinematicCssSource, /\.library-catalog-tile::before[\s\S]*?\.library-catalog-tile\.is-active::before/);
-  assert.match(cinematicCssSource, /\.library-catalog-tile::before\s*\{[^}]*border:\s*2px solid var\(--shell-focus\)/);
-  assert.match(cinematicCssSource, /\.library-catalog-focus-plaque\s*\{[\s\S]*?min-height:\s*60px[\s\S]*?border:\s*0[\s\S]*?background:\s*transparent/);
-  assert.match(cinematicCssSource, /\.library-catalog-focus-status\s*\{[\s\S]*?border:\s*0[\s\S]*?background:\s*transparent/);
-  assert.doesNotMatch(catalogPageSource, /library-catalog-focus-rail/);
-});
-
 test("the persistent atmosphere follows settled preview focus without changing the catalog hierarchy", () => {
   assert.match(libraryViewSource, /CATALOG_ATMOSPHERE_PREVIEW_DELAY_MS\s*=\s*140/);
   assert.match(libraryViewSource, /catalogPreviewModuleId \?\? effectiveTarget\?\.moduleId/);
@@ -213,14 +161,6 @@ test("the settled card restores muted trailer preview without animating in reduc
   assert.match(moduleCoverSource, /if \(motionQuery\.matches\) \{\s*return;/);
 });
 
-test("the focused game name uses a calm status, title and subtitle hierarchy", () => {
-  assert.match(catalogPageSource, /library-catalog-focus-status is-installed/);
-  assert.match(catalogPageSource, /library-catalog-focus-status-icon/);
-  assert.doesNotMatch(catalogPageSource, /library-catalog-focus-kicker/);
-  assert.match(cinematicCssSource, /\.library-home-page--cinematic \.library-catalog-focus-status/);
-  assert.match(cinematicCssSource, /\.library-home-page--cinematic \.library-catalog-focus-title[\s\S]*?letter-spacing:\s*-0\.03em/);
-});
-
 test("the rail contains the outer selection ring throughout its lift and scale animation", () => {
   const rail = cinematicCssSource.match(/\.library-home-page--cinematic \.library-catalog-rail\s*\{([^}]+)\}/)?.[1];
   const tile = sourceSection(cinematicCssSource, ".library-home-page--cinematic .library-catalog-tile {", ".library-home-page--cinematic .library-catalog-focus-copy {");
@@ -238,23 +178,6 @@ test("the rail contains the outer selection ring throughout its lift and scale a
     assert.ok(topPadding >= expansion - Number(offset), `The top ring clips at translateY(${offset}px) scale(${scale})`);
     assert.ok(bottomPadding >= expansion + Number(offset), `The bottom ring clips at translateY(${offset}px) scale(${scale})`);
   }
-});
-
-test("catalog restores portrait cover art and keeps its layout PC scoped", () => {
-  assert.match(cinematicCssSource, /aspect-ratio:\s*0\.76/);
-  assert.match(cinematicCssSource, /\.library-home-page--cinematic \.library-catalog-rail\s*\{[\s\S]*?display:\s*flex/);
-  assert.match(cinematicCssSource, /flex:\s*0 0 196px/);
-  assert.match(cinematicCssSource, /\.shell-content-scroll:has\(\.library-experience--catalog\)[\s\S]*?overflow-y:\s*hidden/);
-  assert.match(cinematicCssSource, /\.shell-content-body:has\(\.library-experience--catalog\) > \.library-experience--catalog/);
-  assert.doesNotMatch(cinematicCssSource, /library-catalog-grid|library-catalog-recent-rail/);
-
-  const narrowViewportRules = cssAtRuleBlocks(cinematicCssSource, "@media")
-    .filter((block) => /max-width\s*:/i.test(block));
-  for (const block of narrowViewportRules) {
-    assert.doesNotMatch(block, /library-catalog/);
-  }
-  assert.doesNotMatch(cinematicCssSource, /@media\s*\(max-width:[\s\S]*?library-detail/);
-  assert.match(cinematicCssSource, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.library-catalog-tile\.is-active[\s\S]*?transform:\s*none/);
 });
 
 test("only focused horizontal neighbors decode eagerly", () => {

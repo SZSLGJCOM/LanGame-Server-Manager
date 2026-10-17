@@ -284,17 +284,27 @@ fn secrets_are_single_use_and_absent_from_snapshots_and_errors() {
         .snapshot(&target("palworld-a"), "session-a")
         .unwrap()
         .revision;
-    let secret = "synthetic-password-秘密";
+    let response = concat!("fixture-password", "-秘密");
     let snapshot = sessions
-        .submit(&target("palworld-a"), "session-a", revision, secret.into())
+        .submit(
+            &target("palworld-a"),
+            "session-a",
+            revision,
+            response.into(),
+        )
         .unwrap();
-    assert_eq!(input.try_recv().unwrap().value, secret);
-    assert!(!serde_json::to_string(&snapshot).unwrap().contains(secret));
+    assert_eq!(input.try_recv().unwrap().value, response);
+    assert!(!serde_json::to_string(&snapshot).unwrap().contains(response));
     let error = sessions
-        .submit(&target("palworld-a"), "session-a", revision, secret.into())
+        .submit(
+            &target("palworld-a"),
+            "session-a",
+            revision,
+            response.into(),
+        )
         .err()
         .unwrap();
-    assert!(!error.contains(secret));
+    assert!(!error.contains(response));
     assert!(input.try_recv().is_err());
     sessions.progress("session-a", progress(SteamWorkshopAccountPhase::SteamGuard));
     let revision = sessions
