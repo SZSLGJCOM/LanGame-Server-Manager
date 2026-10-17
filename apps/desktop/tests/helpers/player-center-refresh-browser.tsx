@@ -127,9 +127,12 @@ async function refresh() {
   if (currentList && currentList !== "online") await listTab(currentList);
 }
 function verifyDrafts() {
-  check(select<HTMLDetailsElement>(".player-center-manual-actions").open, "Manual disclosure closed during refresh");
   check(select<HTMLInputElement>(".player-access-roster-input").value === "76561198000000009", "Roster draft was lost");
-  check(select<HTMLInputElement>("input[id^='manual-player-target-']").value === "manual-draft", "Manual draft was lost");
+}
+// The right panel no longer repeats the selected identity; the highlighted left row is the target.
+function selectedRowText() {
+  const pressed = document.querySelector('.player-center-list-pane [aria-pressed="true"]');
+  return (pressed?.closest('tr, [role="listitem"]') ?? pressed)?.textContent ?? "";
 }
 async function run() {
   const root = createRoot(select<HTMLDivElement>("#fixture"));
@@ -148,7 +151,7 @@ async function run() {
   const controls = select<HTMLElement>(".player-center-controls");
   check(controls.scrollHeight <= controls.clientHeight + 1, "Closed controls acquired unnecessary scroll height"); checks++;
 
-  await click(".player-center-manual-actions > summary");
+  await listTab("manual");
   await input("input[id^='manual-player-target-']", "manual-draft");
   await listTab("blocklist");
   await click(".player-access-roster-create");
@@ -156,18 +159,23 @@ async function run() {
   for (let index = 0; index < 20; index++) {
     await act(async () => { updateProps(); }); verifyOneControlOfEachKind(`draft refresh ${index}`); verifyDrafts();
   }
+  // The 手动查询 draft lives in its own category; it must survive the refreshes made while another list was open.
+  await listTab("manual");
+  check(select<HTMLInputElement>("input[id^='manual-player-target-']").value === "manual-draft", "Manual draft was lost");
   checks++;
 
   onlinePlayers = [player]; await refresh();
   await listTab("online");
   await waitFor(() => Boolean(document.querySelector(".player-center-player-select")), "online player");
   await click(".player-center-player-select");
-  check(document.querySelector(".player-center-member-heading")?.textContent?.includes("Alice"), "Selected player's identity is missing");
+  check(selectedRowText().includes("Alice"), "Selected player's identity is missing");
   check(!select<HTMLButtonElement>(".player-center-member-action").disabled,
     "The snapshot-authorized action was not enabled after selecting its player");
   verifyOneControlOfEachKind("player panel shown");
   check(!document.querySelector(".player-access-roster-editor"), "Changing list retained an obsolete roster form");
-  check(select<HTMLInputElement>("input[id^='manual-player-target-']").value === "manual-draft", "Authoritative refresh lost the independent manual draft"); checks++;
+  await listTab("manual");
+  check(select<HTMLInputElement>("input[id^='manual-player-target-']").value === "manual-draft", "Authoritative refresh lost the independent manual draft");
+  await listTab("online"); checks++;
 
   onlinePlayers = []; await refresh();
   verifyOnlineActionsDisabled();
@@ -179,14 +187,16 @@ async function run() {
   const oldRoster = select<HTMLInputElement>(".player-access-roster-input");
   const oldManual = select<HTMLDetailsElement>(".player-center-manual-actions");
   await act(async () => { switchInstance("refresh-two"); });
-  await waitFor(() => Boolean(document.querySelector("#manual-player-target-refresh-two")), "new instance controls");
+  await waitFor(() => !oldManual.isConnected && Boolean(document.querySelector(".player-center-manual-actions")), "new instance controls");
   verifyOneControlOfEachKind("instance switch");
   check(!oldRoster.isConnected && !oldManual.isConnected, "Old instance controls were retained");
   check(select<HTMLElement>('.player-center-list-tabs [data-list-key="online"]').getAttribute("aria-selected") === "true"
     && !select<HTMLDetailsElement>(".player-center-manual-actions").open, "New instance view was not reset");
   verifyOnlineActionsDisabled();
   await listTab("blocklist"); await click(".player-access-roster-create");
-  check(select<HTMLInputElement>(".player-access-roster-input").value === "" && select<HTMLInputElement>("#manual-player-target-refresh-two").value === "", "Drafts leaked across instances"); checks++;
+  check(select<HTMLInputElement>(".player-access-roster-input").value === "", "Roster draft leaked across instances");
+  await listTab("manual");
+  check(select<HTMLInputElement>("#manual-player-target-refresh-two").value === "", "Manual draft leaked across instances"); checks++;
 
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
   await act(async () => { root.unmount(); }); clearMocks();

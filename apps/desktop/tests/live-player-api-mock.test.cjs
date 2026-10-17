@@ -41,6 +41,34 @@ const {
 const dstPlayerList = parseMockPlayerListFromModuleToml("dontstarve");
 assert.ok(dstPlayerList, "DST mock manifest must declare runtime.player_list");
 
+test("Dragonwilds ban-roster API retains offline bans and removes only the exact unbanned EOS account", async () => {
+  const moduleId = "runescapedragonwilds";
+  await invokeMock("install_module_game", { moduleId });
+  const created = await invokeMock("create_instance_record", {
+    input: { module_id: moduleId, name: "Saved ban roster API fixture" }
+  });
+  const instanceId = created.summary.id;
+  const readBans = () => invokeMock("read_instance_dragonwilds_bans", { instanceId });
+  assert.deepEqual((await readBans()).entries, []);
+  await invokeMock("start_instance_process", { instanceId });
+  const online = await invokeMock("refresh_instance_live_players", { instanceId });
+  const account = online.entries[0].identifiers.find((entry) => entry.kind === "eos_id").value;
+  await invokeMock("execute_instance_player_action", { input: { instance_id: instanceId,
+    snapshot_id: online.snapshot_id, player_key: online.entries[0].player_key, action_id: "ban_player" } });
+  await invokeMock("stop_instance_process", { instanceId });
+  assert.deepEqual((await readBans()).entries, [{ account_id: account, display_name: online.entries[0].display_name }]);
+  const unban = { instance_id: instanceId, action_id: "unban_player", target: account, role: null };
+  await assert.rejects(invokeMock("execute_instance_manual_player_action", { input: unban }), /not running/);
+  await invokeMock("start_instance_process", { instanceId });
+  assert.ok((await invokeMock("refresh_instance_live_players", { instanceId })).entries.every(
+    (entry) => !entry.identifiers.some((identity) => identity.value === account)
+  ));
+  await invokeMock("execute_instance_manual_player_action", { input: unban });
+  assert.deepEqual((await readBans()).entries, []);
+  await assert.rejects(invokeMock("read_instance_dragonwilds_bans", { instanceId: "srv-dst-1" }), /Dragonwilds/);
+  await invokeMock("stop_instance_process", { instanceId });
+});
+
 async function updatePlayerCountSettings(instanceId, patch) {
   const details = await invokeMock("read_instance_details_from_storage", { instanceId });
   return invokeMock("update_instance_record_if_current", {

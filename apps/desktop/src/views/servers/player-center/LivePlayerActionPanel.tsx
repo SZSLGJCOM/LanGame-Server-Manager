@@ -138,13 +138,13 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
                   ? props.t("servers.playerCenter.actions.playerIdentityUnavailable", undefined, "The current player data does not provide the identity required for this action.")
                   : props.t("servers.playerCenter.actions.snapshotNotCurrent", undefined, "The player snapshot is not complete and current. Refresh it before retrying.")));
             const content = busyActionId === actionId ? props.t("servers.playerCenter.actions.running", undefined, "Running...") : label;
-            return <ConfigurationHelp key={JSON.stringify([instanceId, props.player?.player_key, actionId])} description={unavailableReason}>{(help) =>
+            return <ConfigurationHelp key={actionId} description={unavailableReason}>{(help) =>
               <div className="player-access-total-action" ref={help.anchorRef} {...help.interactionProps}
                 tabIndex={disabled ? 0 : undefined} role={disabled ? "group" : undefined} aria-label={disabled ? label : undefined}
                 aria-disabled={disabled || undefined} aria-describedby={help.descriptionId}>
               {danger ? (
               <InlineConfirmAction
-                key={JSON.stringify([instanceId, props.player?.player_key, actionId])}
+                key={actionId}
                 className="secondary-button player-center-action-button player-center-member-action danger"
                 disabled={disabled}
                 aria-describedby={help.descriptionId}

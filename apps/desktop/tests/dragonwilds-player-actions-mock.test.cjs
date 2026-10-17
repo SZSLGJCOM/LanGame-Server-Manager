@@ -89,3 +89,55 @@ test("Dragonwilds expired snapshots and reused action references cannot execute"
   store.execute(ctx, fresh);
   assert.throws(() => store.execute(ctx, fresh), /current/);
 });
+
+test("Dragonwilds preview saves bans by EOS identity, including duplicate display names and stopped servers", () => {
+  const rows = populated();
+  rows.forEach((row) => { row.display_name = "同名玩家"; });
+  const store = withRows(rows);
+  const ctx = context();
+  for (const row of rows) {
+    const snapshot = store.refresh(ctx);
+    const current = snapshot.entries.find((entry) => entry.identifiers[0].value === row.identifiers[0].value);
+    store.execute(ctx, { instance_id: ctx.instance_id, snapshot_id: snapshot.snapshot_id,
+      player_key: current.player_key, action_id: "ban_player" });
+  }
+  const saved = store.readDragonwildsBans({ ...ctx, running: false });
+  assert.deepEqual(saved.entries.map((entry) => entry.account_id), rows.map((row) => row.identifiers[0].value));
+  assert.ok(saved.entries.every((entry) => entry.display_name === "同名玩家"));
+  assert.equal(store.refresh(ctx).entries.length, 0);
+  assert.equal(store.refresh(ctx).current_players, 0);
+  assert.deepEqual(store.readDragonwildsBans({ ...ctx, instance_id: "another-server" }).entries, []);
+  saved.entries[0].display_name = "changed externally";
+  assert.equal(store.readDragonwildsBans(ctx).entries[0].display_name, "同名玩家");
+});
+
+test("Dragonwilds preview unbans an offline account without requiring a current online snapshot", () => {
+  const store = withRows(populated());
+  const ctx = context();
+  const snapshot = store.refresh(ctx);
+  const accountId = snapshot.entries[0].identifiers[0].value;
+  store.execute(ctx, { instance_id: ctx.instance_id, snapshot_id: snapshot.snapshot_id,
+    player_key: snapshot.entries[0].player_key, action_id: "ban_player" });
+  store.read({ ...ctx, running: false });
+  assert.throws(() => store.unbanDragonwilds({ ...ctx, running: false }, accountId), /running/);
+  assert.throws(() => store.unbanDragonwilds(ctx, "1"), /EOS/);
+  assert.equal(store.readDragonwildsBans(ctx).entries.length, 1);
+  store.unbanDragonwilds(ctx, accountId);
+  assert.deepEqual(store.readDragonwildsBans({ ...ctx, running: false }).entries, []);
+  assert.throws(() => store.unbanDragonwilds(ctx, accountId), /target_changed/);
+  assert.throws(() => store.readDragonwildsBans({ ...ctx, module_id: "windrose" }), /Dragonwilds/);
+});
+
+test("Dragonwilds preview kick does not save a ban and deleting an instance clears its saved bans", () => {
+  const store = withRows(populated());
+  const ctx = context();
+  let snapshot = store.refresh(ctx);
+  store.execute(ctx, { instance_id: ctx.instance_id, snapshot_id: snapshot.snapshot_id,
+    player_key: snapshot.entries[0].player_key, action_id: "kick_player" });
+  assert.deepEqual(store.readDragonwildsBans(ctx).entries, []);
+  snapshot = store.refresh(ctx);
+  store.execute(ctx, { instance_id: ctx.instance_id, snapshot_id: snapshot.snapshot_id,
+    player_key: snapshot.entries[0].player_key, action_id: "ban_player" });
+  store.delete(ctx.instance_id);
+  assert.deepEqual(store.readDragonwildsBans(ctx).entries, []);
+});

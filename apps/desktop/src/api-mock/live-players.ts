@@ -1,4 +1,6 @@
 import type {
+  DragonwildsBanEntry,
+  DragonwildsBanRoster,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
   ModulePlayerListCodec,
@@ -273,6 +275,8 @@ function capabilitySupported(context: MockLivePlayerContext): boolean {
 }
 
 export class MockLivePlayerStore {
+  // Preview-only saved bans survive stopped snapshots, just as the native INI does.
+  private readonly dragonwildsBans = new Map<string, Map<string, DragonwildsBanEntry>>();
   private readonly snapshots = new Map<string, RuntimeLivePlayerSnapshot>();
   private readonly lastSuccessfulSnapshots = new Map<string, RuntimeLivePlayerSnapshot>();
   private readonly sequenceByInstance = new Map<string, number>();
@@ -325,6 +329,16 @@ export class MockLivePlayerStore {
     }
 
     const collected = this.collector(clone(context));
+    if (context.module_id === "runescapedragonwilds") {
+      const bans = this.dragonwildsBans.get(context.instance_id);
+      const previousCount = collected.entries.length;
+      collected.entries = collected.entries.filter((entry) => !entry.identifiers.some(
+        (identity) => identity.kind === "eos_id" && bans?.has(identity.value)
+      ));
+      if (collected.current_players !== undefined && collected.current_players !== null) {
+        collected.current_players = Math.max(0, collected.current_players - (previousCount - collected.entries.length));
+      }
+    }
     const observedAt = this.nextObservedAt(context.instance_id);
     const completeSuccess = collected.status === "ready" && collected.complete && !collected.truncated;
     if (!completeSuccess) {
@@ -409,6 +423,15 @@ export class MockLivePlayerStore {
     }
 
     const executedAt = this.nextObservedAt(context.instance_id);
+    if (context.module_id === "runescapedragonwilds" && input.action_id === "ban_player") {
+      const accountId = player.identifiers.find((identity) => identity.kind === "eos_id" && identity.stable)?.value;
+      if (!accountId || !/^[0-9a-f]{32}$/.test(accountId)) {
+        throw new Error("Dragonwilds bans require a verified EOS account ID.");
+      }
+      const bans = this.dragonwildsBans.get(context.instance_id) ?? new Map<string, DragonwildsBanEntry>();
+      bans.set(accountId, { account_id: accountId, display_name: player.display_name || null });
+      this.dragonwildsBans.set(context.instance_id, bans);
+    }
     this.lastSuccessfulSnapshots.delete(context.instance_id);
     this.snapshots.set(context.instance_id, {
       ...clone(snapshot),
@@ -429,9 +452,31 @@ export class MockLivePlayerStore {
   }
 
   delete(instanceId: string): void {
+    this.dragonwildsBans.delete(instanceId);
+    this.invalidate(instanceId);
+  }
+
+  invalidate(instanceId: string): void {
     this.snapshots.delete(instanceId);
     this.lastSuccessfulSnapshots.delete(instanceId);
     this.sequenceByInstance.delete(instanceId);
+  }
+
+  readDragonwildsBans(context: MockLivePlayerContext): DragonwildsBanRoster {
+    if (context.module_id !== "runescapedragonwilds") {
+      throw new Error("The ban roster requires a Dragonwilds instance.");
+    }
+    return { instance_id: context.instance_id, observed_at_unix_ms: this.now(),
+      entries: clone([...this.dragonwildsBans.get(context.instance_id)?.values() ?? []]) };
+  }
+
+  unbanDragonwilds(context: MockLivePlayerContext, accountId: string): void {
+    if (context.module_id !== "runescapedragonwilds" || !context.running || !/^[0-9a-f]{32}$/.test(accountId)) {
+      throw new Error("Dragonwilds unban requires a running server and a complete lowercase EOS account ID.");
+    }
+    const bans = this.dragonwildsBans.get(context.instance_id);
+    if (!bans?.has(accountId)) throw new Error("The banned account is no longer current (target_changed).");
+    bans.delete(accountId);
   }
 
   private readCapabilityState(context: MockLivePlayerContext): RuntimeLivePlayerSnapshot | null {

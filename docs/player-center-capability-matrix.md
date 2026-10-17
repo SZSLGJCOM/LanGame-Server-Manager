@@ -8,9 +8,9 @@
 - `read_only`：提供实时名称或身份信息，行本身没有管理动作。名称不等同于可用于管理的账号 ID。
 - `manual_id`：尚无可靠的实时名单解析器，保留需要手工输入目标的既有管理操作。
 - `unsupported`：尚无可用的实时名单采集器和手工玩家操作；仍可显示有来源的在线人数。
-- 访问名单独立于在线名单。管理员、白名单、封禁记录均不用于生成在线玩家。
+- 访问名单独立于在线名单。管理员、白名单、封禁记录均不用于生成在线玩家。表中访问名单列记录 Schema 管理的名单；Dragonwilds 的游戏原生封禁名单另见下文。
 - 在线玩家均可选中查看已取得的身份、会话及其他详情。选择只读记录不授予管理权限；不可用操作显示具体原因，并与对应按钮建立可访问说明关联。
-- 左侧选项卡只切换查看的名单；右侧共用一份模块支持的操作列表，未选择目标或目标不适用时按钮禁用。名单条目不会仅因保存了账号就获得在线动作权限，踢出等动作仍须匹配当前有效在线快照。
+- 所有游戏的左侧选项卡只切换查看的名单；右侧操作区始终保留一份由模块能力决定的固定操作列表，不随在线、封禁或其他名单替换整区、隐藏操作或重复增加同名动作。当前列表、选中目标、身份、数据新鲜度、服务器状态和处理中状态只决定按钮是否可用。名单条目不会仅因保存了账号就获得在线动作权限，踢出等动作仍须匹配当前有效在线快照。
 - 手工操作可与实时列表共存；列表触发动作、已绑定的行操作、访问名单消费的动作和广播不会重复出现在手工操作区。`pending_adapter` 下的运行管理动作不开放。
 
 | Module / 模块 | Online mode / 在线模式 | Manual ID actions / 手工 ID 动作 | Access lists / 访问名单 | Evidence / 证据 |
@@ -64,7 +64,7 @@
 - **Return to Moria**：`native_console` 采集器通过独立 Windows 辅助进程附着受管服务器控制台，执行[官方只读 `players` 命令](https://northbeachgames.freshdesk.com/support/solutions/articles/154000217148-commands-while-the-server-is-running)。辅助进程校验 PID、创建时间和可执行文件身份，并以请求的起止标记限定响应；人数、记录数和结束标记必须一致。保留原始玩家标签，不把括号内容猜成账号 ID，行无管理动作。需要 `console_enabled=true` 并重启服务器，配置不完整时提供配置入口。实服版本与验收范围见下方“证据与验收边界”。
 - **Satisfactory**：安装兼容的 [Ficsit Remote Monitoring](https://github.com/porisius/FicsitRemoteMonitoring/blob/main/docs/modules/ROOT/pages/dedicatedserver.adoc) 服务端扩展后，如果已开启 FRM HTTP 自动启动，管理器从本实例 `GameUserSettings.ini` 读取端口，经本机回环地址调用 `GET /api/getPlayer`；否则调用游戏 HTTPS API 的 `frm/getPlayer` 扩展。只取 `Online=true`，Actor ID 不当作账号。两个通道均不发送管理员令牌；缺少扩展、世界未就绪、鉴权失败或响应错误有独立状态。
 - **Windrose**：安装已验证的 UE4SS 加载器及专用配置后，启动准备部署独立的 `LgsmPlayerQuery` 只读脚本。脚本在游戏线程读取当前世界的 `GameNetDriver.ClientConnections`，逐项关联控制器、玩家状态并与完整 `PlayerArray` 对照；登录未完成、世界切换、无效身份或调度器未响应均不能生成完整名单。桌面通过实例运行目录中的随机请求标识交换读取结果；`PlayerId` 仅作会话标识，行只读。安装要求与版本证据见 `modules/windrose/extensions/`。Windrose+ 的缓存状态、角色回退、存档及邀请码不进入此数据源。
-- **RuneScape: Dragonwilds**：独立运行副本在启动前准备固定 UE4SS 加载器，以及分别归属的只读名单和玩家控制扩展。控制名单要求正式 `L_World`、完整连接/玩家数组、就绪检查及原生 EOS 身份；踢出和封禁绑定当前启动与连接，解封按完整 EOS 账号操作。踢出确认离线，封禁确认离线及原生/INI 两份标志，解封确认两份标志。未知版本或扩展未准备时只读名单不授予动作。安装、构建和限制见 `modules/runescapedragonwilds/extensions/README.md`；原生 A2S 仍未接入。
+- **RuneScape: Dragonwilds**：独立运行副本在启动前准备固定 UE4SS 加载器，以及分别归属的只读名单和玩家控制扩展。控制名单要求正式 `L_World`、完整连接/玩家数组、就绪检查及原生 EOS 身份；踢出和封禁绑定当前启动与连接。“被封禁”页签独立读取实际运行目录 `DedicatedServer.ini` 的原生 `KnownPlayerList`，保留重启前封禁和离线账号，选中后按完整 EOS 账号解除封禁。停服仍可查看，解封需要服务器运行；读取失败保留上次名单并禁用过期操作。踢出确认离线，封禁确认离线及原生/INI 两份标志，解封确认两份标志；不会经设置保存重写游戏名单。未知版本或扩展未准备时只读名单不授予动作。安装、构建和限制见 `modules/runescapedragonwilds/extensions/README.md`；原生 A2S 仍未接入。
 - **SCUM**：通过独立 `LgsmPlayerQuery` 扩展读取正式 `The_Island` 世界的当前连接，并与完整玩家状态数组交叉核对。官方 UE4SS 加载器需按 `modules/scum/extensions/README.md` 安装；未就绪或扩展不可用时显示错误。名称和会话 ID 只读，不作为 Steam64 或管理目标。原生 A2S 在已测试版本中仍无响应。
 - **Enshrouded**：已验证程序指纹的独占实例运行目录部署 [原生扩展](../modules/enshrouded/control/README.md)。扩展读取原生函数交给调用方的玩家身份深拷贝，以完整会话句柄、桥接代次和当前名称核对目标；不跨线程读取共享会话表，不根据日志顺序猜账号。完整名单还需与实时 A2S 人数吻合。原生账号 `accountId` 与 Steam64 属于不同命名空间，转换依据 [独立原生函数证据](../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json)。踢出和封禁在服务器自己的线程执行，保留原生保护；封禁必须确认玩家离开和原生 `bannedAccounts` 持久记录，解封必须确认原生删除后再同步管理器名单。未知程序版本、用户自有加载器或扩展不可用时回退到原有 A2S/连续日志名称，只读行仍可查看详情。扩展不提供会话开始时间，时长保持未知；不把采集开始时间当登录时间。协议模拟样本与 ABI 验证不代表完成了真实账号封禁、拒绝重连及解封恢复验收。
   原生封禁使用 `bannedAccounts[].accountId`，不能直接填入 Steam64。2026-10-16 对官方可执行文件的独立静态取证及十组合成输入的原生纯函数差分确认了 Steam64 到原生哈希的算法，见[原生账号哈希证据](../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json)。同日 Windows 测试服已用一个测试账号验证管理员密码下受保护、普通玩家密码下可即时封禁、客户端重连被拒绝、解封后正常进入；另经 LGSM 在线行操作和手工解封入口核对了原生与管理器名单同步增删。该实测扩展 SHA256 为 `3e2dbca3aea16278f0a917244d54b96e21b76b9ae75c6130923fbb4e0e3a50bf`；不将这个运行产物的结果扩大为其他构建、多人场景或桌面 UI 实机验收。

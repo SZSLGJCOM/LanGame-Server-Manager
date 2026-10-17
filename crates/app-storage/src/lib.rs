@@ -77,8 +77,10 @@ pub use instance_archive_models::{
     InstanceArchiveState, InstanceArchiveSummary, PendingInstanceDeletion,
 };
 mod astroneer_saves;
+mod dragonwilds_bans;
 mod dragonwilds_save;
 pub use astroneer_saves::read_astroneer_save_catalog;
+pub use dragonwilds_bans::read_dragonwilds_ban_roster;
 mod valheim_world;
 pub use valheim_world::read_valheim_world_rules;
 mod valheim_player_roster;

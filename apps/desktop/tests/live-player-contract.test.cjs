@@ -171,6 +171,21 @@ test("snapshot, row, issue, and action DTO fields match the public Rust contract
   }
 });
 
+test("Dragonwilds saved bans expose only the shared identity/name roster contract", () => {
+  const rustSource = fs.readFileSync(path.resolve(desktopRoot, "../../crates/app-core/src/dragonwilds_bans.rs"), "utf8");
+  for (const [name, keys] of [
+    ["DragonwildsBanEntry", ["account_id", "display_name"]],
+    ["DragonwildsBanRoster", ["instance_id", "observed_at_unix_ms", "entries"]]
+  ]) {
+    assert.deepEqual(interfaceProperties(name), keys);
+    const fields = rustSource.match(new RegExp(`pub struct ${name} \\{([^}]+)\\}`));
+    assert.ok(fields, `${name} Rust DTO is missing`);
+    assert.deepEqual([...fields[1].matchAll(/pub (\w+):/g)].map((field) => field[1]), keys);
+  }
+  assert.match(rustSource, /pub display_name: Option<String>/);
+  assert.match(apiFunctionSource("readInstanceDragonwildsBans"), /invokeOrMock<DragonwildsBanRoster>\("read_instance_dragonwilds_bans", \{ instanceId \}\)/);
+});
+
 test("native extension codec and account namespace match the Rust enums without adding a source", () => {
   for (const name of ["ModulePlayerListSource", "ModulePlayerListCodec", "RuntimePlayerIdentityKind"]) {
     assert.deepEqual(typeAliasValues(name).sort(), rustEnumJsonValues(name).sort(), `${name} must agree across the IPC boundary`);

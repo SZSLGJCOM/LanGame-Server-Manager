@@ -142,6 +142,11 @@ function describedReason(button: HTMLButtonElement): string {
   const id = button.getAttribute("aria-describedby");
   return id ? document.getElementById(id)?.textContent ?? "" : "";
 }
+// The right panel no longer repeats the selected identity; the highlighted left row is the target.
+function selectedRowText() {
+  const pressed = document.querySelector('.player-center-list-pane [aria-pressed="true"]');
+  return (pressed?.closest('tr, [role="listitem"]') ?? pressed)?.textContent ?? "";
+}
 async function run() {
   await act(prepareBrowserLocaleCatalogs);
   await draw("enshrouded"); await selectWithKeyboard(); verifyDisabledDescriptions();
@@ -150,7 +155,7 @@ async function run() {
   check(!fixture?.querySelector(".player-center-member-action") && mutations === 0,
     "Keyboard selects an Enshrouded name without granting native account authority");
   await draw("read-only"); await selectWithKeyboard();
-  check(fixture?.querySelector(".player-center-details") && !fixture.querySelector(".player-access-selected-action, .player-center-member-action"),
+  check(selectedRowText() && !fixture?.querySelector(".player-access-selected-action, .player-center-member-action"),
     "A game with no player actions still exposes selected details");
   await draw("workspace-read-only"); await selectWithKeyboard(); verifyDisabledDescriptions();
   await act(async () => { element<HTMLButtonElement>(".player-center-member-action").click(); });
@@ -163,7 +168,7 @@ async function run() {
   check(fixture?.textContent?.includes("未提供此操作所需的身份") && !fixture.textContent.includes("快照尚未确认完整且有效"),
     "A fresh read-only player explains missing action identity without requesting a refresh");
   await draw("metadata"); await selectWithKeyboard();
-  check(["76561198000000001", "1 小时 1 分", "34 ms", "Guest", "测试世界"].every((value) => fixture?.querySelector(".player-center-details")?.textContent?.includes(value)),
+  check(["76561198000000001", "1 小时 1 分", "34 ms", "Guest", "测试世界"].every((value) => selectedRowText().includes(value)),
     "Selected details preserve every supplied player field");
   await draw("enshrouded-native-unknown"); await selectWithKeyboard(); verifyDisabledDescriptions();
   check(fixture?.textContent?.includes("尚未取得雾锁王国扩展提供的有效原生玩家身份")

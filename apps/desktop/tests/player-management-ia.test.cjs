@@ -107,7 +107,9 @@ test("snapshot actions submit only instance, snapshot, player, and action refere
   for (const routedView of [readSource("views", "AppViewRouter.tsx"), readSource("views", "ServerWorkspaceView.tsx"), serversView, playerCenter]) {
     assert.match(routedView, /onExecutePlayerAction=\{props\.onExecutePlayerAction\}/);
   }
-  assert.match(onlinePlayers, /onExecute=\{props\.onExecutePlayerAction\}/);
+  assert.match(onlinePlayers, /onExecute=\{executeLiveAction\}/);
+  assert.match(onlinePlayers, /\(props\.onExecutePlayerAction \?\? executeInstancePlayerAction\)\(input\)/);
+  assert.match(onlinePlayers, /input\.action_id === "ban_player"\) bans\.invalidate\(\)/);
   assert.match(actionPanel, /!props\.actionIds\.includes\(actionId\) \|\| !player\.available_action_ids\.includes\(actionId\)/);
   assert.match(actionPanel, /const disabled = !props\.actionsEnabled \|\| hasPendingRequest \|\| !props\.player\?\.available_action_ids\.includes\(actionId\)/);
   assert.match(actionPanel, /return <ConfigurationHelp[\s\S]*?\{danger \? \([\s\S]*?<InlineConfirmAction/);

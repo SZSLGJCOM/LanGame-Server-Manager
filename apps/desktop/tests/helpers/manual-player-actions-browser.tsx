@@ -65,6 +65,9 @@ async function input(value: string) {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(target, value);
     target.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  // Actions apply to the looked-up ID, so typing is followed by the lookup button when it is available.
+  const lookup = document.querySelector<HTMLButtonElement>(".player-center-manual-use");
+  if (lookup && !lookup.disabled) await act(async () => { lookup.click(); });
 }
 async function choose(selector: string, value: string) {
   await act(async () => {
@@ -78,17 +81,11 @@ const feedback = () => document.querySelector<HTMLElement>(".shell-activity-noti
 async function run() {
   await act(async () => { await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]); });
   await render();
-  check(!select<HTMLDetailsElement>("details.player-center-manual-actions").open, "Manual controls must start collapsed");
-  await click("summary");
-  check(select<HTMLDetailsElement>("details").open && !document.querySelector("select"), "A single action should not require an action dropdown");
-  check(document.querySelectorAll("button").length === 1, "A single action repeated its execution button");
+  check(!document.querySelector("details") && !document.querySelector("select"), "The manual page is always open and a single action needs no dropdown");
+  check(document.querySelectorAll(".player-center-manual-actions .player-center-action-list button").length === 1, "A single action repeated its execution button");
   checks++;
 
   await input("offline-player-42");
-  await click("summary");
-  check(!select<HTMLDetailsElement>("details").open, "Manual controls did not collapse");
-  await click("summary");
-  check(draft().value === "offline-player-42", "Collapsing manual controls discarded the draft");
   await render([{ ...kick }]);
   check(draft().value === "offline-player-42", "Refreshing action metadata discarded an in-progress draft");
   checks++;
@@ -106,9 +103,6 @@ async function run() {
 
   await render([{ ...kick }]);
   check(draft().disabled && draft().value === "offline-player-99", "Action metadata refresh unlocked a pending action or cleared its target");
-  await click("summary");
-  await click("summary");
-  check(draft().disabled, "Collapsing a pending action unlocked its form");
   await act(async () => { requests[0].result.reject(new Error("Exact player was not found")); });
   check(!draft().disabled && feedback()?.textContent === "Exact player was not found", "Pending action failure did not restore the draft and feedback");
   checks++;
@@ -137,7 +131,7 @@ async function run() {
   checks++;
 
   await render([{ ...role, role_values: ["operator"] }]);
-  check(!document.querySelector("select") && select(".player-center-manual-body").textContent?.includes("operator"),
+  check(!document.querySelector("select") && select(".player-center-manual-actions").textContent?.includes("operator"),
     "A single supported role should remain visible without a redundant dropdown");
   await input("sole-role-player");
   await click("button.danger");

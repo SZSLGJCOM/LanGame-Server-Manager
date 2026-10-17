@@ -110,15 +110,18 @@ function PlayerCenterInstance(props: PlayerCenterWorkbenchProps) {
         loading={!props.readOnly && livePlayers.loading}
         locale={locale}
         access={access}
-        manualActions={manualActions.length > 0 ? (active) => (
+        manualActions={manualActions.length > 0 ? (active, onActionCompleted, onActionFailed) => (
           <ManualPlayerActions
             key={`manual:${props.details.summary.id}`}
             actions={manualActions}
             moduleId={props.details.summary.module_id}
-            disabled={Boolean(props.readOnly) || !instanceRunning || !active}
+            disabled={Boolean(props.readOnly) || !instanceRunning}
+            active={active}
             instanceId={props.details.summary.id}
             locale={locale}
             t={t}
+            onActionCompleted={onActionCompleted}
+            onActionFailed={onActionFailed}
           />
         ) : undefined}
         now={Date.now()}

@@ -6,6 +6,7 @@ import { OnlinePlayersView } from "../../src/views/servers/player-center/OnlineP
 import { usePlayerAccess } from "../../src/views/servers/player-center/use-player-access";
 import { ManualPlayerActions } from "../../src/views/servers/player-center/ManualPlayerActions";
 import { readPlayerAccessRosterCapabilities } from "../../src/views/servers/player-center/player-access-roster-model";
+import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import type { InstanceDetails, InstancePlayerAccessMutationInput, ModuleDetails, ModulePlayerActionDetails, RuntimeLivePlayerEntry, RuntimeLivePlayerSnapshot } from "../../src/types";
 import "../../src/app.css";
 import "../../src/views/servers/workbench.css";
@@ -134,6 +135,10 @@ async function input(selector: string, value: string) {
 }
 async function scenario(next: RuntimeLivePlayerSnapshot, options: ScenarioOptions = {}) { await act(async () => { setScenario(next, options); }); }
 async function selectPlayer(index = 1) { const selector = `.player-center-player-table tbody tr:nth-child(${index}) .player-center-player-select`; if (select<HTMLElement>(selector).getAttribute("aria-pressed") !== "true") await click(selector); }
+function selectedRow(): HTMLElement {
+  const row = select<HTMLElement>('.player-center-list-pane .player-center-player-select[aria-pressed="true"]').closest<HTMLElement>("tr,.player-access-roster-entry");
+  check(row, "Selected list entry has no row"); return row;
+}
 async function disclosure(selector: string, open: boolean) { if (select<HTMLDetailsElement>(selector).open !== open) await click(`${selector} > summary`); }
 async function size(width: number, height: number) { const main = select<HTMLElement>("#fixture-workspace"); main.style.width = `${width}px`; main.style.height = `${height}px`; await settle(); }
 function verifyScrollOwnership() {
@@ -177,7 +182,7 @@ function verifyIdle() {
   check(actions.length > 0 && actions.every((action) => action.disabled), "Unselected target did not retain its complete disabled inventory");
   const firstRect = actions[0].getBoundingClientRect();
   const firstStyle = getComputedStyle(actions[0]);
-  const styleKeys = ["backgroundColor", "borderColor", "borderRadius", "fontSize", "fontWeight", "padding", "textAlign", "opacity"] as const;
+  const styleKeys = ["backgroundColor", "borderColor", "borderRadius", "minHeight", "fontSize", "fontWeight", "lineHeight", "padding", "textAlign", "opacity"] as const;
   actions.forEach((action, index) => {
     const rect = action.getBoundingClientRect();
     const style = getComputedStyle(action);
@@ -185,7 +190,9 @@ function verifyIdle() {
       "Player action buttons do not share one full-width column");
     check(index === 0 || rect.top >= actions[index - 1].getBoundingClientRect().bottom + 5,
       "Player action buttons overlap or remain side by side");
-    check(styleKeys.every((key) => style[key] === firstStyle[key]), "Player action buttons use different visual styles");
+    const differences = styleKeys.filter((key) => style[key] !== firstStyle[key])
+      .map((key) => `${key}: ${JSON.stringify(firstStyle[key])} -> ${JSON.stringify(style[key])}`);
+    check(differences.length === 0, `Player action buttons use different visual styles: ${actions[0].className} / ${action.className}; ${differences.join(", ")}`);
   });
   check(!controls.querySelector(".player-access-selected-sync, .player-access-roster-action-timing"),
     "Player action buttons retain redundant timing descriptions");
@@ -200,13 +207,15 @@ function verifyRosterLocation() {
 }
 async function run() {
   const root = createRoot(select<HTMLDivElement>("#fixture"));
-  await act(async () => { await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]); root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>); });
+  await act(prepareBrowserLocaleCatalogs);
+  await act(async () => { root.render(<StrictMode><I18nProvider><Fixture /></I18nProvider></StrictMode>); });
   await waitFor(() => Boolean(document.querySelector('.player-center-list-tabs [data-list-key="online"]')), "player workspace mount");
   verifyColumns(); verifyScrollOwnership(); verifyIdle();
   check(document.querySelectorAll('.player-center-list-pane [role="tablist"]').length === 1 && !document.querySelector('.player-center-controls [role="tablist"]'), "List navigation is duplicated"); checks++;
   const initialInventory = inventory();
   await selectPlayer();
-  check(select<HTMLElement>(".player-center-member-heading").textContent?.includes("玩家 1"), "Selected online target is missing");
+  check(selectedRow().textContent?.includes("玩家 1") && selectedRow().textContent?.includes("76561198000000001"),
+    "Selected online row lost its player name or complete primary account");
   check(!select<HTMLButtonElement>(".player-center-member-action").disabled && !select<HTMLButtonElement>(rosterAction("blocklist", "remove")).disabled
     && select<HTMLButtonElement>(rosterAction("blocklist", "add")).disabled, "Fresh target did not update its fixed action availability"); checks++;
   await click(rosterAction("blocklist", "remove")); verifyReview();
@@ -227,10 +236,10 @@ async function run() {
   await click(".player-access-roster-create"); await input("#player-access-roster-blocklist", "76561198000000077");
   await click(".player-access-roster-add-button"); await listTab("online"); verifyIdle();
   check(inventory() === initialInventory && mutations.length === 2, "Changing tabs retained a pending editor mutation"); checks++;
-  await disclosure(".player-center-manual-actions", true); await input("#manual-player-target-layout-server", "offline-account");
+  await listTab("manual"); await input("#manual-player-target-layout-server", "offline-account");
   await scenario(snapshot(3));
   check(select<HTMLInputElement>("#manual-player-target-layout-server").value === "offline-account", "Snapshot refresh lost the independent manual draft");
-  await disclosure(".player-center-manual-actions", false); checks++;
+  await listTab("online"); checks++;
   await selectPlayer(3); await click(rosterAction("blocklist", "add")); await selectPlayer(1);
   check(!visibleReview(), "Changing selected players retained the prior confirmation"); checks++;
   await selectPlayer(3); await click(rosterAction("blocklist", "add")); await click(".inline-confirm-submit");
@@ -262,13 +271,14 @@ async function run() {
   const noIdentity = snapshot(2, false); noIdentity.entries = noIdentity.entries.map((entry) => ({ ...entry, identifiers: [] }));
   await scenario(noIdentity, { manual: false });
   await selectPlayer();
-  check(document.querySelector(".player-center-details")
+  check(selectedRow().textContent?.includes("玩家 1") && !selectedRow().textContent?.includes("76561198000000001")
     && Array.from(document.querySelectorAll<HTMLButtonElement>(".player-access-selected-action")).every((button) => button.disabled),
     "Inspecting a player with no account identity authorized a roster operation"); checks++;
   await scenario(snapshot(2, false), { access: false, manual: false, sessionActions: false });
   await selectPlayer();
-  check(document.querySelector(".player-center-controls .player-center-details") && !document.querySelector(".player-center-member-action"),
-    "Read-only server cannot display details without granting runtime actions"); checks++;
+  check(selectedRow().textContent?.includes("玩家 1") && selectedRow().textContent?.includes("76561198000000001")
+    && !document.querySelector(".player-center-member-action"),
+    "Read-only server cannot inspect a selected account without granting runtime actions"); checks++;
   await scenario(snapshot(0)); verifyIdle();
   check(select<HTMLElement>('.player-center-list-tabs [data-list-key="online"]').textContent?.includes("0"), "Known zero count disappeared");
   await scenario({ ...snapshot(0), current_players: null, max_players: null, status: "unsupported", complete: false });
@@ -295,7 +305,7 @@ async function run() {
     "Long English confirmation lost its target or clipped text"); verifyReview(); await click(".inline-confirm-buttons button:first-child"); checks++;
   await act(async () => { setFixtureLocale("zh-CN"); setRoster(["76561198000000009"]); });
   await scenario(snapshot(), { multiple: true }); await listTab("blocklist"); await click(".player-access-roster-select");
-  check(select<HTMLElement>(".player-center-member-heading").textContent?.includes("76561198000000009")
+  check(selectedRow().textContent?.includes("76561198000000009")
     && select<HTMLButtonElement>(".player-center-member-action").disabled && !select<HTMLButtonElement>(rosterAction("admins", "add")).disabled
     && !select<HTMLButtonElement>(rosterAction("blocklist", "remove")).disabled, "Offline roster target cannot use cross-roster actions or incorrectly owns a session"); checks++;
   const beforeRemoval = mutations.length; await click(rosterAction("blocklist", "remove")); verifyReview(); await click(".inline-confirm-submit");
