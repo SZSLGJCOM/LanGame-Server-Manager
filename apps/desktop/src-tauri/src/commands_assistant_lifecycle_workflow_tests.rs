@@ -49,6 +49,10 @@ using System.Net.Sockets;
 using System.Threading;
 class LifecycleFixture {
     static int Main(string[] args) {
+        if (Array.IndexOf(args, "-version") >= 0) {
+            Console.Error.WriteLine("openjdk version \"17.0.0\"");
+            return 0;
+        }
         if (Array.IndexOf(args, "--fail-start") >= 0) {
             Console.Error.WriteLine("Fixture requested startup failure");
             return 7;

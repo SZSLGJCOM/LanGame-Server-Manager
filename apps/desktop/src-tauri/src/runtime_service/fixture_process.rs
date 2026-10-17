@@ -124,6 +124,10 @@ fn run_game(config: Config, executable: PathBuf) -> Result<(), String> {
         return Err("Synthetic game must use an instance-owned fixture runtime".into());
     }
     let args: Vec<String> = std::env::args().collect();
+    if args.len() == 2 && args[1] == "-version" {
+        eprintln!(r#"openjdk version "17.0.0""#);
+        return Ok(());
+    }
     let arg = |name: &str| -> Result<&str, String> {
         args.iter()
             .position(|item| item == name)
