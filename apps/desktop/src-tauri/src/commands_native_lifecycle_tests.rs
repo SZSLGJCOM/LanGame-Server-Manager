@@ -252,13 +252,13 @@ async fn run_native_package(
     let env_guard = environment::NativeEnvironment::set(&package.root)?;
     save_app_settings(AppSettings {
         archives_root: String::new(),
-        // The acquisition coordinator requires its clean library staging to
-        // stay outside the instances root. Storage-only local-package probes
-        // can use sibling leaves to leave more room for deep native DLL paths.
-        servers_root: if creation_mode.acquisition == creation::Acquisition::Official {
-            package.root.join("i")
-        } else {
+        // A full lifecycle keeps the library outside the instances root so
+        // uninstall can enforce the same boundary as a normal installation.
+        // Start/stop-only probes retain the short path for deep native DLLs.
+        servers_root: if cycle_only {
             package.root.clone()
+        } else {
+            package.root.join("i")
         }
         .to_string_lossy()
         .into_owned(),
