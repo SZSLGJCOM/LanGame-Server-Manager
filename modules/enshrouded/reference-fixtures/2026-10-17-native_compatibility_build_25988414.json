@@ -1,0 +1,293 @@
+{
+  "verified_on": "2026-10-17",
+  "module_id": "enshrouded",
+  "steam_app_id": 2278520,
+  "evidence_kind": "independent_static_native_profile_comparison",
+  "baseline": {
+    "steam_build_id": "25967645",
+    "server_executable_sha256": "4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba",
+    "pe_timestamp": 1792083984,
+    "image_size": 31256576
+  },
+  "candidate": {
+    "steam_build_id": "25988414",
+    "server_executable_sha256": "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
+    "pe_timestamp": 1792148062,
+    "image_size": 31256576
+  },
+  "method": {
+    "disassembler": "Capstone 5.0.7 x86-64",
+    "instructions": "Compared complete code regions including all seven accountAction pdata fragments, not only its first unwind fragment. Ignored NOP/INT3 padding; masked direct relative call/jump immediates and RIP-relative disp32; masked the relocated update dispatch-table RVA. Separately compared all internal direct branch offsets and all six dispatch-table targets relative to update entry. Critical direct callees and identity hash assignment were also compared.",
+    "decoder_note": "RIP-relative displacements in 64-bit mode are four bytes; Capstone reports disp_size=2 for a legacy-prefixed movdqa here, so the x86-64 disp32 width was used explicitly. Virtual zero-fill data is not treated as file-backed bytes.",
+    "execution": "No server entry point, native moderation call, real account, or game process was executed for this comparison."
+  },
+  "code_region_checks": [
+    {
+      "name": "update_players",
+      "baseline_rva_range": [
+        "0x7b33e0",
+        "0x7b4af8"
+      ],
+      "candidate_rva_range": [
+        "0x7b34c0",
+        "0x7b4bd8"
+      ],
+      "non_padding_instruction_count": 1261,
+      "normalized_instruction_sha256": "70ecbeaafb6ce38e3104d2ba8fc611fd65dbf3a1deafb4c8cd7ac5d86cb6b24d",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 129,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "account_action_all_pdata_fragments",
+      "baseline_rva_range": [
+        "0x79ba20",
+        "0x79c101"
+      ],
+      "candidate_rva_range": [
+        "0x79bb00",
+        "0x79c1e1"
+      ],
+      "non_padding_instruction_count": 400,
+      "normalized_instruction_sha256": "ce6d8c4b61c187999f882f05280094c25f5dddc948c398d2b00734b2496f5641",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 55,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "local_copy",
+      "baseline_rva_range": [
+        "0x9f54d0",
+        "0x9f5554"
+      ],
+      "candidate_rva_range": [
+        "0x9f5bc0",
+        "0x9f5c44"
+      ],
+      "non_padding_instruction_count": 36,
+      "normalized_instruction_sha256": "b99776ed6bf43d239367e19aec4d717ff5f823f41c2a0ec751242b342cee06e7",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 1,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "deep_copy_record",
+      "baseline_rva_range": [
+        "0x9eb0d0",
+        "0x9eb16a"
+      ],
+      "candidate_rva_range": [
+        "0x9eb7c0",
+        "0x9eb85a"
+      ],
+      "non_padding_instruction_count": 37,
+      "normalized_instruction_sha256": "f8c65abfe149aa55f36d925c04451e0f2cce0a2c688b2c3d727086a45d6411c7",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 0,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "enumerate_full_handles",
+      "baseline_rva_range": [
+        "0x9f5560",
+        "0x9f5644"
+      ],
+      "candidate_rva_range": [
+        "0x9f5c50",
+        "0x9f5d34"
+      ],
+      "non_padding_instruction_count": 49,
+      "normalized_instruction_sha256": "977e3f297b008b6c459a4ea508debe062fd3cc989aaf639d6b5867bbb8415e63",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 0,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "disconnect",
+      "baseline_rva_range": [
+        "0x9f6210",
+        "0x9f639c"
+      ],
+      "candidate_rva_range": [
+        "0x9f6900",
+        "0x9f6a8c"
+      ],
+      "non_padding_instruction_count": 78,
+      "normalized_instruction_sha256": "4a3cc5afe871983b7deeda3fe20157c44246fd979fca95134e3f00b286a0ffa3",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 7,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "native_string_copy",
+      "baseline_rva_range": [
+        "0x58fba0",
+        "0x58fc68"
+      ],
+      "candidate_rva_range": [
+        "0x58fc70",
+        "0x58fd38"
+      ],
+      "non_padding_instruction_count": 63,
+      "normalized_instruction_sha256": "6bfcd3115d98ba6faeeecce1fe0ad574615cb3ce38209744ebbd8cd8fcb808b4",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 13,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "remove_native_ban",
+      "baseline_rva_range": [
+        "0xa01f20",
+        "0xa020a9"
+      ],
+      "candidate_rva_range": [
+        "0xa02610",
+        "0xa02799"
+      ],
+      "non_padding_instruction_count": 78,
+      "normalized_instruction_sha256": "6aa3e4fc6562b4658c422d836ffcf60ed26b402e4d4b627e953e97c23ec944a8",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 7,
+      "internal_direct_branch_offsets_equal": true
+    },
+    {
+      "name": "identity_hash_assignment_fragment",
+      "baseline_rva_range": [
+        "0x9eb68e",
+        "0x9eb7f5"
+      ],
+      "candidate_rva_range": [
+        "0x9ebd7e",
+        "0x9ebee5"
+      ],
+      "non_padding_instruction_count": 79,
+      "normalized_instruction_sha256": "ff803466768340e98abae860ab07d4828a6ce46532ca541b8779e19785330435",
+      "normalized_instructions_equal": true,
+      "internal_direct_branch_count": 5,
+      "internal_direct_branch_offsets_equal": true
+    }
+  ],
+  "account_action_pdata": {
+    "baseline_ranges": [
+      [
+        "0x79ba20",
+        "0x79bc25"
+      ],
+      [
+        "0x79bc25",
+        "0x79bef5"
+      ],
+      [
+        "0x79bef5",
+        "0x79c065"
+      ],
+      [
+        "0x79c065",
+        "0x79c06d"
+      ],
+      [
+        "0x79c06d",
+        "0x79c089"
+      ],
+      [
+        "0x79c089",
+        "0x79c0e6"
+      ],
+      [
+        "0x79c0e6",
+        "0x79c101"
+      ]
+    ],
+    "candidate_ranges": [
+      [
+        "0x79bb00",
+        "0x79bd05"
+      ],
+      [
+        "0x79bd05",
+        "0x79bfd5"
+      ],
+      [
+        "0x79bfd5",
+        "0x79c145"
+      ],
+      [
+        "0x79c145",
+        "0x79c14d"
+      ],
+      [
+        "0x79c14d",
+        "0x79c169"
+      ],
+      [
+        "0x79c169",
+        "0x79c1c6"
+      ],
+      [
+        "0x79c1c6",
+        "0x79c1e1"
+      ]
+    ]
+  },
+  "profile_entry_checks": {
+    "update_players": "0x7b34c0",
+    "local_copy": "0x9f5bc0",
+    "account_action": "0x79bb00",
+    "all_three_32_byte_entry_prefixes_equal_to_baseline": true,
+    "local_copy_return_sites": [
+      "0x7b3b8f",
+      "0x7b497e"
+    ],
+    "both_return_sites_follow_direct_call_to_candidate_local_copy": true,
+    "update_dispatch_table_rva": "0x7b4bd8",
+    "dispatch_table_target_count": 6,
+    "dispatch_table_relative_targets_equal": true
+  },
+  "preserved_native_contract": {
+    "local_copy_call": "Windows x64 RCX=output record, RDX=manager, R8D=full session handle; low six bits select an index, and the complete stored handle must match before the deep copy; AL=0 is success.",
+    "copied_record_offsets": {
+      "session_handle": "0x0",
+      "platform_byte": "0x10",
+      "platform_id_u64": "0x18",
+      "native_account_hash_u64": "0x20",
+      "name_pointer": "0x28",
+      "name_length_u64": "0x30",
+      "native_projection_protection_byte": "0x148"
+    },
+    "server_layout": {
+      "manager_pointer": "0x10",
+      "slot_table": "0x1e0",
+      "slot_stride": "0x148",
+      "slot_phase_byte": "0xa",
+      "connected_phase": 3,
+      "slot_permission_byte": "0x10",
+      "slot_name_pointer": "0x20",
+      "slot_name_length_u64": "0x28"
+    },
+    "account_action_call": "Windows x64 RCX=server, RDX=event. Event account hash is read at +0x8 and action byte at +0x14; action 0 selects kick, 1 selects ban, 2 selects native ban removal. Existing native lookup/hash/protection branches remain present.",
+    "protection": "The copied projection byte must differ from 1 to reach kick/ban. The server-slot permission byte AND 1 rejects both kick and ban. Projection byte 2 does not take the equals-1 rejection branch. No native protection bypass is inferred.",
+    "identity_hash_data_flow": "The relocated identity constructor calls the relocated pure hash function and stores RAX at its unchanged +0x68 field; the local copied record retains its unchanged +0x20 account-hash field and accountAction compares this exact copied hash to event +0x8."
+  },
+  "native_account_hash": {
+    "baseline_rva": "0x9f58a0",
+    "candidate_rva": "0x9f5f90",
+    "complete_function_size_bytes": 157,
+    "complete_function_bytes_equal": true,
+    "function_code_sha256": "0cc3a10a5bcf8859d33b225dcb2448f6a7c3c946e89286238cab4c9256f13f9b",
+    "algorithm_unchanged": {
+      "seed": "0x3f63b56db2890a16",
+      "prime": "0x100000001b3",
+      "input": "Eight little-endian bytes of the u64 platform ID",
+      "step": "h = (h XOR byte) * prime modulo 2^64",
+      "no_platform_result": "0"
+    },
+    "prior_independent_synthetic_native_function_evidence": "2026-10-16-native_account_hash.json",
+    "new_native_function_execution_performed": false
+  },
+  "conclusion": "The reviewed native entry points, copied identity layout, native permission guards, event ABI and pure account hash preserve the baseline static contract after explicit relocation to build 25988414.",
+  "limitations": [
+    "Static ABI/control-flow evidence does not establish DLL loading, correct observer assembly execution in the new game process, or end-to-end moderation.",
+    "This review does not establish real-account kick/ban effects, rejected reconnect, unban recovery, multiplayer behavior, or compatibility with any executable SHA other than the candidate above.",
+    "No transitive equivalence claim is made for every game dependency; the explicitly listed native code regions and static contracts were checked."
+  ]
+}

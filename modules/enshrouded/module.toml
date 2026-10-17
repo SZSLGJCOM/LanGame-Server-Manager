@@ -45,7 +45,7 @@ command = "CTRL_C"
 wait_after_ms = 12000
 
 [storage]
-runtime_copy_exclusions = ["enshrouded_server.json", "mods", ".langame-enshrouded-control", ".langame-enshrouded-control-owner.json"]
+runtime_copy_exclusions = ["enshrouded_server.json", "mods", ".langame-enshrouded-control", ".langame-enshrouded-control-owner.json", ".langame-enshrouded-control-state.json"]
 saves_path_template = "{{paths.instance_root}}/savegame"
 retained_paths = ["enshrouded_server.json"]
 

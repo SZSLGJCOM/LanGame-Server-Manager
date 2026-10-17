@@ -18,6 +18,7 @@ interface LivePlayerActionPanelProps {
   actionsEnabled: boolean;
   declaredActions: ModulePlayerActionDetails[];
   disabledReason?: string | null;
+  disabledNotice?: string | null;
   disabledActionReasons?: Readonly<Record<string, string>>;
   locale: LocaleCode;
   onActionCompleted: () => Promise<void>;
@@ -124,6 +125,7 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
   return (
     <aside className="player-center-member-pane" aria-label={props.t("servers.playerCenter.member.ariaLabel", undefined, "Member actions")} aria-busy={Boolean(busyActionId)}>
       {props.actionIds.length > 0 ? <section className="player-center-action-group" aria-label={props.t("servers.playerCenter.member.currentSession", undefined, "Current session")}>
+        {props.disabledNotice ? <p className="player-center-action-reason" role="status">{props.disabledNotice}</p> : null}
         <div className="player-center-action-list">
           {props.actionIds.map((actionId) => {
             const action = props.declaredActions.find((candidate) => candidate.id === actionId);

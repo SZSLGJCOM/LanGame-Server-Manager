@@ -189,6 +189,7 @@ pub(super) fn failed_snapshot(instance_id: &str, snapshot_id: &str) -> RuntimeLi
         max_players: None,
         entries: Vec::new(),
         issue: Some(RuntimeLivePlayerIssue {
+            extension_status: None,
             code: RuntimeLivePlayerIssueCode::CollectionTimeout,
             setting_keys: Vec::new(),
             summary: String::from("Player collection timed out."),

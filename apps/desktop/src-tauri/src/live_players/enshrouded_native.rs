@@ -1,4 +1,4 @@
-//! Native session identity and moderation for one fingerprinted Enshrouded build.
+//! Native session identity and moderation for verified, fingerprinted Enshrouded builds.
 use std::path::PathBuf;
 
 use app_core::{InstanceDetails, ProcessIdentity, RuntimeLivePlayerIssueCode};
@@ -121,14 +121,26 @@ pub(crate) async fn collect(
         ))
     };
     let context = context(details).map_err(failure)?;
+    let extension_status =
+        io::extension_status(&context.root, context.pid, context.identity.creation_time);
+    let native_failure = |message: String| {
+        let mut snapshot = failure(message);
+        if let Some(issue) = &mut snapshot.issue {
+            issue.extension_status = extension_status;
+            if extension_status.is_none() {
+                issue.code = RuntimeLivePlayerIssueCode::ProtocolIncomplete;
+            }
+        }
+        snapshot
+    };
     // Establish native availability before consuming the query. Name-only
     // fallback owns one query when the extension is absent or incompatible.
     let packet = tokio::task::spawn_blocking(move || transport::read_packet(&context))
         .await
-        .map_err(|_| failure("The native player collector worker failed.".into()))?
-        .map_err(failure)?;
+        .map_err(|_| native_failure("The native player collector worker failed.".into()))?
+        .map_err(native_failure)?;
     let mut projected =
-        response::project(packet, &instance_id, request_id, observed_at).map_err(failure)?;
+        response::project(packet, &instance_id, request_id, observed_at).map_err(native_failure)?;
     let native_count = projected.public_snapshot.entries.len();
     let evidence =
         super::server_query::collect_a2s_player_evidence(details, query, request_id, observed_at)
@@ -138,7 +150,7 @@ pub(crate) async fn collect(
             .info
             .is_some_and(|info| info.current_players != native_count)
     {
-        return Err(failure("The native player identities and live query count are in transition. Refresh players before moderation.".into()));
+        return Err(native_failure("The native player identities and live query count are in transition. Refresh players before moderation.".into()));
     }
     projected.public_snapshot.max_players = evidence.info.map(|info| info.max_players);
     Ok(projected)

@@ -113,6 +113,7 @@ test("TypeScript live-player unions mirror the Rust JSON vocabulary", () => {
     "authentication_failed",
     "extension_unavailable"
   ]);
+  assert.deepEqual(typeAliasValues("RuntimePlayerExtensionStatus"), rustEnumJsonValues("RuntimePlayerExtensionStatus"));
   assert.deepEqual(typeAliasValues("RuntimeLivePlayerActionStatus"), ["sent"]);
 });
 
@@ -144,7 +145,8 @@ test("snapshot, row, issue, and action DTO fields match the public Rust contract
   ]);
   assert.deepEqual(interfaceProperties("RuntimeLivePlayerIdentifier"), ["kind", "value", "stable"]);
   assert.deepEqual(interfaceProperties("RuntimeLivePlayerAttribute"), ["key", "value"]);
-  assert.deepEqual(interfaceProperties("RuntimeLivePlayerIssue"), ["code", "setting_keys", "summary"]);
+  assert.deepEqual(interfaceProperties("RuntimeLivePlayerIssue"), ["code", "setting_keys", "summary", "extension_status"]);
+  assert.deepEqual(typeAliasValues("RuntimePlayerExtensionStatus"), ["unsupported_game_build", "not_installed", "loading", "load_failed"]);
   assert.deepEqual(interfaceProperties("ExecuteInstancePlayerActionInput"), [
     "instance_id",
     "snapshot_id",

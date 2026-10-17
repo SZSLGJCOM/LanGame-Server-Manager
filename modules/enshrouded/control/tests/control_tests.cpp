@@ -49,6 +49,11 @@ int main() {
     auto current = valid.capture();
     if (!current.complete || current.count != 1 || current.players[0].generation != 1
         || current.players[0].accountId != 9007199254740993ull) return 3;
+    Fixture hotfix; hotfix.player();
+    hotfix.cache.callerA = 0x7b3b8f; hotfix.cache.callerB = 0x7b497e;
+    if (!Is(hotfix.observe(), "unexpected_native_caller") || hotfix.capture().complete
+        || !Is(hotfix.observe(0, hotfix.cache.callerA), "none") || !hotfix.capture().complete
+        || !Is(hotfix.observe(0, hotfix.cache.callerB), "none")) return 38;
     const auto generation = current.players[0].generation;
     valid.set(valid.slot + 0x10, std::uint8_t(1));
     if (!valid.capture().players[0].moderationImmune) return 4;

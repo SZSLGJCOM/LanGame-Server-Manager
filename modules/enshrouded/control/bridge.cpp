@@ -31,7 +31,8 @@ std::wstring ControlRoot() {
 }
 bool Status(const std::wstring& root, const char* state, const char* issue) {
     return WriteAtomicFile(root + L"\\status.json", "{\"protocol\":1,\"pid\":" + std::to_string(GetCurrentProcessId())
-        + ",\"state\":\"" + state + "\",\"issue\":\"" + issue + "\",\"exe_sha256\":\"" + kExeSha256 + "\"}");
+        + ",\"state\":\"" + state + "\",\"issue\":\"" + issue + "\",\"exe_sha256\":\""
+        + (g_profile.exeSha256 ? g_profile.exeSha256 : "") + "\"}");
 }
 void RejectPending(const char* issue) noexcept {
     if (!g_hasPending) return;
@@ -60,6 +61,7 @@ DWORD WINAPI Worker(void*) noexcept {
         if (root.empty() || !PlainDirectory(root) || !ReadBoundedFile(root + L"\\enable", 64, enabled)
             || enabled != kHeader) return 0;
         if (!ValidateNativeProfile(g_profile)) { Status(root, "blocked", "unsupported_executable"); return 0; }
+        g_cache.callerA = g_profile.callerA; g_cache.callerB = g_profile.callerB;
         if (!CreateProcessIdentity(g_identity)) { Status(root, "failed", "run_identity_unavailable"); return 1; }
         if (!InstallHooks()) { StopSampling(); Status(root, "failed", "native_hook_installation_failed"); return 1; }
         if (!Status(root, "waiting", "awaiting_native_update")) { StopSampling(); return 1; }
@@ -163,7 +165,7 @@ extern "C" void ControlCaptureCopy(const enshrouded_control::NativeLookupContext
     if (!InterlockedCompareExchange(&g_ready, 0, 0) || !lookup || lookup->caller < g_profile.imageBase
         || InterlockedCompareExchange(&g_stopping, 0, 0)) return;
     const auto caller = lookup->caller - g_profile.imageBase;
-    if (caller != kCallerA && caller != kCallerB) return;
+    if (caller != g_profile.callerA && caller != g_profile.callerB) return;
     if (!TryAcquireSRWLockExclusive(&g_stateLock)) return;
     const auto owner = InterlockedCompareExchange(&g_ownerThread, 0, 0);
     if (!owner) { ReleaseSRWLockExclusive(&g_stateLock); return; }

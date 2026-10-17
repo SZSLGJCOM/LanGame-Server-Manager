@@ -26,6 +26,7 @@ encoding_rs = "0.8.42"
 if-addrs = "0.15.0"
 keyring = "4.2.0"
 mlua = { version = "0.12.2", features = ["lua54", "vendored"] }
+minisign-verify = "=0.3.0"
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true

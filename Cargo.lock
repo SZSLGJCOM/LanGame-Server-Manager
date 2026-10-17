@@ -2758,6 +2758,7 @@ dependencies = [
  "encoding_rs",
  "if-addrs",
  "keyring",
+ "minisign-verify",
  "mlua",
  "reqwest",
  "serde",

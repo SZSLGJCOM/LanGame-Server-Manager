@@ -2,6 +2,7 @@ import { ShellIcon, type ShellIconName } from "../../../components/ShellIcon";
 import { selectLocaleText, type LocaleCode } from "../../../i18n";
 import type { LivePlayerPresentation } from "../../../domain/live-player-state";
 import type { RuntimeLivePlayerSnapshot } from "../../../types";
+import { enshroudedPlayerManagementUnavailableReason } from "./enshrouded-extension-status";
 
 interface LivePlayerStateProps {
   readOnly?: boolean;
@@ -30,6 +31,9 @@ function localizedIssueCopy(
     case "collection_timeout":
       return selectLocaleText(locale, "服务器没有在限定时间内返回完整玩家列表。", "The server did not return a complete player list before the timeout.");
     case "protocol_incomplete":
+      if (moduleId === "enshrouded") {
+        return enshroudedPlayerManagementUnavailableReason(snapshot.issue, locale)!;
+      }
       return selectLocaleText(locale, "服务器返回的玩家列表不完整。", "The server returned an incomplete player list.");
     case "capture_limit":
       return selectLocaleText(locale, "玩家列表超过安全采集上限，当前结果已截断。", "The player list exceeded the safe collection limit and was truncated.");
@@ -58,6 +62,9 @@ function localizedIssueCopy(
     case "authentication_failed":
       return selectLocaleText(locale, "玩家查询认证失败，请检查远程控制或 API 凭据。", "Player query authentication failed. Check the remote-control or API credentials.");
     case "extension_unavailable":
+      if (moduleId === "enshrouded") {
+        return enshroudedPlayerManagementUnavailableReason(snapshot.issue, locale)!;
+      }
       if (moduleId === "runescapedragonwilds") {
         return selectLocaleText(locale, "Dragonwilds 的玩家查询扩展未就绪。独立运行副本会在下次启动时自动准备 UE4SS、专服代理和 LgsmPlayerQuery，请查看启动日志；已有加载器或未验证版本需要按扩展说明处理。此提示不表示游戏开服失败。", "The Dragonwilds player-query extension is unavailable. Independent runtimes prepare UE4SS, the dedicated-server proxy and LgsmPlayerQuery on their next start; check the startup log. Existing loaders and unverified builds require the extension instructions. This does not mean the game server failed to start.");
       }

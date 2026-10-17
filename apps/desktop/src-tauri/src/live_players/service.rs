@@ -72,6 +72,7 @@ pub(crate) fn unsupported_snapshot(
         RuntimeLivePlayerStatus::Unsupported,
         None,
         Some(RuntimeLivePlayerIssue {
+            extension_status: None,
             code: RuntimeLivePlayerIssueCode::AdapterUnavailable,
             setting_keys: Vec::new(),
             summary: String::from("This module has no connected online-player adapter."),
@@ -121,6 +122,7 @@ pub(crate) fn misconfigured_snapshot(
         RuntimeLivePlayerStatus::Misconfigured,
         Some(source),
         Some(RuntimeLivePlayerIssue {
+            extension_status: None,
             code,
             setting_keys,
             summary: summary.into(),
@@ -142,6 +144,7 @@ pub(crate) fn failed_snapshot(
         RuntimeLivePlayerStatus::Failed,
         Some(source),
         Some(RuntimeLivePlayerIssue {
+            extension_status: None,
             code,
             setting_keys: Vec::new(),
             summary: summary.into(),
@@ -458,6 +461,7 @@ fn cached_complete_snapshot(
             max_players: None,
             entries,
             issue: collected.truncated.then(|| RuntimeLivePlayerIssue {
+                extension_status: None,
                 code: RuntimeLivePlayerIssueCode::CaptureLimit,
                 setting_keys: Vec::new(),
                 summary: String::from("Only part of the player list could be returned safely."),

@@ -196,3 +196,38 @@ fn absent_native_array_or_ambiguous_records_are_not_unban_confirmation() {
     assert!(!transport::native_banned(&root, 1).unwrap());
     std::fs::remove_dir_all(&root).unwrap();
 }
+
+#[test]
+fn extension_loading_diagnostics_are_distinct_from_snapshot_failures() {
+    use app_core::RuntimePlayerExtensionStatus as Status;
+    let root = std::env::temp_dir().join(format!(
+        "lgsm-enshrouded-status-{}",
+        uuid::Uuid::new_v4().simple()
+    ));
+    std::fs::create_dir(&root).unwrap();
+    std::fs::create_dir(root.join(io::DIRECTORY)).unwrap();
+    std::fs::write(root.join("enshrouded_server.exe"), b"synthetic executable").unwrap();
+    let sha = io::digest(b"synthetic executable");
+    io::publish_manager_state(&root, &sha, Status::UnsupportedGameBuild).unwrap();
+    assert_eq!(
+        io::extension_status(&root, 42, 7),
+        Some(Status::UnsupportedGameBuild)
+    );
+    io::publish_manager_state(&root, &sha, Status::Loading).unwrap();
+    let path = root.join(io::DIRECTORY).join("status.json");
+    for (state, expected) in [
+        ("ready", None),
+        ("incomplete", None),
+        ("waiting", Some(Status::Loading)),
+        ("failed", Some(Status::LoadFailed)),
+        ("blocked", Some(Status::UnsupportedGameBuild)),
+    ] {
+        std::fs::write(
+            &path,
+            serde_json::to_vec(&json!({"pid":42, "state":state})).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(io::extension_status(&root, 42, 7), expected);
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}

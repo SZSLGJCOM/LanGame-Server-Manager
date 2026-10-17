@@ -14,6 +14,7 @@ mod desktop_app_log;
 mod desktop_reliability;
 mod desktop_window;
 mod dst_mods;
+mod enshrouded_extension;
 #[cfg(all(test, feature = "custom-protocol"))]
 mod embedded_frontend_tests;
 mod knowledge_runtime;

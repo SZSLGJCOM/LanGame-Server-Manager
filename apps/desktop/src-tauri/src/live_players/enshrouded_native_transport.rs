@@ -36,21 +36,20 @@ fn open(context: &Context) -> Result<(File, File), String> {
     let owner: serde_json::Value =
         serde_json::from_slice(&io::read_regular(&context.root.join(io::OWNER), 4096)?)
             .map_err(|_| "The native extension ownership record is invalid.")?;
-    let payload = io::bundled_payload();
-    let hash = io::digest(payload);
-    if payload.is_empty()
-        || owner.get("schema").and_then(|v| v.as_u64()) != Some(1)
+    let payload = io::read_regular(
+        &context.root.join("dbghelp.dll"),
+        crate::enshrouded_extension::MAX_DLL,
+    )?;
+    let hash = io::digest(&payload);
+    let executable = io::digest(&io::read_regular(
+        Path::new(&context.identity.image_path),
+        32 * 1024 * 1024,
+    )?);
+    crate::enshrouded_extension::verify_installed(&context.root, &executable, &payload)?;
+    if owner.get("schema").and_then(|v| v.as_u64()) != Some(1)
         || owner.get("module_id").and_then(|v| v.as_str()) != Some("enshrouded")
         || owner.get("plugin_sha256").and_then(|v| v.as_str()) != Some(hash.as_str())
-        || io::digest(&io::read_regular(
-            &context.root.join("dbghelp.dll"),
-            1024 * 1024,
-        )?) != hash
         || io::read_regular(&context.root.join(io::DIRECTORY).join("enable"), 128)? != io::ENABLE
-        || io::digest(&io::read_regular(
-            Path::new(&context.identity.image_path),
-            32 * 1024 * 1024,
-        )?) != io::EXE_SHA256
     {
         return Err(
             "The verified Enshrouded native extension is not installed for this build.".into(),

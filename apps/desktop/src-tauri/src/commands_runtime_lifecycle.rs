@@ -531,7 +531,12 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     );
     crate::astroneer_console::validate_start_settings(&instance)?;
     super::commands_theforest_control::prepare(storage, &instance).await?;
-    super::commands_enshrouded_control::prepare(storage, &instance).await?;
+    super::commands_enshrouded_control::prepare(
+        storage,
+        &instance,
+        prestart_update_log_path.as_deref(),
+    )
+    .await?;
     let (module, mut launch_plans) = Box::pin(super::commands_runtime_environment::prepare(
         state,
         storage,

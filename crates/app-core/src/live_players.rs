@@ -175,6 +175,17 @@ pub struct RuntimeLivePlayerIssue {
     pub code: RuntimeLivePlayerIssueCode,
     pub setting_keys: Vec<String>,
     pub summary: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extension_status: Option<RuntimePlayerExtensionStatus>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RuntimePlayerExtensionStatus {
+    UnsupportedGameBuild,
+    NotInstalled,
+    Loading,
+    LoadFailed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "verified_on": "2026-10-17",
+  "module_id": "enshrouded",
+  "steam_build_id": "25988414",
+  "executable_sha256": "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
+  "dll_sha256": "49e57a91f01c7378999e04219b6462c41ddebc2188b15b2026704c5216f673dc",
+  "manager_build_input_sha256": "a90e760d2d7a5ad7145982185587e19c600a24fd826a1d2391350ef4f907b2ec",
+  "environment": "Windows x64, pamd, installed production-mode manager candidate 0.1.3, real Steam client and owned independent server",
+  "entry_points": ["execute_instance_player_action", "execute_instance_manual_player_action"],
+  "verified_actions": ["kick", "ban", "unban"],
+  "observations": {
+    "identity": "Exactly one native file_ipc player matched the active local Steam account and had moderation_immune=false. No names or account identifiers are retained here.",
+    "kick": {
+      "time": "2026-10-17T21:18:17.6685876+08:00",
+      "backend_status": "sent",
+      "native_departure_confirmed": true,
+      "native_ban_present": false,
+      "human_confirmed_kick_and_successful_reconnect": true
+    },
+    "ban": {
+      "time": "2026-10-17T21:19:13.9868027+08:00",
+      "backend_status": "sent",
+      "native_departure_confirmed": true,
+      "canonical_native_ban_present": true,
+      "manager_saved_ban_present": true,
+      "human_confirmed_blocked_reconnect": true
+    },
+    "unban": {
+      "time": "2026-10-17T21:19:54.8655007+08:00",
+      "backend_status": "sent",
+      "canonical_native_ban_removed": true,
+      "manager_saved_ban_removed": true,
+      "human_confirmed_successful_reconnect": true,
+      "native_file_ipc_player_online_after_reconnect": true
+    }
+  },
+  "scope": "Real client moderation was verified on build 25988414. The older 25967645 profile is retained using separate prior/static and regression evidence; this run did not repeat live moderation on that older executable. Signed feed download and the final UI packaging are separate acceptance steps."
+}

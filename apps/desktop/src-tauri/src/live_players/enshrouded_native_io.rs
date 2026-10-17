@@ -7,10 +7,85 @@ use sha2::{Digest, Sha256};
 
 pub(crate) const EXE_SHA256: &str =
     "4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba";
+pub(crate) const BUNDLED_EXE_SHA256: &[&str] = &[
+    EXE_SHA256,
+    "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
+];
 pub(crate) const DIRECTORY: &str = ".langame-enshrouded-control";
 pub(crate) const OWNER: &str = ".langame-enshrouded-control-owner.json";
+const MANAGER_STATE: &str = ".langame-enshrouded-control-state.json";
 pub(crate) const ENABLE: &[u8] = b"LGSM_ENSHROUDED_CONTROL_1\n";
 pub(crate) const MAX_BYTES: usize = 64 * 1024;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ManagerState {
+    executable_sha256: String,
+    extension_status: app_core::RuntimePlayerExtensionStatus,
+}
+
+pub(crate) fn publish_manager_state(
+    root: &Path,
+    executable: &str,
+    status: app_core::RuntimePlayerExtensionStatus,
+) -> Result<(), String> {
+    let bytes = serde_json::to_vec(&ManagerState {
+        executable_sha256: executable.to_owned(),
+        extension_status: status,
+    })
+    .map_err(|_| "Cannot encode extension readiness.")?;
+    publish(&root.join(MANAGER_STATE), &bytes)
+}
+
+pub(crate) fn extension_status(
+    root: &Path,
+    pid: u32,
+    creation_time: u64,
+) -> Option<app_core::RuntimePlayerExtensionStatus> {
+    use app_core::RuntimePlayerExtensionStatus as Status;
+    let executable = read_regular(&root.join("enshrouded_server.exe"), 32 * 1024 * 1024)
+        .map(|bytes| digest(&bytes))
+        .ok();
+    let manager: Option<ManagerState> = read_regular(&root.join(MANAGER_STATE), 4096)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+    if let Some(state) = manager
+        && Some(&state.executable_sha256) == executable.as_ref()
+        && matches!(
+            state.extension_status,
+            Status::UnsupportedGameBuild | Status::NotInstalled
+        )
+    {
+        return Some(state.extension_status);
+    }
+    let native: Option<serde_json::Value> =
+        read_regular(&root.join(DIRECTORY).join("status.json"), 4096)
+            .ok()
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+    if let Some(native) = native
+        && native.get("pid").and_then(|v| v.as_u64()) == Some(pid as u64)
+    {
+        return match native.get("state").and_then(|v| v.as_str()) {
+            Some("blocked") => Some(Status::UnsupportedGameBuild),
+            Some("waiting") => Some(Status::Loading),
+            Some("ready" | "incomplete") => None,
+            _ => Some(Status::LoadFailed),
+        };
+    }
+    if !root.join("dbghelp.dll").is_file() {
+        return Some(Status::NotInstalled);
+    }
+    let filetime_now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|d| u64::try_from(d.as_nanos() / 100).ok())
+        .and_then(|ticks| ticks.checked_add(116_444_736_000_000_000));
+    if filetime_now.is_some_and(|now| now.saturating_sub(creation_time) < 100_000_000) {
+        Some(Status::Loading)
+    } else {
+        Some(Status::LoadFailed)
+    }
+}
 
 pub(crate) fn bundled_payload() -> &'static [u8] {
     #[cfg(windows)]

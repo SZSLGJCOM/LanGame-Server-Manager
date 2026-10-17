@@ -25,7 +25,7 @@ interface SelectedPlayerRosterActionsProps {
   onMutate: RosterMutationHandler;
   onClearSelection?: () => void;
   /** A ban roster whose removal also performs the native unban while the server runs (`live`). */
-  mergedUnban?: { fieldKey: string; live: boolean };
+  mergedUnban?: { fieldKey: string; live: boolean; liveUnavailableReason?: string | null };
 }
 interface EditorTarget { fieldKey: string; entry: RosterEntry | null; identity?: SelectedRosterTarget }
 
@@ -106,13 +106,15 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
             const merged = operation === "remove" && props.mergedUnban?.fieldKey === field.key;
             // While running the native unban needs only the target; stopped, it removes the saved entry.
             const mergedLive = merged && props.mergedUnban?.live === true;
+            const liveUnavailableReason = mergedLive && target && props.mergedUnban?.liveUnavailableReason
+              ? `${selectLocaleText(props.locale, "即时解封不可用。", "Live unban is unavailable.")} ${props.mergedUnban.liveUnavailableReason}` : null;
             const label = merged ? selectLocaleText(props.locale, "\u89e3\u5c01", "Unban") : nameBan ? operation === "add" ? selectLocaleText(props.locale, "封禁角色名", "Ban character name")
               : selectLocaleText(props.locale, "解除角色名封禁", "Unban character name") : actionLabel(field, operation, props.locale);
-            const unavailable = disabled || field.property.readOnly === true || !target || (operation === "add" ? Boolean(entry) : !entry && !mergedLive);
+            const unavailable = disabled || Boolean(liveUnavailableReason) || field.property.readOnly === true || !target || (operation === "add" ? Boolean(entry) : !entry && !mergedLive);
             const reason = unavailableReason(field, operation, target, entry);
-            const helpText = [mergedLive && target && !entry && !disabled ? null : merged && !mergedLive && target && !entry && !disabled
+            const helpText = [liveUnavailableReason ?? (mergedLive && target && !entry && !disabled ? null : merged && !mergedLive && target && !entry && !disabled
               ? selectLocaleText(props.locale, `\u6b64\u73a9\u5bb6\u4e0d\u5728\u300c${field.title}\u300d\u4e2d\uff1b\u670d\u52a1\u5668\u8fd0\u884c\u65f6\u53ef\u76f4\u63a5\u89e3\u5c01\u3002`,
-                `This player is not in ${field.title}; start the server to unban natively.`) : reason, nameBan ? nameBanHelp : null, allowlistHelp].filter(Boolean).join(" ");
+                `This player is not in ${field.title}; start the server to unban natively.`) : reason), nameBan ? nameBanHelp : null, allowlistHelp].filter(Boolean).join(" ");
             const rawValue = mergedLive && !entry ? target?.rawValue : operation === "remove" ? entry?.rawValue : target?.rawValue;
             const displayName = entry?.label ?? props.selectedPlayer?.display_name ?? selectedRoster?.entry.label ?? props.manualTarget ?? "";
             const playerLabel = `${displayName}${target ? ` (${target.identity})` : ""}`.replace(/[\u0000-\u001f\u007f]/g, " ").trim();

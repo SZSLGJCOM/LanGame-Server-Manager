@@ -7,7 +7,7 @@ import { I18nProvider, useI18n } from "../../src/i18n";
 import { createPlayerCenterState, derivePlayerCenterViewModel, reducePlayerCenterState } from "../../src/domain/live-player-state";
 import { OnlinePlayersView } from "../../src/views/servers/player-center/OnlinePlayersView";
 import { usePlayerAccess } from "../../src/views/servers/player-center/use-player-access";
-import type { ExecuteInstancePlayerActionInput, InstanceDetails, ModuleDetails, ModulePlayerActionDetails, RuntimeLivePlayerEntry, RuntimeLivePlayerSnapshot } from "../../src/types";
+import type { ExecuteInstancePlayerActionInput, InstanceDetails, InstancePlayerAccessMutationInput, ModuleDetails, ModulePlayerActionDetails, RuntimeLivePlayerEntry, RuntimeLivePlayerSnapshot, RuntimePlayerExtensionStatus } from "../../src/types";
 import "../../src/app.css";
 import "../../src/views/servers/workbench.css";
 
@@ -23,6 +23,7 @@ const errors: string[] = [];
 let commands = 0;
 let mutations = 0;
 const nativeRequests: ExecuteInstancePlayerActionInput[] = [];
+const rosterRequests: InstancePlayerAccessMutationInput[] = [];
 const nativeSteamCase = nativeHashFixture.cases.find((entry) => entry.platform === 3 && entry.synthetic_platform_id === "76561197960265729");
 if (!nativeSteamCase) throw new Error("Synthetic native Steam hash evidence is missing");
 const nativeAccountId = nativeSteamCase.native_hash;
@@ -41,13 +42,25 @@ const nativeActions: ModulePlayerActionDetails[] = [
   { ...action, id: "ban_player", kind: "ban", label: "Ban player", label_zh_cn: "封禁玩家" }
 ];
 type Scenario = "enshrouded" | "read-only" | "workspace-read-only" | "expired" | "unavailable" | "metadata"
+  | "enshrouded-unsupported-build" | "enshrouded-not-installed" | "enshrouded-loading" | "enshrouded-load-failed"
+  | "enshrouded-protocol-incomplete"
+  | "enshrouded-unban-unsupported" | "enshrouded-unban-loading" | "enshrouded-unban-load-failed" | "enshrouded-unban-ready" | "enshrouded-unban-incomplete" | "enshrouded-unban-stopped"
   | "enshrouded-native" | "enshrouded-native-banned" | "enshrouded-native-unknown" | "enshrouded-steam-only" | "enshrouded-native-stale" | "enshrouded-native-protected";
+const extensionScenarios: Partial<Record<Scenario, RuntimePlayerExtensionStatus>> = {
+  "enshrouded-unsupported-build": "unsupported_game_build", "enshrouded-not-installed": "not_installed",
+  "enshrouded-loading": "loading", "enshrouded-load-failed": "load_failed",
+  "enshrouded-unban-unsupported": "unsupported_game_build", "enshrouded-unban-loading": "loading", "enshrouded-unban-load-failed": "load_failed",
+  "enshrouded-unban-stopped": "unsupported_game_build"
+};
 
 function Fixture({ scenario }: { scenario: Scenario }) {
   const { locale, t } = useI18n();
   const enshrouded = scenario.startsWith("enshrouded");
   const nativeScenario = enshrouded && scenario !== "enshrouded";
-  const unknownExtension = scenario === "enshrouded-native-unknown";
+  const unbanScenario = scenario.startsWith("enshrouded-unban-");
+  const extensionStatus = extensionScenarios[scenario];
+  const protocolIncomplete = scenario === "enshrouded-protocol-incomplete" || scenario === "enshrouded-unban-incomplete";
+  const unknownExtension = scenario === "enshrouded-native-unknown" || Boolean(extensionStatus) || protocolIncomplete;
   const steamOnly = scenario === "enshrouded-steam-only";
   const expired = scenario === "expired" || scenario === "enshrouded-native-stale";
   const workspaceReadOnly = scenario === "workspace-read-only";
@@ -64,9 +77,12 @@ function Fixture({ scenario }: { scenario: Scenario }) {
     : expired || workspaceReadOnly ? { ...player, available_action_ids: ["kick"] } : player;
   const snapshot: RuntimeLivePlayerSnapshot = { instance_id: `details-${scenario}`, snapshot_id: `snapshot-${scenario}`,
     source: nativeScenario && !unknownExtension ? "file_ipc" : "server_query", status: "ready", observed_at_unix_ms: now, expires_at_unix_ms: expired ? now - 1 : now + 30_000,
-    stale: false, complete: true, truncated: false, current_players: 1, max_players: 16, entries: [row], issue: null };
+    stale: false, complete: true, truncated: false, current_players: 1, max_players: 16, entries: [row],
+    issue: protocolIncomplete ? { code: "protocol_incomplete", setting_keys: [], summary: "Native identity and query count are in transition." }
+      : extensionStatus ? { code: "extension_unavailable", extension_status: extensionStatus, setting_keys: [],
+      summary: "Native diagnostic text must not be interpreted as a compatibility state." } : null };
   const [state, setState] = useState(() => createPlayerCenterState({ instanceId: snapshot.instance_id, snapshot }));
-  const [bannedIds, setBannedIds] = useState(scenario === "enshrouded-native-banned" ? nativeAccountId : "");
+  const [bannedIds, setBannedIds] = useState(scenario === "enshrouded-native-banned" || unbanScenario ? nativeAccountId : "");
   const details: InstanceDetails = { summary: { id: snapshot.instance_id, name: "Player details", module_id: moduleId,
     status: "Running", active_process_count: 1, autostart: false, bind_ip: "127.0.0.1" }, ports: [],
     settings_json: JSON.stringify({ banned_player_ids: bannedIds }), config_file_path: "", saves_path: "",
@@ -75,13 +91,15 @@ function Fixture({ scenario }: { scenario: Scenario }) {
     default_ports: [], runtime: {}, schema_json: JSON.stringify(schema) };
   const access = usePlayerAccess({ details, moduleDetails, onApplyPlayerAccessMutation: async (input) => {
     mutations++;
+    rosterRequests.push(input);
     return { instanceId: input.instanceId, fieldKey: input.fieldKey, operation: input.operation,
       persistentStatus: "updated", liveStatus: "restart_required", verificationStatus: "unavailable" };
   } });
   return <main style={{ width: "1000px", height: "650px", margin: "32px auto", display: "grid", minHeight: 0 }}>
     <section className="player-access-workbench">
-      <OnlinePlayersView moduleId={moduleId} readOnly={workspaceReadOnly} locale={locale} now={now} declaredActions={nativeScenario ? nativeActions : sessionControls ? [action] : []}
-        playerActionIds={nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable
+      <OnlinePlayersView moduleId={moduleId} readOnly={workspaceReadOnly} locale={locale} now={now}
+        declaredActions={nativeScenario ? [...nativeActions, ...(unbanScenario ? [{ ...action, id: "unban_player", label: "Unban", label_zh_cn: "解封" }] : [])] : sessionControls ? [action] : []}
+        playerActionIds={nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable={scenario !== "enshrouded-unban-stopped"}
         snapshot={state.snapshot} presentation={derivePlayerCenterViewModel(state, now).livePlayers} t={t}
         access={enshrouded ? access : undefined} onRefresh={async () => {}}
         onExecutePlayerAction={async (input) => {
@@ -142,6 +160,30 @@ function describedReason(button: HTMLButtonElement): string {
   const id = button.getAttribute("aria-describedby");
   return id ? document.getElementById(id)?.textContent ?? "" : "";
 }
+function mergedUnbanButton() {
+  return element<HTMLButtonElement>('[data-roster-field="banned_player_ids"] [data-operation="remove"]');
+}
+async function selectUnbanTarget(mode: "roster" | "manual") {
+  await act(async () => { element<HTMLButtonElement>(`[data-list-key="${mode === "roster" ? "banned_player_ids" : "manual"}"]`).click(); });
+  if (mode === "roster") {
+    await act(async () => { element<HTMLButtonElement>(".player-access-roster-select").click(); });
+  } else {
+    const input = element<HTMLInputElement>(".player-center-manual-lookup input");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "18446744073709551615");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => { element<HTMLFormElement>(".player-center-manual-lookup").requestSubmit(); });
+  }
+}
+async function waitForTooltip(reason: string) {
+  const deadline = performance.now() + 5000;
+  while (!Array.from(document.querySelectorAll(".configuration-field-help-tooltip.is-visible"))
+    .some((tooltip) => tooltip.textContent === reason)) {
+    if (performance.now() >= deadline) throw new Error(`Missing visible action tooltip: ${reason}`);
+    await act(async () => { await new Promise<void>((resolve) => requestAnimationFrame(() => resolve())); });
+  }
+}
 // The right panel no longer repeats the selected identity; the highlighted left row is the target.
 function selectedRowText() {
   const pressed = document.querySelector('.player-center-list-pane [aria-pressed="true"]');
@@ -163,7 +205,7 @@ async function run() {
     "Read-only inspection rejects a live command even when the supplied snapshot is actionable");
   await draw("expired"); await selectWithKeyboard(); verifyDisabledDescriptions();
   element<HTMLButtonElement>(".player-center-member-action").click();
-  check(commands === 0 && fixture?.textContent?.includes("快照尚未确认完整且有效"), "Inspecting expired players never sends live commands");
+  check(commands === 0 && fixture?.textContent?.includes("玩家名单已过期"), "Inspecting expired players never sends live commands");
   await draw("unavailable"); await selectWithKeyboard(); verifyDisabledDescriptions();
   check(fixture?.textContent?.includes("未提供此操作所需的身份") && !fixture.textContent.includes("快照尚未确认完整且有效"),
     "A fresh read-only player explains missing action identity without requesting a refresh");
@@ -174,6 +216,32 @@ async function run() {
   check(fixture?.textContent?.includes("扩展未提供有效玩家身份")
     && !fixture.textContent.includes("未连接原生管理接口") && commands === 0,
     "Unknown native extension preserves read-only fallback despite declared actions");
+  for (const [scenario, expected] of [["enshrouded-unsupported-build", "当前 LanGame 尚未取得适配此游戏版本"],
+    ["enshrouded-not-installed", "玩家管理扩展尚未准备"], ["enshrouded-loading", "玩家管理扩展尚未就绪"],
+    ["enshrouded-load-failed", "玩家管理扩展加载失败"], ["enshrouded-protocol-incomplete", "尚未取得完整有效的玩家身份"]] as const) {
+    await draw(scenario); await selectWithKeyboard(); verifyDisabledDescriptions();
+    const kick = nativeAction("踢出玩家"); const ban = nativeAction("封禁玩家");
+    const reason = describedReason(kick);
+    check(reason.includes(expected) && describedReason(ban) === reason
+      && element<HTMLElement>(".player-center-action-reason").textContent === reason,
+      `Selected fallback player exposes ${scenario} beside and on disabled actions`);
+    check(!reason.includes("快照尚未确认") && !reason.includes("Native diagnostic"),
+      "Fresh fallback names preserve structured extension diagnosis without interpreting native text");
+    await act(async () => { kick.closest<HTMLElement>(".player-access-total-action")!.focus(); });
+    await key("Tab");
+    check(document.activeElement === ban.closest(".player-access-total-action"), "Keyboard reaches the disabled ban action explanation");
+    await waitForTooltip(reason);
+    await act(async () => { kick.click(); ban.click(); });
+    check(nativeRequests.length === 0 && !fixture?.querySelector(".inline-confirm-review"), "Extension failures cannot dispatch moderation commands");
+  }
+  await key("Escape");
+  const hoverAction = nativeAction("踢出玩家").closest<HTMLElement>(".player-access-total-action")!;
+  await act(async () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    hoverAction.dispatchEvent(new PointerEvent("pointerover", { bubbles: true, pointerType: "mouse" }));
+  });
+  await waitForTooltip(describedReason(nativeAction("踢出玩家")));
+  check(true, "Hover reveals the extension failure directly on a disabled action");
   await draw("enshrouded-steam-only"); await selectWithKeyboard(); verifyDisabledDescriptions();
   await act(async () => { nativeAction("封禁玩家").click(); });
   check(nativeRequests.length === 0 && !fixture?.querySelector(".inline-confirm-review"), "Steam identity alone never authorizes a native account action");
@@ -186,7 +254,7 @@ async function run() {
   await act(async () => { nativeAction("踢出玩家").click(); nativeAction("封禁玩家").click(); });
   check(nativeRequests.length === 0 && !fixture?.querySelector(".inline-confirm-review"), "Protected native players cannot dispatch moderation commands");
   await draw("enshrouded-native-stale"); await selectWithKeyboard();
-  check(nativeAction("封禁玩家").disabled && describedReason(nativeAction("封禁玩家")).includes("快照尚未确认完整且有效"),
+  check(nativeAction("封禁玩家").disabled && describedReason(nativeAction("封禁玩家")).includes("玩家名单已过期"),
     "Expired native identity remains inspectable without live authority");
   await draw("enshrouded-native-banned"); await selectWithKeyboard();
   check(nativeAction("封禁玩家").disabled && describedReason(nativeAction("封禁玩家")) === "此玩家已在封禁名单中。"
@@ -213,6 +281,31 @@ async function run() {
   await draw("enshrouded-native-banned"); await selectWithKeyboard();
   const controls = element<HTMLElement>(".player-center-controls");
   check(controls.scrollWidth <= controls.clientWidth + 1, "Player details fit the controls column");
+  const beforeUnban = rosterRequests.length;
+  for (const scenario of ["enshrouded-unban-unsupported", "enshrouded-unban-loading", "enshrouded-unban-load-failed"] as const) {
+    for (const mode of ["roster", "manual"] as const) {
+      await draw(scenario); await selectUnbanTarget(mode);
+      const button = mergedUnbanButton();
+      const reason = describedReason(button);
+      check(button.disabled && reason.includes("即时解封不可用") && reason.includes(scenario === "enshrouded-unban-unsupported"
+        ? "尚未取得适配此游戏版本" : scenario === "enshrouded-unban-loading" ? "扩展尚未就绪" : "扩展加载失败"),
+        "Unavailable extensions disable known roster and manual native unban with a specific reason");
+      await act(async () => { button.closest<HTMLElement>(".player-access-total-action")!.focus(); });
+      await waitForTooltip(reason);
+      await act(async () => { button.click(); });
+      check(rosterRequests.length === beforeUnban && !fixture?.querySelector(".inline-confirm-review"), "Disabled native unban never crosses the mutation boundary");
+    }
+  }
+  for (const scenario of ["enshrouded-unban-ready", "enshrouded-unban-incomplete", "enshrouded-unban-stopped"] as const) {
+    await draw(scenario); await selectUnbanTarget("roster");
+    check(!mergedUnbanButton().disabled, "Ready or incomplete player identities and a stopped server do not block known-account unban");
+    const before = rosterRequests.length;
+    await act(async () => { mergedUnbanButton().click(); });
+    await act(async () => { element<HTMLButtonElement>(".inline-confirm-submit").click(); });
+    check(rosterRequests.length === before + 1 && rosterRequests[before].operation === "remove"
+      && rosterRequests[before].fieldKey === "banned_player_ids" && rosterRequests[before].value === nativeAccountId,
+      "Available native unban or stopped ban removal sends only the exact known account");
+  }
   check(errors.length === 0, "Browser and React report no errors");
   return { status: "passed", checks, browser_errors: errors };
 }

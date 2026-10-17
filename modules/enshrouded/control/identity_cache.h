@@ -31,6 +31,7 @@ static_assert(sizeof(NativeLookupContext) == 32);
 struct CacheEntry { Player player{}; std::uint64_t cachedTick{}; };
 struct IdentityCache {
     std::uintptr_t server{}, manager{};
+    std::uintptr_t callerA{kCallerA}, callerB{kCallerB};
     std::uint64_t nextGeneration{};
     bool degraded{};
     CacheEntry entries[kMaxPlayers]{};
@@ -74,7 +75,7 @@ inline bool BindContext(IdentityCache& cache, std::uintptr_t server, ReadMemory 
 inline const char* ObserveLocalCopy(IdentityCache& cache, const NativeLookupContext& lookup,
     std::uintptr_t callerRva, std::uint64_t nativeResult, std::uint64_t now,
     ReadMemory reader, void* context) noexcept {
-    if (callerRva != kCallerA && callerRva != kCallerB) return "unexpected_native_caller";
+    if (callerRva != cache.callerA && callerRva != cache.callerB) return "unexpected_native_caller";
     if (cache.server && lookup.manager != cache.manager) cache.degraded = true;
     if (cache.degraded || !cache.server) return "native_context_changed";
     const auto handle = static_cast<std::uint32_t>(lookup.requestedHandle), index = handle & 0x3fu;

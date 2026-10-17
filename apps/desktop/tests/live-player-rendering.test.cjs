@@ -110,6 +110,27 @@ test("console response closure offers settings without claiming proven authentic
   assert.doesNotMatch(html, /认证失败/);
 });
 
+test("Enshrouded extension failures explain the structured compatibility status in both languages", () => {
+  const cases = [
+    ["unsupported_game_build", /当前 LanGame 尚未取得适配此游戏版本.*实例启动时自动检查兼容更新/, /LanGame has no verified.*automatically checks for compatible updates when the instance starts/],
+    ["not_installed", /玩家管理扩展尚未准备/, /extension has not been prepared/],
+    ["loading", /玩家管理扩展尚未就绪/, /extension is not ready yet/],
+    ["load_failed", /玩家管理扩展加载失败/, /extension failed to load/],
+    [undefined, /玩家管理扩展未就绪/, /extension is not ready\./]
+  ];
+  for (const [extension_status, expectedZh, expectedEn] of cases) {
+    for (const [locale, expected] of [["zh-CN", expectedZh], ["en-US", expectedEn]]) {
+      const html = renderToStaticMarkup(React.createElement(LivePlayerState, {
+        error: null, locale, moduleId: "enshrouded", presentation: { kind: "failed-without-rows", tableVisible: false },
+        snapshot: { issue: { code: "extension_unavailable", extension_status, setting_keys: [],
+          summary: "untrusted diagnostic says unsupported_game_build <script>" } }
+      }));
+      assert.match(html, expected);
+      assert.doesNotMatch(html, /untrusted|<script>|unsupported_game_build/);
+    }
+  }
+});
+
 test("private Steam queries explain each native visibility limit without reporting an empty server", () => {
   for (const [moduleId, settingKey, expectedZh, expectedEn] of [
     ["valheim", "public_server", /私密服务器不提供 Steam 玩家查询/, /Private Valheim servers do not expose/],

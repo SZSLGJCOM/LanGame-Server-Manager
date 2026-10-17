@@ -2,7 +2,7 @@
 use std::fs;
 use std::path::Path;
 
-use app_core::InstanceDetails;
+use app_core::{InstanceDetails, RuntimePlayerExtensionStatus};
 use app_storage::{InstanceProgramMode, ProgramInstallScope, StorageBootstrap};
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +23,7 @@ struct Ownership {
 pub(super) async fn prepare(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
+    log_path: Option<&str>,
 ) -> Result<(), String> {
     if instance.summary.module_id != "enshrouded" {
         return Ok(());
@@ -57,16 +58,104 @@ pub(super) async fn prepare(
     {
         return Err("Enshrouded native control ownership does not match this instance.".into());
     }
-    let payload = io::bundled_payload();
-    tokio::task::spawn_blocking(move || install(&root, payload))
+    if let Some(path) = log_path {
+        let _ = super::commands_runtime_supervision::append_startup_console_line(
+            path,
+            "Checking and preparing Enshrouded player-management extension...",
+            "",
+        );
+    }
+    let executable = io::digest(&io::read_regular(
+        &root.join("enshrouded_server.exe"),
+        32 * 1024 * 1024,
+    )?);
+    let resolution =
+        crate::enshrouded_extension::resolve(&storage.paths.app_data_root, &executable).await;
+    let (selected, source, version, update_issue) = match resolution {
+        Ok(resolution) => (
+            resolution.package,
+            resolution.source,
+            resolution.version,
+            resolution.update_issue,
+        ),
+        Err(error) => (
+            None,
+            if io::BUNDLED_EXE_SHA256.contains(&executable.as_str()) {
+                "bundled"
+            } else {
+                "unsupported"
+            },
+            None,
+            Some(error),
+        ),
+    };
+    super::commands_runtime_supervision::append_desktop_app_log(
+        storage,
+        "info",
+        "instance.enshrouded_extension.prepared",
+        "Selected exact-build Enshrouded player-management extension",
+        serde_json::json!({ "instance_id": instance.summary.id, "executable_sha256": executable,
+            "source": source, "extension_version": version, "update_issue": update_issue }),
+    );
+    if let Some(path) = log_path {
+        let _ = super::commands_runtime_supervision::append_startup_console_line(
+            path,
+            &format!(
+                "Enshrouded player-management extension: {source}; version {}.",
+                version.as_deref().unwrap_or("bundled/none")
+            ),
+            update_issue.as_deref().unwrap_or(""),
+        );
+    }
+    tokio::task::spawn_blocking(move || install_selected(&root, &executable, selected.as_ref()))
         .await
         .map_err(|_| "Enshrouded native control preparation worker failed.")?
 }
 
+fn install_selected(
+    root: &Path,
+    executable: &str,
+    selected: Option<&crate::enshrouded_extension::SignedPackage>,
+) -> Result<(), String> {
+    let _root_guard = io::pin_directory(root)?;
+    if io::digest(&io::read_regular(
+        &root.join("enshrouded_server.exe"),
+        32 * 1024 * 1024,
+    )?) != executable
+    {
+        return Err("The Enshrouded executable changed during extension preparation.".into());
+    }
+    let payload = selected.map(|package| package.payload()).or_else(|| {
+        io::BUNDLED_EXE_SHA256
+            .contains(&executable)
+            .then(io::bundled_payload)
+    });
+    if let Some(payload) = payload.filter(|bytes| !bytes.is_empty()) {
+        let installed = install_payload(root, payload, selected)?;
+        io::publish_manager_state(
+            root,
+            executable,
+            if installed {
+                RuntimePlayerExtensionStatus::Loading
+            } else {
+                RuntimePlayerExtensionStatus::NotInstalled
+            },
+        )
+    } else {
+        retire_owned_proxy(root)?;
+        io::publish_manager_state(
+            root,
+            executable,
+            RuntimePlayerExtensionStatus::UnsupportedGameBuild,
+        )
+    }
+}
+
+#[cfg(test)]
 fn install(root: &Path, payload: &[u8]) -> Result<(), String> {
     let _root_guard = io::pin_directory(root)?;
     let executable = io::read_regular(&root.join("enshrouded_server.exe"), 32 * 1024 * 1024)?;
-    if io::digest(&executable) != io::EXE_SHA256 || payload.is_empty() {
+    if !io::BUNDLED_EXE_SHA256.contains(&io::digest(&executable).as_str()) || payload.is_empty() {
         // An updated executable may import additional dbghelp exports before
         // our fingerprint check can run. Retire only a verified owned proxy.
         retire_owned_proxy(root)?;
@@ -104,7 +193,16 @@ fn retire_owned_proxy(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 fn install_verified(root: &Path, payload: &[u8]) -> Result<(), String> {
+    install_payload(root, payload, None).map(|_| ())
+}
+
+fn install_payload(
+    root: &Path,
+    payload: &[u8],
+    signed: Option<&crate::enshrouded_extension::SignedPackage>,
+) -> Result<bool, String> {
     let owner_path = root.join(io::OWNER);
     let mut owner = if owner_path
         .try_exists()
@@ -134,7 +232,7 @@ fn install_verified(root: &Path, payload: &[u8]) -> Result<(), String> {
             && owner.pending_plugin_sha256.as_deref() != Some(current.as_str())
         {
             // A user loader owns this name; do not replace it or block startup.
-            return Ok(());
+            return Ok(false);
         }
     }
     let directory = root.join(io::DIRECTORY);
@@ -184,6 +282,9 @@ fn install_verified(root: &Path, payload: &[u8]) -> Result<(), String> {
             }
         }
     }
+    if let Some(signed) = signed {
+        signed.publish_proof(&directory)?;
+    }
     io::publish(&dll_path, payload)?;
     owner.plugin_sha256 = Some(payload_hash);
     owner.pending_plugin_sha256 = None;
@@ -198,7 +299,8 @@ fn install_verified(root: &Path, payload: &[u8]) -> Result<(), String> {
             "/../../../modules/enshrouded/control/vendor/minhook/LICENSE.txt"
         )),
     )?;
-    io::publish(&directory.join("enable"), io::ENABLE)
+    io::publish(&directory.join("enable"), io::ENABLE)?;
+    Ok(true)
 }
 
 #[cfg(test)]

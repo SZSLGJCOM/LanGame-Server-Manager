@@ -10,18 +10,208 @@ Files or directories with reparse attributes are rejected. The enable file is an
 explicit local opt-in, not a password; an operator able to replace the DLL already
 has process code execution authority.
 
-The supported executable SHA256 is
-`4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba`.
+The compiled profiles cover these exact official executable SHA256 digests:
+
+| Steam public build | Executable SHA256 |
+| --- | --- |
+| 25967645 | `4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba` |
+| 25988414 | `b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf` |
+
+The release profile inventory is [supported-builds.json](supported-builds.json).
+Adding a compiled profile is not publication or real-client acceptance: the
+independent release tool also requires the final DLL's moderation test receipt.
 Both the on-disk digest and loaded PE/entry bytes must match. Unknown builds retain
 dump forwarding and do not install control hooks. No game binary is distributed.
 
+## Independent updates and maintenance
+
+LanGame maintains this bridge in this repository. Steam does not provide this
+extension or guarantee the internal functions it uses. A game hotfix can move
+those functions even when their behavior remains the same. Each supported profile
+therefore pins the executable digest, PE identity and native entry bytes; new
+builds require inspection and validation before they can control players.
+
+Before starting an Enshrouded instance, the manager hashes that instance's actual
+server executable and checks the independent signed compatibility feed. It can
+install a matching extension while the owned server is stopped, then start the
+server. It never replaces a DLL in a running process. Network failures can fall
+back to previously verified exact-build support. An unknown executable remains
+read-only, with the reason shown in the player controls. Starting an instance is
+the automatic update trigger; already running servers receive their extension
+update at their next normal stop/start.
+
+The independent trust root is [update-public-key.pub](update-public-key.pub),
+separate from the desktop updater's key. Both the manifest and the DLL use standard
+four-line minisign `ED` signatures (Ed25519 over Blake2b-512), including a signed
+purpose comment. Signatures, exact executable membership, payload length/digest
+and a monotonic revision are checked before caching/installing; installed signed
+evidence is verified again when native control is opened. Public download URLs
+are derived from the fixed repository and signed version, never supplied as
+arbitrary URLs by metadata.
+
+- Moving feed: `https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/download/enshrouded-control/manifest.json`
+- Feed signature: the same URL with `.minisig` appended.
+- Immutable payload: `.../releases/download/enshrouded-control-v<version>/Lgsm.Enshrouded.Control_<version>_windows-x86_64.dll`, plus `.minisig`.
+
+These GitHub releases are marked prerelease and `make_latest=false` so the desktop
+application's stable update feed remains independent. The extension's own feed
+is its production channel despite that GitHub display label. The versioned
+payload and signatures are never overwritten. The small moving manifest/signature
+pair cannot be replaced atomically through GitHub's asset API; clients reject
+mixed pairs during publication and retain verified support.
+
+The manifest contract is deliberately bounded:
+
+```json
+{
+  "schema": 1,
+  "module_id": "enshrouded",
+  "protocol": 1,
+  "target": "windows-x86_64",
+  "version": "1.0.0",
+  "revision": 1,
+  "profiles": [
+    {"game_build_id": "25988414", "executable_sha256": "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf"}
+  ],
+  "dll": {
+    "asset_name": "Lgsm.Enshrouded.Control_1.0.0_windows-x86_64.dll",
+    "sha256": "<final-DLL-sha256>",
+    "size": 123456
+  }
+}
+```
+
+The example is explanatory metadata, not a signed release. Unknown fields are
+rejected. Every release increments both the strict `major.minor.patch` version
+and the positive revision; previously verified profiles must be retained. The
+DLL limit is 1 MiB. The exact signed comments are
+`lgsm-enshrouded-control-manifest:1` and
+`lgsm-enshrouded-control-dll:<version>`.
+
+### Detecting game updates
+
+[track-enshrouded-build.yml](../../../.github/workflows/track-enshrouded-build.yml)
+runs every four hours only when the repository Actions variable
+`ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER` is set to `true`; an absent or
+disabled variable leaves scheduled jobs skipped. Manual `workflow_dispatch`
+remains available. Keep the variable unset until the signed production feed is
+published with desktop 0.1.3, then enable it as part of that release. An unpublished
+feed is not evidence of compatibility; a manual run still requires a valid signed
+feed and reports an error if it is missing. The workflow downloads Valve's
+[official SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD), refreshes
+anonymous app metadata for app `2278520`, reads `depots/branches/public/buildid`,
+then compares it with the cryptographically verified published feed. A new build
+opens one compatibility issue, deduplicated across open and closed issues. The
+job retains a small detection report. Metadata/network/signature errors fail the
+job instead of claiming that the game is supported.
+
+Detection does not alter profiles, sign or release code. The maintainer must
+obtain the official binary in isolation, inspect the native ABI/entry points,
+run the C++/Rust tests, and verify real kick, ban and unban on the target build.
+Keeping a signed updater cannot make an unknown native ABI safe automatically.
+
+### Build, sign and publish a verified extension
+
+The independent private key is a PKCS8 Ed25519 file in the publisher's protected
+local directory. It must never be committed, uploaded, printed, or embedded in
+the app. Preserve a secure backup of the established key; generating a different
+root would require a desktop update before existing clients could trust it.
+`scripts/enshrouded_control_package.cjs init` is a one-time provisioning command,
+not a release step. Create and restrict its repository-external parent directory
+to the publisher account before using it. No private key is needed for ordinary
+development or verification.
+
+Build into a new external directory with `build_enshrouded_control.ps1 -RunTests`.
+After the actual moderation acceptance, save a private local receipt:
+
+```json
+{
+  "schema": 1,
+  "dll_sha256": "<final-DLL-sha256>",
+  "profiles": "<the exact supported-builds.json array, not this placeholder>",
+  "verified_actions": ["kick", "ban", "unban"],
+  "evidence": "<local native and real-client acceptance evidence location>"
+}
+```
+
+The receipt binds the exact compiled payload/profile inventory to the maintainer's
+real-action evidence. It is not distributed with the public artifacts and does
+not prove those actions automatically. Keep test account names, addresses and
+credentials out of public release notes.
+
+From the repository root, choose an unused external staging directory:
+
+```powershell
+$extensionStaging = 'C:\ReleaseStaging\enshrouded-control-1.0.0'
+$env:LGSM_ENSHROUDED_SIGNING_KEY_PATH = Join-Path $env:LOCALAPPDATA 'LanGame\Publisher\EnshroudedControl\signing-key.pem'
+node scripts/enshrouded_control_package.cjs package `
+  --dll 'C:\ReleaseStaging\enshrouded-native\dbghelp.dll' `
+  --profiles (Join-Path (Get-Location) 'modules\enshrouded\control\supported-builds.json') `
+  --acceptance 'C:\ReleaseStaging\enshrouded-moderation-acceptance.json' `
+  --version 1.0.0 --revision 1 --private-key $env:LGSM_ENSHROUDED_SIGNING_KEY_PATH --out $extensionStaging
+python -B scripts/publish_enshrouded_control.py --directory $extensionStaging
+```
+
+The first command signs and independently verifies the package; existing staging
+directories are refused. The second is a local verification/dry run and makes
+no network requests. After the complete tested source is committed and available
+on GitHub, publish it using that exact commit:
+
+```powershell
+python -B scripts/publish_enshrouded_control.py --directory $extensionStaging `
+  --source-commit '<exact-40-character-source-commit>' --execute
+```
+
+For the first release, publish and verify this feed together with desktop 0.1.3.
+Then set repository **Settings → Secrets and variables → Actions → Variables →
+`ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER`** to `true` to activate scheduled
+tracking. Pushing this workflow alone does not enable its scheduled job.
+
+The publisher uses `GITHUB_TOKEN`/`GH_TOKEN`, or Git's configured credential
+helper, without printing credentials. It verifies local signatures/checksums,
+rejects revision rollback or mutation of existing versioned files, uploads and
+reads back all immutable assets, publishes that version, and only then advances
+the small signed feed. The immutable release includes the DLL/signature,
+manifest/signature, `LICENSE.txt`, `LICENSE.minhook.txt` and `SHA256SUMS`; both
+licenses are copied unchanged from source and linked from the release notes.
+It rejects unexpected feed assets and concurrent feed
+advancement. A damaged/incomplete existing feed fails closed for maintainer
+repair unless it belongs to the current publisher's recorded interrupted update.
+Before changing the feed, it atomically saves a publication intent beside the
+staging directory, binding the original signed pair, exact target hashes/version/
+revision and feed release ID. Repeating the same publication command recovers
+missing, mixed or completed target files only when every remote file is either
+the original bytes or the verified target bytes. It revalidates the immutable
+target before recovery, rejects unrelated/newer content, and removes the intent
+after successful feed verification. Keep that intent and staging directory until
+publication succeeds. This first implementation uses GitHub directly; it does not provide a
+regional extension mirror or an availability guarantee.
+
+Run the maintenance regressions without private keys:
+
+```powershell
+node --test scripts/tests/enshrouded_control_package.test.cjs
+python -B -m unittest scripts.tests.test_track_enshrouded_build scripts.tests.test_publish_enshrouded_control
+```
+
+The signed fixtures under `apps/desktop/src-tauri/test-data/enshrouded-extension`
+use a discarded one-time test key and inert text payload. Their public key is
+independent of production and cannot authorize a real extension.
+
 ## Identity and native calls
 
-The transparent update observer enters the original `updatePlayers` at RVA
-`0x7b33e0` after restoring its original registers, flags, stack and return address.
-The native helper at RVA `0x9f54d0` has verified inputs RCX=output, RDX=session
-manager, R8D=full session handle, and AL=0 for success. Its two original
-`updatePlayers` return sites are RVAs `0x7b3aaf` and `0x7b489e`. The second observer
+The native addresses differ between the two verified executable profiles:
+
+| Build | `updatePlayers` | identity helper | `accountAction` | helper caller A | helper caller B |
+| --- | --- | --- | --- | --- | --- |
+| 25967645 | `0x7b33e0` | `0x9f54d0` | `0x79ba20` | `0x7b3aaf` | `0x7b489e` |
+| 25988414 | `0x7b34c0` | `0x9f5bc0` | `0x79bb00` | `0x7b3b8f` | `0x7b497e` |
+
+The transparent update observer enters the original `updatePlayers` after
+restoring its original registers, flags, stack and return address. The native
+helper has verified inputs RCX=output, RDX=session manager, R8D=full session handle,
+and AL=0 for success. Its two original `updatePlayers` return sites are pinned
+per profile. The second observer
 calls the relocated original helper with these three inputs, then copies logical
 identity fields and name bytes from the native caller's own deep-copy output.
 It preserves native return registers/flags and ordinary unwind behavior. It never
@@ -45,7 +235,7 @@ The native copied projection flag at +0x148 equal to 1 also sets immunity (2 doe
 not); both independent native guards are represented. No permission bits or
 native immunity guards are modified.
 
-`accountAction` RVA `0x79ba20` has verified RCX=Server and RDX=0x18-byte event inputs
+`accountAction` has verified RCX=Server and RDX=0x18-byte event inputs
 (native account hash at +8, action byte at +0x14: 0 kick, 1 ban, 2 unban). Only the
 existing update owner thread calls it. Its own fresh session/hash and immunity
 checks remain intact. Returning from this call means **dispatched** only. The

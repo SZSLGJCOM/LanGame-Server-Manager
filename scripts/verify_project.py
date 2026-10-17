@@ -105,6 +105,7 @@ class Runner:
 
     def policy(self) -> None:
         self.python("-m", "unittest", "discover", "-s", "scripts/tests", "-p", "test_*.py")
+        self.node("--test", "scripts/tests/enshrouded_control_package.test.cjs")
         self.publication()
         if self.args.tier == "full":
             self.python("scripts/export_public_snapshot.py", "--verbose")

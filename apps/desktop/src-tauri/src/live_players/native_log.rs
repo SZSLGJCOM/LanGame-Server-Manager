@@ -381,6 +381,7 @@ fn supplement(
 fn set_issue(evidence: &mut A2sPlayerEvidence, code: RuntimeLivePlayerIssueCode) {
     evidence.snapshot.public_snapshot.complete = false;
     evidence.snapshot.public_snapshot.issue = Some(RuntimeLivePlayerIssue {
+        extension_status: None,
         code,
         setting_keys: Vec::new(),
         summary:

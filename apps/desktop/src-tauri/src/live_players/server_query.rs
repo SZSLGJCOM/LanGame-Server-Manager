@@ -46,6 +46,7 @@ pub(super) async fn collect_a2s_player_evidence(
         let mut snapshot = super::service::unsupported_snapshot(instance_id, request_id.to_owned());
         snapshot.source = Some(source);
         snapshot.issue = Some(RuntimeLivePlayerIssue {
+            extension_status: None,
             code: RuntimeLivePlayerIssueCode::QueryUnavailable,
             setting_keys: vec![String::from(setting_key)],
             summary: String::from(summary),
@@ -219,6 +220,7 @@ fn project_players(
         && count.is_none_or(|info| info.current_players == returned)
         && (returned > 0 || count.is_some_and(|info| info.current_players == 0));
     let issue = (!complete).then(|| RuntimeLivePlayerIssue {
+        extension_status: None,
         code: RuntimeLivePlayerIssueCode::NamesUnavailable,
         setting_keys: Vec::new(),
         summary: "The server query did not identify every connected player.".into(),

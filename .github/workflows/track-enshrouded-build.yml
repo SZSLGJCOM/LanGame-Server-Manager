@@ -1,0 +1,59 @@
+name: Track Enshrouded server compatibility
+
+on:
+  schedule:
+    - cron: "23 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: enshrouded-compatibility-tracker
+  cancel-in-progress: false
+
+jobs:
+  track:
+    if: >-
+      github.repository == 'SZSLGJCOM/LanGame-Server-Manager' &&
+      (github.event_name == 'workflow_dispatch' || vars.ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER == 'true')
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.11.1"
+      - name: Verify tracker and signing contracts
+        run: |
+          python -B -m unittest scripts.tests.test_track_enshrouded_build
+          node --test scripts/tests/enshrouded_control_package.test.cjs
+      - name: Download the official SteamCMD bootstrap
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $steamDirectory = Join-Path $env:RUNNER_TEMP 'enshrouded-steamcmd'
+          $archive = Join-Path $env:RUNNER_TEMP 'steamcmd.zip'
+          Invoke-WebRequest -Uri 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip' -OutFile $archive -TimeoutSec 90
+          Expand-Archive -LiteralPath $archive -DestinationPath $steamDirectory
+      - name: Compare Steam public build with the signed production feed
+        id: track
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -B scripts/track_enshrouded_build.py --steamcmd "$env:RUNNER_TEMP/enshrouded-steamcmd/steamcmd.exe" --report "$env:RUNNER_TEMP/enshrouded-compatibility.json" --github-output "$env:GITHUB_OUTPUT" --issue
+      - name: Retain detection evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: enshrouded-compatibility
+          path: ${{ runner.temp }}/enshrouded-compatibility.json
+          if-no-files-found: ignore
+          retention-days: 30

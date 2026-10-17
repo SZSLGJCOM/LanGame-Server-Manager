@@ -237,10 +237,17 @@ export interface RuntimeLivePlayerEntry {
   attributes: RuntimeLivePlayerAttribute[];
 }
 
+export type RuntimePlayerExtensionStatus =
+  | "unsupported_game_build"
+  | "not_installed"
+  | "loading"
+  | "load_failed";
+
 export interface RuntimeLivePlayerIssue {
   code: RuntimeLivePlayerIssueCode;
   setting_keys: string[];
   summary: string;
+  extension_status?: RuntimePlayerExtensionStatus | null;
 }
 
 export interface RuntimeLivePlayerSnapshot {
