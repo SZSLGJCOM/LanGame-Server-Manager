@@ -91,10 +91,35 @@ pub(super) async fn probe_all(
 
 const SCRIPT_HEADER: &str = "$ErrorActionPreference='Stop'\n[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)\n";
 pub(super) const SIGNATURE_FUNCTION: &str = r#"
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+public static class LanGameRuntimeSigner {
+    [DllImport("crypt32.dll", EntryPoint="CertGetNameStringW", CharSet=CharSet.Unicode, ExactSpelling=true)]
+    private static extern uint CertGetNameString(IntPtr certificate, uint type, uint flags, [MarshalAs(UnmanagedType.LPStr)] string oid, StringBuilder name, uint capacity);
+    public static string Organization(X509Certificate2 certificate) {
+        if (certificate == null) return String.Empty;
+        try {
+            // CERT_NAME_ATTR_TYPE reads the real X.509 Organization attribute;
+            // the formatted Subject can contain an apparent O= inside a CN.
+            uint length = CertGetNameString(certificate.Handle, 3, 0, "2.5.4.10", null, 0);
+            if (length <= 1) return String.Empty;
+            if (length > 32768) throw new CryptographicException("Certificate organization is too long.");
+            StringBuilder organization = new StringBuilder((int)length);
+            if (CertGetNameString(certificate.Handle, 3, 0, "2.5.4.10", organization, length) != length)
+                throw new CryptographicException("Could not read the certificate organization.");
+            return organization.ToString();
+        } finally { GC.KeepAlive(certificate); }
+    }
+}
+'@
 function Assert-MicrosoftSignature([string]$Path) {
     $signature=Get-AuthenticodeSignature -LiteralPath $Path -ErrorAction Stop
     if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate -or
-        $signature.SignerCertificate.Subject -notmatch '(^|,\s*)O=Microsoft Corporation(,|$)') {
+        ![String]::Equals([LanGameRuntimeSigner]::Organization($signature.SignerCertificate), 'Microsoft Corporation', [StringComparison]::OrdinalIgnoreCase)) {
         throw '运行库文件的 Microsoft Authenticode 签名无效；已拒绝执行。'
     }
 }

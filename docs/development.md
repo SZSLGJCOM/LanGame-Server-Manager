@@ -26,6 +26,8 @@ Windows 正式运行时，React 页面与 hooks 通过 `api.ts` / `api-transport
 
 所有实例在游戏程序更新之后、创建游戏进程之前，经 `commands_runtime_environment` 检查运行环境；固定游戏版本不会跳过环境检查。原生依赖从实际启动及验证程序的有界 PE 普通／延迟 imports 读取，微软安装器由有限目录选择，不执行游戏包中的任意安装脚本。Java 和 .NET 从已安装程序的版本要求选择兼容运行库，下载验证后发布到 SteamCMD 同级工具目录的独立版本目录，不覆盖游戏程序或在用运行库。缺失环境无法准备、安装后复检失败或系统要求重启时均阻止启动；已有环境通过探针而官方更新源不可达时，明确记录离线复用。系统安装一旦开始会持有安装锁并等待真实退出，再处理取消，避免把仍在执行的安装当作已取消。进度与失败原因进入启动控制台及既有后台任务。
 
+运行环境的真实官方包安装、加载与 portable 准备验收见 [Windows Sandbox 验收说明](runtime-prerequisite-validation.md#简体中文)；普通单元测试不会执行这些系统安装。
+
 桌面启动在后台建立连接，界面保持加载状态。连接前核实后台状态；若旧后台正在退出，等待其原始进程句柄确认结束后再启动新后台，不能向退出中的后台初始化存储。退出助手在关闭旧界面前持有按用户和原进程身份隔离的原生命名事件，覆盖退出请求尚未送达的窗口。启动期间再次退出会取消尚未创建后台的连接等待；已创建的后台仍交给同一退出流程处理，沿用点击退出时的截止时间，不重放业务操作。
 
 产品命令在 `apps/desktop/src-tauri/src/command_registry.rs` 统一声明 Tauri 注册、执行进程、LAN 访问权限和完成策略。参数解码仍由各传输适配层负责；runtime service 的内部控制消息不进入产品命令表。修改 IPC 时同步核对前端参数和实际适配器，契约检查核对登记与适配器的双向覆盖。客户端顶层命令参数使用 Tauri 的 camelCase，不重复发送 snake_case 别名；嵌套 `input` 遵循对应 Rust Serde 数据类型的命名，不能递归改名。桌面进程归属和仅限命名管道访问是不同边界，命令登记不能混合这两种含义。
@@ -187,6 +189,8 @@ The desktop connects off the UI thread while the interface remains in its loadin
 `app-core` defines shared domain data and `app-modules` reads game manifests and schemas. `app-storage` owns SQLite, instance configuration, saves and backups; `app-runtime` and `app-platform-win` own process lifecycle and Windows integration. `app-steamcmd`, `app-network` and `app-knowledge` provide installation, network policy and knowledge retrieval. Tauri commands coordinate these components. Updates download and verify the package before stopping the runtime service and game processes and invoking the installer.
 
 Every instance passes `commands_runtime_environment` after game updates and before process creation, including pinned game versions. Bounded PE import inspection identifies native dependencies; a finite Microsoft catalog selects installers without evaluating game install scripts. Installed-game metadata determines compatible Java and .NET versions. Verified portable packages publish to separate version directories beside SteamCMD, preserving game programs and runtimes already in use. Preparation failures, failed post-install probes and required Windows restarts block startup. Offline reuse requires a successful runtime probe and an explicit log message. Once a system installer starts, its owner retains the installation lease until the actual process exits before responding to cancellation. Progress and failure reasons use the startup console and existing background jobs.
+
+Real official-package installation, loading and portable preparation use the opt-in [Windows Sandbox acceptance workflow](runtime-prerequisite-validation.md#english); ordinary unit tests do not perform these system installations.
 
 Product commands declare Tauri registration, execution ownership, LAN access and completion policy in `apps/desktop/src-tauri/src/command_registry.rs`. Transport adapters retain argument decoding; internal runtime-service control messages stay outside the product registry. For IPC changes, check frontend arguments and the actual adapters together; contract checks verify registration coverage in both directions. Clients use Tauri camelCase for top-level arguments without sending duplicate snake_case aliases. Nested `input` follows its Rust Serde type; do not rename fields recursively. Desktop-process ownership and named-pipe-only authorization are separate command boundaries.
 

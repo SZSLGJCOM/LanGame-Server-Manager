@@ -308,3 +308,7 @@ try {
 #[cfg(test)]
 #[path = "portable_runtime_tests.rs"]
 mod tests;
+
+#[cfg(all(test, windows))]
+#[path = "portable_runtime_sandbox_tests.rs"]
+mod sandbox_tests;

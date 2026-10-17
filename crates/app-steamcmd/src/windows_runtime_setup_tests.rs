@@ -6,6 +6,14 @@ use std::future::Future;
 #[path = "windows_runtime_msi_tests.rs"]
 mod msi;
 
+#[cfg(windows)]
+#[path = "windows_runtime_sandbox_tests.rs"]
+mod sandbox;
+
+#[cfg(windows)]
+#[path = "windows_runtime_signature_tests.rs"]
+mod signature;
+
 fn requirement(
     family: Family,
     architecture: Architecture,
