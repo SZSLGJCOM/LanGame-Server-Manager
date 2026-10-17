@@ -79,6 +79,7 @@ async fn native_valheim_interrupted_download_retry_reuse() -> TestResult {
                 guard: initial_guard,
                 validate: false,
                 cancellation: &initial_cancellation,
+                account_name: None,
             },
             |_| initial_cancellation.cancel(),
         ),
@@ -134,6 +135,7 @@ async fn native_valheim_interrupted_download_retry_reuse() -> TestResult {
                 guard,
                 validate: false,
                 cancellation: &cancellation,
+                account_name: None,
             },
             |update| {
                 // A deterministic failure after native Steam repaired the partial

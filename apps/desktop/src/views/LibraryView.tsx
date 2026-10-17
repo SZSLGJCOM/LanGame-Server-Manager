@@ -22,6 +22,10 @@ import { useLibraryGamepadNavigation } from "./library/useLibraryGamepadNavigati
 import { LibraryAtmosphere } from "./library/LibraryAtmosphere";
 import { formatInstallState, installTone, suggestedName } from "./library/library-shared";
 import { isActiveInstallationJob, installationJobPhaseLabel } from "../installation-job";
+import type { SteamInstallationAccountContext } from "../steam-installation-account";
+import { useSteamWorkshopAccount } from "./servers/useSteamWorkshopAccount";
+import { SteamWorkshopAccountConsole } from "./servers/SteamWorkshopAccountConsole";
+import { moduleRequiresSteamCmd } from "../module-installation-dependency";
 
 const LibraryDetailPage = lazy(() =>
   import("./library/LibraryDetailPage").then((module) => ({ default: module.LibraryDetailPage }))
@@ -61,7 +65,7 @@ interface LibraryViewProps {
   onCatalogScrollLeftChange: (scrollLeft: number) => void;
   onOpenModule: (moduleId: string) => void;
   onBackToCatalog: () => void;
-  onInstall: (moduleId: string, validate: boolean) => void;
+  onInstall: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => void | Promise<void>;
   onUninstall: (moduleId: string) => void | Promise<void>;
   onCreateServer: (input: CreateInstanceInput) => Promise<void>;
   creatingModuleIds: ReadonlySet<string>;
@@ -91,6 +95,26 @@ function LibraryDetailLoadingState() {
 
 export function LibraryView(props: LibraryViewProps) {
   const { locale, t } = useI18n();
+  const steamAccount = useSteamWorkshopAccount(props.mode === "detail" && props.selectedModuleId
+    ? { kind: "module", id: props.selectedModuleId } : null);
+  const [installingModules, setInstallingModules] = useState<ReadonlySet<string>>(() => new Set());
+  const installationGate = useRef(new Set<string>());
+  async function installSelectedModule(moduleId: string, validate: boolean) {
+    if (installationGate.current.has(moduleId) || !steamAccount.isCurrentOwner() || steamAccount.target?.id !== moduleId) return;
+    installationGate.current.add(moduleId); setInstallingModules((current) => new Set([...current, moduleId]));
+    try {
+      const module = props.selectedModuleDetails;
+      const appId = module?.summary.steam_app_id;
+      await props.onInstall(moduleId, validate, steamAccount.available && steamAccount.target && module?.summary.id === moduleId
+        && moduleRequiresSteamCmd(module.summary, module.install) && typeof appId === "number" && Number.isSafeInteger(appId) && appId > 0 ? {
+        target: steamAccount.target, expectedAppId: appId, loginAccount: steamAccount.loginAccount, isCurrentOwner: steamAccount.isCurrentOwner,
+        requestAccount: () => steamAccount.requestAccount("server-install")
+      } : undefined);
+    } finally {
+      installationGate.current.delete(moduleId);
+      setInstallingModules((current) => { const next = new Set(current); next.delete(moduleId); return next; });
+    }
+  }
   const deferredSearch = useDeferredValue(props.search);
   const [instanceName, setInstanceName] = useState("");
   const [activeMediaKey, setActiveMediaKey] = useState<string | null>(null);
@@ -668,6 +692,8 @@ export function LibraryView(props: LibraryViewProps) {
             onPreviewModuleChange={setCatalogPreviewModuleId}
             onCatalogReady={handleCatalogReady}
           />
+        ) : steamAccount.recoveryPending ? (
+          <SteamWorkshopAccountConsole account={steamAccount} targetLabel={props.selectedModuleDetails?.summary.name ?? props.selectedModuleId ?? undefined} />
         ) : (
           <Suspense fallback={<LibraryDetailLoadingState />}>
             <LibraryDetailPage
@@ -685,7 +711,7 @@ export function LibraryView(props: LibraryViewProps) {
               categoryTags={categoryTags}
               genreTags={genreTags}
               installLabel={selectedInstallJob ? installationJobPhaseLabel(selectedInstallJob, t) : installLabel}
-              installBusy={Boolean(selectedInstallJob)}
+              installBusy={Boolean(selectedInstallJob) || installingModules.has(props.selectedModuleId ?? "")}
               installStatusClass={installStatusClass}
               creating={selected !== null && props.creatingModuleIds.has(selected.id)}
               creationStartedAt={selected ? props.creationStartedAtByModule?.get(selected.id) : undefined}
@@ -695,7 +721,7 @@ export function LibraryView(props: LibraryViewProps) {
                 props.onBackToCatalog();
               }}
               onActiveMediaChange={setActiveMediaKey}
-              onInstall={props.onInstall}
+              onInstall={(moduleId, validate) => void installSelectedModule(moduleId, validate)}
               onUninstall={props.onUninstall}
               onCreateServer={props.onCreateServer}
               onInstanceNameChange={setInstanceName}

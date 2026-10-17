@@ -15,8 +15,8 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.status, "passed", report.error);
     assert.equal(report.modules.length, 22);
     assert.equal(new Set(report.modules.map((entry) => entry.module)).size, 22);
-    assert.equal(report.modules.filter((entry) => entry.gate === false).length, 6);
-    assert.equal(report.modules.filter((entry) => entry.client_only_explanation).length, 1);
+    assert.equal(report.modules.filter((entry) => entry.gate === false).length, 7);
+    assert.deepEqual(report.modules.filter((entry) => entry.mods_tab_disabled).map((entry) => [entry.module, entry.disabled_reason]), [["rimworld", true]]);
     assert.equal(report.modules.filter((entry) => entry.file_only_controls_absent).length, 14);
     for (const entry of report.modules.filter((entry) => entry.store_library_switch)) {
       for (const flag of ["empty_inventory", "persisted_inventory", "no_steam_controls"]) assert.equal(entry[flag], true, `${entry.module}: ${flag}`);

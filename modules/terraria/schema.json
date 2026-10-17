@@ -224,7 +224,7 @@
     "server_runtime": {
       "type": "string",
       "title": "Server Runtime",
-      "description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0; install it from Microsoft before starting. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
+      "description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0. LanGame checks it before launch and prepares the verified official runtime when missing; Windows may request elevation. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
       "default": "vanilla",
       "enum": [
         "vanilla",

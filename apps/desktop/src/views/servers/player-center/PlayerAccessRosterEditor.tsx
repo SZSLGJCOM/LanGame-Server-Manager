@@ -5,7 +5,8 @@ import type { RuntimeLivePlayerEntry } from "../../../types";
 import { resolveSelectedRosterTarget, type SelectedRosterTarget } from "./player-access-selected-target";
 import { rosterFieldActionLabel } from "./player-access-roster-labels";
 import { ShellIcon } from "../../../components/ShellIcon";
-import { selectLocaleText, type LocaleCode } from "../../../i18n";
+import { selectLocaleText, useI18n, type LocaleCode } from "../../../i18n";
+import { ConfigurationHelp } from "../../settings/ConfigurationFieldHelp";
 import {
   isRosterRecord,
   stringifyRosterEntry,
@@ -59,9 +60,12 @@ interface ObjectRosterFieldEditorProps extends PlayerAccessRosterEditorProps {
   onCancel?: () => void;
   onSaved?: () => void;
   inputPrefix?: string;
+  /** Replaces the default save label, e.g. "确认设为管理员" when the form opened in place of a stack button. */
+  submitLabel?: string;
 }
 
 export function ObjectRosterFieldEditor(props: ObjectRosterFieldEditorProps) {
+  const { t } = useI18n();
   const properties = readObjectRosterProperties(props.field);
   const [draft, setDraft] = useState<ObjectRosterDraft>(() => buildObjectRosterDraft(props.field,
     props.selectedEntry?.rawValue ?? props.lockedIdentity?.rawValue));
@@ -76,6 +80,10 @@ export function ObjectRosterFieldEditor(props: ObjectRosterFieldEditorProps) {
   const alreadyListed = selectedTarget !== null && props.field.entries.some((entry) => entry.key === selectedTarget.identity);
   const inputPrefix = props.inputPrefix ?? `player-access-roster-${props.field.key.replace(/[^a-z0-9_-]/gi, "-")}`;
   const disabled = props.disabled || props.busy;
+  // The target ID comes from the left selection or 手动查询; the form shows only fields it cannot supply.
+  const visibleProperties = properties.filter((property) => !property.identity
+    || (!props.selectedEntry && (!props.lockedIdentity || props.lockedIdentity.pendingKeys?.includes(property.key))));
+  const actionClass = "secondary-button player-center-action-button";
 
   function fillSelectedIdentity() {
     const value = selectedTarget?.rawValue;
@@ -100,58 +108,62 @@ export function ObjectRosterFieldEditor(props: ObjectRosterFieldEditorProps) {
 
   return (
     <div className="player-access-object-roster-field">
-      {!props.lockedIdentity && !props.selectedEntry && props.selectedPlayer && selectedTarget ? <div className="player-access-roster-selected">
-        <button type="button" className="secondary-button player-access-roster-selected-fill"
-          disabled={disabled || alreadyListed} title={selectedTarget.identity} onClick={fillSelectedIdentity}>
+      {!props.lockedIdentity && !props.selectedEntry && props.selectedPlayer && selectedTarget ? <ConfigurationHelp
+        description={`${selectedTarget.identity} \u00b7 ${selectLocaleText(props.locale, "\u6838\u5bf9\u5b8c\u6574\u6761\u76ee\u540e\u518d\u4fdd\u5b58\u3002", "Review the full entry before saving.")}`}>{(help) =>
+        <div className="player-access-roster-selected" ref={help.anchorRef} {...help.interactionProps} aria-describedby={help.descriptionId}>
+        <button type="button" className="secondary-button player-center-action-button player-access-roster-selected-fill"
+          disabled={disabled || alreadyListed} aria-describedby={help.descriptionId} onClick={fillSelectedIdentity}>
           {alreadyListed ? selectLocaleText(props.locale, "已在当前名单", "Already in this roster")
-            : selectLocaleText(props.locale, `填入 ${props.selectedPlayer.display_name} 的身份`, `Fill identity from ${props.selectedPlayer.display_name}`)}
+            : selectLocaleText(props.locale, `填入 ${props.selectedPlayer?.display_name ?? ""} 的身份`, `Fill identity from ${props.selectedPlayer?.display_name ?? ""}`)}
         </button>
-        <span className="form-note">{selectLocaleText(props.locale,
-          "核对下方完整条目后保存。", "Review the full entry below before saving.")}</span>
-      </div> : null}
+      </div>}</ConfigurationHelp> : null}
       <form className="player-access-roster-editor player-access-object-roster-editor" onSubmit={(event) => event.preventDefault()}>
         <div className="player-access-object-roster-grid">
-          {properties.map((property) => {
+          {visibleProperties.map((property) => {
             const inputId = `${inputPrefix}-${property.key.replace(/[^a-z0-9_-]/gi, "-")}`;
             const rawValue = identityValues?.[property.key] ?? draft[property.key] ?? defaultObjectRosterPropertyValue(property);
-            const identityLocked = Boolean((props.selectedEntry || props.lockedIdentity) && property.identity);
+            const title = t(`servers.playerAccess.property.${property.key}.title`, undefined, property.title);
+            const rawDescription = typeof property.property.description === "string" ? property.property.description : "";
+            const description = rawDescription ? t(`servers.playerAccess.property.${property.key}.description`, undefined, rawDescription) : "";
+            const label = <span className="detail-label settings-field-label">{title}{property.required ? " *" : ""}</span>;
             return (
               <label key={property.key} htmlFor={inputId}
                 className={`form-field player-access-object-roster-property${property.kind === "boolean" ? " is-boolean" : ""}`}>
-                <span className="detail-label">{property.title}{property.required ? " *" : ""}</span>
+                {description ? <ConfigurationHelp description={description}>{(help) => <span ref={help.anchorRef} {...help.interactionProps}
+                  aria-describedby={help.descriptionId} className="player-access-object-roster-label">{label}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp> : label}
                 {property.kind === "boolean" ? (
                   <input id={inputId} type="checkbox" checked={rawValue === true}
                     onChange={(event) => setDraft((current) => ({ ...current, [property.key]: event.target.checked }))}
-                    disabled={disabled || identityLocked} />
+                    disabled={disabled} />
                 ) : property.enumValues.length > 0 ? (
-                  <select id={inputId} className="text-input" value={String(rawValue)}
+                  <select id={inputId} className="settings-schema-input settings-schema-select" value={String(rawValue)}
                     onChange={(event) => {
                       const selected = property.enumValues.find((value) => String(value) === event.target.value);
                       setDraft((current) => ({ ...current, [property.key]: selected ?? event.target.value }));
-                    }} disabled={disabled || identityLocked}>
+                    }} disabled={disabled}>
                     {property.enumValues.map((value) => <option key={String(value)} value={String(value)}>{String(value)}</option>)}
                   </select>
                 ) : (
                   <input id={inputId} type={property.kind === "integer" ? "number" : property.property.format === "date" ? "date" : "text"}
-                    step={property.kind === "integer" ? 1 : undefined} className="text-input"
+                    step={property.kind === "integer" ? 1 : undefined} className="settings-schema-input"
                     value={typeof rawValue === "string" || typeof rawValue === "number" ? rawValue : ""}
                     onChange={(event) => setDraft((current) => ({ ...current, [property.key]: event.target.value }))}
-                    disabled={disabled || identityLocked} />
+                    disabled={disabled} />
                 )}
               </label>
             );
           })}
         </div>
         <div className="player-access-roster-action-pair">
-          <InlineConfirmAction type="submit" className={props.field.lane === "block" ? "ghost-button danger" : "secondary-button"}
+          <InlineConfirmAction type="submit" className={`${actionClass}${props.field.lane === "block" ? " danger" : ""}`}
             disabled={disabled || properties.length === 0}
             scopeKey={rosterConfirmationScope(props.field, normalizedDraft, props.selectedEntry)}
             confirmation={confirmation} onConfirm={saveDraft}>
             {props.busy ? selectLocaleText(props.locale, "保存中", "Saving")
-              : props.selectedEntry ? selectLocaleText(props.locale, "保存修改", "Save changes")
-                : rosterFieldActionLabel(props.field, props.locale)}
+              : props.submitLabel ?? (props.selectedEntry ? selectLocaleText(props.locale, "保存修改", "Save changes")
+                : rosterFieldActionLabel(props.field, props.locale))}
           </InlineConfirmAction>
-          <button type="button" className="ghost-button" disabled={disabled}
+          <button type="button" className={actionClass} disabled={disabled}
             onClick={() => props.onCancel ? props.onCancel() : setDraft(buildObjectRosterDraft(props.field, props.selectedEntry?.rawValue))}>
             {props.onCancel ? selectLocaleText(props.locale, "取消", "Cancel") : props.selectedEntry ? selectLocaleText(props.locale, "重置修改", "Reset changes")
               : selectLocaleText(props.locale, "清空", "Clear")}
@@ -177,18 +189,18 @@ function SimpleRosterFieldEditor(props: PlayerAccessRosterEditorProps) {
 
   return <form className="player-access-roster-editor" onSubmit={(event) => event.preventDefault()}>
     <label htmlFor={inputId} className="sr-only">{props.field.title}</label>
-    <input id={inputId} type="text" className="text-input player-access-roster-input" value={draft}
+    <input id={inputId} type="text" className="settings-schema-input player-access-roster-input" value={draft}
       onChange={(event) => setDraft(event.target.value)}
       placeholder={selectLocaleText(props.locale, `输入${props.field.title}`, `Enter ${props.field.title}`)} disabled={disabled} />
     <InlineConfirmAction type="submit"
-      className={`player-access-roster-add-button ${props.field.lane === "block" ? "ghost-button danger" : "secondary-button"}`}
+      className={`player-access-roster-add-button secondary-button player-center-action-button${props.field.lane === "block" ? " danger" : ""}`}
       disabled={disabled || !draft.trim()} aria-label={`${rosterFieldActionLabel(props.field, props.locale)} · ${props.field.title}`}
       scopeKey={rosterConfirmationScope(props.field, draft.trim())}
       confirmation={rosterConfirmation(props.field, draft, "add", props.locale)} onConfirm={addDraft}>
       <ShellIcon name="plus" className="player-access-roster-add-icon" />
       {props.busy ? selectLocaleText(props.locale, "保存中", "Saving") : rosterFieldActionLabel(props.field, props.locale)}
     </InlineConfirmAction>
-    {props.onCancel ? <button type="button" className="ghost-button" disabled={disabled} onClick={props.onCancel}>
+    {props.onCancel ? <button type="button" className="secondary-button player-center-action-button" disabled={disabled} onClick={props.onCancel}>
       {selectLocaleText(props.locale, "取消", "Cancel")}
     </button> : null}
   </form>;

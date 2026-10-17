@@ -6,6 +6,9 @@ use super::commands_program_storage::{ProgramUpdateRequest, install_program_with
 use super::*;
 
 #[cfg(test)]
+#[path = "commands_runtime_prestart_account_tests.rs"]
+mod account_tests;
+#[cfg(test)]
 #[path = "commands_runtime_prestart_policy_tests.rs"]
 mod tests;
 
@@ -157,45 +160,109 @@ pub(super) async fn run_prestart_update_if_needed(
             let message = format!("已确认服务器程序为当前发布版本 {version}。");
             return Ok((install_guard, message));
         }
-        if uses_library {
-            app_storage::ensure_library_program_target_available(&storage.paths, &root)
+        let mut install_guard = install_guard;
+        let mut account_name = None;
+        let (result, guard) = loop {
+            if uses_library {
+                app_storage::ensure_library_program_target_available(&storage.paths, &root)
+                    .await
+                    .map_err(|error| error.to_string())?;
+                super::commands_program_storage::ensure_shared_program_unused(
+                    state,
+                    storage,
+                    &instance.summary.module_id,
+                    &root,
+                    Some(&instance.summary.id),
+                )
                 .await
-                .map_err(|error| error.to_string())?;
-            super::commands_program_storage::ensure_shared_program_unused(
-                state,
-                storage,
-                &instance.summary.module_id,
-                &root,
-                Some(&instance.summary.id),
+                .map_err(|reason| format!("启动前更新无法完成：{reason}"))?;
+            }
+            app_storage::ensure_program_archive_dependencies(&storage.paths, &root)
+                .await
+                .map_err(|error| format!("启动前更新受归档版本保护：{error}"))?;
+
+            let attempt = install_program_with_baseline(
+                ProgramUpdateRequest {
+                    storage,
+                    descriptor,
+                    module,
+                    root: &root,
+                    operation: reservation.storage_operation(),
+                    guard: install_guard,
+                    validate: false,
+                    cancellation,
+                    account_name: account_name.as_deref(),
+                },
+                |update: InstallProgressUpdate| {
+                    if let Some(path) = context.console_log_path {
+                        let _ = append_prestart_update_console_line(path, &update.detail, "");
+                    }
+                    let _ = update_background_job(state, &job_id, |job| {
+                        apply_install_progress(job, &update)
+                    });
+                },
             )
-            .await
-            .map_err(|reason| format!("启动前更新无法完成：{reason}"))?;
-        }
-        app_storage::ensure_program_archive_dependencies(&storage.paths, &root)
-            .await
-            .map_err(|error| format!("启动前更新受归档版本保护：{error}"))?;
-        let (result, guard) = install_program_with_baseline(
-            ProgramUpdateRequest {
-                storage,
-                descriptor,
-                module,
-                root: &root,
-                operation: reservation.storage_operation(),
-                guard: install_guard,
-                validate: false,
-                cancellation,
-            },
-            |update: InstallProgressUpdate| {
-                if let Some(path) = context.console_log_path {
-                    let _ = append_prestart_update_console_line(path, &update.detail, "");
+            .await;
+            match attempt {
+                Ok(result) => break result,
+                Err(error)
+                    if account_name.is_none()
+                        && matches!(&error, app_steamcmd::SteamCmdError::SteamAppAccountRequired { app_id, .. }
+                    if Some(*app_id) == module.summary.steam_app_id)
+                        && !cancellation.is_cancelled()
+                        && !reservation.is_cancelled() =>
+                {
+                    let original = steamcmd_error_message(&error);
+                    let canonical_root = fs::canonicalize(&root).map_err(|_| original.clone())?;
+                    let mut targets = vec![
+                        crate::steam_workshop_account_sessions::SteamAccountLoginTarget::Instance(
+                            instance.summary.id.clone(),
+                        ),
+                    ];
+                    if uses_library {
+                        targets.push(
+                            crate::steam_workshop_account_sessions::SteamAccountLoginTarget::Module(
+                                instance.summary.module_id.clone(),
+                            ),
+                        );
+                    }
+                    account_name = state
+                        .steam_workshop_account_sessions
+                        .server_download_account(
+                            &targets,
+                            &instance.summary.module_id,
+                            &canonical_root,
+                            &storage.paths.steamcmd_root,
+                            &storage.paths.app_data_root,
+                        )?;
+                    if account_name.is_none() {
+                        return Err(original);
+                    }
+                    // Failure released the provider and program lease. Reacquire
+                    // under the original start reservation; never wait for UI here.
+                    install_guard = acquire_prestart_program_guard(
+                        state,
+                        &instance.summary.module_id,
+                        &root,
+                        reservation,
+                    )
+                    .await?;
+                    let still_authorized = state
+                        .steam_workshop_account_sessions
+                        .server_download_account(
+                            &targets,
+                            &instance.summary.module_id,
+                            &canonical_root,
+                            &storage.paths.steamcmd_root,
+                            &storage.paths.app_data_root,
+                        )?;
+                    if still_authorized != account_name {
+                        return Err(original);
+                    }
                 }
-                let _ = update_background_job(state, &job_id, |job| {
-                    apply_install_progress(job, &update)
-                });
-            },
-        )
-        .await
-        .map_err(|error| steamcmd_error_message(&error))?;
+                Err(error) => return Err(steamcmd_error_message(&error)),
+            }
+        };
         let record = GameInstallSyncRecord {
             module_id: result.module_id.clone(),
             install_root: result.install_root.clone(),

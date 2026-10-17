@@ -394,8 +394,10 @@
   overflow-wrap: anywhere;
 }
 
-/* Every player action (session, roster, manual ID, native unban) shares one size and shape. */
-.player-center-action-button {
+/* Every player action (session, roster, manual ID, native unban) shares one size and shape.
+   The controls-scoped selector outranks the compact .player-center-controls .secondary-button rule. */
+.player-center-action-button,
+.player-center-controls .player-center-action-button {
   min-width: 0;
   width: 100%;
   min-height: var(--settings-control-height, 38px);
@@ -566,4 +568,32 @@
   border-color: color-mix(in srgb, var(--danger) 38%, var(--shell-line));
   background: color-mix(in srgb, var(--danger) 9%, transparent);
   color: var(--danger);
+}
+
+/* Muted ⓘ for persistent conditions (category titles, unknown values); the text lives in the shared help bubble. */
+.player-center-list-info {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  color: var(--text-muted);
+  cursor: help;
+  vertical-align: middle;
+}
+
+/* Module-owned list categories (e.g. Moria permissions) use the list pane padding like the manual lookup. */
+.player-center-extra-list {
+  min-width: 0;
+  padding: 12px;
+}
+
+.player-center-native-settings .server-backup-policy-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.player-center-native-settings .server-backup-policy-footer .player-center-action-button {
+  width: auto;
+  min-width: 120px;
 }

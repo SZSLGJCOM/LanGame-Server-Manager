@@ -42,6 +42,8 @@ import type {
 import { parseSettingsObject, parseWorkshopIdList } from "../settings/guided-settings";
 import type { SettingsObject } from "../settings/settings-schema";
 import { useModWorkbenchMutations } from "./useModWorkbenchMutations";
+import type { SteamWorkshopAccountState } from "./useSteamWorkshopAccount";
+import { requiresSteamWorkshopAccount } from "./steam-workshop-access-error";
 import { DST_RAW_MOD_WARNING, hasDstRawModOverrides } from "./mod-workbench-dst-policy";
 import { SteamWorkshopPreview, SteamWorkshopStoreDetail, type WorkshopStoreAction } from "./SteamWorkshopStoreDetail";
 import { useSteamWorkshopBrowse } from "./useSteamWorkshopBrowse";
@@ -66,7 +68,6 @@ import {
   readManagedWorkshopCollections, collectInstalledWorkshopCollections,
   mergeManagedWorkshopCollections, managedCollectionMemberIds, type ManagedWorkshopCollection
 } from "./mod-workbench-collections";
-import { ManualModInstallHelp } from "./ManualModInstallHelp";
 import { ManualModInventoryList } from "./ManualModInventoryList";
 import { ManagedModDeleteDialog } from "./ManagedModDeleteDialog";
 import { useManagedManualMods } from "./useManagedManualMods";
@@ -76,7 +77,7 @@ import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
 import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, buildAsaModPlan, canonicalAsaModId,
   hasAsaRawModFlags, parseAsaModIds, readAsaModMembership, type AsaModAction } from "./mod-workbench-asa";
 import { referenceCandidatesFromText } from "./mod-reference-parser";
-import { MOD_WORKFLOW_CATALOG, type ModWorkflowCatalogEntry } from "./mod-workbench-capability";
+import { MOD_WORKFLOW_CATALOG, modWorkbenchAvailability, type ModWorkflowCatalogEntry } from "./mod-workbench-capability";
 import {
   buildConfiguredEntries,
   buildConfigurableEntries,
@@ -136,6 +137,8 @@ const EMPTY_WORKSHOP_ITEMS: SteamWorkshopLookupItem[] = [];
 const EMPTY_MANUAL_INVENTORY_ITEMS: ManualModInventoryItem[] = [];
 
 export interface ModWorkbenchProps {
+  steamAccount?: SteamWorkshopAccountState;
+  onSteamAccountRequired?: (retry: (accountName: string) => Promise<SteamWorkshopDownloadResult>) => Promise<SteamWorkshopDownloadResult>;
   details: InstanceDetails;
   archive?: InstanceArchiveDetails;
   moduleDetails: ModuleDetails | null;
@@ -176,17 +179,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   } satisfies ModWorkflowCatalogEntry;
   const manualStaging = props.moduleDetails?.mods?.manual_staging ?? null;
   const manualEnablement = props.moduleDetails?.mods?.enablement ?? null;
-  const modWorkflowUnsupported =
-    workflow.installScope === "client_only" || (
-      workflow.supportStatus === "not_modelled" &&
-      !props.moduleDetails?.workshop &&
-      !manualStaging &&
-      !manualEnablement
-    );
+  // The Mods tab is disabled for these modules; the guard keeps every mutation path closed if mounted directly.
+  const modWorkflowAvailability = modWorkbenchAvailability(moduleId, props.moduleDetails);
+  const modWorkflowUnsupported = modWorkflowAvailability === "client_only" || modWorkflowAvailability === "unsupported";
   const manualSourceProvider = props.moduleDetails?.mods?.source?.provider?.trim().toLowerCase() ?? "";
   const manualSourceLabel = props.moduleDetails?.mods?.source?.label ?? workflow.sourceLabel;
   const manualSourceUrl = props.moduleDetails?.mods?.source?.url ?? workflow.primaryUrl ?? null;
-  const manualSourceInstallNote = props.moduleDetails?.mods?.source?.install_note?.trim() ?? "";
   const canInstallSiteReferences = Boolean(
     manualStaging &&
     !manualEnablement &&
@@ -259,6 +257,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const manualDropRequest = useRef<AbortController | null>(null);
   const browsePaneRef = useRef<HTMLDivElement | null>(null);
   const [manualDropActive, setManualDropActive] = useState(false);
+  const [manualDropReferenceActive, setManualDropReferenceActive] = useState(false);
   const [manualStageState, setManualStageState] = useState<"idle" | "running" | "success" | "error">("idle");
   const [manualStageResult, setManualStageResult] = useState<ManualModStageResult | null>(null);
   const [manualStageError, setManualStageError] = useState<string | null>(null);
@@ -274,8 +273,9 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const modChangesBlockedRef = useRef(modChangesBlocked);
   const latestSettingsRef = useRef(settings);
   const { mutationBusy, mutationError, setMutationError, runModMutation, launchModMutation } = useModWorkbenchMutations(
-    props.details.summary.id, moduleId, modChangesBlockedRef, latestSettingsRef, t
+    props.details.summary.id, moduleId, modChangesBlockedRef, latestSettingsRef, t, props.steamAccount?.isBusy
   );
+  const steamAccount = props.steamAccount;
   const managedManualMods = useManagedManualMods({
     instanceId: props.details.summary.id,
     runOperation: (operation) => runModMutation("staging", operation),
@@ -346,7 +346,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     .filter((item): item is SteamWorkshopLookupItem => Boolean(item))
     .filter((item) => !steamItemBelongsToApp(item, expectedAppId));
   const asaRawFlagsActive = moduleId === "arksurvivalascended" && hasAsaRawModFlags(settings);
-  const modMutationsDisabled = modChangesBlocked || mutationBusy || asaRawFlagsActive;
+  const modMutationsDisabled = modChangesBlocked || mutationBusy || Boolean(steamAccount?.busy) || asaRawFlagsActive;
   const dstRawOverridesActive = moduleId === "dontstarve" && hasDstRawModOverrides(settings);
   const modEnablementDisabled = modMutationsDisabled || dstRawOverridesActive;
   const [activeJob, setActiveJob] = useState<BackgroundJob | null>(null);
@@ -692,6 +692,19 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
   useEffect(() => () => manualDropRequest.current?.abort(), [props.details.summary.id, moduleId, activeWorkbenchView, manifestMode]);
 
+  useEffect(() => {
+    if (!manualDropActive) return;
+    const clear = () => setManualDropActive(false);
+    window.addEventListener("dragend", clear);
+    window.addEventListener("drop", clear);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("dragend", clear);
+      window.removeEventListener("drop", clear);
+      window.removeEventListener("blur", clear);
+    };
+  }, [manualDropActive]);
+
   async function handleManualFileDrop(transfer: DataTransfer) {
     manualDropRequest.current?.abort();
     const request = new AbortController();
@@ -886,11 +899,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       // A cache hit alone does not prove that the selected instance has its Mod files.
       if (usesSteamCmd && downloadableIds.length > 0) {
         const preparationIds = downloadableIds;
-        workshopDownload = await downloadSteamWorkshopItems(
-          props.details.summary.id,
-          preparationIds,
-          true
-        );
+        const download = (accountName?: string) => downloadSteamWorkshopItems(props.details.summary.id, preparationIds, true, accountName);
+        try {
+          workshopDownload = await download(steamAccount?.loginAccount);
+        } catch (error) {
+          if (steamAccount?.loginAccount !== undefined || !requiresSteamWorkshopAccount(error) ||
+            !steamAccount?.available || !props.onSteamAccountRequired) throw error;
+          workshopDownload = await props.onSteamAccountRequired(download);
+        }
         const downloadResults = new Map(
           workshopDownload.items.map((item) => [item.item_id, item.expected_path_exists])
         );
@@ -2048,11 +2064,20 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       ? selectedInventoryItem?.name
       : selectedEnabledRow ? lookupMap[selectedEnabledRow.id]?.title ?? selectedEnabledRow.value : null;
     const settingsLabel = t("servers.mods.configPanel.label", undefined, "Mod settings");
+    const acceptsDrop = Boolean(manualStaging) && !readOnly && !manifestMode;
+    const allowReferences = !isSteamWorkshopModule && canUseManualReferences;
+    const dropActive = acceptsDrop && manualDropActive && !modMutationsDisabled;
 
     return (
       <div className="mw-config-pane">
         <div className={`mw-detail-layout${manifestMode ? " mw-detail-layout--manifest" : empty ? " mw-detail-layout--empty" : ""}`}>
-          <div className="mw-detail-list-col">
+          <div className={`mw-detail-list-col${acceptsDrop ? " mw-dropzone" : ""}${dropActive ? " mw-dropzone--active" : ""}${acceptsDrop && manualStageState === "running" ? " mw-dropzone--running" : ""}`}
+            {...(acceptsDrop ? manualListDropHandlers(allowReferences) : {})}
+            role={acceptsDrop ? "region" : undefined}
+            aria-label={acceptsDrop ? t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here") : undefined}
+            aria-disabled={acceptsDrop ? modMutationsDisabled : undefined}
+            aria-busy={acceptsDrop ? manualStageState === "running" || manualReferenceState === "running" : undefined}
+          >
             <div className="mw-detail-col-title">
               <span>{collectionsMode ? t("servers.mods.browseKind.collection", undefined, "Collections") : t("servers.mods.detailTabs.mods", undefined, "Mods")}</span>
               <span className="mw-entry-count-chip">{collectionsMode ? managedCollections.length : modCount}</span>
@@ -2082,6 +2107,11 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 : moduleId === "squad" ? t("servers.mods.manifest.downloadOnly") : undefined}
               onApply={(review, enable) => handleInstallWorkshopItems(review.contentIds, { review, enable })}
             /> : collectionsMode ? renderCollectionList(selectedMemberId) : renderModList()}</div>
+            {dropActive ? <div className="mw-dropzone-feedback" aria-hidden="true">
+                <ShellIcon name="package" className="mw-btn-icon" />
+                <strong>{manualDropReferenceActive ? t("servers.mods.referenceDropTitle", { source: manualSourceLabel }, "Drop {source} links or IDs here")
+                  : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}</strong>
+            </div> : null}
           </div>
           {!manifestMode && !empty ? <div className="mw-detail-config-col" role="region" aria-label={selectedName ? `${settingsLabel}: ${selectedName}` : settingsLabel}>
             <div className="mw-detail-config-panel">
@@ -2091,6 +2121,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             </div>
           </div> : null}
         </div>
+        {renderManualImportFeedback()}
       </div>
     );
   }
@@ -2182,7 +2213,6 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             </button>
           ))}
         </div>
-        {manualSourceInstallNote ? <ManualModInstallHelp key={moduleId} note={manualSourceInstallNote} /> : null}
       </div>
     );
   }
@@ -2380,199 +2410,87 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               onClick={() => { setActiveWorkbenchView("config"); setManifestMode(true); }}
             >{t("servers.mods.manifest.mode")}</button> : null}
           </div>
-          {activeWorkbenchView === "store" && manualSourceInstallNote
-            ? <ManualModInstallHelp key={moduleId} note={manualSourceInstallNote} /> : null}
         </div>
-        {activeWorkbenchView === "store" ? renderCommunitySourcePane() : renderConfigurationPane()}
+        {activeWorkbenchView === "store" ? renderManualImportPane() : renderConfigurationPane()}
       </div>
     );
   }
 
-  function renderCommunitySourcePane() {
-    const updateDropFeedback = (event: DragEvent<HTMLElement>) => {
+  function manualListDropHandlers(allowReferences: boolean) {
+    const updateFeedback = (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
-      const effect = modMutationsDisabled ? "none" : modDropEffect(event.dataTransfer, canUseManualReferences);
+      const effect = modMutationsDisabled ? "none" : modDropEffect(event.dataTransfer, allowReferences);
       event.dataTransfer.dropEffect = effect;
       setManualDropActive(event.type !== "drop" && effect !== "none");
+      setManualDropReferenceActive(allowReferences && (effect === "link" || (!Array.from(event.dataTransfer.types).includes("Files")
+        && !Array.from(event.dataTransfer.items).some((item) => item.kind === "file"))));
       return effect;
     };
-    const dropZoneClassName = [
-      "mw-dropzone",
-      manualDropActive ? "mw-dropzone--active" : "",
-      manualStageState === "running" ? "mw-dropzone--running" : ""
-    ].filter(Boolean).join(" ");
-
-    return (
-      <div className={manualStaging ? "mw-manual-pane mw-manual-pane--has-dropzone" : "mw-manual-pane"}>
-        {manualStaging ? (
-          <div
-            className={dropZoneClassName}
-            aria-disabled={modMutationsDisabled}
-            onDragEnter={updateDropFeedback}
-            onDragOver={updateDropFeedback}
-            onDragLeave={(event) => {
-              if (event.currentTarget === event.target) {
-                setManualDropActive(false);
-              }
-            }}
-            onDrop={(event) => {
-              const effect = updateDropFeedback(event);
-              if (effect === "none") {
-                return;
-              }
-              const references = canUseManualReferences ? referencesFromDomDrop(event) : [];
-              const files = Array.from(event.dataTransfer.files);
-              const fileItems = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
-              const browserLinkFiles = files.length > 0 && files.length === fileItems.length
-                && files.every((file) => /\.url$/i.test(file.name) || file.type.startsWith("image/"))
-                && fileItems.every((item) => !item.webkitGetAsEntry?.()?.isDirectory);
-              const webReferences = references.filter((reference) => /^https?:\/\//i.test(reference));
-              if (effect === "link" || (browserLinkFiles && webReferences.length > 0)) {
-                void handleEnableManualReferences(effect === "link" ? references : webReferences);
-                return;
-              }
-              // Local Mod packages and folders retain precedence over incidental text.
-              if (event.dataTransfer.files.length || Array.from(event.dataTransfer.items).some((item) => item.kind === "file")) {
-                void handleManualFileDrop(event.dataTransfer);
-                return;
-              }
-              if (references.length > 0 && canUseManualReferences) {
-                void handleEnableManualReferences(references);
-                return;
-              }
-              if (!canUseManualReferences) {
-                void handleStageManualModPaths([]);
-                return;
-              }
-              void handleEnableManualReferences([]);
-            }}
-          >
-            <ShellIcon name="package" className="mw-dropzone-icon" />
-            <div className="mw-dropzone-copy">
-              <strong className="mw-dropzone-title">
-                {manualReferenceState === "running" && manualEnablement
-                  ? t("servers.mods.referenceResolving", undefined, "Resolving...")
-                  : manualStageState === "running"
-                  ? t("servers.mods.manualDropRunning", undefined, "Installing...")
-                  : canUseManualReferences
-                    ? t("servers.mods.referenceDropTitle", { source: manualSourceLabel }, "Drop {source} links or IDs here")
-                    : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}
-              </strong>
-              <span className="mw-dropzone-subtitle">
-                {manualEnablement
-                  ? t("servers.mods.referenceDropTarget", { target: manualEnablement.setting_label }, "Writes to {target}")
-                  : t("servers.mods.manualDropTarget", { target: manualStaging.target_label }, "Installs to {target}")}
-              </span>
-            </div>
-
-            {manualSourceUrl ? (
-              <button
-                type="button"
-                className="mw-btn mw-btn--secondary mw-dropzone-open-btn"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void openExternalUrl(manualSourceUrl);
-                }}
-              >
-                <ShellIcon name="external-link" className="mw-btn-icon" />
-                <span>{t("servers.mods.openSource", { source: manualSourceLabel }, "Open {source}")}</span>
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-
-        {manualStageResult ? (
-          <div className="mw-manual-success-bar">
-            <span className="mw-chip mw-chip--on">
-              {t("servers.mods.manualDropSuccess", { count: manualStageResult.copied_file_count, target: manualStageResult.target_label }, "{count} files installed to {target}")}
-            </span>
-          </div>
-        ) : null}
-
-        {canUseManualReferences ? (
-          <div className="mw-reference-row">
-            <input
-              className="mw-reference-input"
-              value={manualReferenceInput}
-              disabled={modEnablementDisabled}
-              placeholder={t("servers.mods.referenceInputPlaceholder", { source: manualSourceLabel }, "Paste {source} link or mod ID...")}
-              onChange={(event) => setManualReferenceInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleEnableManualReferenceInput();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className="mw-btn mw-btn--secondary"
-              disabled={modEnablementDisabled}
-              onClick={handleEnableManualReferenceInput}
-            >
-              {manualEnablement
-                ? t("servers.mods.applyAction.enableLocal", undefined, "Enable")
-                : t("servers.mods.applyAction.install", undefined, "Install")}
-            </button>
-          </div>
-        ) : null}
-
-        {manualReferenceResult ? (
-          <span className="mw-chip mw-chip--on">
-            {t("servers.mods.referenceResolved", { count: manualReferenceResult.resolved_ids.length }, "{count} ID(s) ready")}
-          </span>
-        ) : null}
-        {manualReferenceError ? <ActivityNotice tone="error">{manualReferenceError}</ActivityNotice> : null}
-        {manualStageError ? <ActivityNotice tone="error">{manualStageError}</ActivityNotice> : null}
-      </div>
-    );
+    return {
+      onDragEnter: updateFeedback,
+      onDragOver: updateFeedback,
+      onDragLeave: (event: DragEvent<HTMLElement>) => {
+        if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) setManualDropActive(false);
+      },
+      onDrop: (event: DragEvent<HTMLElement>) => {
+        const effect = updateFeedback(event);
+        if (effect === "none") return;
+        const references = allowReferences ? referencesFromDomDrop(event) : [];
+        const files = Array.from(event.dataTransfer.files);
+        const fileItems = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
+        const browserLinkFiles = files.length > 0 && files.length === fileItems.length
+          && files.every((file) => /\.url$/i.test(file.name) || file.type.startsWith("image/"))
+          && fileItems.every((item) => !item.webkitGetAsEntry?.()?.isDirectory);
+        const webReferences = references.filter((reference) => /^https?:\/\//i.test(reference));
+        if (effect === "link" || (browserLinkFiles && webReferences.length > 0)) {
+          void handleEnableManualReferences(effect === "link" ? references : webReferences);
+          return;
+        }
+        // Local Mod packages and folders retain precedence over incidental text.
+        if (files.length || fileItems.length) { void handleManualFileDrop(event.dataTransfer); return; }
+        if (references.length > 0 && allowReferences) { void handleEnableManualReferences(references); return; }
+        if (!allowReferences) { void handleStageManualModPaths([]); return; }
+        void handleEnableManualReferences([]);
+      }
+    };
   }
 
-  function renderUnsupportedModWorkflowPane() {
-    const clientOnly = workflow.installScope === "client_only";
-    const reason = clientOnly
-      ? t(
-          "servers.mods.unsupported.clientOnlyBody",
-          undefined,
-          "These Workshop packages are installed on each player's game client, not the dedicated server."
-        )
-      : workflow.unsupportedReason?.trim() || t(
-          "servers.mods.unsupported.body",
-          undefined,
-          "No verified server-side mod workflow is available for this module."
-        );
+  function renderManualImportFeedback() {
+    if (!manualStageResult && !manualReferenceResult && !manualReferenceError && !manualStageError && manualStageState !== "running" && manualReferenceState !== "running") return null;
+    return <div className="mw-manual-feedback">
+      {manualStageState === "running" ? <ActivityNotice>{t("servers.mods.manualDropRunning", undefined, "Installing...")}</ActivityNotice> : null}
+      {manualReferenceState === "running" && manualStageState !== "running" ? <ActivityNotice>{t("servers.mods.referenceResolving", undefined, "Resolving...")}</ActivityNotice> : null}
+      {manualStageResult ? <div className="mw-manual-success-bar"><span className="mw-chip mw-chip--on">
+        {t("servers.mods.manualDropSuccess", { count: manualStageResult.copied_file_count, target: manualStageResult.target_label }, "{count} files installed to {target}")}
+      </span></div> : null}
+      {manualReferenceResult ? <span className="mw-chip mw-chip--on">
+        {t("servers.mods.referenceResolved", { count: manualReferenceResult.resolved_ids.length }, "{count} ID(s) ready")}
+      </span> : null}
+      {manualReferenceError ? <ActivityNotice tone="error">{manualReferenceError}</ActivityNotice> : null}
+      {manualStageError ? <ActivityNotice tone="error">{manualStageError}</ActivityNotice> : null}
+    </div>;
+  }
 
-    return (
-      <div className="mw-unsupported-pane">
-        <ShellIcon name="alert-triangle" className="mw-unsupported-icon" />
-        <div className="mw-unsupported-copy">
-          <span className="mw-chip mw-chip--warn">
-            {clientOnly
-              ? t("servers.mods.unsupported.clientOnlyStatus", undefined, "Client only")
-              : t("servers.mods.unsupported.status", undefined, "Unavailable")}
-          </span>
-          <h3>
-            {clientOnly
-              ? t("servers.mods.unsupported.clientOnlyTitle", undefined, "No server-side Mod installation")
-              : t("servers.mods.unsupported.title", undefined, "Mod workflow not verified")}
-          </h3>
-          <p>{reason}</p>
-          <p>
-            {clientOnly
-              ? t(
-                  "servers.mods.unsupported.clientOnlyGuardrail",
-                  undefined,
-                  "Manage these dependencies through Steam Workshop on every participating client."
-                )
-              : t(
-                  "servers.mods.unsupported.guardrail",
-                  undefined,
-                  "LanGame will not stage files or write mod settings until a repeatable server-side contract is verified."
-                )}
-          </p>
-        </div>
-      </div>
-    );
+  function renderManualImportPane(allowReferences = canUseManualReferences) {
+    const hasActions = Boolean(manualSourceUrl || allowReferences);
+    return <div className={`mw-manual-pane${hasActions ? " mw-manual-pane--with-actions" : ""}`}>
+      {hasActions ? <div className="mw-manual-actions">
+        {allowReferences ? <div className="mw-reference-row">
+          <input className="mw-reference-input" value={manualReferenceInput} disabled={modEnablementDisabled}
+            placeholder={t("servers.mods.referenceInputPlaceholder", { source: manualSourceLabel }, "Paste {source} link or mod ID...")}
+            onChange={(event) => setManualReferenceInput(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleEnableManualReferenceInput(); } }} />
+          <button type="button" className="mw-btn mw-btn--secondary" disabled={modEnablementDisabled} onClick={handleEnableManualReferenceInput}>
+            {manualEnablement ? t("servers.mods.applyAction.enableLocal", undefined, "Enable") : t("servers.mods.applyAction.install", undefined, "Install")}
+          </button>
+        </div> : null}
+        {manualSourceUrl ? <button type="button" className="mw-btn mw-btn--secondary mw-source-open-btn" onClick={() => void openExternalUrl(manualSourceUrl)}>
+          <ShellIcon name="external-link" className="mw-btn-icon" />
+          <span>{t("servers.mods.openSource", { source: manualSourceLabel }, "Open {source}")}</span>
+        </button> : null}
+      </div> : null}
+      {renderConfigurationPane()}
+    </div>;
   }
 
   return (
@@ -2628,9 +2546,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
         <section className={`mw-workspace-section mw-workspace-section--${activeWorkbenchView}`} role="tabpanel">
           <div className="mw-workspace-panel">
-            {modWorkflowUnsupported ? (
-              renderUnsupportedModWorkflowPane()
-            ) : props.moduleDetails?.workshop?.provider === "steam" ? (
+            {modWorkflowUnsupported ? null : props.moduleDetails?.workshop?.provider === "steam" ? (
               renderSteamWorkshopWorkspace()
             ) : (
               renderCommunityWorkspace()

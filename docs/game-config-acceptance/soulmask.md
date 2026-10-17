@@ -9,7 +9,7 @@
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `SteamCMD app 3017310 build 24123420; GameXishu template 276 keys x 3 profiles`)
 - Sources: `launch_args`, `game_xishu_json`, `runtime_rcon`
-- Coverage: editable `285`, specialized `1`, derived `0`, generated `0`, excluded `5`
+- Coverage: editable `285`, specialized `1`, derived `0`, generated `0`, excluded `6`
 
 ### Initial native files
 
@@ -925,6 +925,7 @@
       "-backup=60",
       "-online=Steam",
       "-mod=\"123456789,987654321\"",
+      "-serverpm=2",
       "-NoCrashDialog",
       "-log"
     ],
@@ -1039,7 +1040,8 @@
       "-adminpsw=acceptance-admin",
       "-saving=300",
       "-backup=900",
-      "-online=Steam"
+      "-online=Steam",
+      "-serverpm=2"
     ],
     "executable_suffix": "WS/Binaries/Win64/WSServer-Win64-Shipping.exe"
   }

@@ -797,6 +797,7 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
         if action.get("destructive") is True and not (
             runtime_player_action_requires_destructive(action_id)
             or runtime_player_action_is_read_only(action_id)
+            or action_id in PLAYER_ACTION_TARGETLESS_MUTATING_IDS
         ):
             failures.append(
                 f"{module_id}: runtime.player_actions[{action_id or index}] is marked destructive but its id does not classify the player-management effect"

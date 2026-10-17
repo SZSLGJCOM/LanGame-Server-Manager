@@ -2,15 +2,15 @@
 //! online snapshot is authoritative for this roster, and no INI text is exposed.
 
 use std::collections::HashSet;
+#[cfg(test)]
 use std::fs::{self, OpenOptions};
-use std::io::Read;
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use app_core::{DragonwildsBanEntry, DragonwildsBanRoster};
 
 use crate::StorageError;
-use crate::instance_file_patch::io::{guard_directories, is_link};
+use crate::native_bans_io::{decode as decode_native, read_optional_native_file};
 
 const FILE: &str = "RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini";
 const SECTION: &str = "[/Script/Dominion.DedicatedServerSettings]";
@@ -27,12 +27,12 @@ pub fn read_dragonwilds_ban_roster(
     if instance_id.trim().is_empty() {
         return Err(invalid(&path, "An instance identity is required."));
     }
-    let parent = path
-        .parent()
-        .ok_or_else(|| invalid(&path, "The native configuration has no parent."))?;
-    let _guards = guard_directories(parent)?;
-    let content = read_native(&path)?;
-    let entries = parse(&decode(&content, &path)?, &path)?;
+    let content = read_optional_native_file(&path, "runescapedragonwilds", MAX_BYTES)?
+        .ok_or_else(|| invalid(&path, "The native configuration is missing."))?;
+    let entries = parse(
+        &decode_native(&content, "runescapedragonwilds", &path)?,
+        &path,
+    )?;
     let observed_at_unix_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_err(|_| invalid(&path, "The observation clock is unavailable."))?
@@ -56,127 +56,6 @@ fn invalid(path: &Path, message: impl Into<String>) -> StorageError {
         module_id: "runescapedragonwilds".into(),
         path: path.to_path_buf(),
         message: message.into(),
-    }
-}
-
-fn read_native(path: &Path) -> Result<Vec<u8>, StorageError> {
-    let before = fs::symlink_metadata(path).map_err(|source| StorageError::ReadPath {
-        path: path.to_path_buf(),
-        source,
-    })?;
-    if !before.is_file() || is_link(&before) {
-        return Err(invalid(
-            path,
-            "The native configuration must be a regular file without links or reparse points.",
-        ));
-    }
-    if before.len() > MAX_BYTES as u64 {
-        return Err(invalid(
-            path,
-            "The native configuration exceeds the 8 MiB read limit.",
-        ));
-    }
-    let mut options = OpenOptions::new();
-    options.read(true);
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::OpenOptionsExt;
-        use windows_sys::Win32::Storage::FileSystem::{
-            FILE_FLAG_OPEN_REPARSE_POINT, FILE_SHARE_READ, FILE_SHARE_WRITE,
-        };
-        options
-            .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE)
-            .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT);
-    }
-    let file = options
-        .open(path)
-        .map_err(|source| StorageError::ReadConfig {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    let opened = file
-        .metadata()
-        .map_err(|_| invalid(path, "Cannot inspect the opened native configuration."))?;
-    if !opened.is_file() || is_link(&opened) || opened.len() > MAX_BYTES as u64 {
-        return Err(invalid(
-            path,
-            "The opened native configuration is not a bounded regular file.",
-        ));
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        if before.dev() != opened.dev() || before.ino() != opened.ino() {
-            return Err(invalid(
-                path,
-                "The native configuration changed while opening it.",
-            ));
-        }
-    }
-    let mut bytes = Vec::new();
-    (&file)
-        .take((MAX_BYTES + 1) as u64)
-        .read_to_end(&mut bytes)
-        .map_err(|source| StorageError::ReadConfig {
-            path: path.to_path_buf(),
-            source,
-        })?;
-    let after = file
-        .metadata()
-        .map_err(|_| invalid(path, "Cannot recheck the native configuration."))?;
-    let current = fs::symlink_metadata(path)
-        .map_err(|_| invalid(path, "The native configuration changed while reading it."))?;
-    if bytes.len() > MAX_BYTES
-        || bytes.len() as u64 != opened.len()
-        || after.len() != opened.len()
-        || after.modified().ok() != opened.modified().ok()
-        || !current.is_file()
-        || is_link(&current)
-        || current.len() != opened.len()
-        || current.modified().ok() != opened.modified().ok()
-    {
-        return Err(invalid(
-            path,
-            "The native configuration changed or exceeded its read limit.",
-        ));
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        if current.dev() != opened.dev() || current.ino() != opened.ino() {
-            return Err(invalid(
-                path,
-                "The native configuration was replaced while reading it.",
-            ));
-        }
-    }
-    Ok(bytes)
-}
-
-fn decode(bytes: &[u8], path: &Path) -> Result<String, StorageError> {
-    if let Some(bytes) = bytes.strip_prefix(&[0xff, 0xfe]) {
-        if bytes.len() % 2 != 0 {
-            return Err(invalid(
-                path,
-                "The native UTF-16LE configuration has an incomplete code unit.",
-            ));
-        }
-        let units = bytes
-            .as_chunks::<2>()
-            .0
-            .iter()
-            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
-            .collect::<Vec<_>>();
-        String::from_utf16(&units)
-            .map_err(|_| invalid(path, "The native configuration contains invalid UTF-16LE."))
-    } else {
-        let bytes = bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(bytes);
-        String::from_utf8(bytes.to_vec()).map_err(|_| {
-            invalid(
-                path,
-                "The native configuration is not valid UTF-8 or BOM-marked UTF-16LE.",
-            )
-        })
     }
 }
 

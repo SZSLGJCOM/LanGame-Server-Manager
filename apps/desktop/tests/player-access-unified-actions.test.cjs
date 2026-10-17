@@ -487,7 +487,8 @@ test("RimWorld retired whitelist has no binding or obsolete native actions", () 
   const runtimeActions = realModuleActions("rimworld");
   assert.deepEqual(Array.from(api.buildPlayerAccessBindings(fields, runtimeActions)), []);
   assert.deepEqual(runtimeActions.map((action) => action.id), [
-    "list_players", "list_bans", "kick_user", "ban_user", "unban_user", "op_player", "deop_player"
+    "list_players", "list_bans", "kick_user", "ban_user", "unban_user", "op_player", "deop_player",
+    "list_mods", "toggle_mod_bypass"
   ]);
   assert.doesNotMatch(moduleToml("rimworld"), /command_template = "whitelist/);
 });

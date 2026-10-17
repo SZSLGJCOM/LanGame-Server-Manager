@@ -24,10 +24,11 @@ interface ManualPlayerActionsProps {
 }
 
 /**
- * Hosts provided by the players workspace: the ID lookup renders in the 手动查询 category page and the
- * actions render in the shared right-side control area, exactly like a player picked from a list.
+ * Provided by the players workspace: 手动查询 owns the typed/looked-up ID (`target`, empty unless that
+ * category is open) and the actions render into the shared right-side stack (`actions`).
  */
-export interface ManualPlayerHosts { lookup: HTMLElement | null; actions: HTMLElement | null; onTarget?: (target: string) => void }
+/** `suppressedActionIds`: actions merged into a roster button of the same meaning (e.g. Enshrouded unban). */
+export interface ManualPlayerHosts { actions: HTMLElement | null; target: string; suppressedActionIds?: readonly string[] }
 export const ManualPlayerHostContext = createContext<ManualPlayerHosts | null>(null);
 
 function localizedActionLabel(action: ModulePlayerActionDetails, locale: LocaleCode): string {
@@ -38,54 +39,56 @@ function localizedActionLabel(action: ModulePlayerActionDetails, locale: LocaleC
 }
 
 export function ManualPlayerActions(props: ManualPlayerActionsProps) {
-  const eligibleActions = useMemo(
-    () => props.actions.filter(actionNeedsManualTarget),
-    [props.actions]
-  );
-  const [actionId, setActionId] = useState(eligibleActions[0]?.id ?? "");
-  const [target, setTarget] = useState("");
-  const [lookedUp, setLookedUp] = useState("");
   const hosts = useContext(ManualPlayerHostContext);
-  const [role, setRole] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
-  const action = useMemo(
-    () => eligibleActions.find((candidate) => candidate.id === actionId) ?? eligibleActions[0] ?? null,
-    [actionId, eligibleActions]
+  const suppressed = hosts?.suppressedActionIds;
+  const eligibleActions = useMemo(
+    () => props.actions.filter(actionNeedsManualTarget)
+      .filter((candidate) => !suppressed?.includes(candidate.id)),
+    [props.actions, suppressed]
   );
-  const needsTarget = action ? actionNeedsManualTarget(action) : false;
-  const targetError = action && target ? manualPlayerActionTargetError(props.moduleId, action, target, props.locale) : null;
-  const roleValues = action?.role_values ?? [];
-  const selectedRole = roleValues.includes(role) ? role : roleValues[0] ?? "";
-  // Module-specific identity formats live in the tooltip instead of a permanent paragraph.
-  const formatHint = action ? manualPlayerActionTargetError(props.moduleId, action, "", props.locale) : null;
+  const [ownTarget, setTarget] = useState("");
+  const [lookedUp, setLookedUp] = useState("");
+  // Inside the workspace the ID comes from 手动查询; standalone use keeps its own field and lookup.
+  const target = hosts ? hosts.target : ownTarget;
+  // Each action is its own stack button; a role choice expands in place of the button that needs it.
+  const [roles, setRoles] = useState<Record<string, string>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const busy = busyId !== null;
+  const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    setActionId(action?.id ?? "");
     setTarget("");
     setLookedUp("");
-    setRole("");
+    setRoles({});
+    setExpandedId(null);
     setFeedback(null);
-  }, [props.instanceId, action?.id]);
+  }, [props.instanceId]);
   // Actions only act on the ID that was explicitly looked up; editing the field deselects it.
   const active = props.active !== false;
-  const selectedTarget = active && lookedUp && lookedUp === target.trim() ? lookedUp : "";
-  const onTarget = hosts?.onTarget;
-  useEffect(() => { if (!active) setLookedUp(""); }, [active]);
-  useEffect(() => { onTarget?.(selectedTarget); }, [onTarget, selectedTarget]);
-  async function execute() {
-    if (!action || props.disabled || busy || Boolean(targetError) || (needsTarget && !selectedTarget)) {
+  const selectedTarget = hosts ? active ? target.trim() : "" : active && lookedUp && lookedUp === target.trim() ? lookedUp : "";
+  useEffect(() => { if (!active) { setLookedUp(""); setExpandedId(null); } }, [active]);
+
+  // The first action supplies the lookup field's label, placeholder and format hint.
+  const action = eligibleActions[0] ?? null;
+  if (eligibleActions.length === 0) {
+    return null;
+  }
+  // The typed ID is acceptable when any action accepts it; each button still checks its own format.
+  const lookupError = action && target.trim() && eligibleActions.every((candidate) => manualPlayerActionTargetError(props.moduleId, candidate, target, props.locale))
+    ? manualPlayerActionTargetError(props.moduleId, action, target, props.locale) : null;
+  const formatHint = action ? manualPlayerActionTargetError(props.moduleId, action, "", props.locale) : null;
+
+  async function execute(action: ModulePlayerActionDetails, role: string) {
+    const targetError = target ? manualPlayerActionTargetError(props.moduleId, action, target, props.locale) : null;
+    if (props.disabled || busy || Boolean(targetError) || !selectedTarget) {
       return;
     }
-    setBusy(true);
+    setBusyId(action.id);
     setFeedback(null);
     try {
-      await executeDeclaredRuntimePlayerAction(
-        props.instanceId,
-        action.id,
-        needsTarget ? target.trim() : "",
-        selectedRole
-      );
+      await executeDeclaredRuntimePlayerAction(props.instanceId, action.id, target.trim(), role);
+      setExpandedId(null);
       setFeedback({
         tone: "success",
         text: props.t("servers.playerCenter.manual.accepted", undefined, "The server accepted the action.")
@@ -100,42 +103,30 @@ export function ManualPlayerActions(props: ManualPlayerActionsProps) {
       props.onActionFailed?.();
       setFeedback({ tone: "error", text: describeError(error) });
     } finally {
-      setBusy(false);
+      setBusyId(null);
     }
   }
 
-  if (!action) {
-    return null;
-  }
-
-  const blockedReason = props.disabled
-    ? props.t("servers.playerCenter.manual.requiresRunning", undefined, "Available while the server is running.")
-    : targetError
-      ? targetError
-      : needsTarget && !selectedTarget
-        ? props.t("servers.playerCenter.manual.needsTarget", undefined, "Select or enter a player first.")
-        : null;
-  const actionDisabled = props.disabled || busy || Boolean(targetError) || (needsTarget && !selectedTarget);
   function lookUp() {
     const next = target.trim();
-    if (!next || targetError || busy) return;
+    if (!next || lookupError || busy) return;
     setLookedUp(next);
     setFeedback(null);
   }
 
-  const targetLabel = props.locale === "zh-CN" && action.target_label_zh_cn?.trim()
+  const targetLabel = props.locale === "zh-CN" && action?.target_label_zh_cn?.trim()
     ? action.target_label_zh_cn
-    : action.target_label || props.t("servers.playerCenter.manual.playerId", undefined, "Player ID");
+    : action?.target_label || props.t("servers.playerCenter.manual.playerId", undefined, "Player ID");
   const helpText = [props.t("servers.playerCenter.manual.description", undefined,
     "Enter an exact player identifier obtained from the server to run an action."), formatHint].filter(Boolean).join(" ");
 
   // 手动查询 category content: only the ID field and lookup; the actions stay in the shared control area.
-  const lookup = needsTarget ? (
+  const lookup = action ? (
     <form className="settings-schema-grid player-center-manual-lookup" aria-label={props.t("servers.playerCenter.manual.tab", undefined, "Manual lookup")}
       onSubmit={(event) => { event.preventDefault(); lookUp(); }}>
       <div className="settings-schema-field">
         <ConfigurationHelp description={helpText}>{(help) =>
-          <label className="detail-label" htmlFor={`manual-player-target-${props.instanceId}`} ref={help.anchorRef} {...help.interactionProps}
+          <label className="detail-label settings-field-label" htmlFor={`manual-player-target-${props.instanceId}`} ref={help.anchorRef} {...help.interactionProps}
             aria-describedby={help.descriptionId}>
             {targetLabel}<ShellIcon name="alert-circle" className="maintenance-help-icon" />
           </label>}</ConfigurationHelp>
@@ -144,100 +135,104 @@ export function ManualPlayerActions(props: ManualPlayerActionsProps) {
           type="text"
           className="settings-schema-input"
           value={target}
-          aria-invalid={Boolean(targetError)}
-          aria-describedby={targetError ? `manual-player-target-error-${props.instanceId}` : undefined}
+          aria-invalid={Boolean(lookupError)}
+          aria-describedby={lookupError ? `manual-player-target-error-${props.instanceId}` : undefined}
           disabled={props.disabled || busy}
           placeholder={props.locale === "zh-CN" && action.target_placeholder_zh_cn?.trim()
             ? action.target_placeholder_zh_cn
             : action.target_placeholder || props.t("servers.playerCenter.manual.playerIdPlaceholder", undefined, "Exact player ID")}
           onChange={(event) => setTarget(event.target.value)}
         />
-        {targetError ? <span className="form-note form-note--error" role="alert" id={`manual-player-target-error-${props.instanceId}`}>{targetError}</span> : null}
+        {lookupError ? <span className="form-note form-note--error" role="alert" id={`manual-player-target-error-${props.instanceId}`}>{lookupError}</span> : null}
       </div>
       <div className="player-center-manual-lookup-action">
         <button type="submit" className="secondary-button player-center-manual-use"
-          disabled={props.disabled || busy || !target.trim() || Boolean(targetError)}>
+          disabled={props.disabled || busy || !target.trim() || Boolean(lookupError)}>
           <ShellIcon name="search" />{props.t("servers.playerCenter.manual.lookup", undefined, "Look up")}
         </button>
       </div>
     </form>
   ) : null;
-  const label = localizedActionLabel(action, props.locale);
-  const content = busy ? props.t("servers.playerCenter.actions.running", undefined, "Running...") : label;
-  // Same action-group markup and button classes as the selected-player actions (LivePlayerActionPanel).
-  const actions = (
-    <section className="player-center-action-group player-center-manual-actions"
-      aria-label={props.t("servers.playerCenter.manual.title", undefined, "Server player actions")} aria-busy={busy}>
-      {eligibleActions.length > 1 ? (
-        <label className="settings-schema-field" htmlFor={`manual-player-action-${props.instanceId}`}>
-          <span className="detail-label">{props.t("servers.playerCenter.manual.action", undefined, "Action")}</span>
-          <select
-            id={`manual-player-action-${props.instanceId}`}
-            className="settings-schema-input"
-            value={action.id}
-            disabled={props.disabled || busy}
-            onChange={(event) => {
-              const next = eligibleActions.find((candidate) => candidate.id === event.target.value) ?? null;
-              setActionId(event.target.value);
-              setTarget("");
-              setRole(next?.role_values?.[0] ?? "");
-              setFeedback(null);
-            }}
-          >
-            {eligibleActions.map((candidate) => <option key={candidate.id} value={candidate.id}>{localizedActionLabel(candidate, props.locale)}</option>)}
-          </select>
-        </label>
-      ) : null}
-      {roleValues.length > 1 ? (
-        <label className="settings-schema-field" htmlFor={`manual-player-role-${props.instanceId}`}>
-          <span className="detail-label">{props.t("servers.playerCenter.manual.role", undefined, "Role")}</span>
-          <select id={`manual-player-role-${props.instanceId}`} className="settings-schema-input" value={selectedRole} disabled={props.disabled || busy} onChange={(event) => setRole(event.target.value)}>
+
+  function renderAction(action: ModulePlayerActionDetails) {
+    const roleValues = action?.role_values ?? [];
+    const selectedRole = roleValues.includes(roles[action.id] ?? "") ? roles[action.id] : roleValues[0] ?? "";
+    const targetError = target ? manualPlayerActionTargetError(props.moduleId, action, target, props.locale) : null;
+    const blockedReason = props.disabled
+      ? props.t("servers.playerCenter.manual.requiresRunning", undefined, "Available while the server is running.")
+      : targetError ?? (!selectedTarget ? props.t("servers.playerCenter.manual.needsTarget", undefined, "Select or enter a player action.") : null);
+    const actionDisabled = props.disabled || busy || Boolean(targetError) || !selectedTarget;
+    const label = localizedActionLabel(action, props.locale);
+    const content = busyId === action.id ? props.t("servers.playerCenter.actions.running", undefined, "Running...") : label;
+    const expanded = roleValues.length > 1 && expandedId === action.id && !actionDisabled;
+    const buttonClass = `secondary-button player-center-action-button${action.destructive ? " danger" : ""}`;
+    const confirmation = props.t("servers.playerCenter.manual.confirm",
+      { action: selectedRole ? `${label} (${selectedRole})` : label, target: target.trim() },
+      "Run \u201c{action}\u201d for known identity \u201c{target}\u201d?");
+    if (expanded) {
+      const confirmLabel = props.locale === "zh-CN" ? `\u786e\u8ba4${label}` : `Confirm ${label}`;
+      return <div key={action.id} className="player-access-selected-editor is-inline player-center-manual-action" data-manual-action={action.id}>
+        <label className="settings-schema-field" htmlFor={`manual-player-role-${props.instanceId}-${action.id}`}>
+          <span className="detail-label settings-field-label">{props.t("servers.playerCenter.manual.role", undefined, "Role")}</span>
+          <select id={`manual-player-role-${props.instanceId}-${action.id}`} className="settings-schema-input settings-schema-select" value={selectedRole}
+            disabled={props.disabled || busy} onChange={(event) => setRoles((current) => ({ ...current, [action.id]: event.target.value }))}>
             {roleValues.map((roleValue) => <option key={roleValue} value={roleValue}>{roleValue}</option>)}
           </select>
         </label>
-      ) : roleValues.length === 1 ? <span className="form-note player-center-manual-role">
-        {props.t("servers.playerCenter.manual.role", undefined, "Role")}: {selectedRole}
-      </span> : null}
-      <div className="player-center-action-list">
-        <ConfigurationHelp description={busy ? null : blockedReason}>{(help) =>
-        <div className="player-access-total-action" ref={help.anchorRef} {...help.interactionProps}
-          tabIndex={actionDisabled ? 0 : undefined} role={actionDisabled ? "group" : undefined} aria-label={actionDisabled ? label : undefined}
-          aria-disabled={actionDisabled || undefined} aria-describedby={help.descriptionId}>
-        {action.destructive ? (
+        <div className="player-access-roster-action-pair">
+          {action.destructive ? (
+            <InlineConfirmAction className={buttonClass} disabled={actionDisabled}
+              scopeKey={JSON.stringify([props.instanceId, action.id, target.trim(), selectedRole])}
+              confirmation={confirmation} onConfirm={() => execute(action, selectedRole)}>
+              {busyId === action.id ? content : confirmLabel}
+            </InlineConfirmAction>
+          ) : <button type="button" className={buttonClass} disabled={actionDisabled} onClick={() => void execute(action, selectedRole)}>
+            {busyId === action.id ? content : confirmLabel}
+          </button>}
+          <button type="button" className="secondary-button player-center-action-button" disabled={busy} onClick={() => setExpandedId(null)}>
+            {props.locale === "zh-CN" ? "\u53d6\u6d88" : "Cancel"}
+          </button>
+        </div>
+      </div>;
+    }
+    return <ConfigurationHelp key={action.id} description={busy ? null : blockedReason}>{(help) =>
+      <div className="player-access-total-action player-center-manual-action" data-manual-action={action.id} ref={help.anchorRef} {...help.interactionProps}
+        tabIndex={actionDisabled ? 0 : undefined} role={actionDisabled ? "group" : undefined} aria-label={actionDisabled ? label : undefined}
+        aria-disabled={actionDisabled || undefined} aria-describedby={help.descriptionId}>
+        {roleValues.length > 1 ? (
+          <button type="button" className={buttonClass} disabled={actionDisabled} aria-describedby={help.descriptionId}
+            aria-expanded={false} onClick={() => setExpandedId(action.id)}>{content}</button>
+        ) : action.destructive ? (
           <InlineConfirmAction
-            className="secondary-button player-center-action-button danger"
+            className={buttonClass}
             disabled={actionDisabled}
             aria-describedby={help.descriptionId}
             scopeKey={JSON.stringify([props.instanceId, action.id, target.trim(), selectedRole])}
-            confirmation={props.t(
-              "servers.playerCenter.manual.confirm",
-              { action: label, target: target.trim() },
-              "Run \u201c{action}\u201d for known identity \u201c{target}\u201d?"
-            )}
-            onConfirm={execute}
+            confirmation={confirmation}
+            onConfirm={() => execute(action, selectedRole)}
           >
             {content}
           </InlineConfirmAction>
         ) : (
-          <button
-            type="button"
-            className="secondary-button player-center-action-button"
-            disabled={actionDisabled}
-            aria-describedby={help.descriptionId}
-            onClick={() => void execute()}
-          >
+          <button type="button" className={buttonClass} disabled={actionDisabled} aria-describedby={help.descriptionId}
+            onClick={() => void execute(action, selectedRole)}>
             {content}
           </button>
         )}
-        </div>}</ConfigurationHelp>
-      </div>
+      </div>}</ConfigurationHelp>;
+  }
+
+  // One stack button per action, same markup and classes as the selected-player actions; no headings or pickers.
+  const actions = (
+    <section className="player-center-action-group player-center-manual-actions"
+      aria-label={props.t("servers.playerCenter.manual.title", undefined, "Server player actions")} aria-busy={busy}>
+      <div className="player-center-action-list">{eligibleActions.map(renderAction)}</div>
       {feedback ? <ActivityNotice tone={feedback.tone} onDismiss={() => setFeedback(null)}>{feedback.text}</ActivityNotice> : null}
     </section>
   );
   if (hosts) {
-    // Inside the players workspace: split into the category page and the shared control area.
+    // Inside the players workspace: the actions join the shared control area.
     return <>
-      {hosts.lookup ? createPortal(lookup, hosts.lookup) : null}
       {hosts.actions ? createPortal(actions, hosts.actions) : null}
     </>;
   }

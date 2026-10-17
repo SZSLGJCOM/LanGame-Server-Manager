@@ -65,7 +65,7 @@ function interfaceProperties(name) {
 function rustEnumJsonValues(name) {
   const declaration = rustLivePlayerSource.match(new RegExp(`pub enum ${name} \\{([^}]+)\\}`));
   assert.ok(declaration, `Rust enum ${name} is missing`);
-  return declaration[1].split(",").map((variant) => variant.trim()).filter(Boolean)
+  return declaration[1].replace(/\/\/[^\r\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "").split(",").map((variant) => variant.trim()).filter(Boolean)
     .map((variant) => variant.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase());
 }
 
@@ -88,7 +88,7 @@ test("TypeScript live-player unions mirror the Rust JSON vocabulary", () => {
   ]);
   assert.deepEqual(typeAliasValues("RuntimePlayerIdentityKind"), [
     "klei_user_id", "steam_id", "ark_account_id", "conan_user_id", "eos_id", "player_name", "session_id",
-    "palworld_user_id", "minecraft_uuid", "astroneer_guid", "enshrouded_account_id", "valheim_platform_id"
+    "palworld_user_id", "palworld_player_uid", "minecraft_uuid", "astroneer_guid", "enshrouded_account_id", "valheim_platform_id", "necesse_ban_id", "soulmask_account_id"
   ]);
   assert.deepEqual(typeAliasValues("RuntimeLivePlayerStatus"), [
     "ready",
@@ -184,6 +184,19 @@ test("Dragonwilds saved bans expose only the shared identity/name roster contrac
   }
   assert.match(rustSource, /pub display_name: Option<String>/);
   assert.match(apiFunctionSource("readInstanceDragonwildsBans"), /invokeOrMock<DragonwildsBanRoster>\("read_instance_dragonwilds_bans", \{ instanceId \}\)/);
+});
+
+test("native bans share typed Rust and frontend identities and expose narrow IPC", () => {
+  const rustSource = fs.readFileSync(path.resolve(desktopRoot, "../../crates/app-core/src/native_bans.rs"), "utf8");
+  for (const [name, keys] of [["NativeBanEntry", ["account_id", "display_name", "identity_kind"]],
+    ["NativeBanRoster", ["instance_id", "module_id", "observed_at_unix_ms", "entries"]]]) {
+    assert.deepEqual(interfaceProperties(name), keys);
+    const fields = rustSource.match(new RegExp(`pub struct ${name} \\{([^}]+)\\}`));
+    assert.ok(fields, `${name} Rust DTO is missing`);
+    assert.deepEqual([...fields[1].matchAll(/pub (\w+):/g)].map((field) => field[1]), keys);
+  }
+  assert.match(apiFunctionSource("readInstanceNativeBans"), /invokeOrMock<NativeBanRoster>\("read_instance_native_bans", \{ instanceId \}\)/);
+  assert.match(apiFunctionSource("unbanInstanceNativeBan"), /invokeOrMock<ExecuteInstancePlayerActionResult>\("unban_instance_native_ban", \{ instanceId, accountId \}\)/);
 });
 
 test("native extension codec and account namespace match the Rust enums without adding a source", () => {

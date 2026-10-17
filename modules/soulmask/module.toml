@@ -37,6 +37,7 @@ args_template = [
   "-backup={{settings.backup_interval_seconds}}",
   "-online=Steam",
   "{{soulmask.workshop_mods_arg}}",
+  "{{soulmask.default_server_permissions_arg}}",
   "{{launch.extra_args}}",
 ]
 working_directory_template = "{{paths.install_root}}/WS/Binaries/Win64"
@@ -143,11 +144,11 @@ id = "ban_player"
 label = "Ban"
 label_zh_cn = "封禁"
 transport = "source_rcon"
-command_template = "ban {{target}}"
-target_label = "Player name or ID"
-target_label_zh_cn = "玩家名或 ID"
-target_placeholder = "Single-token player name or Steam64 ID"
-target_placeholder_zh_cn = "不含空格的玩家名或 Steam64 ID"
+command_template = "usp 1 1 \"{{target}}\""
+target_label = "Account ID"
+target_label_zh_cn = "账号 ID"
+target_placeholder = "Steam64 ID or complete EpicAccountId|ProductUserId"
+target_placeholder_zh_cn = "Steam64 ID 或完整 EpicAccountId|ProductUserId"
 target_required = true
 port_name = "rcon"
 password_setting_key = "rcon_password"
@@ -158,11 +159,11 @@ id = "unban_player"
 label = "Unban"
 label_zh_cn = "解封"
 transport = "source_rcon"
-command_template = "unban {{target}}"
-target_label = "Player ID"
-target_label_zh_cn = "玩家 ID"
-target_placeholder = "Steam64 ID or permission-list ID"
-target_placeholder_zh_cn = "Steam64 ID 或权限列表 ID"
+command_template = "usp 1 0 \"{{target}}\""
+target_label = "Account ID"
+target_label_zh_cn = "账号 ID"
+target_placeholder = "Steam64 ID or complete EpicAccountId|ProductUserId"
+target_placeholder_zh_cn = "Steam64 ID 或完整 EpicAccountId|ProductUserId"
 target_required = true
 port_name = "rcon"
 password_setting_key = "rcon_password"
@@ -179,8 +180,8 @@ wait_after_ms = 12000
 [player_management]
 status = "runtime_actions"
 planned_surface = "source_rcon"
-reason = "Soulmask documents RCON launch parameters and remote commands for online/all player lists, permission-list inspection, kick, ban, and unban. LanGame passes the RCON password/address/port at launch and dispatches those commands through the instance rcon TCP port."
-verification = "Run WSServer-Win64-Shipping.exe on Windows, confirm -rconpsw/-rconaddr/-rconport bind the configured RCON endpoint, then verify List_OnlinePlayers output plus kick/ban/unban side effects. Recheck whether ban/unban map to direct ban commands or ServerPermissionList commands before claiming persistent roster import."
+reason = "Soulmask uses Source RCON for runtime actions. LanGame defaults to -serverpm=2 unless extra launch arguments explicitly select a permission mode, reads WS/Saved/BlackAccountList.txt, and dispatches quoted account IDs through usp 1 1 for ban and usp 1 0 for unban."
+verification = "Isolated Windows app 3017310 build 25361728 verified Source RCON usp 1 1 and usp 1 0 against synthetic Steam64 and complete Epic account/product IDs: the native BlackAccountList.txt gained and removed the exact account. The legacy unban command returned Not Found and made no change. lsp confirmed -serverpm=2 enables the account blacklist; real-player admission and kick behavior remain separate checks."
 
 [storage]
 runtime_copy_exclusions = ["WS/Saved"]

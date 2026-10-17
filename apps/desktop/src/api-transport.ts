@@ -3,6 +3,9 @@ import { desktopExitLifecycle, FINAL_EXIT_ERROR } from "./desktop-exit-lifecycle
 
 const LAN_MANAGEMENT_TOKEN_STORAGE_KEY = "langameLanToken";
 
+/** Local capabilities follow the same native-first precedence as invocation. */
+export function canUseLocalDesktopApi(): boolean { return isTauri() || !shouldUseLanApi(); }
+
 export async function invokeOrMock<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   if (isTauri()) {
     if (desktopExitLifecycle.getSnapshot().requested) throw new Error(FINAL_EXIT_ERROR);

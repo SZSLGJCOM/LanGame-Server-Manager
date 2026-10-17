@@ -7,6 +7,7 @@ import type { LocaleCode, TranslateFn } from "../../i18n";
 import type { InstancePanelLoadState } from "../../instance-panel-loader";
 import { instanceHasRunningProcess } from "../../runtime-action-state";
 import type { InstanceArchiveDetails } from "../../storage-management-types";
+import type { SteamInstallationAccountContext } from "../../steam-installation-account";
 import type {
   BackgroundJob, DstWorldImportResult, InstanceBackupResult, InstanceDetails,
   InstanceRuntimeOverview, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput
@@ -36,6 +37,9 @@ export interface ServerMaintenanceWorkspaceProps {
   locale: LocaleCode;
   t: TranslateFn;
   archive?: InstanceArchiveDetails;
+  account?: SteamInstallationAccountContext;
+  accountBusy?: boolean;
+  keepProgramMaintenance?: boolean;
   selectedBackups?: InstanceBackupResult[];
   panelLoadState?: InstancePanelLoadState | null;
   jobs?: BackgroundJob[];
@@ -152,13 +156,14 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
               savedCrashRestartLimit={props.archive?.maintenance.crash_restart_limit} onSaveSettings={props.onSaveSettings} />
           </section>
         </> },
-        { id: "storage", title: t("servers.isolation.title"), icon: "folder", content: <>
+        { id: "storage", title: t("servers.isolation.title"), icon: "folder", preserveAfterVisit: props.keepProgramMaintenance, content: <>
           <ProgramUpdatePolicyEditor details={props.details} moduleDetails={props.moduleDetails} t={t}
             readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
           {readOnly ? unavailable : props.onOpenLocalPath && onChanged ? <InstanceIsolationPanel key={`isolation-${props.details.summary.id}`}
             instanceId={props.details.summary.id} backupPath={selectedBackupDirectory}
             renderProgramMaintenance={(report) => <InstanceProgramMaintenance
               details={props.details!} report={report} jobs={props.jobs ?? []}
+              account={props.account} accountBusy={props.accountBusy}
               onChanged={onChanged} />}
             onOpenLocalPath={props.onOpenLocalPath} /> : null}
         </> },

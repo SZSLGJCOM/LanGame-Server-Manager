@@ -185,6 +185,7 @@ version = "0.1.1"
 dependencies = [
  "app-core",
  "app-network",
+ "app-runtime",
  "reqwest",
  "serde",
  "serde_json",

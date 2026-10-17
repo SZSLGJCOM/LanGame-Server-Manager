@@ -33,6 +33,7 @@ pub(in crate::commands) struct ProgramUpdateRequest<'a, G> {
     pub guard: G,
     pub validate: bool,
     pub cancellation: &'a app_steamcmd::InstallCancellation,
+    pub account_name: Option<&'a str>,
 }
 
 /// Library, instance maintenance and startup updates share the same trust
@@ -56,6 +57,7 @@ where
         guard,
         validate,
         cancellation,
+        account_name,
     } = request;
     let metadata_error = |detail| app_steamcmd::SteamCmdError::InstallationVerificationFailed {
         module_id: descriptor.summary.id.clone(),
@@ -118,20 +120,23 @@ where
         .flatten();
     let previous_version = owner.and_then(|record| record.current_version);
     let baseline = LibraryBaselineRecorder::new(operation, descriptor, cancellation);
-    let result = app_steamcmd::install_or_update_module_at_with_callbacks(
-        &storage.settings,
-        module,
-        root,
-        guard.install_guard(),
-        // Empty first acquisitions have no old bytes to repair and still require
-        // exact official depot verification below. Existing partial or unknown
-        // payloads must be repaired before their inventory can be certified.
-        should_validate_program_acquisition(
-            validate,
-            needs_steam_inventory.is_some(),
-            source_was_empty,
-        ),
-        cancellation,
+    let result = app_steamcmd::install_or_update_module_at_with_login_and_callbacks(
+        app_steamcmd::SteamModuleInstallRequest {
+            settings: &storage.settings,
+            module,
+            install_root: root,
+            guard: guard.install_guard(),
+            // Empty first acquisitions have no old bytes to repair and still require
+            // exact official depot verification below. Existing partial or unknown
+            // payloads must be repaired before their inventory can be certified.
+            validate: should_validate_program_acquisition(
+                validate,
+                needs_steam_inventory.is_some(),
+                source_was_empty,
+            ),
+            cancellation,
+            account_name,
+        },
         app_steamcmd::ModuleInstallCallbacks {
             on_progress: |update| {
                 report_program_install_progress(&on_progress, started_at, update);

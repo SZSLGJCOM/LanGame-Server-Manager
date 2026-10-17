@@ -43,7 +43,7 @@ LAN AI 助手支持自带模型服务（BYOK），可结合日志协助排障。
 
 ## 运行环境
 
-支持 **Windows 10 / 11** 和 **Windows Server**，界面为简体中文和英文。各游戏对硬件、存储和网络的要求不同。Terraria 原版 Windows 服务端还需要 [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914)，请在首次开服前安装微软官方运行库。公网联机还需配置端口与防火墙；同一局域网，以及 Radmin VPN、Hamachi 这类组网软件组成的虚拟局域网，可按检测到的网卡绑定联机地址。部分设置需重启服务器后生效。
+支持 **Windows 10 / 11** 和 **Windows Server**，界面为简体中文和英文。各游戏对硬件、存储和网络的要求不同。启动实例时会检查实际程序依赖，自动准备所需的 Java、.NET、VC++ 和旧版 DirectX；Terraria 原版所需的 [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914) 也在启动时检查并补齐。下载使用官方来源并校验，系统运行库安装可能需要允许 Windows 提权提示；安装失败或要求重启时会阻止实例启动并说明原因。公网联机还需配置端口与防火墙；同一局域网，以及 Radmin VPN、Hamachi 这类组网软件组成的虚拟局域网，可按检测到的网卡绑定联机地址。部分设置需重启服务器后生效。
 
 ## 使用与授权
 

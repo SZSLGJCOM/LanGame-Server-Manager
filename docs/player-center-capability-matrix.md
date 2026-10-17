@@ -8,10 +8,38 @@
 - `read_only`：提供实时名称或身份信息，行本身没有管理动作。名称不等同于可用于管理的账号 ID。
 - `manual_id`：尚无可靠的实时名单解析器，保留需要手工输入目标的既有管理操作。
 - `unsupported`：尚无可用的实时名单采集器和手工玩家操作；仍可显示有来源的在线人数。
-- 访问名单独立于在线名单。管理员、白名单、封禁记录均不用于生成在线玩家。表中访问名单列记录 Schema 管理的名单；Dragonwilds 的游戏原生封禁名单另见下文。
+- 访问名单独立于在线名单。管理员、白名单、封禁记录均不用于生成在线玩家。表中访问名单列记录 Schema 管理的名单；游戏原生封禁名单另见下文。
 - 在线玩家均可选中查看已取得的身份、会话及其他详情。选择只读记录不授予管理权限；不可用操作显示具体原因，并与对应按钮建立可访问说明关联。
 - 所有游戏的左侧选项卡只切换查看的名单；右侧操作区始终保留一份由模块能力决定的固定操作列表，不随在线、封禁或其他名单替换整区、隐藏操作或重复增加同名动作。当前列表、选中目标、身份、数据新鲜度、服务器状态和处理中状态只决定按钮是否可用。名单条目不会仅因保存了账号就获得在线动作权限，踢出等动作仍须匹配当前有效在线快照。
 - 手工操作可与实时列表共存；列表触发动作、已绑定的行操作、访问名单消费的动作和广播不会重复出现在手工操作区。`pending_adapter` 下的运行管理动作不开放。
+
+## 游戏原生封禁列表
+
+玩家中心 header 的“封禁列表”与在线玩家列表并列。名单直接读取游戏自己的持久文件，停服或玩家离线后仍可查看；不会把它写成应用设置或在启动时重建。从列表解封要求成功刷新名单并选择精确原生身份，后端在执行前再次读取名单。除 Squad 外，解封要求服务器运行；Squad 修改持久文件，停服时也可操作，重启后生效。文件读取失败、未知格式或并发变化均不能显示为已确认的空名单。原生命令提交后重新读取名单，记录仍在或刷新失败时显示结果尚未确认，不把提交当作解封成功。
+
+原先支持的手工 ID 解封仍通过“手动查询”使用同一个右侧按钮，名单读取失败不会移除该入口；由既有原生命令契约校验目标，仅报告命令已发送。Palworld 玩家 GUID 不能作为平台 UserID 解封，Squad 没有手工账号解封的原生命令，Dragonwilds 仍保留既有名单与扩展校验。
+
+下表中的路径以实例实际运行程序目录为根，Necesse 的路径以实例目录为根。
+
+| 游戏 | 原生持久来源 | 解封及身份边界 |
+| --- | --- | --- |
+| Conan Exiles | `ConanSandbox/Saved/blacklist.txt`；`原生ID:显示名` | 使用原生 ID 调用既有 `unbanplayer`，不把显示名或平台标签转换成账号。 |
+| Palworld | `Pal/Saved/SaveGames/banlist.txt`；平台 UserID 与可选玩家 GUID | REST 解封只接收原生 UserID。仅有 GUID 的旧记录仍显示，但禁用解封，避免将 GUID 当作平台账号。 |
+| RimWorld Together | `Assets/Users` 的玩家文件中的 `Username`、`IsBanned` | 通过原生 `pardon`；只投影用户名和封禁标记，不暴露密码、哈希或 IP。 |
+| Soulmask | `WS/Saved/BlackAccountList.txt`；逐行 Steam64 或完整 `32hex\|32hex` | 原生 Source RCON `usp 1 0` 解封，`usp 1 1` 封禁；账号加引号，可信边界校验完整身份。未显式设置权限模式时启动默认 `-serverpm=2`，已有自定义组合保留。 |
+| ARK ASA / ASE | `ShooterGame/Binaries/Win64/BanList.txt` | 两款原生注册 `UnbanPlayer`，默认相对 Win64 工作目录读写。ASA 格式 `id,name,expiry`，到期值为 Unix 秒，0 永久、严格 `now > expiry` 过期；缺失名称或到期列按原生默认值处理。ASE 按首个逗号分隔 ID 与完整名称，无逗号行不加载。重复账号以最后记录为准。ASA 已知 ID/其他显示名碰撞拒绝解封，防止原生名称 fallback。名单不复制给新实例，更新时保留。 |
+| Squad | `SquadGame/ServerConfig/Bans.cfg`；Steam64 或 EOS 身份与到期时间 | 独占打开文件，保留原文恢复副本，只删除精确目标的记录。允许停服编辑；明确提示重启后生效，不自动重启，不把文件删除当作运行中缓存已解除。 |
+| Necesse | `data/cfg/banned.cfg`；原生小写用户名或 authentication token | 原生 `unban` 接收原 token；该身份与在线玩家名称分开，不猜测 Steam64。 |
+| Unturned | `Servers/<instance-id>/Server/Blacklist.dat`，原生 v2–v4 二进制 | 按原生到期规则读取有效 Steam 账号，使用既有 `Unban`；未知版本拒绝。IP、管理员、理由与硬件标识不进入名单 DTO。 |
+| RuneScape: Dragonwilds | `DedicatedServer.ini` 的 `KnownPlayerList` | 保留原有 EOS 原生扩展、持久标记确认及解封流程。 |
+
+Squad 当前 build 25295557 的 `AdminReloadServerConfig` 只刷新管理员和远程封禁源，本地封禁仍保存在 GameSession 缓存中；登录及定时检查均读取该缓存。隔离原生进程验证：两条虚拟封禁载入缓存后，经应用实现精确删行，磁盘剩一条；配置重载返回成功，但同一稳定缓存仍有两条；原生正常停服保留磁盘删行结果，重启后新缓存只剩保留的账号。只读内存探针核验测试进程路径、程序哈希、创建时间和容器前后状态，不修改进程或读取其他进程。应用不提供误导性的“重载后即时解封”，文件原文保留在实例 `config/native-ban-recovery/`；并发写入、删除或回读失败均明确报告，失败不自动回滚覆盖游戏的新封禁。
+
+隔离测试使用完整程序副本、新存档、新凭据、本机端口和虚拟 ID，未修改实际实例或真实封禁。Soulmask app 3017310 build 25361728 已验证旧 `unban` 返回 `Not Found` 且不删记录，原生 `usp 1 1/0` 会在上述路径精确增删 Steam 形式及 Epic 复合形式的虚拟账号；原生保存退出、重启后 `lsp` 确认两种账号重新加载，账号黑名单保持启用，再次原生解封只删除指定目标。命令与权限语义另见[原始远程控制说明](https://saraserenity.net/soulmask/remote_console.php)和[权限说明](https://saraserenity.net/soulmask/server_permissions.php)。ARK ASA build 25535041、ASE build 21241282 均已验证 `UnbanPlayer` 实际文件删除、其余记录保留、重启加载后再次精确删除；ASA 原生保存包含到期字段，ASE 完整保留名称中的逗号。原生 `Unbanned` 回复本身不作为成功证据。
+
+Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Unturned 核对本机空文件及完整原生读取布局；RimWorld Together 依据官方 `26.8.31.1` 标签源码及程序集。浏览器验收使用生产 React 组件和替代 IPC，截图为构造数据。虚拟账号测试覆盖服务端持久化和原生管理接口，不代表完成 Steam/EOS 客户端认证、真实玩家拒绝重连与解封后加入验收。Project Zomboid 的 SQLite 封禁列表不在本批范围。
+
+## 在线能力与应用访问名单
 
 | Module / 模块 | Online mode / 在线模式 | Manual ID actions / 手工 ID 动作 | Access lists / 访问名单 | Evidence / 证据 |
 | --- | --- | --- | --- | --- |

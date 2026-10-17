@@ -20,16 +20,16 @@ class ModWorkflowAuditTests(unittest.TestCase):
         self.assertEqual(Counter(row["status"] for row in self.rows.values()), {
             "supported": 11, "managed_files": 12, "external_manager": 2, "not_modelled": 7,
         })
-        self.assertEqual(sum(row["frontend_tab"] == "True" for row in self.rows.values()), 26)
+        self.assertEqual(sum(row["frontend_tab"] == "True" for row in self.rows.values()), 25)
         self.assertEqual(sum(row["frontend_apply"] == "True" for row in self.rows.values()), 23)
 
     def test_client_dependencies_and_hidden_catalog_entries_do_not_become_install_support(self) -> None:
         rimworld = self.rows["rimworld"]
         self.assertEqual((rimworld["status"], rimworld["frontend_tab"], rimworld["frontend_apply"],
                           rimworld["frontend_guardrail"], rimworld["collections"]),
-                         ("not_modelled", "True", "False", "True", "False"))
+                         ("not_modelled", "False", "False", "True", "False"))
         hidden = {name for name, row in self.rows.items() if row["frontend_tab"] == "False"}
-        self.assertEqual(hidden, {"nightingale", "returntomoria", "romestead", "runescapedragonwilds", "scum", "theforest"})
+        self.assertEqual(hidden, {"nightingale", "returntomoria", "rimworld", "romestead", "runescapedragonwilds", "scum", "theforest"})
         self.assertEqual(self.rows["runescapedragonwilds"]["frontend_guardrail"], "False")
 
     def test_managed_file_support_preserves_native_enablement_and_modrinth_boundaries(self) -> None:

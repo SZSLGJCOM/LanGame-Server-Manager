@@ -30,11 +30,12 @@ host_surface = "managed_terminal"
 host_notes = "The dedicated server runs in the instance's private runtime. Native WindowsServer configuration is written before launch. AllowStdOutLogVerbosity includes normal Log-level output in the managed console; abslog retains the native map log and FORCELOGFLUSH makes each written line available during the run."
 
 [storage]
-runtime_copy_exclusions = ["ShooterGame/Saved", "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt", "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt"]
+runtime_copy_exclusions = ["ShooterGame/Saved", "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt", "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt", "ShooterGame/Binaries/Win64/BanList.txt"]
 saves_path_template = "{{paths.install_root}}/ShooterGame/Saved/{{instance.id}}"
 retained_paths = [
   "ShooterGame/Binaries/Win64/PlayersExclusiveJoinList.txt",
   "ShooterGame/Binaries/Win64/PlayersJoinNoCheckList.txt",
+  "ShooterGame/Binaries/Win64/BanList.txt",
 ]
 
 [[default_ports]]

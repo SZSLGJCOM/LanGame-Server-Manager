@@ -41,10 +41,13 @@ mod minecraft_metadata;
 mod module_install;
 mod ownership;
 mod package_revision;
+mod portable_runtime;
 mod program_update_check;
 mod retained_install_data;
+mod steam_app_access;
 pub mod steam_depot;
 mod steam_install_retained;
+mod steamcmd_account;
 mod steamcmd_bootstrap_log;
 mod steamcmd_content_evidence;
 mod steamcmd_manifest_recovery;
@@ -56,6 +59,8 @@ mod steamcmd_stream;
 mod steamcmd_update_bridge;
 mod steamcmd_update_cache;
 mod steamcmd_update_manifest;
+mod windows_runtime_catalog;
+mod windows_runtime_setup;
 mod workshop_cache;
 mod workshop_paths;
 
@@ -95,7 +100,8 @@ use minecraft_java::ensure_minecraft_jre;
 #[cfg(test)]
 use module_install::steamcmd_install_script_lines;
 pub use module_install::{
-    ModuleInstallCallbacks, install_or_update_module_at_with_callbacks,
+    ModuleInstallCallbacks, SteamModuleInstallRequest, install_or_update_module_at_with_callbacks,
+    install_or_update_module_at_with_login_and_callbacks,
     install_or_update_module_at_with_progress_and_cancellation,
     install_or_update_module_with_progress,
     install_or_update_module_with_progress_and_cancellation,
@@ -104,6 +110,8 @@ pub use ownership::SteamCmdOwnership;
 use ownership::{prepare_configured_steamcmd_root, validate_steamcmd_ownership};
 use package_revision::{begin_game_install_revision, complete_game_install_revision};
 pub use package_revision::{read_game_install_revision, read_program_install_revision};
+/// Prepare versioned startup runtimes without replacing installed game files.
+pub use portable_runtime::{PortableRuntime, prepare_portable_runtime};
 pub use program_update_check::current_program_version;
 pub use retained_install_data::{
     RETAINED_INSTALL_DATA_MARKER, has_retained_install_data, mark_retained_install_data,
@@ -111,6 +119,11 @@ pub use retained_install_data::{
 pub use steam_depot::{
     VerifiedSteamPackage, verify_installed_steam_package,
     verify_installed_steam_package_with_progress,
+};
+pub use steamcmd_account::{
+    SteamWorkshopAccountAuthenticationResult, SteamWorkshopAccountInput, SteamWorkshopAccountPhase,
+    SteamWorkshopAccountProgress, authenticate_workshop_account_with_progress,
+    normalize_workshop_account_name,
 };
 pub use steamcmd_prepare::{
     SteamCmdPreparePhase, SteamCmdPrepareProgress, ensure_steamcmd_installed,
@@ -123,8 +136,11 @@ use steamcmd_stream::{
     spawn_line_forwarder, steamcmd_output_is_retryable_file_lock, updated_content_log_excerpt,
 };
 use steamcmd_stream::{run_steamcmd_script_with_progress, steamcmd_failure_context};
+/// Verify and prepare official Windows prerequisites before game creation.
+pub use windows_runtime_setup::prepare_windows_runtime_dependencies;
 use workshop_paths::{inspect_workshop_item_paths, resolve_workshop_content_roots};
 pub use workshop_paths::{inspect_workshop_items, inspect_workshop_items_with_dst_ugc_roots};
+mod workshop_download;
 
 const MINECRAFT_VERSION_MANIFEST_URL: &str =
     "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
@@ -366,6 +382,7 @@ pub enum SteamCmdError {
         url: String,
         detail: String,
         permits_source_fallback: bool,
+        source_unavailable: bool,
     },
     #[error("download response was interrupted: {detail}")]
     HttpDownloadInterrupted { detail: String },
@@ -377,6 +394,8 @@ pub enum SteamCmdError {
     MinecraftServerJarUnavailable { version: String },
     #[error("Minecraft Java runtime preparation failed: {detail}")]
     MinecraftJrePreparation { detail: String },
+    #[error("Server runtime preparation failed: {detail}")]
+    RuntimePreparation { detail: String },
     #[error("failed to write installation file {path}: {source}")]
     WriteMinecraftServerFile {
         path: PathBuf,
@@ -454,6 +473,32 @@ pub enum SteamCmdError {
     },
     #[error("SteamCMD command failed: {output_excerpt}")]
     SteamCmdCommandFailed { output_excerpt: String },
+    #[error(
+        "Steam app {app_id} requires a Steam account with access to the requested server files: {output_excerpt}"
+    )]
+    SteamAppAccountRequired { app_id: u32, output_excerpt: String },
+    #[error(
+        "Steam account name must contain 1 to 64 ASCII letters, digits, underscores, dots, at signs or hyphens, and cannot be anonymous"
+    )]
+    InvalidSteamAccountName,
+    #[error("Steam account authentication failed: {output_excerpt}")]
+    SteamAccountAuthenticationFailed { output_excerpt: String },
+    #[error("interactive Steam account authentication requires Windows")]
+    SteamAccountInteractiveUnsupported,
+    #[error(
+        "Steam Workshop app {consumer_app_id} download is missing a decryption key in the current Steam session: {output_excerpt}"
+    )]
+    WorkshopDecryptionKeyMissing {
+        consumer_app_id: u32,
+        output_excerpt: String,
+    },
+    #[error(
+        "Steam Workshop app {consumer_app_id} requires a Steam account with access to the requested content: {output_excerpt}"
+    )]
+    WorkshopAccountRequired {
+        consumer_app_id: u32,
+        output_excerpt: String,
+    },
     #[error(
         "module `{module_id}` finished `{operation}` but expected executable is still missing: {path}"
     )]
@@ -647,6 +692,16 @@ impl SteamCmdLifecycleGuard {
         self.0.ensure_root(&configured_steamcmd_root(settings))?;
         self.0
             .ensure_root(Path::new(&steamcmd_status(settings).root))
+    }
+
+    async fn require_ready_with_progress<F: FnMut(SteamCmdPrepareProgress)>(
+        &self,
+        settings: &AppSettings,
+        deadline: InstallDeadline,
+        on_progress: F,
+    ) -> Result<SteamCmdStatus, SteamCmdError> {
+        self.ensure_settings(settings)?;
+        steamcmd_prepare::require_ready_locked(settings, deadline, on_progress).await
     }
 }
 
@@ -1150,19 +1205,67 @@ pub async fn download_workshop_items_with_progress<F>(
     ids: &[String],
     guard: &GameInstallLifecycleGuard,
     steamcmd_guard: &SteamCmdLifecycleGuard,
+    on_progress: F,
+) -> Result<SteamWorkshopDownloadResult, SteamCmdError>
+where
+    F: FnMut(InstallProgressUpdate),
+{
+    download_workshop_items_with_login_and_progress(
+        settings,
+        SteamWorkshopDownloadRequest {
+            consumer_app_id,
+            install_root,
+            ids,
+            account_name: None,
+        },
+        guard,
+        steamcmd_guard,
+        on_progress,
+    )
+    .await
+}
+
+pub struct SteamWorkshopDownloadRequest<'a> {
+    pub consumer_app_id: u32,
+    pub install_root: &'a Path,
+    pub ids: &'a [String],
+    pub account_name: Option<&'a str>,
+}
+
+/// Uses only an explicitly selected, previously authenticated Steam account.
+/// Cached credentials are owned by SteamCMD; passwords never enter this API.
+pub async fn download_workshop_items_with_login_and_progress<F>(
+    settings: &AppSettings,
+    request: SteamWorkshopDownloadRequest<'_>,
+    guard: &GameInstallLifecycleGuard,
+    steamcmd_guard: &SteamCmdLifecycleGuard,
     mut on_progress: F,
 ) -> Result<SteamWorkshopDownloadResult, SteamCmdError>
 where
     F: FnMut(InstallProgressUpdate),
 {
+    let SteamWorkshopDownloadRequest {
+        consumer_app_id,
+        install_root,
+        ids,
+        account_name,
+    } = request;
     let deadline = InstallDeadline::new("Steam Workshop download", WORKSHOP_DOWNLOAD_TIMEOUT);
+    let account_name = account_name
+        .map(normalize_workshop_account_name)
+        .transpose()?;
+    let login_line = steamcmd_account::workshop_login_line(account_name.as_deref());
     guard.0.ensure_root(install_root)?;
     steamcmd_guard.ensure_settings(settings)?;
     let item_ids = normalize_steam_workshop_item_ids(ids);
     if item_ids.is_empty() {
         return Err(SteamCmdError::MissingWorkshopItemIds);
     }
-    let steamcmd = require_steamcmd_ready(settings)?;
+    let steamcmd = steamcmd_guard
+        .require_ready_with_progress(settings, deadline, |update| {
+            on_progress(InstallProgressUpdate::preparing_steamcmd(update));
+        })
+        .await?;
     on_progress(InstallProgressUpdate {
         install_progress: None,
         progress_percent: 1.0,
@@ -1202,7 +1305,7 @@ where
         String::from("@ShutdownOnFailedCommand 1"),
         String::from("@NoPromptForPassword 1"),
         format!("force_install_dir {}", steamcmd_script_path(install_root)),
-        String::from("login anonymous"),
+        login_line,
     ];
     for item_id in &item_ids {
         script_lines.push(format!(
@@ -1261,20 +1364,7 @@ where
 
     let _ = fs::remove_file(&script_path);
 
-    let excerpt = if output.success {
-        output.excerpt
-    } else {
-        steamcmd_failure_context(
-            &output.excerpt,
-            output.exit_code,
-            output.content_log_excerpt.as_deref(),
-        )
-    };
-    if !output.success {
-        return Err(SteamCmdError::SteamCmdCommandFailed {
-            output_excerpt: excerpt,
-        });
-    }
+    workshop_download::verify_command_result(consumer_app_id, account_name.as_deref(), &output)?;
 
     let (workshop_root, alternate_workshop_root) =
         resolve_workshop_content_roots(install_root, Path::new(&steamcmd.root), consumer_app_id);
@@ -1284,7 +1374,14 @@ where
         &alternate_workshop_root,
         item_ids,
     )?;
-    verify_downloaded_workshop_items(&items, &excerpt)?;
+    verify_downloaded_workshop_items(&items, &workshop_download::failure_context(&output))
+        .map_err(|error| match error {
+            SteamCmdError::SteamCmdCommandFailed { output_excerpt } => {
+                workshop_download::command_error(consumer_app_id, &output, output_excerpt)
+            }
+            other => other,
+        })?;
+    let excerpt = output.excerpt;
 
     on_progress(InstallProgressUpdate {
         install_progress: None,
@@ -1309,6 +1406,14 @@ fn verify_downloaded_workshop_items(
     items: &[SteamWorkshopDownloadItemResult],
     output_excerpt: &str,
 ) -> Result<(), SteamCmdError> {
+    if output_excerpt
+        .lines()
+        .any(workshop_download::is_workshop_download_failure_line)
+    {
+        return Err(SteamCmdError::SteamCmdCommandFailed {
+            output_excerpt: output_excerpt.to_owned(),
+        });
+    }
     let missing_ids = items
         .iter()
         .filter(|item| !item.expected_path_exists)

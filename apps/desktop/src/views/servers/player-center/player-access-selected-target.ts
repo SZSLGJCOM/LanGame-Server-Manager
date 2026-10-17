@@ -10,6 +10,8 @@ import type { PlayerAccessRosterCapability, RawSchemaProperty } from "./player-a
 export interface SelectedRosterTarget {
   identity: string;
   rawValue: string | Record<string, unknown>;
+  /** Identity keys the looked-up ID cannot supply (e.g. an undetectable platform); the inline form asks only for these. */
+  pendingKeys?: string[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -205,4 +207,47 @@ export function resolveSelectedRosterIdentity(
   const rawValue = objectIdentityTarget(player, field);
   const identity = rawValue ? canonicalPlayerAccessIdentity("object_identity", rawValue, field.property) : null;
   return rawValue && identity ? { identity, rawValue } : null;
+}
+
+/**
+ * 手动查询: interpret an ID typed by the operator against one roster, using that roster's own codec.
+ * Object rosters only receive their identity fields; the inline editor collects the remaining values.
+ */
+export function resolveManualRosterTarget(raw: string, field: PlayerAccessRosterCapability): SelectedRosterTarget | null {
+  const value = raw.trim();
+  if (!value || !isPlayerRosterCapability(field)) return null;
+  const codec = parsePlayerAccessCodec(field.property);
+  if (!codec) return null;
+  if (codec !== "object_identity") {
+    const normalized = normalizePlayerAccessMutationEntry(codec, value, field.property, "add");
+    return normalized && (typeof normalized.stored === "string" || isRecord(normalized.stored))
+      ? { identity: normalized.identity, rawValue: normalized.stored } : null;
+  }
+  const properties = field.property.items?.properties;
+  const identityKeys = playerAccessObjectIdentityKeys(field.property);
+  if (!properties || identityKeys.length === 0) return null;
+  const rawValue: Record<string, unknown> = {};
+  const platformKeys = new Set(identityKeys.flatMap((key) => {
+    const platformKey = properties[key]?.["x-lsgm-player-access-platform-field"];
+    return typeof platformKey === "string" ? [platformKey] : [];
+  }));
+  const valueKeys = identityKeys.filter((key) => !platformKeys.has(key));
+  // One typed ID can only fill one identity value.
+  if (valueKeys.length !== 1) return null;
+  rawValue[valueKeys[0]] = value;
+  const platformKey = properties[valueKeys[0]]?.["x-lsgm-player-access-platform-field"];
+  if (typeof platformKey === "string") {
+    const allowed = properties[platformKey]?.enum;
+    const platform = /^\d{17}$/.test(value) ? "Steam" : /^(?:EOS_)?[0-9a-f]{32}$/i.test(value) ? "EOS" : null;
+    if (!Array.isArray(allowed) || allowed.length === 0) return null;
+    if (!platform || !allowed.includes(platform)) {
+      // The platform cannot be derived from this ID: keep the ID and let the inline form ask for the platform only.
+      const pattern = properties[valueKeys[0]]?.pattern;
+      if (typeof pattern === "string" && !new RegExp(pattern).test(value)) return null;
+      return { identity: `pending:${valueKeys[0]}=${value}`, rawValue, pendingKeys: [platformKey] };
+    }
+    rawValue[platformKey] = platform;
+  }
+  const identity = canonicalPlayerAccessIdentity("object_identity", rawValue, field.property);
+  return identity ? { identity, rawValue } : null;
 }

@@ -88,8 +88,13 @@ fn required_runtime(install_root: &Path) -> Option<RuntimeRequirement> {
     }
     Some(RuntimeRequirement {
         version,
-        exact_patch: options.get("rollForward").and_then(Value::as_str) == Some("Disable")
-            || options.get("applyPatches").and_then(Value::as_bool) == Some(false),
+        // applyPatches=false selects the lowest compatible installed patch; it
+        // does not forbid using a higher patch. Per-framework policy wins.
+        exact_patch: framework
+            .get("rollForward")
+            .or_else(|| options.get("rollForward"))
+            .and_then(Value::as_str)
+            .is_some_and(|policy| policy.eq_ignore_ascii_case("Disable")),
     })
 }
 

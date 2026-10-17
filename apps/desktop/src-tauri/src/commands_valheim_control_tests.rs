@@ -87,6 +87,10 @@ fn preparation_rejects_wrong_leaf_types_before_changing_owned_files() {
         }
         assert!(inspect_plugin_destination(&root.0).is_err(), "{name}");
         assert!(
+            refresh_prepared_plugin(&root.0, b"replacement").is_err(),
+            "{name}"
+        );
+        assert!(
             install_owned_plugin(&root.0, b"replacement").is_err(),
             "{name}"
         );
@@ -145,6 +149,7 @@ fn preparation_rejects_an_owned_control_junction_before_upgrading_the_plugin() {
     std::fs::write(outside.0.join("user-data"), b"preserve outside").unwrap();
     create_test_junction(&directory, &outside.0);
     assert!(inspect_plugin_destination(&root.0).is_err());
+    assert!(refresh_prepared_plugin(&root.0, b"replacement").is_err());
     assert!(install_owned_plugin(&root.0, b"replacement").is_err());
     assert_eq!(std::fs::read(root.0.join(io::OWNER)).unwrap(), owner_before);
     assert_eq!(std::fs::read(root.0.join(io::PLUGIN)).unwrap(), b"first");
@@ -239,6 +244,211 @@ fn preparation_rejects_a_junction_before_creating_any_plugin_directory() {
     assert!(!outside.0.join("plugins").exists());
     assert!(!root.0.join(io::OWNER).exists());
     std::fs::remove_dir(link).unwrap();
+}
+
+fn preservation_sentinels(root: &Path) -> Vec<(PathBuf, Vec<u8>)> {
+    [
+        "config/instance.json",
+        "saves/adminlist.txt",
+        "saves/worlds_local/World.fwl2",
+        "winhttp.dll",
+        "doorstop_config.ini",
+    ]
+    .into_iter()
+    .map(|name| {
+        let path = root.join(name);
+        let bytes = format!("preserve unrelated {name}\0bytes").into_bytes();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, &bytes).unwrap();
+        (path, bytes)
+    })
+    .collect()
+}
+
+fn assert_sentinels(files: &[(PathBuf, Vec<u8>)]) {
+    for (path, bytes) in files {
+        assert_eq!(&std::fs::read(path).unwrap(), bytes);
+    }
+}
+
+fn assert_current_plugin(root: &Path, payload: &[u8]) {
+    assert_eq!(std::fs::read(root.join(io::PLUGIN)).unwrap(), payload);
+    let owner: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(root.join(io::OWNER)).unwrap()).unwrap();
+    assert_eq!(
+        owner,
+        serde_json::json!({"protocol":1,"module_id":"valheim","plugin_sha256":io::digest(payload)})
+    );
+}
+
+#[test]
+fn prepared_refresh_upgrades_owned_bytes_and_leaves_identical_payloads_untouched() {
+    let root = Scratch::new();
+    install_owned_plugin(&root.0, b"owned A").unwrap();
+    let sentinels = preservation_sentinels(&root.0);
+    refresh_prepared_plugin(&root.0, b"current C").unwrap();
+    assert_current_plugin(&root.0, b"current C");
+    assert_sentinels(&sentinels);
+    let fixed = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_700_000_000);
+    let before = [io::OWNER, io::PLUGIN].map(|name| {
+        let path = root.0.join(name);
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_modified(fixed)
+            .unwrap();
+        let modified = std::fs::metadata(&path).unwrap().modified().unwrap();
+        let bytes = std::fs::read(&path).unwrap();
+        (path, modified, bytes)
+    });
+    refresh_prepared_plugin(&root.0, b"current C").unwrap();
+    for (path, modified, bytes) in before {
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().modified().unwrap(),
+            modified,
+            "identical owned payload must not be republished"
+        );
+        assert_eq!(std::fs::read(path).unwrap(), bytes);
+    }
+    assert_sentinels(&sentinels);
+}
+
+#[test]
+fn prepared_refresh_recovers_pending_old_or_new_bytes_and_clears_a_completed_intent() {
+    for (installed, next) in [
+        (b"owned A".as_slice(), b"current C".as_slice()),
+        (b"pending B".as_slice(), b"current C".as_slice()),
+        (b"pending B".as_slice(), b"pending B".as_slice()),
+    ] {
+        let root = Scratch::new();
+        install_owned_plugin(&root.0, b"owned A").unwrap();
+        let sentinels = preservation_sentinels(&root.0);
+        let mut owner = read_owner(&root.0).unwrap().unwrap();
+        owner.pending_plugin_sha256 = Some(io::digest(b"pending B"));
+        io::publish(
+            &root.0.join(io::OWNER),
+            &serde_json::to_vec(&owner).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(root.0.join(io::PLUGIN), installed).unwrap();
+        refresh_prepared_plugin(&root.0, next).unwrap();
+        assert_current_plugin(&root.0, next);
+        assert_sentinels(&sentinels);
+    }
+    let root = Scratch::new();
+    install_owned_plugin(&root.0, b"owned A").unwrap();
+    let sentinels = preservation_sentinels(&root.0);
+    let mut owner = read_owner(&root.0).unwrap().unwrap();
+    owner.pending_plugin_sha256 = Some(io::digest(b"pending B"));
+    let owner_bytes = serde_json::to_vec(&owner).unwrap();
+    io::publish(&root.0.join(io::OWNER), &owner_bytes).unwrap();
+    std::fs::write(root.0.join(io::PLUGIN), b"unknown D").unwrap();
+    assert!(refresh_prepared_plugin(&root.0, b"current C").is_err());
+    assert_eq!(std::fs::read(root.0.join(io::OWNER)).unwrap(), owner_bytes);
+    assert_eq!(
+        std::fs::read(root.0.join(io::PLUGIN)).unwrap(),
+        b"unknown D"
+    );
+    assert_sentinels(&sentinels);
+}
+
+#[test]
+fn prepared_refresh_requires_every_existing_installation_component() {
+    for missing in [
+        "all",
+        io::OWNER,
+        io::PLUGIN,
+        io::DIRECTORY,
+        "BepInEx/plugins",
+        "BepInEx",
+    ] {
+        let root = Scratch::new();
+        if missing != "all" {
+            install_owned_plugin(&root.0, b"owned A").unwrap();
+            match missing {
+                io::OWNER | io::PLUGIN => std::fs::remove_file(root.0.join(missing)).unwrap(),
+                io::DIRECTORY => std::fs::remove_dir(root.0.join(missing)).unwrap(),
+                _ => {
+                    std::fs::remove_file(root.0.join(io::PLUGIN)).unwrap();
+                    std::fs::remove_dir(root.0.join("BepInEx/plugins")).unwrap();
+                    if missing == "BepInEx" {
+                        std::fs::remove_dir(root.0.join(missing)).unwrap();
+                    }
+                }
+            }
+        }
+        let sentinels = preservation_sentinels(&root.0);
+        let existing = [io::OWNER, io::PLUGIN].map(|name| std::fs::read(root.0.join(name)).ok());
+        let directories =
+            [io::DIRECTORY, "BepInEx/plugins", "BepInEx"].map(|name| root.0.join(name).is_dir());
+        assert!(
+            refresh_prepared_plugin(&root.0, b"current C").is_err(),
+            "{missing}"
+        );
+        assert_eq!(
+            [io::OWNER, io::PLUGIN].map(|name| std::fs::read(root.0.join(name)).ok()),
+            existing
+        );
+        assert_eq!(
+            [io::DIRECTORY, "BepInEx/plugins", "BepInEx"].map(|name| root.0.join(name).is_dir()),
+            directories
+        );
+        assert_sentinels(&sentinels);
+    }
+}
+
+#[test]
+fn prepared_refresh_preserves_modified_oversized_and_unusable_payloads() {
+    for invalid in [
+        "modified",
+        "oversized-installed",
+        "empty-payload",
+        "oversized-payload",
+    ] {
+        let root = Scratch::new();
+        install_owned_plugin(&root.0, b"owned A").unwrap();
+        let sentinels = preservation_sentinels(&root.0);
+        let oversized = vec![b'x'; 1024 * 1024 + 1];
+        if invalid == "modified" {
+            std::fs::write(root.0.join(io::PLUGIN), b"external edit").unwrap();
+        }
+        if invalid == "oversized-installed" {
+            std::fs::write(root.0.join(io::PLUGIN), &oversized).unwrap();
+        }
+        let payload = match invalid {
+            "empty-payload" => b"".as_slice(),
+            "oversized-payload" => &oversized,
+            _ => b"current C".as_slice(),
+        };
+        let owner = std::fs::read(root.0.join(io::OWNER)).unwrap();
+        let plugin = std::fs::read(root.0.join(io::PLUGIN)).unwrap();
+        assert!(
+            refresh_prepared_plugin(&root.0, payload).is_err(),
+            "{invalid}"
+        );
+        assert_eq!(std::fs::read(root.0.join(io::OWNER)).unwrap(), owner);
+        let actual = std::fs::read(root.0.join(io::PLUGIN)).unwrap();
+        assert_eq!(actual.len(), plugin.len());
+        assert_eq!(io::digest(&actual), io::digest(&plugin));
+        assert_sentinels(&sentinels);
+    }
+
+    let root = Scratch::new();
+    let path = root.0.join("owned-cas");
+    std::fs::write(&path, b"original").unwrap();
+    let expected = std::fs::read(&path).unwrap();
+    for modified in [b"changed!".as_slice(), b"changed and longer".as_slice()] {
+        std::fs::write(&path, modified).unwrap();
+        assert!(replace_prepared_file(&path, &expected, b"replacement").is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), modified);
+    }
+    std::fs::remove_file(&path).unwrap();
+    assert!(replace_prepared_file(&path, &expected, b"replacement").is_err());
+    assert!(!path.exists());
+    std::fs::write(&path, &expected).unwrap();
+    replace_prepared_file(&path, &expected, b"replacement").unwrap();
+    assert_eq!(std::fs::read(&path).unwrap(), b"replacement");
 }
 
 fn snapshot(admin: bool) -> ControlSnapshot {

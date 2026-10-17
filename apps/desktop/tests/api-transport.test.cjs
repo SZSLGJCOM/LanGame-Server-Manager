@@ -50,8 +50,21 @@ for (const hostname of ["localhost", "127.0.0.1", "::1", "[::1]", "server.exampl
 
 test("native host takes precedence over browser credentials and development mode", async () => {
   const { api, calls } = fixture({ native: true, development: true, token: "synthetic-test-only" });
+  assert.equal(api.shouldUseLanApi(), true, "A historical browser token still identifies browser LAN routing");
+  assert.equal(api.canUseLocalDesktopApi(), true, "Native local capability takes precedence over browser routing");
   assert.equal(await api.invokeOrMock("bootstrap"), "native");
   assert.deepEqual(calls.map((call) => call.kind), ["native"]);
+});
+
+test("a real LAN browser cannot use native local capabilities", () => {
+  for (const configuration of [{ development: true, token: "synthetic-test-only" },
+    { development: false }, { development: true, hostname: "server.example" }]) {
+    const { api, calls } = fixture(configuration);
+    assert.equal(api.shouldUseLanApi(), true);
+    assert.equal(api.canUseLocalDesktopApi(), false);
+    assert.deepEqual(calls, []);
+  }
+  assert.equal(fixture({ development: true }).api.canUseLocalDesktopApi(), true, "The existing local preview remains available");
 });
 
 test("native final-exit rejection latches the UI and prevents further runtime requests without hiding its error", async () => {

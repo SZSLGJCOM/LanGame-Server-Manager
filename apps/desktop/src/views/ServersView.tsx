@@ -32,7 +32,8 @@ import type {
   SaveInstanceSettingsOptions,
   ServerWorkspaceSection,
   UpdateInstanceInput,
-  BackgroundJob
+  BackgroundJob,
+  SteamWorkshopDownloadResult
 } from "../types";
 import { formatInstanceStatus } from "../view-models";
 import {
@@ -47,6 +48,9 @@ import {
   type ServerModuleInstallation
 } from "../server-primary-action";
 import { RuntimeSurfaceWorkbench } from "./servers/RuntimeSurfaceWorkbench";
+import { useSteamWorkshopAccount } from "./servers/useSteamWorkshopAccount";
+import type { SteamInstallationAccountContext } from "../steam-installation-account";
+import { moduleRequiresSteamCmd } from "../module-installation-dependency";
 import { collectRuntimeLogPaths, type RuntimeLogStartupBoundary } from "../runtime-log-stream";
 import {
   ConfigurationWorkspace, GMToolsWorkbench, ModWorkbench, PlayerCenterWorkbench, ServerMaintenanceWorkspace
@@ -99,7 +103,7 @@ interface ServersViewProps {
   onSelectInstance: (instanceId: string) => void;
   onStart: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
   onStop: (instanceId: string) => void | Promise<void>;
-  onInstallModule: (moduleId: string, validate: boolean) => Promise<void>;
+  onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onOpenModuleLibrary: (moduleId: string) => void;
   onCreateInstance: () => void;
   onPickDirectory: (currentPath?: string | null) => Promise<string | null>;
@@ -346,6 +350,16 @@ export function ServersView(props: ServersViewProps) {
   const activeDetailTab = detailTabs.find((tab) => tab.id === requestedDetailTab)?.disabled
     ? "runtime" : requestedDetailTab;
   const selectedDetailsId = props.selectedDetails?.summary.id ?? null;
+  const steamAccount = useSteamWorkshopAccount(props.selectedInstanceId ? { kind: "instance", id: props.selectedInstanceId } : null);
+  const [steamCmdSelected, setSteamCmdSelected] = useState(false);
+  const [retainedSteamModInstanceId, setRetainedSteamModInstanceId] = useState<string | null>(null);
+  const [retainedSteamMaintenanceInstanceId, setRetainedSteamMaintenanceInstanceId] = useState<string | null>(null);
+  type QueuedInstallation = { instanceId: string; moduleId: string; intent: ServerInstallationIntent; selected: boolean };
+  const [queuedInstallation, setQueuedInstallation] = useState<QueuedInstallation | null>(null);
+  const queuedInstallationRef = useRef<QueuedInstallation | null>(null);
+  const selectedInstanceIdRef = useRef(props.selectedInstanceId);
+  selectedInstanceIdRef.current = props.selectedInstanceId;
+  useEffect(() => { setSteamCmdSelected(false); }, [props.selectedInstanceId]);
 
   useEffect(() => {
     setRetainedGmInstanceId((previous) => activeDetailTab === "gm"
@@ -420,11 +434,62 @@ export function ServersView(props: ServersViewProps) {
     }
   }
 
+  function installationAccount(returnTab: ServerDetailTab): SteamInstallationAccountContext | undefined {
+    const target = steamAccount.target;
+    const module = props.selectedModuleDetails;
+    const appId = module?.summary.steam_app_id;
+    if (!target || !steamAccount.available || !module || module.summary.id !== props.selectedDetails?.summary.module_id
+      || !moduleRequiresSteamCmd(module.summary, module.install) || typeof appId !== "number" || !Number.isSafeInteger(appId) || appId <= 0) return undefined;
+    return { target, expectedAppId: appId, loginAccount: steamAccount.loginAccount, isCurrentOwner: steamAccount.isCurrentOwner,
+      requestAccount: async () => {
+        if (!steamAccount.isCurrentOwner()) throw new Error("installation_cancelled");
+        if (returnTab === "maintenance") setRetainedSteamMaintenanceInstanceId(target.id);
+        setSteamCmdSelected(true); setActiveDetailTab("runtime"); props.onWorkspaceSectionChange("overview");
+        try {
+          const account = await steamAccount.requestAccount("server-install");
+          if (!steamAccount.isCurrentOwner()) throw new Error("installation_cancelled");
+          setActiveDetailTab(returnTab);
+          return account;
+        } finally {
+          setRetainedSteamMaintenanceInstanceId((current) => current === target.id ? null : current);
+        }
+      } };
+  }
+
+  function queueInstallationAction(instanceId: string, moduleId: string, intent: ServerInstallationIntent) {
+    if (queuedInstallationRef.current || installationsByModuleId[moduleId]) return;
+    const request = { instanceId, moduleId, intent, selected: false };
+    queuedInstallationRef.current = request; setQueuedInstallation(request);
+    props.onSelectInstance(instanceId);
+  }
+
+  useEffect(() => {
+    const request = queuedInstallationRef.current;
+    if (!request) return;
+    if (props.selectedInstanceId !== request.instanceId) {
+      if (request.selected) { queuedInstallationRef.current = null; setQueuedInstallation(null); }
+      return;
+    }
+    request.selected = true;
+    if (props.panelLoadState?.instanceId === request.instanceId && props.panelLoadState.errors.details) {
+      queuedInstallationRef.current = null; setQueuedInstallation(null);
+      props.onActivity(message("activity.installFailed", { moduleId: request.moduleId, message: props.panelLoadState.errors.details }));
+      return;
+    }
+    if (selectedDetailsId !== request.instanceId || !steamAccount.isCurrentOwner()) return;
+    if (props.selectedModuleDetails?.summary.id !== request.moduleId && !props.selectedModuleDetailsError) return;
+    queuedInstallationRef.current = null; setQueuedInstallation(null);
+    void runInstallationAction(request.moduleId, request.intent).catch((error) => {
+      props.onActivity(message("activity.installFailed", { moduleId: request.moduleId, message: describeError(error) }));
+    });
+  }, [queuedInstallation, props.selectedInstanceId, selectedDetailsId, props.panelLoadState, props.selectedModuleDetails,
+    props.selectedModuleDetailsError, steamAccount.isCurrentOwner]);
+
   async function runInstallationAction(moduleId: string, intent: ServerInstallationIntent) {
     await installationGate.run(moduleId, intent, async (targetId, validate) => {
       setInstallationsByModuleId((current) => ({ ...current, [targetId]: intent }));
       try {
-        await props.onInstallModule(targetId, validate);
+        await props.onInstallModule(targetId, validate, installationAccount(activeDetailTab));
       } finally {
         setInstallationsByModuleId((current) => {
           const { [targetId]: _completed, ...rest } = current;
@@ -564,7 +629,10 @@ export function ServersView(props: ServersViewProps) {
                 onActivity={props.onActivity}
                 active={!selectedDeletion && instance.id === props.selectedInstanceId}
                 t={t}
-                onSelectInstance={(id) => { setSelectedDeletionId(null); props.onSelectInstance(id); }}
+                onSelectInstance={(id) => {
+                  if (queuedInstallationRef.current?.instanceId !== id) { queuedInstallationRef.current = null; setQueuedInstallation(null); }
+                  setSelectedDeletionId(null); props.onSelectInstance(id);
+                }}
                 onArchiveInstance={(id) => retireInstance(id, props.onArchiveInstance)}
                 onDeleteInstance={(id) => retireInstance(id, props.onDeleteInstance)}
                 storageBusy={storageBusy}
@@ -574,9 +642,10 @@ export function ServersView(props: ServersViewProps) {
                 installation={props.moduleInstallations[instance.module_id]}
                 launchPlan={props.instanceLaunchPlans[instance.id]}
                 launchFailed={props.instanceLaunchFailures[instance.id]}
-                pendingInstallation={installationsByModuleId[instance.module_id]}
+                pendingInstallation={installationsByModuleId[instance.module_id]
+                  ?? (queuedInstallation?.moduleId === instance.module_id ? queuedInstallation.intent : undefined)}
                 jobs={props.jobs}
-                onInstall={(moduleId, intent) => void runInstallationAction(moduleId, intent)}
+                onInstall={(moduleId, intent) => queueInstallationAction(instance.id, moduleId, intent)}
                 onOpenModuleLibrary={props.onOpenModuleLibrary}
               />
             ))}
@@ -632,6 +701,8 @@ export function ServersView(props: ServersViewProps) {
               ) : null}
 
               <ServerMaintenanceWorkspace active={activeDetailTab === "maintenance"}
+                account={installationAccount("maintenance")} accountBusy={steamAccount.busy}
+                keepProgramMaintenance={retainedSteamMaintenanceInstanceId === selectedDetailsId}
                 details={props.selectedDetails} moduleDetails={props.selectedModuleDetails}
                 locale={locale} t={t} selectedBackups={props.selectedBackups}
                 panelLoadState={props.panelLoadState} jobs={props.jobs} runtime={props.runtime}
@@ -643,7 +714,8 @@ export function ServersView(props: ServersViewProps) {
                 onPickDirectory={props.onPickDirectory} onImportDontStarveWorldData={props.onImportDontStarveWorldData}
                 onOpenLocalPath={props.onOpenLocalPath} />
 
-              {activeDetailTab === "mods" && props.selectedDetails ? (
+              {(activeDetailTab === "mods" || retainedSteamModInstanceId === selectedDetailsId) && props.selectedDetails ? (
+                <div hidden={activeDetailTab !== "mods"} style={{ height: "100%", minHeight: 0 }}>
                 <ModWorkbench
                   key={props.selectedDetails.summary.id}
                   details={props.selectedDetails}
@@ -651,11 +723,32 @@ export function ServersView(props: ServersViewProps) {
                   jobs={props.jobs}
                   launchPlan={props.launchPlan}
                   onSaveSettings={props.onSaveSettings}
+                  steamAccount={steamAccount}
+                  onSteamAccountRequired={async (retry: (accountName: string) => Promise<SteamWorkshopDownloadResult>) => {
+                    const instanceId = selectedDetailsId;
+                    if (!instanceId || selectedInstanceIdRef.current !== instanceId || !steamAccount.isCurrentOwner()) throw new Error("installation_cancelled");
+                    setRetainedSteamModInstanceId(instanceId);
+                    setSteamCmdSelected(true);
+                    setActiveDetailTab("runtime");
+                    props.onWorkspaceSectionChange("overview");
+                    try {
+                      const accountName = await steamAccount.requestAccount();
+                      if (selectedInstanceIdRef.current !== instanceId) throw new Error("installation_cancelled");
+                      setActiveDetailTab("mods");
+                      return await retry(accountName);
+                    } finally {
+                      setRetainedSteamModInstanceId((current) => current === instanceId ? null : current);
+                    }
+                  }}
                 />
+                </div>
               ) : null}
 
               {activeDetailTab === "runtime" ? (
                 <RuntimeSurfaceWorkbench
+                  steamAccount={steamAccount}
+                  steamCmdSelected={steamCmdSelected}
+                  onSteamCmdSelected={setSteamCmdSelected}
                   details={props.selectedDetails}
                   moduleDetails={props.selectedModuleDetails}
                   runtime={props.runtime}

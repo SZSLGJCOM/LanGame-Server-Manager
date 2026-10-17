@@ -8,7 +8,7 @@ const { parseSource, sourceText, transpileTypeScript, visitSyntax } = require(".
 
 require.extensions[".ts"] = (module, filename) =>
   module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
-const { MOD_WORKFLOW_CATALOG, moduleHasModWorkbench } = require("../src/views/servers/mod-workbench-capability.ts");
+const { MOD_WORKFLOW_CATALOG, modWorkbenchAvailability, moduleHasModWorkbench } = require("../src/views/servers/mod-workbench-capability.ts");
 const root = path.resolve(__dirname, "../../..");
 const modulesDir = path.join(root, "modules");
 const moduleIds = fs.readdirSync(modulesDir).filter((id) => fs.existsSync(path.join(modulesDir, id, "module.toml"))).sort();
@@ -40,7 +40,7 @@ const details = (id) => ({
 
 test("all 32 actual modules expose only their declared Mod workspaces", () => {
   assert.equal(moduleIds.length, 32);
-  const hidden = ["nightingale", "returntomoria", "romestead", "runescapedragonwilds", "scum", "theforest"];
+  const hidden = ["nightingale", "returntomoria", "rimworld", "romestead", "runescapedragonwilds", "scum", "theforest"];
   for (const id of moduleIds) assert.equal(moduleHasModWorkbench(id, details(id)), !hidden.includes(id), id);
   assert.equal(moduleHasModWorkbench("unknown", {}), false);
   assert.equal(moduleHasModWorkbench(null, details("dontstarve")), false);
@@ -69,6 +69,8 @@ test("server collections apply to ten Steam games, not fourteen file-only games 
   assert.equal(fileOnly.length, 14);
   assert.ok(fileOnly.every((id) => moduleHasModWorkbench(id, details(id))));
   assert.equal(MOD_WORKFLOW_CATALOG.rimworld.installScope, "client_only");
-  assert.equal(moduleHasModWorkbench("rimworld", details("rimworld")), true, "RimWorld keeps the client dependency explanation");
+  assert.equal(moduleHasModWorkbench("rimworld", details("rimworld")), false, "RimWorld client dependencies disable the Mods tab");
+  assert.equal(modWorkbenchAvailability("rimworld", details("rimworld")), "client_only");
+  assert.equal(modWorkbenchAvailability("runescapedragonwilds", details("runescapedragonwilds")), "unsupported");
   assert.equal(moduleHasModWorkbench("runescapedragonwilds", details("runescapedragonwilds")), false);
 });

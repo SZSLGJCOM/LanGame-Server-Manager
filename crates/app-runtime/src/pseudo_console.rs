@@ -48,6 +48,54 @@ impl Drop for ManagedPseudoConsole {
     }
 }
 
+impl ManagedPseudoConsole {
+    pub(super) fn output_failed(&self) -> bool {
+        self.state.output_failed.load(Ordering::Acquire)
+    }
+
+    /// The process owner must first end the complete Job. A failed drain retains
+    /// the reader so its owner can retry instead of abandoning an active thread.
+    pub(super) fn finish_until(&mut self, deadline: Instant) -> io::Result<()> {
+        if self.handle != 0 {
+            if Instant::now() >= deadline {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "The interactive console close exceeded its deadline.",
+                ));
+            }
+            unsafe { ClosePseudoConsole(self.handle as *mut c_void) };
+            self.handle = 0;
+        }
+        self.state.closed.store(true, Ordering::Release);
+        while self
+            .reader
+            .as_ref()
+            .is_some_and(|reader| !reader.is_finished())
+        {
+            let remaining = deadline.saturating_duration_since(Instant::now());
+            if remaining.is_zero() {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "The interactive console output drain exceeded its deadline.",
+                ));
+            }
+            std::thread::sleep(remaining.min(POLL_INTERVAL));
+        }
+        if let Some(reader) = self.reader.take() {
+            reader
+                .join()
+                .map_err(|_| io::Error::other("The interactive console reader failed."))?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum OutputMode {
+    CompletedRows,
+    InteractiveSnapshots,
+}
+
 #[derive(Debug)]
 pub(super) struct PseudoConsoleInput {
     pipe: Option<File>,
@@ -142,6 +190,29 @@ pub(super) fn spawn(
     run_in_background: bool,
     resource_group: Option<&super::RuntimeResourceGroup>,
 ) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
+    spawn_with_output_mode(
+        plan,
+        log,
+        run_in_background,
+        resource_group,
+        OutputMode::CompletedRows,
+    )
+}
+
+pub(super) fn spawn_interactive(
+    plan: &super::SpawnCommand<'_>,
+    output: impl Write + Send + 'static,
+) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
+    spawn_with_output_mode(plan, output, true, None, OutputMode::InteractiveSnapshots)
+}
+
+fn spawn_with_output_mode(
+    plan: &super::SpawnCommand<'_>,
+    log: impl Write + Send + 'static,
+    run_in_background: bool,
+    resource_group: Option<&super::RuntimeResourceGroup>,
+    mode: OutputMode,
+) -> io::Result<(RuntimeChild, Option<super::WindowsHiddenDesktop>)> {
     super::process_environment::validate_windows_command(plan)?;
     let desktop = run_in_background
         .then(super::create_hidden_desktop_for_spawn)
@@ -182,7 +253,7 @@ pub(super) fn spawn(
     terminal.reader = Some(
         std::thread::Builder::new()
             .name("managed-terminal-output".into())
-            .spawn(move || drain_output(output, log, reader_state))?,
+            .spawn(move || drain_output_in_mode(output, log, reader_state, mode))?,
     );
     let spawn_result =
         spawn_attached_process(plan, handle, job.launch_job_handles(), desktop.as_ref());
@@ -272,11 +343,39 @@ fn drain_output(output: File, log: impl Write, state: Arc<TerminalState>) {
     );
 }
 
+fn drain_output_in_mode(
+    output: File,
+    log: impl Write,
+    state: Arc<TerminalState>,
+    mode: OutputMode,
+) {
+    if mode == OutputMode::CompletedRows {
+        return drain_output(output, log, state);
+    }
+    drain_output_with_reader_in_mode(
+        |buffer| read_pipe(&output, buffer),
+        log,
+        state,
+        OUTPUT_CLOSE_BUDGET,
+        mode,
+    );
+}
+
 fn drain_output_with_reader(
+    read: impl FnMut(&mut [u8]) -> io::Result<usize>,
+    log: impl Write,
+    state: Arc<TerminalState>,
+    close_budget: Duration,
+) {
+    drain_output_with_reader_in_mode(read, log, state, close_budget, OutputMode::CompletedRows);
+}
+
+fn drain_output_with_reader_in_mode(
     mut read: impl FnMut(&mut [u8]) -> io::Result<usize>,
     mut log: impl Write,
     state: Arc<TerminalState>,
     close_budget: Duration,
+    mode: OutputMode,
 ) {
     let mut transcript = TerminalTranscript::new(WIDTH, HEIGHT);
     let mut buffer = [0; 8192];
@@ -299,12 +398,14 @@ fn drain_output_with_reader(
                 if !state.output_failed.load(Ordering::Acquire) {
                     let mut text = String::new();
                     let parsed = transcript.push(&buffer[..size], &mut text);
-                    if parsed.is_err() {
+                    if parsed.is_err() || mode == OutputMode::InteractiveSnapshots {
                         transcript.drain_pending_rows(&mut text);
                     }
-                    let result = persist_transcript(&mut log, &text, parsed);
+                    let result = persist_transcript(&mut log, &text, parsed, mode);
                     if let Err(error) = result {
-                        eprintln!("Managed terminal output could not be persisted: {error}");
+                        if mode == OutputMode::CompletedRows {
+                            eprintln!("Managed terminal output could not be persisted: {error}");
+                        }
                         state.output_failed.store(true, Ordering::Release);
                     }
                 }
@@ -325,24 +426,39 @@ fn drain_output_with_reader(
         // A broken read or bounded shutdown still owns its decoded final row.
         // Preserve that known prefix before reporting the missing stream tail.
         let completed = capture_failure.map_or(completed, Err);
-        let result = persist_transcript(&mut log, &text, completed);
+        let result = persist_transcript(&mut log, &text, completed, mode);
         if let Err(error) = result {
-            eprintln!("Managed terminal output could not be completed: {error}");
+            if mode == OutputMode::CompletedRows {
+                eprintln!("Managed terminal output could not be completed: {error}");
+            }
             state.output_failed.store(true, Ordering::Release);
         }
     }
     if let Err(error) = log.flush() {
-        eprintln!("Managed terminal output could not be flushed: {error}");
+        if mode == OutputMode::CompletedRows {
+            eprintln!("Managed terminal output could not be flushed: {error}");
+        }
         state.output_failed.store(true, Ordering::Release);
     }
 }
 
-fn persist_transcript(log: &mut impl Write, text: &str, parsed: io::Result<()>) -> io::Result<()> {
+fn persist_transcript(
+    log: &mut impl Write,
+    text: &str,
+    parsed: io::Result<()>,
+    mode: OutputMode,
+) -> io::Result<()> {
     // The caller owns the decoded prefix even when parsing fails later in the
     // same read. Persist it before the failure marker, never the rejected bytes.
     log.write_all(text.as_bytes())?;
     if let Err(error) = parsed {
-        record_capture_failure(log, &error);
+        if mode == OutputMode::CompletedRows {
+            record_capture_failure(log, &error);
+        } else {
+            // The interactive sink may process sensitive input. Never send its
+            // error text or terminal content through application stderr/logging.
+            let _ = log.write_all(b"\n[LanGame] Interactive console output is incomplete.\n");
+        }
         return Err(error);
     }
     Ok(())

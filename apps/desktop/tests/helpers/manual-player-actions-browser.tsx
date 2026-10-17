@@ -109,20 +109,23 @@ async function run() {
 
   await render([kick, role]);
   check(draft().value === "offline-player-99", "Adding an available action discarded the existing draft");
-  await choose("select[id^=manual-player-action]", role.id);
-  check(draft().value === "", "Switching action types retained a potentially incompatible target");
+  // Every action is its own stack button; a role choice expands in place of the button that needs it.
+  check(!document.querySelector("select") && document.querySelectorAll(".player-center-manual-actions .player-center-action-list .player-center-action-button").length === 2,
+    "Manual actions must be separate stack buttons without an action dropdown");
   await input("operator-7");
+  await click('[data-manual-action="set_role"] button');
+  check(!document.querySelector('[data-manual-action="set_role"] .player-access-total-action')
+    && document.querySelectorAll(".player-center-manual-actions .player-center-action-button").length === 3, "The role form did not replace its stack button in place");
   await choose("select[id^=manual-player-role]", "operator");
   await render([{ ...kick }, { ...role, role_values: [...role.role_values!] }]);
-  check(select<HTMLSelectElement>("select[id^=manual-player-action]").value === role.id
-    && select<HTMLSelectElement>("select[id^=manual-player-role]").value === "operator" && draft().value === "operator-7",
+  check(select<HTMLSelectElement>("select[id^=manual-player-role]").value === "operator" && draft().value === "operator-7",
   "Action metadata refresh lost the selected action, role or target");
   checks++;
 
-  await click("button.danger");
+  await click('[data-manual-action="set_role"] button.danger');
   await choose("select[id^=manual-player-role]", "admin");
   check(!document.querySelector(".inline-confirm-review"), "Role change retained a stale confirmation");
-  await click("button.danger");
+  await click('[data-manual-action="set_role"] button.danger');
   await click(".inline-confirm-submit");
   check(requests.length === 2 && requests[1].input.action_id === role.id && requests[1].input.role === "admin"
     && requests[1].input.target === "operator-7", "Manual action did not retain the reviewed role and identity");
@@ -131,11 +134,11 @@ async function run() {
   checks++;
 
   await render([{ ...role, role_values: ["operator"] }]);
-  check(!document.querySelector("select") && select(".player-center-manual-actions").textContent?.includes("operator"),
-    "A single supported role should remain visible without a redundant dropdown");
+  check(!document.querySelector("select"), "A single supported role needs no dropdown");
   await input("sole-role-player");
   await click("button.danger");
-  check(requests.length === 2 && select(".inline-confirm-message").textContent?.includes("sole-role-player"),
+  check(requests.length === 2 && select(".inline-confirm-message").textContent?.includes("sole-role-player")
+    && select(".inline-confirm-message").textContent?.includes("operator"),
     "The single-role action bypassed exact-target confirmation");
   await click(".inline-confirm-submit");
   check(requests.length === 3 && requests[2].input.action_id === role.id && requests[2].input.role === "operator"
@@ -144,7 +147,7 @@ async function run() {
   checks++;
 
   await render([kick]);
-  check(draft().value === "" && !document.querySelector("select"), "Removing the selected action retained its incompatible draft or dropdown");
+  check(!document.querySelector("select"), "Removing the role action retained its dropdown");
   await render([kick], true);
   check(draft().disabled && select<HTMLButtonElement>("button.danger").disabled, "A stopped instance still offered a manual action");
   checks++;

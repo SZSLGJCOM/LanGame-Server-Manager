@@ -1,0 +1,10 @@
+.server-steamcmd-source { max-width: 180px; }
+.server-steamcmd-input-error { color: var(--theme-danger-text); }
+.server-steamcmd-console .server-runtime-console-title { flex-wrap: wrap; }
+.server-steamcmd-console .server-steamcmd-status { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; white-space: normal; color: var(--shell-muted); font-size: var(--text-code); }
+.server-steamcmd-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.server-steamcmd-status--processing::before { width: 10px; height: 10px; border: 1px solid currentColor; border-right-color: transparent; background: none; animation: steamcmd-status-spin .8s linear infinite; }
+.server-steamcmd-status[data-phase="authenticated"] { color: var(--theme-success-text, #22c55e); }
+.server-steamcmd-status[data-phase="failed"] { color: var(--theme-danger-text); }
+@keyframes steamcmd-status-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .server-steamcmd-status--processing::before { animation: none; } }

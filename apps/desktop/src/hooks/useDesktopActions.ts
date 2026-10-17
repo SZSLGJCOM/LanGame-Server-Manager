@@ -10,6 +10,7 @@ import {
   executeInstancePlayerAction,
   importDontStarveWorldData,
   installModule,
+  installAuthenticatedModule,
   listInstanceBackups,
   logFrontendEvent,
   renameInstanceBackup,
@@ -34,6 +35,7 @@ import {
 import { message, programCleanupDetails, type UiMessage } from "../app-ui";
 import { useSteamCmdActions, type SteamCmdActionOptions } from "./useSteamCmdActions";
 import { isInstallationCancelled } from "../installation-cancellation";
+import { runSteamInstallationWithAccount, type SteamInstallationAccountContext } from "../steam-installation-account";
 import { useI18n } from "../i18n";
 import { formatInstallState } from "../install-state-presentation";
 import { refreshInstancePanelForCurrentSelection } from "../instance-panel-refresh";
@@ -106,11 +108,12 @@ export function useLibraryActions(options: LibraryActionOptions) {
     }
   }
 
-  async function handleInstallModule(moduleId: string, validate: boolean) {
+  async function handleInstallModule(moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) {
     options.setLibraryTaskPolling(true);
     options.setActivity(message(validate ? "activity.preparingValidation" : "activity.preparingInstall", { moduleId }));
     try {
-      const result = await installModule(moduleId, validate);
+      const result = await runSteamInstallationWithAccount(() => installModule(moduleId, validate),
+        (accountName, target) => installAuthenticatedModule(moduleId, validate, accountName, target), account);
       options.setActivity(
         message(validate ? "activity.validationCompleted" : "activity.installCompleted", {
           moduleId,

@@ -32,6 +32,7 @@ mod runtime_transport_humanitz;
 mod startup_storage;
 mod state;
 mod steam_workshop;
+mod steam_workshop_account_sessions;
 mod steamcmd_preparation;
 mod text_decode;
 mod webview_drop;

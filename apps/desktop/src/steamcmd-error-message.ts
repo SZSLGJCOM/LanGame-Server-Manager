@@ -48,6 +48,32 @@ export function formatSteamCmdError(t: TranslateFn, value: Record<string, unknow
     case "steamcmd_command_failed":
       if (typeof value.output_excerpt !== "string") return null;
       return withDiagnostic(t, t("errors.steamcmdCommandFailed"), value.output_excerpt);
+    case "steam_workshop_decryption_key_missing":
+      if (typeof value.consumer_app_id !== "number" || !Number.isSafeInteger(value.consumer_app_id)
+        || value.consumer_app_id <= 0 || typeof value.output_excerpt !== "string") return null;
+      return withDiagnostic(t, t("errors.steamWorkshopDecryptionKeyMissing", {
+        appId: value.consumer_app_id,
+        myMods: t("servers.mods.mainTabs.config"), dropTarget: t("servers.mods.detailTabs.mods")
+      }), value.output_excerpt);
+    case "steam_account_name_invalid":
+      return t("errors.steamAccountNameInvalid");
+    case "steam_account_authentication_failed":
+      if (typeof value.output_excerpt !== "string") return null;
+      return withDiagnostic(t, t("errors.steamAccountAuthenticationFailed"), value.output_excerpt);
+    case "steam_account_interactive_unsupported":
+      return t("errors.steamAccountInteractiveUnsupported");
+    case "steam_workshop_login_cancelled":
+      return t("errors.steamWorkshopLoginCancelled");
+    case "steam_account_session_unavailable":
+      return t("servers.mods.steamAccount.inputError.steam_account_session_unavailable");
+    case "steam_workshop_account_required":
+      if (typeof value.consumer_app_id !== "number" || !Number.isSafeInteger(value.consumer_app_id)
+        || value.consumer_app_id <= 0 || typeof value.output_excerpt !== "string") return null;
+      return withDiagnostic(t, t("errors.steamWorkshopAccountRequired"), value.output_excerpt);
+    case "steam_app_account_required":
+      if (typeof value.app_id !== "number" || !Number.isSafeInteger(value.app_id)
+        || value.app_id <= 0 || typeof value.output_excerpt !== "string") return null;
+      return withDiagnostic(t, t("errors.steamAppAccountRequired"), value.output_excerpt);
     case "steamcmd_prepare_failed":
       if (typeof value.output_excerpt !== "string") return null;
       return withDiagnostic(t, t("errors.steamcmdPrepareFailed"), value.output_excerpt);

@@ -115,6 +115,9 @@ function parseIdentityKind(value: string | null): RuntimePlayerIdentityKind | nu
     case "player_name":
     case "session_id":
     case "palworld_user_id":
+    case "palworld_player_uid":
+    case "necesse_ban_id":
+    case "soulmask_account_id":
     case "minecraft_uuid":
     case "astroneer_guid":
     case "enshrouded_account_id":
@@ -192,13 +195,16 @@ function sampleEntries(context: MockLivePlayerContext): RuntimeLivePlayerEntry[]
     eos_id: ["00000000000000000000000000000001", "00000000000000000000000000000002"],
     session_id: ["1", "2"],
     palworld_user_id: ["steam_76561198000000001", "steam_76561198000000002"],
+    palworld_player_uid: ["00000000000000000000000000000001", "00000000000000000000000000000002"],
     minecraft_uuid: ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"],
     astroneer_guid: ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002"],
     // Synthetic platform-3 pairs checked against native_account_hash.json;
     // these preview values do not establish that a native extension is running.
     enshrouded_account_id: ["7105925790711809417", "10863749286127979488"],
     valheim_platform_id: ["Steam_76561198000000001", "Xbox_NativeAccount_A7"],
-    player_name: ["HostAlice", "Bob"]
+    player_name: ["HostAlice", "Bob"],
+    necesse_ban_id: ["HostAlice", "Bob"],
+    soulmask_account_id: [`${"1".repeat(32)}|${"2".repeat(32)}`, `${"3".repeat(32)}|${"4".repeat(32)}`]
   };
   function sampleIdentities(index: 0 | 1): RuntimeLivePlayerEntry["identifiers"] {
     if (namesOnly) return [];

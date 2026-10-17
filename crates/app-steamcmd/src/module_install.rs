@@ -15,6 +15,18 @@ pub struct ModuleInstallCallbacks<P, C> {
     pub prepare_fresh_payload: C,
 }
 
+/// A caller-owned installation target and its optional cached Steam identity.
+/// Passwords and Steam Guard input belong to interactive authentication only.
+pub struct SteamModuleInstallRequest<'a> {
+    pub settings: &'a AppSettings,
+    pub module: &'a ModuleDetails,
+    pub install_root: &'a Path,
+    pub guard: &'a GameInstallLifecycleGuard,
+    pub validate: bool,
+    pub cancellation: &'a InstallCancellation,
+    pub account_name: Option<&'a str>,
+}
+
 pub async fn install_or_update_module_with_progress<F>(
     lock_context: &InstallLockContext,
     settings: &AppSettings,
@@ -74,6 +86,7 @@ where
                 InstallLifecycle {
                     guard: &_operation,
                     revision_key: &module.summary.id,
+                    account_name: None,
                 },
                 deadline,
                 started_at,
@@ -134,6 +147,45 @@ where
     C: FnMut(PathBuf) -> Fut,
     Fut: std::future::Future<Output = Result<(), SteamCmdError>>,
 {
+    install_or_update_module_at_with_login_and_callbacks(
+        SteamModuleInstallRequest {
+            settings,
+            module,
+            install_root,
+            guard,
+            validate,
+            cancellation,
+            account_name: None,
+        },
+        callbacks,
+    )
+    .await
+}
+
+/// Uses a previously authenticated Steam account for every native attempt,
+/// including manifest recovery and shared dependency validation. A failed or
+/// mismatched cached login never falls back to anonymous installation.
+pub async fn install_or_update_module_at_with_login_and_callbacks<P, C, Fut>(
+    request: SteamModuleInstallRequest<'_>,
+    callbacks: ModuleInstallCallbacks<P, C>,
+) -> Result<ModuleInstallResult, SteamCmdError>
+where
+    P: FnMut(InstallProgressUpdate),
+    C: FnMut(PathBuf) -> Fut,
+    Fut: std::future::Future<Output = Result<(), SteamCmdError>>,
+{
+    let SteamModuleInstallRequest {
+        settings,
+        module,
+        install_root,
+        guard,
+        validate,
+        cancellation,
+        account_name,
+    } = request;
+    let account_name = account_name
+        .map(normalize_workshop_account_name)
+        .transpose()?;
     guard.ensure_scope(&module.summary.id, install_root)?;
     let (target_settings, target_module) = explicit_install_target(settings, module, install_root)?;
     let revision_key = package_revision::program_revision_key(&module.summary.id, install_root)?;
@@ -145,6 +197,7 @@ where
             InstallLifecycle {
                 guard,
                 revision_key: &revision_key,
+                account_name: account_name.as_deref(),
             },
             InstallDeadline::new("game server install or validation", MODULE_INSTALL_TIMEOUT),
             std::time::Instant::now(),
@@ -191,6 +244,7 @@ fn explicit_install_target(
 struct InstallLifecycle<'a> {
     guard: &'a GameInstallLifecycleGuard,
     revision_key: &'a str,
+    account_name: Option<&'a str>,
 }
 
 async fn install_module<F, C, Fut>(
@@ -214,6 +268,7 @@ where
     let InstallLifecycle {
         guard: game_guard,
         revision_key,
+        account_name,
     } = lifecycle;
     let mut on_progress = |mut update: InstallProgressUpdate| {
         if let Some(progress) = update.install_progress.as_mut() {
@@ -251,8 +306,9 @@ where
         });
     }
 
-    // Dependency preparation belongs to the explicit System action. Reject
-    // missing or unverified SteamCMD before creating files or invalidating revisions.
+    // Dependency preparation belongs to the explicit System action. A managed
+    // runtime that updated itself can be reverified here; reject missing or
+    // never-verified dependencies before creating files or invalidating revisions.
     let _steamcmd_operation = if !minecraft_java && direct_download_url.is_none() {
         on_progress(InstallProgressUpdate::stage(
             InstallPhase::Queued,
@@ -261,7 +317,11 @@ where
         let guard = game_guard
             .acquire_steamcmd_with_deadline(settings, deadline)
             .await?;
-        require_steamcmd_ready(settings)?;
+        guard
+            .require_ready_with_progress(settings, deadline, |update| {
+                on_progress(InstallProgressUpdate::preparing_steamcmd(update));
+            })
+            .await?;
         Some(guard)
     } else {
         None
@@ -355,8 +415,9 @@ where
             let script_path =
                 script_root.join(format!("steamcmd-{}-{stamp}.txt", module.summary.id));
 
-            let script_lines =
-                steamcmd_install_script_lines(module, steam_app_id, &acquisition_root, validate);
+            let script_lines = steamcmd_install_script_lines_with_login(
+                module, steam_app_id, &acquisition_root, validate, account_name,
+            );
 
             fs::write(
                 &script_path,
@@ -406,16 +467,23 @@ where
                     }
                 };
 
-                last_excerpt = if output.success {
-                    output.excerpt
-                } else {
-                    steamcmd_failure_context(
-                        &output.excerpt,
-                        output.exit_code,
-                        output.content_log_excerpt.as_deref(),
-                    )
+                let succeeded = match super::steam_app_access::verify_command_result(
+                    steam_app_id, account_name, &output,
+                ) {
+                    Ok(()) => true,
+                    Err(error @ (SteamCmdError::SteamAppAccountRequired { .. }
+                        | SteamCmdError::SteamAccountAuthenticationFailed { .. })) => {
+                        let _ = fs::remove_file(&script_path);
+                        return Err(error);
+                    }
+                    Err(_) => false,
                 };
-                if output.success {
+                last_excerpt = if succeeded {
+                    output.excerpt.clone()
+                } else {
+                    super::steam_app_access::failure_context(steam_app_id, &output)
+                };
+                if succeeded {
                     if let Some(backup) = &manifest_recovery {
                         on_progress(InstallProgressUpdate::stage(
                             InstallPhase::Verifying,
@@ -464,8 +532,8 @@ where
                         ),
                     ));
                     manifest_recovery = Some(backup);
-                    let lines = steamcmd_install_script_lines(
-                        module, steam_app_id, &acquisition_root, true,
+                    let lines = steamcmd_install_script_lines_with_login(
+                        module, steam_app_id, &acquisition_root, true, account_name,
                     );
                     if let Err(source) = fs::write(&script_path, lines.join("\r\n")) {
                         let _ = fs::remove_file(&script_path);
@@ -549,6 +617,7 @@ where
                     root: &acquisition_root,
                     script: &script_path,
                     deadline,
+                    account_name,
                 },
                 &mut on_progress,
                 last_excerpt,
@@ -676,11 +745,22 @@ fn with_retry_context(mut update: InstallProgressUpdate, retry: usize) -> Instal
     update
 }
 
+#[cfg(test)]
 pub(super) fn steamcmd_install_script_lines(
     module: &ModuleDetails,
     steam_app_id: u32,
     install_root: &Path,
     validate: bool,
+) -> Vec<String> {
+    steamcmd_install_script_lines_with_login(module, steam_app_id, install_root, validate, None)
+}
+
+pub(super) fn steamcmd_install_script_lines_with_login(
+    module: &ModuleDetails,
+    steam_app_id: u32,
+    install_root: &Path,
+    validate: bool,
+    account_name: Option<&str>,
 ) -> Vec<String> {
     let mut script_lines = vec![
         String::from("@ShutdownOnFailedCommand 1"),
@@ -701,7 +781,7 @@ pub(super) fn steamcmd_install_script_lines(
         "force_install_dir {}",
         steamcmd_script_path(install_root)
     ));
-    script_lines.push(String::from("login anonymous"));
+    script_lines.push(super::steamcmd_account::workshop_login_line(account_name));
 
     let mut app_update_line = format!("app_update {steam_app_id}");
     if validate {

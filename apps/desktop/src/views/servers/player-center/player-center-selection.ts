@@ -1,10 +1,34 @@
 import { canonicalPlayerAccessIdentity, isValheimPlatformAccountTarget, normalizePlayerAccessMutationEntry, parsePlayerAccessCodec, playerAccessObjectIdentityKeys } from "../../../domain/player-access";
 import { isAuthoritativeLivePlayerSnapshot } from "../../../domain/live-player-state";
-import type { DragonwildsBanEntry, RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier, RuntimeLivePlayerSnapshot, RuntimePlayerIdentityKind } from "../../../types";
+import type { DragonwildsBanEntry, NativeBanEntry, RuntimeLivePlayerEntry, RuntimeLivePlayerIdentifier, RuntimeLivePlayerSnapshot, RuntimePlayerIdentityKind } from "../../../types";
 import { isRosterRecord, type RosterEntry, type RosterField } from "./player-access-roster-model";
 import { isPlayerRosterCapability, resolveSelectedRosterIdentity, type SelectedRosterTarget } from "./player-access-selected-target";
 
 export interface SelectedRosterEntry { field: RosterField; entry: RosterEntry }
+
+function nativePlayerAccountId(player: RuntimeLivePlayerEntry | null, kind: RuntimePlayerIdentityKind): string | null {
+  const identities = player?.identifiers.filter((identity) => identity.kind === kind) ?? [];
+  return identities.length === 1 && identities[0].stable ? identities[0].value : null;
+}
+
+/** Native entries carry their identity namespace; a display name cannot substitute for it. */
+export function nativeBanEntryForPlayer(player: RuntimeLivePlayerEntry | null, entries: NativeBanEntry[]): NativeBanEntry | null {
+  const matches = entries.filter((entry) => nativePlayerAccountId(player, entry.identity_kind) === entry.account_id);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+export function nativeBanPlayer(entry: NativeBanEntry | null): RuntimeLivePlayerEntry | null {
+  return entry ? { player_key: `native-ban:${entry.identity_kind}:${entry.account_id}`, display_name: entry.display_name ?? entry.account_id,
+    identifiers: [{ kind: entry.identity_kind, value: entry.account_id, stable: true }], available_action_ids: [],
+    ping_ms: null, session_started_at_unix_ms: null, role: null, attributes: [] } : null;
+}
+
+export function matchNativeBanLivePlayer(entry: NativeBanEntry | null, snapshot: RuntimeLivePlayerSnapshot | null,
+  now: number): RuntimeLivePlayerEntry | null {
+  if (!entry || !isAuthoritativeLivePlayerSnapshot(snapshot, now)) return null;
+  const matches = snapshot.entries.filter((player) => nativePlayerAccountId(player, entry.identity_kind) === entry.account_id);
+  return matches.length === 1 ? matches[0] : null;
+}
 
 export function dragonwildsAccountId(player: RuntimeLivePlayerEntry | null): string | null {
   const identities = player?.identifiers.filter((identity) => identity.kind === "eos_id") ?? [];

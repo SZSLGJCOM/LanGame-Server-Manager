@@ -37,7 +37,7 @@ pub(crate) async fn fetch_text_from_candidates<T>(
     let deadline = deadline.limited_to(REQUEST_BUDGET);
     let max_bytes = max_bytes.min(METADATA_LIMIT);
     let url = candidates.first().map(String::as_str).unwrap_or("metadata");
-    let mut last_error = download_error(url, "no source was available");
+    let mut last_error = None;
     for (index, candidate) in candidates.iter().enumerate() {
         let source_deadline = candidate_deadline(deadline, candidates.len() - index);
         // A single source may restart an interrupted body once. Header retries
@@ -80,11 +80,11 @@ pub(crate) async fn fetch_text_from_candidates<T>(
                 }
                 Err(error) => {
                     if !permits_source_fallback(&error) {
-                        return Err(error);
+                        return Err(prefer_source_failure(last_error.take(), error));
                     }
                     app_network::record_failure(candidate);
                     let restart = retry == 0 && is_interrupted(&error);
-                    last_error = error;
+                    last_error = Some(prefer_source_failure(last_error.take(), error));
                     if !restart {
                         break;
                     }
@@ -92,5 +92,5 @@ pub(crate) async fn fetch_text_from_candidates<T>(
             }
         }
     }
-    Err(last_error)
+    Err(last_error.unwrap_or_else(|| download_error(url, "no source was available")))
 }

@@ -6,13 +6,15 @@ import type { RuntimeLivePlayerEntry } from "../../../types";
 import { ObjectRosterFieldEditor, PlayerAccessRosterEditor, type RosterMutationHandler } from "./PlayerAccessRosterEditor";
 import { rosterFieldActionLabel, rosterFieldRemoveLabel } from "./player-access-roster-labels";
 import type { RosterEntry, RosterField } from "./player-access-roster-model";
-import type { SelectedRosterTarget } from "./player-access-selected-target";
+import { resolveManualRosterTarget, type SelectedRosterTarget } from "./player-access-selected-target";
 import { resolveRosterActionTarget, type SelectedRosterEntry } from "./player-center-selection";
 import { ConfigurationHelp } from "../../settings/ConfigurationFieldHelp";
 
 interface SelectedPlayerRosterActionsProps {
   selectedPlayer: RuntimeLivePlayerEntry | null;
   selectedRoster?: SelectedRosterEntry | null;
+  /** ID looked up in 手动查询; each roster interprets it with its own codec. */
+  manualTarget?: string;
   fields: RosterField[];
   suppressedAddFieldKeys?: readonly string[];
   createFieldKey?: string;
@@ -22,6 +24,8 @@ interface SelectedPlayerRosterActionsProps {
   locale: LocaleCode;
   onMutate: RosterMutationHandler;
   onClearSelection?: () => void;
+  /** A ban roster whose removal also performs the native unban while the server runs (`live`). */
+  mergedUnban?: { fieldKey: string; live: boolean };
 }
 interface EditorTarget { fieldKey: string; entry: RosterEntry | null; identity?: SelectedRosterTarget }
 
@@ -47,6 +51,8 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
     if (props.disabled) return props.disabledReason ?? selectLocaleText(props.locale, "当前无法保存名单。", "Rosters cannot be saved in the current workspace.");
     if (field.property.readOnly === true) return selectLocaleText(props.locale, `${field.title}为只读名单。`, `${field.title} is read-only.`);
     if (!target) {
+      if (props.manualTarget) return selectLocaleText(props.locale, `\u8be5 ID \u4e0d\u7b26\u5408\u300c${field.title}\u300d\u7684\u683c\u5f0f\u3002`,
+        `This ID does not match the format of ${field.title}.`);
       if (!props.selectedPlayer && !selectedRoster) return selectLocaleText(props.locale, "请先选择玩家或名单条目。", "Select a player or roster entry first.");
       if (parsePlayerAccessCodec(field.property) === "uint64") return selectLocaleText(props.locale,
         "此名单需要原生 accountId，当前玩家数据未提供该身份；Steam ID 不能替代。可在名单中手动添加。",
@@ -77,8 +83,14 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
   return <>
     <div className="player-access-selected-actions" role="group" aria-label={selectLocaleText(props.locale, "名单操作", "Roster actions")}>
       {props.fields.map((field) => {
-        const target = resolveRosterActionTarget(props.selectedPlayer, selectedRoster, field);
-        const entry = target ? field.entries.find((candidate) => candidate.key === target.identity) : undefined;
+        const target = props.manualTarget ? resolveManualRosterTarget(props.manualTarget, field)
+          : resolveRosterActionTarget(props.selectedPlayer, selectedRoster, field);
+        const pendingMatches = target?.pendingKeys && typeof target.rawValue !== "string"
+          ? field.entries.filter((candidate) => typeof candidate.rawValue !== "string" && typeof target.rawValue !== "string"
+            && Object.entries(target.rawValue).every(([key, value]) => (candidate.rawValue as Record<string, unknown>)[key] === value)) : [];
+        // An ID with an undetectable platform matches an entry only when exactly one entry carries it.
+        const entry = !target ? undefined : target.pendingKeys ? (pendingMatches.length === 1 ? pendingMatches[0] : undefined)
+          : field.entries.find((candidate) => candidate.key === target.identity);
         const valheimBan = parsePlayerAccessCodec(field.property) === "valheim_ban";
         const platformBan = valheimBan && typeof target?.rawValue === "string" && isValheimPlatformAccountTarget(target.rawValue);
         const nameBan = valheimBan && !platformBan;
@@ -91,12 +103,18 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
             "When the allowlist is non-empty, only listed accounts can enter. Removing its last entry disables the allowlist restriction; bans still apply.") : null;
         return <div key={field.key} className="player-access-selected-row" data-roster-field={field.key}>
           {(["add", "remove"] as const).filter((operation) => operation !== "add" || !props.suppressedAddFieldKeys?.includes(field.key)).map((operation) => {
-            const label = nameBan ? operation === "add" ? selectLocaleText(props.locale, "封禁角色名", "Ban character name")
+            const merged = operation === "remove" && props.mergedUnban?.fieldKey === field.key;
+            // While running the native unban needs only the target; stopped, it removes the saved entry.
+            const mergedLive = merged && props.mergedUnban?.live === true;
+            const label = merged ? selectLocaleText(props.locale, "\u89e3\u5c01", "Unban") : nameBan ? operation === "add" ? selectLocaleText(props.locale, "封禁角色名", "Ban character name")
               : selectLocaleText(props.locale, "解除角色名封禁", "Unban character name") : actionLabel(field, operation, props.locale);
-            const unavailable = disabled || field.property.readOnly === true || !target || (operation === "add" ? Boolean(entry) : !entry);
-            const helpText = [unavailableReason(field, operation, target, entry), nameBan ? nameBanHelp : null, allowlistHelp].filter(Boolean).join(" ");
-            const rawValue = operation === "remove" ? entry?.rawValue : target?.rawValue;
-            const displayName = entry?.label ?? props.selectedPlayer?.display_name ?? selectedRoster?.entry.label ?? "";
+            const unavailable = disabled || field.property.readOnly === true || !target || (operation === "add" ? Boolean(entry) : !entry && !mergedLive);
+            const reason = unavailableReason(field, operation, target, entry);
+            const helpText = [mergedLive && target && !entry && !disabled ? null : merged && !mergedLive && target && !entry && !disabled
+              ? selectLocaleText(props.locale, `\u6b64\u73a9\u5bb6\u4e0d\u5728\u300c${field.title}\u300d\u4e2d\uff1b\u670d\u52a1\u5668\u8fd0\u884c\u65f6\u53ef\u76f4\u63a5\u89e3\u5c01\u3002`,
+                `This player is not in ${field.title}; start the server to unban natively.`) : reason, nameBan ? nameBanHelp : null, allowlistHelp].filter(Boolean).join(" ");
+            const rawValue = mergedLive && !entry ? target?.rawValue : operation === "remove" ? entry?.rawValue : target?.rawValue;
+            const displayName = entry?.label ?? props.selectedPlayer?.display_name ?? selectedRoster?.entry.label ?? props.manualTarget ?? "";
             const playerLabel = `${displayName}${target ? ` (${target.identity})` : ""}`.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
             const confirmation = nameBan ? selectLocaleText(props.locale,
               `确认对角色名「${String(target?.rawValue ?? "")}」执行「${label}」？${nameBanHelp}`,
@@ -104,6 +122,16 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
               : selectLocaleText(props.locale, `确认对「${playerLabel}」执行「${label}」？`, `Run “${label}” for “${playerLabel}”?`)
                 + (allowlistHelp ? ` ${allowlistHelp}` : "");
             // Adding to a block/ban roster is a moderation action and uses the same danger variant as kick and ban.
+            if (operation === "add" && editor?.identity && editor.fieldKey === field.key && editorField) {
+              // The extra fields open in place of this button; its confirm/cancel pair takes the same spot.
+              return <div key={operation} className="player-access-selected-editor is-inline" data-editor-field={editorField.key}>
+                <ObjectRosterFieldEditor key={`${editorField.key}:quick`} field={editorField} busy={props.busyFieldKey === editorField.key}
+                  disabled={disabled} locale={props.locale} onMutate={mutate} selectedEntry={null} lockedIdentity={editor.identity}
+                  inputPrefix={`player-access-quick-${editorField.key}`}
+                  submitLabel={selectLocaleText(props.locale, `\u786e\u8ba4${label}`, `Confirm ${label}`)}
+                  onCancel={() => setEditor(null)} onSaved={() => setEditor(null)} />
+              </div>;
+            }
             const className = `secondary-button player-center-action-button player-access-selected-action${operation === "add" && field.lane === "block" ? " danger" : ""}`;
             return <ConfigurationHelp key={operation} description={helpText}>{(help) => <div className="player-access-total-action" data-roster-operation={operation}
               ref={help.anchorRef} {...help.interactionProps} tabIndex={unavailable ? 0 : undefined}
@@ -121,7 +149,11 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
           })}
         </div>;
       })}
-      <ConfigurationHelp description={editReason}>{(help) => <div className="player-access-total-action" ref={help.anchorRef} {...help.interactionProps}
+      {editor && editorField && !editor.identity ? <div className="player-access-selected-editor is-inline" data-editor-field={editorField.key}>
+        <PlayerAccessRosterEditor key={`${editorField.key}:${editorEntry?.key ?? "create"}`} field={editorField}
+          busy={props.busyFieldKey === editorField.key} disabled={disabled} locale={props.locale} onMutate={mutate}
+          selectedEntry={editorEntry} selectedPlayer={props.selectedPlayer} onCancel={() => setEditor(null)} onSaved={() => setEditor(null)} />
+      </div> : <ConfigurationHelp description={editReason}>{(help) => <div className="player-access-total-action" ref={help.anchorRef} {...help.interactionProps}
         tabIndex={editReason ? 0 : undefined} role={editReason ? "group" : undefined} aria-disabled={Boolean(editReason) || undefined}
         aria-label={editReason ? selectLocaleText(props.locale, "编辑当前条目", "Edit selected entry") : undefined} aria-describedby={help.descriptionId}>
       <button type="button" className="secondary-button player-center-action-button player-access-edit-selected" aria-describedby={help.descriptionId} disabled={disabled || !selectedRoster
@@ -129,17 +161,7 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
         onClick={() => selectedRoster && setEditor({ fieldKey: selectedRoster.field.key, entry: selectedRoster.entry })}>
         {selectLocaleText(props.locale, "编辑当前条目", "Edit selected entry")}
       </button>
-      </div>}</ConfigurationHelp>
+      </div>}</ConfigurationHelp>}
     </div>
-    {editor && editorField ? <div className="player-access-selected-editor" data-editor-field={editorField.key}>
-      <strong>{editorField.title}</strong>
-      {editor.identity ? <ObjectRosterFieldEditor key={`${editorField.key}:quick`} field={editorField} busy={props.busyFieldKey === editorField.key}
-        disabled={disabled} locale={props.locale} onMutate={mutate} selectedEntry={null} lockedIdentity={editor.identity}
-        inputPrefix={`player-access-quick-${editorField.key}`}
-        onCancel={() => setEditor(null)} onSaved={() => setEditor(null)} />
-        : <PlayerAccessRosterEditor key={`${editorField.key}:${editorEntry?.key ?? "create"}`} field={editorField}
-          busy={props.busyFieldKey === editorField.key} disabled={disabled} locale={props.locale} onMutate={mutate}
-          selectedEntry={editorEntry} selectedPlayer={props.selectedPlayer} onCancel={() => setEditor(null)} onSaved={() => setEditor(null)} />}
-    </div> : null}
   </>;
 }

@@ -432,13 +432,11 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     );
     let package_module = module.clone();
     let startup_log_stamp = current_unix_ms();
-    let prestart_update_log_path = if should_run_prestart_update(&package_module) {
+    let prestart_update_log_path = {
         let mut update_log_plans =
             build_process_launch_plans_for_instance(&storage.settings, &module, &instance)?;
         assign_process_log_paths_with_stamp(&instance, &mut update_log_plans, startup_log_stamp);
         update_log_plans.first().map(|plan| plan.log_path.clone())
-    } else {
-        None
     };
     if let Some(log_path) = prestart_update_log_path.as_deref() {
         publish_pending_start_console_log_path(
@@ -532,14 +530,21 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         descriptor,
         Some(private_root.as_str()),
     );
-    ensure_module_installed_for_start(&module)?;
     crate::astroneer_console::validate_start_settings(&instance)?;
     super::commands_theforest_control::prepare(storage, &instance).await?;
     super::commands_enshrouded_control::prepare(storage, &instance).await?;
-    let mut launch_plans =
-        build_process_launch_plans_for_instance(&storage.settings, &module, &instance)?;
+    let (module, mut launch_plans) = Box::pin(super::commands_runtime_environment::prepare(
+        state,
+        storage,
+        &instance,
+        module,
+        runtime_start_reservation,
+        prestart_update_log_path.as_deref(),
+    ))
+    .await?;
     // Only a stopped-instance, explicit account-control preparation creates
-    // this ownership marker. Ordinary starts never install or detach programs.
+    // this ownership marker. Ordinary starts only refresh an intact owned
+    // plugin; they never install a loader or detach programs.
     if let Some((key, value)) = super::commands_valheim_control::startup_environment(&instance)? {
         for plan in &mut launch_plans {
             plan.launch_plan

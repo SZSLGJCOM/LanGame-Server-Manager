@@ -39,6 +39,68 @@ function live(playerKey = "live-alice", value = steamId) {
 }
 function snapshot(entries) { return { status: "ready", complete: true, truncated: false, stale: false, expires_at_unix_ms: 200, entries }; }
 
+test("native bans retain their namespace and never invent live action authority", () => {
+  for (const identity_kind of ["steam_id", "eos_id", "palworld_user_id", "conan_user_id", "ark_account_id", "player_name", "soulmask_account_id"]) {
+    const entry = { account_id: "exact-account", display_name: "Same name", identity_kind };
+    const projected = api.nativeBanPlayer(entry);
+    assert.deepEqual(Array.from(projected.available_action_ids), []);
+    assert.equal(projected.identifiers[0].kind, identity_kind);
+    const row = { ...live(), identifiers: [{ kind: identity_kind, value: entry.account_id, stable: true }] };
+    assert.equal(api.nativeBanEntryForPlayer(row, [entry]), entry);
+    assert.equal(api.matchNativeBanLivePlayer(entry, snapshot([row]), 100), row);
+    assert.equal(api.matchNativeBanLivePlayer(entry, snapshot([row, { ...row, player_key: "duplicate" }]), 100), null);
+    assert.equal(api.matchNativeBanLivePlayer(entry, { ...snapshot([row]), stale: true }, 100), null);
+    assert.equal(api.matchNativeBanLivePlayer(entry, snapshot([row]), 200), null);
+    for (const identifiers of [[], [{ ...row.identifiers[0], stable: false }],
+      [{ ...row.identifiers[0], value: "other-account" }], [row.identifiers[0], row.identifiers[0]]]) {
+      assert.equal(api.nativeBanEntryForPlayer({ ...row, identifiers }, [entry]), null);
+      assert.equal(api.matchNativeBanLivePlayer(entry, snapshot([{ ...row, identifiers }]), 100), null);
+    }
+    assert.equal(api.nativeBanEntryForPlayer(row, [entry, entry]), null);
+  }
+  const sameValue = [{ account_id: "same", display_name: null, identity_kind: "steam_id" },
+    { account_id: "same", display_name: null, identity_kind: "eos_id" }];
+  const steam = { ...live(), identifiers: [{ kind: "steam_id", value: "same", stable: true }] };
+  assert.equal(api.nativeBanEntryForPlayer(steam, sameValue), sameValue[0]);
+  assert.equal(api.matchNativeBanLivePlayer(sameValue[1], snapshot([steam]), 100), null);
+  const necesse = { account_id: "HostAlice", display_name: null, identity_kind: "necesse_ban_id" };
+  const sameName = { ...live(), identifiers: [{ kind: "player_name", value: "HostAlice", stable: true }] };
+  assert.equal(api.nativeBanEntryForPlayer(sameName, [necesse]), null);
+  assert.equal(api.matchNativeBanLivePlayer(necesse, snapshot([sameName]), 100), null);
+});
+
+test("Soulmask Epic bans retain the complete pair and cannot match another namespace or a name", () => {
+  const account = `${"ABCDEF0123456789".repeat(2)}|${"0123456789abcdef".repeat(2)}`;
+  const entry = { account_id: account, display_name: "Alice", identity_kind: "soulmask_account_id" };
+  assert.equal(api.nativeBanPlayer(entry).identifiers[0].value, account);
+  for (const kind of ["steam_id", "eos_id", "player_name"]) {
+    const row = { ...live(), identifiers: [{ kind, value: account, stable: true }] };
+    assert.equal(api.nativeBanEntryForPlayer(row, [entry]), null);
+    assert.equal(api.matchNativeBanLivePlayer(entry, snapshot([row]), 100), null);
+  }
+  const partial = { ...live(), identifiers: [{ kind: "soulmask_account_id", value: account.split("|")[0], stable: true }] };
+  assert.equal(api.nativeBanEntryForPlayer(partial, [entry]), null);
+});
+
+test("only Soulmask ban and unban require the complete native Steam or Epic identity", () => {
+  const { manualPlayerActionTargetError } = load("views/servers/player-center/manual-player-action-model.ts");
+  const epic = `${"ABCDEF0123456789".repeat(2)}|${"0123456789abcdef".repeat(2)}`;
+  for (const id of ["ban_player", "unban_player"]) for (const locale of ["zh-CN", "en-US"]) {
+    for (const target of [steamId, "00000000000000001", epic]) {
+      assert.equal(manualPlayerActionTargetError("soulmask", { id }, target, locale), null);
+    }
+    for (const target of ["", "0".repeat(17), "42", "1".repeat(16), "1".repeat(18), "Alice", "1".repeat(32),
+      `|${"2".repeat(32)}`, `${"1".repeat(32)}|`, `${epic}|`, `${epic}\n`, epic.replace("|", " |"), ` ${steamId}`, `${steamId}\n`,
+      `${"g".repeat(32)}|${"2".repeat(32)}`]) {
+      const reason = manualPlayerActionTargetError("soulmask", { id }, target, locale);
+      assert.ok(reason, `${locale}/${id}: ${JSON.stringify(target)}`);
+      assert.match(reason, /EpicAccountId\|ProductUserId/);
+    }
+  }
+  assert.equal(manualPlayerActionTargetError("soulmask", { id: "kick_player" }, "Player Name", "en-US"), null);
+  assert.equal(manualPlayerActionTargetError("unturned", { id: "ban_player" }, "Player Name", "en-US"), null);
+});
+
 test("Dragonwilds persisted ban identities never authorize runtime actions by themselves", () => {
   const banned = { account_id: "11111111111111111111111111111111", display_name: "Same Name" };
   const projected = api.dragonwildsBanPlayer(banned);

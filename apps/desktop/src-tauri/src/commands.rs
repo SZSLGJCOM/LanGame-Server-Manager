@@ -154,6 +154,8 @@ mod commands_mod_capacity;
 mod commands_mod_staging;
 #[path = "commands_mods.rs"]
 mod commands_mods;
+#[path = "commands_steam_app_account.rs"]
+pub(crate) mod commands_steam_app_account;
 #[path = "commands_workshop_collection_removal.rs"]
 pub(crate) mod commands_workshop_collection_removal;
 #[path = "dst_import_mods.rs"]
@@ -166,6 +168,8 @@ pub(crate) mod commands_program_storage;
 pub use commands_program_storage::update_instance_program;
 #[path = "commands_dragonwilds_bans.rs"]
 pub(crate) mod commands_dragonwilds_bans;
+#[path = "commands_native_bans.rs"]
+pub(crate) mod commands_native_bans;
 #[path = "commands_dragonwilds_player_control.rs"]
 mod commands_dragonwilds_player_control;
 #[path = "commands_dragonwilds_player_query.rs"]
@@ -192,6 +196,8 @@ pub(crate) mod commands_runtime_lifecycle;
 mod commands_runtime_observability;
 #[path = "commands_runtime_prestart_update.rs"]
 mod commands_runtime_prestart_update;
+#[path = "commands_runtime_environment.rs"]
+mod commands_runtime_environment;
 #[path = "commands_theforest_control.rs"]
 mod commands_theforest_control;
 #[path = "commands_valheim_control.rs"]
@@ -210,6 +216,8 @@ pub(crate) mod commands_runtime_supervision;
 pub(crate) mod commands_save_import;
 #[path = "commands_stdin_dispatch.rs"]
 pub(crate) mod commands_stdin_dispatch;
+#[path = "commands_steam_workshop_account.rs"]
+pub(crate) mod commands_steam_workshop_account;
 #[path = "commands_steamcmd_errors.rs"]
 mod commands_steamcmd_errors;
 #[path = "commands_steamcmd_preparation.rs"]
@@ -305,7 +313,8 @@ use commands_runtime_supervision::*;
 pub use commands_runtime_supervision::{
     bind_address_candidates, log_frontend_event, overlay_families,
 };
-use commands_steamcmd_errors::{steamcmd_error_excerpt, steamcmd_error_message};
+use commands_steamcmd_errors::steamcmd_error_excerpt;
+pub(crate) use commands_steamcmd_errors::steamcmd_error_message;
 pub use commands_steamcmd_preparation::{
     cancel_steamcmd_preparation, ensure_steamcmd_ready, read_steamcmd_prepare_progress,
 };
@@ -1829,6 +1838,7 @@ pub async fn download_steam_workshop_items<R: tauri::Runtime>(
             ids,
             missing_only.unwrap_or(false),
             app_network::SourcePreference::from_locale(locale.as_deref()),
+            None,
         )
         .await
     })

@@ -5,6 +5,7 @@ import type { LibraryPageMode, RuntimeRefreshIssue } from "../app-state";
 import type { UiMessage } from "../app-ui";
 import type { AiSettings } from "../ai-settings";
 import type { ServerModuleInstallation } from "../server-primary-action";
+import type { SteamInstallationAccountContext } from "../steam-installation-account";
 import type { InstancePanelLoadState } from "../instance-panel-loader";
 import type { InstanceRetirementKind } from "../hooks/useInstanceRetirement";
 import type {
@@ -103,7 +104,7 @@ interface AppViewRouterProps {
   onEnsureSteamCmd: () => void;
   onUninstallSteamCmd: () => void;
   onEnsureStorageOnly: () => void;
-  onInstallModule: (moduleId: string, validate: boolean) => Promise<void>;
+  onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onLibraryCatalogFocusChange: (moduleId: string | null) => void;
   onLibraryCatalogScrollLeftChange: (scrollLeft: number) => void;
   onUninstallModule: (moduleId: string) => void | Promise<void>;

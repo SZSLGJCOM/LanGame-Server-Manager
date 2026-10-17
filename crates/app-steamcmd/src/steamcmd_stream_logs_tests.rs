@@ -180,3 +180,84 @@ async fn console_file_updates_reach_progress_while_the_process_is_still_running(
         [InstallPhase::Downloading, InstallPhase::Verifying]
     );
 }
+
+#[cfg(windows)]
+#[tokio::test]
+async fn workshop_failure_survives_excerpt_eviction_and_exposes_only_new_workshop_logs() {
+    use crate::steamcmd_stream::run_steamcmd_script_with_source;
+    use crate::{InstallDeadline, ps_literal};
+    use std::time::Duration;
+
+    const FAILURE: &str = "[2026-10-17 13:50:44] [AppID 1623730] Update canceled: Failed to initialize depot 1623730, manifest 3622555758966187100 (Missing decryption key) (Missing decryption key)";
+    for source in ["stdout", "console", "none"] {
+        let fixture = Fixture::new();
+        fixture.append(
+            "console_log.txt",
+            b"[2026-10-16 13:50:44] ERROR! Download item 1111111111 failed (Failure).\n",
+        );
+        fixture.append("workshop_log.txt", b"historical Workshop error\n");
+        let console = ps_literal(&fixture.0.join("logs/console_log.txt"));
+        let native_failure = match source {
+            "stdout" => String::from(
+                "[Console]::Out.WriteLine('ERROR! Download item 3816899969 failed (Failure).');",
+            ),
+            "console" => format!(
+                "[IO.File]::AppendAllText({console}, '[2026-10-17 13:50:44] ERROR! Download item 3816899969 failed (Failure).' + [Environment]::NewLine);"
+            ),
+            _ => String::new(),
+        };
+        let noise = if source == "console" {
+            format!(
+                "[IO.File]::AppendAllText({console}, ('later diagnostic ' + $_) + [Environment]::NewLine);"
+            )
+        } else {
+            String::from("[Console]::Out.WriteLine('later diagnostic ' + $_);")
+        };
+        let script = fixture.0.join("writer.ps1");
+        fs::write(
+            &script,
+            format!(
+                concat!(
+                    "$ErrorActionPreference = 'Stop';\n",
+                    "[IO.File]::AppendAllText({workshop}, '{failure}' + [Environment]::NewLine);\n",
+                    "{native_failure}\n",
+                    "1..80 | ForEach-Object {{ {noise} }};\n",
+                    "exit 0\n"
+                ),
+                workshop = ps_literal(&fixture.0.join("logs/workshop_log.txt")),
+                failure = FAILURE,
+                native_failure = native_failure,
+                noise = noise,
+            ),
+        )
+        .unwrap();
+        let launcher = fixture.0.join("steamcmd.cmd");
+        fs::write(
+            &launcher,
+            format!(
+                "@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{}\"\r\n",
+                script.display(),
+            ),
+        )
+        .unwrap();
+        let result = run_steamcmd_script_with_source(
+            launcher.to_str().unwrap(),
+            &fixture.0.join("ignored.txt"),
+            fixture.0.to_str().unwrap(),
+            InstallDeadline::new("Workshop diagnostics fixture", Duration::from_secs(20)),
+            |_| {},
+            None,
+        )
+        .await
+        .unwrap();
+        assert!(result.success, "{source}: {}", result.excerpt);
+        assert_eq!(result.exit_code, Some(0));
+        assert_eq!(
+            result.workshop_download_failed,
+            source != "none",
+            "{source}"
+        );
+        assert!(!result.excerpt.contains("ERROR! Download item"), "{source}");
+        assert_eq!(result.workshop_log_excerpt.as_deref(), Some(FAILURE));
+    }
+}

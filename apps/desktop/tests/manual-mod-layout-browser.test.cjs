@@ -5,7 +5,7 @@ const test = require("node:test");
 const { runBrowserFixture } = require("./helpers/runtime-browser-process.cjs");
 
 for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
-  test(`manual Mod drop targets fill the remaining workspace at ${viewport.width}x${viewport.height}`,
+  test(`manual Mod lists receive drops without permanent guidance at ${viewport.width}x${viewport.height}`,
     { timeout: 90000 }, async () => {
       const output = process.env.LANGAME_MANUAL_MOD_LAYOUT_OUTPUT;
       if (output) {
@@ -19,7 +19,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
         screenshotPath: output ? path.join(output, `${name}.png`) : undefined });
       if (output) await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(report, null, 2));
       console.log(`MANUAL_MOD_LAYOUT ${JSON.stringify({ viewport: report.viewport, checks: report.checks?.length,
-        failures: report.failures, measurements: report.measurements, help_measurements: report.help_measurements, writes: report.writes,
+        failures: report.failures, measurements: report.measurements, writes: report.writes,
         browser_errors: report.browser_errors, browser_exited: report.browser_exited,
         browser_processes_remaining: report.browser_processes_remaining, scratch_removed: report.scratch_removed })}`);
       assert.equal(report.status, "passed", report.error);

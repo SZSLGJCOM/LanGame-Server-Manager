@@ -93,3 +93,25 @@ fn final_transcript_rejects_incomplete_utf8_and_control_sequences() {
         );
     }
 }
+
+#[test]
+fn interactive_snapshots_expose_unterminated_prompts_and_subsequent_edits() {
+    let mut terminal = TerminalTranscript::new(80, 8);
+    let mut output = push(&mut terminal, b"Pass").unwrap();
+    assert!(output.is_empty());
+    terminal.drain_pending_rows(&mut output);
+    assert_eq!(output, "Pass\n");
+    output = push(&mut terminal, b"word: ").unwrap();
+    terminal.drain_pending_rows(&mut output);
+    assert_eq!(output, "Password:\n");
+    output.clear();
+    terminal.drain_pending_rows(&mut output);
+    assert!(
+        output.is_empty(),
+        "unchanged screen snapshots must not repeat"
+    );
+    output = push(&mut terminal, b"\rSteam Guard:\x1b[K").unwrap();
+    terminal.drain_pending_rows(&mut output);
+    assert_eq!(output, "Steam Guard:\n");
+    assert!(finish(&mut terminal).unwrap().is_empty());
+}

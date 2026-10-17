@@ -1,5 +1,6 @@
 import { version as desktopVersion } from "../package.json";
 import { MockDragonwildsWorldSettings } from "./api-mock/dragonwilds-world-settings";
+import { MockNativeBanStore } from "./api-mock/native-bans";
 import { buildMockAstroneerSaveCatalog } from "./api-mock/astroneer-saves";
 import { buildMockValheimWorldRules } from "./api-mock/valheim-world-rules";
 import { MockSatisfactoryWorldSettings } from "./api-mock/satisfactory-world-settings";
@@ -144,6 +145,7 @@ const mockWorkshopInstallationStore = new Map<string, Set<string>>();
 const mockBroadcastPolicyStore = new Map<string, InstanceBroadcastPolicy>();
 const mockBroadcastEventStore = new Map<string, InstanceBroadcastEvent[]>();
 const mockLivePlayerStore = new MockLivePlayerStore();
+const mockNativeBanStore = new MockNativeBanStore();
 const mockDstWorldStateStore = new MockDstWorldStateStore();
 const mockArkMapLogs = new MockArkMapLogs();
 let mockSteamCmdProgress: SteamCmdPrepareSnapshot | null = null;
@@ -1289,6 +1291,14 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
       return mockLivePlayerStore.readDragonwildsBans(buildMockLivePlayerContext(instanceId)) as T;
     }
+    case "read_instance_native_bans": {
+      const instanceId = String(args?.instanceId ?? "");
+      return mockNativeBanStore.read(buildMockLivePlayerContext(instanceId)) as T;
+    }
+    case "unban_instance_native_ban": {
+      const instanceId = String(args?.instanceId ?? "");
+      return mockNativeBanStore.unban(buildMockLivePlayerContext(instanceId), String(args?.accountId ?? "")) as T;
+    }
     case "refresh_instance_live_players": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockLivePlayerStore.refresh(buildMockLivePlayerContext(instanceId)) as T;
@@ -1307,6 +1317,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const context = buildMockLivePlayerContext(String(input.instance_id ?? ""));
       const player = mockLivePlayerStore.read(context).entries.find((entry) => entry.player_key === input.player_key);
       const result = mockLivePlayerStore.execute(context, input);
+      if (input.action_id === "ban_player" || input.action_id === "ban_user") mockNativeBanStore.ban(context, player);
       if (context.module_id === "sevendaystodie" && input.action_id === "ban_player") {
         const current = ensureMockInstanceDetails(context.instance_id);
         const settings = buildMockSevenDaysBanSettings(
@@ -2156,6 +2167,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       mockBroadcastPolicyStore.delete(instanceId);
       mockBroadcastEventStore.delete(instanceId);
       mockLivePlayerStore.delete(instanceId);
+      mockNativeBanStore.delete(instanceId);
       return result as T;
     }
     case "update_instance_autostart": {

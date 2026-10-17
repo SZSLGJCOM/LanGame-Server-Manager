@@ -169,7 +169,7 @@ def classify(
     has_mod_fields = bool(fields)
 
     if frontend_guardrail:
-        return "not_modelled", "This workspace only explains client dependencies; it cannot install server Mods."
+        return "not_modelled", "The Mods tab is disabled: these Workshop packages are client dependencies, not server Mods."
 
     if not frontend_tab and not has_manifest:
         return "not_modelled", "No LanGame Mod/Workshop install workflow or workspace is declared."
@@ -209,12 +209,14 @@ def audit_rows() -> list[dict[str, str]]:
             fields.sort()
         has_manifest = bool(workshop or source or staging or enablement)
         catalog_entry = catalog.get(module_id, {})
-        # Match moduleHasModWorkbench: a not_modelled catalog entry alone does not expose a tab.
-        frontend_tab = has_manifest or (module_id in catalog and module_id not in guardrail_ids)
-        frontend_guardrail = frontend_tab and (
+        # Match modWorkbenchAvailability: client-only content and unverified workflows disable the Mods tab.
+        catalog_blocked = module_id in guardrail_ids and (
             catalog_entry.get("installScope") == "client_only"
-            or (module_id in guardrail_ids and not has_manifest)
+            or not (workshop or staging or enablement)
         )
+        frontend_tab = (has_manifest or module_id in catalog) and not catalog_blocked
+        # A declared manifest that the catalog guardrail keeps behind a disabled tab.
+        frontend_guardrail = catalog_blocked and has_manifest
         evidence = materialization_evidence(module_id, fields, storage_text)
         if frontend_guardrail:
             evidence = "; ".join(filter(bool, [evidence, "UI: unsupported guardrail"]))
@@ -340,7 +342,7 @@ def write_markdown(rows: list[dict[str, str]]) -> None:
         source = row["workshop"] or row["source"] or "-"
         enablement = row["enablement"] or "-"
         target = row["manual_staging"] or "-"
-        ui = "explanation only" if row["frontend_guardrail"] == "True" else "workspace" if row["frontend_tab"] == "True" else "hidden"
+        ui = "disabled tab" if row["frontend_guardrail"] == "True" else "workspace" if row["frontend_tab"] == "True" else "hidden"
         lines.append(
             f"| {index} | `{row['module_id']}` | {row['status']} | {ui} | {row['package_installation']} | {source}<br>{target} | {enablement} | {row['collections']} | {row['note']} |"
         )

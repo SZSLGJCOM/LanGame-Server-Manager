@@ -16,6 +16,7 @@ use super::{
 
 pub(super) const STEAMCMD_PREPARE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 const STEAMCMD_OUTPUT_IDLE_TIMEOUT: Duration = Duration::from_secs(90);
+const STEAMCMD_REVERIFICATION_TIMEOUT: Duration = Duration::from_secs(90);
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -83,6 +84,41 @@ where
             prepare_locked(settings, deadline, &mut reporter).await
         })
         .await
+}
+
+/// The caller owns the SteamCMD lifecycle lease. Recheck only an already
+/// verified managed runtime whose native files changed, without entering the
+/// dependency install/update path or acquiring the same lease a second time.
+pub(super) async fn require_ready_locked<F: FnMut(SteamCmdPrepareProgress)>(
+    settings: &AppSettings,
+    deadline: InstallDeadline,
+    on_progress: F,
+) -> Result<SteamCmdStatus, SteamCmdError> {
+    deadline.check_cancelled()?;
+    let status = steamcmd_status(settings);
+    if status.ready && status.executable_exists {
+        return Ok(status);
+    }
+    if !super::steamcmd_readiness::needs_reverification(
+        std::path::Path::new(&status.root),
+        status.ownership,
+    ) {
+        return Err(SteamCmdError::SteamCmdNotReady {
+            path: status.executable_path,
+        });
+    }
+    let deadline = deadline.limited_to(STEAMCMD_REVERIFICATION_TIMEOUT);
+    deadline.check_cancelled()?;
+    let mut reporter = PrepareReporter::new(on_progress);
+    reporter.stage(
+        SteamCmdPreparePhase::Verifying,
+        "SteamCMD runtime changed since its last verification; checking the existing runtime with +quit...",
+    );
+    // The preparation runner requires fresh console/API markers, a successful
+    // exit and an empty owned process tree before this call can return success.
+    warm_up_steamcmd(&status, deadline, &mut reporter).await?;
+    deadline.check_cancelled()?;
+    reporter.ready(status)
 }
 
 async fn prepare_locked<F: FnMut(SteamCmdPrepareProgress)>(
@@ -347,3 +383,7 @@ fn parse_download_count(value: &str) -> Option<u64> {
 #[cfg(test)]
 #[path = "steamcmd_prepare_tests.rs"]
 mod tests;
+
+#[cfg(all(test, windows))]
+#[path = "steamcmd_reverification_tests.rs"]
+mod reverification_tests;

@@ -89,9 +89,9 @@ function stateCopy(
   }
   switch (presentation.kind) {
     case "empty":
-      return { icon: "inbox", title: selectLocaleText(locale, "当前没有在线玩家", "No players are online"), copy: selectLocaleText(locale, "这是服务器返回的完整空结果。", "The server returned a complete empty result.") };
+      return { icon: "inbox", title: selectLocaleText(locale, "当前没有在线玩家", "No players are online"), copy: "" };
     case "stopped":
-      return { icon: "stop-circle", title: selectLocaleText(locale, "服务器尚未运行", "Server is not running"), copy: selectLocaleText(locale, "启动服务器后可刷新玩家信息。", "Start the server to refresh player information.") };
+      return { icon: "stop-circle", title: selectLocaleText(locale, "服务器尚未运行", "Server is not running"), copy: "" };
     case "adapter-unavailable":
       return { icon: "users", title: selectLocaleText(locale, "在线玩家读取尚未接入", "Player-list adapter unavailable"), copy: localizedIssueCopy(locale, snapshot, "LanGame 尚未接入此服务器的在线玩家读取通道。", "LanGame has not connected a player-list adapter for this server.") };
     case "count-only":
@@ -129,9 +129,9 @@ function stateCopy(
       return { icon: "alert-triangle", title: selectLocaleText(locale, "玩家列表不完整", "Player list is incomplete"), copy: localizedIssueCopy(locale, snapshot, "服务器响应未完整结束，不能据此确认无人在线或执行成员操作。", "The response did not complete, so it cannot prove an empty server or authorize member actions.") };
     case "refreshing-with-rows":
     case "refreshing-without-rows":
-      return { icon: "refresh", title: selectLocaleText(locale, "正在刷新玩家快照", "Refreshing player snapshot"), copy: selectLocaleText(locale, "等待服务器返回在线玩家信息。", "Waiting for online player information from the server.") };
+      return { icon: "refresh", title: selectLocaleText(locale, "正在刷新玩家快照", "Refreshing player snapshot"), copy: "" };
     default:
-      return { icon: "users", title: selectLocaleText(locale, "正在读取在线玩家", "Loading online players"), copy: selectLocaleText(locale, "这里只显示服务器能够可靠确认的成员。", "Only members reliably confirmed by the server are shown.") };
+      return { icon: "users", title: selectLocaleText(locale, "正在读取在线玩家", "Loading online players"), copy: "" };
   }
 }
 
@@ -147,7 +147,7 @@ export function LivePlayerState(props: LivePlayerStateProps) {
       <span className="player-center-state-icon" aria-hidden="true"><ShellIcon name={copy.icon} /></span>
       <div>
         <strong>{copy.title}</strong>
-        <p>{copy.copy}</p>
+        {copy.copy ? <p>{copy.copy}</p> : null}
       </div>
       {(props.presentation.kind === "misconfigured" || props.snapshot?.issue?.code === "authentication_failed" || (props.snapshot?.issue?.setting_keys.length ?? 0) > 0) && props.onOpenSettings ? (
         <button type="button" className="secondary-button" onClick={props.onOpenSettings}>

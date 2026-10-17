@@ -104,25 +104,40 @@ export const MOD_WORKFLOW_CATALOG: Record<string, ModWorkflowCatalogEntry> = {
   }
 };
 
+export type ModWorkbenchAvailability = "available" | "client_only" | "unsupported" | "absent";
+
 export function moduleHasModWorkbench(moduleId?: string | null, moduleDetails?: ModuleDetails | null): boolean {
+  return modWorkbenchAvailability(moduleId, moduleDetails) === "available";
+}
+
+// Client-only content and unverified (not_modelled) workflows have no server-side workbench, so
+// the catalog disables the Mods tab instead of opening an explanation-only workspace.
+export function modWorkbenchAvailability(
+  moduleId?: string | null,
+  moduleDetails?: ModuleDetails | null
+): ModWorkbenchAvailability {
   if (!moduleId) {
-    return false;
+    return "absent";
   }
 
   const catalogEntry = MOD_WORKFLOW_CATALOG[moduleId];
+  if (catalogEntry?.installScope === "client_only") {
+    return "client_only";
+  }
+  if (
+    catalogEntry?.supportStatus === "not_modelled" &&
+    !moduleDetails?.workshop &&
+    !moduleDetails?.mods?.manual_staging &&
+    !moduleDetails?.mods?.enablement
+  ) {
+    return "unsupported";
+  }
+
   const hasModuleDefinedModWorkflow = Boolean(
     moduleDetails?.workshop ||
     moduleDetails?.mods?.source ||
     moduleDetails?.mods?.manual_staging ||
     moduleDetails?.mods?.enablement
   );
-
-  if (catalogEntry?.supportStatus === "not_modelled" && !hasModuleDefinedModWorkflow) {
-    return false;
-  }
-
-  return Boolean(
-    catalogEntry ||
-    hasModuleDefinedModWorkflow
-  );
+  return catalogEntry || hasModuleDefinedModWorkflow ? "available" : "absent";
 }
