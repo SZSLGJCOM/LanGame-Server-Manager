@@ -55,8 +55,12 @@ jobs:
           key: rustsec-${{ runner.os }}-${{ runner.arch }}-${{ env.CARGO_AUDIT_VERSION }}-${{ hashFiles('rust-toolchain.toml') }}
 
       - name: Install the pinned RustSec scanner
+        if: steps.scanner-cache.outputs.cache-hit != 'true'
         run: |
           cargo install cargo-audit --version "$CARGO_AUDIT_VERSION" --locked --root "$RUNNER_TEMP/lgsm-rustsec"
+
+      - name: Verify and enable the RustSec scanner
+        run: |
           test "$("$RUNNER_TEMP/lgsm-rustsec/bin/cargo-audit" --version)" = "cargo-audit $CARGO_AUDIT_VERSION"
           echo "$RUNNER_TEMP/lgsm-rustsec/bin" >> "$GITHUB_PATH"
 

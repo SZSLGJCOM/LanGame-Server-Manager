@@ -8,10 +8,12 @@ const GAMES_ROOT_ENV: &str = "LANGAME_SMOKE_GAMES_ROOT";
 const MAX_RUN_LABEL_BYTES: usize = 12;
 
 pub(super) fn smoke_workspace_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
+    env::var_os("LANGAME_SMOKE_SOURCE_ROOT")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.."))
         .canonicalize()
-        .expect("workspace root")
+        .expect("native test source root")
 }
 
 pub(super) fn smoke_games_root() -> PathBuf {

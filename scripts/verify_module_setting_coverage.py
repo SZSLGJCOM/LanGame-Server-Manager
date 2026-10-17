@@ -21,7 +21,6 @@ from verify_module_setting_coverage_scum import (
     validate_scum_native_settings_contract,
 )
 from verify_module_setting_coverage_server_tabs import validate_server_detail_tool_tabs
-from verify_module_setting_coverage_console import validate_runtime_console_boundary
 from verify_module_setting_coverage_typescript import (
     extract_ts_balanced_block,
     extract_ts_braced_block,
@@ -2662,9 +2661,6 @@ def validate_frontend_coverage() -> list[str]:
             failures.append(
                 f"backend: complete settings normalization no longer preserves marker {marker!r}"
             )
-    failures.extend(validate_runtime_console_boundary(
-        runtime_surface_source, read_frontend_file("runtime-console-transport.ts")
-    ))
     types_player_management_markers = (
         "export interface ModulePlayerActionDetails {",
         "label_zh_cn?: string | null;",

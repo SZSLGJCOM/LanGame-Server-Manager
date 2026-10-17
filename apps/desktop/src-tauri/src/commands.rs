@@ -168,8 +168,6 @@ pub(crate) mod commands_program_storage;
 pub use commands_program_storage::update_instance_program;
 #[path = "commands_dragonwilds_bans.rs"]
 pub(crate) mod commands_dragonwilds_bans;
-#[path = "commands_native_bans.rs"]
-pub(crate) mod commands_native_bans;
 #[path = "commands_dragonwilds_player_control.rs"]
 mod commands_dragonwilds_player_control;
 #[path = "commands_dragonwilds_player_query.rs"]
@@ -180,6 +178,8 @@ mod commands_enshrouded_control;
 mod commands_instance_reconciliation;
 #[path = "commands_instance_retirement.rs"]
 pub(crate) mod commands_instance_retirement;
+#[path = "commands_native_bans.rs"]
+pub(crate) mod commands_native_bans;
 #[path = "commands_player_access.rs"]
 pub(crate) mod commands_player_access;
 #[path = "commands_player_counts.rs"]
@@ -190,14 +190,14 @@ pub(crate) mod commands_program_inventory;
 mod commands_runtime_actions;
 #[path = "commands_runtime_ark.rs"]
 mod commands_runtime_ark;
+#[path = "commands_runtime_environment.rs"]
+mod commands_runtime_environment;
 #[path = "commands_runtime_lifecycle.rs"]
 pub(crate) mod commands_runtime_lifecycle;
 #[path = "commands_runtime_observability.rs"]
 mod commands_runtime_observability;
 #[path = "commands_runtime_prestart_update.rs"]
 mod commands_runtime_prestart_update;
-#[path = "commands_runtime_environment.rs"]
-mod commands_runtime_environment;
 #[path = "commands_theforest_control.rs"]
 mod commands_theforest_control;
 #[path = "commands_valheim_control.rs"]

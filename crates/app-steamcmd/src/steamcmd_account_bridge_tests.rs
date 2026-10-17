@@ -32,11 +32,11 @@ public static class AccountBridgeFixture {
     string phase = script < 0 ? "interactive" : "cache";
     if (Array.IndexOf(args, "+login") >= 0 || Array.IndexOf(args, "selected_account") >= 0
       || Array.IndexOf(args, "7Q9XW") >= 0 || Array.IndexOf(args, "MAIL7") >= 0
-      || Array.IndexOf(args, "synthetic-password") >= 0
+      || Array.IndexOf(args, "fixture-password") >= 0
       || (script < 0 && Array.IndexOf(args, "+quit") >= 0)) return 80;
     if (script >= 0) {
       string contents = File.ReadAllText(args[script + 1]);
-      if (contents.Contains("7Q9XW") || contents.Contains("MAIL7") || contents.Contains("synthetic-password")) return 85;
+      if (contents.Contains("7Q9XW") || contents.Contains("MAIL7") || contents.Contains("fixture-password")) return 85;
     }
     int update = Array.IndexOf(args, "-overridepackageurl");
     string endpoint = update >= 0 && update + 1 < args.Length ? args[update + 1] : "plain";
@@ -78,13 +78,13 @@ public static class AccountBridgeFixture {
           Console.WriteLine("Warning: invalid cached credentials.");
         }
         Console.Write("Password: "); Console.Out.Flush();
-        string password = mode == "retry-password-mobile" && attempt == 2 ? "synthetic-retry-password" : "synthetic-password";
+        string password = mode == "retry-password-mobile" && attempt == 2 ? "fixture-server-password" : "fixture-password";
         if (Console.ReadLine() != password) return 86;
         File.AppendAllText("password-reads", "native\n");
         if (attempt == 1 && mode.StartsWith("retry-password")) {
           Console.WriteLine("Login Failure: Invalid Password");
           Console.Write("Password: "); Console.Out.Flush();
-          if (Console.ReadLine() != "synthetic-retry-password") return 87;
+          if (Console.ReadLine() != "fixture-server-password") return 87;
           File.AppendAllText("password-reads", "retry\n");
         }
       }
@@ -237,9 +237,9 @@ public static class AccountBridgeFixture {
                             "a replacement native attempt must reuse the latest password only once"
                         );
                         Some(if password_challenges == 1 {
-                            "synthetic-password"
+                            "fixture-password"
                         } else {
-                            "synthetic-retry-password"
+                            "fixture-server-password"
                         })
                     }
                     SteamWorkshopAccountPhase::EmailCode => Some("MAIL7"),

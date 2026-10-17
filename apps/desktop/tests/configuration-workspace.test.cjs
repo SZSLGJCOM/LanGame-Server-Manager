@@ -170,7 +170,13 @@ test("keeps the six instance tabs in their established order", () => {
     "servers.tabs.runtime", "servers.tabs.settings", "servers.tabs.mods",
     "servers.tabs.players", "servers.tabs.maintenance", "servers.tabs.gmTools"
   ]);
-  assert.match(serversViewSource, /const detailTabs = buildServerDetailTabSpecs\(/);
+  const { ZH_CN_EXTRA_MESSAGES } = require("../src/i18n-messages-zh-extra.ts");
+  const { EN_US_EXTRA_MESSAGES } = require("../src/i18n-messages-en-extra.ts");
+  for (const catalog of [ZH_CN_EXTRA_MESSAGES, EN_US_EXTRA_MESSAGES]) {
+    const localized = buildServerDetailTabSpecs({ moduleId: "corekeeper", moduleDetails: null, t: (key) => catalog[key] });
+    assert.deepEqual(localized.map((tab) => tab.id), ids);
+    assert.ok(localized.every((tab) => typeof tab.label === "string" && tab.label.trim().length > 0));
+  }
 });
 
 test("archive tabs preserve module capabilities and require restoration for tools", () => {

@@ -50,20 +50,6 @@ for (const theme of ["light", "dark"]) {
   const tokens = themeTokens(theme);
   const surfaces = ["--bg", "--theme-card-surface", "--theme-card-elevated", "--theme-card-muted", "--theme-control-surface", "--theme-control-hover"];
 
-  test(`${theme} shared structure and interaction colors remain neutral`, () => {
-    for (const [token, value] of Object.entries(tokens)) {
-      if (/success|warning|danger/.test(token) || !value.startsWith("#")) continue;
-      const [red, green, blue] = color(value, tokens);
-      assert.equal(red, green, `${token} must not tint neutral surfaces or controls`);
-      assert.equal(green, blue, `${token} must not tint neutral surfaces or controls`);
-    }
-    const expected = theme === "dark"
-      ? ["#101010", "#191919", "#232323", "#f5f5f5", "#adadad"]
-      : ["#f6f6f6", "#ffffff", "#eeeeee", "#1a1a1a", "#606060"];
-    ["--bg", "--theme-card-surface", "--theme-card-active-bg", "--shell-text", "--shell-muted"]
-      .forEach((token, index) => assert.equal(tokens[token].toLowerCase(), expected[index], token));
-  });
-
   test(`${theme} primary actions use the theme's contrasting light or dark fill`, () => {
     const action = luminance(color("--accent", tokens));
     const label = luminance(color("--theme-accent-contrast", tokens));

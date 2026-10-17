@@ -65,10 +65,11 @@ function mountWorkbench(registration, options = {}) {
         total_lines: retainedLines.length, truncated: retainedLines.length > 400, read_error: null })) };
     if (id === "../../app-state") return { describeError: String };
     if (id === "../../components/ShellIcon") return { ShellIcon: () => null };
+    if (id === "./SteamWorkshopAccountConsole") return { SteamWorkshopAccountConsole: () => null };
     return originalRequire(id);
   };
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
-  const tree = loaded.exports.RuntimeSurfaceWorkbench({
+  let tree = loaded.exports.RuntimeSurfaceWorkbench({
     moduleDetails: options.moduleDetails === undefined ? {
       summary: { id: "dontstarve" }, runtime: { shutdown: { commands: [{ transport: "stdin" }] } }
     } : options.moduleDetails,
@@ -80,6 +81,7 @@ function mountWorkbench(registration, options = {}) {
     onSendRuntimeCommand: options.onSendRuntimeCommand ?? (async () => null), onSuppressRuntimeWindows: async () => {},
     onRetryReads: options.onRetryReads
   });
+  while (typeof tree?.type === "function") tree = tree.type(tree.props);
   const cleanups = effects.map((effect) => effect());
   let disposed = false;
   let emittedByteOffset = 0;

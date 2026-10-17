@@ -1,6 +1,6 @@
 # Desktop release preparation
 
-The repository defaults to local builds: the update feed is empty, update checks are disabled, and ordinary NSIS builds do not require an updater signing key. Release preparation is local and does not publish a GitHub Release, upload assets, create a tag, change repository visibility, or enable a publishing workflow.
+Local builds disable update checks and do not require an updater signing key. The release script prepares or builds artifacts; publishing is a separate step after acceptance.
 
 The supported release target is Windows x86_64 with a stable `major.minor.patch` version. Keep `Cargo.toml` (`workspace.package.version`), `apps/desktop/package.json`, and `apps/desktop/src-tauri/tauri.conf.json` aligned. The desktop crate inherits the workspace version. Change the corresponding lockfile package version when bumping a version. Release builds statically link the Visual C++ runtime and use the UCRT provided by supported Windows systems, so a separate Visual C++ Redistributable is not required.
 
@@ -46,7 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
     -OutputRoot 'C:\ReleaseStaging\LanGame-0.0.1-update-plan' -EnableGitHubUpdates
 ```
 
-That local merge configuration points to `https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/latest/download/latest.json` and sets `VITE_LANGAME_DESKTOP_UPDATES_ENABLED=true` in the frontend build command. The checked-in default configuration remains disabled. A private repository or unpublished release does not provide an anonymous public update feed; do not embed GitHub tokens in the app or URLs.
+That merge configuration points to `https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/latest/download/latest.json` and sets `VITE_LANGAME_DESKTOP_UPDATES_ENABLED=true` in the frontend build command. The checked-in default remains disabled. Update feeds and artifacts must be anonymously accessible; credentials never belong in the app or URLs.
 
 Use `-EnableRegionalUpdates` to prepare regional release candidates. Publish these candidates only after the [regional metadata service](../deploy/desktop-updates/README.md) has been deployed and verified. It enables updates with `https://langame.cn/updates/server-manager/latest.json` first and the independent GitHub feed second. It works with both small and offline installers. Clients also try the two built-in public proxy feeds (`gh-proxy.org` and `ghfast.top`) when earlier checks fail; each source has a 12-second check budget and the complete check has a 60-second deadline. Local builds with no configured endpoint remain disabled.
 
@@ -113,7 +113,7 @@ Write the user-facing changes in a UTF-8 text file and pass it with `-NotesFile`
 
 An enabled desktop build checks its configured manifest sources once after initialization and then every four hours while no update is already available, downloading or installing. A higher version triggers the prompt; dismissing a version suppresses repeated prompts during the session. This is polling, not immediate server push. An already-pending version remains selected until installation or another explicit check/restart, so editing its notes does not interrupt the current prompt. A valid response reporting no update does not prevent checking independent feeds, because a mirror may still be synchronizing.
 
-Release the incremented version's installer, signature and matching manifest together when publication is authorized. Uploading only an installer does not notify clients. Binary distribution does not require publishing application source: a separate public distribution repository can host the feed, but using one requires changing the release script's feed/asset URLs and the frontend's versioned download-page URL together. The current scripts do not make that separation or add private-repository authentication.
+Publish the incremented version's installer, signature and matching manifest together. The release description and `latest.json.notes` use the same release notes. The feed, artifact URLs and frontend download-page URL must refer to the same repository and version.
 
 ## Installer and update acceptance
 
@@ -149,42 +149,32 @@ Before public distribution, use disposable data on a supported Windows test mach
 5. Interrupted download, unavailable feed, incorrect signatures, and installation failure report actionable errors; an unsuccessful download does not stop running servers.
 6. Record the final installer's Windows signature status. If application publisher signing is configured, verify its intended publisher and certificate chain. Verify both a trusted update and a tampered update through the actual Tauri updater regardless of Windows publisher signing.
 
-## When publication is separately authorized
+## Publish a verified release
 
-Create the corresponding stable `v<version>` tag and release with release notes only after the private acceptance work is complete. Attach the small installer, its `.exe.sig`, `latest.json`, and `SHA256SUMS`, plus the offline installer, its `.exe.sig`, and `SHA256SUMS.offline`. Keep plans, inventories and build receipts local. Confirm both signatures match the established public key and all uploaded bytes match their respective checksum inventory. Only the small installer belongs in `latest.json`; retain the offline companion as a manual download. The updater consumes signed NSIS executables directly; its optional ZIP archive compatibility feature is disabled, while TLS and system proxy support remain enabled. The manifest uses the exact versioned asset URL, while clients read the stable `releases/latest/download/latest.json` endpoint. A draft or prerelease is not the stable latest-release channel. Never replace an already-distributed installer under the same version.
+After CI and package acceptance pass for the release candidate, create the stable `v<version>` tag and release. Upload exactly seven public assets:
 
-A build distributed while checks were disabled needs one manual installation of an update-enabled build. Uploading an installer alone cannot enable updates in those older binaries. Source publication and repository visibility remain a separate decision from preparing installer assets.
+- Small installer and its `.exe.sig`.
+- Offline installer and its `.exe.sig`.
+- `latest.json`, `SHA256SUMS`, and `SHA256SUMS.offline`.
+
+Keep plans, inventories and build receipts local. Verify both updater signatures against the established public key and compare uploaded bytes with the checksum inventories. Only the small installer belongs in `latest.json`; the offline companion is a manual download. Clients consume signed NSIS executables directly through the stable `releases/latest/download/latest.json` feed, whose manifest names an exact versioned asset URL. Drafts and prereleases do not update the stable channel. Never replace a distributed installer under the same version.
+
+A build distributed with update checks disabled needs one manual installation of an update-enabled build.
 
 References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/), [Windows code signing](https://v2.tauri.app/distribute/sign/windows/), [GitHub Releases](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
 
 ## 简体中文操作摘要
 
-打包前使用精确候选提交的完整验证结果。自动 push 已选中并通过全部前端、Rust 和原生检查时，保留该轮地址及验收产物，无须为同一候选再次手动跑完整回归；部分检查、未提交的源码变化或后续提交不能复用此结论。构建脚本不会再执行全套测试，实际安装包的签名、安装、升级及存档保留验收仍独立完成。
+完整参数与验收要求见上文；以下按实际发布顺序执行：
 
-默认执行脚本只在仓库外生成本地计划与合并配置，不构建、不联网、不上传、不创建 Release、不公开源码。默认不需要更新私钥、不开启更新源。`-SignUpdates` 生成更新签名；`-EnableGitHubUpdates` 同时启用 GitHub 更新源并要求匹配的签名私钥。`-BuildPortable` 用于普通 Windows 构建机，受管环境应遵循其指定构建入口。
+1. 将 Cargo、npm、Tauri 及对应锁文件版本统一为待发布版本。保留精确候选提交的完整 CI 结果；同一候选已通过完整检查时无需重复运行。
+2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机使用 `-BuildManaged`，签名和更新选项沿用受管发行入口。私钥通过发行环境传入，保留现有 updater 公钥。
+3. 小包使用 `embedBootstrapper`，缺 WebView2 时从微软联网安装。用独立输出目录加 `-OfflineInstaller` 构建内嵌完整 WebView2 的离线包；两包版本、更新通道与签名密钥一致。
+4. `-EnableGitHubUpdates` 启用 GitHub 更新；`-EnableRegionalUpdates` 同时启用官网地区清单。地区服务、GitCode 附件与匿名读取须先通过[部署验收](../deploy/desktop-updates/README.md)。
+5. 检查实际安装包、两份 updater 签名、微软 WebView2 载荷签名和两个应用可执行文件的运行库依赖。在隔离 Windows 环境执行安装、升级、卸载、数据保留、真实开服和旧版在线更新验收。编译夹具或配置回执不能替代实际安装。
+6. 创建正式 `v<version>` Release，上传两包、两份 `.exe.sig`、`latest.json`、`SHA256SUMS` 和 `SHA256SUMS.offline`。核对上传后文件名、版本、哈希与匿名下载；本地计划和回执不上传。
+7. 核实本机镜像发布器的该版本记录为 `succeeded`，再核对官网地区清单和 GitCode 的完整版本指针。GitHub 镜像工作流保持禁用，确保只有一个发布者。
 
-可用 `-EnableRegionalUpdates` 提前构建待发布的小包或离线包；正式发布前必须部署并验证[地区更新清单服务](../deploy/desktop-updates/README.md)。客户端依次检查官网清单、独立 GitHub 清单及内置的 `gh-proxy.org`、`ghfast.top` 公共代理；单源检查最多 12 秒，整体最多 60 秒。某个镜像返回“无更新”时仍检查其他源，避免同步延迟阻挡新版本。本地空更新源配置保持禁用。
+客户端初始化后检查一次，空闲时每四小时检查；关闭某版本提示后，本次会话不重复提示。更新下载并验签完成后才协调停止后台及游戏进程。手动安装或卸载前使用应用的安全退出，关闭到托盘不等于退出。
 
-官网只返回小型更新清单，按 APNIC 中国地址分配记录选择已验证的 GitCode 附件，其他地址选择 GitHub，安装包不经过官网服务器。地址分配记录只是地区判断依据，不保证实际物理位置。下载始终保持选定版本和签名，依次尝试清单附件、同版本 GitHub 附件及两个公共代理；30 秒不足 1 MiB 时切换下一源，第二轮允许慢速传输但拒绝连续 30 秒无进展，整体最多 30 分钟。每次切源重置进度，完整安装包经 Tauri 验签通过后才停止服务器并安装。公共代理政策和可用性须独立核实，不能作为可用性承诺。
-
-发布工作站每五分钟检查 GitHub 正式 Release，将两包、两份签名、两份校验表和唯一 `latest.json` 同步至 GitCode；需要工作站开机、用户登录且已配置的 GitHub 代理可用。GitHub 镜像工作流保持禁用，避免两个发布者同时写入。只有七份附件完成匿名下载、哈希及安装包密码学验签后，才提交国内清单指针；失败保留上一份有效指针。凭据保存、网络路由和失败恢复见[服务指南](../deploy/desktop-updates/README.md)。客户端要求签名的可信注释包含实际版本，不得为镜像关闭 `requireSignedVersion`，以防旧包被标成新版本。
-
-自动更新小包拒绝阈值为 256 MiB，同步发布器与客户端同时执行该限制；响应长度声明或实际流量超限时请求取消当前源。插件在下次异步让出时才执行取消，当前数据块和缓冲区预留容量可能额外占用内存，因此这不是进程内存峰值的硬上限。离线包仍供手动下载。
-
-中英文默认小包使用 `embedBootstrapper`，内嵌微软引导器，已有 WebView2 时直接复用，缺少时须联网从微软安装。构建机从 `https://go.microsoft.com/fwlink/p/?LinkId=2124703` 获取引导器；用户端运行时下载由该微软程序处理，仓库不固定其内部下载地址。无法连接微软或需要断网安装时，使用显式 `-OfflineInstaller` 构建的独立离线包，内置完整 x64 Evergreen 安装程序。两包使用相同版本和签名密钥，各自保留独立配置回执；离线包不含游戏服务端文件，启用更新后仍通过小包更新。构建机仍须连接微软官方分发路径和 Tauri 官方工具地址，不使用第三方镜像。发布前检查两包实际内嵌微软载荷的 Authenticode 签名与 SHA-256，分别验证缺运行时的联网安装、联网失败、离线包断网安装及已有运行时复用；配置测试及源码回执不能替代真实验收。
-
-每版更新说明用 UTF-8 文本通过 `-NotesFile` 写入 `latest.json.notes`，软件按纯文本和换行显示。GitHub Release 正文与软件内说明目前不自动同步，应使用同一份文案。启用更新的客户端初始化后检查一次，之后在没有待更新版本、下载或安装任务时每四小时检查；这不是实时推送。新版本须连同安装包、签名和清单一起发布，仅上传安装包不会触发通知。保持源码私有并公开二进制时，可另用公开发行仓库，但须同步修改更新源、资产下载和前往下载页面三处地址，当前脚本不会自动拆分。
-
-在线升级复用已保存的安装器语言；未保存时使用系统语言，不弹语言选择框。手动交互安装仍显示语言选择框。安装器守卫测试入口同时运行八个隔离的语言初始化场景，覆盖旧版更新器的 `/P /UPDATE /R /ARGS` 参数组合。
-
-`-ArtifactRoot` 可导出已有当前版本 `.exe` 与 `.exe.sig`，生成 `latest.json`、`SHA256SUMS` 和回执，但不能修改或证明导入包内置的更新开关。Tauri 输入仍使用含空格的原始名称，公开附件统一使用 `LanGame.Server.Manager_<version>_x64-setup.exe` 及 `.exe.sig`，文件字节不变；清单与校验表使用相同的点号名称，发布前核对 GitHub 实际返回的附件名和下载地址。签名格式、key ID、复制一致性校验不等于密码学验签；正式私钥匹配、安装升级卸载及数据保留仍须以真实安装包验收。应用安装包的 Windows 发布者签名可选，当前发行沿用无发布者证书的更新签名包；若配置发布者签名，应验证证书链。内嵌微软运行时仍须通过微软签名校验。手动安装或卸载前应从 LGSM 安全退出，不能只关闭到托盘。`-CompileOnly` 只验证 NSIS 夹具编译；六个安装/卸载场景须在允许该夹具执行的受支持 Windows 测试机上完整运行，才能验证守卫的运行行为。
-
-离线导出另加 `-OfflineInstaller` 并使用新的输出目录，公开文件名为 `LanGame.Server.Manager_<version>_x64-offline-setup.exe` 及 `.exe.sig`，校验表为 `SHA256SUMS.offline`，本地清单为 `desktop-offline-artifacts.json`，不生成 `latest.json`，不改写小包校验表。发布时附带两包、两份签名、两份校验表及小包的唯一 `latest.json`，本地计划与回执不上传。导出选项不能把已有小包变成离线包，须核对原构建回执和实际载荷；更新说明仅写入小包清单。
-
-### 数据位置与卸载
-
-程序安装目录与数据目录独立。没有已有设置或数据库时，首次使用按可用空间从大到小尝试可写的本地固定非系统盘，最后尝试 Windows 系统盘。盘根 `LanGame` 不存在或为空时初始化；非空目录只有具备绑定实际目录的有效本程序标识和完整预期布局时才复用，陌生目录会跳过，不接管其中内容。全部自动候选不可用时，首次启动可以选择另一个本地父目录或空的 `LanGame` 目录，仍须通过同样检查，也可以取消启动。选择会保存，之后不随剩余空间变化重新选盘；已保存位置异常时只能恢复该位置，不提供换盘选项。
-
-新用户的游戏程序位于 `LanGame/server-files`，实例位于 `LanGame/instances`，SteamCMD 位于 `LanGame/cmd/steamcmd`。服务器路径设置、数据库、日志、知识库和媒体缓存集中在 `LanGame/app-data/ServerManager/<本机用户的目录ID>`，分别对应 `settings.json`、`db`、`logs`、`knowledge` 和 `cache`，各 Windows 账号的数据库独立。Windows 将小型位置记录保存在 `%LOCALAPPDATA%\LanGame\ServerManager\storage-location.json`。已有登记位置不要求补加新目录标识；已有用户的后端设置或数据库继续使用原用户数据目录，包括原本地 runtime 和已配置的游戏目录，不自动迁移。
-
-WebView 的 Windows 配置、浏览器存储和浏览器缓存另行位于 `%LOCALAPPDATA%\cn.langame.servermanager`。卸载移除应用文件，保留游戏数据、服务器设置、后端 `settings.json`、数据库、旧数据目录和位置记录，供重装后继续读取。可选的界面数据清理针对应用标识/WebView 目录，会重置 localStorage 中的语言、主题、模型服务配置等界面设置，不会删除保留的服务器数据或后端文件。
+安装目录与游戏数据独立；卸载保留服务器配置、数据库、实例、存档、归档、备份和已保存的数据位置。可选界面数据清理仅重置 WebView/localStorage 设置。具体默认路径及旧数据兼容规则见 [Data locations and uninstallation](#data-locations-and-uninstallation)。

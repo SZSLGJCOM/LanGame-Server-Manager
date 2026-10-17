@@ -11,9 +11,7 @@
    Tauri 签名。把**同一安装包字节**上传到受控 GitCode 附件仓库，下载核验哈希、签名及
    匿名可用性后，取得固定版本的永久下载 URL。使用 GitCode 官方文档定义的入口：
    `https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/vVERSION/attach_files/NAME/download`。
-   同步流程先确认附件存在，再通过此入口匿名回读并验证完整字节；文档中的 API 形式
-   不代表本仓库附件已经上传或已证实可匿名读取。也接受已在真实 GitCode 分发链上观察到
-   的精确网页永久形式 `https://gitcode.com/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/download/vVERSION/NAME`；
+   同步流程先确认附件存在，再通过此入口匿名回读并验证完整字节。也接受精确网页永久形式 `https://gitcode.com/SZSLGJCOM/LanGame-Server-Manager-Releases/releases/download/vVERSION/NAME`；
    该形式用于本仓库前同样必须完整匿名回读核验。除此之外的路径和临时带签名 CDN URL
    均拒绝，也不在客户端/元数据里附带 token。
 2. 从 [APNIC 官方目录](https://ftp.apnic.net/stats/apnic/) 保存标准
@@ -65,11 +63,9 @@ python -B scripts/prepare_desktop_update_service.py `
 服务器无 token，固定匿名读取：
 `https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/updates/server-manager/release.json?ref=main`。
 使用 GitCode 官方的[获取 raw 文件 API](https://docs.gitcode.com/docs/apis/get-api-v-5-repos-owner-repo-raw-path/)，
-其中 `ref=main` 固定读取最后提交的完整版本指针。2026-10-08 已在本机和部署服务器上
-不带 token、Cookie、代理或重定向地读取 0.0.3 的完整 5,461 字节指针；两端 SHA-256
-一致，与发布提交内容一致，并通过生产 `validate_release_pointer`。该版本的七个附件
-也已通过匿名完整回读、SHA-256 及两份安装包签名验证。网站 `raw.gitcode.com` 预览链接
-对此 JSON 返回 403“暂不支持预览”，不能由 README 可读推断指针也可读。
+其中 `ref=main` 固定读取最后提交的完整版本指针。每次发布从生产入口匿名读取，核对
+指针与发布提交的 SHA-256，并运行生产 `validate_release_pointer`；七个附件还须完整
+回读并验证哈希及两份安装包签名。使用固定 raw API，不依赖网站预览页面。
 服务只做一次最多 256 KiB 的 HTTPS 请求，不采用环境代理、
 不跟随重定向、没有备用任意 URL。指针不满足契约时保留已有 current 并失败退出。
 
@@ -196,8 +192,7 @@ APNIC 数据按发行流程刷新；超过 31 天需重新取得。原先只内�
 无法通过部署此服务直接迁移；需要原 GitHub 更新通路或手动安装带新入口的正式版本。
 
 公共代理不是本服务的存储后端。`gh-proxy.org` 的公开用途文档侧重开源软件，尚未确认
-本项目源码可见许可是否适用；`ghfast.top` 未公开明确大规模自动更新额度/SLA；
-`update.hwdns.net` 曾对本项目附件返回 403。可达样本不代表授权或保障，不把代理宣传为
+本项目源码可见许可是否适用；`ghfast.top` 未公开明确大规模自动更新额度/SLA。可达样本不代表授权或保障，不把代理宣传为
 无限免费、官方托管或已签约服务；未经授权不联系运营方、不注册或付费。
 
 ## 验证与原始资料

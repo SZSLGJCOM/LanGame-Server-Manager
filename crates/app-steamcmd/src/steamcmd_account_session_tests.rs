@@ -17,7 +17,7 @@ fn partial_and_repeated_prompt_snapshots_open_one_challenge() {
         Some(Phase::Password)
     );
     state.observe_snapshot("Password:");
-    state.observe_snapshot("Password: synthetic-response");
+    state.observe_snapshot("Password: fixture-password");
     assert!(state.pending.is_none());
     assert_eq!(state.consume(first.revision), None);
     assert_eq!(state.phase, Phase::Connecting);
@@ -89,9 +89,9 @@ fn only_exact_allowlisted_native_prompts_reach_the_shared_state() {
     let mut sink = PromptSink(state.clone());
     for row in [
         "Loading Steam API...OK",
-        "synthetic-password",
+        "fixture-password",
         "ABCDE",
-        "Password: synthetic-password",
+        "Password: fixture-password",
         "Steam Guard code: ABCDE",
         "synthetic-response says password:",
         "unknown private output",
@@ -476,7 +476,14 @@ mod windows {
         let fixture = Fixture::new();
         // The fixture advances without receiving a secret, so arrival after
         // the new prompt is deterministic and independent of polling timing.
-        let script = "[Console]::Write('Password: '); while(!(Test-Path -LiteralPath 'advance-prompt')){Start-Sleep -Milliseconds 10}; [Console]::WriteLine(); [Console]::WriteLine('Login Failure: Invalid Password'); [Console]::Write('Steam Guard code: '); $value=[Console]::ReadLine(); if($value -cne '7Q9XW'){exit 9}; exit 0";
+        let script = r#"[Console]::Write('Password: ')
+while(!(Test-Path -LiteralPath 'advance-prompt')){Start-Sleep -Milliseconds 10}
+[Console]::WriteLine()
+[Console]::WriteLine('Login Failure: Invalid Password')
+[Console]::Write('Steam Guard code: ')
+$value=[Console]::ReadLine()
+if($value -cne '7Q9XW'){exit 9}
+exit 0"#;
         let (sender, mut input) = mpsc::channel(3);
         let mut old_revision = None;
         let mut new_revision = None;
