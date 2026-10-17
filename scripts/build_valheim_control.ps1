@@ -8,28 +8,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-if ($OutDir -notmatch '^[A-Za-z]:[\\/]' -or $OutDir.IndexOf(':', 2) -ge 0) {
-    throw 'Valheim control requires an absolute local OutDir.'
-}
-$output = [IO.Path]::GetFullPath($OutDir)
-if ($output.TrimEnd([char[]]'\/').Length -le 2) { throw 'Valheim control output cannot be a volume root.' }
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if ($output.Equals($projectRoot, [StringComparison]::OrdinalIgnoreCase) -or
-    $output.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Valheim control build output must be outside the repository.'
-}
-function Assert-PlainOutputAncestors([string]$Path) {
-    for ($current = [IO.DirectoryInfo]::new($Path); $null -ne $current; $current = $current.Parent) {
-        if (Test-Path -LiteralPath $current.FullName) {
-            $attributes = [IO.File]::GetAttributes($current.FullName)
-            if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0 -or
-                ($attributes -band [IO.FileAttributes]::Directory) -eq 0) {
-                throw 'Valheim control build output and its existing ancestors must be ordinary directories.'
-            }
-        }
-    }
-}
-Assert-PlainOutputAncestors $output
+. (Join-Path $PSScriptRoot 'build_control_output.ps1')
+$output = Resolve-ControlBuildOutput -OutDir $OutDir -ProjectRoot $projectRoot -CargoLeaf 'valheim-control' -LocalOnly
 $references = @($BepInExAssembly, $UnityCoreAssembly, $UnityEngineAssembly, $NetStandardAssembly)
 $provided = @($references | Where-Object { -not [string]::IsNullOrEmpty($_) }).Count
 if ($provided -ne 0 -and $provided -ne 4) { throw 'Provide all four real assembly references or none.' }
@@ -58,7 +39,7 @@ if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
 }
 $source = Join-Path $projectRoot 'modules/valheim/control'
 [IO.Directory]::CreateDirectory($output) | Out-Null
-Assert-PlainOutputAncestors $output
+Assert-PlainControlBuildOutput $output
 $common = @('/nologo', '/noconfig', '/optimize+', '/warnaserror+', '/langversion:5')
 foreach ($assembly in @('System.dll', 'System.Core.dll', 'System.Runtime.Serialization.dll', 'System.Xml.dll')) {
     $common += '/reference:' + (Join-Path $framework $assembly)
@@ -67,7 +48,9 @@ $shared = @('ControlProtocol.cs', 'ControlFiles.cs', 'NativeAccessPins.cs', 'Val
 $plugin = Join-Path $output 'LanGame.Valheim.Control.dll'
 if ($provided -eq 0) {
     $referenceOutput = Join-Path $output 'reference'
+    Assert-PlainControlBuildOutput $referenceOutput
     [IO.Directory]::CreateDirectory($referenceOutput) | Out-Null
+    Assert-PlainControlBuildOutput $referenceOutput
     $referenceSource = Join-Path $source 'CompilerReferences.cs'
     $unityReference = Join-Path $referenceOutput 'UnityEngine.CoreModule.dll'
     $loaderReference = Join-Path $referenceOutput 'BepInEx.dll'
@@ -99,7 +82,7 @@ if ($RunTests) {
         # privilege. Its target and the link are both owned test fixtures.
         New-Item -ItemType Junction -Path $junction -Target $target | Out-Null
         $reparseAccepted = $false
-        try { Assert-PlainOutputAncestors (Join-Path $junction 'output'); $reparseAccepted = $true } catch { }
+        try { Assert-PlainControlBuildOutput (Join-Path $junction 'output'); $reparseAccepted = $true } catch { }
         if ($reparseAccepted) { throw 'Compiler output accepted a reparse ancestor.' }
         & $test $output $junction
         if ($LASTEXITCODE -ne 0) { throw 'Valheim control tests failed.' }

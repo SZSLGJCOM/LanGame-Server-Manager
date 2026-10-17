@@ -10,15 +10,9 @@ foreach ($moduleName in @('Microsoft.PowerShell.Management', 'Microsoft.PowerShe
     $moduleManifest = [IO.Path]::Combine($PSHOME, 'Modules', $moduleName, $moduleName + '.psd1')
     Import-Module -Name $moduleManifest -ErrorAction Stop
 }
-if ($OutDir -notmatch '^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/\r\n]+[\\/][^\\/\r\n]+(?:[\\/]|$))') {
-    throw 'Dragonwilds player query requires an absolute drive-root or UNC OutDir.'
-}
-$output = [IO.Path]::GetFullPath($OutDir)
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if ($output.Equals($projectRoot, [StringComparison]::OrdinalIgnoreCase) -or
-    $output.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Dragonwilds player query build output must be outside the repository.'
-}
+. (Join-Path $PSScriptRoot 'build_control_output.ps1')
+$output = Resolve-ControlBuildOutput -OutDir $OutDir -ProjectRoot $projectRoot -CargoLeaf 'dragonwilds-player-query'
 foreach ($path in @($output, $projectRoot)) {
     if ($path.IndexOfAny([char[]]'%!&|<>^"') -ge 0 -or $path.Contains("`n") -or $path.Contains("`r")) {
         throw 'MSVC build paths contain unsupported command characters.'
@@ -49,6 +43,7 @@ if ($LASTEXITCODE -ne 0 -or ($cmakeVersionText -join "`n") -notmatch 'cmake vers
 # Cargo owns this cache, so cleanup follows the existing managed build retention.
 # Only the 32 pinned source files are cached, with at most 2 MiB per file.
 $source = Join-Path $output 'sources'
+Assert-PlainControlBuildOutput $source
 $sourcePrefix = $source.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 $maximumSourceBytes = 2MB
 Add-Type -AssemblyName System.Net.Http
@@ -66,6 +61,7 @@ try {
             $remainingMilliseconds = 300000 - $budget.ElapsedMilliseconds
             if ($remainingMilliseconds -le 0) { throw 'Dragonwilds proxy source download exceeded its five-minute budget.' }
             [IO.Directory]::CreateDirectory((Split-Path -Parent $path)) | Out-Null
+            Assert-PlainControlBuildOutput (Split-Path -Parent $path)
             $partial = $path + '.' + [Guid]::NewGuid().ToString('N') + '.partial'
             $cancellation = [Threading.CancellationTokenSource]::new()
             $cancellation.CancelAfter([int][Math]::Min(60000, $remainingMilliseconds))
@@ -122,6 +118,7 @@ try {
     ).Replace('-', '').ToLowerInvariant()
 } finally { $sourceHasher.Dispose() }
 $build = Join-Path $output $buildName
+Assert-PlainControlBuildOutput $build
 $cache = Join-Path $build 'CMakeCache.txt'
 if (Test-Path -LiteralPath $cache -PathType Leaf) {
     $cachedHome = Get-Content -LiteralPath $cache | Where-Object { $_.StartsWith('CMAKE_HOME_DIRECTORY:INTERNAL=') }

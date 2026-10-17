@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from urllib.parse import urlsplit
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -148,6 +149,9 @@ SAFE_TEST_PLACEHOLDERS = frozenset(
 SAFE_TEST_URL_CREDENTIALS = frozenset(
     {("user", "password"), ("user", "pass"), ("user", "fixture")}
 )
+# The proxy rejection fixture's literal error-redaction marker is safe only at
+# an explicit HTTP loopback endpoint, in addition to the test-source gate.
+SAFE_TEST_LOOPBACK_URL_REDACTION_PAIR = ("user", "secret")
 TEST_SOURCE_NAME = re.compile(
     r"(?:\.test\.(?:[cm]?js|tsx?)|(?:^|_)tests\.rs|^test_[a-z0-9_]+\.py)$", re.I
 )
@@ -262,6 +266,26 @@ def _assignment_scan_line(path: Path, line: str) -> str:
     return " " * entry.end() + line[entry.end():]
 
 
+def _is_safe_test_url_credential(path: Path, match: re.Match[str]) -> bool:
+    if TEST_SOURCE_NAME.search(path.name) is None:
+        return False
+    credentials = (match.group("username"), match.group("password"))
+    if credentials in SAFE_TEST_URL_CREDENTIALS:
+        return True
+    if credentials != SAFE_TEST_LOOPBACK_URL_REDACTION_PAIR:
+        return False
+    try:
+        origin = urlsplit(match.group(0))
+        return (
+            origin.scheme == "http"
+            and origin.hostname in {"127.0.0.1", "localhost", "::1"}
+            and origin.port is not None
+            and 1 <= origin.port <= 65535
+        )
+    except ValueError:
+        return False
+
+
 def _decode_text_payload(path: Path, payload: bytes) -> tuple[str | None, str | None]:
     # UTF-32 LE starts with the UTF-16 LE BOM, so check the longer marker first.
     if payload.startswith((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE)):
@@ -304,14 +328,10 @@ def scan_payload(path: Path, payload: bytes) -> list[Finding]:
             findings.append(Finding(path=path, line=line_number, rule="private-key"))
         if PROVIDER_TOKEN.search(line):
             findings.append(Finding(path=path, line=line_number, rule="provider-token"))
-        # URL rejection tests use these exact synthetic pairs. Other values and
-        # the same pairs in production/configuration files remain findings.
+        # Only exact known synthetic credentials qualify; test-source and origin
+        # constraints are enforced before excluding an individual URL match.
         if any(
-            not (
-                TEST_SOURCE_NAME.search(path.name) is not None
-                and (match.group("username"), match.group("password"))
-                in SAFE_TEST_URL_CREDENTIALS
-            )
+            not _is_safe_test_url_credential(path, match)
             for match in URL_CREDENTIAL.finditer(line)
         ):
             findings.append(Finding(path=path, line=line_number, rule="url-credential"))

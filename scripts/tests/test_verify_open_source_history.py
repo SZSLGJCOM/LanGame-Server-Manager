@@ -55,6 +55,46 @@ class OpenSourceHistoryScannerTests(unittest.TestCase):
             self.assertEqual(exit_code, 0)
             self.assertIn("open-source history scan passed", output.getvalue())
 
+    def test_removed_synthetic_proxy_rejection_fixture_remains_safe_in_history(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            self._initialize_repository(repository)
+            source = repository / "tests" / "test_proxy_rejection.py"
+            source.parent.mkdir()
+            value = "http" + "://user:" + "sec" + "ret@127.0.0.1:80"
+            source.write_text('rejected_proxy = "' + value + '"\n', encoding="utf-8")
+            self._commit_all(repository, "synthetic proxy rejection fixture")
+            source.unlink()
+            self._commit_all(repository, "remove fixture")
+
+            result = scan_reachable_history(repository)
+
+            self.assertEqual(result.commit_count, 2)
+            self.assertEqual(result.findings, ())
+
+    def test_proxy_fixture_rule_cannot_hide_deleted_real_or_production_url_credentials(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            self._initialize_repository(repository)
+            source = repository / "tests" / "test_proxy_rejection.py"
+            production = repository / "proxy.ini"
+            source.parent.mkdir()
+            source.write_text('rejected_proxy = "http' + '://user:SyntheticCredentialValue123@127.0.0.1:80"\n',
+                              encoding="utf-8")
+            production.write_text('proxy=http' + '://user:' + 'sec' + 'ret@127.0.0.1:80\n', encoding="utf-8")
+            original_commit = self._commit_all(repository, "URL credentials")
+            source.unlink()
+            production.unlink()
+            self._commit_all(repository, "remove credentials")
+
+            result = scan_reachable_history(repository)
+
+            self.assertEqual(
+                {(finding.commit, finding.path.as_posix(), finding.rule) for finding in result.findings},
+                {(original_commit, "tests/test_proxy_rejection.py", "history-secret:url-credential"),
+                 (original_commit, "proxy.ini", "history-secret:url-credential")},
+            )
+
     def test_detached_head_is_scanned_without_a_branch_reference(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repository = Path(directory)
