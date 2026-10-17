@@ -4,6 +4,10 @@ fn main() {
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("scripts/build_control_output.ps1").display()
+        );
         let script = root.join("scripts/build_ark_tools.ps1");
         println!("cargo:rerun-if-changed={}", script.display());
         println!(

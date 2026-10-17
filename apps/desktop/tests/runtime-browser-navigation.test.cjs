@@ -10,13 +10,17 @@ const { parseSource, sourceText, visitSyntax } = require("../scripts/typescript_
 
 function heldDocument(t, release, milliseconds) {
   let requests = 0;
+  let receive;
+  const arrived = new Promise((resolve) => { receive = resolve; });
   const timers = new Set();
   t.after(() => { for (const timer of timers) clearTimeout(timer); });
   return {
+    arrived,
     get requests() { return requests; },
     middleware(request, response, next) {
       if (request.url?.split("?")[0] !== "/tests/helpers/runtime-browser.html") return next();
       requests += 1;
+      receive();
       if (milliseconds === null) return;
       const timer = setTimeout(() => {
         timers.delete(timer);
@@ -26,6 +30,38 @@ function heldDocument(t, release, milliseconds) {
       response.once("close", () => { clearTimeout(timer); timers.delete(timer); });
     },
   };
+}
+
+function navigationDeadlineAfterArrival(t, arrived) {
+  const NativeWebSocket = globalThis.WebSocket;
+  const nativeSend = NativeWebSocket.prototype.send;
+  const nativeSetTimeout = globalThis.setTimeout;
+  const nativeClearTimeout = globalThis.clearTimeout;
+  let captureDeadline = false;
+  let arm;
+  const armed = new Promise((resolve) => { arm = resolve; });
+  const timer = { cleared: false };
+  t.mock.method(NativeWebSocket.prototype, "send", function(message) {
+    nativeSend.call(this, message);
+    // openViewportSession constructs deadline synchronously after send.
+    // Capture exactly that timer, leaving startup/cleanup timers real.
+    if (JSON.parse(message).method === "Page.navigate") captureDeadline = true;
+  });
+  t.mock.method(globalThis, "setTimeout", (callback, milliseconds, ...args) => {
+    if (!captureDeadline) return nativeSetTimeout(callback, milliseconds, ...args);
+    captureDeadline = false;
+    arm(milliseconds);
+    // HTTP delivery has no promise to beat a one-second CI wall clock. Expire
+    // the actual command deadline only after this case's unanswered request
+    // exists; shared-budget arithmetic is independently tested below.
+    void arrived.then(() => { if (!timer.cleared) callback(...args); });
+    return timer;
+  });
+  t.mock.method(globalThis, "clearTimeout", (value) => {
+    if (value === timer) timer.cleared = true;
+    else nativeClearTimeout(value);
+  });
+  return { armed, timer };
 }
 
 function verifiedFailureCleanup(error) {
@@ -75,15 +111,25 @@ test("real fixture navigation can use its existing budget after a slow HTML resp
 // leave the same 10-second outer margin as the ordinary 80/90-second fixtures.
 test("navigation that never receives a document expires within the fixture budget and releases its tree", { timeout: 46000 }, async (t) => {
   const document = heldDocument(t, () => assert.fail("The held document must not be released"), null);
-  await assert.rejects(runBrowserFixture({ viewport: { width: 960, height: 600 }, fixtureTimeoutMs: 1000,
-    fixtureMiddleware: document.middleware }), (error) => {
+  const deadline = navigationDeadlineAfterArrival(t, document.arrived);
+  const fixture = runBrowserFixture({ viewport: { width: 960, height: 600 }, fixtureTimeoutMs: 1000,
+    fixtureMiddleware: document.middleware });
+  const rejected = assert.rejects(fixture, (error) => {
     verifiedFailureCleanup(error);
     const timeout = error.errors[0].message.match(/^Page\.navigate exceeded (\d+) ms$/);
     assert.ok(timeout, error.errors[0].message);
     assert.ok(Number(timeout[1]) > 0 && Number(timeout[1]) <= 1000, "Navigation must use the fixture's remaining budget");
     return true;
   });
+  const budget = await Promise.race([
+    deadline.armed,
+    rejected.then(() => assert.fail("The fixture failed before its navigation deadline was armed")),
+  ]);
+  assert.equal(budget, 1000, "The real navigation command retains its original fixture budget");
+  assert.equal(document.requests, 0, "Arming the CDP deadline does not prove HTTP delivery");
+  await rejected;
   assert.equal(document.requests, 1);
+  assert.equal(deadline.timer.cleared, true, "The command releases its controlled deadline after rejection");
 });
 
 test("the report cannot obtain a fresh budget after navigation consumes part of it", async (t) => {

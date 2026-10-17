@@ -4,15 +4,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-if ($OutDir -notmatch '^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/\r\n]+[\\/][^\\/\r\n]+(?:[\\/]|$))') {
-    throw 'Enshrouded control requires an absolute drive-root or UNC OutDir.'
-}
-$output = [IO.Path]::GetFullPath($OutDir)
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if ($output.Equals($projectRoot, [StringComparison]::OrdinalIgnoreCase) -or
-    $output.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Enshrouded control build output must be outside the repository.'
-}
+. (Join-Path $PSScriptRoot 'build_control_output.ps1')
+$output = Resolve-ControlBuildOutput -OutDir $OutDir -ProjectRoot $projectRoot -CargoLeaf 'enshrouded-control'
 $source = Join-Path $projectRoot 'modules/enshrouded/control'
 foreach ($path in @($output, $source)) {
     if ($path.IndexOfAny([char[]]'%!&|<>^"') -ge 0 -or $path.Contains("`n") -or $path.Contains("`r")) {
@@ -26,6 +20,7 @@ if ($LASTEXITCODE -ne 0 -or -not $installation) { throw 'MSVC x64 toolchain was 
 $vcvars = Join-Path $installation 'VC/Auxiliary/Build/vcvars64.bat'
 if (-not (Test-Path -LiteralPath $vcvars -PathType Leaf)) { throw 'MSVC vcvars64.bat was not found.' }
 [IO.Directory]::CreateDirectory($output) | Out-Null
+Assert-PlainControlBuildOutput $output
 $commands = [Collections.Generic.List[string]]::new()
 $commands.Add('@echo off')
 $commands.Add('setlocal DisableDelayedExpansion')
