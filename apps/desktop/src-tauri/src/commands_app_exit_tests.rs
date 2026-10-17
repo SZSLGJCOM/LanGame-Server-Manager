@@ -148,7 +148,7 @@ fn app_exit_storage_exclusive_rejects_pending_start_and_allows_retry_after_relea
 }
 
 #[tokio::test]
-async fn aborted_runtime_start_caller_leaves_owned_worker_to_finish_handoff() {
+async fn aborted_enshrouded_start_caller_retains_program_locks_until_native_work_finishes() {
     let state = Arc::new(DesktopState::default());
     let reservation = match state
         .try_reserve_runtime_start("detached-start", "manual")
@@ -157,15 +157,36 @@ async fn aborted_runtime_start_caller_leaves_owned_worker_to_finish_handoff() {
         RuntimeStartReservationAttempt::Reserved(reservation) => reservation,
         attempt => panic!("unexpected reservation attempt: {attempt:?}"),
     };
+    let root = std::env::temp_dir().join(format!("langame-start-locks-{}", uuid::Uuid::new_v4()));
+    let program_roots = [root.join("program")];
+    std::fs::create_dir_all(&program_roots[0]).unwrap();
+    let install_locks = app_steamcmd::InstallLockContext::new(root.join("app-data"));
+    let program_guards: RuntimeProgramGuards = (
+        state.acquire_instance_mutation("detached-start").await,
+        Some(
+            app_steamcmd::acquire_game_install_lifecycle(
+                &install_locks,
+                "enshrouded",
+                &program_roots,
+            )
+            .await
+            .unwrap(),
+        ),
+    );
     let supervisor_owned = Arc::new(AtomicBool::new(false));
     let worker_owned = Arc::clone(&supervisor_owned);
     let (spawned_tx, spawned_rx) = tokio::sync::oneshot::channel();
-    let (release_tx, release_rx) = tokio::sync::oneshot::channel();
+    let (release_tx, release_rx) = std::sync::mpsc::channel();
     let (completed_tx, completed_rx) = tokio::sync::oneshot::channel();
     let caller = tokio::spawn(async move {
         run_runtime_start_worker_to_completion(&reservation, async move {
-            spawned_tx.send(()).expect("spawn signal");
-            release_rx.await.expect("handoff release");
+            let _program_guards = program_guards;
+            tokio::task::spawn_blocking(move || {
+                spawned_tx.send(()).expect("spawn signal");
+                release_rx.recv().expect("native worker release");
+            })
+            .await
+            .expect("native worker completion");
             worker_owned.store(true, Ordering::SeqCst);
             completed_tx.send(()).expect("completion signal");
             Ok::<_, String>(())
@@ -176,6 +197,21 @@ async fn aborted_runtime_start_caller_leaves_owned_worker_to_finish_handoff() {
     spawned_rx.await.expect("spawn signal");
     caller.abort();
     let _ = caller.await;
+    assert!(
+        state
+            .try_acquire_instance_mutation("detached-start")
+            .await
+            .is_none()
+    );
+    let next_install =
+        app_steamcmd::acquire_game_install_lifecycle(&install_locks, "enshrouded", &program_roots);
+    tokio::pin!(next_install);
+    assert!(
+        tokio::time::timeout(Duration::from_millis(100), &mut next_install)
+            .await
+            .is_err(),
+        "a cancelled caller must not release the native worker's install lock"
+    );
     assert!(state.begin_storage_context_transition().is_err());
     assert_eq!(
         state
@@ -197,6 +233,18 @@ async fn aborted_runtime_start_caller_leaves_owned_worker_to_finish_handoff() {
     state
         .begin_storage_context_transition()
         .expect("completed handoff should release the worker lease");
+    assert!(
+        state
+            .try_acquire_instance_mutation("detached-start")
+            .await
+            .is_some()
+    );
+    let next_guard = tokio::time::timeout(Duration::from_secs(5), next_install)
+        .await
+        .unwrap()
+        .unwrap();
+    drop(next_guard);
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[test]

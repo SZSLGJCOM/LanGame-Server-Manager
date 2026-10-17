@@ -28,19 +28,130 @@ pub(super) async fn prepare(
     if instance.summary.module_id != "enshrouded" {
         return Ok(());
     }
+    let binding = app_storage::read_instance_program_install(&storage.paths, &instance.summary.id)
+        .await
+        .map_err(|error| error.to_string());
+    let worker_storage = storage.clone();
+    let worker_instance = instance.clone();
+    let log_path = log_path.map(str::to_owned);
+    let prepared = tokio::task::spawn_blocking(move || {
+        match prepare_local(
+            &worker_storage,
+            &worker_instance,
+            binding,
+            log_path.as_deref(),
+        ) {
+            Ok(executable) => executable,
+            Err(error) => {
+                report_preparation_failure(
+                    &worker_storage,
+                    &worker_instance.summary.id,
+                    log_path.as_deref(),
+                    &error,
+                );
+                None
+            }
+        }
+    })
+    .await;
+    match prepared {
+        Ok(Some(executable)) => {
+            let updater_storage = storage.clone();
+            let instance_id = instance.summary.id.clone();
+            crate::enshrouded_extension::start_refresh(
+                storage.paths.app_data_root.clone(),
+                executable.clone(),
+                move |result| {
+                    use crate::enshrouded_extension::RefreshResult;
+                    let (level, action, version, issue) = match result {
+                        Ok(RefreshResult::Cached { version }) => (
+                            "info",
+                            "instance.enshrouded_extension.cached",
+                            Some(version),
+                            None,
+                        ),
+                        Ok(RefreshResult::Unsupported) => (
+                            "info",
+                            "instance.enshrouded_extension.update_finished",
+                            None,
+                            None,
+                        ),
+                        Err(error) => (
+                            "warn",
+                            "instance.enshrouded_extension.update_failed",
+                            None,
+                            Some(error),
+                        ),
+                    };
+                    super::commands_runtime_supervision::append_desktop_app_log(
+                        &updater_storage,
+                        level,
+                        action,
+                        "Background player-management extension check completed; the running server is unchanged",
+                        serde_json::json!({ "instance_id": instance_id, "executable_sha256": executable,
+                        "extension_version": version, "update_issue": issue, "applies_on_next_start": true }),
+                    );
+                },
+            );
+        }
+        Err(_) => {
+            // A failed optional worker must not prevent the actual game from starting.
+            let storage = storage.clone();
+            let instance_id = instance.summary.id.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                report_preparation_failure(
+                    &storage,
+                    &instance_id,
+                    None,
+                    "The extension preparation worker failed.",
+                )
+            })
+            .await;
+        }
+        Ok(None) => {}
+    }
+    Ok(())
+}
+
+fn report_preparation_failure(
+    storage: &StorageBootstrap,
+    instance_id: &str,
+    log_path: Option<&str>,
+    error: &str,
+) {
+    super::commands_runtime_supervision::append_desktop_app_log(
+        storage,
+        "warn",
+        "instance.enshrouded_extension.preparation_failed",
+        "Player-management extension preparation failed; continuing game startup",
+        serde_json::json!({ "instance_id": instance_id, "extension_issue": error }),
+    );
+    if let Some(path) = log_path {
+        let _ = super::commands_runtime_supervision::append_startup_console_line(
+            path,
+            "Enshrouded player-management extension unavailable; continuing game startup.",
+            error,
+        );
+    }
+}
+
+/// Only this stopped-instance worker may mutate an instance runtime. Network
+/// refresh receives the application cache path, never this runtime directory.
+fn prepare_local(
+    storage: &StorageBootstrap,
+    instance: &InstanceDetails,
+    binding: Result<Option<app_storage::InstanceProgramInstall>, String>,
+    log_path: Option<&str>,
+) -> Result<Option<String>, String> {
     let instance_root = super::commands_program_storage::instance_root(instance)?;
     if app_storage::instance_program_mode(instance_root).map_err(|e| e.to_string())?
         != InstanceProgramMode::Independent
     {
-        // Shared programs retain the existing name-only capability.
-        return Ok(());
+        return Ok(None);
     }
     let root =
         app_storage::resolve_instance_runtime_root(instance_root).map_err(|e| e.to_string())?;
-    let binding = app_storage::read_instance_program_install(&storage.paths, &instance.summary.id)
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or("Enshrouded program ownership is missing.")?;
+    let binding = binding?.ok_or("Enshrouded program ownership is missing.")?;
     let exclusive =
         app_storage::instance_uses_exclusive_program(instance_root).map_err(|e| e.to_string())?;
     let owner_matches = match binding.install.scope {
@@ -58,58 +169,60 @@ pub(super) async fn prepare(
     {
         return Err("Enshrouded native control ownership does not match this instance.".into());
     }
-    if let Some(path) = log_path {
-        let _ = super::commands_runtime_supervision::append_startup_console_line(
-            path,
-            "Checking and preparing Enshrouded player-management extension...",
-            "",
-        );
-    }
-    let executable = io::digest(&io::read_regular(
-        &root.join("enshrouded_server.exe"),
-        32 * 1024 * 1024,
-    )?);
-    let resolution =
-        crate::enshrouded_extension::resolve(&storage.paths.app_data_root, &executable).await;
-    let (selected, source, version, update_issue) = match resolution {
-        Ok(resolution) => (
-            resolution.package,
-            resolution.source,
-            resolution.version,
-            resolution.update_issue,
-        ),
-        Err(error) => (
-            None,
-            if io::BUNDLED_EXE_SHA256.contains(&executable.as_str()) {
-                "bundled"
-            } else {
-                "unsupported"
-            },
-            None,
-            Some(error),
-        ),
+    let _root_guard = io::pin_directory(&root)?;
+    let executable = match io::read_regular(&root.join("enshrouded_server.exe"), 32 * 1024 * 1024) {
+        Ok(bytes) => io::digest(&bytes),
+        Err(error) => {
+            // No fingerprint means no known-safe ABI. Retire our own proxy even
+            // when a future executable exceeds the bounded inspection limit.
+            return Err(match retire_owned_proxy(&root) {
+                Ok(()) => error,
+                Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
+            });
+        }
     };
+    let resolution =
+        crate::enshrouded_extension::resolve_local(&storage.paths.app_data_root, &executable);
+    let install_issue = prepare_optional_install(&root, &executable, resolution.package.as_ref());
+    let issue = install_issue.or(resolution.update_issue);
     super::commands_runtime_supervision::append_desktop_app_log(
         storage,
-        "info",
+        if issue.is_some() { "warn" } else { "info" },
         "instance.enshrouded_extension.prepared",
-        "Selected exact-build Enshrouded player-management extension",
+        "Selected locally verified Enshrouded player-management extension without waiting for updates",
         serde_json::json!({ "instance_id": instance.summary.id, "executable_sha256": executable,
-            "source": source, "extension_version": version, "update_issue": update_issue }),
+            "source": resolution.source, "extension_version": resolution.version, "extension_issue": issue }),
     );
     if let Some(path) = log_path {
         let _ = super::commands_runtime_supervision::append_startup_console_line(
             path,
             &format!(
-                "Enshrouded player-management extension: {source}; version {}.",
-                version.as_deref().unwrap_or("bundled/none")
+                "Enshrouded player-management extension: {}; background updates apply on next start.",
+                resolution.source
             ),
-            update_issue.as_deref().unwrap_or(""),
+            issue.as_deref().unwrap_or(""),
         );
     }
-    tokio::task::spawn_blocking(move || install_selected(&root, &executable, selected.as_ref()))
-        .await
-        .map_err(|_| "Enshrouded native control preparation worker failed.")?
+    Ok(Some(executable))
+}
+
+/// Extension setup is optional. Preserve unrelated loaders and fail closed for
+/// moderation while allowing ordinary game startup to continue.
+fn prepare_optional_install(
+    root: &Path,
+    executable: &str,
+    selected: Option<&crate::enshrouded_extension::SignedPackage>,
+) -> Option<String> {
+    let error = install_selected(root, executable, selected).err()?;
+    let cleanup = (|| {
+        let _root_guard = io::pin_directory(root)?;
+        retire_owned_proxy(root)?;
+        io::publish_manager_state(root, executable, RuntimePlayerExtensionStatus::NotInstalled)
+    })();
+    Some(match cleanup {
+        Ok(()) => error,
+        Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
+    })
 }
 
 fn install_selected(

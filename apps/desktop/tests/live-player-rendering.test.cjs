@@ -112,7 +112,7 @@ test("console response closure offers settings without claiming proven authentic
 
 test("Enshrouded extension failures explain the structured compatibility status in both languages", () => {
   const cases = [
-    ["unsupported_game_build", /当前 LanGame 尚未取得适配此游戏版本.*实例启动时自动检查兼容更新/, /LanGame has no verified.*automatically checks for compatible updates when the instance starts/],
+    ["unsupported_game_build", /不影响正常游玩.*后台检查已发布的兼容更新.*下次正常开服/, /normal gameplay is unaffected.*background after startup.*next normal start/],
     ["not_installed", /玩家管理扩展尚未准备/, /extension has not been prepared/],
     ["loading", /玩家管理扩展尚未就绪/, /extension is not ready yet/],
     ["load_failed", /玩家管理扩展加载失败/, /extension failed to load/],
@@ -127,6 +127,10 @@ test("Enshrouded extension failures explain the structured compatibility status 
       }));
       assert.match(html, expected);
       assert.doesNotMatch(html, /untrusted|<script>|unsupported_game_build/);
+      if (extension_status === "not_installed" || extension_status === "load_failed") {
+        assert.match(html, locale === "zh-CN" ? /不影响正常游玩/ : /normal gameplay is unaffected/);
+        assert.doesNotMatch(html, /正常停服后重新开服|stop the server normally and start it again/);
+      }
     }
   }
 });

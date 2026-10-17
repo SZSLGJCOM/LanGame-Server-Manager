@@ -1,13 +1,11 @@
 //! Independently signed, exact-build Enshrouded control updates. No arbitrary URLs.
-use std::{collections::HashSet, fs, path::Path, time::Duration};
+use std::{collections::HashSet, fs, path::Path};
 
 use minisign_verify::{PublicKey, Signature};
 use serde::{Deserialize, Serialize};
 
 use crate::live_players::enshrouded_native::io;
 
-const RELEASES: &str = "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/download/";
-const FEED: &str = "https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases/download/enshrouded-control/manifest.json";
 const PUBLIC_KEY: &str =
     include_str!("../../../../modules/enshrouded/control/update-public-key.pub");
 pub(crate) const MANIFEST: &str = "extension-manifest.json";
@@ -19,7 +17,10 @@ const MAX_SIGNATURE: usize = 2048;
 const MAX_CACHED_PACKAGES: usize = 64;
 const WATERMARK: &str = "highest-manifest.json";
 const WATERMARK_SIGNATURE: &str = "highest-manifest.json.minisig";
-static UPDATE_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+#[path = "enshrouded_extension_update.rs"]
+mod update;
+pub(crate) use update::{RefreshResult, start_refresh};
 
 pub(crate) struct Resolution {
     pub(crate) package: Option<SignedPackage>,
@@ -372,111 +373,9 @@ fn prune_cache(directory: &Path, key: &PublicKey) -> Result<(), String> {
     Ok(())
 }
 
-async fn download(client: &reqwest::Client, url: &str, limit: usize) -> Result<Vec<u8>, String> {
-    let mut response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|_| "Extension update source is unavailable.")?
-        .error_for_status()
-        .map_err(|_| "Extension update source returned an error.")?;
-    if response
-        .content_length()
-        .is_some_and(|size| size > limit as u64)
-    {
-        return Err("Extension update download exceeds its size limit.".into());
-    }
-    let mut bytes = Vec::new();
-    while let Some(chunk) = response
-        .chunk()
-        .await
-        .map_err(|_| "Extension update download was interrupted.")?
-    {
-        if bytes.len().saturating_add(chunk.len()) > limit {
-            return Err("Extension update download exceeds its size limit.".into());
-        }
-        bytes.extend_from_slice(&chunk);
-    }
-    Ok(bytes)
-}
-
-async fn latest(
-    directory: &Path,
-    executable: &str,
-    minimum_revision: u64,
-    existing: Option<&SignedPackage>,
-    key: &PublicKey,
-) -> Result<Option<SignedPackage>, String> {
-    let client = reqwest::Client::builder()
-        .connect_timeout(Duration::from_secs(4))
-        .timeout(Duration::from_secs(8))
-        .user_agent("LanGame-Enshrouded-Control/1")
-        .redirect(reqwest::redirect::Policy::custom(|attempt| {
-            let url = attempt.url();
-            if attempt.previous().len() < 4
-                && url.scheme() == "https"
-                && url.username().is_empty()
-                && url.password().is_none()
-                && url.port().is_none()
-                && matches!(
-                    url.host_str(),
-                    Some("github.com" | "release-assets.githubusercontent.com")
-                )
-            {
-                attempt.follow()
-            } else {
-                attempt.stop()
-            }
-        }))
-        .build()
-        .map_err(|_| "Cannot create the extension updater client.")?;
-    let manifest_signature_url = format!("{FEED}.minisig");
-    let (bytes, proof, manifest) = tokio::time::timeout(Duration::from_secs(8), async {
-        let (bytes, proof) = tokio::try_join!(
-            download(&client, FEED, MAX_MANIFEST),
-            download(&client, &manifest_signature_url, MAX_SIGNATURE)
-        )?;
-        let manifest = admit_manifest(&bytes, &proof, key, minimum_revision)?;
-        Ok::<_, String>((bytes, proof, manifest))
-    })
-    .await
-    .map_err(|_| "Extension update metadata check timed out.")??;
-    remember_manifest(directory, &bytes, &proof)?;
-    if !manifest
-        .profiles
-        .iter()
-        .any(|p| p.executable_sha256 == executable)
-    {
-        return Ok(None);
-    }
-    if let Some(existing) = existing
-        && existing.manifest_bytes == bytes
-    {
-        return Ok(Some(existing.clone()));
-    }
-    let url = format!(
-        "{RELEASES}enshrouded-control-v{}/{}",
-        manifest.version, manifest.dll.asset_name
-    );
-    let dll_signature_url = format!("{url}.minisig");
-    let (dll, dll_proof) = tokio::time::timeout(Duration::from_secs(16), async {
-        tokio::try_join!(
-            download(&client, &url, manifest.dll.size),
-            download(&client, &dll_signature_url, MAX_SIGNATURE)
-        )
-    })
-    .await
-    .map_err(|_| "Extension payload download timed out.")??;
-    verify_package(bytes, proof, dll, dll_proof, executable, key).map(Some)
-}
-
-/// Called under the existing stopped-instance/install lock before creating its process.
-/// A network or signature failure never authorizes new code; a verified exact cache can still run.
-pub(crate) async fn resolve(cache_root: &Path, executable: &str) -> Result<Resolution, String> {
-    let key = key()?;
-    let directory = cache_root.join("cache/enshrouded-control");
-    let update_lock = UPDATE_LOCK.try_lock();
-    let (existing, minimum_revision) = cached(&directory, executable, &key)?;
+/// Local selection runs in the stopped-instance blocking worker. No network work
+/// participates in preparing an instance; refreshed packages apply on its next start.
+pub(crate) fn resolve_local(cache_root: &Path, executable: &str) -> Resolution {
     let fallback = |package: Option<SignedPackage>, update_issue| Resolution {
         version: package.as_ref().map(|p| p.manifest.version.clone()),
         source: if package.is_some() {
@@ -489,47 +388,17 @@ pub(crate) async fn resolve(cache_root: &Path, executable: &str) -> Result<Resol
         package,
         update_issue,
     };
-    // Multiple instances can start concurrently. Only one checks the shared
-    // feed; the others use already verified exact support without queuing.
-    let Ok(_lock) = update_lock else {
-        return Ok(fallback(
-            existing,
-            Some("Another extension update check is active.".into()),
-        ));
-    };
-    let update = tokio::time::timeout(
-        Duration::from_secs(20),
-        latest(
-            &directory,
+    match key().and_then(|key| {
+        cached(
+            &cache_root.join("cache/enshrouded-control"),
             executable,
-            minimum_revision,
-            existing.as_ref(),
             &key,
-        ),
-    )
-    .await;
-    match update {
-        Ok(Ok(Some(package))) => {
-            let update_issue = cache(&directory, &package).err();
-            Ok(Resolution {
-                source: "signed_package",
-                version: Some(package.manifest.version.clone()),
-                package: Some(package),
-                update_issue,
-            })
-        }
-        Ok(Ok(None)) => Ok(fallback(existing, None)),
-        Ok(Err(error)) => Ok(fallback(existing, Some(error))),
-        Err(_) => Ok(fallback(
-            existing,
-            Some(
-                "Extension update check timed out; using verified exact-build support if available."
-                    .into(),
-            ),
-        )),
+        )
+    }) {
+        Ok((package, _)) => fallback(package, None),
+        Err(error) => fallback(None, Some(error)),
     }
 }
-
 #[cfg(test)]
 #[path = "enshrouded_extension_tests.rs"]
 mod tests;

@@ -216,7 +216,7 @@ async function run() {
   check(fixture?.textContent?.includes("扩展未提供有效玩家身份")
     && !fixture.textContent.includes("未连接原生管理接口") && commands === 0,
     "Unknown native extension preserves read-only fallback despite declared actions");
-  for (const [scenario, expected] of [["enshrouded-unsupported-build", "当前 LanGame 尚未取得适配此游戏版本"],
+  for (const [scenario, expected] of [["enshrouded-unsupported-build", "当前版本的玩家管理扩展暂不可用"],
     ["enshrouded-not-installed", "玩家管理扩展尚未准备"], ["enshrouded-loading", "玩家管理扩展尚未就绪"],
     ["enshrouded-load-failed", "玩家管理扩展加载失败"], ["enshrouded-protocol-incomplete", "尚未取得完整有效的玩家身份"]] as const) {
     await draw(scenario); await selectWithKeyboard(); verifyDisabledDescriptions();
@@ -288,7 +288,7 @@ async function run() {
       const button = mergedUnbanButton();
       const reason = describedReason(button);
       check(button.disabled && reason.includes("即时解封不可用") && reason.includes(scenario === "enshrouded-unban-unsupported"
-        ? "尚未取得适配此游戏版本" : scenario === "enshrouded-unban-loading" ? "扩展尚未就绪" : "扩展加载失败"),
+        ? "当前版本的玩家管理扩展暂不可用" : scenario === "enshrouded-unban-loading" ? "扩展尚未就绪" : "扩展加载失败"),
         "Unavailable extensions disable known roster and manual native unban with a specific reason");
       await act(async () => { button.closest<HTMLElement>(".player-access-total-action")!.focus(); });
       await waitForTooltip(reason);

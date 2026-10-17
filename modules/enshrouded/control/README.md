@@ -31,14 +31,20 @@ those functions even when their behavior remains the same. Each supported profil
 therefore pins the executable digest, PE identity and native entry bytes; new
 builds require inspection and validation before they can control players.
 
-Before starting an Enshrouded instance, the manager hashes that instance's actual
-server executable and checks the independent signed compatibility feed. It can
-install a matching extension while the owned server is stopped, then start the
-server. It never replaces a DLL in a running process. Network failures can fall
-back to previously verified exact-build support. An unknown executable remains
-read-only, with the reason shown in the player controls. Starting an instance is
-the automatic update trigger; already running servers receive their extension
-update at their next normal stop/start.
+Before starting an Enshrouded instance, the manager hashes its actual executable
+and selects only locally verified exact-build support from the signed cache or
+built-in payload. Extension preparation is optional: a failed check or install is
+logged, unrelated loaders are preserved, and normal game startup continues.
+Hashing, signature checks and file work run off the async executor.
+
+Each normal start may also launch one bounded background check of the published
+signed feed. Startup never waits for the network or maintenance work. Concurrent
+starts do not queue extra checks; after an attempt ends, a later normal start may
+check again. Downloads only update the application cache. They cannot replace a
+live runtime DLL, restart a server, change game configuration or update the game.
+A downloaded compatible extension is prepared at the next normal stop/start.
+An unknown executable disables only native player-management actions and shows
+the reason beside the buttons; the server remains available for normal gameplay.
 
 The independent trust root is [update-public-key.pub](update-public-key.pub),
 separate from the desktop updater's key. Both the manifest and the DLL use standard
@@ -91,13 +97,11 @@ DLL limit is 1 MiB. The exact signed comments are
 ### Detecting game updates
 
 [track-enshrouded-build.yml](../../../.github/workflows/track-enshrouded-build.yml)
-runs every four hours only when the repository Actions variable
-`ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER` is set to `true`; an absent or
-disabled variable leaves scheduled jobs skipped. Manual `workflow_dispatch`
-remains available. Keep the variable unset until the signed production feed is
-published with desktop 0.1.3, then enable it as part of that release. An unpublished
-feed is not evidence of compatibility; a manual run still requires a valid signed
-feed and reports an error if it is missing. The workflow downloads Valve's
+is a manual maintainer diagnostic (`workflow_dispatch`). It has no schedule,
+client event submission or automatic publication. Run it when investigating a
+reported failure. An unpublished feed is not evidence of compatibility: the
+diagnostic requires a valid signed feed and reports an error if it is missing.
+The workflow downloads Valve's
 [official SteamCMD](https://developer.valvesoftware.com/wiki/SteamCMD), refreshes
 anonymous app metadata for app `2278520`, reads `depots/branches/public/buildid`,
 then compares it with the cryptographically verified published feed. A new build
@@ -105,7 +109,10 @@ opens one compatibility issue, deduplicated across open and closed issues. The
 job retains a small detection report. Metadata/network/signature errors fail the
 job instead of claiming that the game is supported.
 
-Detection does not alter profiles, sign or release code. The maintainer must
+Player-management compatibility is maintained manually in this repository when
+a failure is reported; keeping every game build current is not a prerequisite
+for opening or playing on a server. Detection does not alter profiles, sign or
+release code. The maintainer must
 obtain the official binary in isolation, inspect the native ABI/entry points,
 run the C++/Rust tests, and verify real kick, ban and unban on the target build.
 Keeping a signed updater cannot make an unknown native ABI safe automatically.
@@ -163,9 +170,9 @@ python -B scripts/publish_enshrouded_control.py --directory $extensionStaging `
 ```
 
 For the first release, publish and verify this feed together with desktop 0.1.3.
-Then set repository **Settings → Secrets and variables → Actions → Variables →
-`ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER`** to `true` to activate scheduled
-tracking. Pushing this workflow alone does not enable its scheduled job.
+Later manual fixes can ship as small signed extensions or with a desktop release.
+A source push alone does not distribute a compiled fix to installed clients.
+No periodic tracking job or automatic adaptation/publishing service is needed.
 
 The publisher uses `GITHUB_TOKEN`/`GH_TOKEN`, or Git's configured credential
 helper, without printing credentials. It verifies local signatures/checksums,

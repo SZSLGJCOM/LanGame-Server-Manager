@@ -1,8 +1,6 @@
 name: Track Enshrouded server compatibility
 
 on:
-  schedule:
-    - cron: "23 */4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -17,7 +15,7 @@ jobs:
   track:
     if: >-
       github.repository == 'SZSLGJCOM/LanGame-Server-Manager' &&
-      (github.event_name == 'workflow_dispatch' || vars.ENABLE_ENSHROUDED_COMPATIBILITY_TRACKER == 'true')
+      github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:

@@ -98,3 +98,28 @@ fn unowned_control_directory_is_preserved() {
     );
     assert!(!root.0.join(DLL).exists());
 }
+
+#[test]
+fn optional_preparation_failure_preserves_a_user_loader_and_disables_moderation() {
+    let root = Scratch::new();
+    fs::write(root.0.join(DLL), b"user loader").unwrap();
+    // Missing executable makes preparation fail. The optional setup reports the
+    // issue as a value, preserving the ordinary game-start control flow.
+    let issue = prepare_optional_install(&root.0, &"f".repeat(64), None);
+    assert!(issue.is_some());
+    assert_eq!(fs::read(root.0.join(DLL)).unwrap(), b"user loader");
+    let state: serde_json::Value = serde_json::from_slice(
+        &fs::read(root.0.join(".langame-enshrouded-control-state.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(state["extension_status"], "not_installed");
+}
+
+#[test]
+fn optional_preparation_failure_retires_only_the_verified_owned_proxy() {
+    let root = Scratch::new();
+    install_verified(&root.0, b"our extension").unwrap();
+    assert!(prepare_optional_install(&root.0, &"f".repeat(64), None).is_some());
+    assert!(!root.0.join(DLL).exists());
+    assert!(root.0.join(io::OWNER).exists());
+}

@@ -531,12 +531,25 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     );
     crate::astroneer_console::validate_start_settings(&instance)?;
     super::commands_theforest_control::prepare(storage, &instance).await?;
-    super::commands_enshrouded_control::prepare(
-        storage,
-        &instance,
-        prestart_update_log_path.as_deref(),
-    )
-    .await?;
+    let extension_storage = storage.clone();
+    let extension_instance = instance.clone();
+    let extension_log_path = prestart_update_log_path.clone();
+    let (guards, extension_result) =
+        spawn_storage_context_task(runtime_start_reservation, async move {
+            // Native file preparation can outlive a cancelled start request.
+            // Retain both program locks until that worker has actually finished.
+            let result = super::commands_enshrouded_control::prepare(
+                &extension_storage,
+                &extension_instance,
+                extension_log_path.as_deref(),
+            )
+            .await;
+            (program_guards, result)
+        })
+        .await
+        .map_err(|error| format!("runtime start extension preparation task failed: {error}"))?;
+    program_guards = guards;
+    extension_result?;
     let (module, mut launch_plans) = Box::pin(super::commands_runtime_environment::prepare(
         state,
         storage,

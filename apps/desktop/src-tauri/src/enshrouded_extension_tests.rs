@@ -182,3 +182,25 @@ fn a_valid_old_signature_cannot_roll_back_the_recorded_revision() {
         .is_err()
     );
 }
+
+#[test]
+fn local_selection_needs_no_network_or_async_runtime() {
+    let root = Scratch::new();
+    let result = resolve_local(&root.0, io::EXE_SHA256);
+    assert_eq!(result.source, "bundled");
+    assert!(result.package.is_none());
+    assert!(result.update_issue.is_none());
+    let result = resolve_local(&root.0, &"f".repeat(64));
+    assert_eq!(result.source, "unsupported");
+    assert!(result.package.is_none());
+}
+
+#[test]
+fn an_unusable_optional_cache_still_selects_bundled_support() {
+    let root = Scratch::new();
+    fs::write(root.0.join("cache"), b"not a directory").unwrap();
+    let result = resolve_local(&root.0, io::EXE_SHA256);
+    assert_eq!(result.source, "bundled");
+    assert!(result.package.is_none());
+    assert!(result.update_issue.is_some());
+}
