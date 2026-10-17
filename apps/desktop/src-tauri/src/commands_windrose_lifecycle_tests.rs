@@ -42,13 +42,15 @@ fn windrose_initialization_child() {
         unsafe { SetConsoleCtrlHandler(record_interrupt as *const () as *mut _, 1) },
         0
     );
-    std::fs::write(root.join("bootstrap-pid"), std::process::id().to_string()).unwrap();
     let mode = std::env::var("LANGAME_WINDROSE_BOOTSTRAP_MODE").unwrap();
+    if !matches!(mode.as_str(), "exit" | "detached_ready") {
+        native_console_fixture::create();
+    }
+    // Cancellation may begin as soon as this marker is observed. Publish it
+    // only after the native quit endpoint exists.
+    std::fs::write(root.join("bootstrap-pid"), std::process::id().to_string()).unwrap();
     if mode == "exit" {
         return;
-    }
-    if mode != "detached_ready" {
-        native_console_fixture::create();
     }
     if matches!(mode.as_str(), "ready" | "unclean") {
         write_native_world(&root);
