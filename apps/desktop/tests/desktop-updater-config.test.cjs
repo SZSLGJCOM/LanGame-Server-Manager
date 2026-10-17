@@ -37,13 +37,14 @@ const fixturePublicKey = encodedRecord([
   Buffer.concat([Buffer.from("Ed"), Buffer.alloc(8, 7), Buffer.alloc(32, 2)]).toString("base64"),
 ]);
 
-function fixtureExecutable(importName = "KERNEL32.dll") {
+function fixtureExecutable(importName = "KERNEL32.dll", subsystem = 2) {
   const data = Buffer.alloc(1536);
   data.write("MZ"); data.writeUInt32LE(128, 60); data.write("PE\0\0", 128);
   data.writeUInt16LE(0x8664, 132); data.writeUInt16LE(1, 134);
   data.writeUInt16LE(240, 148); data.writeUInt16LE(0x20b, 152);
   data.writeBigUInt64LE(0x140000000n, 176);
   data.writeUInt32LE(512, 212); data.writeUInt32LE(16, 260);
+  data.writeUInt16LE(subsystem, 220);
   data.writeUInt32LE(0x1000, 272); data.writeUInt32LE(40, 276);
   data.write(".rdata", 392);
   data.writeUInt32LE(1024, 400); data.writeUInt32LE(0x1000, 404);
@@ -404,6 +405,8 @@ for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline
   { name: "rejects an untyped VC runtime receipt", runtimeReceipt: "staticVcruntime='true';", rejection: /static Visual C\+\+ runtime/ },
   { name: "rejects actual dynamic VC imports despite a static receipt", runtimeReceipt: "staticVcruntime=$true;",
     executable: "dynamic", rejection: /runtime dependency verification failed/ },
+  { name: "rejects a Console main executable despite a static receipt", runtimeReceipt: "staticVcruntime=$true;",
+    executable: "console", rejection: /runtime dependency verification failed/ },
   { name: "rejects an invalid executable despite a static receipt", runtimeReceipt: "staticVcruntime=$true;",
     executable: "invalid", rejection: /runtime dependency verification failed/ },
   { name: "rejects a receipt without the executable", runtimeReceipt: "staticVcruntime=$true;",
@@ -414,7 +417,8 @@ for (const { name, changedConfig, runtimeReceipt, rejection, executable, offline
     const managedScripts = path.join(fixture.tempRoot, "scripts");
     fs.mkdirSync(managedScripts);
     fs.writeFileSync(path.join(fixture.artifactRoot, "langame-desktop.exe"), executable === "invalid"
-      ? Buffer.from("invalid PE fixture") : fixtureExecutable(executable === "dynamic" ? "VCRUNTIME140.dll" : undefined));
+      ? Buffer.from("invalid PE fixture")
+      : fixtureExecutable(executable === "dynamic" ? "VCRUNTIME140.dll" : undefined, executable === "console" ? 3 : 2));
     // Replace only the external workstation builder/receipt-reader boundary.
     // This verifies the product export decision, not real compilation or signing.
     fs.writeFileSync(path.join(managedScripts, "codex-snapshot-build.psm1"), `
@@ -449,6 +453,7 @@ exit 0
     const output = path.join(fixture.outputRoot, exportedName);
     if (rejection) {
       expectFailure(result, rejection);
+      if (executable === "console") assert.match(result.stdout + result.stderr, /Expected Windows GUI subsystem \(2\), found 3/);
       assert.equal(fs.existsSync(output), false);
       assert.equal(fs.existsSync(path.join(fixture.outputRoot, "desktop-installer-artifacts.json")), false);
     } else {
