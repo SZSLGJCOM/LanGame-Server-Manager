@@ -51,7 +51,7 @@
     "@react-three/fiber": "^9.8.1",
     "@tauri-apps/api": "^2.12.3",
     "hls.js": "^1.7.3",
-    "motion": "^14.1.0",
+    "motion": "^14.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "0.186.1"
