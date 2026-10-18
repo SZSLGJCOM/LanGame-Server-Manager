@@ -208,8 +208,13 @@ jobs:
         with:
           cache-key: rust-native
           save-cache: "true"
+      - name: Prepare pinned NSIS installer tools
+        id: nsis
+        run: |
+          $nsisRoot = & ./scripts/prepare_desktop_installer_tools.ps1 -OutputRoot (Join-Path $env:RUNNER_TEMP 'lgsm-installer-tools')
+          "root=$nsisRoot" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
       - name: Verify native Tauri and WebView2 recovery
-        run: python -B scripts/verify_project.py --component native --tier full --output "${{ runner.temp }}/verification"
+        run: python -B scripts/verify_project.py --component native --tier full --output "${{ runner.temp }}/verification" --nsis-root "${{ steps.nsis.outputs.root }}"
       - name: Retain native acceptance evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

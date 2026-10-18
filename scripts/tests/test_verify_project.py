@@ -124,7 +124,15 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual(full_scopes(["apps/desktop/src/api-transport.ts"]), (True, True, False))
         self.assertEqual(full_scopes(["modules/palworld/schema.json"]), (True, True, False))
         self.assertEqual(full_scopes(["apps/desktop/tests/helpers/desktop-reliability.tsx"]), (True, False, True))
-        self.assertEqual(full_scopes(["scripts/tests/test_desktop_installer_guard.ps1"]), (False, False, True))
+
+    def test_installer_script_family_selects_native_checks(self):
+        for name in ("guard", "language", "resources"):
+            path = f"scripts/tests/test_desktop_installer_{name}.ps1"
+            with self.subTest(path=path):
+                self.assertEqual(full_scopes([path]), (False, False, True))
+        self.assertEqual(full_scopes(["scripts/prepare_desktop_installer_tools.ps1"]), (False, False, True))
+        fixture = "scripts/tests/fixtures/retired-package-resources/enshrouded.json"
+        self.assertEqual(full_scopes([fixture]), (False, False, True))
 
     def test_browser_partition_is_complete_disjoint_and_preserves_runner_unit_tests(self):
         quick, browser = set(frontend_tests(False)), set(frontend_tests(True))

@@ -26,10 +26,12 @@ NATIVE_RISK_PREFIXES = (
     "apps/desktop/src-tauri/", "crates/app-runtime/", "crates/app-platform-win/",
     "crates/app-core/", "crates/app-storage/", ".cargo/",
     "apps/desktop/tests/helpers/desktop-reliability.",
+    "scripts/tests/test_desktop_installer_",
+    "scripts/tests/fixtures/retired-package-resources/",
 )
 NATIVE_RISK_FILES = {"apps/desktop/scripts/verify_desktop_reliability.cjs",
                      "apps/desktop/tests/desktop-reliability-driver.test.cjs",
-                     "scripts/tests/test_desktop_installer_guard.ps1"}
+                     "scripts/prepare_desktop_installer_tools.ps1"}
 SHARED_RISK_FILES = {"Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "apps/desktop/package.json",
                      "apps/desktop/package-lock.json", "scripts/verify_project.py",
                      "scripts/verify_scope.py",

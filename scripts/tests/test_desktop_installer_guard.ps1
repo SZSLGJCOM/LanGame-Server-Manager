@@ -134,6 +134,7 @@ SectionEnd
     Compile-Fixture $fixture ($common + @("/DOUTPUT=$update", "/DRECEIPT=$updateReceipt", '/DUPDATE=1'))
 
     & (Join-Path $PSScriptRoot 'test_desktop_installer_language.ps1') -NsisRoot $NsisRoot -CompileOnly:$CompileOnly
+    & (Join-Path $PSScriptRoot 'test_desktop_installer_resources.ps1') -NsisRoot $NsisRoot -CompileOnly:$CompileOnly
 
     if ($CompileOnly) {
         Write-Output 'NSIS compilation passed for both languages and install/uninstall guards; execution was not requested.'

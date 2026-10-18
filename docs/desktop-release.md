@@ -131,14 +131,18 @@ New installations use `LanGame/server-files` for game programs, `LanGame/instanc
 
 WebView's Windows profile, browser storage and browser cache are separate from these directories and remain under `%LOCALAPPDATA%\cn.langame.servermanager`. Uninstallation removes the application but preserves game data, server settings, the backend `settings.json`, databases, previously used data directories and the location record, so reinstallation can find them. The optional interface-data cleanup targets the application-identifier/WebView directories and resets interface settings stored in localStorage, including language, theme and model-service configuration. It does not erase the retained server data or backend files.
 
-The disposable NSIS guard fixture checks six install/uninstall process scenarios without using real server data:
+Tauri's in-app update replaces the uninstaller's resource list without removing files retired by an earlier package. `apps/desktop/src-tauri/installer/retired-resources.nsh` records those exact paths and original SHA256 values, including distributed line endings. Installation and uninstallation remove only matching files; edited files, additional files and directory links are preserved. When retiring another bundled resource, add its original identity to this list and exercise it through the same installer fixture. Never replace this with recursive removal of the modules directory.
+
+The disposable NSIS guard fixture exercises process guards, installer languages and retired-resource cleanup without using real server data:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tests/test_desktop_installer_guard.ps1 `
+pwsh -NoProfile -File scripts/tests/test_desktop_installer_guard.ps1 `
     -NsisRoot 'C:\BuildTools\NSIS'
 ```
 
-`-NsisRoot` must contain `makensis.exe` and the Tauri NSIS plugins expected by the test. `-CompileOnly` verifies compilation only; omit it to execute all six install/uninstall scenarios. Run the full fixture on a supported Windows test machine whose application-control policy permits the test executables. Compilation alone does not establish runtime behavior.
+`-NsisRoot` must contain `makensis.exe` and the Tauri NSIS plugins expected by the test. `-CompileOnly` verifies compilation only; omit it to execute the install/uninstall scenarios, including modified-file preservation and a failed deletion followed by retry. Run the full fixture on a supported Windows test machine whose application-control policy permits the test executables. Compilation alone does not establish runtime behavior.
+
+The Windows native CI job prepares the Tauri-pinned NSIS tools with `scripts/prepare_desktop_installer_tools.ps1`, verifies the downloaded assets, and runs this same fixture entry point.
 
 Before public distribution, use disposable data on a supported Windows test machine to verify:
 

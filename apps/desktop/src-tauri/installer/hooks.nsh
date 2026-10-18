@@ -38,6 +38,18 @@
   !undef LGSM_LANGUAGE_ID
 !macroend
 
+!include "${__FILEDIR__}\retired-resources.nsh"
+
+!macro NSIS_HOOK_POSTINSTALL
+  !insertmacro LGSM_REMOVE_RETIRED_RESOURCES ""
+!macroend
+
+!macro NSIS_HOOK_PREUNINSTALL
+  ; This hook precedes Tauri's own guard, so check before touching any files.
+  !insertmacro CheckIfAppIsRunning "$INSTDIR\${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
+  !insertmacro LGSM_REMOVE_RETIRED_RESOURCES "un."
+!macroend
+
 !ifmacrondef CheckIfAppIsRunning
   !error "Unsupported Tauri NSIS template: process guard is missing."
 !endif
