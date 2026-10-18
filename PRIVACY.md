@@ -58,7 +58,7 @@ On Windows, closing the main window hides it to the tray. The runtime service, s
 
 Browsing the game library or opening details can load images, video, descriptions, news or reviews from publishers, Steam and other configured media/API sources. Cached content can be reused; uncached or refreshed content contacts the source. Installing, validating or updating game programs and Workshop content contacts the relevant download/platform services. Knowledge synchronization contacts its listed sources. Opening an external link passes control to that site or application.
 
-These services can receive the source IP address, requested resource, feature parameters such as game/item IDs, language or search terms, and ordinary connection metadata. Games, SteamCMD, mods, embedded media and independently configured services may have their own accounts, logs, telemetry and retention. Their behavior is not covered by a promise that LanGame stores server files locally. Application update checks are disabled by default and the current configuration has no update feed; builds with an enabled feed contact that configured source.
+These services can receive the source IP address, requested resource, feature parameters such as game/item IDs, language or search terms, and ordinary connection metadata. Games, SteamCMD, mods, embedded media and independently configured services may have their own accounts, logs, telemetry and retention. Their behavior is not covered by a promise that LanGame stores server files locally. Official releases automatically check for application updates using the configured update sources (langame.cn and GitHub); the default source-code configuration has no update feed.
 
 ### Reports, requests and changes
 
@@ -126,7 +126,7 @@ Windows 下关闭主窗口会隐藏到托盘，运行时服务、服务器和定
 
 浏览游戏库或打开详情时，可能从发行方、Steam 及配置的其他媒体或接口来源加载图片、视频、介绍、新闻和评测。缓存可复用，缺少缓存或刷新内容时会访问来源。安装、校验、更新游戏程序及创意工坊内容会访问相应下载或平台服务；知识库同步会访问其资料来源。打开外部链接后，由对应网站或应用处理后续访问。
 
-这些服务可能收到来源 IP、所请求的资源、游戏或物品 ID、语言、搜索词等功能参数及一般连接信息。游戏、SteamCMD、Mod、嵌入媒体及单独配置的服务可能有自己的账号、日志、遥测和保留规则，不能用“LanGame 将服务器文件保存在本机”来概括它们的行为。应用默认关闭更新检查，当前配置没有更新源；配置并启用更新源的构建会访问相应来源。
+这些服务可能收到来源 IP、所请求的资源、游戏或物品 ID、语言、搜索词等功能参数及一般连接信息。游戏、SteamCMD、Mod、嵌入媒体及单独配置的服务可能有自己的账号、日志、遥测和保留规则，不能用“LanGame 将服务器文件保存在本机”来概括它们的行为。官方发行版会自动检查应用更新，访问所配置的更新源（国内更新站点 langame.cn 和 GitHub）；源代码默认配置未设置更新源。
 
 ### 反馈、请求与变更
 
