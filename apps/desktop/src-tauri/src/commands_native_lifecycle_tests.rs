@@ -659,6 +659,24 @@ async fn run_native_package(
             "NATIVE_LIFECYCLE module={module_id} phase=first_instance_deleted library=preserved remaining_instances=0"
         );
     }
+    if std::env::var_os("LANGAME_NATIVE_STEAMCMD_ROOT").is_none()
+        && package.root.join("steamcmd").is_dir()
+    {
+        let before = probe_steamcmd_status(state.clone())?;
+        if !before.ready || !before.can_uninstall {
+            return Err("native SteamCMD acquisition did not produce a ready managed tool".into());
+        }
+        let removed = uninstall_steamcmd(state.clone()).await?;
+        if removed.executable_exists
+            || removed.can_uninstall
+            || package.root.join("steamcmd").exists()
+        {
+            return Err("native SteamCMD uninstall did not remove its owned tool directory".into());
+        }
+        println!(
+            "NATIVE_LIFECYCLE module={module_id} phase=steamcmd_uninstall managed_tool=removed"
+        );
+    }
     drop(cleanup);
     if let Some(mut firewall) = firewall_cleanup {
         firewall.finish()?;
