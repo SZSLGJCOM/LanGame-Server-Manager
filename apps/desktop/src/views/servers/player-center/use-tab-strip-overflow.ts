@@ -1,5 +1,23 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
+function revealSelectedTab(element: HTMLElement) {
+  const selected = element.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+  if (!selected) return;
+  const fade = 28;
+  // Position inside the scrolled content, independent of the tab's offsetParent.
+  const left = selected.getBoundingClientRect().left - element.getBoundingClientRect().left - element.clientLeft + element.scrollLeft;
+  const width = selected.getBoundingClientRect().width;
+  const right = left + width;
+  const view = element.clientWidth;
+  // A wide tab keeps its start and focus ring visible across repeated resize notifications.
+  if (width + 2 * fade > view) {
+    element.scrollLeft = Math.max(0, left - Math.max(3, (view - width) / 2));
+    return;
+  }
+  if (left - fade < element.scrollLeft) element.scrollLeft = Math.max(0, left - fade);
+  else if (right + fade > element.scrollLeft + view) element.scrollLeft = right + fade - view;
+}
+
 /**
  * Keeps a single-row tab strip usable when its tabs are wider than the space beside the header actions:
  * the strip scrolls horizontally (no visible scrollbar), marks which edges hide tabs so CSS can fade them,
@@ -30,7 +48,11 @@ export function useTabStripOverflow<T extends HTMLElement>(selectedKey: string, 
     update();
     element.addEventListener("scroll", update, { passive: true });
     element.addEventListener("wheel", wheel, { passive: false });
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    // Fonts, translations and header actions can resize the strip without changing selection.
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
+      revealSelectedTab(element);
+      update();
+    });
     observer?.observe(element);
     for (const child of element.children) observer?.observe(child);
     return () => {
@@ -43,15 +65,8 @@ export function useTabStripOverflow<T extends HTMLElement>(selectedKey: string, 
   // The selected tab is scrolled fully into the strip only (never the page), including after keyboard moves.
   useLayoutEffect(() => {
     const element = strip.current;
-    const selected = element?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
-    if (!element || !selected) return;
-    const fade = 28;
-    // Position inside the scrolled content, independent of the tab's offsetParent.
-    const left = selected.getBoundingClientRect().left - element.getBoundingClientRect().left - element.clientLeft + element.scrollLeft;
-    const right = left + selected.getBoundingClientRect().width;
-    const view = element.clientWidth;
-    if (left - fade < element.scrollLeft) element.scrollLeft = Math.max(0, left - fade);
-    else if (right + fade > element.scrollLeft + view) element.scrollLeft = right + fade - view;
+    if (!element) return;
+    revealSelectedTab(element);
     element.dispatchEvent(new Event("scroll"));
   }, [selectedKey, itemsKey]);
 

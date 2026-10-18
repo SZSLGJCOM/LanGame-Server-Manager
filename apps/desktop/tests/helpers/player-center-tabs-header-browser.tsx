@@ -424,6 +424,31 @@ async function keyboardReachesEveryTab(locale: string) {
   const last = tabs().at(-1)!;
   expect(document.activeElement === last && last.getAttribute("aria-selected") === "true" && last.tabIndex === 0, `${locale}@${innerWidth}: End did not move roving focus to the last tab`);
   expect(inView(last), `${locale}@${innerWidth}: the selected last tab is not scrolled into view`);
+  // Header actions and fonts can change the available width without changing the selected tab.
+  strip.style.minWidth = "0";
+  strip.style.maxWidth = "130px";
+  await frames(3);
+  expect(inView(last), `${locale}@${innerWidth}: the selected last tab became hidden after the strip narrowed`);
+  strip.style.removeProperty("min-width");
+  strip.style.removeProperty("max-width");
+  await frames(3);
+  await key("Home");
+  await key("ArrowRight");
+  await key("ArrowRight");
+  await key("ArrowRight");
+  const wideTab = tabs()[3];
+  strip.style.minWidth = "0";
+  strip.style.maxWidth = "80px";
+  await frames(3);
+  expect(inView(wideTab), `${locale}@${innerWidth}: the start of a wider selected tab is hidden`);
+  const tabWidth = wideTab.style.width;
+  wideTab.style.width = `${wideTab.getBoundingClientRect().width + 1}px`;
+  await frames(3);
+  expect(inView(wideTab), `${locale}@${innerWidth}: resizing a wider selected tab hid its start`);
+  wideTab.style.width = tabWidth;
+  strip.style.removeProperty("min-width");
+  strip.style.removeProperty("max-width");
+  await key("End");
   const stripStyle = getComputedStyle(strip), outline = 2 + 1; // .player-center-list-tab:focus-visible outline + offset
   expect(parseFloat(stripStyle.paddingTop) >= outline && parseFloat(stripStyle.paddingLeft) >= outline,
     `${locale}@${innerWidth}: the clipped tab strip has no room for the focus ring`);
