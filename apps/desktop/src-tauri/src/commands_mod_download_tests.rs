@@ -59,9 +59,13 @@ async fn thunderstore_download_cancellation_settles_active_writer_and_removes_pa
         // Cancel after the real owned writer has written the first chunk;
         // this proves more than dropping an unstarted request future.
         loop {
-            let wrote = fs::read_dir(&worker_root)
-                .unwrap()
-                .any(|entry| entry.unwrap().metadata().unwrap().len() > 0);
+            // Windows directory entries can retain length zero while the
+            // writer is open. Observe its bytes through a fresh file handle.
+            let wrote = fs::read_dir(&worker_root).unwrap().any(|entry| {
+                let mut file = fs::File::open(entry.unwrap().path()).unwrap();
+                let mut byte = [0u8; 1];
+                file.read(&mut byte).unwrap() == 1 && byte[0] == b'z'
+            });
             if wrote {
                 break;
             }
@@ -116,7 +120,10 @@ async fn thunderstore_download_cancellation_settles_active_writer_and_removes_pa
     // join here prevents Hyper from driving the cancelled connection's EOF.
     let server_result =
         tokio::task::spawn_blocking(move || server.thread.take().unwrap().join()).await;
-    server_result.unwrap().unwrap();
+    assert!(
+        server_result.unwrap().is_ok(),
+        "download fixture failed; download result: {result:?}"
+    );
     let result = result.expect("download did not settle within its fixture budget");
     assert!(
         matches!(result, Err(ModDownloadFailure::Terminal(_))),
