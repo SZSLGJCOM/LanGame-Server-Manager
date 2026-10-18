@@ -36,6 +36,7 @@ impl Fixture {
             path,
             label: version.into(),
             identity: OnlineModIdentity {
+                thunderstore_intent: None,
                 provider: "modrinth".into(),
                 project: project.into(),
                 historical_names: vec![project.into(), "fabric-api".into()],
@@ -60,6 +61,7 @@ impl Fixture {
             path,
             label: version.into(),
             identity: OnlineModIdentity {
+                thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: "Author-Plugin".into(),
                 historical_names: vec!["Author-Plugin".into()],
@@ -94,6 +96,7 @@ fn online_mod_replacement_respects_installed_consumers_and_preserves_rejected_st
     manifest.packages.insert(
         "thunderstore-Author-Unrelated".into(),
         InstalledPackage {
+            thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "thunderstore-Author-Unrelated".into(),
             files: BTreeMap::new(),

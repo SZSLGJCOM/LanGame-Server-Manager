@@ -26,6 +26,7 @@ pub(crate) fn decode_document_settings(document: &Value) -> Result<Value, Storag
     if !app_core::ark_maps::is_ark(module_id) {
         return Ok(Value::Object(settings));
     }
+    normalize_mod_overrides(module_id, &mut settings)?;
     let invalid_field = |field: &str, message: &str| StorageError::InvalidModuleSetting {
         module_id: module_id.into(),
         field: field.into(),
@@ -106,9 +107,11 @@ pub(crate) fn normalize_settings(
     if !app_core::ark_maps::is_ark(module_id) {
         return Ok(());
     }
+    normalize_mod_overrides(module_id, settings)?;
     // These values only exist in a trusted process projection, never persisted input.
     settings.remove("_managed_ark_save_directory");
     settings.remove("_managed_ark_native_log");
+    settings.remove("_managed_ark_ini_directory");
     let maps = app_core::ark_maps::parse_additional_maps(&Value::Object(settings.clone()))
         .map_err(|error| invalid(module_id, error))?;
     if !maps.is_empty()
@@ -124,6 +127,28 @@ pub(crate) fn normalize_settings(
             Value::String(format!("lgsm-{instance_id}")),
         );
     }
+    Ok(())
+}
+
+pub(crate) fn normalize_mod_overrides(
+    module_id: &str,
+    settings: &mut Map<String, Value>,
+) -> Result<(), StorageError> {
+    if !settings.contains_key(app_core::ark_mod_scopes::SNAPSHOTS_FIELD) {
+        return Ok(());
+    }
+    let mut value = Value::Object(settings.clone());
+    app_core::ark_mod_scopes::convert_map_snapshots(module_id, &mut value).map_err(|message| {
+        StorageError::InvalidModuleSetting {
+            module_id: module_id.into(),
+            field: app_core::ark_mod_scopes::SNAPSHOTS_FIELD.into(),
+            message,
+        }
+    })?;
+    *settings = value
+        .as_object()
+        .cloned()
+        .ok_or(StorageError::InvalidSettingsRoot)?;
     Ok(())
 }
 

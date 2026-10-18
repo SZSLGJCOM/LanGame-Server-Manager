@@ -24,6 +24,7 @@ const patch = require("../src/views/servers/mod-settings-patch.ts");
 const dstPolicy = require("../src/views/servers/mod-workbench-dst-policy.ts");
 const workshopControls = require("../src/views/servers/mod-workbench-workshop-controls.ts");
 const workshopInventory = require("../src/views/servers/mod-workbench-workshop-inventory.ts");
+const { arkModFields } = require("../src/views/servers/ark-map-mods.ts");
 const { parseSettingsObject, parseWorkshopIdList } = require("../src/views/settings/guided-settings.ts");
 
 function functionSource(name) {
@@ -53,6 +54,7 @@ const INITIAL_SETTINGS = {
 };
 
 function fixture() {
+  const moduleId = "projectzomboid";
   let persisted = structuredClone(INITIAL_SETTINGS);
   const scanStarted = deferred();
   const releaseScan = deferred();
@@ -66,7 +68,8 @@ function fixture() {
   const noOp = () => {};
   const context = {
     ...model, ...plans, ...collections, ...patch, parseSettingsObject, exports, Set, Map,
-    moduleId: "projectzomboid", expectedAppId: 108600, locale: "en-US", readOnly: false, steamAccount: undefined,
+    moduleId, isArk: arkModFields(moduleId).length > 0,
+    expectedAppId: 108600, locale: "en-US", readOnly: false, steamAccount: undefined,
     workflow: { steamDownloadMode: "steamcmd-cache" },
     modMutationsDisabled: false, modWorkflowUnsupported: false,
     modChangesBlockedRef: { current: false },
@@ -171,6 +174,7 @@ test("PZ collection install reports a source conflict instead of replacing a col
 });
 
 function dstFixture() {
+  const moduleId = "dontstarve";
   const initial = { steam_workshop_collections: [{ id: COLLECTION_ID, title: "Owned collection", member_ids: [MEMBER_ID] }],
     public_name: "Original name" };
   let persisted = structuredClone(initial);
@@ -183,7 +187,8 @@ function dstFixture() {
   const noOp = () => {};
   const context = {
     ...model, ...plans, ...collections, ...patch, ...dstPolicy, parseSettingsObject, exports, Set, Map,
-    moduleId: "dontstarve", expectedAppId: 322330, locale: "en-US", pzSnapshot: null, lookupMap: {}, readOnly: false,
+    moduleId, isArk: arkModFields(moduleId).length > 0,
+    expectedAppId: 322330, locale: "en-US", pzSnapshot: null, lookupMap: {}, readOnly: false,
     modChangesBlockedRef: { current: false }, latestSettingsRef: { current: structuredClone(initial) },
     t: (key, _params, fallback) => fallback ?? key,
     startTransition: (operation) => operation(),
@@ -295,7 +300,7 @@ function controlFixture(moduleId, enabled) {
   const instanceId = `instance-${moduleId}`;
   const context = {
     ...model, ...plans, ...collections, ...patch, ...workshopControls, ...workshopInventory,
-    parseSettingsObject, parseWorkshopIdList, exports, Set, Map, moduleId,
+    parseSettingsObject, parseWorkshopIdList, exports, Set, Map, moduleId, isArk: arkModFields(moduleId).length > 0,
     expectedAppId: null, locale: "en-US", pzSnapshot: null, lookupMap: {}, readOnly: false,
     modChangesBlockedRef: { current: false }, latestSettingsRef: { current: structuredClone(initial) },
     t: (key, _params, fallback) => fallback ?? key,

@@ -41,7 +41,10 @@ fn failed_start_error_with_cleanup(
 ) -> String {
     let primary_error = primary_error.into();
     match cleanup.issue_summary() {
-        Some(issue) => format!("{primary_error}; failed-start cleanup: {issue}"),
+        Some(issue) => super::commands_asa_startup_budget::mod_failure_with_cleanup_note(
+            primary_error,
+            &format!("; failed-start cleanup: {issue}"),
+        ),
         None => primary_error,
     }
 }
@@ -477,6 +480,45 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         ))
         .await?,
     );
+    let install_guard = program_guards
+        .1
+        .take()
+        .ok_or("startup program lifecycle lock is missing")?;
+    let workshop_update = Box::pin(super::commands_mods::workshop_start::update_before_start(
+        state,
+        storage,
+        super::commands_mods::workshop_start::WorkshopStartRequest {
+            descriptor,
+            instance: &instance,
+            install_guard,
+            reservation: runtime_start_reservation,
+            context: PrestartUpdateLogContext {
+                source,
+                console_log_path: prestart_update_log_path.as_deref(),
+            },
+        },
+    ))
+    .await?;
+    let thunderstore_update = Box::pin(
+        super::commands_mods::thunderstore_start::update_before_start(
+            state,
+            storage,
+            super::commands_mods::thunderstore_start::ThunderstoreStartRequest {
+                descriptor,
+                instance: &instance,
+                install_guard: workshop_update.install_guard,
+                reservation: runtime_start_reservation,
+                context: PrestartUpdateLogContext {
+                    source,
+                    console_log_path: prestart_update_log_path.as_deref(),
+                },
+            },
+        ),
+    )
+    .await?;
+    program_guards.1 = Some(thunderstore_update.install_guard);
+    let mut start_warnings = workshop_update.warnings;
+    start_warnings.extend(thunderstore_update.warnings);
     let materialization_paths = storage.paths.clone();
     let materialization_instance_id = instance_id.clone();
     let query_reservation = runtime_start_reservation.clone();
@@ -641,7 +683,13 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     #[cfg(not(all(windows, feature = "desktop-reliability")))]
     let fixture_firewall_boundary = false;
     if !fixture_firewall_boundary && !defer_materialization {
-        ensure_firewall_rules_for_start(storage, &instance, source).await?;
+        ensure_firewall_rules_for_start(
+            storage,
+            &instance,
+            source,
+            launch_plans.first().map(|plan| plan.log_path.as_str()),
+        )
+        .await?;
     }
     let active_runs = list_active_instance_runs(&storage.paths)
         .await
@@ -741,7 +789,13 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 // Bootstrap deliberately postpones port remapping. Apply rules
                 // only to the persisted formal-start ports, never its old snapshot.
                 if !fixture_firewall_boundary {
-                    ensure_firewall_rules_for_start(storage, &instance, source).await?;
+                    ensure_firewall_rules_for_start(
+                        storage,
+                        &instance,
+                        source,
+                        launch_plans.first().map(|plan| plan.log_path.as_str()),
+                    )
+                    .await?;
                 }
                 let primary = launch_plans
                     .first()
@@ -778,6 +832,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             runtime_start_reservation,
         )
         .await?;
+    super::commands_asa_startup_budget::validate_mod_start_plans(&instance, &launch_plans)?;
     let serialize_asa_mod_startup = asa_mod_startup::requires_barrier(
         &module.summary.id,
         launch_plans.len(),
@@ -920,7 +975,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .await
     {
         let bind_error =
-            format!("instance `{instance_id}` failed strict bind-address verification: {error}");
+            super::commands_asa_startup_budget::mod_failure_for_instance(error, &instance_id);
         let cleanup = stop_spawned_processes(&mut spawned_processes);
         if !cleanup.has_survivors() {
             return Err(failed_start_error_with_cleanup(bind_error, &cleanup));
@@ -938,9 +993,14 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             .map(|status| format!("{} pid {}", status.process_key, status.pid))
             .collect::<Vec<_>>()
             .join(", ");
-        failed_bind_message = Some(format!(
-            "{bind_error}; emergency cleanup could not stop {cleanup_issue}. The surviving process remains registered as running so it can be stopped from the server controls."
-        ));
+        failed_bind_message = Some(
+            super::commands_asa_startup_budget::mod_failure_with_cleanup_note(
+                bind_error,
+                &format!(
+                    "; emergency cleanup could not stop {cleanup_issue}. The surviving process remains registered as running so it can be stopped from the server controls."
+                ),
+            ),
+        );
     }
 
     if module.summary.id == "dontstarve"
@@ -1135,7 +1195,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             storage,
             "error",
             "instance.bind_address.cleanup_survivor_tracked",
-            &message,
+            &super::commands_asa_startup_budget::mod_failure_readable(&message),
             json!({
                 "source": source,
                 "instance_id": instance_id.as_str(),
@@ -1150,7 +1210,35 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         cancel_pending_runtime_restart(state, storage, &instance_id, &instance.summary.name);
     }
     drop(program_guards);
+    if source == "auto_restart" && !start_warnings.is_empty() {
+        let warning_job = BackgroundJob {
+            warnings: start_warnings.clone(),
+            id: new_background_job_id("instance-restart", &instance_id),
+            kind: JobKind::StartInstance,
+            label: format!("Restart {}", instance.summary.name),
+            status: JobStatus::Completed,
+            progress_percent: 100.0,
+            install_progress: None,
+            cancellable: false,
+            cancel_requested: false,
+            target_id: Some(instance_id.clone()),
+            detail: Some("Restarted using verified Mod caches after an update failure.".into()),
+            output_excerpt: None,
+        };
+        if let Err(error) = insert_background_job(state, storage, warning_job) {
+            // Publishing a notice cannot change an already-running server into
+            // a failed start. The provider's startup log retains the warning.
+            append_desktop_app_log(
+                storage,
+                "error",
+                "instance.start_warning.publish_failed",
+                &error,
+                json!({"instance_id":instance_id, "source":source}),
+            );
+        }
+    }
     Ok(StartInstanceResult {
+        warnings: start_warnings,
         summary,
         run_id: primary_process.run_id,
         session_id,

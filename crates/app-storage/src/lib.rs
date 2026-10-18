@@ -249,11 +249,12 @@ pub use program_runtime::{
 };
 pub use runtime::{
     GameLogDocument, GameLogSnapshot, QueriedPlayerCount, StartedInstanceProcess,
-    WindroseNativeStage, describe_expected_player_query_binding, list_active_instance_runs,
-    mark_instance_process_started_with_identity, mark_instance_process_stopped,
-    normalize_query_host, parse_a2s_info_payload, parse_minecraft_query_basic_response,
-    parse_minecraft_query_challenge_response, query_a2s_player_count, query_live_player_count,
-    read_active_instance_run, read_game_log_snapshot, read_instance_details_and_runtime_overview,
+    WindroseNativeStage, ark_native_log_message, describe_expected_player_query_binding,
+    list_active_instance_runs, mark_instance_process_started_with_identity,
+    mark_instance_process_stopped, normalize_query_host, parse_a2s_info_payload,
+    parse_minecraft_query_basic_response, parse_minecraft_query_challenge_response,
+    query_a2s_player_count, query_live_player_count, read_active_instance_run,
+    read_game_log_snapshot, read_instance_details_and_runtime_overview,
     read_instance_game_log_document, read_instance_log_document,
     read_instance_restart_failure_count, read_instance_runtime_overview, read_log_path_snapshot,
     resolve_player_query_target, steam_player_query_visibility_restriction,

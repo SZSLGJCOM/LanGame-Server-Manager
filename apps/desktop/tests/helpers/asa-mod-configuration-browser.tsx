@@ -132,7 +132,7 @@ async function run() {
   assert(authorLink.parentElement?.classList.contains("asa-mod-config__heading") && authorLink.querySelector("svg")
     && !authorLink.textContent?.trim() && authorLink.getAttribute("aria-label") === (zh ? "作者文档" : "Author documentation"),
     "Author documentation is an accessible icon within the heading");
-  const sharedInstructions = zh ? "集群各地图共用" : "All maps in this cluster share";
+  const sharedInstructions = zh ? "配置应用于当前选定的地图范围" : "These settings apply to the selected map scope";
   assert(!visibleBodyText().includes(sharedInstructions) && !fixture.querySelector(".asa-mod-config__field code"),
     "General instructions and INI field identities do not occupy the configuration body");
   await verifyHelp(element<HTMLHeadingElement>(".asa-mod-config__heading h3"), sharedInstructions, "Configuration heading help");
@@ -255,14 +255,21 @@ async function run() {
   assert(input().value === "[OtherFile]\nKeep=dirty-other-file\n", "Late reload cannot discard another file's dirty draft after selection changes");
   await choose("game_ini"); assert(input().value.includes("Fresh=second"), "The completed readback resets only its originally reviewed destination");
   heldSettings = null;
+  const beforeCleanParent = { unrelated: stored.unrelated, otherMod: structuredClone(configs()[known]),
+    otherFile: configs()[unknown].game_user_settings_ini };
   stored = { ...stored, asa_mod_configurations: { ...configs(), [unknown]: { ...configs()[unknown], game_ini: "[NewPropsFixture]\nChanged=yes\n" } } };
   await render();
+  assert(input().value === "[NewPropsFixture]\nChanged=yes\n" && save().disabled,
+    "A clean editor follows new saved parent content without creating an unsaved draft");
   await change(input(), "[NewPropsFixture]\nChanged=local\n");
   const beforeNewPropsSave = saves.length; await click(save());
-  await settle(() => fixture.textContent?.includes(zh ? "已经改变" : "changed") ?? false);
-  assert(saves.length === beforeNewPropsSave, "New parent contents supersede recovered authority without silently rebasing an existing draft");
+  await settle(() => configs()[unknown].game_ini === "[NewPropsFixture]\nChanged=local\n");
+  assert(saves.length === beforeNewPropsSave + 1 && stored.unrelated === beforeCleanParent.unrelated
+    && JSON.stringify(configs()[known]) === JSON.stringify(beforeCleanParent.otherMod)
+    && configs()[unknown].game_user_settings_ini === beforeCleanParent.otherFile,
+    "A new edit after clean parent refresh saves once against current authority and preserves unrelated Mod/file settings");
 
-  await reload(); await change(input(), "[DelayedReadDraft]\nKeep=local\n");
+  await change(input(), "[DelayedReadDraft]\nKeep=local\n");
   const delayedReadDraft = input().value;
   capturedReload = structuredClone(stored);
   let releaseOldRead!: () => void; pendingReload = new Promise<void>((resolve) => { releaseOldRead = resolve; });

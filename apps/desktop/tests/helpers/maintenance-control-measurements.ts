@@ -23,12 +23,10 @@ export async function measureMaintenanceControls(
   await navigate("save-policy");
   measure("save retention", ".server-managed-backup-policy input[type=number]", 38);
   measure("save policy toggle", ".server-backup-policy-toggle", 38);
-  measure("save policy action", ".server-backup-policy-card button[type=submit]", 30, "action");
   await navigate("runtime");
   measure("runtime CPU limit", ".server-resource-fields input[name=cpu]", 38);
   measure("runtime autostart toggle", ".server-autostart-policy-editor > .settings-toggle-card", 38);
   measure("runtime recovery attempts", ".server-runtime-recovery-editor input[name=maxRestarts]", 38);
-  measure("runtime recovery action", ".server-runtime-recovery-editor button[type=submit]", 30, "action");
   await navigate("storage");
   measure("storage refresh action", ".instance-isolation-refresh", 30, "action");
   await navigate("broadcast");

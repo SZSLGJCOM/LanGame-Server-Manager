@@ -123,6 +123,7 @@ pub(super) async fn run_prestart_update_if_needed(
         state,
         storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::ValidateGame,
             label: format!("启动前更新 {}", instance.summary.name),

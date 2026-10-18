@@ -91,6 +91,9 @@ pub(super) async fn probe_all(
 
 const SCRIPT_HEADER: &str = "$ErrorActionPreference='Stop'\n[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)\n";
 pub(super) const SIGNATURE_FUNCTION: &str = r#"
+# PowerShell 7 can pass an incompatible Security module through PSModulePath.
+# Select the Security module belonging to this actual Windows PowerShell host.
+Import-Module -Name ($PSHOME+'\Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') -ErrorAction Stop
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;

@@ -518,6 +518,7 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA Official Coverage?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=30",
       "-NullRHI",
       "-Unattended",
@@ -652,6 +653,7 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA advanced configuration?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=30",
       "-NullRHI",
       "-Unattended",
@@ -712,6 +714,7 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA platform template configuration?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=30",
       "-NullRHI",
       "-Unattended",
@@ -783,6 +786,7 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=20?SessionName=LanGame Map Group?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=20",
       "-NullRHI",
       "-Unattended",
@@ -850,6 +854,7 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame ASA Native Settings?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=8",
       "-NullRHI",
       "-Unattended",
@@ -917,12 +922,157 @@
     "arguments": [
       "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame Mod Configuration?RCONEnabled=true?RCONPort=27020",
       "-port=7777",
+      "-QueryPort=27015",
       "-WinLiveMaxPlayers=8",
       "-NullRHI",
       "-Unattended",
       "-NoSplash",
       "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
       "-mods=1254808"
+    ],
+    "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+  }
+}
+```
+
+## `2026-10-18-asa_query_port.json`
+
+- Evidence: `best_effort_verified` at `2026-10-18` (build `Windows ASA 94.29 with AsaApi 2.03: the same API/configuration with a whole-quoted map URL containing a spaced server name and no independent keyword reported Steam initialization FAILED and lacked its configured query socket. Two concurrent processes retaining quoted URLs with independent -QueryPort=47015/47025 each owned their declared UDP query socket. Unquoted URL-only controls initialized Steam successfully and bound their configured query port, with and without the API. These observations cover query socket ownership. This fixture verifies rendered arguments while retaining the ARK URL and INI values, using the Epic UE 5.5 keyword contract.`)
+- Sources: `asa_query_port`, `asa_query_port_native_20261018`
+- Coverage: editable `0`, specialized `0`, derived `0`, generated `0`, excluded `1`
+
+### Settings
+
+```json
+{
+  "additional_maps": [],
+  "admin_password": "fixture-admin-password",
+  "map_name": "TheIsland_WP",
+  "max_players": 8,
+  "rcon_enabled": true,
+  "server_name": "LanGame Query Port"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "fragments": [
+        "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+        "SessionName=LanGame Query Port",
+        "Port=7777",
+        "QueryPort=27015",
+        "MaxPlayers=8",
+        "RCONPort=27020",
+        "ServerAdminPassword=fixture-admin-password"
+      ],
+      "path": "GameUserSettings.ini",
+      "root": "config"
+    },
+    {
+      "format": "ini",
+      "fragments": [
+        "[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5",
+        "SessionName=LanGame Query Port",
+        "Port=7777",
+        "QueryPort=27015",
+        "MaxPlayers=8",
+        "RCONPort=27020",
+        "ServerAdminPassword=fixture-admin-password"
+      ],
+      "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame Query Port?RCONEnabled=true?RCONPort=27020",
+      "-port=7777",
+      "-QueryPort=27015",
+      "-WinLiveMaxPlayers=8",
+      "-NullRHI",
+      "-Unattended",
+      "-NoSplash",
+      "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+      "-servergamelog",
+      "-servergamelogincludetribelogs",
+      "-ServerRCONOutputTribeLogs",
+      "-NoTransferFromFiltering"
+    ],
+    "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+  }
+}
+```
+
+## `2026-10-18-map_mod_scopes.json`
+
+- Evidence: `best_effort_verified` at `2026-10-18` (build `LGSM managed map process contract: the empty per-map override default retains shared INI and primary launch output. Per-Mod targeting, shared inheritance, native INI isolation, retained content, and restoring inheritance are covered by ARK Mod storage tests and ARK runtime tests; this fixture does not claim native gameplay verification.`)
+- Sources: `map_mod_scopes`
+- Coverage: editable `0`, specialized `1`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "additional_maps": [
+    {
+      "enabled": true,
+      "id": "desert",
+      "map_name": "ScorchedEarth_WP",
+      "name": "Scorched Earth"
+    },
+    {
+      "enabled": false,
+      "id": "paused",
+      "map_name": "TheCenter_WP",
+      "name": "The Center"
+    }
+  ],
+  "admin_password": "fixture-admin-password",
+  "ark_mod_map_overrides": {},
+  "cluster_directory": "",
+  "cluster_id": "fixture-map-group",
+  "map_name": "TheIsland_WP",
+  "max_players": 20,
+  "no_transfer_from_filtering": false,
+  "rcon_enabled": true,
+  "server_game_log": false,
+  "server_game_log_include_tribe_logs": false,
+  "server_name": "LanGame Map Group"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "fragments": [
+        "SessionName=LanGame Map Group",
+        "RCONPort=27020"
+      ],
+      "path": "GameUserSettings.ini",
+      "root": "config"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=20?SessionName=LanGame Map Group?RCONEnabled=true?RCONPort=27020",
+      "-port=7777",
+      "-QueryPort=27015",
+      "-WinLiveMaxPlayers=20",
+      "-NullRHI",
+      "-Unattended",
+      "-NoSplash",
+      "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+      "-ClusterDirOverride={{paths.saves_dir}}\\acceptance-arksurvivalascended\\cluster",
+      "-clusterid=fixture-map-group"
     ],
     "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
   }

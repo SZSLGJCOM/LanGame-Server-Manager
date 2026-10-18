@@ -5,6 +5,7 @@ import { instanceHasRunningProcess } from "../../runtime-action-state";
 import type { ConfigurationSpecializedRendererProps } from "./module-types";
 import { ArkMapAvailabilityNotice, ArkMapUnavailableWarning } from "./ArkMapAvailabilityNotice";
 import { ConfigurationHelp } from "./ConfigurationFieldHelp";
+import { ARK_MOD_MAP_OVERRIDES, readArkModMapOverrides } from "../servers/ark-map-mods";
 import {
   ARK_ADDITIONAL_MAP_LIMIT, arkMapsText, arkMapSelectionErrorMessage, buildArkMapSelectionPatch, newArkMapId, readAdditionalArkMaps,
   readArkMapSuggestions, validateAdditionalArkMaps, type AdditionalArkMap
@@ -46,14 +47,22 @@ export function ArkClusterMapsEditor(props: ConfigurationSpecializedRendererProp
 
   function patch(next: AdditionalArkMap[]) {
     if (disabled) return;
-    props.onPatch({ additional_maps: next });
+    const change: Record<string, unknown> = { additional_maps: next };
+    if (props.settings[ARK_MOD_MAP_OVERRIDES] !== undefined) {
+      try {
+        const scopes = new Set(["main", ...next.map((map) => `map-${map.id}`)]);
+        change[ARK_MOD_MAP_OVERRIDES] = Object.fromEntries(Object.entries(readArkModMapOverrides(props.settings, props.details.summary.module_id))
+          .filter(([scope]) => scopes.has(scope)));
+      } catch { setAddError(arkMapsText(t, "enableMapFailed")); return; }
+    }
+    props.onPatch(change);
   }
   function update(id: string, change: Partial<AdditionalArkMap>) {
     if (!maps) return;
     if (change.map_name !== undefined && !disabled) {
       try {
         props.onPatch(buildArkMapSelectionPatch(props.settings, change.map_name, suggestions,
-          { additional_maps: maps.map((map) => map.id === id ? { ...map, ...change } : map) }));
+          { additional_maps: maps.map((map) => map.id === id ? { ...map, ...change } : map) }, `map-${id}`));
         setAddError(null);
       } catch (cause) { setAddError(arkMapSelectionErrorMessage(cause, t)); }
       return;
@@ -67,7 +76,7 @@ export function ArkClusterMapsEditor(props: ConfigurationSpecializedRendererProp
     const error = validateAdditionalArkMaps({ additional_maps: [...maps, candidate] });
     if (error) { setAddError(arkMapsText(t, `error.${error}`)); return; }
     try {
-      props.onPatch(buildArkMapSelectionPatch(props.settings, mapName, suggestions, { additional_maps: [...maps, candidate] }));
+      props.onPatch(buildArkMapSelectionPatch(props.settings, mapName, suggestions, { additional_maps: [...maps, candidate] }, `map-${candidate.id}`));
     } catch (cause) { setAddError(arkMapSelectionErrorMessage(cause, t)); return; }
     setNewName(""); setAddError(null);
   }

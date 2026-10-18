@@ -148,6 +148,9 @@ mod text;
 #[path = "http_download_budget_tests.rs"]
 mod budget;
 
+#[path = "http_download_error_tests.rs"]
+mod errors;
+
 #[cfg(windows)]
 #[tokio::test]
 async fn persist_failure_keeps_the_existing_target_and_cleans_the_staging_file() {

@@ -957,3 +957,78 @@
   }
 }
 ```
+
+## `2026-10-18-map_mod_scopes.json`
+
+- Evidence: `exhaustive_verified` at `2026-10-18` (build `LGSM managed map process contract: the empty per-map override default retains shared INI and primary launch output. Per-Mod targeting, shared inheritance, native INI isolation, retained content, and restoring inheritance are covered by ARK Mod storage tests and ARK runtime tests; this fixture does not claim native gameplay verification.`)
+- Sources: `map_mod_scopes`
+- Coverage: editable `0`, specialized `1`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "additional_maps": [
+    {
+      "enabled": true,
+      "id": "desert",
+      "map_name": "ScorchedEarth_P",
+      "name": "Scorched Earth"
+    },
+    {
+      "enabled": false,
+      "id": "paused",
+      "map_name": "TheCenter",
+      "name": "The Center"
+    }
+  ],
+  "admin_password": "fixture-admin-password",
+  "ark_mod_map_overrides": {},
+  "auto_managed_mods": false,
+  "cluster_directory": "",
+  "cluster_id": "fixture-map-group",
+  "map_name": "TheIsland",
+  "max_players": 20,
+  "no_transfer_from_filtering": false,
+  "notify_admin_commands_in_chat": false,
+  "rcon_enabled": true,
+  "server_game_log": false,
+  "server_game_log_include_tribe_logs": false,
+  "server_name": "LanGame Map Group"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "fragments": [
+        "SessionName=LanGame Map Group",
+        "RCONPort=27020"
+      ],
+      "path": "GameUserSettings.ini",
+      "root": "config"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "TheIsland?AltSaveDirectoryName=acceptance-arksurvivalevolved?Port=7777?QueryPort=27015?MaxPlayers=20?SessionName=LanGame Map Group?RCONEnabled=true?RCONPort=27020",
+      "-NullRHI",
+      "-Unattended",
+      "-NoSplash",
+      "-abslog={{paths.logs_dir}}/ark-evolved-server.log",
+      "-stdout",
+      "-AllowStdOutLogVerbosity",
+      "-FORCELOGFLUSH",
+      "-ClusterDirOverride={{paths.saves_dir}}\\acceptance-arksurvivalevolved\\cluster",
+      "-MaxNumOfSaveBackups=20",
+      "-MinimumTimeBetweenInventoryRetrieval=3600",
+      "-clusterid=fixture-map-group"
+    ],
+    "executable_suffix": "ShooterGame/Binaries/Win64/ShooterGameServer.exe"
+  }
+}
+```

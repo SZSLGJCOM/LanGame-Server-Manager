@@ -3,7 +3,8 @@ import type { TranslateFn } from "../../i18n";
 import { ARK_WORKSPACE_EN } from "../../i18n/games/ark-workspace.en";
 import { isArkModule } from "../../ark-clusters";
 import type { ModulePortGroupDetails } from "../../types";
-import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, buildAsaModPlan, readAsaModMembership } from "../servers/mod-workbench-asa";
+import { ASA_RAW_MOD_WARNING, AsaModControlError, hasAsaRawModFlags, readAsaModMembership } from "../servers/mod-workbench-asa";
+import { ARK_MOD_MAP_OVERRIDES, applyArkModChange, arkModEnabledMaps, projectArkModSettings, readArkModMapOverrides } from "../servers/ark-map-mods";
 
 export const ARK_ADDITIONAL_MAP_LIMIT = 15;
 export interface AdditionalArkMap {
@@ -97,21 +98,19 @@ export function mergeArkMapSuggestions(official: readonly ArkMapSuggestion[], in
 
 /** A deliberate map choice enables its discovered Mod in the same settings mutation. Other edits leave membership alone. */
 export function buildArkMapSelectionPatch(settings: Readonly<SettingsObject>, mapName: string,
-  choices: readonly ArkMapSuggestion[], mapPatch: Readonly<SettingsObject>): SettingsObject {
+  choices: readonly ArkMapSuggestion[], mapPatch: Readonly<SettingsObject>, scope = "main"): SettingsObject {
   const id = choices.find((choice) => choice.value === mapName)?.modId;
   if (!id) return { ...mapPatch };
-  const added = buildAsaModPlan(settings, [id], "add", [id]);
-  let next = added;
-  if (readAsaModMembership(added).passive.includes(id)) {
-    // The shared actions remove passive membership; keep the active list's existing order.
-    next = buildAsaModPlan(buildAsaModPlan(added, [id], "disable", [id]), [id], "add", [id]);
-    next.mod_ids_csv = added.mod_ids_csv;
-  }
-  const patch = { ...mapPatch };
-  for (const key of ASA_MEMBERSHIP_KEYS) {
-    if (JSON.stringify(next[key]) !== JSON.stringify(settings[key])) patch[key] = next[key];
-  }
-  return patch;
+  const root = { ...settings, ...mapPatch };
+  if (hasAsaRawModFlags(root)) throw new AsaModControlError("raw-mod-flags");
+  const enabled = arkModEnabledMaps(root, "arksurvivalascended", id);
+  const next = applyArkModChange(root, "arksurvivalascended", { kind: "membership", modId: id, maps: [...new Set([...enabled, scope])] });
+  const overrides = readArkModMapOverrides(next, "arksurvivalascended");
+  const entry = overrides[scope];
+  const mod = entry.mods[id];
+  Object.assign(mod, { active: true, passive: false, disabled_active: false, disabled_passive: false, removed: false });
+  entry.active_order = [...new Set([...readAsaModMembership(projectArkModSettings(root, "arksurvivalascended", scope)).active, id])];
+  return { ...mapPatch, [ARK_MOD_MAP_OVERRIDES]: overrides };
 }
 
 export function arkMapSelectionErrorMessage(cause: unknown, t: TranslateFn): string {

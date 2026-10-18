@@ -33,11 +33,13 @@ import { appUpdateReleaseUrl } from "../app-update-model";
 import { openExternalUrl } from "../api";
 import { ActivityBar, type ActivityBarEntry } from "./ActivityBar";
 import { createActivityNoticeStore } from "./activity-notice-store";
+import { RuntimeStartWarnings } from "./RuntimeStartWarnings";
 
 interface AppShellProps {
   activeView: ViewKey;
   activityText: string;
   activityTone?: UiMessage["tone"];
+  runtimeStartNotice?: UiMessage["runtimeStartNotice"];
   runtimeRefreshIssue: RuntimeRefreshIssue | null;
   runtimeAutoRefreshPaused: boolean;
   runtimePollIntervalMs: number;
@@ -103,7 +105,8 @@ export function AppShell(props: AppShellProps) {
   const installationJob = selectActiveInstallationJob(props.jobs);
   const showInstallationProgress = installationJob && (!props.steamCmdProgress?.active
     || (props.steamCmdProgress.phase === "queued" && installationJob.install_progress?.phase !== "queued"));
-  const showActivityFeedback = Boolean(props.activityTone) || (!showInstallationProgress && !showSteamCmdProgress);
+  const showActivityFeedback = !props.runtimeStartNotice
+    && (Boolean(props.activityTone) || (!showInstallationProgress && !showSteamCmdProgress));
   const showRefreshFeedback = Boolean(props.runtimeRefreshIssue || props.runtimeAutoRefreshPaused);
   const activityEntries: ActivityBarEntry[] = [];
   if (showActivityFeedback) activityEntries.push({
@@ -121,6 +124,7 @@ export function AppShell(props: AppShellProps) {
 
   return (
     <ActivityNoticeTarget.Provider value={{ element: null, store: noticeStore, dismissLabel: t("servers.mods.closeToast", undefined, "Close") }}>
+    <RuntimeStartWarnings jobs={props.jobs} manual={props.runtimeStartNotice} />
     <div className="shell-frame" data-theme={props.theme}>
       <div className="shell-main shell-main--console">
         <AppHeader

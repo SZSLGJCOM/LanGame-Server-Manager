@@ -33,6 +33,7 @@ pub(super) async fn prepare(
         state,
         storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::ValidateGame,
             label: format!("准备 {} 运行环境", instance.summary.name),

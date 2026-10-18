@@ -32,7 +32,16 @@ export function composeWorkshopLookups(
 ): Record<string, SteamWorkshopLookupItem> {
   const result = { ...metadata };
   for (const summary of summaries) {
-    result[summary.id] = metadata[summary.id] ? { ...metadata[summary.id],
+    const detail = metadata[summary.id];
+    // A current Steam catalog supplies authoritative type evidence too. A failed
+    // optional HTML lookup must not keep an old 429 after that type is verified.
+    // Collection summaries cannot establish whether all members are verified.
+    const verifiedType = detail?.status === "unverified" && detail.item_kind === "unknown"
+      && detail.consumer_app_id != null && detail.consumer_app_id === summary.consumer_app_id
+      && summary.status === "resolved" && summary.item_kind === "item"
+      && detail.child_count === 0 && detail.children.length === 0;
+    result[summary.id] = detail ? { ...detail,
+      ...(verifiedType ? { item_kind: summary.item_kind, status: summary.status, message: null } : {}),
       title: summary.title, description: summary.description, description_excerpt: summary.description_excerpt
     } : summary;
   }

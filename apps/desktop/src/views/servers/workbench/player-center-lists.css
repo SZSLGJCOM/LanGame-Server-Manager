@@ -1,14 +1,43 @@
+/* One scrollable row (like the shell top navigation): edges that hide tabs fade, set by useTabStripOverflow. */
 .player-center-list-tabs {
-  min-width: 0;
+  --player-tabs-fade-start: 0px;
+  --player-tabs-fade-end: 0px;
+  /* The tabs keep at least ~40% of the header; status chips ellipsize before the strip shrinks further. */
+  min-width: min(40%, 240px);
   display: flex;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
+  flex: 1 1 0;
+  flex-wrap: nowrap;
   gap: 4px;
+  /* Room for the focus ring inside the clipped strip without changing the header height. */
+  margin: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline: 28px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--player-tabs-fade-start),
+    #000 calc(100% - var(--player-tabs-fade-end)), transparent 100%);
+}
+
+.player-center-list-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.player-center-list-tabs[data-overflow-start="true"] {
+  --player-tabs-fade-start: 28px;
+}
+
+.player-center-list-tabs[data-overflow-end="true"] {
+  --player-tabs-fade-end: 28px;
 }
 
 .player-center-list-tab {
+  flex: 0 0 auto;
   min-width: 0;
   min-height: 34px;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 7px;

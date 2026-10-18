@@ -33,7 +33,7 @@ const parent = { ...collection(parentId, "Fixture Collection", [server, client,
   description_excerpt: summaryOnly, description: fullDescription };
 const clientCollection = collection(clientCollectionId, "Client Collection", [client]);
 const catalog = [parent, nested, clientCollection, server, client, recovered, deep];
-let details: InstanceDetails, writes = 0, downloads = 0, unknownAttempts = 0, failUnknown = true;
+let details: InstanceDetails, writes = 0, downloads = 0, unknownAttempts = 0, serverAttempts = 0, failUnknown = true;
 let holdParent = true;
 let parentMetadataReturned = false;
 const heldParents: (() => void)[] = [];
@@ -153,6 +153,7 @@ async function run() {
       unknownAttempts += 1;
       if (failUnknown) throw new Error("Fixture member detail unavailable");
     }
+    if (command === "read_steam_workshop_item_details" && ids[0] === serverId) serverAttempts += 1;
     const result = await baseIpc(command, payload);
     if (command === "lookup_steam_workshop_items" && ids.includes(parentId)) parentMetadataReturned = true;
     return result;
@@ -234,6 +235,7 @@ async function run() {
   await back(nested.title!); await back(parent.title!);
   assert(!detail().querySelector(".mw-store-detail-back"), "Nested back navigation returns to the original collection root");
   await click(child(serverId)); await titleIs(server.title);
+  assert(serverAttempts === 1, "Reopening a recently verified Mod reuses its details without another Community lookup");
   await click(button("Close details"));
   holdParent = true;
   await openCollection();

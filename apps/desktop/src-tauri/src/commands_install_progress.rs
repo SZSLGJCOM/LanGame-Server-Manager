@@ -196,6 +196,7 @@ mod tests {
 
     fn downloading_job() -> BackgroundJob {
         BackgroundJob {
+            warnings: Vec::new(),
             id: String::from("install-fixture"),
             cancellable: true,
             cancel_requested: false,

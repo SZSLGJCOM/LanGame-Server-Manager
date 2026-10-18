@@ -149,6 +149,7 @@ fn dependencies_block_reverse_mutations_and_enable_checks_payload_version_and_st
         manifest.packages.insert(
             key.into(),
             InstalledPackage {
+                thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name.into(),
                 files: fingerprint_tree(&target.target_path.join(name)).unwrap(),
@@ -418,6 +419,7 @@ fn adopting_existing_thunderstore_consumer_preserves_declared_reverse_dependenci
     manifest.packages.insert(
         "thunderstore-Team-Library".into(),
         InstalledPackage {
+            thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "Library".into(),
             files: fingerprint_tree(&target.target_path.join("Library")).unwrap(),
@@ -523,6 +525,7 @@ fn deleting_owned_payload_preserves_root_and_nested_configuration_formats() {
     manifest.packages.insert(
         "local-Example".into(),
         InstalledPackage {
+            thunderstore_intent: None,
             routed_files: BTreeMap::new(),
             target_name: "Example".into(),
             files: fingerprint_tree(&package).unwrap(),
@@ -564,6 +567,7 @@ fn deleting_a_recorded_configuration_root_file_preserves_its_bytes() {
         manifest.packages.insert(
             key.clone(),
             InstalledPackage {
+                thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name.into(),
                 files: fingerprint_tree(&file).unwrap(),

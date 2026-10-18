@@ -4,6 +4,8 @@ use super::*;
 mod game_logs;
 #[path = "tests_asa_mod_configuration.rs"]
 mod mod_configuration;
+#[path = "tests_ark_mod_inheritance.rs"]
+mod mod_inheritance;
 
 struct MapFixture {
     descriptor: app_modules::ModuleDescriptor,

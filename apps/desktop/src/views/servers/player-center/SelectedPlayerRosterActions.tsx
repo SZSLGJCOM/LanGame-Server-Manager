@@ -11,6 +11,7 @@ import { resolveRosterActionTarget, type SelectedRosterEntry } from "./player-ce
 import { ConfigurationHelp } from "../../settings/ConfigurationFieldHelp";
 
 interface SelectedPlayerRosterActionsProps {
+  moduleId?: string;
   selectedPlayer: RuntimeLivePlayerEntry | null;
   selectedRoster?: SelectedRosterEntry | null;
   /** ID looked up in 手动查询; each roster interprets it with its own codec. */
@@ -66,7 +67,14 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
       return selectLocaleText(props.locale, `当前所选记录未提供「${field.title}」所需的身份。`, `The selected record does not provide the identity required by ${field.title}.`);
     }
     if (operation === "add" && entry) return selectLocaleText(props.locale, `此玩家已在「${field.title}」中。`, `This player is already in ${field.title}.`);
-    if (operation === "remove" && !entry) return selectLocaleText(props.locale, `此玩家不在「${field.title}」中。`, `This player is not in ${field.title}.`);
+    if (operation === "remove" && !entry) {
+      if (props.moduleId === "dontstarve" && field.key === "admin_list" && props.selectedPlayer?.role === "admin") {
+        return selectLocaleText(props.locale,
+          "服务器报告管理员权限，但当前不在本管理员名单。权限可能来自服务器所有者、Steam 组或本次启动已载入的配置；当前没有可移除的对应条目，无法通过此名单撤销这些权限。",
+          "The server reports administrator privileges, but this player is not in the current administrator list. Permissions may come from server ownership, a Steam group, or configuration loaded at startup; removing an absent entry cannot revoke them.");
+      }
+      return selectLocaleText(props.locale, `此玩家不在「${field.title}」中。`, `This player is not in ${field.title}.`);
+    }
     return null;
   }
   const editReason = disabled ? props.disabledReason ?? selectLocaleText(props.locale, "名单正在保存，请等待完成。", "A roster is being saved. Wait for it to finish.")
@@ -101,6 +109,10 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
           ? selectLocaleText(props.locale,
             "名单非空时，仅名单内账号可进入；移除最后一项会取消白名单限制，封禁规则继续有效。",
             "When the allowlist is non-empty, only listed accounts can enter. Removing its last entry disables the allowlist restriction; bans still apply.") : null;
+        const dstAdminRemovalHelp = props.moduleId === "dontstarve" && field.key === "admin_list" && entry
+          ? selectLocaleText(props.locale,
+            "移除仅修改本管理员名单，重启服务器后应用；其他来源（如服务器所有者、Steam 组或其他配置）授予的管理员权限不会随此移除。",
+            "Removal changes only this administrator list and applies after a server restart. Administrator privileges from other sources, such as server ownership, Steam groups, or other configuration, are unaffected.") : null;
         return <div key={field.key} className="player-access-selected-row" data-roster-field={field.key}>
           {(["add", "remove"] as const).filter((operation) => operation !== "add" || !props.suppressedAddFieldKeys?.includes(field.key)).map((operation) => {
             const merged = operation === "remove" && props.mergedUnban?.fieldKey === field.key;
@@ -114,7 +126,8 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
             const reason = unavailableReason(field, operation, target, entry);
             const helpText = [liveUnavailableReason ?? (mergedLive && target && !entry && !disabled ? null : merged && !mergedLive && target && !entry && !disabled
               ? selectLocaleText(props.locale, `\u6b64\u73a9\u5bb6\u4e0d\u5728\u300c${field.title}\u300d\u4e2d\uff1b\u670d\u52a1\u5668\u8fd0\u884c\u65f6\u53ef\u76f4\u63a5\u89e3\u5c01\u3002`,
-                `This player is not in ${field.title}; start the server to unban natively.`) : reason), nameBan ? nameBanHelp : null, allowlistHelp].filter(Boolean).join(" ");
+                `This player is not in ${field.title}; start the server to unban natively.`) : reason), nameBan ? nameBanHelp : null, allowlistHelp,
+              operation === "remove" ? dstAdminRemovalHelp : null].filter(Boolean).join(" ");
             const rawValue = mergedLive && !entry ? target?.rawValue : operation === "remove" ? entry?.rawValue : target?.rawValue;
             const displayName = entry?.label ?? props.selectedPlayer?.display_name ?? selectedRoster?.entry.label ?? props.manualTarget ?? "";
             const playerLabel = `${displayName}${target ? ` (${target.identity})` : ""}`.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
@@ -122,7 +135,8 @@ export function SelectedPlayerRosterActions(props: SelectedPlayerRosterActionsPr
               `确认对角色名「${String(target?.rawValue ?? "")}」执行「${label}」？${nameBanHelp}`,
               `Run “${label}” for character name “${String(target?.rawValue ?? "")}”? ${nameBanHelp}`)
               : selectLocaleText(props.locale, `确认对「${playerLabel}」执行「${label}」？`, `Run “${label}” for “${playerLabel}”?`)
-                + (allowlistHelp ? ` ${allowlistHelp}` : "");
+                + (allowlistHelp ? ` ${allowlistHelp}` : "")
+                + (operation === "remove" && dstAdminRemovalHelp ? ` ${dstAdminRemovalHelp}` : "");
             // Adding to a block/ban roster is a moderation action and uses the same danger variant as kick and ban.
             if (operation === "add" && editor?.identity && editor.fieldKey === field.key && editorField) {
               // The extra fields open in place of this button; its confirm/cancel pair takes the same spot.

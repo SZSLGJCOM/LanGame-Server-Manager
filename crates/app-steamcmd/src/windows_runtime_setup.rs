@@ -68,7 +68,6 @@ where
             .map_err(|error| install_acquire_error(error, deadline))?;
         prepare_cache_root(&root)?;
         process::check_reboot_marker(&root, deadline).await?;
-        let client = http_client()?;
         let plans = planned_packages(requirements, needs_xna);
         let mut guard = Some(guard);
         for plan in plans {
@@ -83,9 +82,16 @@ where
             let download = if !fresh || !path.is_file() {
                 let detail = format!("正在下载并验证 {}...", package.name);
                 on_progress(InstallProgressUpdate::stage(InstallPhase::Downloading, &detail));
-                let result = http_download::download_file_with_progress(&client, package.url, &path,
+                let result = http_download::download_native_package_with_progress(package.url, &path,
                     DownloadIntegrity { sha256: package.sha256, ..Default::default() }, deadline,
-                    |downloaded, total| on_progress(InstallProgressUpdate::download(&detail, downloaded, total))).await;
+                    |event| match event {
+                        http_download::NativeDownloadEvent::Route { ipv4: true, origin } =>
+                            on_progress(InstallProgressUpdate::stage(InstallPhase::Downloading,
+                                format!("{} 连接失败，正在通过 IPv4 重试官方地址 {}...", package.name, origin))),
+                        http_download::NativeDownloadEvent::Route { .. } => {},
+                        http_download::NativeDownloadEvent::Progress { bytes, total } =>
+                            on_progress(InstallProgressUpdate::download(&detail, bytes, total)),
+                    }).await;
                 match result {
                     Ok(downloaded) => {
                         process::verify_package(downloaded.path(), package, deadline).await?;

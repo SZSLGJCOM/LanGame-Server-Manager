@@ -1290,6 +1290,10 @@ async fn update_instance_transaction(
         let mut incoming_settings = parse_settings_object(&input.settings_json)?;
         let persisted_settings =
             parse_settings_object(&read_instance_settings_json(&config_file_path)?)?;
+        crate::ark_maps::normalize_mod_overrides(
+            &record.summary.module_id,
+            &mut incoming_settings,
+        )?;
         let native_permissions =
             MoriaPermissionsSnapshot::read(&record.summary.module_id, &template_install_root)?;
         if let Some(snapshot) = &native_permissions {
@@ -1335,6 +1339,26 @@ async fn update_instance_transaction(
                 expected_settings_json.as_deref(),
                 removed_enshrouded_ban,
             )?;
+        }
+        if app_core::ark_maps::is_ark(&record.summary.module_id)
+            && persisted_settings
+                .get(app_core::ark_mod_scopes::OVERRIDES_FIELD)
+                .filter(|value| !value.as_object().is_some_and(|map| map.is_empty()))
+                != incoming_settings
+                    .get(app_core::ark_mod_scopes::OVERRIDES_FIELD)
+                    .filter(|value| !value.as_object().is_some_and(|map| map.is_empty()))
+            && (has_active_run
+                || record.summary.active_process_count > 0
+                || matches!(
+                    record.summary.status,
+                    InstanceStatus::Starting | InstanceStatus::Running | InstanceStatus::Stopping
+                ))
+        {
+            return Err(StorageError::InvalidModuleSetting {
+                module_id: record.summary.module_id.clone(),
+                field: app_core::ark_mod_scopes::OVERRIDES_FIELD.into(),
+                message: "Stop all maps before changing map-specific Mods".into(),
+            });
         }
         if record.summary.module_id == "arksurvivalascended"
             && persisted_settings

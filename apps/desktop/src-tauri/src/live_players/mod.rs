@@ -40,4 +40,7 @@ mod cache_refresh_tests;
 mod dst_client_table_tests;
 
 #[cfg(test)]
+mod dst_client_table_command_tests;
+
+#[cfg(test)]
 mod service_tests;

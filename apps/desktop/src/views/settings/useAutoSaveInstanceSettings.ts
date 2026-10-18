@@ -28,6 +28,8 @@ interface UseAutoSaveInstanceSettingsOptions extends AutoSavePayload {
   /** False while the editor cannot validate its projection against loaded module metadata. */
   ready?: boolean;
   disabled?: boolean;
+  /** Follow records written by other editors while idle, so the next write uses their compare-and-swap baseline. */
+  adoptExternalWrites?: boolean;
   onSave?: (input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions) => Promise<InstanceDetails | undefined>;
 }
 
@@ -168,6 +170,12 @@ export function useAutoSaveInstanceSettings(
       registration.detach(!hasDraft || finalRequest ? completion : completion.then(rejectInvalid, rejectInvalid));
     };
   }, [coordinator, options.details.summary.id, options.enabled]);
+
+  const persistedSignature = buildPersistedDetailsSignature(options.details);
+  useEffect(() => {
+    if (!options.adoptExternalWrites || options.enabled === false) return;
+    saveQueueRef.current?.adoptPersisted(options.details.summary.id, options.details.settings_json, persistedSignature);
+  }, [options.adoptExternalWrites, options.enabled, options.details.summary.id, options.details.settings_json, persistedSignature]);
 
   useEffect(() => {
     // Loading a schema is not a user draft. Preserve an earlier draft if metadata reloads.

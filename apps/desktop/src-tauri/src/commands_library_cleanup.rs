@@ -249,6 +249,7 @@ pub(super) async fn uninstall_module_game_transaction(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::UninstallGame,
             label: label.clone(),

@@ -4,10 +4,10 @@ import { ShellIcon } from "../../components/ShellIcon";
 import { useMediaSource } from "../../components/useMediaSource";
 import { officialMediaCandidates } from "../../official-media-sources";
 import { useI18n } from "../../i18n";
-import { formatDesktopError } from "../../desktop-error-message";
 import { WorkshopStatus } from "./WorkshopStatus";
 import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
 import { isClientOnlyDstWorkshopItem } from "./mod-workbench-model";
+import { buildWorkshopLocalizationWarning } from "./workshop-warning";
 import type { SteamWorkshopLookupItem } from "../../types";
 import {
   formatWorkshopByteSize,
@@ -27,6 +27,7 @@ interface SteamWorkshopStoreDetailProps {
   progressPercent?: number | null;
   detailsReady: boolean;
   detailsError?: string | null;
+  localizationWarningCovered?: boolean;
   onRetryDetails?: () => void;
   onAction: () => void;
   onOpenChild: (childId: string) => void;
@@ -97,6 +98,8 @@ export function SteamWorkshopStoreDetail(props: SteamWorkshopStoreDetailProps) {
   const children = props.item.children.filter((child) => !(child.status === "resolved" && child.item_kind === "item" &&
     child.consumer_app_id === props.item.consumer_app_id && isClientOnlyDstWorkshopItem(child, props.item.consumer_app_id ?? null)));
   const skippedChildren = props.item.children.length - children.length;
+  const localizationWarning = props.item.localization_warning && !props.localizationWarningCovered
+    ? buildWorkshopLocalizationWarning(t, props.item.localization_warning) : null;
 
   return (
     <aside className="mw-store-detail" aria-busy={!props.detailsReady && !props.detailsError}
@@ -142,9 +145,9 @@ export function SteamWorkshopStoreDetail(props: SteamWorkshopStoreDetailProps) {
           </div>
         ) : <>
         {props.detailsError ? <ActivityNotice tone="error" action={<button type="button" className="mw-ghost-btn" onClick={props.onRetryDetails}>{t("common.retry", undefined, "Retry")}</button>}>{props.detailsError}</ActivityNotice> : null}
-        {props.item.localization_warning ? <ActivityNotice tone="warning" action={props.onRetryDetails ?
+        {localizationWarning ? <ActivityNotice tone="warning" details={localizationWarning.details} action={props.onRetryDetails ?
           <button type="button" className="mw-ghost-btn" onClick={props.onRetryDetails}>{t("common.retry", undefined, "Retry")}</button> : undefined}>
-          {`${t("servers.mods.storeDetail.originalTextFallback", undefined, "Workshop details could not be loaded in the selected language. Showing the author's original text; retry to load localized content.")} ${formatDesktopError(t, props.item.localization_warning)}`}
+          {localizationWarning.summary}
         </ActivityNotice> : null}
         <div className="mw-store-detail-preview">
           <SteamWorkshopPreview url={props.item.preview_url} />

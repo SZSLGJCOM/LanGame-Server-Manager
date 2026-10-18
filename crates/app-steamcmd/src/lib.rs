@@ -62,6 +62,10 @@ mod steamcmd_update_manifest;
 mod windows_runtime_catalog;
 mod windows_runtime_setup;
 mod workshop_cache;
+mod workshop_cache_integrity;
+mod workshop_cache_transaction;
+mod workshop_deployment_baseline;
+mod workshop_instance_membership;
 mod workshop_paths;
 
 use archive_install::{DirectDownloadInstallRequest, install_or_update_module_from_download};
@@ -69,6 +73,7 @@ use discovery::{configured_steamcmd_root, require_steamcmd_ready};
 pub use discovery::{managed_steamcmd_status, steamcmd_executable_path, steamcmd_status};
 pub use dst_workshop_cache::{
     DstWorkshopCacheDeployment, DstWorkshopCacheError, deploy_dst_workshop_cache,
+    deploy_verified_dst_workshop_cache,
 };
 use executable_resolution::{normalized_relative_path, resolve_probe_process_executable};
 use http_download::{DownloadIntegrity, fetch_json, http_client};
@@ -138,7 +143,15 @@ use steamcmd_stream::{
 use steamcmd_stream::{run_steamcmd_script_with_progress, steamcmd_failure_context};
 /// Verify and prepare official Windows prerequisites before game creation.
 pub use windows_runtime_setup::prepare_windows_runtime_dependencies;
-use workshop_paths::{inspect_workshop_item_paths, resolve_workshop_content_roots};
+pub use workshop_cache_integrity::record_validated_workshop_items;
+pub use workshop_cache_transaction::{
+    VerifiedWorkshopCache, WorkshopCacheScope, WorkshopCacheTransaction,
+    WorkshopDeploymentProtection,
+};
+pub use workshop_deployment_baseline::WorkshopDeploymentBaseline;
+#[cfg(test)]
+use workshop_paths::inspect_workshop_item_paths;
+use workshop_paths::resolve_workshop_content_roots;
 pub use workshop_paths::{inspect_workshop_items, inspect_workshop_items_with_dst_ugc_roots};
 mod workshop_download;
 
@@ -383,6 +396,7 @@ pub enum SteamCmdError {
         detail: String,
         permits_source_fallback: bool,
         source_unavailable: bool,
+        permits_ip_family_retry: bool,
     },
     #[error("download response was interrupted: {detail}")]
     HttpDownloadInterrupted { detail: String },
@@ -1232,8 +1246,36 @@ pub struct SteamWorkshopDownloadRequest<'a> {
     pub account_name: Option<&'a str>,
 }
 
+/// Cancels runtime verification and downloading through the same owned-process
+/// cleanup used by installation. The caller must await this operation after
+/// signalling cancellation so SteamCMD and its descendants are reaped before
+/// releasing their lifecycle leases.
+pub async fn download_workshop_items_with_login_and_cancellation_and_progress<F>(
+    settings: &AppSettings,
+    request: SteamWorkshopDownloadRequest<'_>,
+    guard: &GameInstallLifecycleGuard,
+    steamcmd_guard: &SteamCmdLifecycleGuard,
+    cancellation: &InstallCancellation,
+    on_progress: F,
+) -> Result<SteamWorkshopDownloadResult, SteamCmdError>
+where
+    F: FnMut(InstallProgressUpdate),
+{
+    cancellation
+        .scope(download_workshop_items_with_login_and_progress(
+            settings,
+            request,
+            guard,
+            steamcmd_guard,
+            on_progress,
+        ))
+        .await
+}
+
 /// Uses only an explicitly selected, previously authenticated Steam account.
 /// Cached credentials are owned by SteamCMD; passwords never enter this API.
+/// Every requested item runs native `workshop_download_item ... validate`, even
+/// when the local cache is already complete, so Steam checks its current version.
 pub async fn download_workshop_items_with_login_and_progress<F>(
     settings: &AppSettings,
     request: SteamWorkshopDownloadRequest<'_>,
@@ -1368,11 +1410,11 @@ where
 
     let (workshop_root, alternate_workshop_root) =
         resolve_workshop_content_roots(install_root, Path::new(&steamcmd.root), consumer_app_id);
-    let items = inspect_workshop_item_paths(
+    let items = workshop_cache::inspect_downloaded_items(
         consumer_app_id,
-        &workshop_root,
-        &alternate_workshop_root,
+        &[workshop_root.clone(), alternate_workshop_root],
         item_ids,
+        &output.workshop_command_evidence,
     )?;
     verify_downloaded_workshop_items(&items, &workshop_download::failure_context(&output))
         .map_err(|error| match error {
@@ -1381,6 +1423,11 @@ where
             }
             other => other,
         })?;
+    let workshop_root = items
+        .first()
+        .and_then(|item| Path::new(&item.expected_path).parent())
+        .map(Path::to_path_buf)
+        .unwrap_or(workshop_root);
     let excerpt = output.excerpt;
 
     on_progress(InstallProgressUpdate {
@@ -1532,3 +1579,5 @@ mod install_cancellation_safety_tests;
 #[cfg(test)]
 #[path = "steamcmd_tests.rs"]
 mod tests;
+#[cfg(all(windows, test))]
+mod workshop_download_cancellation_tests;

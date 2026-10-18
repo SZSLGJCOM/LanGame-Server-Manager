@@ -31,7 +31,7 @@
       "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
       "arguments": [
         "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame Mod Configuration?RCONEnabled=true?RCONPort=27020",
-        "-port=7777", "-WinLiveMaxPlayers=8", "-NullRHI", "-Unattended", "-NoSplash",
+        "-port=7777", "-QueryPort=27015", "-WinLiveMaxPlayers=8", "-NullRHI", "-Unattended", "-NoSplash",
         "-abslog={{paths.logs_dir}}/ark-ascended-server.log", "-mods=1254808"
       ]
     }

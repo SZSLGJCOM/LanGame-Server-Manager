@@ -25,6 +25,7 @@ pub(in crate::commands::tests) fn elevated_fixture_allowed(
 pub(in crate::commands::tests) struct NativeFirewall {
     specs: Vec<WindowsFirewallRuleSpec>,
     finished: bool,
+    cleanup_on_drop: bool,
 }
 
 impl NativeFirewall {
@@ -52,6 +53,7 @@ impl NativeFirewall {
         Ok(Self {
             specs,
             finished: false,
+            cleanup_on_drop: true,
         })
     }
 
@@ -64,6 +66,80 @@ impl NativeFirewall {
         Ok(Self {
             specs,
             finished: false,
+            cleanup_on_drop: true,
+        })
+    }
+
+    pub(in crate::commands::tests) fn prepare_asa_native(
+        instance: &InstanceDetails,
+        run_root: &Path,
+    ) -> Result<Self, String> {
+        let root = ordinary_path(run_root)?;
+        let parent = std::env::temp_dir()
+            .canonicalize()
+            .map_err(|error| error.to_string())?;
+        let id = instance.summary.id.as_str();
+        let unique_id = id.rsplit_once('-').is_some_and(|(slug, suffix)| {
+            slug == "asa-cf"
+                && suffix.len() == 16
+                && suffix
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        });
+        if root.parent() != Some(parent.as_path())
+            || !unique_id
+            || instance.summary.module_id != "arksurvivalascended"
+            || instance.summary.bind_ip != "0.0.0.0"
+            || instance.summary.autostart
+            || instance.active_run.is_some()
+            || ordinary_path(Path::new(&instance.config_file_path))?
+                != ordinary_path(&root.join("i").join(id).join("config/instance.json"))?
+        {
+            return Err(
+                "ASA firewall acceptance requires its unique disposable native wildcard instance"
+                    .into(),
+            );
+        }
+        let settings: serde_json::Value = serde_json::from_str(&instance.settings_json)
+            .map_err(|_| "ASA firewall acceptance settings are invalid")?;
+        if settings["map_name"] != "TheIsland_WP"
+            || settings["additional_maps"]
+                .as_array()
+                .is_none_or(|maps| !maps.is_empty())
+            || instance.ports.len() != 4
+        {
+            return Err("ASA firewall acceptance requires the declared single-map fixture".into());
+        }
+        let declared = [
+            ("game", "udp", 27777),
+            ("peer", "udp", 27778),
+            ("query", "udp", 47015),
+            ("rcon", "tcp", 47020),
+        ];
+        if declared.iter().any(|(name, protocol, number)| {
+            instance
+                .ports
+                .iter()
+                .filter(|port| {
+                    port.name == *name
+                        && port.protocol.eq_ignore_ascii_case(protocol)
+                        && port.port == *number
+                })
+                .count()
+                != 1
+        }) {
+            return Err("ASA firewall acceptance has invalid declared ports".into());
+        }
+        let specs =
+            build_instance_firewall_rule_specs(id, &instance.summary.name, &instance.ports, None);
+        if specs.len() != 4 || specs.iter().any(|spec| spec.local_address != "Any") {
+            return Err("ASA firewall acceptance produced an unexpected rule scope".into());
+        }
+        run(&script(&specs, Action::CheckAbsent)?)?;
+        Ok(Self {
+            specs,
+            finished: false,
+            cleanup_on_drop: false,
         })
     }
 
@@ -207,7 +283,14 @@ fn ordinary_path(path: &Path) -> Result<PathBuf, String> {
 
 impl Drop for NativeFirewall {
     fn drop(&mut self) {
-        if !self.finished
+        // ASA callers explicitly finish after independently confirming that
+        // their owned server stopped. Unwinding must retain rules when shutdown
+        // is uncertain, rather than removing them from a live server.
+        if !self.finished && !self.cleanup_on_drop {
+            eprintln!(
+                "NATIVE_LIFECYCLE cleanup=firewall_retained shutdown_confirmation_required=true"
+            );
+        } else if !self.finished
             && let Err(error) = self.finish()
         {
             eprintln!("NATIVE_LIFECYCLE cleanup=firewall_failed detail={error}");

@@ -15,10 +15,13 @@ fixture.style.cssText = "height:100vh;padding:16px;box-sizing:border-box;display
 const root = createRoot(fixture);
 const modules = ["abioticfactor", "arksurvivalascended", "astroneer", "corekeeper", "enshrouded", "humanitz",
   "minecraft", "necesse", "rust", "satisfactory", "sevendaystodie", "sonsoftheforest", "valheim", "vrising", "windrose"];
-const checks: string[] = [], errors: string[] = [], covered: string[] = [];
+const workshopModules = ["barotrauma", "conanexiles", "palworld", "squad", "terraria"];
+const checks: string[] = [], errors: string[] = [], covered: string[] = [], workshopCovered: string[] = [];
+const versionPolicyCovered: string[] = [];
 let details: InstanceDetails, moduleDetails: ModuleDetails, inventory: ManualModInventoryResult;
 let epoch = 0, stages = 0, references = 0, saves = 0, inventoryReads = 0;
 let lastReferences: string[] = [];
+let lastVersionPolicy: string | undefined;
 let referenceFailure: string | null = null;
 let expectedSourcePaths = ["C:\\Fixture\\mod.zip", "C:\\Fixture\\Folder\u3000"];
 const originalError = console.error;
@@ -74,7 +77,23 @@ async function run() {
     check, save: (saved) => { details = saved; }
   });
   mockIPC(async (command, payload) => {
-    const args = payload as { instanceId: string; references: string[]; sourcePaths: string[] };
+    if (command === "nexus_account_status") return { configured: true, user_name: "Fixture", is_premium: true };
+    if (command === "review_nexus_mod_references") {
+      const args = payload as { instanceId: string; references: string[] };
+      check(args.instanceId === details.summary.id && moduleDetails.mods?.source?.provider === "nexus", "Nexus review stays scoped to its current instance");
+      references++; lastReferences = args.references;
+      return args.references.map((reference, reference_index) => ({ reference_index, game_domain: "fixture", mod_id: reference,
+        mod_name: "Fixture server Mod", page_url: "https://www.nexusmods.com/7daystodie/mods/123", selected_file_id: null,
+        files: [{ file_id: "101", name: "Server files", file_name: "server.zip", version: "1.0", category: "MAIN", size_bytes: 1024,
+          description: "Dedicated server payload", downloadable: true, unavailable_reason: null }] }));
+    }
+    if (command === "install_nexus_mod_files") {
+      const args = payload as { instanceId: string; selections: { reference: string; file_id: string }[] };
+      check(args.instanceId === details.summary.id && args.selections.length === 1 && args.selections[0].file_id === "101",
+        "Nexus installation uses the explicitly reviewed file in its current instance");
+      stages++; return stageResult();
+    }
+    const args = payload as { instanceId: string; references: string[]; sourcePaths: string[]; thunderstoreVersionPolicy?: string };
     if (command === "read_manual_mod_inventory") inventoryReads++;
     if (["stage_manual_mod_files", "install_manual_mod_references", "resolve_manual_mod_references"].includes(command)) {
       check(args.instanceId === details.summary.id, "Drop mutation stays scoped to its current instance");
@@ -84,7 +103,9 @@ async function run() {
           "Native paths preserve the selected files, directories and significant trailing Unicode spaces");
         stages++; return stageResult();
       }
-      references++; lastReferences = args.references;
+      references++; lastReferences = args.references; lastVersionPolicy = args.thunderstoreVersionPolicy;
+      check(command !== "resolve_manual_mod_references" || !Object.hasOwn(args, "thunderstoreVersionPolicy"),
+        "Non-Thunderstore reference resolution has no Thunderstore version policy");
       if (referenceFailure) {
         const message = referenceFailure; referenceFailure = null;
         throw new Error(message);
@@ -106,6 +127,8 @@ async function run() {
         target_path: `C:\\Fixture\\${id}\\Mods`, target_exists: false, items: [] };
       const readsBefore = inventoryReads;
       await mount(); await settle(() => inventoryReads > readsBefore && Boolean(fixture.querySelector(".mw-dropzone")));
+      check(Boolean(fixture.querySelector(".mw-manual-pane > .mw-dropzone")) && !fixture.querySelector(".mw-config-pane"),
+        "Non-Workshop file installation starts in the independent Store drop zone");
       const file = new File(["fixture"], "mod.zip");
       Object.defineProperty(file, "path", { value: "C:\\Fixture\\mod.zip" });
       const fileDrop = new DataTransfer(); fileDrop.items.add(file);
@@ -116,6 +139,18 @@ async function run() {
       const previousStage = stages, previousReferences = references;
       await drop(fileDrop); await settle(() => stages === previousStage + 1);
       check(references === previousReferences, "File drop wins over incidental URL payload");
+      if (moduleDetails.mods?.source?.provider === "nexus") {
+        const data = new DataTransfer(); data.setData("text/plain", "123");
+        const beforeReview = references, beforeInstall = stages;
+        await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+        await drop(data); await settle(() => references === beforeReview + 1 && Boolean(fixture.querySelector("[data-nexus-file-review]")));
+        check(stages === beforeInstall && fixture.querySelector<HTMLButtonElement>("[data-nexus-install]")?.disabled,
+          "Nexus reference drops always require an explicit file selection before installation");
+        await act(async () => { fixture.querySelector<HTMLInputElement>('[data-nexus-file-id="101"]')!.click(); });
+        await act(async () => { fixture.querySelector<HTMLButtonElement>("[data-nexus-install]")!.click(); });
+        await settle(() => stages === beforeInstall + 1 && !fixture.querySelector("[data-nexus-file-review]"));
+        check(lastReferences[0] === "123", "Nexus short IDs reach the dedicated review provider unchanged");
+      }
       const supportsReferences = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
       if (supportsReferences) for (const [type, text] of [
         ["text/plain", "424242"], ["text/uri-list", "https://example.invalid/mod/424242"],
@@ -135,6 +170,10 @@ async function run() {
         await drop(link, true, "link", "link"); await settle(() => references === previous + 1);
         check(lastReferences[0] === "https://example.invalid/mod/515151", "A link-only source reaches the reference provider");
         if (moduleDetails.mods?.source?.provider === "thunderstore") {
+          const policy = fixture.querySelector<HTMLButtonElement>(".mw-version-policy-btn");
+          check(policy?.dataset.versionPolicy === "follow_latest", `${id}: online installation defaults to following latest`);
+          check(policy.textContent?.trim() === "Follow latest" && policy.getAttribute("aria-label") === "Update policy: Follow latest"
+            && !policy.hasAttribute("aria-pressed"), "Update policy button exposes its current value in a concise accessible name");
           const packageUrl = `${moduleDetails.mods.source.url}p/FixtureAuthor/FixturePlugin/`;
           for (const format of ["text/uri-list", "text/html"]) {
             const protocol = "ror2mm://v1/install/thunderstore.io/FixtureAuthor/FixturePlugin/1.2.3/";
@@ -145,9 +184,46 @@ async function run() {
             await drop(button, true, "link", "link");
             await settle(() => references === before + 1);
             check(stages === stagedBefore && lastReferences.length === 1
-              && lastReferences[0] === "https://thunderstore.io/package/FixtureAuthor/FixturePlugin/1.2.3/",
-            `${id}: Mod Manager button ${format} reaches the shared pinned package installer`);
+              && lastReferences[0] === "https://thunderstore.io/package/FixtureAuthor/FixturePlugin/1.2.3/"
+              && lastVersionPolicy === "follow_latest",
+            `${id}: Mod Manager button ${format} keeps this download's version but explicitly follows latest for future starts`);
           }
+          await settle(() => !policy.disabled);
+          await act(async () => {
+            policy.focus(); check(document.activeElement === policy, "Version policy is keyboard-focusable");
+            policy.click();
+          });
+          check(policy.getAttribute("data-version-policy") === "pinned" && policy.textContent?.trim() === "Fixed version"
+            && policy.getAttribute("aria-label") === "Update policy: Fixed version", "The button preserves the user's explicit pin selection");
+          for (const view of ["My Mods", "Store"]) {
+            const tab = [...fixture.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((item) => item.textContent === view);
+            check(tab, `The ${view} tab is available beside the version policy`);
+            await act(async () => tab.click());
+            check(fixture.querySelector(".mw-version-policy-btn") === policy && policy.getAttribute("data-version-policy") === "pinned",
+              `${id}: ${view} retains the same version button and explicit pin choice`);
+          }
+          const input = fixture.querySelector<HTMLInputElement>(".mw-reference-input:not(select)");
+          const install = [...fixture.querySelectorAll<HTMLButtonElement>(".mw-reference-row button")]
+            .find((button) => button.textContent?.trim() === "Install");
+          check(input && install, "Reference entry and real install button are available");
+          const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+          check(setter, "Native reference input setter exists");
+          const reference = "ror2mm://v1/install/thunderstore.io/FixtureAuthor/FixturePlugin/1.2.3/";
+          await act(async () => { setter.call(input, reference); input.dispatchEvent(new Event("input", { bubbles: true })); });
+          const beforePinned = references;
+          await act(async () => { install.click(); });
+          await settle(() => references === beforePinned + 1 && !policy.disabled);
+          check(lastVersionPolicy === "pinned" && lastReferences[0] === "https://thunderstore.io/package/FixtureAuthor/FixturePlugin/1.2.3/",
+            `${id}: explicitly pinning sends pinned intent through the real input, handler and API`);
+          await act(async () => { policy.click(); });
+          check(policy.getAttribute("data-version-policy") === "follow_latest" && policy.getAttribute("aria-label") === "Update policy: Follow latest",
+            "A second button click restores following latest before installation");
+          await act(async () => { setter.call(input, reference); input.dispatchEvent(new Event("input", { bubbles: true })); });
+          const beforeLatest = references;
+          await act(async () => { install.click(); });
+          await settle(() => references === beforeLatest + 1 && !policy.disabled);
+          check(lastVersionPolicy === "follow_latest", `${id}: returning to follow latest is an explicit independent install intent`);
+          versionPolicyCovered.push(id);
           for (const [name, type, mask, format] of [
             ["Jotunn.url", "application/internet-shortcut", "link", "text/uri-list"],
             ["Jotunn.url", "", "copyLink", "text/plain"],
@@ -224,15 +300,61 @@ async function run() {
       await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
       details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 } };
       await mount();
+      if (moduleDetails.mods?.source?.provider === "thunderstore") {
+        check(fixture.querySelector<HTMLButtonElement>(".mw-version-policy-btn")?.disabled,
+          "Running instances cannot change the installation version policy");
+      }
       const writesBefore = stages + references + saves;
       await drop(fileDrop, false);
       check(stages + references + saves === writesBefore, `${id}: running servers refuse drops`);
       covered.push(id);
     }
+    for (const id of workshopModules) {
+      moduleDetails = buildMockModuleDetails(id);
+      check(moduleDetails.summary.id === id && moduleDetails.workshop?.provider === "steam" && Boolean(moduleDetails.mods?.manual_staging),
+        "Workshop drag installation is covered only for this game's actual staging contract");
+      details = { ...template, summary: { ...template.summary, id: `drop-workshop-${id}`, module_id: id,
+        status: "Stopped", active_process_count: 0 }, active_run: null, settings_json: "{}" };
+      inventory = { instance_id: details.summary.id, module_id: id, source_label: "Steam Workshop", target_label: "Mods",
+        target_path: `C:\\Fixture\\${id}\\Mods`, target_exists: false, items: [] };
+      const readsBefore = inventoryReads;
+      await mount();
+      const myMods = [...fixture.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent?.trim() === "My Mods");
+      check(myMods && !myMods.disabled, "Workshop My Mods navigation is available");
+      await act(async () => { myMods.click(); });
+      await settle(() => inventoryReads > readsBefore && Boolean(fixture.querySelector(".mw-config-pane .mw-detail-list-col.mw-dropzone")));
+      check(!fixture.querySelector(".mw-manual-pane,.mw-reference-row"), "Workshop My Mods keeps file import within its inventory list");
+      const file = new File(["fixture"], "mod.zip");
+      Object.defineProperty(file, "path", { value: "C:\\Fixture\\mod.zip" });
+      const folder = new File([], "Folder\u3000");
+      Object.defineProperty(folder, "path", { value: "C:\\Fixture\\Folder\u3000" });
+      const transfer = new DataTransfer(); transfer.items.add(file); transfer.items.add(folder);
+      transfer.setData("text/plain", "https://example.invalid/incidental-file-text");
+      const stagesBefore = stages, referencesBefore = references, savesBefore = saves;
+      await drop(transfer);
+      await settle(() => stages === stagesBefore + 1 && !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+      check(references === referencesBefore && saves === savesBefore,
+        `${id}: My Mods stages local files without turning incidental text into a reference or settings mutation`);
+      check(Boolean(fixture.querySelector(".mw-config-pane .mw-dropzone")), "Successful Workshop file import stays in My Mods");
+      const link = new DataTransfer(); link.setData("text/uri-list", "https://steamcommunity.com/sharedfiles/filedetails/?id=424242");
+      await drop(link, false, "link");
+      check(stages === stagesBefore + 1 && references === referencesBefore && saves === savesBefore,
+        "Workshop My Mods local import does not gain an unsupported reference installation path");
+      details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 } };
+      await mount();
+      const runningMyMods = [...fixture.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent?.trim() === "My Mods");
+      check(runningMyMods, "Running Workshop instance retains My Mods navigation");
+      await act(async () => { runningMyMods.click(); });
+      await drop(transfer, false);
+      check(stages === stagesBefore + 1 && references === referencesBefore && saves === savesBefore,
+        `${id}: running Workshop instances refuse My Mods file drops`);
+      workshopCovered.push(id);
+    }
     check(errors.length === 0, "No console errors or unhandled rejections");
-    return { status: "passed", checks, covered, stages, references, saves, browser_errors: errors };
+    return { status: "passed", checks, covered, workshop_covered: workshopCovered,
+      version_policy_covered: versionPolicyCovered, stages, references, saves, browser_errors: errors };
   } finally { cleanup(); }
 }
-void run().catch((error) => ({ status: "failed", checks, covered, error: String(error), browser_errors: errors }))
+void run().catch((error) => ({ status: "failed", checks, covered, workshop_covered: workshopCovered, error: String(error), browser_errors: errors }))
   .finally(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false }); })
   .then((report) => fetch(`/__reliability_result/${new URLSearchParams(location.search).get("nonce")}`, { method: "POST", body: JSON.stringify(report) }));

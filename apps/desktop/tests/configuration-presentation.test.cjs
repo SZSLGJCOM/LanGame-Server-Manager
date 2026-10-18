@@ -206,8 +206,10 @@ test("raw and path behaviors cover the exact audited native-value fields", () =>
 test("non-scalar fields fail closed or use their real workspace and module-addon renderers", () => {
   const expected = new Map([
     ["arksurvivalascended.additional_maps", ["module-addon", null]],
+    ["arksurvivalascended.ark_mod_map_overrides", ["workspace", "mods"]],
     ["arksurvivalascended.asa_mod_configurations", ["workspace", "mods"]],
     ["arksurvivalevolved.additional_maps", ["module-addon", null]],
+    ["arksurvivalevolved.ark_mod_map_overrides", ["workspace", "mods"]],
     ["sevendaystodie.admin_users", ["workspace", "player_access"]],
     ["sevendaystodie.admin_groups", ["workspace", "player_access"]],
     ["sevendaystodie.whitelist_users", ["workspace", "player_access"]],

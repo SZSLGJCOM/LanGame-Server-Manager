@@ -2,14 +2,21 @@
 //! Historical diagnostic tails intentionally have a different, looser contract.
 use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 
 use super::steamcmd_manifest_recovery::{ManifestDenial, manifest_denial};
 
-const MAX_NEW_BYTES: u64 = 4 * 1024 * 1024;
 const CHECKPOINT_BYTES: u64 = 64;
+const MAX_DENIALS: usize = 8192;
 
-#[derive(Debug, PartialEq, Eq)]
+#[path = "steamcmd_invocation_log.rs"]
+mod invocation_log;
+pub(super) use invocation_log::InvocationLog;
+pub(super) use invocation_log::LogUpdate;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct Identity {
     #[cfg(windows)]
     volume_and_index: (u32, u64),
@@ -19,11 +26,12 @@ struct Identity {
 }
 
 pub(super) struct ContentLogEvidence {
-    path: PathBuf,
-    before: Option<Snapshot>,
-    usable: bool,
+    log: InvocationLog,
+    denials: Vec<ManifestDenial>,
+    diagnostics: Vec<String>,
 }
 
+#[derive(Clone)]
 struct Snapshot {
     identity: Identity,
     length: u64,
@@ -32,84 +40,40 @@ struct Snapshot {
 
 impl ContentLogEvidence {
     pub(super) async fn before_spawn(root: &Path) -> Self {
-        let path = root.join("logs/content_log.txt");
-        let fallback = path.clone();
-        tokio::task::spawn_blocking(move || {
-            let snapshot = read_snapshot(&path);
-            Self {
-                path,
-                usable: snapshot.is_ok(),
-                before: snapshot.ok().flatten(),
-            }
-        })
-        .await
-        .unwrap_or(Self {
-            path: fallback,
-            before: None,
-            usable: false,
-        })
+        Self {
+            log: InvocationLog::before_spawn(root.join("logs/content_log.txt")).await,
+            denials: Vec::new(),
+            diagnostics: Vec::new(),
+        }
     }
 
+    pub(super) async fn poll(&mut self) -> LogUpdate {
+        let update = self.log.poll().await;
+        for line in &update.lines {
+            let Some(denial) = manifest_denial(line) else {
+                continue;
+            };
+            if self.denials.len() < MAX_DENIALS && !self.denials.contains(&denial) {
+                self.denials.push(denial);
+                if self.diagnostics.len() < 16 {
+                    self.diagnostics.push(line.clone());
+                }
+            }
+        }
+        update
+    }
+
+    #[cfg(test)]
     pub(super) async fn finish(self) -> Vec<ManifestDenial> {
-        // Losing evidence only disables recovery; ordinary failure diagnostics
-        // and SteamCMD's exit status remain available to the caller.
-        tokio::task::spawn_blocking(move || self.read_new_denials())
-            .await
-            .ok()
-            .and_then(Result::ok)
-            .unwrap_or_default()
+        self.finish_with_excerpt().await.0
     }
 
-    fn read_new_denials(self) -> io::Result<Vec<ManifestDenial>> {
-        if !self.usable {
-            return Ok(Vec::new());
-        }
-        let mut file = open_log(&self.path)?;
-        let length = file.metadata()?.len();
-        let (offset, skip_partial) = if let Some(before) = self.before {
-            if identity(&file)? != before.identity
-                || length < before.length
-                || checkpoint(&mut file, before.length)? != before.checkpoint
-            {
-                // Rotation, replacement and truncate-and-regrow are ambiguous.
-                // Never reinterpret an entire replacement log as new evidence.
-                return Ok(Vec::new());
-            }
-            (
-                before.length,
-                before.length > 0 && before.checkpoint.last() != Some(&b'\n'),
-            )
-        } else {
-            (0, false)
-        };
-        let appended = length - offset;
-        if appended == 0 || appended > MAX_NEW_BYTES {
-            return Ok(Vec::new());
-        }
-        file.seek(SeekFrom::Start(offset))?;
-        let mut bytes = Vec::with_capacity(appended as usize);
-        file.take(appended).read_to_end(&mut bytes)?;
-        if bytes.len() as u64 != appended {
-            return Ok(Vec::new());
-        }
-        let start = if skip_partial {
-            match bytes.iter().position(|byte| *byte == b'\n') {
-                Some(index) => index + 1,
-                None => return Ok(Vec::new()),
-            }
-        } else {
-            0
-        };
-        let Some(end) = bytes.iter().rposition(|byte| *byte == b'\n') else {
-            return Ok(Vec::new());
-        };
-        if start >= end {
-            return Ok(Vec::new());
-        }
-        let Ok(text) = std::str::from_utf8(&bytes[start..end]) else {
-            return Ok(Vec::new());
-        };
-        Ok(text.lines().filter_map(manifest_denial).collect())
+    pub(super) async fn finish_with_excerpt(mut self) -> (Vec<ManifestDenial>, Option<String>) {
+        while self.poll().await.activity {}
+        (
+            self.denials,
+            (!self.diagnostics.is_empty()).then(|| self.diagnostics.join("\n")),
+        )
     }
 }
 

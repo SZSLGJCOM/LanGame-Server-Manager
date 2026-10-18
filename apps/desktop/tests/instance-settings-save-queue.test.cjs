@@ -671,3 +671,71 @@ test("a missing persistence acknowledgement fails without marking the draft as s
   assert.deepEqual(baselines, ['{"name":"stored"}', '{"name":"stored"}'], "a missing ACK cannot advance the CAS baseline");
   assert.equal(queue.isSaved("draft"), false);
 });
+
+test("an idle queue adopts a record written by another editor as its next CAS baseline", async () => {
+  const baselines = [];
+  const { queue } = createQueue((_nextInput, expectedSettingsJson) => { baselines.push(expectedSettingsJson); });
+  queue.adoptPersisted("server-a", '{"roster":[],"elsewhere":true}', "elsewhere");
+  assert.equal(queue.isSaved("elsewhere"), true, "the adopted record is the persisted state");
+  assert.equal(queue.markDirty("elsewhere"), false, "following another editor's write is not a new draft");
+  queue.adoptPersisted("server-b", '{"other":true}', "other-instance");
+  assert.equal(queue.isSaved("elsewhere"), true, "records for another instance are ignored");
+  queue.enqueue({ input: input("server-a", '{"mine":true}'), signature: "mine" });
+  await queue.whenIdle();
+  assert.deepEqual(baselines, ['{"roster":[],"elsewhere":true}']);
+});
+
+test("a record observed during a write is adopted after it settles, so a matching queued draft is not rewritten", async () => {
+  const first = deferred();
+  const calls = [];
+  const { queue, statuses } = createQueue((nextInput, expectedSettingsJson) => {
+    calls.push([nextInput.settings_json, expectedSettingsJson]);
+    return calls.length === 1 ? first.promise : undefined;
+  });
+  queue.enqueue({ input: input("server-a", '{"draft":1}'), signature: "draft" });
+  await settleQueue();
+  queue.adoptPersisted("server-a", '{"draft":1,"refreshed":true}', "refreshed");
+  assert.equal(queue.isSaved("refreshed"), false, "a running write keeps its own baseline");
+  queue.markDirty("refreshed");
+  queue.enqueue({ input: input("server-a", '{"draft":1,"refreshed":true}'), signature: "refreshed" });
+  first.resolve('{"draft":1}');
+  await queue.whenIdle();
+  assert.equal(calls.length, 1, "the refreshed record already holds the queued draft");
+  assert.equal(queue.isSaved("refreshed"), true);
+  assert.equal(statuses.at(-1).state, "saved");
+  queue.enqueue({ input: input("server-a", '{"next":true}'), signature: "next" });
+  await queue.whenIdle();
+  assert.deepEqual(calls.at(-1), ['{"next":true}', '{"draft":1,"refreshed":true}']);
+});
+
+test("a delayed pre-write record cannot replace the successful persistence acknowledgement", async () => {
+  const first = deferred();
+  const calls = [];
+  const { queue, statuses } = createQueue((nextInput, expectedSettingsJson) => {
+    calls.push([nextInput.settings_json, expectedSettingsJson]);
+    return calls.length === 1 ? first.promise : undefined;
+  });
+  queue.enqueue({ input: input("server-a", '{"draft":1}'), signature: "draft" });
+  await settleQueue();
+  queue.adoptPersisted("server-a", '{"roster":[]}', "base");
+  first.resolve('{"draft":1,"normalized":true}');
+  await queue.whenIdle();
+  assert.equal(queue.isSaved("draft"), true);
+  assert.equal(statuses.at(-1).state, "saved");
+  queue.enqueue({ input: input("server-a", '{"next":true}'), signature: "next" });
+  await queue.whenIdle();
+  assert.deepEqual(calls.at(-1), ['{"next":true}', '{"draft":1,"normalized":true}']);
+});
+
+test("a changed persisted signature is adopted even when its settings JSON matches the pre-write baseline", async () => {
+  const first = deferred();
+  const { queue } = createQueue(() => first.promise);
+  const draft = { ...input("server-a", '{"roster":[]}'), backup_retention_count: 4 };
+  queue.enqueue({ input: draft, signature: "retention-four" });
+  await settleQueue();
+  queue.adoptPersisted("server-a", '{"roster":[]}', "retention-five");
+  queue.enqueue({ input: { ...draft, backup_retention_count: 5 }, signature: "retention-five" });
+  first.resolve('{"roster":[]}');
+  await queue.whenIdle();
+  assert.equal(queue.isSaved("retention-five"), true);
+});

@@ -11,22 +11,29 @@ pub(super) fn has_asa_ready_marker(normalized: &str) -> bool {
     // complete final message at the message boundary, not arbitrary user text.
     let mut message = normalized.trim_start();
     if message.starts_with('[') {
-        if native_line_timestamp(message).is_none() {
+        let Some((_, native_message)) = ark_native_log_message(message) else {
             return false;
-        }
-        message = message[25..].trim_start();
-        if let Some(frame) = message.strip_prefix('[') {
-            let Some((frame, rest)) = frame.split_once(']') else {
-                return false;
-            };
-            let frame = frame.trim();
-            if frame.is_empty() || !frame.bytes().all(|byte| byte.is_ascii_digit()) {
-                return false;
-            }
-            message = rest.trim_start();
-        }
+        };
+        message = native_message;
     }
     message.starts_with(ASA_READY_MARKER)
+}
+
+/// The timestamp and message boundary of a native Unreal log record. Consumers
+/// compare this timestamp with the owned process creation token; a reused log
+/// filename or a fresh file modification time alone cannot identify a run.
+pub fn ark_native_log_message(line: &str) -> Option<(u64, &str)> {
+    let timestamp = native_line_timestamp(line)?;
+    let mut message = line.get(25..)?.trim_start();
+    if let Some(frame) = message.strip_prefix('[') {
+        let (frame, rest) = frame.split_once(']')?;
+        let frame = frame.trim();
+        if frame.is_empty() || !frame.bytes().all(|byte| byte.is_ascii_digit()) {
+            return None;
+        }
+        message = rest.trim_start();
+    }
+    Some((timestamp, message))
 }
 
 #[path = "runtime_ark_log_evidence.rs"]

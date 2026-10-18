@@ -139,13 +139,16 @@ pub(super) fn render_ark_active_mods_ini_line(
         .and_then(Value::as_str)
         .unwrap_or_default();
     let mut seen = HashSet::new();
-    let ids = raw
-        .split(|character: char| {
+    let ids = if setting_key == "active_mod_ids" {
+        app_core::ark_mods::parse_evolved_mod_ids(raw)
+    } else {
+        raw.split(|character: char| {
             character.is_whitespace() || matches!(character, ',' | ';' | '\u{3001}' | '\u{ff0c}')
         })
         .filter_map(normalize_workshop_id_line)
         .filter(|id| seen.insert(id.clone()))
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>()
+    };
     if ids.is_empty() {
         String::new()
     } else {

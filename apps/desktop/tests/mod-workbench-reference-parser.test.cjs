@@ -60,7 +60,7 @@ test("mod workbench unwraps common redirect links from copied web markup", () =>
   );
 });
 
-test("Thunderstore Mod Manager buttons become pinned package references without launching a protocol", () => {
+test("Thunderstore Mod Manager buttons preserve versioned download references without launching a protocol", () => {
   for (const [owner, name, version] of [
     ["ValheimModding", "Jotunn", "2.30.2"],
     ["deca", "VampireCommandFramework", "0.11.0"],

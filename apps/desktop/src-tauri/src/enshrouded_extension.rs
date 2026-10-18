@@ -357,7 +357,7 @@ fn prune_cache(directory: &Path, key: &PublicKey) -> Result<(), String> {
             packages.push((manifest.revision, path));
         }
     }
-    packages.sort_by(|left, right| right.0.cmp(&left.0));
+    packages.sort_by_key(|package| std::cmp::Reverse(package.0));
     for (_, path) in packages.into_iter().skip(8) {
         let _guard = io::pin_directory(&path)?;
         // Remove only known bounded plain files under a verified content-addressed directory.

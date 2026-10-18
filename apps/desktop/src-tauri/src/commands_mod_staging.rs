@@ -8,8 +8,10 @@ pub(super) use game_boundaries::validate_game_mod_mutation;
 #[path = "commands_mod_packages.rs"]
 mod online_packages;
 pub(super) use online_packages::{
-    ONLINE_MOD_MANIFEST, decorate_inventory, manage_package, recover_management,
-    stage_online_mod_sources,
+    CachedThunderstorePackage, ONLINE_MOD_MANIFEST, ThunderstoreInstallIntent,
+    ThunderstoreStartPlan, decorate_inventory, inspect_thunderstore_startup, manage_package,
+    protected_operator_mod_file, recover_management, root_thunderstore_intents_with_policy,
+    stage_online_mod_sources, untracked_loadable_mod_file,
 };
 
 #[path = "commands_mod_thunderstore_layout.rs"]
@@ -22,7 +24,8 @@ mod thunderstore_import;
 mod bepinex_loader;
 pub(super) use bepinex_loader::{
     ThunderstoreGameProfile, reviewed_loader_satisfies, runtime_loader_requires_archive,
-    stage_thunderstore_online_mod_sources, thunderstore_game_profile,
+    stage_thunderstore_online_mod_sources, stage_thunderstore_online_mod_sources_for_startup,
+    thunderstore_game_profile,
 };
 
 const MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT: usize = 20_000;
@@ -141,6 +144,59 @@ pub(super) fn stage_downloaded_workshop_items_into_manual_target(
     result: &SteamWorkshopDownloadResult,
     target: &ResolvedManualModTarget,
 ) -> Result<ManualModStageResult, String> {
+    let source_paths = downloaded_workshop_source_paths(result)?;
+    stage_manual_mod_source_batch(
+        target,
+        source_paths,
+        false,
+        ManualModArchiveLayout::Preserve,
+        true,
+    )
+}
+
+#[derive(Debug)]
+pub(super) struct WorkshopModStageFailure {
+    pub(super) message: String,
+    pub(super) guard_failed: bool,
+}
+
+#[cfg(test)]
+#[path = "commands_workshop_start_staging_tests.rs"]
+mod workshop_start_guard_tests;
+
+pub(super) type WorkshopBackupCheck<'a> = dyn Fn(&Path) -> Result<(), String> + 'a;
+
+/// Startup alone supplies fixed deployment guards. Ordinary Mod operations
+/// retain their existing API and behavior.
+pub(super) fn stage_downloaded_workshop_items_with_preconditions(
+    result: &SteamWorkshopDownloadResult,
+    target: &ResolvedManualModTarget,
+    before_commit: &dyn Fn() -> Result<(), String>,
+    before_cleanup: &WorkshopBackupCheck<'_>,
+) -> Result<ManualModStageResult, WorkshopModStageFailure> {
+    let guard_failed = std::cell::Cell::new(false);
+    let pre = || before_commit().inspect_err(|_| guard_failed.set(true));
+    let post = |backup: &Path| before_cleanup(backup).inspect_err(|_| guard_failed.set(true));
+    let result = downloaded_workshop_source_paths(result).and_then(|sources| {
+        stage_manual_mod_source_batch_guarded(
+            target,
+            sources,
+            false,
+            ManualModArchiveLayout::Preserve,
+            true,
+            Some(&pre),
+            Some(&post),
+        )
+    });
+    result.map_err(|message| WorkshopModStageFailure {
+        message,
+        guard_failed: guard_failed.get(),
+    })
+}
+
+fn downloaded_workshop_source_paths(
+    result: &SteamWorkshopDownloadResult,
+) -> Result<Vec<PathBuf>, String> {
     let mut source_paths = Vec::with_capacity(result.items.len());
     for item in &result.items {
         if !item.expected_path_exists {
@@ -168,13 +224,7 @@ pub(super) fn stage_downloaded_workshop_items_into_manual_target(
         }
         source_paths.push(source_path);
     }
-    stage_manual_mod_source_batch(
-        target,
-        source_paths,
-        false,
-        ManualModArchiveLayout::Preserve,
-        true,
-    )
+    Ok(source_paths)
 }
 
 fn stage_manual_mod_source_batch(
@@ -183,6 +233,26 @@ fn stage_manual_mod_source_batch(
     enforce_declared_accepts: bool,
     archive_layout: ManualModArchiveLayout,
     replace_source_roots: bool,
+) -> Result<ManualModStageResult, String> {
+    stage_manual_mod_source_batch_guarded(
+        target,
+        source_paths,
+        enforce_declared_accepts,
+        archive_layout,
+        replace_source_roots,
+        None,
+        None,
+    )
+}
+
+fn stage_manual_mod_source_batch_guarded(
+    target: &ResolvedManualModTarget,
+    source_paths: Vec<PathBuf>,
+    enforce_declared_accepts: bool,
+    archive_layout: ManualModArchiveLayout,
+    replace_source_roots: bool,
+    before_commit: Option<&dyn Fn() -> Result<(), String>>,
+    before_cleanup: Option<&WorkshopBackupCheck<'_>>,
 ) -> Result<ManualModStageResult, String> {
     if source_paths.is_empty() {
         return Err(String::from("no mod sources were provided"));
@@ -304,6 +374,9 @@ fn stage_manual_mod_source_batch(
         .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
     let affected_root_names = staged_manual_mod_root_names(&transaction)
         .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+    if let Some(check) = before_commit {
+        check().map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+    }
     if let Err(failure) =
         commit_manual_mod_transaction(&transaction, &target.target_path, &replace_roots)
     {
@@ -312,6 +385,18 @@ fn stage_manual_mod_source_batch(
             failure.message,
             &transaction,
             !retained,
+        ));
+    }
+
+    if let Some(check) = before_cleanup
+        && let Err(error) = check(&transaction.backup)
+    {
+        // Publication has occurred; neither the new target nor the moved
+        // original may be deleted or implicitly rolled back after a changed
+        // preimage. Preserve both for explicit recovery.
+        return Err(format!(
+            "{error}; preserved original Workshop deployment at {}",
+            transaction.backup.display()
         ));
     }
 

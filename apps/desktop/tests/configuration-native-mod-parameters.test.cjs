@@ -33,7 +33,9 @@ test("operational Mod lists and per-Mod options belong to the Mods workspace", (
   const expected = new Map([
     ["arksurvivalascended.mod_ids_csv", "mod-workbench-asa-mod-ids"],
     ["arksurvivalascended.asa_mod_configurations", "mod-workbench-asa-mod-ids"],
+    ["arksurvivalascended.ark_mod_map_overrides", "mod-workbench-asa-mod-ids"],
     ["arksurvivalevolved.active_mod_ids", "mod-workbench-workshop-ids"],
+    ["arksurvivalevolved.ark_mod_map_overrides", "mod-workbench-workshop-ids"],
     ["barotrauma.mod_workshop_ids", "mod-workbench-workshop-ids"],
     ["conanexiles.mod_workshop_ids", "mod-workbench-workshop-ids"],
     ["palworld.mod_package_names", "mod-workbench-package-names"],

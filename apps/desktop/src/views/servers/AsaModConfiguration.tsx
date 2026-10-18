@@ -20,16 +20,17 @@ import "./asa-mod-configuration.css";
 
 export interface AsaModConfigurationProps {
   instanceId: string;
+  scopeKey?: string;
   modId: string;
   settings: SettingsObject;
   disabled: boolean;
   readOnly?: boolean;
   installed?: boolean;
   authorDefinitions?: readonly AsaModAuthorDefinition[];
-  onSave: (nextSettings: SettingsObject, expectedBase: SettingsObject) => Promise<SettingsObject | void>;
+  onSave: (nextSettings: SettingsObject, expectedBase: SettingsObject, draftBase?: SettingsObject) => Promise<SettingsObject | void>;
   onReload?: () => Promise<SettingsObject>;
 }
-type Draft = { text: string; base: string; revision: number };
+type Draft = { text: string; base: string; revision: number; settingsBase?: SettingsObject };
 type Drafts = Record<string, Draft>;
 type Feedback = { error?: string; saved?: boolean; note?: string };
 
@@ -81,7 +82,7 @@ function Editor(props: AsaModConfigurationProps) {
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [reloadingKey, setReloadingKey] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  const propsSignature = useMemo(() => JSON.stringify(props.settings), [props.settings]);
+  const propsSignature = useMemo(() => JSON.stringify([props.scopeKey ?? "shared", props.settings]), [props.scopeKey, props.settings]);
   const propsSignatureRef = useRef(propsSignature); propsSignatureRef.current = propsSignature;
   // A fresh read/save remains authoritative while the parent still renders its
   // previous snapshot. New parent contents supersede it without erasing drafts.
@@ -96,14 +97,18 @@ function Editor(props: AsaModConfigurationProps) {
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; importRevision.current++; }; }, []);
   const validId = canonicalAsaModId(props.modId) === props.modId;
   const author = (props.authorDefinitions ?? ASA_MOD_AUTHOR_CATALOG).find((entry) => entry.modId === props.modId);
-  const file = selectedFiles[props.modId] ?? author?.parameters[0]?.file ?? "game_ini";
-  const key = `${props.modId}:${file}`;
+  const modScopeKey = `${props.scopeKey ?? "shared"}:${props.modId}`;
+  const file = selectedFiles[modScopeKey] ?? author?.parameters[0]?.file ?? "game_ini";
+  const key = `${modScopeKey}:${file}`;
   const loaded = useMemo<{ configs: Record<string, AsaModConfiguration>; error: unknown }>(() => {
     try { return { configs: readAsaModConfigurations(settings), error: null }; }
     catch (error) { return { configs: {}, error }; }
   }, [settings]);
   const saved = loaded.configs[props.modId]?.[file] ?? "";
-  const draft = drafts[key] ?? { text: saved, base: saved, revision: 0 };
+  const retainedDraft = drafts[key];
+  const draft = retainedDraft && retainedDraft.text === retainedDraft.base && retainedDraft.base !== saved
+    ? { ...retainedDraft, text: saved, base: saved, settingsBase: settings }
+    : retainedDraft ?? { text: saved, base: saved, revision: 0 };
   const parsed = useMemo(() => parseAsaModIni(draft.text), [draft.text]);
   const issues = useMemo<AsaModConfigurationIssue[]>(() => {
     try { return [...parsed.issues, ...findAsaModIniConflicts(settings, props.modId, file, parsed.entries)]; }
@@ -122,12 +127,13 @@ function Editor(props: AsaModConfigurationProps) {
 
   function edit(text: string) {
     if (!current.current.editable) return;
-    const next = { ...draftsRef.current, [key]: { text, base: draft.base, revision: draft.revision + 1 } };
+    const next = { ...draftsRef.current, [key]: { text, base: draft.base, revision: draft.revision + 1,
+      settingsBase: draft.text === draft.base ? structuredClone(settings) : draft.settingsBase ?? structuredClone(settings) } };
     const size = Object.values(next).reduce((total, entry) => total + new TextEncoder().encode(entry.text).length, 0);
     if (size > ASA_MOD_CONFIGURATION_TOTAL_LIMIT) {
       setFeedback((previous) => ({ ...previous, [key]: { error: configText("draftLimit") } })); return;
     }
-    draftsRef.current = next; setDrafts(next); setSelectedFiles((previous) => ({ ...previous, [props.modId]: file }));
+    draftsRef.current = next; setDrafts(next); setSelectedFiles((previous) => ({ ...previous, [modScopeKey]: file }));
     importRevision.current++; setFeedback((previous) => ({ ...previous, [key]: {} }));
   }
   async function reload() {
@@ -145,7 +151,7 @@ function Editor(props: AsaModConfigurationProps) {
       setSnapshot({ sourceProps, settings: fresh });
       const existing = draftsRef.current[target];
       if ((existing?.revision ?? 0) === revision) {
-        const next = { ...draftsRef.current, [target]: { text, base: text, revision: revision + 1 } };
+        const next = { ...draftsRef.current, [target]: { text, base: text, revision: revision + 1, settingsBase: fresh } };
         draftsRef.current = next; setDrafts(next);
         setFeedback((previous) => ({ ...previous, [target]: {} }));
       }
@@ -180,7 +186,7 @@ function Editor(props: AsaModConfigurationProps) {
     inFlight.current = true; setSavingKey(target); setFeedback((previous) => ({ ...previous, [target]: {} }));
     try {
       const next = buildAsaModConfigurationSettings(expectedBase, props.modId, file, text, draft.base);
-      const persisted = await props.onSave(next, expectedBase);
+      const persisted = await props.onSave(next, expectedBase, draft.settingsBase ?? expectedBase);
       if (!mounted.current) return;
       const authoritative = structuredClone(persisted ?? next);
       const savedText = readAsaModConfigurations(authoritative)[props.modId]?.[file] ?? "";
@@ -192,7 +198,7 @@ function Editor(props: AsaModConfigurationProps) {
       setDrafts((previous) => {
         const existing = previous[target];
         if (!existing) return previous;
-        const nextDrafts = { ...previous, [target]: { ...existing, base: savedText } };
+        const nextDrafts = { ...previous, [target]: { ...existing, base: savedText, settingsBase: authoritative } };
         if (existing.revision === revision) nextDrafts[target].text = nextDrafts[target].base;
         draftsRef.current = nextDrafts; return nextDrafts;
       });
@@ -234,7 +240,7 @@ function Editor(props: AsaModConfigurationProps) {
     <div className="asa-mod-config__toolbar">
       <ConfigurationHelp description={configText("targetHelp")}>{(help) => <select id={`${id}-target`} className="settings-schema-input"
         aria-label={configText("target")} ref={help.anchorRef} {...help.interactionProps} aria-describedby={help.descriptionId}
-        data-asa-mod-file value={file} onChange={(event) => setSelectedFiles((previous) => ({ ...previous, [props.modId]: event.target.value as AsaModIniFile }))}>
+        data-asa-mod-file value={file} onChange={(event) => setSelectedFiles((previous) => ({ ...previous, [modScopeKey]: event.target.value as AsaModIniFile }))}>
         {Object.entries(ASA_MOD_INI_FILES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>}</ConfigurationHelp>
       <button type="button" className="ghost-button" disabled={!editable || importing} onClick={() => fileInput.current?.click()}>{configText("import")}</button>

@@ -7,6 +7,18 @@ const MAX_MANIFEST_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_PACKAGE_FILES: usize = 20_000;
 const MAX_PACKAGE_DEPTH: usize = 64;
 
+#[path = "commands_thunderstore_start_intent.rs"]
+mod thunderstore_intent;
+pub(in crate::commands) use thunderstore_intent::{
+    ThunderstoreInstallIntent, root_thunderstore_intents_with_policy, thunderstore_project,
+};
+
+#[path = "commands_thunderstore_start_cache.rs"]
+mod thunderstore_start_cache;
+pub(in crate::commands) use thunderstore_start_cache::{
+    CachedThunderstorePackage, ThunderstoreStartPlan, inspect_thunderstore_startup,
+};
+
 #[path = "commands_mod_dependencies.rs"]
 mod dependencies;
 use dependencies::verify_dependencies;
@@ -17,6 +29,20 @@ pub(in crate::commands) use management::{decorate_inventory, manage_package, rec
 
 #[path = "commands_mod_routed_packages.rs"]
 mod routed;
+
+/// Startup replacement uses the same operator-data boundary as managed Mod
+/// updates. Package identity metadata must retain its strict payload validation.
+pub(in crate::commands) fn protected_operator_mod_file(relative: &str) -> bool {
+    management::protected_file(relative)
+        && !routed::is_metadata(relative)
+        && !["Info.json", "manifest.json", "ModInfo.xml"]
+            .iter()
+            .any(|name| relative.eq_ignore_ascii_case(name))
+}
+
+pub(in crate::commands) fn untracked_loadable_mod_file(relative: &str) -> bool {
+    management::loadable_file(relative) && !protected_operator_mod_file(relative)
+}
 pub(super) use routed::{
     finalize_thunderstore_transaction, prepare_local_thunderstore_transaction,
     prepare_thunderstore_mod_transaction,
@@ -37,6 +63,8 @@ struct InstalledPackages {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct InstalledPackage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    thunderstore_intent: Option<ThunderstoreInstallIntent>,
     target_name: String,
     files: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -59,6 +87,35 @@ pub(in crate::commands) fn stage_online_mod_sources(
     target: ResolvedManualModTarget,
     sources: &[DownloadedManualModSource],
 ) -> Result<ManualModStageResult, String> {
+    stage_online_mod_sources_checked(target, sources, None, None)
+}
+
+pub(super) fn stage_online_mod_sources_for_startup(
+    target: ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    proof: &ThunderstoreStartPlan,
+    cancellation: &app_steamcmd::InstallCancellation,
+) -> Result<ManualModStageResult, String> {
+    let before = || {
+        if cancellation.is_cancelled() {
+            return Err("Thunderstore Mod startup was cancelled before publication".into());
+        }
+        proof.verify_unchanged(&target)
+    };
+    let after = |backup: &Path, roots: &HashSet<PathBuf>| {
+        proof.verify_backup(backup, &target.target_path, roots)
+    };
+    stage_online_mod_sources_checked(target.clone(), sources, Some(&before), Some(&after))
+}
+
+type PackageBackupCheck<'a> = dyn Fn(&Path, &HashSet<PathBuf>) -> Result<(), String> + 'a;
+
+fn stage_online_mod_sources_checked(
+    target: ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    before: Option<&dyn Fn() -> Result<(), String>>,
+    after: Option<&PackageBackupCheck<'_>>,
+) -> Result<ManualModStageResult, String> {
     validate_game_mod_mutation(&target.module_id)?;
     if sources.is_empty() {
         return Err("no online mod packages were provided".into());
@@ -70,13 +127,26 @@ pub(in crate::commands) fn stage_online_mod_sources(
     validate_manual_mod_target_path(&target.target_path)?;
     validate_manual_mod_target_tree(&target.target_path)?;
     let transaction = create_manual_mod_transaction(&target.target_path)?;
-    let prepared = prepare_online_mod_transaction(&target, sources, &transaction, &[]);
+    let prepared = if before.is_some() {
+        prepare_online_mod_transaction_with_policy(
+            &target,
+            sources,
+            &transaction,
+            &[],
+            PackageUserDataPolicy::PreserveVerifiedStartup,
+        )
+    } else {
+        prepare_online_mod_transaction(&target, sources, &transaction, &[])
+    };
     let (items, copied_file_count, copied_total_bytes, replace_roots) = match prepared {
         Ok(prepared) => prepared,
         Err(error) => return Err(manual_mod_staging_failure(error, &transaction, true)),
     };
     let affected_root_names = staged_manual_mod_root_names(&transaction)
         .map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+    if let Some(check) = before {
+        check().map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+    }
     if let Err(failure) =
         commit_manual_mod_transaction(&transaction, &target.target_path, &replace_roots)
     {
@@ -85,6 +155,10 @@ pub(in crate::commands) fn stage_online_mod_sources(
             &transaction,
             failure.rollback_complete,
         ));
+    }
+    if let Some(check) = after {
+        check(&transaction.backup, &replace_roots)
+            .map_err(|error| manual_mod_staging_failure(error, &transaction, false))?;
     }
     let cleanup_warning = cleanup_manual_mod_transaction(&transaction).err();
     Ok(ManualModStageResult {
@@ -114,6 +188,31 @@ pub(super) fn prepare_online_mod_transaction(
     transaction: &ManualModTransactionPaths,
     runtime_dependencies: &[OnlineModIdentity],
 ) -> Result<PreparedPackages, String> {
+    prepare_online_mod_transaction_with_policy(
+        target,
+        sources,
+        transaction,
+        runtime_dependencies,
+        PackageUserDataPolicy::RejectConflicts,
+    )
+}
+
+/// Ordinary installs reject configuration collisions. Startup has a full
+/// preimage proof plus precommit/moved-original guards, so it may retain mutable
+/// operator bytes while replacing only the verified package payload.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum PackageUserDataPolicy {
+    RejectConflicts,
+    PreserveVerifiedStartup,
+}
+
+fn prepare_online_mod_transaction_with_policy(
+    target: &ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    transaction: &ManualModTransactionPaths,
+    runtime_dependencies: &[OnlineModIdentity],
+    policy: PackageUserDataPolicy,
+) -> Result<PreparedPackages, String> {
     management::recover_management(target)?;
     reject_untracked_downloads(&target.target_path, sources)?;
     let mut manifest = read_manifest(&target.target_path.join(ONLINE_MOD_MANIFEST))?;
@@ -126,7 +225,7 @@ pub(super) fn prepare_online_mod_transaction(
             .collect::<Vec<_>>(),
         runtime_dependencies,
     )?;
-    prepare_packages(target, sources, transaction, &mut manifest)
+    prepare_packages(target, sources, transaction, &mut manifest, policy)
 }
 
 fn prepare_packages(
@@ -134,6 +233,7 @@ fn prepare_packages(
     sources: &[DownloadedManualModSource],
     transaction: &ManualModTransactionPaths,
     manifest: &mut InstalledPackages,
+    policy: PackageUserDataPolicy,
 ) -> Result<PreparedPackages, String> {
     let mut registry = ManualModStagingRegistry::default();
     let mut replace_roots = HashSet::new();
@@ -196,16 +296,28 @@ fn prepare_packages(
                     "online package `{key}` changed its installation layout; existing files were preserved"
                 ));
             }
-            preserve_user_files(&destination, &staged_path, previous, &incoming)?;
+            preserve_user_files_with_policy(
+                &destination,
+                &staged_path,
+                previous,
+                &incoming,
+                policy,
+            )?;
         } else if destination.exists() {
             return Err(format!(
                 "online package destination {} is not owned by the manager; existing files were preserved",
                 destination.display()
             ));
         }
+        let intent = thunderstore_intent::retained_intent(
+            manifest.packages.get(&key),
+            source.identity.thunderstore_intent.as_ref(),
+            &source.identity.version,
+        )?;
         manifest.packages.insert(
             key,
             InstalledPackage {
+                thunderstore_intent: intent,
                 target_name: target_name.clone(),
                 files: incoming,
                 routed_files: BTreeMap::new(),
@@ -393,27 +505,36 @@ fn fingerprint_tree_with_limits(
     Ok(result)
 }
 
-fn preserve_user_files(
+fn preserve_user_files_with_policy(
     destination: &Path,
     staging: &Path,
     previous: &InstalledPackage,
     incoming: &BTreeMap<String, String>,
+    policy: PackageUserDataPolicy,
 ) -> Result<(), String> {
     let current = fingerprint_tree(destination)?;
     for (relative, hash) in &current {
-        let preserve = if let Some(original) = previous.files.get(relative) {
+        let candidate = if relative.is_empty() {
+            previous.target_name.as_str()
+        } else {
+            relative.as_str()
+        };
+        let protected = if policy == PackageUserDataPolicy::PreserveVerifiedStartup {
+            protected_operator_mod_file(candidate)
+                && !candidate.eq_ignore_ascii_case("ModManifest.json")
+        } else {
+            management::protected_file(candidate) && !routed::is_metadata(candidate)
+        };
+        let preserve = if policy == PackageUserDataPolicy::PreserveVerifiedStartup && protected {
+            true
+        } else if let Some(original) = previous.files.get(relative) {
             if original != hash {
                 return Err(format!(
                     "online mod file {} was modified outside the manager; update stopped and existing files were preserved",
                     destination.join(relative).display()
                 ));
             }
-            let candidate = if relative.is_empty() {
-                previous.target_name.as_str()
-            } else {
-                relative.as_str()
-            };
-            if management::protected_file(candidate) && !routed::is_metadata(candidate) {
+            if protected {
                 if incoming
                     .get(relative)
                     .is_some_and(|incoming_hash| incoming_hash != hash)
@@ -441,6 +562,49 @@ fn preserve_user_files(
             if let Some(parent) = output.parent() {
                 fs::create_dir_all(parent)
                     .map_err(|error| format!("failed to preserve user mod file: {error}"))?;
+            }
+            if output
+                .try_exists()
+                .map_err(|error| format!("failed to inspect staged user file: {error}"))?
+            {
+                let metadata = validate_manual_mod_source_filesystem_entry(&output)?;
+                if !metadata.is_file() {
+                    return Err("Operator data conflicts with a staged directory; existing bytes were preserved".into());
+                }
+                if metadata.permissions().readonly() {
+                    #[cfg(windows)]
+                    {
+                        use std::os::windows::ffi::OsStrExt;
+                        use std::os::windows::fs::MetadataExt;
+                        use windows_sys::Win32::Storage::FileSystem::{
+                            FILE_ATTRIBUTE_READONLY, SetFileAttributesW,
+                        };
+
+                        let attributes = metadata.file_attributes() & !FILE_ATTRIBUTE_READONLY;
+                        let wide: Vec<u16> =
+                            output.as_os_str().encode_wide().chain(Some(0)).collect();
+                        // The staged file is private; retain its ACLs and every other
+                        // attribute. The path buffer stays alive through the call.
+                        if unsafe { SetFileAttributesW(wide.as_ptr(), attributes) } == 0 {
+                            return Err(format!(
+                                "failed to prepare staged user file: {}",
+                                std::io::Error::last_os_error()
+                            ));
+                        }
+                    }
+                    #[cfg(not(windows))]
+                    {
+                        let mut permissions = metadata.permissions();
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::fs::PermissionsExt;
+                            permissions.set_mode(permissions.mode() | 0o200);
+                        }
+                        fs::set_permissions(&output, permissions).map_err(|error| {
+                            format!("failed to prepare staged user file: {error}")
+                        })?;
+                    }
+                }
             }
             copy_mod_payload(&destination.join(relative), &output)
                 .map_err(|error| format!("failed to preserve user mod file: {error}"))?;

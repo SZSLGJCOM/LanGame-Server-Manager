@@ -591,7 +591,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--shard-count", type=int, default=1, help="Independent desktop runners (1..4)")
     parser.add_argument("--output", type=Path, help="New evidence directory outside the repository")
     parser.add_argument("--cycles", type=int, default=24, help="Isolated process lifecycle cycles (4..256)")
-    parser.add_argument("--cargo-wrapper", type=Path, help="Managed workstation invoke-codex-cargo.ps1")
+    parser.add_argument("--cargo-wrapper", type=Path, help="Managed workstation Cargo wrapper")
     parser.add_argument("--node-wrapper", type=Path, help="Managed workstation run-guarded-node-command.cjs")
     parser.add_argument("--frontend-dist", type=Path,
                         help="Existing absolute frontend distribution outside the repository for Rust asset embedding")

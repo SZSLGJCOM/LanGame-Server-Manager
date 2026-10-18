@@ -8,6 +8,7 @@ fn output(success: bool, excerpt: &str) -> StreamingCommandResult {
         content_log_excerpt: None,
         workshop_log_excerpt: None,
         workshop_download_failed: false,
+        workshop_command_evidence: Default::default(),
         app_command_evidence: Default::default(),
         authenticated_account_name: None,
         denied_manifests: Vec::new(),

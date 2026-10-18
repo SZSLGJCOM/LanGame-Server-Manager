@@ -29,6 +29,7 @@ import type {
   ManualModInventoryResult,
   ManualModReferenceResolveResult,
   ManualModStageResult,
+  ThunderstoreVersionPolicy,
   ModuleDetails,
   ProjectZomboidWorkshopModsSnapshot,
   SaveInstanceSettingsOptions,
@@ -40,6 +41,7 @@ import type {
   BackgroundJob
 } from "../../types";
 import { parseSettingsObject, parseWorkshopIdList } from "../settings/guided-settings";
+import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
 import type { SettingsObject } from "../settings/settings-schema";
 import { useModWorkbenchMutations } from "./useModWorkbenchMutations";
 import type { SteamWorkshopAccountState } from "./useSteamWorkshopAccount";
@@ -48,11 +50,22 @@ import { DST_RAW_MOD_WARNING, hasDstRawModOverrides } from "./mod-workbench-dst-
 import { SteamWorkshopPreview, SteamWorkshopStoreDetail, type WorkshopStoreAction } from "./SteamWorkshopStoreDetail";
 import { useSteamWorkshopBrowse } from "./useSteamWorkshopBrowse";
 import { composeWorkshopLookups, rememberWorkshopPresentation, type WorkshopPresentationCache } from "./workshop-presentation";
+import { WorkshopDetailsRequests } from "./workshop-details-requests";
+import { buildWorkshopVerificationWarning } from "./workshop-warning";
 import { DstWorkshopConfiguration } from "./DstWorkshopConfiguration";
 import { ProjectZomboidMapOrderEditor, validateProjectZomboidMapOrder } from "./ProjectZomboidMapOrderEditor";
 import { WorkshopManifestPanel } from "./WorkshopManifestPanel";
 import { AsaModManifestPanel } from "./AsaModManifestPanel";
-import { AsaModConfiguration } from "./AsaModConfiguration";
+import { ArkModMapConfiguration } from "./ArkModMapConfiguration";
+import { canUseNexusApi, readNexusAccountStatus, reviewNexusModReferences, installNexusModFiles, NexusApiError,
+  type NexusAccountStatus, type NexusModReview } from "../../nexus-mods-api";
+import { NexusCredentialsDialog } from "./NexusCredentialsDialog";
+import { NexusFileSelectionDialog } from "./NexusFileSelectionDialog";
+import { nexusErrorText, nexusText } from "./nexus-mods-messages";
+import { nexusReferencesFromText } from "./nexus-mod-reference";
+import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
+import { arkModFields, arkModCompatibilityDiffers, arkModUnionSettings, arkModEnabledCounts, applyArkModChange, applyArkSharedModAction,
+  assertArkModChangeBase, readArkModMapOverrides, ArkModScopeError, type ArkModChange } from "./ark-map-mods";
 import { WorkshopCollectionLibrary } from "./WorkshopCollectionLibrary";
 import { WorkshopCollectionRemovalDialog } from "./WorkshopCollectionRemovalDialog";
 import { useWorkshopCollectionRemoval } from "./useWorkshopCollectionRemoval";
@@ -74,8 +87,8 @@ import { useManagedManualMods } from "./useManagedManualMods";
 import { WorkshopStatus } from "./WorkshopStatus";
 import type { WorkshopManifestReview } from "./workshop-manifest";
 import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
-import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, buildAsaModPlan, canonicalAsaModId,
-  hasAsaRawModFlags, parseAsaModIds, readAsaModMembership, type AsaModAction } from "./mod-workbench-asa";
+import { ASA_MEMBERSHIP_KEYS, ASA_RAW_MOD_WARNING, AsaModControlError, canonicalAsaModId,
+  buildAsaActiveListPlan, hasAsaRawModFlags, parseAsaModIds, readAsaModMembership, type AsaModAction } from "./mod-workbench-asa";
 import { referenceCandidatesFromText } from "./mod-reference-parser";
 import { MOD_WORKFLOW_CATALOG, modWorkbenchAvailability, type ModWorkflowCatalogEntry } from "./mod-workbench-capability";
 import {
@@ -147,16 +160,16 @@ export interface ModWorkbenchProps {
   onSaveSettings?: (input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions) => Promise<InstanceDetails | undefined>;
 }
 
-function referencesFromDomDrop(event: DragEvent<HTMLElement>): string[] {
+function referencesFromDomDrop(event: DragEvent<HTMLElement>, parser = referenceCandidatesFromText): string[] {
   // These are alternative representations of the same selection. Combining
   // them can turn an anchor's thumbnail URL into a second Mod installation.
   for (const type of ["text/uri-list", "text/plain"]) {
-    const references = referenceCandidatesFromText(event.dataTransfer.getData(type));
+    const references = parser(event.dataTransfer.getData(type));
     if (references.length) return references;
   }
   const html = event.dataTransfer.getData("text/html");
   const hrefs = Array.from(html.matchAll(/href=["']([^"']+)["']/gi), (match) => match[1]);
-  return referenceCandidatesFromText(hrefs.length ? hrefs.join("\n") : html);
+  return parser(hrefs.length ? hrefs.join("\n") : html);
 }
 
 export function ModWorkbench(props: ModWorkbenchProps) {
@@ -164,10 +177,19 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const moduleId = props.details.summary.module_id;
   const readOnly = Boolean(props.archive);
   const modChangesBlocked = readOnly || instanceBlocksModChanges(props.details);
-  const settings = useMemo(
+  const instanceSettings = useMemo(
     () => parseSettingsObject(props.details.settings_json, t).value ?? {},
     [props.details.settings_json, t]
   );
+  const isArk = arkModFields(moduleId).length > 0;
+  const arkProjection = useMemo(() => {
+    try { return { settings: arkModUnionSettings(instanceSettings, moduleId),
+      differs: isArk && arkModCompatibilityDiffers(instanceSettings, moduleId), error: false }; }
+    catch { return { settings: instanceSettings, differs: false, error: true }; }
+  }, [instanceSettings, moduleId, isArk]);
+  const settings = instanceSettings;
+  const arkMapCounts = useMemo(() => isArk && !arkProjection.error ? arkModEnabledCounts(settings, moduleId)
+    : { counts: new Map<string, number>(), total: 0 }, [isArk, arkProjection.error, settings, moduleId]);
   const workflow = MOD_WORKFLOW_CATALOG[moduleId] ?? {
     moduleId,
     provider: workflowProviderFromModuleDetails(props.moduleDetails),
@@ -185,18 +207,19 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const manualSourceProvider = props.moduleDetails?.mods?.source?.provider?.trim().toLowerCase() ?? "";
   const manualSourceLabel = props.moduleDetails?.mods?.source?.label ?? workflow.sourceLabel;
   const manualSourceUrl = props.moduleDetails?.mods?.source?.url ?? workflow.primaryUrl ?? null;
+  const nexusSource = manualSourceProvider === "nexus", nexusLocal = canUseNexusApi();
   const canInstallSiteReferences = Boolean(
     manualStaging &&
     !manualEnablement &&
-    manualSourceProvider === "thunderstore"
+    ["thunderstore", "nexus"].includes(manualSourceProvider)
   );
   const canUseManualReferences = Boolean(manualEnablement || canInstallSiteReferences);
   const managedCollections = useMemo(() => readManagedWorkshopCollections(settings, moduleId), [settings, moduleId]);
   const collectionMemberIds = useMemo(() => uniqueEntries(managedCollections.flatMap((collection) => collection.member_ids)), [managedCollections]);
   const managedCollectionIds = useMemo(() => new Set(managedCollections.map((entry) => entry.id)), [managedCollections]);
   const configuredEntries = useMemo(
-    () => buildConfiguredEntries(moduleId, settings, props.moduleDetails, collectionMemberIds),
-    [moduleId, props.moduleDetails, settings, collectionMemberIds]
+    () => buildConfiguredEntries(moduleId, isArk ? arkProjection.settings : settings, props.moduleDetails, collectionMemberIds),
+    [moduleId, props.moduleDetails, settings, collectionMemberIds, isArk, arkProjection.settings]
   );
   const configurableEntries = useMemo(
     () => buildConfigurableEntries(moduleId, configuredEntries),
@@ -218,6 +241,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [retainedWorkshopIds, setRetainedWorkshopIds] = useState<string[]>([]);
   const [lookupCache, setLookupCache] = useState<Partial<Record<LocaleCode, Record<string, SteamWorkshopLookupItem>>>>({});
   const [presentationCache, setPresentationCache] = useState<Partial<Record<LocaleCode, WorkshopPresentationCache>>>({});
+  const detailsRequests = useRef(new WorkshopDetailsRequests(readSteamWorkshopItemDetails));
   const lookupSequence = useRef(0);
   const itemLookupVersions = useRef(new Map<string, number>());
   const resolvedLookupMap = useMemo(() => lookupCache[locale] ?? {}, [lookupCache, locale]);
@@ -250,6 +274,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [selectedCollectionMember, setSelectedCollectionMember] = useState<{ collectionId: string; modId: string } | null>(null);
   const [selectedEnabledRowKey, setSelectedEnabledRowKey] = useState<string | null>(null);
+  const [selectedArkModId, setSelectedArkModId] = useState<string | null>(null);
   const [selectedInventoryPath, setSelectedInventoryPath] = useState<string | null>(null);
   const [activeDetailSource, setActiveDetailSource] = useState<"enabled" | "inventory">("enabled");
   const [draggedEnabledRow, setDraggedEnabledRow] = useState<ModEnabledRow | null>(null);
@@ -265,11 +290,30 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const [manualInventoryError, setManualInventoryError] = useState<string | null>(null);
   const workshopControlStates = useMemo(() => moduleId === "palworld" ? palworldWorkshopStates(settings, manualInventory)
     : readWorkshopControlStates(moduleId, settings, pzSnapshot), [moduleId, settings, manualInventory, pzSnapshot]);
-  const asaMembership = useMemo(() => readAsaModMembership(moduleId === "arksurvivalascended" ? settings : {}), [moduleId, settings]);
+  const asaMembership = useMemo(() => readAsaModMembership(moduleId === "arksurvivalascended" ? arkProjection.settings : {}), [moduleId, arkProjection.settings]);
+  const sharedAsaMembership = useMemo(() => readAsaModMembership(moduleId === "arksurvivalascended" ? settings : {}), [moduleId, settings]);
   const [manualReferenceInput, setManualReferenceInput] = useState("");
+  const [thunderstoreVersionPolicy, setThunderstoreVersionPolicy] = useState<ThunderstoreVersionPolicy>("follow_latest");
+  useEffect(() => { setThunderstoreVersionPolicy("follow_latest"); }, [props.details.summary.id]);
   const [manualReferenceState, setManualReferenceState] = useState<"idle" | "running" | "success" | "error">("idle");
   const [manualReferenceResult, setManualReferenceResult] = useState<ManualModReferenceResolveResult | null>(null);
   const [manualReferenceError, setManualReferenceError] = useState<string | null>(null);
+  const [nexusAccount, setNexusAccount] = useState<NexusAccountStatus | null>(null);
+  const [nexusCredentialsOpen, setNexusCredentialsOpen] = useState(false);
+  const [nexusReview, setNexusReview] = useState<{ references: string[]; reviews: NexusModReview[]; input: string } | null>(null);
+  const [nexusInstallError, setNexusInstallError] = useState<string | null>(null);
+  const nexusGeneration = useRef(0);
+  useEffect(() => {
+    const generation = ++nexusGeneration.current;
+    setNexusAccount(null);
+    setNexusCredentialsOpen(false); setNexusReview(null); setNexusInstallError(null);
+    if (nexusSource && nexusLocal) void readNexusAccountStatus().then((status) => {
+      if (nexusGeneration.current === generation) setNexusAccount(status);
+    }).catch((failure) => {
+      if (nexusGeneration.current === generation) setManualReferenceError(nexusErrorText(locale, failure));
+    });
+    return () => { nexusGeneration.current++; };
+  }, [nexusSource, nexusLocal, props.details.summary.id]);
   const modChangesBlockedRef = useRef(modChangesBlocked);
   const latestSettingsRef = useRef(settings);
   const { mutationBusy, mutationError, setMutationError, runModMutation, launchModMutation } = useModWorkbenchMutations(
@@ -346,7 +390,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     .filter((item): item is SteamWorkshopLookupItem => Boolean(item))
     .filter((item) => !steamItemBelongsToApp(item, expectedAppId));
   const asaRawFlagsActive = moduleId === "arksurvivalascended" && hasAsaRawModFlags(settings);
-  const modMutationsDisabled = modChangesBlocked || mutationBusy || Boolean(steamAccount?.busy) || asaRawFlagsActive;
+  const modMutationsDisabled = modChangesBlocked || mutationBusy || Boolean(steamAccount?.busy) || asaRawFlagsActive
+    || arkProjection.error;
   const dstRawOverridesActive = moduleId === "dontstarve" && hasDstRawModOverrides(settings);
   const modEnablementDisabled = modMutationsDisabled || dstRawOverridesActive;
   const [activeJob, setActiveJob] = useState<BackgroundJob | null>(null);
@@ -424,8 +469,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     setDetailHistory([]);
     setLookupCache({});
     setPresentationCache({});
+    detailsRequests.current.clear();
     itemLookupVersions.current.clear();
     setSelectedEnabledRowKey(null);
+    setSelectedArkModId(null);
     setSelectedInventoryPath(null);
     setActiveDetailSource("enabled");
     setDraggedEnabledRow(null);
@@ -512,23 +559,28 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   useEffect(() => {
     if (readOnly || !selectedBrowseWorkshopId) return;
     let cancelled = false;
-    const version = beginLookup([selectedBrowseWorkshopId]);
+    const version = ++lookupSequence.current;
     setDetailFailure(null);
-    readSteamWorkshopItemDetails(selectedBrowseWorkshopId, locale).then((item) => {
+    detailsRequests.current.read(selectedBrowseWorkshopId, locale).then(({ item, cached }) => {
       if (cancelled) return;
       if (!item || item.id !== selectedBrowseWorkshopId) {
         throw new Error(JSON.stringify({ code: "workshop-collection-install", reason: "unresolved",
           item_id: selectedBrowseWorkshopId, message: "Workshop details did not contain the requested item." }));
       }
-      setResolvedLookupMap((current) => itemLookupVersions.current.get(`${locale}:${item.id}`) === version
-        ? { ...current, [item.id]: item } : current);
+      // Reused display content cannot overwrite newer game/type/client-only evidence.
+      const lookupKey = `${locale}:${item.id}`;
+      if (!cached && (itemLookupVersions.current.get(lookupKey) ?? 0) < version) {
+        itemLookupVersions.current.set(lookupKey, version);
+        setResolvedLookupMap((current) => itemLookupVersions.current.get(lookupKey) === version
+          ? { ...current, [item.id]: item } : current);
+      }
       setPresentationCache((current) => ({ ...current, [locale]: rememberWorkshopPresentation(current[locale] ?? {}, item) }));
     }).catch((error) => {
       if (cancelled) return;
       setDetailFailure({ id: selectedBrowseWorkshopId, locale, message: describeError(error) });
     });
     return () => { cancelled = true; };
-  }, [readOnly, selectedBrowseWorkshopId, detailRevision, locale, setResolvedLookupMap, beginLookup]);
+  }, [readOnly, selectedBrowseWorkshopId, detailRevision, locale, setResolvedLookupMap]);
 
   useEffect(() => {
     const ids = workshopInspectionIdsKey.split("\n").map((entry) => entry.trim()).filter(Boolean);
@@ -688,7 +740,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         setManualStageState("error");
       });
     }
-  }, [manualStaging, moduleId, props.details.summary.id, runModMutation, t]);
+  }, [manualStaging, moduleId, props.details.summary.id, runModMutation, t, instanceSettings, arkProjection.error]);
 
   useEffect(() => () => manualDropRequest.current?.abort(), [props.details.summary.id, moduleId, activeWorkbenchView, manifestMode]);
 
@@ -725,11 +777,15 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   async function readWritableInstanceState(): Promise<{
     details: InstanceDetails;
     settings: SettingsObject;
+    instanceSettings: SettingsObject;
   }> {
     if (readOnly) throw new Error(t("servers.archives.workspace.restoreForMods", undefined,
       "Restore this instance to manage Mods."));
     if (modChangesBlockedRef.current) {
       throw new Error(t("servers.mods.stopBeforeChanges", undefined, "Stop the instance before changing Mods."));
+    }
+    if (isArk && arkProjection.error) {
+      throw new Error(locale === "zh-CN" ? "地图 MOD 配置无效，请刷新后重试。" : "Map Mod settings are invalid. Reload and retry.");
     }
     const latestDetails = await readInstanceDetails(props.details.summary.id);
     if (instanceBlocksModChanges(latestDetails) || modChangesBlockedRef.current) {
@@ -743,7 +799,14 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         "Unable to read instance settings."
       ));
     }
-    return { details: latestDetails, settings: latestParseResult.value };
+    if (isArk) {
+      try { readArkModMapOverrides(latestParseResult.value, moduleId); }
+      catch (failure) {
+        if (!(failure instanceof ArkModScopeError)) throw failure;
+        throw new Error(locale === "zh-CN" ? "MOD 地图配置无效，请检查已保存的配置。" : "Mod map configuration is invalid. Review the saved configuration.");
+      }
+    }
+    return { details: latestDetails, instanceSettings: latestParseResult.value, settings: latestParseResult.value };
   }
 
   async function persistSettings(nextSettings: SettingsObject, expectedBase?: SettingsObject,
@@ -792,6 +855,31 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     });
     latestSettingsRef.current = mergedSettings;
     return mergedSettings;
+  }
+
+  async function saveArkModChange(change: ArkModChange, base: SettingsObject): Promise<SettingsObject> {
+    const save = props.onSaveSettings;
+    if (readOnly || !save) throw new Error(t("servers.archives.workspace.restoreForMods"));
+    let saved = base;
+    await runModMutation("configuration", async () => {
+      const latest = await readWritableInstanceState();
+      let next: SettingsObject;
+      try { assertArkModChangeBase(base, latest.settings, moduleId, change); next = applyArkModChange(latest.settings, moduleId, change); }
+      catch (failure) {
+        if (!(failure instanceof ArkModScopeError)) throw failure;
+        throw new Error(failure.code === "changed" ? locale === "zh-CN" ? "此 MOD 的目标配置已在别处修改，请重新读取已保存配置后再保存。" : "This Mod's target configuration changed elsewhere. Reload saved configuration before saving."
+          : failure.code === "scope" ? locale === "zh-CN" ? "所选地图已变更，请刷新后重新选择。" : "The selected maps changed. Reload and select them again."
+          : failure.code === "raw-flags" ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING)
+          : locale === "zh-CN" ? "MOD 地图配置无效，请检查已保存的配置。" : "Mod map configuration is invalid. Review the saved configuration.");
+      }
+      await save({ id: latest.details.summary.id, bind_ip: latest.details.summary.bind_ip,
+        auto_backup_on_stop: latest.details.auto_backup_on_stop, backup_retention_count: latest.details.backup_retention_count,
+        settings_json: JSON.stringify(next, null, 2), ports: latest.details.ports },
+      { expectedSettingsJson: latest.details.settings_json, throwOnError: true, silent: true });
+      saved = next; latestSettingsRef.current = next;
+      setScanNonce((current) => current + 1);
+    });
+    return saved;
   }
 
   async function saveProjectZomboidMapOrder(value: string, expectedValue: string | undefined) {
@@ -1110,6 +1198,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       if (moduleId === "terraria" && parseLineOrSemicolonEntries(latestState.settings.tmodloader_enabled_mod_names).length) {
         throw new Error(t("servers.mods.collections.removalError.terraria-metadata"));
       }
+      if (moduleId === "arksurvivalevolved") {
+        await persistSettings(applyArkSharedModAction(latestState.settings, moduleId, targetIds, "remove"), latestState.settings);
+        setScanNonce((current) => current + 1); return;
+      }
       const removePlan = buildModSettingsRemovePlan(
         moduleId,
         latestState.settings,
@@ -1164,6 +1256,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
   function entryValueParser(entry: ModSourceEntry): (value: unknown) => string[] {
     if (entry.key.startsWith("arksurvivalascended-") && ["mod_ids_csv", "passive_mod_ids_csv"].includes(entry.fieldLabel)) return parseAsaModIds;
+    if (entry.key.startsWith("arksurvivalevolved-")) return parseEvolvedModIds;
     return entry.key === "pz-mods" || entry.key === "pz-maps"
       ? parseLineOrSemicolonEntries
       : parseDelimitedEntries;
@@ -1217,7 +1310,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     const inventoryIds = ids.some((id) => !owned.has(id)) && action !== "add" && action !== "restore-files"
       ? (await readManualModInventory(props.details.summary.id)).items.map((item) => item.inferred_id ?? "") : [];
     let next: SettingsObject;
-    try { next = buildAsaModPlan(latest.settings, ids, action, inventoryIds); }
+    try { next = applyArkSharedModAction(latest.settings, moduleId, ids, action, inventoryIds); }
     catch (error) {
       if (!(error instanceof AsaModControlError)) throw error;
       throw new Error(error.code === "raw-mod-flags" ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING) : error.code === "not-owned"
@@ -1225,6 +1318,28 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         : t("servers.mods.invalidCurseForgeId", undefined, "Enter a valid numeric CurseForge project ID."));
     }
     await persistSettings(next, latest.settings, undefined, (current) => assertAsaMembershipBase(latest.settings, current));
+    startTransition(() => { setApplyMessage(null); setScanNonce((current) => current + 1); });
+  }
+
+  /** Checklist mode: the written list becomes exactly the shared active list (CAS against what the editor saw). */
+  async function applyAsaActiveList(ids: string[], expected: string[], instanceId: string) {
+    if (instanceId !== props.details.summary.id) throw new Error(t("servers.mods.membershipChanged", undefined, "The instance’s Mods changed elsewhere. Reload and retry."));
+    const latest = await readWritableInstanceState();
+    const assertExpected = (current: SettingsObject) => {
+      assertAsaMembershipBase(latest.settings, current);
+      if (readAsaModMembership(current).active.join("\n") !== expected.join("\n")) {
+        throw new Error(t("servers.mods.membershipChanged", undefined, "The instance’s Mods changed elsewhere. Reload and retry."));
+      }
+    };
+    assertExpected(latest.settings);
+    let next: SettingsObject;
+    try { next = buildAsaActiveListPlan(latest.settings, ids); }
+    catch (error) {
+      if (!(error instanceof AsaModControlError)) throw error;
+      throw new Error(error.code === "raw-mod-flags" ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING)
+        : t("servers.mods.invalidCurseForgeId", undefined, "Enter a valid numeric CurseForge project ID."));
+    }
+    await persistSettings(next, latest.settings, undefined, assertExpected);
     startTransition(() => { setApplyMessage(null); setScanNonce((current) => current + 1); });
   }
 
@@ -1304,7 +1419,8 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   const handleEnableManualReferences = useCallback(async (references: string[]) => {
-    const cleanReferences = uniqueEntries(references.map((reference) => reference.trim()).filter(Boolean));
+    const cleanReferences = nexusSource ? [...new Set(references.map((reference) => reference.trim()).filter(Boolean))]
+      : uniqueEntries(references.map((reference) => reference.trim()).filter(Boolean));
     if (!manualEnablement && !canInstallSiteReferences) {
       return;
     }
@@ -1321,10 +1437,24 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         setManualReferenceResult(null);
         setManualReferenceError(null);
         setManualStageError(null);
+        if (nexusSource) {
+          const generation = nexusGeneration.current, account = await readNexusAccountStatus();
+          if (generation !== nexusGeneration.current) return;
+          setNexusAccount(account);
+          if (!account.configured) {
+            setManualReferenceState("idle"); setNexusCredentialsOpen(true);
+            setManualReferenceError(nexusText(locale, "nexus_auth_required")); return;
+          }
+          const reviews = await reviewNexusModReferences(props.details.summary.id, cleanReferences);
+          if (generation !== nexusGeneration.current) return;
+          setNexusReview({ references: cleanReferences, reviews, input: manualReferenceInput });
+          setNexusInstallError(null); setManualReferenceState("idle"); return;
+        }
         if (!manualEnablement) {
           setManualStageState("running");
           setManualStageResult(null);
-          const result = await installManualModReferences(props.details.summary.id, cleanReferences);
+          const result = await installManualModReferences(props.details.summary.id, cleanReferences,
+            manualSourceProvider === "thunderstore" ? thunderstoreVersionPolicy : undefined);
           startTransition(() => {
             setManualStageResult(result);
             setManualStageState("success");
@@ -1366,6 +1496,11 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       });
     } catch (error) {
       startTransition(() => {
+        if (nexusSource) {
+          setManualReferenceError(nexusErrorText(locale, error)); setManualReferenceState("error");
+          if (error instanceof NexusApiError && ["nexus_auth_required", "nexus_auth_invalid"].includes(error.code)) setNexusCredentialsOpen(true);
+          return;
+        }
         setManualReferenceError(t(
           manualEnablement ? "servers.mods.referenceFailed" : "servers.mods.referenceInstallFailed",
           { message: formatDesktopError(t, error) },
@@ -1377,10 +1512,33 @@ export function ModWorkbench(props: ModWorkbenchProps) {
         }
       });
     }
-  }, [canInstallSiteReferences, manualEnablement, moduleId, props.details.summary.id, runModMutation, t]);
+  }, [canInstallSiteReferences, manualEnablement, manualSourceProvider, thunderstoreVersionPolicy, moduleId, props.details.summary.id, runModMutation, t, instanceSettings, arkProjection.error, nexusSource, locale, manualReferenceInput]);
+
+  async function handleInstallNexusFiles(selected: Record<number, string>) {
+    const review = nexusReview, generation = nexusGeneration.current;
+    if (!review) return;
+    try {
+      await runModMutation("staging", async () => {
+        const selections = review.reviews.map((project) => {
+          const file = project.files.find((candidate) => candidate.file_id === selected[project.reference_index] && candidate.downloadable);
+          if (!file) throw new NexusApiError("nexus_file_unavailable");
+          return { reference: review.references[project.reference_index], file_id: file.file_id };
+        });
+        setManualStageState("running"); setManualStageResult(null); setNexusInstallError(null); setManualReferenceError(null);
+        const result = await installNexusModFiles(props.details.summary.id, selections);
+        if (generation !== nexusGeneration.current) return;
+        setManualStageResult(result); setManualStageState("success"); setManualReferenceState("success"); setNexusReview(null);
+        setManualReferenceInput((input) => input === review.input ? "" : input);
+        setScanNonce((current) => current + 1);
+      });
+    } catch (failure) {
+      if (generation !== nexusGeneration.current) return;
+      setNexusInstallError(nexusErrorText(locale, failure)); setManualStageState("error");
+    }
+  }
 
   function handleEnableManualReferenceInput() {
-    void handleEnableManualReferences(referenceCandidatesFromText(manualReferenceInput));
+    void handleEnableManualReferences((nexusSource ? nexusReferencesFromText : referenceCandidatesFromText)(manualReferenceInput));
   }
 
   const browsedWorkshopItems = browseResult?.items ?? EMPTY_WORKSHOP_ITEMS;
@@ -1487,27 +1645,31 @@ export function ModWorkbench(props: ModWorkbenchProps) {
     setSelectedBrowseWorkshopId(parent);
   }
   const selectedEnabledRow = useMemo(
-    () => enabledRows.find((row) => row.key === selectedEnabledRowKey) ?? enabledRows[0] ?? null,
-    [enabledRows, selectedEnabledRowKey]
+    () => enabledRows.find((row) => row.key === selectedEnabledRowKey)
+      ?? (isArk ? enabledRows.find((row) => row.id === selectedArkModId) : null) ?? enabledRows[0] ?? null,
+    [enabledRows, selectedEnabledRowKey, isArk, selectedArkModId]
   );
   const selectedInventoryItem = useMemo(
     () => unconfiguredInventoryItems.find((item) => item.path === selectedInventoryPath) ?? unconfiguredInventoryItems[0] ?? null,
     [unconfiguredInventoryItems, selectedInventoryPath]
   );
   const configuredEntryCount = enabledRows.length;
-  const verificationWarning = uniqueEntries(uniqueEntries([
+  const verificationWarning = buildWorkshopVerificationWarning(t, uniqueEntries([
     ...workshopLookupIds, ...catalogItems.map((item) => item.id), ...(selectedBrowseWorkshopId ? [selectedBrowseWorkshopId] : [])
-  ]).map((id) => lookupMap[id]).filter((item) => item?.status === "unverified")
-    .map((item) => item.message ? formatDesktopError(t, item.message) : t("servers.mods.workshopUnavailable"))).join("\n");
+  ]).map((id) => lookupMap[id]).filter((item): item is SteamWorkshopLookupItem => Boolean(item)),
+  selectedBrowseDetailsReady ? selectedBrowseWorkshopItem : null);
 
   useEffect(() => {
     // Same-value updates can still schedule work while inventory transitions are pending.
     if (enabledRows.length === 0) {
       if (selectedEnabledRowKey !== null) setSelectedEnabledRowKey(null);
-    } else if (!selectedEnabledRowKey || !enabledRows.some((row) => row.key === selectedEnabledRowKey)) {
-      setSelectedEnabledRowKey(enabledRows[0].key);
+    } else {
+      const byKey = enabledRows.find((row) => row.key === selectedEnabledRowKey);
+      const selected = byKey ?? (isArk ? enabledRows.find((row) => row.id === selectedArkModId) : null) ?? enabledRows[0];
+      if (selectedEnabledRowKey !== selected.key) setSelectedEnabledRowKey(selected.key);
+      if (isArk && selectedArkModId !== selected.id) setSelectedArkModId(selected.id);
     }
-  }, [enabledRows, selectedEnabledRowKey]);
+  }, [enabledRows, selectedEnabledRowKey, isArk, selectedArkModId]);
 
   useEffect(() => {
     if (!draggedEnabledRow) {
@@ -1602,11 +1764,15 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
   function handleSelectEnabledRow(rowKey: string) {
     setSelectedEnabledRowKey(rowKey);
+    if (isArk) setSelectedArkModId(enabledRows.find((row) => row.key === rowKey)?.id ?? null);
     setActiveDetailSource("enabled");
   }
 
   function formatEnabledRowDisplayId(row: ModEnabledRow): string {
     return row.id || row.value;
+  }
+  function canSortWorkbenchRow(row: ModEnabledRow): boolean {
+    return canReorderEnabledRow(row) && (!isArk || entryValueParser(row.entry)(settings[row.entry.fieldLabel]).includes(row.value));
   }
 
   function handleReorderEnabledRow(sourceRow: ModEnabledRow | null, targetRow: ModEnabledRow) {
@@ -1636,7 +1802,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function handleEnabledRowPointerDown(event: PointerEvent<HTMLButtonElement>, row: ModEnabledRow) {
-    if (modMutationsDisabled || event.button !== 0 || !canReorderEnabledRow(row)) {
+    if (modMutationsDisabled || event.button !== 0 || !canSortWorkbenchRow(row)) {
       return;
     }
     setDraggedEnabledRow(row);
@@ -1699,14 +1865,16 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           const isActive = activeDetailSource === "enabled" && row.key === selectedEnabledRow?.key;
           const controlState = supportsWorkshopModEnablement(moduleId) && row.entry.kind === "steam-item"
             ? workshopControlStates.get(row.id) ?? null : null;
-          const isDisabled = moduleId === "arksurvivalascended" ? !asaMembership.enabled.has(row.id)
+          const sharedArkMember = !isArk || (moduleId === "arksurvivalascended" ? sharedAsaMembership.owned.has(row.id)
+            : uniqueEntries([...parseEvolvedModIds(settings.active_mod_ids), ...parseEvolvedModIds(settings.auto_managed_mod_ids)]).includes(row.id));
+          const isDisabled = moduleId === "arksurvivalascended" ? !sharedAsaMembership.enabled.has(row.id)
             : controlState ? !controlState.enabled : row.entry.key === "dst-disabled";
           const id = formatEnabledRowDisplayId(row);
           const lookup = lookupMap[row.id];
           const title = lookup?.title ?? row.value ?? row.entry.label;
           const lifecycle = lookup ? resolveWorkshopStoreItemState(lookup).lifecycleState
             : moduleId === "dontstarve" ? "checking" : "enabled";
-          const isSortable = !readOnly && (moduleId !== "arksurvivalascended" || !asaRawFlagsActive) && canReorderEnabledRow(row);
+          const isSortable = !readOnly && (moduleId !== "arksurvivalascended" || !asaRawFlagsActive) && canSortWorkbenchRow(row);
           const isDragging = draggedEnabledRow?.key === row.key;
           const isDropTarget = enabledDropTargetKey === row.key;
           const rowClassName = [
@@ -1737,20 +1905,22 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                   <span className="mw-entry-row-status">
                     {!readOnly ? <WorkshopStatus state={lifecycle} /> : null}
                     <span className="mw-entry-id">{row.entry.label} / {id}</span>
+                    {isArk ? <><span className="ark-mod-default-label">{sharedArkMember ? locale === "zh-CN" ? "共用默认" : "Shared defaults"
+                      : locale === "zh-CN" ? "仅地图配置" : "Map configuration"}</span><span data-ark-mod-map-count>{arkMapCounts.counts.get(row.id) ?? 0}/{arkMapCounts.total}{locale === "zh-CN" ? " 地图" : " maps"}</span></> : null}
                   </span>
                 </span>
               </button>
               <div className="mw-entry-row-actions">
-                {canToggleModEnabledRow(row, moduleId, isManualEnablementModule) ? <input
+                {sharedArkMember && canToggleModEnabledRow(row, moduleId, isManualEnablementModule) ? <input
                   className="mw-entry-enabled-toggle"
                   type="checkbox"
                   checked={!isDisabled}
                   aria-checked={controlState?.partiallyEnabled ? "mixed" : !isDisabled}
                   ref={(input) => { if (input) input.indeterminate = Boolean(controlState?.partiallyEnabled); }}
                   disabled={modEnablementDisabled || (controlState !== null && !controlState.canToggle)}
-                  aria-label={isDisabled
+                  aria-label={(isArk ? locale === "zh-CN" ? "共用默认：" : "Shared defaults: " : "") + (isDisabled
                     ? t("servers.mods.configList.enable", { name: title }, "Enable {name}")
-                    : t("servers.mods.configList.disable", { name: title }, "Disable {name}")}
+                    : t("servers.mods.configList.disable", { name: title }, "Disable {name}"))}
                   onChange={() => {
                     handleSelectEnabledRow(row.key);
                     if (moduleId === "arksurvivalascended") handleAsaModAction(id, isDisabled ? "enable" : "disable");
@@ -1873,16 +2043,12 @@ export function ModWorkbench(props: ModWorkbenchProps) {
 
     const asaConfigId = canonicalAsaModId(resolvedDetailSource === "enabled"
       ? selectedRow?.id ?? "" : inventoryItem?.inferred_id ?? "");
-    if (moduleId === "arksurvivalascended" && asaConfigId) {
-      return <div className="mw-selected-config-panel"><AsaModConfiguration
-        key={props.details.summary.id} instanceId={props.details.summary.id} modId={asaConfigId} settings={settings}
+    if (isArk && asaConfigId && !arkProjection.error) {
+      return <div className="mw-selected-config-panel"><ArkModMapConfiguration
+        key={props.details.summary.id} instanceId={props.details.summary.id} instanceName={props.details.summary.name} moduleId={moduleId} modId={asaConfigId} settings={settings}
         disabled={modMutationsDisabled} readOnly={readOnly}
         installed={manualInventoryItems.some((item) => item.inferred_id === asaConfigId && item.file_count > 0)}
-        onSave={async (next, expected) => {
-          let saved = next;
-          await runModMutation("configuration", async () => { saved = await persistSettings(next, expected); });
-          return saved;
-        }}
+        onChange={saveArkModChange}
         onReload={async () => {
           let fresh = settings;
           await runModMutation("configuration", async () => { fresh = (await readWritableInstanceState()).settings; });
@@ -2078,7 +2244,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
             aria-disabled={acceptsDrop ? modMutationsDisabled : undefined}
             aria-busy={acceptsDrop ? manualStageState === "running" || manualReferenceState === "running" : undefined}
           >
-            <div className="mw-detail-col-title">
+            {manifestMode ? null : <div className="mw-detail-col-title">
               <span>{collectionsMode ? t("servers.mods.browseKind.collection", undefined, "Collections") : t("servers.mods.detailTabs.mods", undefined, "Mods")}</span>
               <span className="mw-entry-count-chip">{collectionsMode ? managedCollections.length : modCount}</span>
               {!collectionsMode && showsManualInventory && manualInventory?.target_exists ? <button type="button" className="mw-ghost-btn"
@@ -2086,20 +2252,22 @@ export function ModWorkbench(props: ModWorkbenchProps) {
                 onClick={() => void openLocalPath(manualInventory.target_path).catch((error) => setMutationError(describeError(error)))}>
                 <ShellIcon name="folder" className="mw-btn-icon" />{t("servers.mods.openFolder", undefined, "Open Mod folder")}
               </button> : null}
-            </div>
+            </div>}
             <div className="mw-detail-panel">{manifestMode && moduleId === "arksurvivalascended" ? <AsaModManifestPanel
               key={props.details.summary.id} instanceId={props.details.summary.id}
-              currentIds={asaMembership.active} initialText={manifestDraft} onDraftChange={setManifestDraft}
-              disabled={modMutationsDisabled} readOnly={readOnly}
-              blockedNote={asaRawFlagsActive ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING) : undefined}
-              onApply={async (ids) => {
-                await runModMutation("enablement", () => applyAsaModAction(ids, "add"));
-                return true;
-              }}
+              currentIds={sharedAsaMembership.active} initialText={manifestDraft} onDraftChange={setManifestDraft}
+              readOnly={readOnly}
+              blockedReason={asaRawFlagsActive ? t("servers.mods.asaRawFlagsWarning", undefined, ASA_RAW_MOD_WARNING)
+                : modChangesBlocked ? t("servers.mods.stopBeforeChanges", undefined, "Stop the instance before changing Mods.")
+                  : arkProjection.error ? t("servers.mods.asaManifest.mapSettingsInvalid")
+                    : mutationBusy || steamAccount?.busy ? t("servers.mods.mutationBusy", undefined, "Another Mod change is still in progress.")
+                      : null}
+              onSave={(ids, expected) => runModMutation("enablement", () => applyAsaActiveList(ids, expected, props.details.summary.id))}
             /> : manifestMode && expectedAppId ? <WorkshopManifestPanel
               key={props.details.summary.id} instanceId={props.details.summary.id} appId={expectedAppId}
               initialText={manifestDraft} onDraftChange={setManifestDraft}
-              currentIds={uniqueEntries([...workshopIds, ...(moduleId === "dontstarve" ? enabledRows.map((row) => row.id) : [])])} disabled={modMutationsDisabled}
+              currentIds={moduleId === "arksurvivalevolved" ? parseEvolvedModIds(settings.active_mod_ids)
+                : uniqueEntries([...workshopIds, ...(moduleId === "dontstarve" ? enabledRows.map((row) => row.id) : [])])} disabled={modMutationsDisabled}
               readOnly={readOnly}
               targetNote={t(`servers.mods.manifest.target.${moduleId}`, undefined, "")}
               allowCachedInstall={Boolean(manualStaging)}
@@ -2115,9 +2283,9 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           </div>
           {!manifestMode && !empty ? <div className="mw-detail-config-col" role="region" aria-label={selectedName ? `${settingsLabel}: ${selectedName}` : settingsLabel}>
             <div className="mw-detail-config-panel">
-              {collectionsMode ? selectedMemberId ? renderSelectedModConfigPanel(selectedMemberId) : <div className="mw-empty">
+              {!manifestMode && !empty ? collectionsMode ? selectedMemberId ? renderSelectedModConfigPanel(selectedMemberId) : <div className="mw-empty">
                 <span>{t("servers.mods.collections.selectMember", undefined, "Select a Mod from a collection to view its settings.")}</span>
-              </div> : renderSelectedModConfigPanel()}
+              </div> : renderSelectedModConfigPanel() : null}
             </div>
           </div> : null}
         </div>
@@ -2362,8 +2530,13 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               <SteamWorkshopStoreDetail
                 item={selectedBrowseWorkshopItem}
                 detailsReady={selectedBrowseDetailsReady}
+                localizationWarningCovered={verificationWarning?.includesOriginalText}
                 detailsError={detailError ? formatDesktopError(t, detailError) : null}
-                onRetryDetails={() => { setDetailFailure(null); setDetailRevision((value) => value + 1); }}
+                onRetryDetails={() => {
+                  if (selectedBrowseWorkshopId) detailsRequests.current.invalidate(selectedBrowseWorkshopId, locale);
+                  setDetailFailure(null);
+                  setDetailRevision((value) => value + 1);
+                }}
                 lifecycleState={!selectedBrowseDetailsReady ? (detailError ? "unknown" : "checking") : detailState.lifecycleState}
                 action={detailState.action}
                 actionBusy={detailState.lifecycleState === "installing"}
@@ -2385,9 +2558,33 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderCommunityWorkspace() {
+    const versionPolicyLabel = t(thunderstoreVersionPolicy === "pinned"
+      ? "servers.mods.thunderstore.pinned" : "servers.mods.thunderstore.followLatest");
     return (
-      <div className="mw-community-workspace">
-        <div className="mw-workspace-toolbar">
+      <div className={`mw-community-workspace${nexusSource ? " mw-community-workspace--nexus" : ""}`}>
+        <div className="mw-workspace-toolbar mw-manual-toolbar">
+          {canUseManualReferences ? <div className="mw-reference-row">
+            <input className="mw-reference-input" value={manualReferenceInput} disabled={modEnablementDisabled || (nexusSource && !nexusLocal)}
+              aria-label={t("servers.mods.referenceInputPlaceholder", { source: manualSourceLabel }, "Paste {source} link or mod ID...")}
+              placeholder={t("servers.mods.referenceInputPlaceholder", { source: manualSourceLabel }, "Paste {source} link or mod ID...")}
+              onChange={(event) => setManualReferenceInput(event.target.value)}
+              onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleEnableManualReferenceInput(); } }} />
+            <button type="button" className="mw-btn mw-btn--secondary" disabled={modEnablementDisabled || (nexusSource && !nexusLocal)} onClick={handleEnableManualReferenceInput}>
+              {manualEnablement ? t("servers.mods.applyAction.enableLocal", undefined, "Enable") : t("servers.mods.applyAction.install", undefined, "Install")}
+            </button>
+          </div> : <span className="mw-manual-toolbar-title">{manualSourceLabel}</span>}
+          <div className="mw-manual-toolbar-actions">
+          {canInstallSiteReferences && manualSourceProvider === "thunderstore" ? <ConfigurationHelp
+            description={t("servers.mods.thunderstore.versionPolicyHelp")}>
+            {(help) => <button type="button" className="mw-btn mw-btn--secondary mw-version-policy-btn"
+              ref={help.anchorRef} {...help.interactionProps} aria-describedby={help.descriptionId}
+              aria-label={`${t("servers.mods.thunderstore.versionPolicy")}: ${versionPolicyLabel}`}
+              data-version-policy={thunderstoreVersionPolicy} disabled={modEnablementDisabled}
+              onClick={() => setThunderstoreVersionPolicy((current) => current === "pinned" ? "follow_latest" : "pinned")}>
+              <ShellIcon name={thunderstoreVersionPolicy === "pinned" ? "lock" : "refresh"} className="mw-btn-icon" />
+              <span>{versionPolicyLabel}</span>
+            </button>}
+          </ConfigurationHelp> : null}
           <div className="mw-sort-pills" role="tablist" aria-label={t("servers.mods.mainTabs.aria", undefined, "Mod workspace")}>
             {MOD_WORKBENCH_TABS.map((tab) => (
               <button
@@ -2410,6 +2607,15 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               onClick={() => { setActiveWorkbenchView("config"); setManifestMode(true); }}
             >{t("servers.mods.manifest.mode")}</button> : null}
           </div>
+          {nexusSource ? <button type="button" className="mw-btn mw-btn--secondary mw-nexus-auth-btn" data-nexus-auth-open
+            data-nexus-authorized={nexusAccount ? String(nexusAccount.configured) : "unknown"}
+            disabled={modMutationsDisabled || !nexusLocal} aria-label={nexusText(locale, "auth")}
+            onClick={() => setNexusCredentialsOpen(true)}><ShellIcon name={nexusAccount?.configured ? "check-circle" : "lock"} className="mw-btn-icon" />{nexusText(locale, "key")}</button> : null}
+          {manualSourceUrl ? <button type="button" className="mw-btn mw-btn--secondary mw-source-open-btn" onClick={() => void openExternalUrl(manualSourceUrl)}>
+            <ShellIcon name="external-link" className="mw-btn-icon" />
+            <span>{t("servers.mods.openSource", { source: manualSourceLabel }, "Open {source}")}</span>
+          </button> : null}
+          </div>
         </div>
         {activeWorkbenchView === "store" ? renderManualImportPane() : renderConfigurationPane()}
       </div>
@@ -2417,6 +2623,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function manualListDropHandlers(allowReferences: boolean) {
+    allowReferences = allowReferences && (!nexusSource || nexusLocal);
     const updateFeedback = (event: DragEvent<HTMLElement>) => {
       event.preventDefault();
       const effect = modMutationsDisabled ? "none" : modDropEffect(event.dataTransfer, allowReferences);
@@ -2435,7 +2642,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
       onDrop: (event: DragEvent<HTMLElement>) => {
         const effect = updateFeedback(event);
         if (effect === "none") return;
-        const references = allowReferences ? referencesFromDomDrop(event) : [];
+        const references = allowReferences ? referencesFromDomDrop(event, nexusSource ? nexusReferencesFromText : referenceCandidatesFromText) : [];
         const files = Array.from(event.dataTransfer.files);
         const fileItems = Array.from(event.dataTransfer.items).filter((item) => item.kind === "file");
         const browserLinkFiles = files.length > 0 && files.length === fileItems.length
@@ -2456,8 +2663,10 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderManualImportFeedback() {
-    if (!manualStageResult && !manualReferenceResult && !manualReferenceError && !manualStageError && manualStageState !== "running" && manualReferenceState !== "running") return null;
+    const nexusLocalNote = nexusSource && !nexusLocal ? <p className="mw-nexus-local-note">{nexusText(locale, "nexus_local_desktop_required")}</p> : null;
+    if (!manualStageResult && !manualReferenceResult && !manualReferenceError && !manualStageError && manualStageState !== "running" && manualReferenceState !== "running") return nexusLocalNote;
     return <div className="mw-manual-feedback">
+      {nexusLocalNote}
       {manualStageState === "running" ? <ActivityNotice>{t("servers.mods.manualDropRunning", undefined, "Installing...")}</ActivityNotice> : null}
       {manualReferenceState === "running" && manualStageState !== "running" ? <ActivityNotice>{t("servers.mods.referenceResolving", undefined, "Resolving...")}</ActivityNotice> : null}
       {manualStageResult ? <div className="mw-manual-success-bar"><span className="mw-chip mw-chip--on">
@@ -2472,34 +2681,54 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderManualImportPane(allowReferences = canUseManualReferences) {
-    const hasActions = Boolean(manualSourceUrl || allowReferences);
-    return <div className={`mw-manual-pane${hasActions ? " mw-manual-pane--with-actions" : ""}`}>
-      {hasActions ? <div className="mw-manual-actions">
-        {allowReferences ? <div className="mw-reference-row">
-          <input className="mw-reference-input" value={manualReferenceInput} disabled={modEnablementDisabled}
-            placeholder={t("servers.mods.referenceInputPlaceholder", { source: manualSourceLabel }, "Paste {source} link or mod ID...")}
-            onChange={(event) => setManualReferenceInput(event.target.value)}
-            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleEnableManualReferenceInput(); } }} />
-          <button type="button" className="mw-btn mw-btn--secondary" disabled={modEnablementDisabled} onClick={handleEnableManualReferenceInput}>
-            {manualEnablement ? t("servers.mods.applyAction.enableLocal", undefined, "Enable") : t("servers.mods.applyAction.install", undefined, "Install")}
-          </button>
+    const dropActive = manualDropActive && !modMutationsDisabled;
+    return <div className="mw-manual-pane">
+      {manualStaging ? <div
+        className={`mw-dropzone${dropActive ? " mw-dropzone--active" : ""}${manualStageState === "running" ? " mw-dropzone--running" : ""}`}
+        {...manualListDropHandlers(allowReferences)}
+        role="region"
+        aria-label={t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}
+        aria-disabled={modMutationsDisabled}
+        aria-busy={manualStageState === "running" || manualReferenceState === "running"}
+      >
+        <ShellIcon name="package" className="mw-dropzone-icon" />
+        <div className="mw-dropzone-copy">
+          <strong className="mw-dropzone-title">
+            {manualStageState === "running" ? t("servers.mods.manualDropRunning", undefined, "Installing...")
+              : manualReferenceState === "running" ? t("servers.mods.referenceResolving", undefined, "Resolving...")
+              : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}
+          </strong>
+          <span>{t("servers.mods.manualDropTarget", { target: manualStaging.target_label }, "Installs to {target}")}</span>
+        </div>
+        {dropActive ? <div className="mw-dropzone-feedback" aria-hidden="true">
+          <ShellIcon name="package" className="mw-btn-icon" />
+          <strong>{manualDropReferenceActive ? t("servers.mods.referenceDropTitle", { source: manualSourceLabel }, "Drop {source} links or IDs here")
+            : t("servers.mods.manualDropTitle", undefined, "Drop downloaded mods here")}</strong>
         </div> : null}
-        {manualSourceUrl ? <button type="button" className="mw-btn mw-btn--secondary mw-source-open-btn" onClick={() => void openExternalUrl(manualSourceUrl)}>
-          <ShellIcon name="external-link" className="mw-btn-icon" />
-          <span>{t("servers.mods.openSource", { source: manualSourceLabel }, "Open {source}")}</span>
-        </button> : null}
       </div> : null}
-      {renderConfigurationPane()}
+      {renderManualImportFeedback()}
     </div>;
   }
 
   return (
-    <section className={moduleId === "projectzomboid" ? "mw-workbench mw-workbench--pz" : "mw-workbench"}>
+    <section className={`mw-workbench${moduleId === "projectzomboid" ? " mw-workbench--pz" : ""}`}>
+      {arkProjection.error ? <ActivityNotice tone="error">{locale === "zh-CN" ? "地图 MOD 配置无效，请在高级配置中检查 ark_mod_map_overrides。"
+        : "Map Mod settings are invalid. Review ark_mod_map_overrides under Advanced."}</ActivityNotice> : null}
+      {arkProjection.differs ? <ActivityNotice tone="warning">{locale === "zh-CN"
+        ? "各地图的 MOD 列表、加载顺序或参数不同。跨服传送的物品、生物可能无法在目标地图加载；请核对 MOD 作者的集群兼容说明。"
+        : "Maps use different Mod lists, load orders, or options. Transferred items or creatures may not load on the destination map. Check the Mod authors' cluster compatibility guidance."}</ActivityNotice> : null}
       {applyMessage ? <ActivityNotice tone="success" onDismiss={() => setApplyMessage(null)}>{applyMessage}</ActivityNotice> : null}
-      {verificationWarning ? <ActivityNotice tone="warning" action={
+      {verificationWarning ? <ActivityNotice tone="warning" details={verificationWarning.details} action={
         <button className="mw-ghost-btn" type="button" disabled={lookupLoading || browseLoading}
-          onClick={() => { setLookupRevision((current) => current + 1); retryBrowse(); }}>{t("common.retry", undefined, "Retry")}</button>
-      }>{verificationWarning}</ActivityNotice> : null}
+          onClick={() => {
+            setLookupRevision((current) => current + 1); retryBrowse();
+            if (verificationWarning.includesOriginalText && selectedBrowseWorkshopId) {
+              detailsRequests.current.invalidate(selectedBrowseWorkshopId, locale);
+              setDetailFailure(null);
+              setDetailRevision((value) => value + 1);
+            }
+          }}>{t("common.retry", undefined, "Retry")}</button>
+      }>{verificationWarning.summary}</ActivityNotice> : null}
       <div className="mw-workbench-main">
             {selectedBrowseDetailsReady && !isCollectionSummary(selectedBrowseWorkshopItem) && isIncompleteWorkshopCollection(selectedBrowseWorkshopItem ?? undefined) ? <ActivityNotice tone="warning">
               {t("servers.mods.incompleteCollection", undefined, "This collection contains nested or unresolved entries. Add the individual Mods instead.")}
@@ -2581,6 +2810,13 @@ export function ModWorkbench(props: ModWorkbenchProps) {
           if (managedManualMods.review) managedManualMods.change(managedManualMods.review, "delete");
         }}
       /> : null}
+      {nexusSource && nexusCredentialsOpen && nexusLocal && !readOnly ? <NexusCredentialsDialog
+        disabled={modChangesBlocked || mutationBusy} onClose={() => setNexusCredentialsOpen(false)}
+        onStatus={(status) => { nexusGeneration.current++; setNexusAccount(status); setNexusReview(null); }} /> : null}
+      {nexusSource && nexusReview ? <NexusFileSelectionDialog reviews={nexusReview.reviews} busy={mutationBusy}
+        disabled={modChangesBlocked || !nexusLocal} error={nexusInstallError} installNote={props.moduleDetails?.mods?.source?.install_note}
+        onClose={() => { if (!mutationBusy) { setNexusReview(null); setNexusInstallError(null); } }}
+        onInstall={(selected) => void handleInstallNexusFiles(selected)} /> : null}
     </section>
   );
 }

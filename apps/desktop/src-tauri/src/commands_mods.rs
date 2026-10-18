@@ -33,8 +33,14 @@ mod install_removal;
 mod library_cleanup;
 use super::commands_module_mutation_locks::acquire_module_instance_mutations;
 pub(super) use library_cleanup::after_instance_deletion;
+#[path = "commands_thunderstore_start.rs"]
+pub(super) mod thunderstore_start;
 #[path = "commands_workshop_download.rs"]
 mod workshop_download;
+#[path = "commands_workshop_start.rs"]
+pub(super) mod workshop_start;
+#[path = "commands_workshop_start_plan.rs"]
+mod workshop_start_plan;
 pub(super) async fn prepare_dst_import_workshop_items(
     install_locks: &app_steamcmd::InstallLockContext,
     storage: &StorageBootstrap,
@@ -533,6 +539,7 @@ pub(super) async fn install_module_game_with_account_inner(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: job_kind,
             label: label.clone(),
@@ -673,6 +680,20 @@ pub(super) async fn download_steam_workshop_items_inner(
             descriptor.summary.id
         )
     })?;
+    let account_target = crate::steam_workshop_account_sessions::SteamAccountLoginTarget::Instance(
+        instance_id.clone(),
+    );
+    let account_authorization = account_name
+        .as_deref()
+        .map(|account| {
+            state.steam_workshop_account_sessions.authorize_account(
+                &account_target,
+                account,
+                &storage.paths.steamcmd_root,
+                &storage.paths.app_data_root,
+            )
+        })
+        .transpose()?;
     let instance_lock =
         acquire_stopped_instance_mod_mutation(&state, &storage, &instance_id).await?;
     let instance_lock = super::commands_program_storage::prepare_instance_mod_program(
@@ -696,6 +717,21 @@ pub(super) async fn download_steam_workshop_items_inner(
         .acquire_steamcmd(&storage.settings)
         .await
         .map_err(|error| steamcmd_error_message(&error))?;
+    if let (Some(account), Some(authorization)) =
+        (account_name.as_deref(), account_authorization.as_ref())
+    {
+        // Anonymous selection or a new login while queued revokes the earlier
+        // request. Never restore automatic reuse from that stale authorization.
+        state
+            .steam_workshop_account_sessions
+            .authorize_workshop_download_account(
+                &account_target,
+                account,
+                authorization,
+                &storage.paths.steamcmd_root,
+                &storage.paths.app_data_root,
+            )?;
+    }
     let mutation = std::sync::Arc::new(workshop_download::WorkshopMutation::for_instance(
         instance_lock,
         steamcmd,
@@ -707,6 +743,7 @@ pub(super) async fn download_steam_workshop_items_inner(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::DownloadWorkshop,
             label: label.clone(),
@@ -881,6 +918,7 @@ pub(super) async fn install_manual_mod_references_inner(
     storage_context_operation: &StorageContextOperationGuard,
     instance_id: String,
     references: Vec<String>,
+    thunderstore_version_policy: Option<String>,
 ) -> Result<ManualModStageResult, String> {
     let references = normalize_manual_mod_references(references)?;
     let storage = state.bootstrap_storage()?;
@@ -937,6 +975,9 @@ pub(super) async fn install_manual_mod_references_inner(
         .map(|source| source.provider.trim().to_ascii_lowercase())
         .unwrap_or_default();
     let runtime_target = target.target_path.clone();
+    if thunderstore_version_policy.is_some() && runtime_provider != "thunderstore" {
+        return Err("Version policy is supported only for Thunderstore installations".into());
+    }
     if runtime_provider == "thunderstore" {
         let profile = super::commands_mod_staging::thunderstore_game_profile(&runtime_module)?;
         if runtime_target != runtime_root.join(profile.target_relative) {
@@ -949,7 +990,7 @@ pub(super) async fn install_manual_mod_references_inner(
         let prepared = tokio::select! {
             biased;
             _ = storage_context_operation.cancelled() => return Err("Thunderstore Mod installation preparation was cancelled".into()),
-            result = mod_online::prepare_thunderstore_install(&runtime_module, source, &references, &runtime_root) => result?,
+            result = mod_online::prepare_thunderstore_install_with_policy(&runtime_module, source, &references, &runtime_root,thunderstore_version_policy.as_deref()) => result?,
         };
         let cancellation = storage_context_operation.cancellation_token();
         return spawn_blocking_storage_context_task(storage_context_operation, move || {
@@ -1293,7 +1334,7 @@ pub(super) async fn download_manual_mod_sources_for_staging(
     match provider.as_str() {
         "modrinth" => download_modrinth_mod_sources(&client, source, references).await,
         "nexus" => Err(String::from(
-            "Nexus Mods downloads require an authenticated browser/API session; download the archive first and provide the local file path.",
+            "Nexus Mods downloads require an authenticated browser/API session and an explicit file selection; use the Nexus header input to select a file, or provide a downloaded local package.",
         )),
         other => Err(format!(
             "module source `{other}` does not support automatic package downloads yet; download the archive first and provide a local path"
@@ -1428,6 +1469,7 @@ pub(super) async fn download_modrinth_mod_sources(
         sources.push(DownloadedManualModSource {
             path: source_path,
             identity: OnlineModIdentity {
+                thunderstore_intent: None,
                 provider: "modrinth".into(),
                 project: version.project_id.clone(),
                 historical_names,
@@ -1516,6 +1558,7 @@ pub(super) async fn fetch_thunderstore_package_metadata(
     Ok(metadata)
 }
 
+#[cfg(test)]
 pub(super) async fn download_mod_site_archive(
     client: &reqwest::Client,
     download_url: &str,
@@ -1841,6 +1884,16 @@ pub(super) async fn resolve_curseforge_project_reference(
     enablement: &app_core::ModuleModEnablementSpec,
     reference: &str,
 ) -> Result<(String, Option<String>), String> {
+    let parsed = super::mod_curseforge_reference::parse_reference(reference)
+        .ok_or("CurseForge reference must identify a project on an official CurseForge URL")?;
+    if enablement.reference_game_id == Some(83374)
+        && parsed
+            .game_slug
+            .as_deref()
+            .is_some_and(|game| game != "ark-survival-ascended")
+    {
+        return Err("CurseForge link belongs to another game; select an ASA project".into());
+    }
     if let Some(id) = extract_curseforge_project_id_from_reference(reference) {
         return Ok((id, None));
     }
@@ -1874,42 +1927,11 @@ pub(super) async fn resolve_curseforge_project_reference(
 }
 
 pub(super) fn extract_curseforge_project_id_from_reference(reference: &str) -> Option<String> {
-    let url = reqwest::Url::parse(reference).ok()?;
-    let mut previous = "";
-    for segment in url.path_segments()? {
-        if previous.eq_ignore_ascii_case("projects")
-            && segment.chars().all(|character| character.is_ascii_digit())
-        {
-            return Some(segment.to_string());
-        }
-        previous = segment;
-    }
-    for (key, value) in url.query_pairs() {
-        if matches!(
-            key.as_ref(),
-            "projectId" | "projectID" | "project_id" | "modId" | "modID"
-        ) && value.chars().all(|character| character.is_ascii_digit())
-        {
-            return Some(value.into_owned());
-        }
-    }
-    None
+    super::mod_curseforge_reference::project_id_from_reference(reference)
 }
 
 pub(super) fn extract_curseforge_mod_slug(reference: &str) -> Option<String> {
-    let url = reqwest::Url::parse(reference).ok()?;
-    let host = url.host_str()?.to_ascii_lowercase();
-    if !host.ends_with("curseforge.com") {
-        return None;
-    }
-    let mut previous = "";
-    for segment in url.path_segments()? {
-        if previous.eq_ignore_ascii_case("mods") && !segment.trim().is_empty() {
-            return Some(segment.to_string());
-        }
-        previous = segment;
-    }
-    None
+    super::mod_curseforge_reference::mod_slug_from_reference(reference)
 }
 
 pub(super) fn extract_modrinth_project_reference(
@@ -2337,6 +2359,7 @@ pub(super) async fn validate_module_game_with_account_inner(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::ValidateGame,
             label: label.clone(),

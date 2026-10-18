@@ -1,6 +1,16 @@
 //! ASA numeric IDs and native reference forms shared by launch and configuration.
 use std::collections::HashSet;
 
+pub fn parse_evolved_mod_ids(raw: &str) -> Vec<String> {
+    let mut seen = HashSet::new();
+    raw.split(|character: char| {
+        character.is_whitespace() || matches!(character, ',' | ';' | '\u{3001}' | '\u{ff0c}')
+    })
+    .filter_map(crate::workshop_ids::normalize_reference)
+    .filter(|id| seen.insert(id.clone()))
+    .collect()
+}
+
 pub fn parse_mod_ids(raw: &str) -> Vec<String> {
     let mut mod_ids = Vec::new();
     let mut seen = HashSet::new();

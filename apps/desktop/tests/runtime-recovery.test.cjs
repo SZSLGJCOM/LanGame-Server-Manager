@@ -1,13 +1,9 @@
 const ts = require("@typescript/typescript6");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const Module = require("node:module");
 const path = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
-const React = require("react");
-const helpHarness = require("./helpers/configuration-help-harness.cjs");
-const { renderToStaticMarkup } = require("react-dom/server");
 const { parseSource, sourceText, transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
 // Browser coverage verifies styles; these Node tests exercise policy state and persistence.
 require.extensions[".css"] = () => {};
@@ -16,7 +12,6 @@ require.extensions[".tsx"] = require.extensions[".ts"] = (module, filename) => {
 };
 const { readRecoveryPolicy, recoveryDraft, parseRecoveryDraft, mergeRecoveryPolicy } = require("../src/views/servers/runtime-recovery-model.ts");
 const defaults = { enabled: false, max_restarts: 3, backoff_ms: 5000, only_nonzero_exit: true };
-const settle = () => new Promise((resolve) => setImmediate(resolve));
 
 test("recovery policy reads the current supervisor defaults and bounded policy", () => {
   assert.deepEqual(readRecoveryPolicy({}), defaults);
@@ -73,189 +68,188 @@ test("recovery patch preserves unrelated settings and rejects conflicting owned 
   assert.throws(() => mergeRecoveryPolicy({ runtime_restart: { enabled: true } }, {}, { ...defaults, max_restarts: 5 }), /conflict/);
 });
 
-function descendants(node) {
-  return React.isValidElement(node) ? [node, ...React.Children.toArray(node.props.children).flatMap(descendants)] : [];
-}
+const { createAutosaveHarness, deferred, pendingDelays, runTimers } = require("./helpers/maintenance-autosave-harness.cjs");
+
 function details(id = "server-a", settings = { server_name: "Keep" }) {
   return { summary: { id, bind_ip: "127.0.0.1" }, auto_backup_on_stop: true, backup_retention_count: 7,
     settings_json: JSON.stringify(settings), ports: [{ name: "game", port: 7777, protocol: "udp" }] };
 }
-function harness(save = async () => {}) {
-  const hooks = [], effects = [], calls = [];
-  let cursor = 0;
-  const equal = (a, b) => a?.length === b?.length && a.every((value, index) => Object.is(value, b[index]));
-  const react = { ...React, useId: () => "recovery-validation",
-    useState(initial) { const i = cursor++; if (!(i in hooks)) hooks[i] = { value: typeof initial === "function" ? initial() : initial };
-      return [hooks[i].value, (next) => { hooks[i].value = typeof next === "function" ? next(hooks[i].value) : next; }]; },
-    useMemo(create, deps) { const i = cursor++; if (!equal(hooks[i]?.deps, deps)) hooks[i] = { value: create(), deps }; return hooks[i].value; },
-    useRef(initial) { const i = cursor++; if (!(i in hooks)) hooks[i] = { current: initial }; return hooks[i]; },
-    useEffect(create, deps) { const i = cursor++; if (equal(hooks[i]?.deps, deps)) return;
-      const previous = hooks[i]; hooks[i] = { deps }; effects.push(() => { previous?.cleanup?.(); hooks[i].cleanup = create(); }); }
+/** Saves resolve with the refreshed record, which the parent then passes back like the real workbench does. */
+function harness(save) {
+  const calls = [];
+  const props = { details: details(), t: (key, params) => params?.message ? `${key}: ${params.message}` : key };
+  props.onSaveSettings = (input, options) => {
+    calls.push({ input, options });
+    const persist = () => {
+      const saved = { ...props.details, summary: { ...props.details.summary, id: input.id }, settings_json: input.settings_json };
+      if (props.details.summary.id === input.id) props.details = saved;
+      return saved;
+    };
+    return save ? save(input, options).then(persist) : Promise.resolve(persist());
   };
-  const filename = path.resolve(__dirname, "../src/views/servers/RuntimeRecoveryEditor.tsx");
-  const loaded = new Module(filename, module); loaded.filename = filename;
-  const localRequire = Module.createRequire(filename);
-  loaded.require = (id) => id === "react" ? react
-    : id === "../settings/ConfigurationFieldHelp" ? helpHarness : localRequire(id);
-  loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
-  const props = { details: details(), t: (key) => key, async onSaveSettings(input, options) { calls.push({ input, options }); await save(input, options); } };
-  function render() { cursor = 0; const root = loaded.exports.RuntimeRecoveryEditor(props); while (effects.length) effects.shift()();
-    const nodes = descendants(root); return { root, html: renderToStaticMarkup(root),
-      input: (name) => nodes.find((node) => node.type === "input" && node.props.name === name),
-      submit: nodes.find((node) => node.type === "button" && node.props.type === "submit") }; }
-  return { props, calls, render, edit(name, value) { render().input(name).props.onChange({ target: { value, checked: value } }); },
-    submit() { render().root.props.onSubmit({ preventDefault() {} }); },
-    unmount() { for (const hook of hooks) hook?.cleanup?.(); } };
+  const state = createAutosaveHarness({ editorPath: "../../src/views/servers/RuntimeRecoveryEditor.tsx",
+    exportName: "RuntimeRecoveryEditor", props });
+  return { ...state, calls, policy: (index) => JSON.parse(calls[index].input.settings_json).runtime_restart };
 }
-test("recovery editor saves canonical policy with CAS while retaining backups, ports and concurrent game edits", async () => {
+
+test("recovery editor has no save button and auto-saves toggles immediately with CAS while keeping concurrent edits", async () => {
   const state = harness();
   const initial = state.render();
   const exitControl = initial.input("onlyNonzeroExit");
-  const exitDescription = descendants(initial.root).find((node) => node.props.id === exitControl.props["aria-describedby"]);
+  const exitDescription = initial.nodes.find((node) => node.props.id === exitControl.props["aria-describedby"]);
   assert.equal(exitControl.props.title, undefined);
   assert.equal(exitDescription?.props.children, "servers.recovery.exitBehavior", "Recovery help remains associated with its checkbox");
-  assert.equal(state.render().submit.props.disabled, true);
+  assert.equal(initial.submit, undefined, "auto-save replaces the redundant save button");
+  assert.equal(initial.state, "saved");
   state.edit("enabled", true);
+  assert.deepEqual(pendingDelays(), [0], "toggles save without a typing delay");
   state.props.details = details("server-a", { server_name: "Concurrent", mods: ["123"] });
-  state.submit(); await settle();
+  const concurrent = state.props.details;
+  state.render();
+  await runTimers();
+  assert.equal(state.calls.length, 1);
   const { input, options } = state.calls[0];
   assert.deepEqual(JSON.parse(input.settings_json), { server_name: "Concurrent", mods: ["123"], runtime_restart: { ...defaults, enabled: true } });
   assert.equal(input.auto_backup_on_stop, true); assert.equal(input.backup_retention_count, 7);
-  assert.deepEqual(input.ports, state.props.details.ports);
-  assert.equal(options.expectedSettingsJson, state.props.details.settings_json);
-  assert.equal(state.render().input("enabled").props.checked, true, "successful policy must survive delayed refresh");
-  assert.equal(state.render().submit.props.disabled, true);
-});
-test("recovery editor blocks invalid values and owned conflicts without saving", async () => {
-  const state = harness(); state.edit("enabled", true); state.edit("maxRestarts", "0"); state.submit(); await settle();
-  assert.equal(state.calls.length, 0); assert.equal(state.render().input("maxRestarts").props["aria-invalid"], true);
-  state.edit("maxRestarts", "4");
-  state.props.details = details("server-a", { runtime_restart: { ...defaults, max_restarts: 5 } });
-  state.submit(); await settle();
-  assert.equal(state.calls.length, 0); assert.match(state.render().html, /servers.recovery.conflict/);
-});
-test("recovery saves are single-flight and instance switches isolate late completion", async () => {
-  let resolve; const state = harness(() => new Promise((done) => { resolve = done; }));
-  state.edit("enabled", true); state.submit(); state.submit();
-  assert.equal(state.calls.length, 1);
-  state.props.details = details("server-b");
-  assert.equal(state.render().input("enabled").props.checked, false);
-  resolve(); await settle();
-  assert.equal(state.render().input("enabled").props.checked, false);
-  assert.doesNotMatch(state.render().html, /servers.backups.policySaved/);
-  state.unmount();
+  assert.deepEqual(input.ports, concurrent.ports);
+  assert.equal(options.expectedSettingsJson, concurrent.settings_json);
+  const saved = state.render();
+  assert.equal(saved.input("enabled").props.checked, true, "the saved policy survives the refresh");
+  assert.equal(saved.state, "saved");
+  assert.match(saved.html(), /servers.backups.policySaved/);
 });
 
-test("recovery save errors retain the draft for retry and reload adopts the latest policy", async () => {
+test("recovery number fields debounce typing and the latest edit wins over in-flight saves", async () => {
+  const held = [];
+  const state = harness(() => { const gate = deferred(); held.push(gate); return gate.promise; });
+  state.edit("maxRestarts", "4");
+  assert.deepEqual(pendingDelays(), [650], "typed numbers wait for a pause");
+  await runTimers();
+  assert.equal(state.calls.length, 1);
+  assert.equal(state.render().state, "saving");
+  state.edit("maxRestarts", "5"); state.edit("maxRestarts", "6");
+  held.shift().resolve(); await runTimers();
+  assert.equal(state.render().input("maxRestarts").props.value, "6", "a refresh echoing the earlier write keeps the newer draft");
+  assert.doesNotMatch(state.render().html(), /servers.recovery.conflict/, "own earlier write is not a conflict");
+  await runTimers();
+  assert.equal(state.calls.length, 2, "intermediate values are coalesced");
+  assert.equal(state.policy(1).max_restarts, 6);
+  assert.equal(state.calls[1].options.expectedSettingsJson, state.calls[0].input.settings_json);
+  held.shift().resolve(); await runTimers();
+  assert.equal(state.render().state, "saved");
+  assert.equal(state.render().input("maxRestarts").props.value, "6");
+});
+
+test("recovery validation blocks writes and same-field external changes are never overwritten", async () => {
+  const state = harness();
+  state.edit("enabled", true); state.edit("maxRestarts", "0");
+  await runTimers();
+  assert.equal(state.calls.length, 0, "invalid drafts are not written");
+  let view = state.render();
+  assert.equal(view.input("maxRestarts").props["aria-invalid"], true);
+  assert.equal(view.state, "blocked");
+  await assert.rejects(state.coordinator.flush("server-a"), /invalid/i, "start barriers refuse an invalid pending draft");
+  state.edit("maxRestarts", "4");
+  state.props.details = details("server-a", { runtime_restart: { ...defaults, max_restarts: 5 } });
+  view = state.render();
+  await runTimers();
+  assert.equal(state.calls.length, 0, "a policy edited elsewhere is not silently overwritten");
+  assert.equal(view.state, "blocked");
+  assert.match(view.html(), /servers.recovery.conflict/);
+  view.discard.props.onClick();
+  view = state.render();
+  assert.equal(view.input("maxRestarts").props.value, "5", "discard adopts the external policy");
+  assert.equal(view.input("enabled").props.checked, false);
+  assert.equal(view.state, "saved");
+  await runTimers();
+  assert.equal(state.calls.length, 0);
+});
+
+test("recovery save failures keep the draft with retry and discard actions", async () => {
   let reject = true;
   const state = harness(async () => { if (reject) throw new Error("Permission denied"); });
   state.edit("enabled", true); state.edit("maxRestarts", "4"); state.edit("waitSeconds", "0.125");
-  state.submit(); await settle();
-  assert.match(state.render().html, /Permission denied/);
-  assert.equal(state.render().input("maxRestarts").props.value, "4");
-  assert.equal(state.render().input("waitSeconds").props.value, "0.125");
-  assert.equal(state.render().submit.props.disabled, false);
-  reject = false; state.submit(); await settle();
+  await runTimers();
+  let view = state.render();
+  assert.equal(view.state, "failed");
+  assert.match(view.html(), /Permission denied/);
+  assert.equal(view.input("maxRestarts").props.value, "4");
+  assert.equal(view.input("waitSeconds").props.value, "0.125");
+  assert.ok(view.retry && view.discard);
+  reject = false; view.retry.props.onClick(); await runTimers();
   assert.equal(state.calls.length, 2);
-  assert.equal(JSON.parse(state.calls[1].input.settings_json).runtime_restart.backoff_ms, 125);
-  assert.equal(state.render().submit.props.disabled, true);
-  state.edit("maxRestarts", "5");
-  state.props.details = details("server-a", { runtime_restart: { ...defaults, max_restarts: 7 } });
-  const reload = descendants(state.render().root).find((node) => node.type === "button" && node.props.type === "button");
-  reload.props.onClick();
-  assert.equal(state.render().input("enabled").props.checked, false);
-  assert.equal(state.render().submit.props.disabled, true);
-  state.edit("enabled", true);
-  assert.equal(state.render().input("maxRestarts").props.value, "7");
+  assert.deepEqual(state.policy(1), { enabled: true, max_restarts: 4, backoff_ms: 125, only_nonzero_exit: true });
+  view = state.render();
+  assert.equal(view.state, "saved");
+  assert.equal(view.retry, undefined);
+  reject = true; state.edit("maxRestarts", "5"); await runTimers();
+  state.render().discard.props.onClick();
+  view = state.render();
+  assert.equal(view.input("maxRestarts").props.value, "4", "discard returns to the persisted policy");
+  assert.equal(view.state, "saved");
 });
 
-test("recovery success retains a refreshed full settings object for subsequent CAS saves", async () => {
-  let resolve;
-  const state = harness(() => new Promise((done) => { resolve = done; }));
-  state.edit("enabled", true); state.submit();
-  const refreshed = { server_name: "Fresh name", runtime_restart: { ...defaults, enabled: true } };
-  state.props.details = details("server-a", refreshed);
-  state.render(); resolve(); await settle();
-  state.edit("maxRestarts", "4"); state.submit();
-  assert.equal(state.calls.length, 2);
-  assert.equal(JSON.parse(state.calls[1].input.settings_json).server_name, "Fresh name");
-  assert.equal(state.calls[1].options.expectedSettingsJson, state.props.details.settings_json);
-  resolve(); await settle();
-});
-
-test("recovery late failures after an instance switch or unmount do not change the new editor", async () => {
-  let reject;
-  const state = harness(() => new Promise((_, fail) => { reject = fail; }));
-  state.edit("enabled", true); state.submit();
-  state.props.details = details("server-b"); state.render();
-  reject(new Error("Old instance failure")); await settle();
-  assert.doesNotMatch(state.render().html, /Old instance failure/);
-  assert.equal(state.render().input("enabled").props.checked, false);
-  state.edit("enabled", true); state.submit(); state.unmount();
-  reject(new Error("Unmounted failure")); await settle();
-});
-
-test("recovery batches changes to different controls without losing earlier draft values", async () => {
+test("recovery flushes pending edits on instance switch and unmount without leaking into the next instance", async () => {
   const state = harness();
-  state.edit("enabled", true);
+  state.edit("maxRestarts", "8");
+  state.props.details = details("server-b");
+  let view = state.render();
+  await runTimers();
+  assert.equal(state.calls.length, 1, "switching instances writes the pending draft instead of dropping it");
+  assert.equal(state.calls[0].options.expectedSettingsJson, details().settings_json);
+  assert.equal(state.policy(0).max_restarts, 8);
+  view = state.render();
+  assert.equal(view.input("maxRestarts").props.value, "3", "the next instance shows its own policy");
+  state.edit("waitSeconds", "2");
+  state.unmount();
+  await runTimers();
+  assert.equal(state.calls.length, 2, "unmount flushes the debounced draft");
+  assert.equal(state.policy(1).backoff_ms, 2000);
+  assert.match(state.calls[1].input.settings_json, /runtime_restart/);
+});
+
+test("recovery batches edits to different controls and keeps limits editable while disabled", async () => {
+  const state = harness();
+  assert.equal(state.render().input("maxRestarts").props.disabled, false);
+  assert.equal(state.render().input("waitSeconds").props.disabled, false);
   const frame = state.render();
   frame.input("enabled").props.onChange({ target: { checked: true } });
   frame.input("maxRestarts").props.onChange({ target: { value: "6" } });
   frame.input("waitSeconds").props.onChange({ target: { value: "2.5" } });
   frame.input("onlyNonzeroExit").props.onChange({ target: { checked: false } });
-  state.submit(); await settle();
-  assert.deepEqual(JSON.parse(state.calls[0].input.settings_json).runtime_restart,
-    { enabled: true, max_restarts: 6, backoff_ms: 2500, only_nonzero_exit: false });
+  state.render();
+  await runTimers();
+  assert.equal(state.calls.length, 1);
+  assert.deepEqual(state.policy(0), { enabled: true, max_restarts: 6, backoff_ms: 2500, only_nonzero_exit: false });
 });
-
-
-test("recovery limits stay visible and editable before enabling the policy", async () => {
-  const state = harness();
-  assert.equal(state.render().input("maxRestarts").props.disabled, false);
-  assert.equal(state.render().input("waitSeconds").props.disabled, false);
-  assert.equal(state.render().submit.props.disabled, true);
-  state.edit("enabled", true);
-  state.edit("maxRestarts", "6");
-  state.edit("waitSeconds", "2.5");
-  state.edit("enabled", false);
-  assert.equal(state.render().input("maxRestarts").props.disabled, false);
-  state.edit("enabled", true);
-  assert.equal(state.render().input("maxRestarts").props.value, "6");
-  assert.equal(state.render().input("waitSeconds").props.value, "2.5");
-  state.submit(); await settle();
-  assert.deepEqual(JSON.parse(state.calls[0].input.settings_json).runtime_restart,
-    { enabled: true, max_restarts: 6, backoff_ms: 2500, only_nonzero_exit: true });
-});
-
 
 test("turning recovery off after invalid edits keeps correction and saving reachable", async () => {
   const state = harness();
   state.edit("enabled", true);
   state.edit("maxRestarts", "");
   state.edit("enabled", false);
-  assert.equal(state.render().submit.props.disabled, true);
+  await runTimers();
+  assert.equal(state.calls.length, 0);
   assert.equal(state.render().input("maxRestarts").props.disabled, false);
   state.edit("maxRestarts", "4");
-  assert.equal(state.render().submit.props.disabled, false);
-  state.submit(); await settle();
+  await runTimers();
   assert.equal(state.calls.length, 1);
-  assert.deepEqual(JSON.parse(state.calls[0].input.settings_json).runtime_restart,
-    { enabled: false, max_restarts: 4, backoff_ms: 5000, only_nonzero_exit: true });
+  assert.deepEqual(state.policy(0), { enabled: false, max_restarts: 4, backoff_ms: 5000, only_nonzero_exit: true });
 });
 
 test("archived recovery shows missing values instead of live defaults and forbids writes", async () => {
   const state = harness();
   state.props.readOnly = true;
   let view = state.render();
+  assert.equal(view.footer, undefined, "archives have no save status");
   assert.equal(view.input("enabled").props.hidden, true);
   assert.equal(view.input("onlyNonzeroExit").props.hidden, true);
   assert.equal(view.input("maxRestarts").props.value, "");
   assert.equal(view.input("waitSeconds").props.value, "");
-  assert.match(view.html, /servers.archives.configuration.notSaved/);
+  assert.match(view.html(), /servers.archives.configuration.notSaved/);
   state.edit("enabled", true);
   state.edit("maxRestarts", "8");
-  state.submit();
-  await settle();
+  await runTimers();
   assert.deepEqual(state.calls, []);
   state.props.details.settings_json = JSON.stringify({ runtime_restart: { enabled: false, only_nonzero_exit: false, backoff_ms: 2700 } });
   state.props.savedCrashRestartLimit = 6;
@@ -266,7 +260,8 @@ test("archived recovery shows missing values instead of live defaults and forbid
   assert.equal(view.input("onlyNonzeroExit").props.checked, false);
   assert.equal(view.input("maxRestarts").props.value, "6");
   assert.equal(view.input("waitSeconds").props.value, "2.7");
-  state.unmount();
+  state.unmount(); await runTimers();
+  assert.deepEqual(state.calls, []);
 });
 
 test("archived recovery preserves null sources without alias or metadata fallback", async () => {
@@ -285,9 +280,9 @@ test("archived recovery preserves null sources without alias or metadata fallbac
     assert.equal(view.input(name).props.readOnly, true);
     assert.equal(view.input(name).props.value, "null");
   }
-  assert.equal((view.html.match(/>null</g) ?? []).length, 2, "raw null stays visible in each boolean label");
-  assert.doesNotMatch(view.html, />servers.archives.configuration.notSaved</);
-  state.submit(); await settle();
+  assert.equal((view.html().match(/>null</g) ?? []).length, 2, "raw null stays visible in each boolean label");
+  assert.doesNotMatch(view.html(), />servers.archives.configuration.notSaved</);
+  await runTimers();
   assert.deepEqual(state.calls, []);
   state.unmount();
 });
@@ -328,8 +323,8 @@ test("archived recovery distinguishes valid booleans, empty saved text and missi
   let view = state.render();
   assert.equal(view.input("enabled").props.hidden, true);
   assert.equal(view.input("onlyNonzeroExit").props.hidden, true);
-  assert.match(view.html, /&quot;&quot;/);
-  assert.match(view.html, />unknown</);
+  assert.match(view.html(), /&quot;&quot;/);
+  assert.match(view.html(), />unknown</);
   assert.equal(view.input("maxRestarts").props.value, "0");
   assert.equal(view.input("waitSeconds").props.value, "0");
   state.props.savedCrashRestartLimit = null;
@@ -337,6 +332,6 @@ test("archived recovery distinguishes valid booleans, empty saved text and missi
   view = state.render();
   assert.equal(view.input("maxRestarts").props.value, "null", "saved metadata null is distinct from absent metadata");
   assert.equal(view.input("enabled").props.hidden, true);
-  assert.match(view.html, />servers.archives.configuration.notSaved</);
+  assert.match(view.html(), />servers.archives.configuration.notSaved</);
   state.unmount();
 });

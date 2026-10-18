@@ -89,6 +89,9 @@
 .server-backup-policy-field { display: grid; gap: 4px; min-width: 0; }
 .server-backup-policy-field .detail-label { color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); font-size: var(--text-body); font-weight: var(--font-weight-medium); line-height: var(--leading-heading); letter-spacing: normal; text-transform: none; }
 .server-backup-policy-toggle { margin: 0; }
+/* Bare toggle cards opt out of row stretching with align-self: start (settings-controls.css). In these
+   label-above-control grids that lifts them to the neighbouring label line; share the control's bottom edge. */
+:is(.server-backup-policy-editor, .server-save-policy-fields) > .settings-toggle-card { align-self: end; }
 .server-backup-policy-toggle .settings-toggle-copy { flex: 1; }
 .server-backup-policy-toggle .settings-field-title { font-size: var(--text-body); line-height: var(--leading-heading); }
 .server-backup-policy-footer { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; font-size: var(--text-meta); }

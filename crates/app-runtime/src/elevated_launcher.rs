@@ -11,9 +11,12 @@ use serde_json::json;
 use crate::{OwnedWindowsHandle, RuntimeChild, WindowsProcessHandle, WindowsSpawnedChild};
 
 mod control;
+mod firewall;
 mod pipe;
 mod request;
 mod security;
+
+pub use firewall::{request_elevated_firewall, run_elevated_firewall_if_requested};
 
 const HELPER_FLAG: &str = "--langame-elevated-launcher";
 const START_TIMEOUT: Duration = Duration::from_secs(30);
@@ -80,13 +83,18 @@ pub(super) fn spawn(
 }
 
 fn shell_execute(nonce: &str, creation: u64) -> io::Result<OwnedWindowsHandle> {
+    shell_execute_mode(HELPER_FLAG, nonce, creation)
+}
+
+fn shell_execute_mode(
+    flag: &'static str,
+    nonce: &str,
+    creation: u64,
+) -> io::Result<OwnedWindowsHandle> {
     let executable = std::env::current_exe()?;
     let verb = crate::wide_null("runas");
     let file = crate::wide_null(&executable.to_string_lossy());
-    let arguments = crate::wide_null(&format!(
-        "{HELPER_FLAG} {nonce} {} {creation}",
-        std::process::id()
-    ));
+    let arguments = crate::wide_null(&format!("{flag} {nonce} {} {creation}", std::process::id()));
     let directory = executable
         .parent()
         .ok_or_else(|| invalid("launcher directory missing"))?;

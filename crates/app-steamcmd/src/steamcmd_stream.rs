@@ -1,6 +1,7 @@
 use super::install_progress::SteamInstallOutput;
 use super::steamcmd_account::AccountLoginEvidence;
 use super::steamcmd_content_evidence::ContentLogEvidence;
+use super::steamcmd_content_evidence::InvocationLog;
 use super::steamcmd_manifest_recovery::ManifestDenial;
 use super::*;
 
@@ -20,6 +21,7 @@ pub(super) struct StreamingCommandResult {
     pub(super) content_log_excerpt: Option<String>,
     pub(super) workshop_log_excerpt: Option<String>,
     pub(super) workshop_download_failed: bool,
+    pub(super) workshop_command_evidence: super::workshop_download::WorkshopEvidence,
     pub(super) app_command_evidence: super::steam_app_access::SteamAppCommandEvidence,
     pub(super) authenticated_account_name: Option<String>,
     pub(super) denied_manifests: Vec<ManifestDenial>,
@@ -28,14 +30,22 @@ pub(super) struct StreamingCommandResult {
 #[derive(Default)]
 struct CommandEvidence {
     workshop_download_failed: bool,
+    workshop: super::workshop_download::WorkshopEvidence,
     app: super::steam_app_access::SteamAppCommandEvidence,
     account: AccountLoginEvidence,
+}
+
+struct OutputRecord {
+    line: String,
+    complete: bool,
+    repeated: bool,
 }
 
 impl CommandEvidence {
     fn observe_line(&mut self, line: &str) {
         self.workshop_download_failed |=
             super::workshop_download::is_workshop_download_failure_line(line);
+        self.workshop.observe_line(line);
         self.app.observe_line(line);
         self.account.observe_line(line);
     }
@@ -106,10 +116,22 @@ where
     F: FnMut(InstallProgressUpdate),
 {
     deadline.check_cancelled()?;
-    let content_evidence = deadline
+    let mut content_evidence = deadline
         .run(ContentLogEvidence::before_spawn(Path::new(
             working_directory,
         )))
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
+    let mut workshop_evidence_log = deadline
+        .run(InvocationLog::before_spawn(
+            Path::new(working_directory).join("logs/workshop_log.txt"),
+        ))
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
+    let mut console_evidence_log = deadline
+        .run(InvocationLog::before_spawn(
+            Path::new(working_directory).join("logs/console_log.txt"),
+        ))
         .await
         .map_err(|_| operation_timeout(deadline))?;
     let content_log_before = deadline
@@ -135,6 +157,13 @@ where
         working_directory,
         update_source,
     );
+    let workshop_manifests = deadline
+        .run(super::workshop_download::requested_item_manifests(
+            script_path,
+            Path::new(working_directory),
+        ))
+        .await
+        .map_err(|_| operation_timeout(deadline))?;
     let (mut child, mut process_guard) = spawn_managed_command(&mut command).await?;
 
     let stdout = match child.stdout.take() {
@@ -157,13 +186,21 @@ where
     };
 
     let (tx, mut rx) =
-        mpsc::channel::<Result<String, std::io::Error>>(STEAMCMD_OUTPUT_CHANNEL_CAPACITY);
-    let mut stdout_forwarder = spawn_line_forwarder(stdout, tx.clone());
-    let mut stderr_forwarder = spawn_line_forwarder(stderr, tx.clone());
+        mpsc::channel::<Result<OutputRecord, std::io::Error>>(STEAMCMD_OUTPUT_CHANNEL_CAPACITY);
+    let record = |line, complete, repeated| OutputRecord {
+        line,
+        complete,
+        repeated,
+    };
+    let mut stdout_forwarder = spawn_record_forwarder(stdout, tx.clone(), true, record);
+    let mut stderr_forwarder = spawn_record_forwarder(stderr, tx.clone(), true, record);
     drop(tx);
 
     let mut excerpt_lines = VecDeque::new();
     let mut evidence = CommandEvidence::default();
+    for (app, item, manifest) in workshop_manifests {
+        evidence.workshop.seed_manifest(app, item, manifest);
+    }
     let mut progress = SteamInstallOutput::new();
     let mut status = None;
     let mut channel_closed = false;
@@ -172,6 +209,14 @@ where
 
     loop {
         if status.is_some() && channel_closed {
+            let evidence_activity = publish_invocation_evidence(
+                &mut content_evidence,
+                &mut workshop_evidence_log,
+                &mut console_evidence_log,
+                &mut evidence,
+                deadline,
+            )
+            .await?;
             match publish_log_progress(
                 &mut logs,
                 &mut progress,
@@ -183,6 +228,7 @@ where
             .await
             {
                 Ok(true) => continue,
+                Ok(false) if evidence_activity => continue,
                 Ok(false) => break,
                 Err(error) => {
                     let cleanup =
@@ -203,6 +249,12 @@ where
                 return Err(operation_timeout(deadline));
             }
             _ = log_tick.tick() => {
+                if let Err(error) = publish_invocation_evidence(&mut content_evidence, &mut workshop_evidence_log, &mut console_evidence_log, &mut evidence, deadline).await {
+                    let cleanup = terminate_and_reap_child(&mut child, &mut process_guard, deadline).await;
+                    abort_line_forwarders(&mut stdout_forwarder, &mut stderr_forwarder).await;
+                    cleanup?;
+                    return Err(error);
+                }
                 if let Err(error) = publish_log_progress(&mut logs, &mut progress, &mut excerpt_lines, &mut evidence, deadline, &mut on_progress).await {
                     let cleanup = terminate_and_reap_child(&mut child, &mut process_guard, deadline).await;
                     abort_line_forwarders(&mut stdout_forwarder, &mut stderr_forwarder).await;
@@ -212,12 +264,13 @@ where
             }
             maybe_line = rx.recv(), if !channel_closed => {
                 match maybe_line {
-                    Some(Ok(line)) => {
-                        let trimmed = line.trim();
+                    Some(Ok(record)) => {
+                        let trimmed = record.line.trim();
                         if trimmed.is_empty() {
                             continue;
                         }
-                        evidence.observe_line(trimmed);
+                        if record.complete { evidence.observe_line(trimmed); }
+                        if record.repeated { continue; }
                         push_excerpt_line(&mut excerpt_lines, trimmed);
                         if let Some(update) = progress.stdout_line(trimmed, join_excerpt_lines(&excerpt_lines)) {
                             on_progress(update);
@@ -261,8 +314,8 @@ where
         .map(|exit_status| exit_status.success())
         .unwrap_or(false);
     let exit_code = status.and_then(|exit_status| exit_status.code());
-    let denied_manifests = deadline
-        .run(content_evidence.finish())
+    let (denied_manifests, retained_content_excerpt) = deadline
+        .run(content_evidence.finish_with_excerpt())
         .await
         .map_err(|_| operation_timeout(deadline))?;
     let content_log_after = deadline
@@ -275,16 +328,23 @@ where
         .run(workshop_log.finish())
         .await
         .map_err(|_| operation_timeout(deadline))?;
+    let mut content_log_excerpt =
+        updated_content_log_excerpt(content_log_before.as_deref(), content_log_after.as_deref());
+    if let Some(retained) = retained_content_excerpt {
+        let tail = content_log_excerpt.get_or_insert_with(String::new);
+        if !tail.contains(&retained) {
+            *tail = format!("[retained manifest permission evidence]\n{retained}\n{tail}");
+        }
+    }
+    evidence.workshop.finish_capture();
     Ok(StreamingCommandResult {
         success,
         exit_code,
         excerpt: join_excerpt_lines(&excerpt_lines),
-        content_log_excerpt: updated_content_log_excerpt(
-            content_log_before.as_deref(),
-            content_log_after.as_deref(),
-        ),
+        content_log_excerpt,
         workshop_log_excerpt,
         workshop_download_failed: evidence.workshop_download_failed,
+        workshop_command_evidence: evidence.workshop,
         app_command_evidence: evidence.app,
         authenticated_account_name: evidence
             .account
@@ -294,11 +354,35 @@ where
     })
 }
 
+async fn publish_invocation_evidence(
+    content: &mut ContentLogEvidence,
+    workshop: &mut InvocationLog,
+    console: &mut InvocationLog,
+    evidence: &mut CommandEvidence,
+    deadline: InstallDeadline,
+) -> Result<bool, SteamCmdError> {
+    deadline
+        .run(async {
+            let content = content.poll().await;
+            let workshop = workshop.poll().await;
+            let console = console.poll().await;
+            for line in content.lines.iter().chain(&workshop.lines) {
+                evidence.workshop.observe_line(line);
+            }
+            for line in &console.lines {
+                evidence.observe_line(line);
+            }
+            content.activity || workshop.activity || console.activity
+        })
+        .await
+        .map_err(|_| operation_timeout(deadline))
+}
+
 async fn publish_log_progress<F: FnMut(InstallProgressUpdate)>(
     logs: &mut StreamLogs,
     progress: &mut SteamInstallOutput,
     excerpt: &mut VecDeque<String>,
-    evidence: &mut CommandEvidence,
+    _evidence: &mut CommandEvidence,
     deadline: InstallDeadline,
     on_progress: &mut F,
 ) -> Result<bool, SteamCmdError> {
@@ -311,9 +395,6 @@ async fn publish_log_progress<F: FnMut(InstallProgressUpdate)>(
         let line = line.trim();
         if line.is_empty() {
             continue;
-        }
-        if matches!(source, LogSource::Console) {
-            evidence.observe_line(line);
         }
         push_excerpt_line(excerpt, line);
         let excerpt = join_excerpt_lines(excerpt);
@@ -328,12 +409,27 @@ async fn publish_log_progress<F: FnMut(InstallProgressUpdate)>(
     Ok(update.activity)
 }
 
+#[cfg(test)]
 pub(super) fn spawn_line_forwarder<R>(
-    mut reader: R,
+    reader: R,
     sender: mpsc::Sender<Result<String, std::io::Error>>,
 ) -> AbortOnDropTask<()>
 where
     R: AsyncRead + Unpin + Send + 'static,
+{
+    spawn_record_forwarder(reader, sender, false, |line, _, _| line)
+}
+
+fn spawn_record_forwarder<R, T, F>(
+    mut reader: R,
+    sender: mpsc::Sender<Result<T, std::io::Error>>,
+    include_completed_snapshots: bool,
+    record: F,
+) -> AbortOnDropTask<()>
+where
+    R: AsyncRead + Unpin + Send + 'static,
+    T: Send + 'static,
+    F: Fn(String, bool, bool) -> T + Send + 'static,
 {
     AbortOnDropTask::new(tokio::spawn(async move {
         let mut read_buffer = [0_u8; STEAMCMD_OUTPUT_READ_CHUNK_BYTES];
@@ -355,7 +451,7 @@ where
                     };
                     let snapshot = finish_bounded_output_line(&line_buffer[..complete], line_truncated);
                     if !snapshot.is_empty() && snapshot != last_snapshot {
-                        if sender.send(Ok(snapshot.clone())).await.is_err() { return; }
+                        if sender.send(Ok(record(snapshot.clone(), false, false))).await.is_err() { return; }
                         last_snapshot = snapshot;
                     }
                     continue;
@@ -369,9 +465,16 @@ where
             };
             if read == 0 {
                 if (!line_buffer.is_empty() || line_truncated)
-                    && finish_bounded_output_line(&line_buffer, line_truncated) != last_snapshot
+                    && (include_completed_snapshots
+                        || finish_bounded_output_line(&line_buffer, line_truncated)
+                            != last_snapshot)
                     && sender
-                        .send(Ok(finish_bounded_output_line(&line_buffer, line_truncated)))
+                        .send(Ok(record(
+                            finish_bounded_output_line(&line_buffer, line_truncated),
+                            true,
+                            finish_bounded_output_line(&line_buffer, line_truncated)
+                                == last_snapshot,
+                        )))
                         .await
                         .is_err()
                 {
@@ -390,7 +493,12 @@ where
                     line_truncated = false;
                     let already_sent = line == last_snapshot;
                     last_snapshot.clear();
-                    if !already_sent && sender.send(Ok(line)).await.is_err() {
+                    if (include_completed_snapshots || !already_sent)
+                        && sender
+                            .send(Ok(record(line, true, already_sent)))
+                            .await
+                            .is_err()
+                    {
                         return;
                     }
                 } else if line_buffer.len() < STEAMCMD_OUTPUT_LINE_LIMIT_BYTES {
@@ -554,6 +662,79 @@ mod command_tests {
             .map(|arg| arg.to_str().unwrap())
             .collect::<Vec<_>>();
         assert_eq!(arguments, ["+runscript", "installation script.txt"]);
+    }
+
+    #[tokio::test]
+    async fn partial_permission_preview_waits_for_the_complete_native_result() {
+        use tokio::io::AsyncWriteExt;
+        let (mut writer, reader) = tokio::io::duplex(1024);
+        let (sender, mut receiver) = mpsc::channel(8);
+        let mut forwarder =
+            spawn_record_forwarder(reader, sender, true, |line, complete, repeated| {
+                OutputRecord {
+                    line,
+                    complete,
+                    repeated,
+                }
+            });
+        writer
+            .write_all(b"ERROR! Download item 3817722715 failed (Access Denied)")
+            .await
+            .unwrap();
+        let preview = tokio::time::timeout(Duration::from_secs(2), receiver.recv())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert!(!preview.complete);
+        writer
+            .write_all(b" while writing local cache\n")
+            .await
+            .unwrap();
+        drop(writer);
+        let mut evidence = CommandEvidence::default();
+        while let Some(record) = receiver.recv().await {
+            let record = record.unwrap();
+            if record.complete {
+                evidence.observe_line(&record.line);
+            }
+        }
+        forwarder.join().await.unwrap();
+        assert!(evidence.workshop_download_failed);
+        assert!(!evidence.workshop.permission_denial(1_623_730));
+    }
+
+    #[tokio::test]
+    async fn completed_identical_preview_still_reaches_decisive_evidence() {
+        use tokio::io::AsyncWriteExt;
+        let (mut writer, reader) = tokio::io::duplex(1024);
+        let (sender, mut receiver) = mpsc::channel(8);
+        let mut forwarder =
+            spawn_record_forwarder(reader, sender, true, |line, complete, repeated| {
+                OutputRecord {
+                    line,
+                    complete,
+                    repeated,
+                }
+            });
+        writer
+            .write_all(b"ERROR! Download item 3817722715 failed (Access Denied).")
+            .await
+            .unwrap();
+        let preview = tokio::time::timeout(Duration::from_secs(2), receiver.recv())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        assert!(!preview.complete);
+        writer.write_all(b"\n").await.unwrap();
+        drop(writer);
+        let complete = receiver.recv().await.unwrap().unwrap();
+        assert!(complete.complete && complete.repeated);
+        let mut evidence = CommandEvidence::default();
+        evidence.observe_line(&complete.line);
+        assert!(evidence.workshop.permission_denial(1_623_730));
+        forwarder.join().await.unwrap();
     }
 }
 

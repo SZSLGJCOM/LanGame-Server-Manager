@@ -86,6 +86,15 @@
 .shell-activity-panel .shell-activity-notice,
 .shell-activity-panel .auto-refresh-status { align-items: flex-start; }
 .shell-activity-panel .shell-activity-notice-actions { flex-wrap: wrap; }
+.shell-activity-notice-diagnostics {
+  display: block;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  line-height: var(--line-height-body, 1.5);
+  color: var(--shell-muted);
+}
 .shell-task-diagnostics { display: none; }
 .shell-activity-panel .shell-task-activity { display: flex; flex-wrap: wrap; gap: 10px; }
 .shell-activity-panel .shell-task-summary { flex-basis: 100%; }
@@ -120,9 +129,12 @@
 .shell-activity-notice.is-warning { color: var(--theme-warning-text); }
 .shell-activity-notice.is-success { color: var(--success, #22c55e); }
 .shell-activity-notice::before { content: ""; width: 6px; height: 6px; margin: 6px 2px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
-.shell-activity-notice-text {
+.shell-activity-notice-copy {
   flex: 1;
   min-width: 0;
+}
+.shell-activity-notice-text {
+  display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

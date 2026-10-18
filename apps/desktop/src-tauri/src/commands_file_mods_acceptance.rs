@@ -145,7 +145,7 @@ async fn isolated_valheim_thunderstore_file_mod_lifecycle() -> support::Result {
     .await?;
     let mut cycles = Vec::new();
     let verification: support::Result<Value> = async {
-        install_manual_mod_references(state.clone(), id.clone(), vec![REFERENCE.into()]).await?;
+        install_manual_mod_references(state.clone(), id.clone(), vec![REFERENCE.into()], None).await?;
         let runtime = support::plain(&creation::program_root(&read_instance_details(&storage.paths, &id).await?)?)?;
         if !runtime.starts_with(&support::plain(&package.root)?) || runtime == source {
             return Err("Mod installation escaped the isolated copied package".into());

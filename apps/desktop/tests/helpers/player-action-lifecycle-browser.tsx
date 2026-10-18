@@ -153,11 +153,26 @@ async function run() {
   await click("button.player-center-member-action:not(.danger)");
   await settle(3);
   check(inspect().disabled, "The action was released before its refresh finished");
-  await render(players[0], snapshot("one", "third"));
+  const refreshedPlayer = { ...players[0], player_key: "dst:third:1", available_action_ids: [] };
+  const refreshedSnapshot = { ...snapshot("one", "third"), entries: [refreshedPlayer, players[1]] };
+  await render(null, refreshedSnapshot, false);
   check(inspect().disabled, "Snapshot arrival during refresh permitted duplicate submission");
   await act(async () => { pendingRefresh!.resolve(); });
   pendingRefresh = null;
-  check(!inspect().disabled && feedback()?.getAttribute("role") === "status", "Successful refresh lost delivery feedback or kept actions locked");
+  check(feedback()?.getAttribute("role") === "status" && feedback()?.classList.contains("is-info")
+    && ["Alice", "Inspect", "has not been confirmed"].every((text) => feedback()?.textContent?.includes(text)),
+    "Refresh clearing a snapshot-scoped selection lost neutral, target-specific delivery feedback");
+  verifyDisabledActions();
+  await click("button.player-center-member-action:not(.danger)");
+  await click(".player-center-member-action.danger");
+  check(requests.length === 4 && !document.querySelector(".inline-confirm-review"),
+    "Retaining delivery feedback restored the cleared snapshot's action authority");
+  await render(refreshedPlayer, refreshedSnapshot);
+  verifyDisabledActions();
+  check(feedback()?.textContent?.includes("Alice"), "A new player key hid the completed delivery feedback");
+  checks++;
+  await render(players[0], snapshot("one", "third"));
+  check(!inspect().disabled, "A fresh explicitly selected target did not restore its own action authority");
   checks++;
 
   await click("button.player-center-member-action:not(.danger)");

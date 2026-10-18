@@ -95,7 +95,7 @@ class VerificationSelectionTests(unittest.TestCase):
 
     def test_unit_and_scanner_changes_do_not_select_unrelated_slow_suites(self):
         for path in ("apps/desktop/tests/runtime-browser-process.test.cjs",
-                     "apps/desktop/tests/unsupported-games-removal.test.cjs",
+                     "apps/desktop/tests/settings-page-routing.test.cjs",
                      "scripts/tests/test_verify_game_knowledge.py", ".github/ISSUE_TEMPLATE/bug_report.yml"):
             with self.subTest(path=path):
                 self.assertEqual(full_scopes([path]), (False, False, False))

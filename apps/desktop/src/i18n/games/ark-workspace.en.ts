@@ -2,7 +2,7 @@ import type { MessageCatalog } from "../../i18n-config";
 export const ARK_WORKSPACE_EN: MessageCatalog = {
   "ark.maps.title": "Cluster maps",
   "ark.maps.count": "{count} maps",
-  "ark.maps.shared": "All maps share this instance's server files, configuration and Mods. Each map has its own save, ports and LanGameCMD output; switch maps with the dropdown at the console's top right.",
+  "ark.maps.shared": "Maps share this instance's server files and server settings. Mods use shared defaults unless configured separately per map in the Mods workspace. Each map has its own save, ports and LanGameCMD output; switch maps with the dropdown at the console's top right.",
   "ark.maps.stopFirst": "Stop this instance before changing its map configuration.",
   "ark.maps.name": "Server name",
   "ark.maps.names": "Enter each map's complete name as shown in the in-game server browser. No prefix or map name is added automatically. The primary map uses the same server name as Room settings.",

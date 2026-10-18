@@ -5,6 +5,8 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { readInstanceDetails, updateInstance } from "../../src/api";
 import { buildMockModuleDetails } from "../../src/api-mock/module-details";
 import { ActivityNoticeTarget } from "../../src/components/ActivityNotice";
+import { ActivityBar } from "../../src/components/ActivityBar";
+import { createActivityNoticeStore } from "../../src/components/activity-notice-store";
 import { I18nProvider, useI18n } from "../../src/i18n";
 import { ModWorkbench } from "../../src/views/servers/ModWorkbench";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
@@ -55,8 +57,8 @@ function Controls() {
   </div>;
 }
 function Workspace() {
-  const [noticeTarget, setNoticeTarget] = useState<HTMLDivElement | null>(null);
-  return <ActivityNoticeTarget.Provider value={{ element: noticeTarget, dismissLabel: "Close" }}>
+  const [noticeStore] = useState(createActivityNoticeStore);
+  return <ActivityNoticeTarget.Provider value={{ element: null, dismissLabel: "Close", store: noticeStore }}>
     <Controls />
     <div style={{ flex: 1, minHeight: 0 }}><ModWorkbench key={epoch} details={details} moduleDetails={moduleDetails}
       launchPlan={null} onSaveSettings={async (input, options) => {
@@ -64,7 +66,7 @@ function Workspace() {
         draw(); return saved;
       }} /></div>
     <footer className="shell-activity-bar"><span className="shell-activity-label">Activity</span>
-      <div className="shell-activity-notices" ref={setNoticeTarget} /></footer>
+      <ActivityBar store={noticeStore} entries={[]} /></footer>
   </ActivityNoticeTarget.Provider>;
 }
 function draw() { root.render(<I18nProvider><InstanceSettingsSaveProvider><Workspace /></InstanceSettingsSaveProvider></I18nProvider>); }
@@ -189,6 +191,18 @@ async function run() {
     const warning = currentLanguage === "中文" ? "现显示作者原始文案" : "Showing the author's original text";
     await settle(() => fixture.querySelector(".shell-activity-bar")?.textContent?.includes(warning) === true,
       "Original-text fallback did not explicitly identify its language limitation");
+    const compactSummary = element(".shell-activity-notice-text").textContent ?? "";
+    assert(compactSummary.length < 125 && !/HTTP|https:|retry_after_seconds/.test(compactSummary),
+      "Workshop summary stays concise and keeps request diagnostics out of the activity bar");
+    assert(fixture.querySelectorAll(".shell-activity-notice.is-warning").length === 1 &&
+      !fixture.querySelector(".shell-activity-count"), "One Steam limit produces one warning while preserving the original-text hint");
+    assert(!fixture.querySelector(".shell-activity-bar")?.textContent?.includes(localizationFailure),
+      "Raw Workshop evidence is hidden while message details are closed");
+    await click(element(".shell-activity-expand"));
+    const messageDetails = element(".shell-activity-panel");
+    assert(messageDetails.textContent?.includes("HTTP 429") && messageDetails.textContent?.includes(localizationFailure),
+      "Expanded message details retain Steam status, cooldown and complete raw diagnostics");
+    await click(element(".shell-activity-panel-close"));
     assert(element<HTMLButtonElement>(".mw-store-detail-metric").disabled,
       "Retained original text cannot enable download for an unverified item type");
     failOriginalLocalization = false;
@@ -271,6 +285,7 @@ async function run() {
   return { status: "passed", checks, browser_errors: errors, requests, stale_requests_ignored: true, parent_language_preserved: true,
     author_text_preserved: true, manifest_review_isolated: true, pending_install_lock: true, latest_validation_preserved: true,
     localized_failure_retains_text: true, localized_retry_recovers: true, unverified_fallback_blocks_download: true,
+    warning_compact: true, warning_diagnostics_preserved: true, warning_duplicates_merged: true,
     writes, downloads, viewport: { width: innerWidth, height: innerHeight } };
 }
 let watchdog: ReturnType<typeof setTimeout>;

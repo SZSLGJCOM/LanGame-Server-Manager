@@ -20,7 +20,7 @@ const root = createRoot(fixture);
 const community = ["abioticfactor", "arksurvivalascended", "astroneer", "corekeeper", "enshrouded", "humanitz",
   "minecraft", "necesse", "rust", "satisfactory", "sevendaystodie", "sonsoftheforest", "valheim", "vrising", "windrose"];
 const unavailable = ["nightingale", "returntomoria", "romestead", "runescapedragonwilds", "scum", "theforest"];
-const checks: string[] = [], errors: string[] = [], reports: Record<string, unknown>[] = [], opened: string[] = [];
+const checks: string[] = [], errors: string[] = [], reports: Record<string, unknown>[] = [], opened: string[] = [], openedSources: string[] = [];
 let game = "", epoch = 0, inventoryReads = 0;
 let details: InstanceDetails, moduleDetails: ModuleDetails, inventory: ManualModInventoryResult | null;
 const originalError = console.error;
@@ -29,7 +29,8 @@ addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 function check(condition: unknown, label: string): asserts condition {
   if (!condition) throw new Error(`${game}: ${label}: ${fixture.textContent}`);
-  checks.push(`${game}: ${label}`);
+  const entry = `${game}: ${label}`;
+  if (!checks.includes(entry)) checks.push(entry);
 }
 function button(label: string): HTMLButtonElement {
   const result = [...fixture.querySelectorAll<HTMLButtonElement>("button")].find((item) =>
@@ -82,6 +83,18 @@ function noSteamControls() {
   check(!fixture.querySelector('[aria-label="Workshop content type"]'), "Community workflow has no Steam Mod/Collection selector");
   check(!fixture.querySelector(".mw-search-input,.mw-collection-list"), "Community workflow has no Steam browser or collection library");
 }
+function independentStore(references: boolean) {
+  check(!fixture.querySelector(".mw-config-pane,.mw-entry-row,.mw-detail-list-col,.mw-detail-config-col,[data-asa-mod-config]"),
+    "Community Store stays independent of My Mods inventory and configuration");
+  check(Boolean(fixture.querySelector(".mw-manual-pane > .mw-dropzone")), "Store owns a standalone file installation drop zone");
+  for (const selector of [".mw-dropzone-title", ".mw-dropzone-copy", ".mw-dropzone-icon", ".mw-source-open-btn"]) {
+    const target = fixture.querySelector<HTMLElement>(selector);
+    check(target && target.getBoundingClientRect().width > 0 && target.getBoundingClientRect().height > 0,
+      `Store keeps its visible ${selector} entry`);
+  }
+  check(Boolean(fixture.querySelector(".mw-reference-row")) === references,
+    "Store shows reference installation only for its declared provider");
+}
 async function runCommunity(template: InstanceDetails, id: string) {
   prepare(template, id);
   check(moduleHasModWorkbench(id, moduleDetails), "Production gate exposes the declared Mod workflow");
@@ -90,14 +103,21 @@ async function runCommunity(template: InstanceDetails, id: string) {
   await mount();
   await settle(() => inventoryReads > readsBefore && Boolean(fixture.querySelector(".mw-dropzone")), "Community store did not initialize");
   noSteamControls();
-  const references = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
+  const references = Boolean(moduleDetails.mods?.enablement || ["thunderstore", "nexus"].includes(moduleDetails.mods?.source?.provider ?? ""));
+  independentStore(references);
   check(Boolean(fixture.querySelector(".mw-reference-input")) === references, "Only supported online/reference contracts expose an input");
+  const sourceUrl = moduleDetails.mods?.source?.url;
+  check(sourceUrl, "Community installation has an actual source URL");
+  const sourcesBefore = openedSources.length;
+  await click(fixture.querySelector<HTMLButtonElement>(".mw-source-open-btn")!);
+  await settle(() => openedSources.length === sourcesBefore + 1, "Source entry did not open");
+  check(openedSources.at(-1) === new URL(sourceUrl).href, "Source entry opens this game's actual Mod provider");
   await click(button("My Mods"));
   await settle(() => Boolean(fixture.querySelector(".mw-config-pane .mw-empty")), "Empty library did not render");
   check(!fixture.querySelector(".mw-entry-row"), "An empty instance has no invented Mod rows");
   check(!fixture.querySelector(".mw-detail-config-col"), "Empty library omits an empty detail column");
   await click(button("Store"));
-  check(Boolean(fixture.querySelector(".mw-dropzone")), "Store/My Mods switching preserves the source entry");
+  independentStore(references);
 
   const extension = moduleDetails.mods!.manual_staging!.accepts.find((value) => !["folder", "zip"].includes(value));
   const name = id === "arksurvivalascended" ? "424242-FixtureMod" : extension ? `FixtureMod.${extension}` : "FixtureMod";
@@ -105,7 +125,12 @@ async function runCommunity(template: InstanceDetails, id: string) {
     item_type: extension ? "file" : "directory", file_count: 2, total_bytes: 8192,
     inferred_id: id === "arksurvivalascended" ? "424242" : null }] };
   const nextRead = inventoryReads;
-  await mount(); await click(button("My Mods"));
+  await mount();
+  await settle(() => inventoryReads > nextRead && Boolean(fixture.querySelector(".mw-dropzone")), "Store with saved inventory did not initialize");
+  independentStore(references);
+  check(!fixture.textContent?.includes(name) && !fixture.textContent?.includes(inventory.items[0].path),
+    "Store does not show existing payload names or local details");
+  await click(button("My Mods"));
   await settle(() => inventoryReads > nextRead && fixture.querySelectorAll(".mw-entry-row").length === 1, "Saved inventory must appear after remount");
   noSteamControls();
   const row = fixture.querySelector<HTMLElement>(".mw-entry-row")!;
@@ -126,8 +151,31 @@ async function runCommunity(template: InstanceDetails, id: string) {
   }
   await click(button("Open Mod folder"));
   check(opened.at(-1) === inventory.target_path, "Folder action opens this instance's target");
+  await click(button("Store"));
+  independentStore(references);
+  check(!fixture.textContent?.includes(inventory.items[0].path), "Returning to Store clears selected payload details from the page");
+  if (id === "arksurvivalascended") {
+    const installedId = inventory.items[0].inferred_id;
+    check(installedId, "ASA inventory identifies the installed CurseForge Mod");
+    details = { ...details, settings_json: JSON.stringify({ mod_ids_csv: installedId,
+      asa_mod_configurations: { [installedId]: { game_ini: "[StoreSeparationFixture]\nKeep=original\n", game_user_settings_ini: "" } } }) };
+    const configuredRead = inventoryReads;
+    await mount();
+    await settle(() => inventoryReads > configuredRead && Boolean(fixture.querySelector(".mw-dropzone")), "Configured ASA Store did not initialize");
+    independentStore(references);
+    check(!fixture.textContent?.includes(installedId) && !fixture.textContent?.includes("StoreSeparationFixture"),
+      "Configured CurseForge IDs and INI contents stay out of Store");
+    await click(button("My Mods"));
+    await settle(() => Boolean(fixture.querySelector(`[data-asa-mod-config="${installedId}"]`)), "Configured ASA Mod editor did not return in My Mods");
+    check(fixture.querySelector<HTMLTextAreaElement>(".asa-mod-config__input")?.value.includes("StoreSeparationFixture"),
+      "My Mods retains the installed ASA Mod's saved INI configuration");
+    await click(button("Store"));
+    independentStore(references);
+  }
   check(document.documentElement.scrollWidth <= innerWidth + 1, "Workspace has no horizontal page overflow");
   reports.push({ module: id, gate: true, store_library_switch: true, empty_inventory: true, persisted_inventory: true,
+    independent_empty_store: true, independent_populated_store: true, source_entry_opens: true,
+    independent_configured_store: id === "arksurvivalascended", selected_detail_stays_in_library: true,
     no_steam_controls: true, file_only_controls_absent: id !== "arksurvivalascended", references });
 }
 async function run() {
@@ -138,7 +186,12 @@ async function run() {
   });
   mockWindows("community-capabilities-fixture");
   mockIPC(async (command, payload) => {
+    if (command === "nexus_account_status") return { configured: false, user_name: null, is_premium: false };
     if (command === "read_manual_mod_inventory") inventoryReads += 1;
+    if (command === "open_external_url") {
+      openedSources.push(String((payload as { url: string }).url));
+      return;
+    }
     return base(command, payload);
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });

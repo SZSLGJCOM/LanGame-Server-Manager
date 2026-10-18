@@ -9,6 +9,7 @@ use app_core::ModulePlayerQuerySpec;
 #[path = "runtime_ark_readiness.rs"]
 mod ark_readiness;
 use ark_readiness::analyze_ark_evolved_runtime_health;
+pub use ark_readiness::ark_native_log_message;
 #[path = "runtime_game_log.rs"]
 mod game_log;
 pub use game_log::{

@@ -11,14 +11,17 @@ export const ActivityNoticeTarget = createContext<{
   store?: ActivityNoticeStore;
 } | undefined>(undefined);
 
+export const ActivityNoticeDetails = createContext(false);
+
 interface ActivityNoticeProps {
   children: string;
+  details?: string;
   tone?: "error" | "warning" | "success" | "info";
   action?: ReactNode;
   onDismiss?: () => void;
 }
 
-export function ActivityNotice({ children, tone = "info", action, onDismiss }: ActivityNoticeProps) {
+export function ActivityNotice({ children, details, tone = "info", action, onDismiss }: ActivityNoticeProps) {
   const host = useContext(ActivityNoticeTarget);
   const id = useId();
   const target = host?.element;
@@ -30,18 +33,22 @@ export function ActivityNotice({ children, tone = "info", action, onDismiss }: A
   useLayoutEffect(() => {
     if (!store) return;
     if (hidden) store.remove(id);
-    else store.publish({ id, text: children, tone, action, dismiss });
-  }, [store, id, children, tone, action, onDismiss, hidden]);
+    else store.publish({ id, text: children, details, tone, action, dismiss });
+  }, [store, id, children, details, tone, action, onDismiss, hidden]);
   useLayoutEffect(() => () => store?.remove(id), [store, id]);
   if (hidden || store || target === null) return null;
-  const notice = <ActivityNoticeContent tone={tone} action={action} onDismiss={dismiss}
+  const notice = <ActivityNoticeContent tone={tone} details={details} action={action} onDismiss={dismiss}
     dismissLabel={host?.dismissLabel ?? "Close"}>{children}</ActivityNoticeContent>;
   return target === undefined ? notice : createPortal(notice, target);
 }
 
-export function ActivityNoticeContent({ children, tone = "info", action, onDismiss, dismissLabel }: ActivityNoticeProps & { dismissLabel: string }) {
+export function ActivityNoticeContent({ children, details, tone = "info", action, onDismiss, dismissLabel }: ActivityNoticeProps & { dismissLabel: string }) {
+  const showDetails = useContext(ActivityNoticeDetails);
   return <div className={`shell-activity-notice is-${tone}`} role={tone === "error" ? "alert" : "status"}>
-    <span className="shell-activity-notice-text" title={children}>{children}</span>
+    <span className="shell-activity-notice-copy">
+      <span className="shell-activity-notice-text" title={children}>{children}</span>
+      {showDetails && details ? <span className="shell-activity-notice-diagnostics">{details}</span> : null}
+    </span>
     {action ? <span className="shell-activity-notice-actions">{action}</span> : null}
     <button type="button" className="shell-activity-notice-close" aria-label={dismissLabel} onClick={onDismiss}>
       <ShellIcon name="x" />

@@ -1,5 +1,6 @@
 import type { TranslateFn, TranslationParams } from "./i18n";
 import type { ProgramCleanupResult } from "./types";
+import type { RuntimeStartNotice } from "./runtime-start-warning";
 
 import { formatDesktopError } from "./desktop-error-message";
 
@@ -9,6 +10,7 @@ export interface UiMessage {
   fallback?: string;
   scopeKey?: string;
   tone?: "error" | "warning";
+  runtimeStartNotice?: RuntimeStartNotice;
 }
 
 export function message(key: string, params?: TranslationParams, extra?: Omit<UiMessage, "key" | "params">): UiMessage {

@@ -23,6 +23,17 @@
 .privacy-notice-body section + section { margin-top: 16px; }
 .privacy-notice-body h3 { margin: 0 0 6px; color: var(--shell-text); font: inherit; font-weight: var(--font-weight-medium); }
 .privacy-notice-body p { margin: 0 0 8px; white-space: pre-line; }
+.privacy-notice-app-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--shell-line);
+}
+.privacy-notice-version { font-variant-numeric: tabular-nums; user-select: text; }
 .assistant-privacy-surface {
   flex: 1 1 auto;
   min-height: 0;

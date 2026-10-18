@@ -277,6 +277,41 @@ class IndependentPlayerCapabilitiesTests(unittest.TestCase):
         self.assertEqual(verifier.validate_player_management_contract("barotrauma", module, schema), [])
 
 
+class DstPlayerActionTargetEncodingTests(unittest.TestCase):
+    def validate_template(self, template: str | None = None, module_id: str = "dontstarve") -> list[str]:
+        module = verifier.read_module_toml("dontstarve")
+        action = next(action for action in module["runtime"]["player_actions"] if action["id"] == "kick_userid")
+        self.assertEqual(action["target_encoding"], "quoted_string")
+        if template is not None:
+            action["command_template"] = template
+        return verifier.validate_runtime_player_actions(module_id, module)
+
+    def test_current_dst_kick_preserves_a_quoted_klei_id_in_its_lua_local_binding(self) -> None:
+        self.assertEqual(self.validate_template(), [])
+
+    def test_dst_lua_call_and_local_binding_both_accept_string_literals(self) -> None:
+        for template in (
+            "TheNet:Kick({{target}})",
+            "local user_id = {{target}} ;TheNet:Kick(user_id)",
+        ):
+            with self.subTest(template=template):
+                self.assertEqual(self.validate_template(template), [])
+
+    def test_lua_binding_does_not_exempt_other_id_templates_or_target_checks(self) -> None:
+        for template, message in (
+            ("kick {{target}}", "pure ID token"),
+            ("-- local u={{target}};TheNet:Kick(u)", "pure ID token"),
+            ("local 1u={{target}};TheNet:Kick(1u)", "pure ID token"),
+            ('local u="{{target}}";TheNet:Kick(u)', "must not add quotes"),
+            ("local u={{target}};TheNet:Kick({{target}})", "must not use {target} more than once"),
+        ):
+            with self.subTest(template=template):
+                failures = self.validate_template(template)
+                self.assertTrue(any(message in failure for failure in failures), failures)
+        failures = self.validate_template("local u={{target}};kick u", "minecraft")
+        self.assertTrue(any("pure ID token" in failure for failure in failures), failures)
+
+
 class NativePlayerChannelContractTests(unittest.TestCase):
     channels = (
         ("enshrouded", "enshrouded_native", "enshrouded_native_players", "enshrouded_account_id"),

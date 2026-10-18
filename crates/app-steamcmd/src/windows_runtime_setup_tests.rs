@@ -11,6 +11,10 @@ mod msi;
 mod sandbox;
 
 #[cfg(windows)]
+#[path = "windows_runtime_http_sandbox_tests.rs"]
+mod http_sandbox;
+
+#[cfg(windows)]
 #[path = "windows_runtime_signature_tests.rs"]
 mod signature;
 

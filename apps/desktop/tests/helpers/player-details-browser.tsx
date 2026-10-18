@@ -2,6 +2,7 @@ import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import React, { act, useState } from "react";
 import { createRoot } from "react-dom/client";
 import schema from "../../../../modules/enshrouded/schema.json";
+import dstSchema from "../../../../modules/dontstarve/schema.json";
 import nativeHashFixture from "../../../../modules/enshrouded/reference-fixtures/2026-10-16-native_account_hash.json";
 import { I18nProvider, useI18n } from "../../src/i18n";
 import { createPlayerCenterState, derivePlayerCenterViewModel, reducePlayerCenterState } from "../../src/domain/live-player-state";
@@ -41,7 +42,7 @@ const nativeActions: ModulePlayerActionDetails[] = [
   { ...action, id: "kick_player" },
   { ...action, id: "ban_player", kind: "ban", label: "Ban player", label_zh_cn: "封禁玩家" }
 ];
-type Scenario = "enshrouded" | "read-only" | "workspace-read-only" | "expired" | "unavailable" | "metadata"
+type Scenario = "enshrouded" | "read-only" | "workspace-read-only" | "expired" | "unavailable" | "metadata" | "dontstarve-admin" | "dontstarve-admin-listed" | "dontstarve-player"
   | "enshrouded-unsupported-build" | "enshrouded-not-installed" | "enshrouded-loading" | "enshrouded-load-failed"
   | "enshrouded-protocol-incomplete"
   | "enshrouded-unban-unsupported" | "enshrouded-unban-loading" | "enshrouded-unban-load-failed" | "enshrouded-unban-ready" | "enshrouded-unban-incomplete" | "enshrouded-unban-stopped"
@@ -56,6 +57,7 @@ const extensionScenarios: Partial<Record<Scenario, RuntimePlayerExtensionStatus>
 function Fixture({ scenario }: { scenario: Scenario }) {
   const { locale, t } = useI18n();
   const enshrouded = scenario.startsWith("enshrouded");
+  const dontstarve = scenario.startsWith("dontstarve");
   const nativeScenario = enshrouded && scenario !== "enshrouded";
   const unbanScenario = scenario.startsWith("enshrouded-unban-");
   const extensionStatus = extensionScenarios[scenario];
@@ -65,8 +67,12 @@ function Fixture({ scenario }: { scenario: Scenario }) {
   const expired = scenario === "expired" || scenario === "enshrouded-native-stale";
   const workspaceReadOnly = scenario === "workspace-read-only";
   const sessionControls = expired || workspaceReadOnly || scenario === "unavailable";
-  const moduleId = enshrouded ? "enshrouded" : "fixture";
-  const row: RuntimeLivePlayerEntry = nativeScenario ? { ...player, player_key: "native-player",
+  const moduleId = enshrouded ? "enshrouded" : dontstarve ? "dontstarve" : "fixture";
+  const row: RuntimeLivePlayerEntry = dontstarve ? { ...player, player_key: "dst:current:1",
+    identifiers: [{ kind: "klei_user_id", value: "KU_abcdefgh", stable: true }], available_action_ids: ["kick_userid"],
+    role: scenario === "dontstarve-admin" || scenario === "dontstarve-admin-listed" ? "admin" : null,
+    attributes: [{ key: "character", value: "walter" }] }
+    : nativeScenario ? { ...player, player_key: "native-player",
     identifiers: unknownExtension ? [] : steamOnly ? [{ kind: "steam_id", value: nativeSteamId, stable: true }]
       : [{ kind: "steam_id", value: nativeSteamId, stable: true }, { kind: "enshrouded_account_id", value: nativeAccountId, stable: true }],
     available_action_ids: ["kick_player", "ban_player"], role: scenario === "enshrouded-native" ? "Admin" : null,
@@ -76,32 +82,36 @@ function Fixture({ scenario }: { scenario: Scenario }) {
     session_started_at_unix_ms: now - 3_660_000, role: "Guest", attributes: [{ key: "World", value: "测试世界" }] }
     : expired || workspaceReadOnly ? { ...player, available_action_ids: ["kick"] } : player;
   const snapshot: RuntimeLivePlayerSnapshot = { instance_id: `details-${scenario}`, snapshot_id: `snapshot-${scenario}`,
-    source: nativeScenario && !unknownExtension ? "file_ipc" : "server_query", status: "ready", observed_at_unix_ms: now, expires_at_unix_ms: expired ? now - 1 : now + 30_000,
+    source: dontstarve ? "structured_log" : nativeScenario && !unknownExtension ? "file_ipc" : "server_query", status: "ready", observed_at_unix_ms: now, expires_at_unix_ms: expired ? now - 1 : now + 30_000,
     stale: false, complete: true, truncated: false, current_players: 1, max_players: 16, entries: [row],
     issue: protocolIncomplete ? { code: "protocol_incomplete", setting_keys: [], summary: "Native identity and query count are in transition." }
       : extensionStatus ? { code: "extension_unavailable", extension_status: extensionStatus, setting_keys: [],
       summary: "Native diagnostic text must not be interpreted as a compatibility state." } : null };
   const [state, setState] = useState(() => createPlayerCenterState({ instanceId: snapshot.instance_id, snapshot }));
   const [bannedIds, setBannedIds] = useState(scenario === "enshrouded-native-banned" || unbanScenario ? nativeAccountId : "");
+  const [dstAdminList, setDstAdminList] = useState(scenario === "dontstarve-admin-listed" ? "KU_abcdefgh\nKU_otheradmin" : "");
   const details: InstanceDetails = { summary: { id: snapshot.instance_id, name: "Player details", module_id: moduleId,
     status: "Running", active_process_count: 1, autostart: false, bind_ip: "127.0.0.1" }, ports: [],
-    settings_json: JSON.stringify({ banned_player_ids: bannedIds }), config_file_path: "", saves_path: "",
+    settings_json: JSON.stringify(dontstarve ? { admin_list: dstAdminList, whitelist: "", blocklist: "" } : { banned_player_ids: bannedIds }), config_file_path: "", saves_path: "",
     backup_uses_declared_saves_path: false, auto_backup_on_stop: false, backup_retention_count: 3 };
   const moduleDetails: ModuleDetails = { summary: { id: moduleId, name: moduleId, version: "1", install_state: "Installed", supported_platforms: ["windows"] },
-    default_ports: [], runtime: {}, schema_json: JSON.stringify(schema) };
+    default_ports: [], runtime: {}, schema_json: JSON.stringify(dontstarve ? dstSchema : schema) };
   const access = usePlayerAccess({ details, moduleDetails, onApplyPlayerAccessMutation: async (input) => {
     mutations++;
     rosterRequests.push(input);
+    if (dontstarve && input.fieldKey === "admin_list" && input.operation === "remove") {
+      setDstAdminList((current) => current.split("\n").filter((id) => id !== input.value).join("\n"));
+    }
     return { instanceId: input.instanceId, fieldKey: input.fieldKey, operation: input.operation,
       persistentStatus: "updated", liveStatus: "restart_required", verificationStatus: "unavailable" };
   } });
   return <main style={{ width: "1000px", height: "650px", margin: "32px auto", display: "grid", minHeight: 0 }}>
     <section className="player-access-workbench">
       <OnlinePlayersView moduleId={moduleId} readOnly={workspaceReadOnly} locale={locale} now={now}
-        declaredActions={nativeScenario ? [...nativeActions, ...(unbanScenario ? [{ ...action, id: "unban_player", label: "Unban", label_zh_cn: "解封" }] : [])] : sessionControls ? [action] : []}
-        playerActionIds={nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable={scenario !== "enshrouded-unban-stopped"}
+        declaredActions={dontstarve ? [{ ...action, id: "kick_userid" }] : nativeScenario ? [...nativeActions, ...(unbanScenario ? [{ ...action, id: "unban_player", label: "Unban", label_zh_cn: "解封" }] : [])] : sessionControls ? [action] : []}
+        playerActionIds={dontstarve ? ["kick_userid"] : nativeScenario ? ["kick_player", "ban_player"] : sessionControls ? ["kick"] : []} error={null} loading={false} runtime={null} runtimeAvailable={scenario !== "enshrouded-unban-stopped"}
         snapshot={state.snapshot} presentation={derivePlayerCenterViewModel(state, now).livePlayers} t={t}
-        access={enshrouded ? access : undefined} onRefresh={async () => {}}
+        access={enshrouded || dontstarve ? access : undefined} onRefresh={async () => {}}
         onExecutePlayerAction={async (input) => {
           commands++;
           if (nativeScenario) {
@@ -306,6 +316,80 @@ async function run() {
       && rosterRequests[before].fieldKey === "banned_player_ids" && rosterRequests[before].value === nativeAccountId,
       "Available native unban or stopped ban removal sends only the exact known account");
   }
+  await draw("dontstarve-admin"); await selectWithKeyboard();
+  const beforeDstCommands = commands;
+  const adminRemove = element<HTMLButtonElement>('[data-roster-field="admin_list"] [data-operation="remove"]');
+  const unlistedAdminReason = describedReason(adminRemove);
+  check(adminRemove.disabled && ["服务器报告管理员权限", "不在本管理员名单", "服务器所有者", "Steam 组", "本次启动", "当前没有可移除的对应条目", "无法通过此名单撤销这些权限"]
+    .every((text) => unlistedAdminReason.includes(text)),
+    "DST live administrator absent from admin_list explains independent permission sources");
+  const beforeEmptyAdminRemoval = rosterRequests.length;
+  await act(async () => { adminRemove.click(); });
+  check(rosterRequests.length === beforeEmptyAdminRemoval && !fixture?.querySelector(".inline-confirm-review"),
+    "DST empty administrator list cannot send a fake permission removal");
+  check(!nativeAction("踢出玩家").disabled && selectedRowText().includes("admin") && selectedRowText().includes("walter"),
+    "DST live administrator role alone does not disable its declared kick action");
+  await act(async () => { nativeAction("踢出玩家").click(); });
+  check(Boolean(fixture?.querySelector(".inline-confirm-review")) && commands === beforeDstCommands,
+    "DST administrator kick can reach review without sending a command");
+  await act(async () => { element<HTMLButtonElement>(".inline-confirm-buttons button:first-child").click(); });
+  const whitelistAdd = element<HTMLButtonElement>('[data-roster-field="whitelist"] [data-operation="add"]');
+  check(!whitelistAdd.disabled, "DST live administrator keeps independent persistent roster actions");
+  const beforeDstRosters = rosterRequests.length;
+  await act(async () => { whitelistAdd.click(); });
+  await act(async () => { element<HTMLButtonElement>(".inline-confirm-submit").click(); });
+  check(rosterRequests.length === beforeDstRosters + 1 && rosterRequests[beforeDstRosters].fieldKey === "whitelist"
+    && rosterRequests[beforeDstRosters].value === "KU_abcdefgh",
+    "DST administrator roster operations retain the exact selected Klei identity");
+  await draw("dontstarve-admin-listed"); await selectWithKeyboard();
+  const listedAdminRemove = element<HTMLButtonElement>('[data-roster-field="admin_list"] [data-operation="remove"]');
+  check(!listedAdminRemove.disabled && ["重启服务器后", "其他来源"].every((text) => describedReason(listedAdminRemove).includes(text)),
+    "DST listed administrator removal explains restart and other permission sources");
+  const beforeListedAdminRemoval = rosterRequests.length;
+  await act(async () => { listedAdminRemove.click(); });
+  check(["重启服务器后", "其他来源"].every((text) => element<HTMLElement>(".inline-confirm-message").textContent?.includes(text)),
+    "DST administrator removal confirmation does not promise live revocation");
+  const removalControls = element<HTMLElement>(".player-center-controls");
+  check(removalControls.scrollWidth <= removalControls.clientWidth + 1,
+    "DST administrator removal explanation fits the controls column");
+  await act(async () => { element<HTMLButtonElement>(".inline-confirm-submit").click(); });
+  check(rosterRequests.length === beforeListedAdminRemoval + 1 && rosterRequests[beforeListedAdminRemoval].fieldKey === "admin_list"
+    && rosterRequests[beforeListedAdminRemoval].operation === "remove" && rosterRequests[beforeListedAdminRemoval].value === "KU_abcdefgh"
+    && selectedRowText().includes("admin") && commands === beforeDstCommands
+    && fixture?.textContent?.includes("下次启动会使用此名单，即时状态未核验") && !fixture.textContent.includes("已即时生效"),
+    "DST removes only the saved Klei administrator entry and retains unverified live admin status");
+  await act(async () => { element<HTMLButtonElement>('[data-list-key="admin_list"]').click(); });
+  check(element<HTMLElement>(".player-center-list-content").textContent?.includes("KU_otheradmin")
+    && !element<HTMLElement>(".player-center-list-content").textContent?.includes("KU_abcdefgh"),
+    "DST administrator removal preserves unrelated saved administrators");
+  await draw("dontstarve-player"); await selectWithKeyboard();
+  check(!nativeAction("踢出玩家").disabled, "DST ordinary players retain their declared kick action");
+  await act(async () => { nativeAction("踢出玩家").click(); });
+  await act(async () => { element<HTMLButtonElement>(".inline-confirm-submit").click(); });
+  check(commands === beforeDstCommands + 1 && fixture?.textContent?.includes("实际执行结果尚未确认")
+    && fixture?.querySelector(".shell-activity-notice.is-info"),
+    "DST ordinary kick feedback confirms sending without claiming the player was removed");
+  const dstControls = element<HTMLElement>(".player-center-controls");
+  const controlBounds = dstControls.getBoundingClientRect();
+  check(dstControls.scrollWidth <= dstControls.clientWidth + 1
+    && Array.from(dstControls.querySelectorAll(".player-center-action-button")).every((button) => {
+      const bounds = button.getBoundingClientRect();
+      return bounds.left >= controlBounds.left && bounds.right <= controlBounds.right;
+    }), "Persistent player action feedback does not widen or clip the controls and buttons");
+  const noticeText = element<HTMLElement>(".shell-activity-notice-text");
+  check(noticeText.scrollWidth <= noticeText.clientWidth + 1 && noticeText.scrollHeight <= noticeText.clientHeight + 1
+    && noticeText.getBoundingClientRect().right <= controlBounds.right,
+    "Persistent player action feedback remains fully readable inside the controls");
+  await draw("dontstarve-admin"); await selectWithKeyboard();
+  await act(async () => { element<HTMLElement>('[data-roster-field="admin_list"] [data-roster-operation="remove"]').focus(); });
+  await waitForTooltip(describedReason(element<HTMLButtonElement>('[data-roster-field="admin_list"] [data-operation="remove"]')));
+  check(true, "DST unlisted administrator explanation is reachable by keyboard");
+  await draw("dontstarve-admin-listed"); await selectWithKeyboard();
+  await act(async () => { element<HTMLButtonElement>('[data-roster-field="admin_list"] [data-operation="remove"]').click(); });
+  await act(async () => { window.dispatchEvent(new Event("blur")); });
+  check(!document.querySelector(".configuration-field-help-tooltip")
+    && element<HTMLElement>(".inline-confirm-message").textContent?.includes("重启服务器后"),
+    "DST administrator removal preview keeps its restart warning readable without a help overlay");
   check(errors.length === 0, "Browser and React report no errors");
   return { status: "passed", checks, browser_errors: errors };
 }

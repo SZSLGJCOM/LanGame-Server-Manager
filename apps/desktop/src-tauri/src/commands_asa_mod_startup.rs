@@ -103,7 +103,7 @@ pub(super) async fn wait_until_previous_map_ready(
     );
 
     let budget = super::super::commands_asa_startup_budget::StartupBudget::prepare(
-        &instance.summary.module_id,
+        instance,
         processes,
         Duration::from_millis(policy.startup_timeout_ms),
         reservation,
@@ -169,15 +169,17 @@ pub(super) async fn wait_until_previous_map_ready(
             Ok(())
         }
         Err(error) => {
-            let error = format!(
-                "ASA map `{}` Mod cache startup barrier failed before `{next_process_key}`: {error}; see {}",
-                previous_key, previous_log_path
+            let error = super::super::commands_asa_startup_budget::mod_failure_for_map(
+                error,
+                &previous_key,
+                Some(next_process_key),
+                Some(&previous_log_path),
             );
             append_desktop_app_log(
                 storage,
                 "error",
                 "instance.asa_mod_cache.failed",
-                &error,
+                &super::super::commands_asa_startup_budget::mod_failure_readable(&error),
                 context,
             );
             Err(error)
@@ -252,9 +254,13 @@ where
                 .map_err(|_| timeout_message.clone())??,
         };
         allowed()?;
-        if let Some(budget) = &mut budget {
+        let evaluation = if let Some(budget) = &mut budget {
+            let evaluation = budget.filter_evaluation(evaluation);
             budget.record_evaluation(&evaluation)?;
-        }
+            evaluation
+        } else {
+            evaluation
+        };
         match evaluation {
             StrictBindEvaluation::Ready => {
                 ready_samples += 1;

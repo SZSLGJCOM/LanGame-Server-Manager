@@ -21,6 +21,14 @@ param(
     [Parameter(ParameterSetName = 'Prepare')]
     [switch]$PortableOnly,
     [Parameter(ParameterSetName = 'Prepare')]
+    [string]$NativeHttpExportDirectory,
+    [Parameter(ParameterSetName = 'Prepare')]
+    [string]$HostDownloadReport,
+    [Parameter(ParameterSetName = 'Prepare')]
+    [switch]$RemainingDownloads,
+    [Parameter(ParameterSetName = 'Prepare')]
+    [string]$DownloadedPackagesDirectory,
+    [Parameter(ParameterSetName = 'Prepare')]
     [string]$BootstrapPackagePath,
     [Parameter(ParameterSetName = 'Prepare')]
     [string]$BootstrapPackageProvenance = 'Operator-prefetched Microsoft package; input hash and guest signature are recorded.',
@@ -40,6 +48,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $utf8 = New-Object Text.UTF8Encoding($false)
+$remainingCaseIds = @('vc-14-x64', 'vc-14-x86', 'vc-2013-x86')
+
+function Get-NativeCaseCount([string]$Selection) {
+    return @{ full = 10; 'portable-bootstrap' = 1; 'download-remaining' = 1; 'remaining-downloads' = 3 }[$Selection]
+}
 
 function Assert-PlainPath([string]$Path) {
     $full = [IO.Path]::GetFullPath($Path)
@@ -97,11 +110,13 @@ function Assert-GuestIdentity {
         (Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash -ine $request.manifest_sha256) {
         throw 'The sandbox run identity or immutable input manifest does not match.'
     }
-    if ($request.case_selection -notin @('full', 'portable-bootstrap') -or
-        ($request.case_selection -eq 'portable-bootstrap' -and ![IO.File]::Exists('C:\LGSMInput\portable\worker.ps1'))) {
+    if (!(Get-NativeCaseCount $request.case_selection) -or
+        ($request.case_selection -eq 'portable-bootstrap' -and ![IO.File]::Exists('C:\LGSMInput\portable\worker.ps1')) -or
+        ($request.case_selection -eq 'download-remaining' -and ![IO.File]::Exists('C:\LGSMInput\native-http\worker.ps1')) -or
+        ($request.case_selection -eq 'remaining-downloads' -and ![IO.File]::Exists('C:\LGSMInput\downloaded-packages\results.json'))) {
         throw 'Unexpected native-case selection or missing required portable worker.'
     }
-    if ($request.bootstrap_package -and ($request.case_selection -ne 'portable-bootstrap' -or
+    if ($request.bootstrap_package -and ($request.case_selection -notin @('portable-bootstrap', 'download-remaining') -or
         $request.bootstrap_package.relative_path -cne 'bootstrap\vc-14-x64.exe')) {
         throw 'A prefetched bootstrap package is restricted to the portable-only VC14 x64 case.'
     }
@@ -183,6 +198,36 @@ function Copy-GuestDiagnostic([string]$Path, [string]$Name) {
     return $null
 }
 
+function Assert-NativeHttpArtifacts([string]$Directory, $Manifest, $Binding) {
+    $reportPath = Join-Path $Directory 'results.json'
+    $report = Get-Content -LiteralPath $reportPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $hostSource = $Binding -and $Binding.source_kind -ceq 'host-production-http'
+    if ($report.schema_version -ne 1 -or @($report.cases).Count -ne 3 -or
+        ($hostSource -and $report.scope -cne 'host production HTTP recovery verification; no installation') -or
+        (!$hostSource -and (!$report.guest.administrator -or $report.guest.user.Split('\')[-1] -cne 'WDAGUtilityAccount')) -or
+        ($Binding -and ((Get-FileHash -LiteralPath $reportPath -Algorithm SHA256).Hash -ine $Binding.report_sha256 -or
+        (!$hostSource -and $report.run_token_sha256 -cne $Binding.run_token_sha256) -or $report.test_binary_sha256 -ine $Binding.binary_sha256))) {
+        throw 'Production HTTP artifact evidence does not match its declared source run.'
+    }
+    foreach ($id in $remainingCaseIds) {
+        $rows = @($report.cases | Where-Object { $_.id -ceq $id })
+        $expected = @($Manifest.cases | Where-Object { $_.id -ceq $id })
+        $relative = if ($hostSource) { $id + '.exe' } else { 'packages/' + $id + '.exe' }
+        $artifact = Join-Path $Directory $relative
+        $url = if ($hostSource) { $rows[0].official_url } else { $rows[0].url }
+        $bytes = if ($hostSource) { $rows[0].download.bytes } else { $rows[0].downloaded_bytes }
+        $sha256 = if ($hostSource) { $rows[0].download.sha256 } else { $rows[0].sha256 }
+        if ($rows.Count -ne 1 -or $expected.Count -ne 1 -or $rows[0].status -cne 'passed' -or
+            $url -cne $expected[0].url -or (!$hostSource -and $rows[0].export_relative_path -cne $relative) -or
+            $rows[0].observed_downloaded_bytes -le 0 -or $bytes -le 0 -or
+            (Get-Item -LiteralPath $artifact).Length -ne $bytes -or
+            (Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash -ine $sha256) {
+            throw "Production HTTP case $id does not prove the exact fresh official package."
+        }
+    }
+    return $report
+}
+
 function Invoke-GuestDownload([string]$Url, [string]$Path, [string]$Label) {
     $curl = Join-Path ([Environment]::SystemDirectory) 'curl.exe'
     if (![IO.File]::Exists($curl)) { throw 'The Windows system curl executable is unavailable.' }
@@ -232,12 +277,21 @@ function Invoke-GuestMatrix {
     $null = [IO.Directory]::CreateDirectory($guestScratch)
     $null = [IO.Directory]::CreateDirectory($expectedRoot)
     $null = [IO.Directory]::CreateDirectory((Join-Path $expectedRoot 'empty-consumer-directory'))
-    $selectedCases = @(if ($request.case_selection -eq 'portable-bootstrap') {
+    $selectedCases = @(if ($request.case_selection -in @('portable-bootstrap', 'download-remaining')) {
         $manifest.cases | Where-Object { $_.id -ceq 'vc-14-x64' }
+    } elseif ($request.case_selection -eq 'remaining-downloads') {
+        $manifest.cases | Where-Object { $_.id -cin $remainingCaseIds }
     } else { $manifest.cases })
-    $expectedCaseCount = if ($request.case_selection -eq 'portable-bootstrap') { 1 } else { 10 }
+    $expectedCaseCount = Get-NativeCaseCount $request.case_selection
     if ($selectedCases.Count -ne $expectedCaseCount) { throw 'The selected production cases do not match the run request.' }
     . ([ScriptBlock]::Create($manifest.signature_function))
+    if ($request.download_evidence.source_kind -eq 'host-production-http') {
+        $httpManifestPath = 'C:\LGSMInput\downloaded-packages\http-manifest.json'
+        $httpManifest = Get-Content -LiteralPath $httpManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ((Get-FileHash -LiteralPath $httpManifestPath -Algorithm SHA256).Hash -ine $request.download_evidence.http_manifest_sha256 -or
+            $httpManifest.binary_sha256 -ine $request.download_evidence.binary_sha256) { throw 'The host download report no longer matches its exported production HTTP binary.' }
+    }
+    $downloadArtifacts = if ($request.case_selection -eq 'remaining-downloads') { Assert-NativeHttpArtifacts 'C:\LGSMInput\downloaded-packages' $manifest $request.download_evidence } else { $null }
     $results = New-Object 'System.Collections.Generic.List[object]'
     $report = [ordered]@{
         schema_version = 1
@@ -245,13 +299,15 @@ function Invoke-GuestMatrix {
         started_utc = [DateTime]::UtcNow.ToString('o')
         environment = @{ identity = [Security.Principal.WindowsIdentity]::GetCurrent().Name; hostname = $env:COMPUTERNAME; os = [Environment]::OSVersion.VersionString; powershell = $PSVersionTable.PSVersion.ToString() }
         scope = $manifest.scope
-        download_scope = if ($request.bootstrap_package) { 'Prefetched cache bootstrap: guest HTTP download is not exercised. Portable API downloads use their production HTTP client.' } else { 'Guest Windows system curl; the production reqwest downloader is not exercised.' }
+        download_scope = if ($request.download_evidence.source_kind -eq 'host-production-http') { 'Packages were freshly downloaded and verified by the production HTTP client on the host; this fresh guest verifies and cold-installs those exact bytes. Guest download networking is not exercised.' } elseif ($request.case_selection -eq 'remaining-downloads') { 'Packages were first downloaded by the production HTTP client in a separate isolated guest; this fresh guest verifies and cold-installs those exact bytes.' } elseif ($request.bootstrap_package) { 'Prefetched cache bootstrap: guest HTTP download is not exercised. API worker downloads use their production HTTP client.' } else { 'Guest Windows system curl; the production reqwest downloader is not exercised.' }
         case_selection = $request.case_selection
         expected_native_case_count = $expectedCaseCount
         cases = @()
         complete = $false
         fatal_error = $null
         portable = $null
+        native_http = $null
+        download_evidence = $request.download_evidence
     }
     Write-JsonAtomically (Join-Path $OutputRoot 'snapshot-00.json') $report
     try {
@@ -261,6 +317,7 @@ function Invoke-GuestMatrix {
             try {
                 $result.baseline = @(Invoke-Probes $case 'baseline')
                 if (@($result.baseline | Where-Object { $_.process_exit_code -ne 0 -or $null -eq $_.value }).Count) { throw 'Production baseline probe did not return a health result.' }
+                if ($request.case_selection -eq 'remaining-downloads' -and @($result.baseline | Where-Object { $_.ready }).Count) { throw 'A remaining-runtime cold install requires an actually missing baseline.' }
                 $package = [IO.Path]::GetFullPath($case.package_path)
                 if (![IO.Path]::GetDirectoryName($package).Equals($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Package escaped the dedicated guest root.' }
                 $uri = [Uri]$case.url
@@ -271,6 +328,15 @@ function Invoke-GuestMatrix {
                     $prefetched = Join-Path 'C:\LGSMInput' $request.bootstrap_package.relative_path
                     [IO.File]::Copy($prefetched, $temporary)
                     $result.download = @{ source = 'prefetched-cache'; provenance = $request.bootstrap_package.provenance; input_sha256 = $request.bootstrap_package.sha256; attempts = @() }
+                } elseif ($request.case_selection -eq 'remaining-downloads') {
+                    $source = @($downloadArtifacts.cases | Where-Object { $_.id -ceq $case.id })[0]
+                    if ($request.download_evidence.source_kind -eq 'host-production-http') {
+                        [IO.File]::Copy((Join-Path 'C:\LGSMInput\downloaded-packages' ($case.id + '.exe')), $temporary)
+                        $result.download = @{ source = 'production-http-host'; official_url = $source.official_url; downloaded_bytes = $source.download.bytes; input_sha256 = $source.download.sha256; attempts = @() }
+                    } else {
+                        [IO.File]::Copy((Join-Path 'C:\LGSMInput\downloaded-packages' $source.export_relative_path), $temporary)
+                        $result.download = @{ source = 'production-http-isolated-guest'; official_url = $source.url; downloaded_bytes = $source.downloaded_bytes; input_sha256 = $source.sha256; source_run_token_sha256 = $downloadArtifacts.run_token_sha256; attempts = @() }
+                    }
                 } else {
                     $download = Invoke-GuestDownload $case.url $temporary $case.id
                     $result.download = @{ source = 'guest-curl'; final_url = $download.final_url; curl_exit_code = $download.curl_exit_code; attempts = $download.attempts }
@@ -286,6 +352,7 @@ function Invoke-GuestMatrix {
                 $result.download.signer_subject = $signature.SignerCertificate.Subject
                 $result.download.file_version = [Diagnostics.FileVersionInfo]::GetVersionInfo($temporary).ProductVersion
                 if ($request.bootstrap_package -and $hash -ine $request.bootstrap_package.sha256) { throw 'Prefetched bootstrap SHA-256 does not match the immutable input.' }
+                if ($request.case_selection -eq 'remaining-downloads' -and $hash -ine $result.download.input_sha256) { throw 'Package bytes differ from the production HTTP source guest.' }
                 if ($case.expected_sha256 -and $hash -ine $case.expected_sha256) { throw 'Official package SHA-256 mismatch.' }
                 Assert-MicrosoftSignature $temporary
                 [IO.File]::Move($temporary, $package)
@@ -326,6 +393,20 @@ function Invoke-GuestMatrix {
                 Write-JsonAtomically (Join-Path $OutputRoot ('snapshot-' + $results.Count.ToString('D2') + '.json')) $report
             }
         }
+        if ($request.case_selection -eq 'download-remaining') {
+            if (@($report.cases | Where-Object { $_.status -ne 'passed' }).Count) { throw 'The production HTTP worker requires a successful verified CRT bootstrap.' }
+            $nativeEvidence = Join-Path $OutputRoot 'native-http'
+            $global:LASTEXITCODE = 0
+            $nativeError = $null
+            try { & ([ScriptBlock]::Create([IO.File]::ReadAllText('C:\LGSMInput\native-http\worker.ps1', [Text.Encoding]::UTF8))) -OutputDirectory 'C:\LGSMNativeHttpWork\packages' -EvidenceDirectory $nativeEvidence -RunToken $RunToken }
+            catch { $nativeError = $_.Exception.ToString() }
+            $nativeReportPath = Join-Path $nativeEvidence 'results.json'
+            $nativeExitPath = Join-Path $nativeEvidence 'worker-exit.json'
+            $nativeExit = if ([IO.File]::Exists($nativeExitPath)) { (Get-Content -LiteralPath $nativeExitPath -Raw -Encoding UTF8 | ConvertFrom-Json).exit_code } else { $null }
+            $report.native_http = @{ exit_code = $nativeExit; output_directory = $nativeEvidence; results_sha256 = if ([IO.File]::Exists($nativeReportPath)) { (Get-FileHash -LiteralPath $nativeReportPath -Algorithm SHA256).Hash } else { $null }; error = $nativeError }
+            if ($nativeError -or $nativeExit -ne 0) { throw "The production native HTTP worker failed: $nativeError" }
+            $null = Assert-NativeHttpArtifacts $nativeEvidence $manifest $null
+        }
         $portableWorker = 'C:\LGSMInput\portable\worker.ps1'
         if ([IO.File]::Exists($portableWorker)) {
             $portableOutput = Join-Path $OutputRoot 'portable'
@@ -357,12 +438,44 @@ if ($Guest) {
 }
 
 if ($PSCmdlet.ParameterSetName -eq 'Prepare') {
-    if ($BootstrapPackagePath -and !$PortableOnly) { throw '-BootstrapPackagePath is permitted only with -PortableOnly.' }
+    $hostSource = [bool]$HostDownloadReport
+    if ($hostSource -and (!$RemainingDownloads -or !$NativeHttpExportDirectory -or $DownloadedPackagesDirectory)) { throw 'A host download report requires only the remaining cold-install mode and its HTTP export manifest.' }
+    if ($BootstrapPackagePath -and !$PortableOnly -and !$NativeHttpExportDirectory) { throw 'A bootstrap package requires a portable or native HTTP worker.' }
+    if (($RemainingDownloads -and ($PortableExportDirectory -or $PortableOnly -or (!$hostSource -and $NativeHttpExportDirectory) -or $BootstrapPackagePath)) -or
+        ($NativeHttpExportDirectory -and ($PortableExportDirectory -or $PortableOnly)) -or
+        ($RemainingDownloads -ne [bool]($DownloadedPackagesDirectory -or $hostSource))) { throw 'Remaining downloads, native HTTP, and portable modes must have separate inputs.' }
+    if ($NativeHttpExportDirectory -and !$hostSource -and (!$BootstrapPackagePath -or ![IO.File]::Exists((Join-Path $NativeHttpExportDirectory 'worker.ps1')))) { throw 'The native HTTP phase requires its worker and verified CRT bootstrap.' }
     if ($PortableOnly -and (!$PortableExportDirectory -or
         ![IO.File]::Exists((Join-Path $PortableExportDirectory 'worker.ps1')))) {
         throw '-PortableOnly requires a verified portable export bundle with worker.ps1.'
     }
     $manifestSource = Assert-PlainPath $ManifestPath
+    $downloadEvidence = $null
+    if ($hostSource) {
+        $hostReportPath = Assert-PlainPath $HostDownloadReport
+        $httpManifestPath = Assert-PlainPath (Join-Path $NativeHttpExportDirectory 'manifest.json')
+        $httpManifest = Get-Content -LiteralPath $httpManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($httpManifest.schema_version -ne 1 -or $httpManifest.binary_sha256 -notmatch '^[a-fA-F0-9]{64}$' -or @($httpManifest.cases).Count -ne 3) { throw 'The production HTTP export manifest has no valid binary binding.' }
+        $downloadEvidence = @{ source_kind = 'host-production-http'; report_sha256 = (Get-FileHash -LiteralPath $hostReportPath -Algorithm SHA256).Hash; binary_sha256 = $httpManifest.binary_sha256; http_manifest_sha256 = (Get-FileHash -LiteralPath $httpManifestPath -Algorithm SHA256).Hash; provenance = 'Fresh official production HTTP downloads on the host; these exact hash-bound packages are cold-installed in this isolated guest.' }
+        $null = Assert-NativeHttpArtifacts (Split-Path -Parent $hostReportPath) (Get-Content -LiteralPath $manifestSource -Raw -Encoding UTF8 | ConvertFrom-Json) $downloadEvidence
+    } elseif ($RemainingDownloads) {
+        $downloadSource = Assert-PlainPath $DownloadedPackagesDirectory
+        $downloadReport = Assert-NativeHttpArtifacts $downloadSource (Get-Content -LiteralPath $manifestSource -Raw -Encoding UTF8 | ConvertFrom-Json) $null
+        $sourceOutput = Split-Path -Parent $downloadSource
+        $sourceResultsPath = Join-Path $sourceOutput 'results.json'
+        $sourceComplete = Get-Content -LiteralPath (Join-Path $sourceOutput 'complete.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        $sourceResults = Get-Content -LiteralPath $sourceResultsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        $sourceRequest = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $sourceOutput) 'prepared.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+        $reportHash = (Get-FileHash -LiteralPath (Join-Path $downloadSource 'results.json') -Algorithm SHA256).Hash
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try { $sourceTokenHash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($sourceComplete.run_token)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
+        if (!$sourceResults.complete -or $sourceResults.fatal_error -or $sourceResults.case_selection -cne 'download-remaining' -or
+            $sourceComplete.run_token -cne $sourceRequest.run_token -or $sourceResults.run_token -cne $sourceComplete.run_token -or
+            $downloadReport.run_token_sha256 -cne $sourceTokenHash -or
+            $sourceResults.native_http.exit_code -ne 0 -or $sourceResults.native_http.results_sha256 -ine $reportHash -or
+            (Get-FileHash -LiteralPath $sourceResultsPath -Algorithm SHA256).Hash -ine $sourceComplete.results_sha256) { throw 'The source download guest did not complete a bound successful production HTTP run.' }
+        $downloadEvidence = @{ source_kind = 'guest-production-http'; report_sha256 = $reportHash; run_token_sha256 = $downloadReport.run_token_sha256; binary_sha256 = $downloadReport.test_binary_sha256; source_results_sha256 = $sourceComplete.results_sha256; provenance = 'Fresh official production HTTP downloads in a separate completed Windows Sandbox guest; these exact hash-bound artifacts are cold-installed here.' }
+    }
     $work = Assert-PlainPath $WorkRoot
     $repository = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\') + '\'
     if (($work.TrimEnd('\') + '\').StartsWith($repository, [StringComparison]::OrdinalIgnoreCase)) { throw 'Sandbox output must remain outside the repository.' }
@@ -379,6 +492,20 @@ if ($PSCmdlet.ParameterSetName -eq 'Prepare') {
         foreach ($item in Get-ChildItem -LiteralPath $portable -Recurse -Force) { $null = Assert-PlainPath $item.FullName }
         Copy-Item -LiteralPath $portable -Destination (Join-Path $inputDirectory 'portable') -Recurse
     }
+    foreach ($bundle in @(@{ path = $NativeHttpExportDirectory; name = 'native-http' }, @{ path = $DownloadedPackagesDirectory; name = 'downloaded-packages' })) {
+        if ($bundle.path -and !$hostSource) {
+            $source = Assert-PlainPath $bundle.path
+            foreach ($item in Get-ChildItem -LiteralPath $source -Recurse -Force) { $null = Assert-PlainPath $item.FullName }
+            Copy-Item -LiteralPath $source -Destination (Join-Path $inputDirectory $bundle.name) -Recurse
+        }
+    }
+    if ($hostSource) {
+        $hostInputs = Join-Path $inputDirectory 'downloaded-packages'
+        $null = [IO.Directory]::CreateDirectory($hostInputs)
+        Copy-Item -LiteralPath $hostReportPath -Destination (Join-Path $hostInputs 'results.json')
+        Copy-Item -LiteralPath $httpManifestPath -Destination (Join-Path $hostInputs 'http-manifest.json')
+        foreach ($id in $remainingCaseIds) { Copy-Item -LiteralPath (Assert-PlainPath (Join-Path (Split-Path -Parent $hostReportPath) ($id + '.exe'))) -Destination (Join-Path $hostInputs ($id + '.exe')) }
+    }
     $bootstrap = $null
     if ($BootstrapPackagePath) {
         $bootstrapSource = Assert-PlainPath $BootstrapPackagePath
@@ -392,8 +519,8 @@ if ($PSCmdlet.ParameterSetName -eq 'Prepare') {
     $inputFiles = @(Get-ChildItem -LiteralPath $inputDirectory -Recurse -File | Sort-Object FullName | ForEach-Object {
         @{ relative_path = $_.FullName.Substring($inputDirectory.Length + 1); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
     })
-    $selection = if ($PortableOnly) { 'portable-bootstrap' } else { 'full' }
-    $request = @{ schema_version = 1; run_token = $token; host_name = $env:COMPUTERNAME; case_selection = $selection; bootstrap_package = $bootstrap; manifest_sha256 = (Get-FileHash -LiteralPath (Join-Path $inputDirectory 'manifest.json') -Algorithm SHA256).Hash; runner_sha256 = (Get-FileHash -LiteralPath (Join-Path $inputDirectory 'guest-runner.ps1') -Algorithm SHA256).Hash; input_files = $inputFiles }
+    $selection = if ($RemainingDownloads) { 'remaining-downloads' } elseif ($NativeHttpExportDirectory) { 'download-remaining' } elseif ($PortableOnly) { 'portable-bootstrap' } else { 'full' }
+    $request = @{ schema_version = 1; run_token = $token; host_name = $env:COMPUTERNAME; case_selection = $selection; bootstrap_package = $bootstrap; download_evidence = $downloadEvidence; manifest_sha256 = (Get-FileHash -LiteralPath (Join-Path $inputDirectory 'manifest.json') -Algorithm SHA256).Hash; runner_sha256 = (Get-FileHash -LiteralPath (Join-Path $inputDirectory 'guest-runner.ps1') -Algorithm SHA256).Hash; input_files = $inputFiles }
     $bootstrap = '& ([ScriptBlock]::Create([IO.File]::ReadAllText(''C:\LGSMInput\guest-runner.ps1''))) -Guest -ManifestPath ''C:\LGSMInput\manifest.json'' -OutputRoot ''C:\LGSMOutput'' -RunToken ''' + $token + ''''
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($bootstrap))
     $escape = { param($value) [Security.SecurityElement]::Escape($value) }
@@ -420,8 +547,8 @@ $PreparedRoot = Assert-PlainPath $PreparedRoot
 $inputDirectory = Join-Path $PreparedRoot 'input'
 $outputDirectory = Join-Path $PreparedRoot 'output'
 $request = Get-Content -LiteralPath (Join-Path $PreparedRoot 'prepared.json') -Raw | ConvertFrom-Json
-if ($request.case_selection -notin @('full', 'portable-bootstrap')) { throw 'Unexpected prepared native-case selection.' }
-$expectedCaseCount = if ($request.case_selection -eq 'portable-bootstrap') { 1 } else { 10 }
+if (!(Get-NativeCaseCount $request.case_selection)) { throw 'Unexpected prepared native-case selection.' }
+$expectedCaseCount = Get-NativeCaseCount $request.case_selection
 $configurationPath = Join-Path $PreparedRoot 'runtime-matrix.wsb'
 if ((Get-FileHash -LiteralPath (Join-Path $inputDirectory 'manifest.json') -Algorithm SHA256).Hash -ine $request.manifest_sha256 -or
     (Get-FileHash -LiteralPath (Join-Path $inputDirectory 'guest-runner.ps1') -Algorithm SHA256).Hash -ine $request.runner_sha256 -or
@@ -470,4 +597,5 @@ if (!$report.complete -or $report.fatal_error -or $report.case_selection -cne $r
     $report.expected_native_case_count -ne $expectedCaseCount -or $report.cases.Count -ne $expectedCaseCount -or
     @($report.cases | Where-Object { $_.status -ne 'passed' }).Count -or
     ($report.portable -and $report.portable.exit_code -ne 0) -or
-    ($request.case_selection -eq 'portable-bootstrap' -and !$report.portable)) { throw 'Sandbox matrix contains failed, incomplete, or reboot-required cases; inspect the structured results.' }
+    ($request.case_selection -eq 'portable-bootstrap' -and !$report.portable) -or
+    ($request.case_selection -eq 'download-remaining' -and (!$report.native_http -or $report.native_http.exit_code -ne 0))) { throw 'Sandbox matrix contains failed, incomplete, or reboot-required cases; inspect the structured results.' }

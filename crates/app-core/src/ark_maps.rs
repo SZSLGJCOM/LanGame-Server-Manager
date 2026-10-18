@@ -221,13 +221,30 @@ pub fn project_process(
         .find(|process| process.process_key == key)
         .ok_or_else(|| format!("ARK map process `{key}` is unknown or disabled"))?;
     let mut projected = instance.clone();
-    let mut settings: Value =
+    let settings: Value =
         serde_json::from_str(&instance.settings_json).map_err(|error| error.to_string())?;
+    let mut settings =
+        crate::ark_mod_scopes::effective_settings(&instance.summary.module_id, &settings, key)?;
+    if let Some(settings) = settings.as_object_mut() {
+        settings.remove("_managed_ark_ini_directory");
+    }
     let has_maps = !parse_additional_maps(&settings)?.is_empty();
     settings["map_name"] = Value::String(process.map_name);
     settings["server_name"] = Value::String(process.display_name);
     settings["_managed_ark_save_directory"] = Value::String(process.save_directory);
     settings["_managed_ark_native_log"] = Value::String(process.native_log_path);
+    if crate::ark_mod_scopes::has_overrides(&settings) {
+        let config_dir = Path::new(&instance.config_file_path)
+            .parent()
+            .ok_or("The instance configuration has no owned directory")?;
+        settings["_managed_ark_ini_directory"] = Value::String(
+            config_dir
+                .join("ark-maps")
+                .join(key)
+                .to_string_lossy()
+                .into_owned(),
+        );
+    }
     if has_maps
         && settings
             .get("cluster_id")

@@ -261,3 +261,108 @@ async fn workshop_failure_survives_excerpt_eviction_and_exposes_only_new_worksho
         assert_eq!(result.workshop_log_excerpt.as_deref(), Some(FAILURE));
     }
 }
+
+#[cfg(windows)]
+#[tokio::test]
+async fn decisive_workshop_evidence_survives_full_stream_and_large_log_rollover() {
+    use crate::steamcmd_stream::run_steamcmd_script_with_source;
+    use crate::{InstallDeadline, SteamCmdError, ps_literal, workshop_download};
+    use std::time::Duration;
+
+    const APP: u32 = 1_623_730;
+    const DENIED: &str = "CDepotDownloadMgr::BYldRequestDepotManifest(App: 1623730, Depot: 1623730, Manifest: 8195362111486240380, branch: public): Failed to get manifest request code, 'Access Denied'";
+    const REQUEST: &str = "[AppID 1623730] Download item 3817722715 requested by app";
+    const MANIFEST: &str = "[AppID 1623730] Detected workshop change (latest from server) : changed cached item 3817722715, new manifest 8195362111486240380";
+    const RESULT: &str = "[AppID 1623730] Download item 3817722715 result : No Connection";
+    for mode in [
+        "stdout",
+        "console",
+        "key",
+        "manifest",
+        "cached-manifest",
+        "partial-stdout",
+        "partial-console",
+    ] {
+        let fixture = Fixture::new();
+        let console = ps_literal(&fixture.0.join("logs/console_log.txt"));
+        let workshop = ps_literal(&fixture.0.join("logs/workshop_log.txt"));
+        let content = ps_literal(&fixture.0.join("logs/content_log.txt"));
+        let body = match mode {
+            "partial-stdout" => "[Console]::Out.Write('ERROR! Download item 3817722715 failed (Access Denied)'); [Console]::Out.Flush(); Start-Sleep -Milliseconds 600; [Console]::Out.WriteLine(' while writing local cache'); 1..100 | ForEach-Object { [Console]::Out.WriteLine($noise) };".to_owned(),
+            "partial-console" => format!("[IO.File]::AppendAllText({console}, 'ERROR! Download item 3817722715 failed (Access Denied)'); Start-Sleep -Milliseconds 600; [IO.File]::AppendAllText({console}, ' while writing local cache' + $nl + ($noise + $nl) * 100);"),
+            "stdout" => "[Console]::Out.WriteLine('ERROR! Download item 3817722715 failed (No subscription).'); 1..100 | ForEach-Object { [Console]::Out.WriteLine($noise) };".to_owned(),
+            "console" => format!("[IO.File]::AppendAllText({console}, 'ERROR! Download item 3817722715 failed (Access Denied)' + $nl + ($noise + $nl) * 100);"),
+            "key" => format!("[IO.File]::AppendAllText({workshop}, '[AppID 1623730] Update canceled: Missing decryption key' + $nl + ($noise + $nl) * 100);"),
+            _ => format!(
+                "[IO.File]::AppendAllText({workshop}, '{REQUEST}' + $nl + ($noise + $nl) * 100 + '{mapping}' + $nl + ($noise + $nl) * 100 + '{RESULT}' + $nl + ($noise + $nl) * 100); [IO.File]::AppendAllText({content}, '{denial}' + $nl + ($noise + $nl) * {count});",
+                mapping = if mode == "manifest" { MANIFEST } else { "unchanged item metadata reused" },
+                denial = DENIED.replace("'", "''"),
+                count = if mode == "manifest" { 5000 } else { 100 },
+            ),
+        };
+        let install_script = fixture.0.join("download.txt");
+        fs::write(&install_script, format!("force_install_dir \"{}\"\nlogin anonymous\nworkshop_download_item {APP} 3817722715 validate\nquit\n", fixture.0.display())).unwrap();
+        if mode == "cached-manifest" {
+            fs::create_dir_all(fixture.0.join("steamapps/workshop")).unwrap();
+            fs::write(fixture.0.join("steamapps/workshop/appworkshop_1623730.acf"),
+                "\"AppWorkshop\" { \"appid\" \"1623730\" \"WorkshopItemDetails\" { \"3817722715\" { \"manifest\" \"8195362111486240380\" } } }").unwrap();
+        }
+        let writer = fixture.0.join("writer.ps1");
+        fs::write(&writer, format!("$ErrorActionPreference = 'Stop'; $nl = [Environment]::NewLine; $noise = 'later diagnostic ' + ('x' * 1024); {body}\nexit 0\n")).unwrap();
+        let launcher = fixture.0.join("steamcmd.cmd");
+        fs::write(&launcher, format!("@echo off\r\npowershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{}\"\r\n", writer.display())).unwrap();
+        let result = run_steamcmd_script_with_source(
+            launcher.to_str().unwrap(),
+            &install_script,
+            fixture.0.to_str().unwrap(),
+            InstallDeadline::new("independent Workshop evidence", Duration::from_secs(30)),
+            |_| {},
+            None,
+        )
+        .await
+        .unwrap();
+        assert!(result.success, "{mode}: {}", result.excerpt);
+        assert_eq!(
+            result.workshop_download_failed,
+            matches!(
+                mode,
+                "stdout" | "console" | "partial-stdout" | "partial-console"
+            )
+        );
+        let error = workshop_download::verify_command_result(APP, None, &result).unwrap_err();
+        if mode.starts_with("partial-") {
+            assert!(
+                matches!(error, SteamCmdError::SteamCmdCommandFailed { .. }),
+                "{mode}: {error}"
+            );
+            continue;
+        }
+        if mode == "key" {
+            assert!(
+                matches!(error, SteamCmdError::WorkshopDecryptionKeyMissing { .. }),
+                "{mode}: {error}"
+            );
+        } else {
+            assert!(
+                matches!(error, SteamCmdError::WorkshopAccountRequired { .. }),
+                "{mode}: {error}"
+            );
+        }
+        let diagnostic = error.to_string();
+        assert!(
+            diagnostic.contains(if mode == "key" {
+                "Missing decryption key"
+            } else if mode == "stdout" {
+                "No subscription"
+            } else {
+                "Access Denied"
+            }),
+            "{mode}: {diagnostic}"
+        );
+        if mode.contains("manifest") {
+            assert!(
+                diagnostic.contains("3817722715") && diagnostic.contains("8195362111486240380")
+            );
+        }
+    }
+}

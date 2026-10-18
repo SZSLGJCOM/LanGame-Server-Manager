@@ -193,7 +193,11 @@ test("failed sends retain the message and visible error until a successful retry
   state.render(); await settle();
   state.change("broadcast-message", "Keep this message");
   state.render().button("servers.broadcast.send").props.onClick(); await settle();
-  assert.match(state.render().html, /class="shell-activity-notice is-error" role="alert"><span[^>]*>Connection rejected<\/span>/);
+  const errorNotice = state.render().nodes.find((node) => node.props.tone === "error");
+  assert.equal(errorNotice?.props.children, "Connection rejected");
+  const errorMarkup = renderToStaticMarkup(errorNotice);
+  assert.match(errorMarkup, /role="alert"/);
+  assert.equal(errorMarkup.replace(/<[^>]*>/g, ""), "Connection rejected");
   assert.equal(state.render().control("broadcast-message").props.value, "Keep this message");
   fail = false;
   state.render().button("servers.broadcast.send").props.onClick(); await settle();

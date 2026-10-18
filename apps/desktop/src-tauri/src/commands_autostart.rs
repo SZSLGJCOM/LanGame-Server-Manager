@@ -50,7 +50,7 @@ async fn run_autostart_batch_with<F, Fut>(
 ) -> Result<(), String>
 where
     F: FnMut(InstanceSummary) -> Fut,
-    Fut: std::future::Future<Output = Result<(), String>>,
+    Fut: std::future::Future<Output = Result<Vec<app_core::RuntimeStartWarning>, String>>,
 {
     ensure_storage_context_snapshot_current(state, &batch.storage, "instance autostart")?;
     for instance in &batch.instances {
@@ -65,6 +65,7 @@ where
             state,
             &batch.storage,
             BackgroundJob {
+                warnings: Vec::new(),
                 id: job_id.clone(),
                 kind: JobKind::StartInstance,
                 label: format!("Autostart {}", instance.name),
@@ -85,7 +86,7 @@ where
         };
         state.autostart.cancel(&instance.id)?;
         let (status, detail) = match &result {
-            Ok(()) => (
+            Ok(_) => (
                 JobStatus::Completed,
                 String::from("Started automatically with LGSM."),
             ),
@@ -116,6 +117,7 @@ where
                 "status": status }),
         );
         update_background_job(state, &job_id, |job| {
+            job.warnings = result.as_ref().cloned().unwrap_or_default();
             job.status = status;
             job.progress_percent = 100.0;
             job.detail = Some(detail.clone());
@@ -130,7 +132,7 @@ async fn start_autostart_instance(
     state: &tauri::State<'_, DesktopState>,
     storage: &StorageBootstrap,
     instance: &InstanceSummary,
-) -> Result<(), String> {
+) -> Result<Vec<app_core::RuntimeStartWarning>, String> {
     if !state.autostart.is_eligible(&instance.id)? {
         return Err(String::from(AUTOSTART_CANCELLED));
     }
@@ -147,7 +149,7 @@ async fn start_autostart_instance(
         None,
     )
     .await
-    .map(|_| ())
+    .map(|result| result.warnings)
 }
 
 fn is_autostart_skip(error: &str) -> bool {

@@ -40,7 +40,7 @@ import { useI18n } from "../i18n";
 import { formatInstallState } from "../install-state-presentation";
 import { refreshInstancePanelForCurrentSelection } from "../instance-panel-refresh";
 import type { InstallationSnapshot } from "../library-installation-refresh";
-import { readModuleNotReadyError, serverStartFailureMessage } from "../server-start-error";
+import { readModuleNotReadyError, serverStartFailureMessage, serverStartSuccessMessage } from "../server-start-error";
 import { useInstanceSettingsSaveCoordinator } from "../views/settings/InstanceSettingsSaveContext";
 import type { useInstanceRetirement } from "./useInstanceRetirement";
 import type {
@@ -325,12 +325,12 @@ export function useInstanceActions(options: InstanceActionOptions) {
     options.setActivity(message("activity.startingServer", { id: instanceId }));
     try {
       await settingsSaveCoordinator.flush(instanceId);
-      if (expectedWorldStart) await startInstance(instanceId, expectedWorldStart);
-      else await startInstance(instanceId);
+      const result = expectedWorldStart
+        ? await startInstance(instanceId, expectedWorldStart) : await startInstance(instanceId);
       await options.reloadBootstrap({ instanceId });
       options.setSelectedInstanceId(instanceId);
       options.markRuntimeRefreshed();
-      options.setActivity(message("activity.serverStartSent", { id: instanceId }));
+      options.setActivity(serverStartSuccessMessage(result, instanceId));
       return true;
     } catch (error) {
       const errorMessage = describeError(error);

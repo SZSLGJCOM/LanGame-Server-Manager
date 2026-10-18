@@ -19,6 +19,8 @@ const checks: string[] = [], errors: string[] = [], commands: string[] = [];
 let stored: InstanceDetails, details: InstanceDetails, inventory: ManualModInventoryResult, epoch = 0, saves = 0;
 let failSave = false, pending: Promise<void> | null = null;
 let failReloadRead = false, coordinator: InstanceSettingsSaveCoordinator | null = null;
+let viewOther = false;
+const otherId = "fixture-asa-other";
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
 addEventListener("error", (event) => errors.push(event.message));
@@ -55,6 +57,11 @@ async function text(value: string) {
   });
 }
 function settings() { return JSON.parse(stored.settings_json) as Record<string, unknown>; }
+function element<T extends Element>(selector: string): T {
+  const found = fixture.querySelector<T>(selector); if (!found) throw new Error(`Missing ${selector}: ${fixture.textContent}`); return found;
+}
+function saveState() { return fixture.querySelector<HTMLElement>(".mw-manifest-actions")?.dataset.saveState ?? ""; }
+async function pause(ms: number) { await act(async () => { await new Promise((resolve) => setTimeout(resolve, ms)); }); }
 function toolbarPaint() {
   return [...fixture.querySelectorAll<HTMLButtonElement>('.mw-workspace-toolbar [role="tab"]')].map((tab) => {
     const style = getComputedStyle(tab);
@@ -91,7 +98,7 @@ async function settleToolbarPaint() {
 }
 const captureCoordinator = (value: InstanceSettingsSaveCoordinator) => { coordinator = value; };
 function draw() { root.render(<ModWorkbenchBrowserHost details={details} moduleDetails={moduleDetails} epoch={epoch} onSaved={draw} onCoordinator={captureCoordinator} />); }
-const label = { mode: zh ? "清单模式" : "Manifest mode", apply: zh ? "合并并启用" : "Merge and enable" };
+const label = { mode: zh ? "清单模式" : "Manifest mode" };
 async function mount() {
   details = structuredClone(stored); epoch += 1; await act(async () => draw());
   await settle(() => [...fixture.querySelectorAll("button")].some((entry) => entry.textContent?.trim() === label.mode));
@@ -109,7 +116,9 @@ async function run() {
     settings_json: JSON.stringify({ mod_ids_csv: "1346144", passive_mod_ids_csv: "1346148", unrelated: "keep" }) };
   inventory = { instance_id: stored.summary.id, module_id: stored.summary.module_id, source_label: "CurseForge",
     target_label: "Mods/83374", target_path: "C:\\Fixture\\ASA\\Mods\\83374", target_exists: true, items: [] };
-  const base = createModWorkbenchFixtureIpc(() => ({ details: stored, moduleDetails, inventory, catalog: [], cached: new Set() }), {
+  const scoped = () => viewOther ? { ...stored, summary: { ...stored.summary, id: otherId } } : stored;
+  const base = createModWorkbenchFixtureIpc(() => ({ details: scoped(), moduleDetails,
+    inventory: viewOther ? { ...inventory, instance_id: otherId, items: [] } : inventory, catalog: [], cached: new Set() }), {
     check: assert, save: (saved) => { stored = saved; details = structuredClone(saved); saves += 1; } });
   mockWindows("main");
   mockIPC(async (command, payload) => {
@@ -119,39 +128,81 @@ async function run() {
       if (pending) await pending;
       if (failSave) { failSave = false; throw new Error("Fixture CAS rejected the manifest save"); }
     }
-    return base(command, payload);
+    viewOther = JSON.stringify(payload ?? null).includes(otherId);
+    try { return await base(command, payload); } finally { viewOther = false; }
   }, { shouldMockEvents: true });
   Object.assign(window, { isTauri: true });
   await mount();
   assert(input().value === "1346144", "Current active IDs initialize the manifest without passive IDs");
   assert(!fixture.textContent?.includes("Download missing") && !fixture.textContent?.includes("下载缺失"), "ASA shows native startup semantics instead of Steam download actions");
+  assert(![...fixture.querySelectorAll("button")].some((entry) => /合并并启用|Merge and enable/.test(entry.textContent ?? "")),
+    "The checklist has no merge-and-enable action; enablement lives in My Mods");
+  assert(!/启用|enable/i.test(fixture.querySelector(".mw-manifest-pane--review")?.textContent ?? ""), "The list preview does not talk about enabling");
+  let before = saves;
   await text("1346145\nwrong-id");
-  assert(button(label.apply).disabled, "Malformed tokens block the complete submission");
+  await pause(900);
+  assert(saves === before && saveState() === "blocked", "Malformed tokens block the save");
   assert(fixture.textContent?.includes("wrong-id"), "Invalid token is explained");
   await text("001346145,1346146;1346145");
-  let before = saves; await click(button(label.apply));
-  await settle(() => saves === before + 1 && !button(label.apply).disabled);
-  assert(String(settings().mod_ids_csv).split(/[\n,;]/).join(",") === "1346144,1346145,1346146", "Bulk save preserves existing order and canonicalizes additions");
+  assert(saves === before, "A typed list waits for the autosave pause");
+  await settle(() => saves === before + 1 && saveState() === "saved");
+  assert(settings().mod_ids_csv === "1346145\n1346146", "Saving replaces the active list exactly, in written order and deduplicated");
+  assert((settings().curseforge_disabled_mod_ids as string[]).includes("1346144"), "An ID removed from the list stays in My Mods as disabled");
   assert(settings().passive_mod_ids_csv === "1346148" && settings().unrelated === "keep", "Passive loading and unrelated settings are retained");
-  assert(fixture.textContent?.includes(zh ? "下次开服" : "next server start"), "Successful result states configuration persistence and next-start loading");
-  await text("1346147"); failSave = true; before = saves; await click(button(label.apply));
-  await settle(() => Boolean(fixture.textContent?.includes("Fixture CAS rejected")));
-  assert(saves === before && input().value === "1346147", "CAS failure retains the draft and does not report a saved ID");
+  assert(fixture.textContent?.includes(zh ? "下次开服" : "next server start"), "Saved status states next-start loading");
+  await text("1346144\n1346145\n1346146\n1346147"); failSave = true; before = saves;
+  await settle(() => saveState() === "failed" && Boolean(fixture.textContent?.includes("Fixture CAS rejected")));
+  assert(saves === before && input().value.includes("1346147"), "A failed save retains the draft and does not report it saved");
   let release!: () => void; pending = new Promise<void>((resolve) => { release = resolve; });
-  await click(button(label.apply)); await settle(() => input().disabled);
-  assert(fixture.querySelector("section.mw-manifest")?.getAttribute("aria-busy") === "true", "Pending save is visible and locks edits");
-  await act(async () => { button(zh ? "正在保存…" : "Saving…").click(); });
-  assert(saves === before, "Pending mutation is not replayed");
-  await act(async () => release()); pending = null; await settle(() => saves === before + 1 && !input().disabled);
+  await click(element<HTMLButtonElement>(".mw-manifest-actions .mw-btn--secondary"));
+  await settle(() => saveState() === "saving");
+  assert(fixture.querySelector("section.mw-manifest")?.getAttribute("aria-busy") === "true", "Pending save is visible");
+  await text("1346144\n1346145\n1346146\n1346147\n1346149");
+  await act(async () => release()); pending = null;
+  await settle(() => saves === before + 2 && saveState() === "saved");
+  assert(settings().mod_ids_csv === "1346144\n1346145\n1346146\n1346147\n1346149", "An edit typed during a save is written after it (latest wins)");
+  assert(!(settings().curseforge_disabled_mod_ids as string[]).includes("1346144"), "Listing a disabled ID again restores it to the active list");
   stored = { ...stored, settings_json: JSON.stringify({ ...settings(), custom_launch_flags: "-mods=1346144" }) };
-  await mount(); await text("1346149");
-  assert(button(label.apply).disabled, "Raw native Mod flags disable manifest application");
+  await mount(); before = saves; await text(`${input().value}\n1346150`); await pause(900);
+  assert(saves === before && saveState() === "blocked" && Boolean(fixture.textContent?.includes("-mods")), "Raw native Mod flags block the list and say why");
   stored = { ...stored, settings_json: JSON.stringify({ ...settings(), custom_launch_flags: "" }),
     summary: { ...stored.summary, status: "Running", active_process_count: 1 } };
-  await mount(); assert(button(label.apply).disabled, "Running instance disables manifest writes");
+  await mount(); before = saves; await text(`${input().value}\n1346150`); await pause(900);
+  assert(saves === before && saveState() === "blocked" && input().value.endsWith("1346150"), "A running instance keeps the draft without writing it");
   stored = { ...stored, summary: { ...stored.summary, status: "Stopped", active_process_count: 0 } };
+  details = structuredClone(stored); await act(async () => draw());
+  await settle(() => saves === before + 1 && saveState() === "saved");
+  assert(String(settings().mod_ids_csv).endsWith("1346150"), "The kept draft saves once the instance stops");
+  stored = { ...stored, settings_json: JSON.stringify({ ...settings(), mod_ids_csv: "1346144\n1346145\n1346146\n1346147" }) };
   await mount();
   assert(input().value.split("\n").includes("1346147"), "Saved membership survives remount");
+  // Start barrier: an edit inside the typing pause is saved before the server starts.
+  const startList = `${input().value}\n1346151`;
+  before = saves; await text(startList);
+  assert(saves === before && saveState() === "dirty", "The edit is still inside the autosave pause");
+  const startFailure = await flushError();
+  assert(startFailure === "" && saves === before + 1 && settings().mod_ids_csv === startList,
+    "Starting right after an edit waits for the checklist list to save");
+  await pause(900);
+  assert(saves === before + 1 && saveState() === "saved", "The start flush does not write the list twice");
+  await text(`${startList}\nnot-an-id`);
+  const invalidStart = await flushError();
+  assert(saves === before + 1 && /invalid/i.test(invalidStart), "An invalid checklist draft blocks the start with the invalid-draft reason");
+  await text(startList); await pause(100);
+  assert(await flushError() === "" && saves === before + 1, "Restoring the saved list releases the start barrier");
+  // Leaving the instance inside the typing pause still saves the list for that instance's next start.
+  const switchList = `${startList}\n1346152`;
+  before = saves; await text(switchList);
+  details = { ...structuredClone(stored), summary: { ...stored.summary, id: otherId } }; await act(async () => draw());
+  const switchFailure = await flushError();
+  assert(switchFailure === "" && saves === before + 1 && settings().mod_ids_csv === switchList,
+    "Switching instances inside the pause saves the pending list before that instance starts");
+  stored = { ...stored, settings_json: JSON.stringify({ ...settings(), custom_launch_flags: "-mods=1346144" }) };
+  await mount(); before = saves; await text(`${input().value}\n1346153`);
+  const flagsStart = await flushError();
+  assert(saves === before && flagsStart.includes("-mods"), "A blocked checklist draft refuses the start and says why");
+  stored = { ...stored, settings_json: JSON.stringify({ ...settings(), custom_launch_flags: "", mod_ids_csv: "1346144\n1346145\n1346146\n1346147" }) };
+  await mount();
   const previousSettings = stored.settings_json;
   const enabledA = "1346144", inventoryB = "1254808";
   const configurationA = { game_ini: "[FixtureA]\nRetained=yes\n", game_user_settings_ini: "" };

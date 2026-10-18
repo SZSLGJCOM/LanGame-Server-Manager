@@ -70,6 +70,7 @@ struct Session {
     storage_root: std::path::PathBuf,
     server_download: Option<(String, std::path::PathBuf)>,
     server_download_revision: u64,
+    workshop_account_selected: bool,
 }
 
 pub(crate) struct ServerAccountAuthorization {
@@ -118,6 +119,7 @@ impl SteamWorkshopAccountSessions {
             storage_root: storage_root.to_owned(),
             server_download: None,
             server_download_revision: 0,
+            workshop_account_selected: false,
         });
         Ok(snapshot)
     }
@@ -240,13 +242,8 @@ impl SteamWorkshopAccountSessions {
     ) -> Result<ServerAccountAuthorization, String> {
         let current = self.current.lock().map_err(|_| lock_error())?;
         let valid = current.as_ref().is_some_and(|session| {
-            let snapshot = &session.snapshot;
-            snapshot.target == *target
-                && session.storage_root == storage_root
-                && snapshot.phase == LoginPhase::Authenticated
-                && snapshot.account_name.as_deref() == Some(account)
-                && snapshot.steamcmd_root.as_deref().map(std::path::Path::new)
-                    == Some(steamcmd_root)
+            authenticated_session_matches_context(session, target, steamcmd_root, storage_root)
+                && session.snapshot.account_name.as_deref() == Some(account)
         });
         if !valid {
             return Err(missing_session());
@@ -292,6 +289,7 @@ impl SteamWorkshopAccountSessions {
         {
             session.server_download = None;
             session.server_download_revision += 1;
+            session.workshop_account_selected = false;
         }
         Ok(())
     }
@@ -323,6 +321,59 @@ impl SteamWorkshopAccountSessions {
                         .is_some_and(|(module, root)| module == module_id && root == program_root)
             })
             .and_then(|session| session.snapshot.account_name.clone()))
+    }
+
+    /// Startup may reuse only the selected account authenticated for this exact
+    /// instance and storage context. Module sessions grant no Workshop access.
+    pub(crate) fn workshop_download_account(
+        &self,
+        target: &SteamAccountLoginTarget,
+        steamcmd_root: &std::path::Path,
+        storage_root: &std::path::Path,
+    ) -> Result<Option<String>, String> {
+        if !matches!(target, SteamAccountLoginTarget::Instance(_)) {
+            return Ok(None);
+        }
+        let current = self.current.lock().map_err(|_| lock_error())?;
+        Ok(current
+            .as_ref()
+            .filter(|session| {
+                session.workshop_account_selected
+                    && authenticated_session_matches_context(
+                        session,
+                        target,
+                        steamcmd_root,
+                        storage_root,
+                    )
+            })
+            .and_then(|session| session.snapshot.account_name.clone()))
+    }
+
+    /// An explicit Workshop request can select an authenticated account again
+    /// after anonymous mode revoked automatic reuse. Verify the exact session.
+    pub(crate) fn authorize_workshop_download_account(
+        &self,
+        target: &SteamAccountLoginTarget,
+        account: &str,
+        authorization: &ServerAccountAuthorization,
+        steamcmd_root: &std::path::Path,
+        storage_root: &std::path::Path,
+    ) -> Result<(), String> {
+        if !matches!(target, SteamAccountLoginTarget::Instance(_)) {
+            return Err(missing_session());
+        }
+        let mut current = self.current.lock().map_err(|_| lock_error())?;
+        let session = current
+            .as_mut()
+            .filter(|session| {
+                authenticated_session_matches_context(session, target, steamcmd_root, storage_root)
+                    && session.snapshot.account_name.as_deref() == Some(account)
+                    && session.snapshot.session_id == authorization.session_id
+                    && session.server_download_revision == authorization.revision
+            })
+            .ok_or_else(missing_session)?;
+        session.workshop_account_selected = true;
+        Ok(())
     }
 
     pub(crate) fn progress(&self, session_id: &str, progress: SteamWorkshopAccountProgress) {
@@ -383,6 +434,7 @@ impl SteamWorkshopAccountSessions {
                 Ok(result) => {
                     session.snapshot.account_name = Some(result.account_name);
                     session.snapshot.steamcmd_root = Some(result.steamcmd_root);
+                    session.workshop_account_selected = true;
                     set_phase(
                         &mut session.snapshot,
                         LoginPhase::Authenticated,
@@ -390,6 +442,7 @@ impl SteamWorkshopAccountSessions {
                     );
                 }
                 Err(error) => {
+                    session.workshop_account_selected = false;
                     let phase = if error == "installation_cancelled" {
                         LoginPhase::Cancelled
                     } else {
@@ -401,6 +454,23 @@ impl SteamWorkshopAccountSessions {
             }
         }
     }
+}
+
+fn authenticated_session_matches_context(
+    session: &Session,
+    target: &SteamAccountLoginTarget,
+    steamcmd_root: &std::path::Path,
+    storage_root: &std::path::Path,
+) -> bool {
+    session.snapshot.target == *target
+        && session.snapshot.phase == LoginPhase::Authenticated
+        && session.storage_root == storage_root
+        && session
+            .snapshot
+            .steamcmd_root
+            .as_deref()
+            .map(std::path::Path::new)
+            == Some(steamcmd_root)
 }
 
 fn set_phase(snapshot: &mut SteamWorkshopAccountLoginSnapshot, phase: LoginPhase, mode: InputMode) {

@@ -57,6 +57,7 @@
       "arguments": [
         "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA platform template configuration?RCONEnabled=true?RCONPort=27020",
         "-port=7777",
+        "-QueryPort=27015",
         "-WinLiveMaxPlayers=30",
         "-NullRHI",
         "-Unattended",

@@ -8,11 +8,11 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Hosting guides](https://langame.cn/hosting/) · [WeChat](#follow-us-on-wechat)
+[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Documentation](docs/README.md#english) · [Hosting guides](https://langame.cn/hosting/) · [WeChat](#follow-us-on-wechat)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows** game server manager. Use it on a Windows PC at home or in a machine room, or on a Windows Server host, to install dedicated servers, edit native settings, run multiple instances, and handle logs and backups from one desktop app.
+[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows** desktop game server manager. Use it on a Windows PC at home or in a machine room, or on a Windows Server host, to install dedicated servers, edit native settings, manage Mods, operate multiple instances, and handle logs and backups from one desktop app.
 
-Hosting yourself usually means SteamCMD, config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the tray. Server files, settings, and saves are normally stored on the computer running the manager.
+Hosting yourself usually means SteamCMD, scattered config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the system tray. Server files, settings, and saves are normally stored on the computer running the manager.
 
 <p align="center">
   <img src="assets/lgsm-system-49eec728.webp" alt="System page: host resources and sample instances" width="920">
@@ -22,28 +22,44 @@ Hosting yourself usually means SteamCMD, config files, and a pile of native cons
 
 ## Main features
 
-**32** game server integrations are available. See the [product page](https://langame.cn/products/langame-server-manager/) for the full list.
+**32** game server integrations are available (including Palworld, Minecraft, ARK ASE / ASA, Don't Starve Together, Enshrouded, 7 Days to Die, Project Zomboid, Valheim, and more; see the expandable list below or the [product page](https://langame.cn/products/langame-server-manager/)).
 
-- Install and update dedicated servers
-- Edit native per-game settings
-- Manage multiple instances, ports, saves, and power controls
-- Host monitoring
-- Backup and restore
-- In-app console, with minimize-to-tray
+- **One-stop deployment and runtime preparation**: Includes managed SteamCMD (supporting anonymous and interactive Steam Guard login) and automatically checks and prepares required Java, .NET, Visual C++, legacy DirectX, and XNA runtimes before startup.
+- **Deep native configuration and multi-instance isolation**: Edit room, permission, and world rules through structured per-game forms (including ARK multi-map clusters and Don't Starve Together Master/Caves shards), with isolated instance directories, port groups, and power controls ([configuration guide](docs/server-configuration.md#english)).
+- **Full-lifecycle Mod management**: Supports Steam Workshop auto-updates with verified cache fallback, native CurseForge updates for ARK: Survival Ascended, and local Mod import, dependency checks, and configuration-preserving removal ([Mod guide](docs/mod-management.md#english)).
+- **Player Center and server tools**: Collects online player rosters across 31 games, manages administrators, allowlists, and native persistent ban lists, and provides scheduled broadcasts ([capability matrix](docs/player-center-capability-matrix.md)).
+- **Save import, backup, and recovery**: Validates and imports existing dedicated-server saves across 31 games, with scheduled/stop backups and recoverable instance archiving ([save import](docs/game-save-import.md)).
+- **Host monitoring and background tray operation**: Tracks host resource usage and instance health, with an integrated in-app console and minimize-to-tray support ([monitoring guide](docs/system-monitoring.md#english)).
+- **LAN AI assistant (BYOK)**: Connects to your own model service, combining a synchronized 32-game documentation library with live instance logs for troubleshooting and preview-confirmed repairs; sends messages and required diagnostic context to the service you configure ([assistant guide](docs/assistant.md#english) · [privacy notice](PRIVACY.md#english)).
 
-The LAN AI assistant supports your own model service (BYOK) and can help with logs and troubleshooting. It sends messages and required diagnostic context to the service you configure. See the [privacy notice](PRIVACY.md#english).
+<details>
+<summary>All 32 supported games</summary>
+
+- **Palworld** · **Minecraft Java Edition** · **ARK: Survival Ascended** · **ARK: Survival Evolved**
+- **Don't Starve Together** · **Enshrouded** · **7 Days to Die** · **Project Zomboid**
+- **Valheim** · **Terraria** · **Rust** · **Satisfactory**
+- **SCUM** · **V Rising** · **Soulmask** · **Conan Exiles**
+- **Sons Of The Forest** · **The Forest** · **Core Keeper** · **Barotrauma**
+- **Abiotic Factor** · **RuneScape: Dragonwilds** · **The Lord of the Rings: Return to Moria** · **ASTRONEER**
+- **RimWorld Together** · **Squad** · **Unturned** · **Necesse**
+- **Nightingale** · **HumanitZ** · **Windrose** · **Romestead**
+
+</details>
 
 ## Download and install
 
-Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases). Use the smaller `x64-setup.exe` for everyday installation and in-app updates. Setup offers Simplified Chinese and reuses an existing WebView2 runtime; when it is missing, the embedded Microsoft bootstrapper installs it over the internet. For disconnected machines or networks that cannot reach Microsoft's download service, choose `x64-offline-setup.exe`, which includes the full WebView2 installer. Both packages install the same application; the offline package does not include game server files.
+Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) (setup offers Simplified Chinese; both packages install the same application and do not bundle game server files):
 
-Application installation and data locations are separate. First use creates `LanGame` at the root of the writable fixed non-system drive with the most available space, or uses the system drive if no other drive is usable. A nonempty `LanGame` directory whose ownership cannot be verified is skipped without adopting or overwriting its contents. The saved choice does not change with free space; existing data stays in place without automatic migration. See [data locations](docs/desktop-release.md#data-locations-and-uninstallation) for the directory layout.
+- **`x64-setup.exe` (everyday installation and in-app updates)**: Smaller package; reuses an existing WebView2 runtime or installs it over the internet via the embedded Microsoft bootstrapper.
+- **`x64-offline-setup.exe` (offline installation)**: Includes the full WebView2 installer for disconnected machines or networks that cannot reach Microsoft's download service.
+
+Application installation and data locations are separate. First use creates `LanGame` at the root of the writable fixed non-system drive with the most available space, or uses the system drive if no other drive is usable. A nonempty `LanGame` directory whose ownership cannot be verified is skipped without adopting or overwriting its contents; the saved choice does not change with free space, and existing data stays in place without automatic migration. See [data locations](docs/desktop-release.md#data-locations-and-uninstallation) for the directory layout.
 
 Before manual installation or removal, choose **Exit** from the system tray and wait for servers to stop. Uninstallation preserves game data, server settings, databases, existing data and the saved location record; optional interface-data cleanup resets interface settings such as language, theme and model-service configuration.
 
 ## Requirements
 
-Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Instance startup checks the actual program dependencies and prepares required Java, .NET, Visual C++, and legacy DirectX runtimes. This includes checking and installing [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914) for vanilla Terraria. Downloads use official sources and verification; system runtime installation may require accepting a Windows elevation prompt. Installation failures or required restarts block startup with an explanation. Public connections still need suitable ports and firewall rules. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter. Some settings take effect only after a server restart.
+Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Instance startup checks the actual program dependencies and prepares required Java, .NET, Visual C++, legacy DirectX, and [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914) (for vanilla Terraria) from official verified sources; system runtime installation may require accepting a Windows elevation prompt, and installation failures or required restarts block startup with an explanation. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter; public connections still need suitable ports and firewall rules. Some settings take effect only after a server restart.
 
 ## Use and permissions
 
@@ -56,7 +72,7 @@ Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and 
 ## Guides and feedback
 
 - Server guides (Chinese): [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/)
-- [Multiplayer and networking](https://langame.cn/networking/)
+- [Multiplayer and networking](https://langame.cn/networking/) · [Full documentation](docs/README.md#english)
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) for suggestions and feedback. Keep credentials, private server details, and player information out of public posts
 
 ## LanGame product family

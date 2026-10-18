@@ -1053,6 +1053,7 @@ async fn create_instance_record_with_program_mode(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id,
             kind: JobKind::ValidateGame,
             label: format!("Create {}", input.name),

@@ -18,8 +18,11 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
     assert.equal(report.modules.filter((entry) => entry.gate === false).length, 7);
     assert.deepEqual(report.modules.filter((entry) => entry.mods_tab_disabled).map((entry) => [entry.module, entry.disabled_reason]), [["rimworld", true]]);
     assert.equal(report.modules.filter((entry) => entry.file_only_controls_absent).length, 14);
+    assert.deepEqual(report.modules.filter((entry) => entry.independent_configured_store).map((entry) => entry.module), ["arksurvivalascended"]);
+    assert.equal(report.modules.filter((entry) => entry.store_library_switch).length, 15);
     for (const entry of report.modules.filter((entry) => entry.store_library_switch)) {
-      for (const flag of ["empty_inventory", "persisted_inventory", "no_steam_controls"]) assert.equal(entry[flag], true, `${entry.module}: ${flag}`);
+      for (const flag of ["empty_inventory", "persisted_inventory", "no_steam_controls", "independent_empty_store",
+        "independent_populated_store", "source_entry_opens", "selected_detail_stays_in_library"]) assert.equal(entry[flag], true, `${entry.module}: ${flag}`);
     }
     assert.deepEqual(report.browser_errors, []);
     assert.equal(report.browser_exited, true); assert.equal(report.browser_processes_remaining, 0); assert.equal(report.scratch_removed, true);

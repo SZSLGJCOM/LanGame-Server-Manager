@@ -1024,28 +1024,70 @@ button.mw-store-detail-metric {
 }
 
 .mw-manual-pane {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
 }
 
-.mw-manual-pane--with-actions { grid-template-rows: auto minmax(0, 1fr); }
-
-.mw-manual-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 14px 14px 0;
+.mw-manual-toolbar > .mw-reference-row {
+  flex: 1 1 auto;
+  min-width: 180px;
 }
 
-.mw-manual-actions > .mw-reference-row { flex: 1 1 auto; min-width: 0; }
+.mw-manual-toolbar :is(.mw-reference-input, .mw-reference-row > .mw-btn, .mw-source-open-btn, .mw-version-policy-btn, .mw-sort-pills) {
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.mw-manual-toolbar .mw-reference-input { padding-block: 6px; }
+
+.mw-manual-toolbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.mw-manual-toolbar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--shell-text);
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mw-source-open-btn { flex-shrink: 0; }
 .mw-manual-feedback { display: grid; gap: 8px; }
 .mw-manual-success-bar { display: flex; align-items: center; gap: 10px; }
 
+.mw-manual-pane > .mw-dropzone {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: 16px;
+  min-height: 0;
+  margin: 14px;
+  padding: 24px;
+  overflow: auto;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--shell-muted);
+  text-align: center;
+}
+
+.mw-dropzone-icon { width: 36px; height: 36px; opacity: 0.6; flex-shrink: 0; }
+.mw-dropzone-copy { display: grid; gap: 8px; font-size: var(--text-secondary); overflow-wrap: anywhere; }
+.mw-dropzone-title { color: var(--shell-text); font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
+.mw-manual-pane > .mw-manual-feedback { flex-shrink: 0; margin: 0 14px 14px; overflow-wrap: anywhere; }
+
+.mw-manual-pane > .mw-dropzone,
 .mw-detail-list-col.mw-dropzone {
   position: relative;
   transition: background 160ms ease, outline-color 160ms ease;
@@ -1077,6 +1119,8 @@ button.mw-store-detail-metric {
   gap: 8px;
   align-items: center;
 }
+
+.mw-version-policy-btn { flex-shrink: 0; white-space: nowrap; }
 
 .mw-reference-input {
   flex: 1;
@@ -1263,14 +1307,6 @@ button.mw-store-detail-metric {
   letter-spacing: 0;
 }
 
-.mw-manifest-actions,
-.mw-manifest-input-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 .mw-detail-layout--manifest,
 .mw-detail-layout--empty {
   grid-template-columns: minmax(0, 1fr);
@@ -1281,45 +1317,168 @@ button.mw-store-detail-metric {
   border-right: 0;
 }
 
-.mw-manifest {
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  max-width: 1040px;
-  margin-inline: auto;
-  padding: 6px;
+/* Manifest mode: one framed workspace split into an input pane and a review pane (no nested cards). */
+.mw-detail-layout--manifest .mw-detail-list-col {
+  grid-template-rows: minmax(0, 1fr);
 }
 
-.mw-manifest-input-head {
+.mw-detail-layout--manifest .mw-detail-panel {
+  container: mw-manifest / inline-size;
+  padding: 0;
+}
+
+.mw-manifest {
+  display: grid;
+  grid-template-columns: minmax(300px, 5fr) minmax(0, 7fr);
+  min-height: 360px;
+}
+
+.mw-manifest-pane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mw-manifest-pane + .mw-manifest-pane {
+  border-left: 1px solid color-mix(in srgb, var(--shell-line) 55%, transparent);
+}
+
+.mw-manifest-pane-head {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 42%, transparent);
+  background: color-mix(in srgb, var(--theme-card-muted) 36%, transparent);
+  color: var(--shell-muted);
   font-size: var(--text-body);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0;
+}
+
+.mw-manifest-pane-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--shell-text);
+}
+
+.mw-manifest-help-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--shell-line) 80%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--shell-muted);
+  font: inherit;
+  font-size: var(--text-meta);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  cursor: help;
+}
+
+.mw-manifest-help-trigger:hover,
+.mw-manifest-help-trigger:focus-visible {
+  border-color: color-mix(in srgb, var(--shell-accent) 55%, transparent);
+  color: var(--shell-accent);
+  outline: none;
+}
+
+.mw-manifest-help-trigger:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shell-accent) 22%, transparent);
+}
+
+.mw-manifest-pane-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+}
+
+.mw-manifest-pane-body > * {
+  flex-shrink: 0;
 }
 
 .mw-manifest-input {
-  min-height: 150px;
-  max-height: 280px;
+  flex: 1 1 auto;
+  min-height: 180px;
   font-family: var(--font-mono);
-  resize: vertical;
+  resize: none;
 }
 
-.mw-manifest-help {
+.mw-manifest-toolbar,
+.mw-manifest-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 52px;
+  padding: 8px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--shell-line) 42%, transparent);
+  background: var(--panel);
+}
+
+.mw-manifest-action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.mw-manifest-action-help {
+  display: inline-flex;
+}
+
+.mw-manifest-meta,
+.mw-manifest-summary,
+.mw-manifest-note {
   margin: 0;
   color: var(--shell-muted);
   font-size: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
   line-height: var(--leading-body);
   overflow-wrap: anywhere;
 }
 
-.mw-manifest-summary {
-  padding-top: 10px;
-  border-top: 1px solid var(--shell-line);
+.mw-manifest-note {
+  flex: 1 1 240px;
+  min-width: 0;
+  font-weight: var(--font-weight-regular);
+}
+
+.mw-manifest-note--error {
+  color: var(--theme-danger-text);
+}
+
+.mw-manifest-empty {
+  display: grid;
+  flex: 1 1 auto;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: 140px;
+  padding: 24px;
+  color: var(--shell-muted);
   font-size: var(--text-secondary);
+  line-height: var(--leading-body);
+  text-align: center;
 }
 
 .mw-manifest-review {
-  max-height: 340px;
-  overflow: auto;
+  min-width: 0;
 }
 
 .mw-manifest-table {
@@ -1331,13 +1490,25 @@ button.mw-store-detail-metric {
 
 .mw-manifest-table th,
 .mw-manifest-table td {
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 50%, transparent);
+  vertical-align: middle;
 }
 
 .mw-manifest-table th {
+  position: sticky;
+  top: -12px;
+  z-index: 1;
+  background: var(--panel);
   color: var(--shell-muted);
+  font-size: var(--text-secondary);
   font-weight: var(--font-weight-medium);
+}
+
+.mw-manifest-table th:last-child,
+.mw-manifest-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .mw-manifest-table td:first-child {
@@ -1345,9 +1516,52 @@ button.mw-store-detail-metric {
 }
 
 .mw-manifest-table small {
-  display: block;
-  margin-top: 3px;
+  display: inline-block;
+  margin-left: 8px;
   color: var(--shell-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-meta);
+}
+
+/* Narrow workbench: stack the panes and let the Workbench panel scroll; actions stay reachable. */
+@container mw-manifest (max-width: 880px) {
+  .mw-manifest {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .mw-detail-layout--manifest .mw-detail-panel > .mw-manifest {
+    flex: 0 0 auto;
+  }
+
+  .mw-manifest-pane {
+    grid-template-rows: auto auto auto;
+  }
+
+  .mw-manifest-pane + .mw-manifest-pane {
+    border-top: 1px solid color-mix(in srgb, var(--shell-line) 55%, transparent);
+    border-left: 0;
+  }
+
+  .mw-manifest-pane-body {
+    overflow: visible;
+  }
+
+  .mw-manifest-input {
+    min-height: 116px;
+    max-height: 240px;
+    resize: vertical;
+  }
+
+  .mw-manifest-table th {
+    top: 0;
+  }
+
+  .mw-manifest-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
 }
 
 .mw-detail-panel,
@@ -1372,6 +1586,7 @@ button.mw-store-detail-metric {
 }
 
 .mw-detail-panel > .mw-manifest {
+  flex: 1 1 auto;
   width: 100%;
 }
 

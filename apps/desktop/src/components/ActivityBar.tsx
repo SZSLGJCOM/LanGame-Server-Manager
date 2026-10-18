@@ -1,6 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { isChineseLocale, useI18n } from "../i18n";
-import { ActivityNoticeContent } from "./ActivityNotice";
+import { ActivityNoticeContent, ActivityNoticeDetails } from "./ActivityNotice";
 import type { ActivityNoticeStore } from "./activity-notice-store";
 import { ShellIcon } from "./ShellIcon";
 import { ActivityProgressDetails } from "./ActivityProgress";
@@ -27,7 +27,7 @@ export function ActivityBar({ store, entries: suppliedEntries, progress }: Activ
   const dismissLabel = t("servers.mods.closeToast", undefined, "Close");
   const entries: ActivityBarEntry[] = [
     ...notices.map((notice) => ({ id: notice.id, content:
-      <ActivityNoticeContent tone={notice.tone} action={notice.action} onDismiss={notice.dismiss}
+      <ActivityNoticeContent tone={notice.tone} details={notice.details} action={notice.action} onDismiss={notice.dismiss}
         dismissLabel={dismissLabel}>{notice.text}</ActivityNoticeContent> })),
     ...suppliedEntries
   ];
@@ -150,12 +150,12 @@ export function ActivityBar({ store, entries: suppliedEntries, progress }: Activ
         <button type="button" className="shell-activity-panel-close" ref={panelClose} aria-label={dismissLabel}
           onClick={() => closePanel()}><ShellIcon name="x" /></button>
       </div>
-      <div className="shell-activity-panel-list">{entries.map((entry) =>
+      <ActivityNoticeDetails.Provider value={true}><div className="shell-activity-panel-list">{entries.map((entry) =>
         <div className="shell-activity-panel-item" key={entry.id}>{entry.content}</div>)}
         {progress ? <div className="shell-activity-panel-item"><ActivityProgressDetails.Provider value={true}>
           {progress}
         </ActivityProgressDetails.Provider></div> : null}
-      </div>
+      </div></ActivityNoticeDetails.Provider>
     </section> : null}
   </div>;
 }

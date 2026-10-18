@@ -31,7 +31,10 @@ use thiserror::Error;
 mod elevated_launcher;
 pub mod native_player_console;
 #[cfg(windows)]
-pub use elevated_launcher::run_elevated_launcher_if_requested;
+pub use elevated_launcher::{
+    request_elevated_firewall, run_elevated_firewall_if_requested,
+    run_elevated_launcher_if_requested,
+};
 mod interactive_console;
 mod runtime_launch;
 pub use interactive_console::EphemeralConsole;
@@ -834,7 +837,7 @@ fn collect_module_launch_setting_issues(
     ports: &[PortBinding],
 ) -> Vec<LaunchValidationIssue> {
     if matches!(module_id, "arksurvivalascended" | "arksurvivalevolved") {
-        return collect_ark_cluster_launch_issues(settings);
+        return collect_ark_cluster_launch_issues(module_id, settings);
     }
     if module_id == "dontstarve" {
         return collect_dontstarve_launch_setting_issues(settings, ports);
@@ -2088,7 +2091,11 @@ fn hidden_desktop_spawn_target(desktop_name: &str) -> String {
 fn build_spawn_command_line(spawn_command: &str, spawn_args: &[String]) -> String {
     let mut segments = Vec::with_capacity(spawn_args.len() + 1);
     segments.push(quote_command_segment(spawn_command));
-    segments.extend(spawn_args.iter().map(|arg| quote_command_segment(arg)));
+    segments.extend(
+        spawn_args
+            .iter()
+            .map(|arg| quote_launch_argument(Path::new(spawn_command), arg)),
+    );
     segments.join(" ")
 }
 

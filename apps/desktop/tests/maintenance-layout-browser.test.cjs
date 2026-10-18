@@ -39,9 +39,15 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       viewport, screenshotPath, fixtureMiddleware: previewMiddleware() });
     console.log(`MAINTENANCE_LAYOUT_BROWSER ${JSON.stringify(report)}`);
     assert.equal(report.status, "passed");
-    assert.equal(report.control_measurements.length, 17);
+    assert.equal(report.control_measurements.length, 15);
     assert.deepEqual(report.control_violations, []);
-    assert.equal(report.checks, 18);
+    assert.equal(report.checks, 19);
+    // The stop-backup toggle and retention input share one control row (or one column when stacked).
+    const row = report.policy_alignment;
+    assert.ok(row, "maintenance fixture must measure the backup policy row");
+    if (row.columns === 2) {
+      assert.ok(Math.abs(row.toggle_top - row.input_top) <= 1 && Math.abs(row.toggle_bottom - row.input_bottom) <= 1, JSON.stringify(row));
+    }
     assert.deepEqual(report.browser_errors, []);
     assert.equal(report.browser_exited, true);
     assert.equal(report.browser_processes_remaining, 0);

@@ -1,0 +1,41 @@
+.ark-mod-maps {
+  --settings-control-height: 38px;
+  --settings-control-radius: 8px;
+  --settings-control-border: color-mix(in srgb, var(--border) 82%, transparent);
+  --settings-control-bg: color-mix(in srgb, var(--panel-strong) 88%, var(--panel));
+  --settings-control-bg-hover: color-mix(in srgb, var(--theme-card-elevated) 86%, var(--panel));
+  --settings-control-focus: color-mix(in srgb, var(--accent) 54%, var(--border));
+  display: flex; flex-direction: column; gap: 16px; min-width: 0;
+}
+.ark-mod-maps__group { border: 0; border-bottom: 1px solid var(--border); padding: 0 0 12px; margin: 0; min-width: 0; }
+.ark-mod-maps__group legend { font-size: var(--text-body); font-weight: var(--font-weight-medium); padding: 0 0 8px; }
+.ark-mod-maps__note,.ark-mod-maps__mixed { margin: 0; font-size: var(--text-secondary); color: var(--shell-muted); line-height: var(--leading-body); }
+.ark-mod-maps__mixed p { margin: 8px 0; }
+.ark-mod-maps__mixed label { display: grid; gap: 6px; }
+.ark-mod-maps__error { color: var(--theme-danger-text); margin: 0; font-size: var(--text-secondary); }
+.ark-mod-default-label { color: var(--shell-muted); font-size: var(--text-secondary); }
+.ark-mod-map-select { position: relative; min-width: 0; }
+.ark-mod-map-select__trigger { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; cursor: pointer; text-align: start; }
+.ark-mod-map-select__summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ark-mod-map-select__count { flex: 0 0 auto; color: var(--shell-muted); font-size: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ark-mod-map-select__arrow { flex: 0 0 14px; height: 14px; background: var(--select-control-arrow-idle) center / 14px 14px no-repeat; }
+.ark-mod-map-select__trigger:hover:not(:disabled) .ark-mod-map-select__arrow { background-image: var(--select-control-arrow-hover); }
+.ark-mod-map-select[data-open] .ark-mod-map-select__arrow { transform: rotate(180deg); }
+.ark-mod-map-select__menu {
+  position: absolute; z-index: 50; top: calc(100% + 4px); right: 0; left: 0;
+  display: grid; gap: 2px; padding: 4px; overflow-y: auto; overscroll-behavior: contain;
+  border: 1px solid var(--shell-line); border-radius: 8px; background: var(--theme-control-surface);
+  box-shadow: var(--shell-shadow); scrollbar-width: thin;
+}
+.ark-mod-map-select__menu[data-above] { top: auto; bottom: calc(100% + 4px); }
+.ark-mod-map-select__divider { height: 1px; margin: 3px 4px; background: var(--shell-line); }
+.ark-mod-map-select__option { display: flex; align-items: center; gap: 9px; min-height: 34px; padding: 5px 8px; border-radius: 5px; font-size: var(--text-body); cursor: pointer; }
+.ark-mod-map-select__option:hover,
+.ark-mod-map-select__option:focus-within { background: var(--settings-control-bg-hover); }
+.ark-mod-map-select__option input { flex: 0 0 auto; margin: 0; accent-color: var(--accent); }
+.ark-mod-map-select__option > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ark-mod-map-select__option small { color: var(--shell-muted); font-size: var(--text-secondary); }
+.ark-mod-map-select__action { display: block; width: 100%; min-height: 34px; padding: 5px 8px; border: 0; border-radius: 5px; background: transparent; color: var(--shell-text); font: inherit; font-size: var(--text-body); text-align: start; cursor: pointer; }
+.ark-mod-map-select__action:hover:not(:disabled) { background: var(--settings-control-bg-hover); }
+.ark-mod-map-select__action:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ark-mod-map-select__action:disabled { color: var(--shell-muted); opacity: .55; cursor: not-allowed; }

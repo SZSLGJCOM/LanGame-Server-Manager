@@ -177,6 +177,46 @@ for (const moduleId of ["humanitz", "squad"]) {
   });
 }
 
+test("DST mock overview shares the current player snapshot without invalidating it", async () => {
+  const moduleId = "dontstarve";
+  const module = await invokeMock("read_module_details", { moduleId });
+  assert.equal(module.runtime.player_count_source, "player_list");
+  assert.equal(module.runtime.player_query.protocol, "none");
+  await invokeMock("install_module_game", { moduleId });
+  const created = await invokeMock("create_instance_record", {
+    input: { name: "DST shared player count contract", module_id: moduleId }
+  });
+  const instanceId = created.summary.id;
+  const readOverview = () => invokeMock("read_instance_runtime_overview_from_storage", { instanceId });
+  const readPlayers = () => invokeMock("read_instance_live_players", { instanceId });
+  const stopped = (await readOverview()).players;
+  assert.equal(stopped.current_players, null);
+  assert.equal(stopped.query.status, "stopped");
+  await invokeMock("start_instance_process", { instanceId });
+
+  const counted = (await readOverview()).players;
+  const listed = await readPlayers();
+  assert.equal(counted.query.status, "ready");
+  assert.equal(listed.status, "ready");
+  assert.equal(listed.complete, true);
+  assert.equal(listed.entries.length, 2);
+  assert.equal(counted.current_players, listed.current_players);
+  assert.equal(counted.current_players, listed.entries.length);
+  assert.deepEqual((await readOverview()).players, counted);
+  assert.equal((await readPlayers()).snapshot_id, listed.snapshot_id,
+    "Reading the DST overview must preserve the current player action snapshot");
+
+  const refreshed = await invokeMock("refresh_instance_live_players", { instanceId });
+  assert.equal((await readOverview()).players.current_players, refreshed.current_players);
+  assert.equal(refreshed.current_players, refreshed.entries.length);
+  assert.equal((await readPlayers()).snapshot_id, refreshed.snapshot_id,
+    "Reading counts must retain an explicitly refreshed DST player snapshot");
+  await invokeMock("stop_instance_process", { instanceId });
+  const stoppedAgain = (await readOverview()).players;
+  assert.equal(stoppedAgain.current_players, null);
+  assert.equal(stoppedAgain.query.status, "stopped");
+});
+
 test("modules without an explicit count source retain their query protocol", async () => {
   const moduleId = "arksurvivalevolved";
   const module = await invokeMock("read_module_details", { moduleId });

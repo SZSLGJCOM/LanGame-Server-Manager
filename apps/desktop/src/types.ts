@@ -101,6 +101,8 @@ export interface ModuleWorkshopDetails {
   supports_collections: boolean;
 }
 
+export type ThunderstoreVersionPolicy = "follow_latest" | "pinned";
+
 export interface ModuleModSourceDetails {
   provider: string;
   label: string;
@@ -947,6 +949,48 @@ export interface LaunchPlan {
   performance_preview?: RuntimePerformancePolicyPreview;
 }
 
+export interface RuntimeStartWarning {
+  code: "mod_update_using_cache" | "mod_update_source_required";
+  provider: "steam_workshop" | "curse_forge" | "thunderstore";
+  reason: "network" | "authentication" | "access_denied" | "request" | "not_found" | "expired"
+    | "response" | "http" | "download" | "install" | "unknown";
+  item_ids: string[];
+  message: string;
+  log_path: string | null;
+  map_key: string | null;
+  http_status: number | null;
+}
+
+export interface ProcessLaunchPlan {
+  process_key: string;
+  display_name: string;
+  log_path: string;
+  launch_plan: LaunchPlan;
+}
+
+export interface StartedProcess {
+  run_id: number;
+  process_key: string;
+  display_name: string;
+  pid: number;
+  log_path: string;
+  performance: RuntimePerformanceApplication;
+}
+
+export interface StartInstanceResult {
+  warnings: RuntimeStartWarning[];
+  summary: InstanceSummary;
+  run_id: number;
+  session_id: string | null;
+  pid: number;
+  log_path: string;
+  launch_plan: LaunchPlan;
+  process_count: number;
+  processes: StartedProcess[];
+  launch_plans: ProcessLaunchPlan[];
+  startup_schedule: RuntimeStartupSchedule;
+}
+
 export interface ModuleInstallResult {
   module_id: string;
   steam_app_id?: number | null;
@@ -1102,6 +1146,7 @@ export interface InstallProgress {
 }
 
 export interface BackgroundJob {
+  warnings?: RuntimeStartWarning[];
   cancellable: boolean;
   cancel_requested: boolean;
   id: string;

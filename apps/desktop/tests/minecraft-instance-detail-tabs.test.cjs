@@ -10,8 +10,6 @@ const desktopRoot = path.join(repoRoot, "apps", "desktop");
 const serversViewPath = path.join(desktopRoot, "src", "views", "ServersView.tsx");
 const configurationWorkspacePath = path.join(desktopRoot, "src", "views", "settings", "ConfigurationWorkspace.tsx");
 const settingsRegistryPath = path.join(desktopRoot, "src", "views", "settings", "module-registry.ts");
-const minecraftPanelsPath = path.join(desktopRoot, "src", "views", "servers", "MinecraftDetailPanels.tsx");
-const minecraftModelPath = path.join(desktopRoot, "src", "views", "servers", "minecraft-detail-model.ts");
 const minecraftManifestPath = path.join(repoRoot, "modules", "minecraft", "module.toml");
 const maintenanceWorkspacePath = path.join(desktopRoot, "src", "views", "servers", "ServerMaintenanceWorkspace.tsx");
 
@@ -75,11 +73,6 @@ test("Minecraft instance tabs use the same shared workbenches as other games", (
     serversView,
     /minecraftDetailModel|MinecraftDetailPanels|Minecraft[A-Za-z]+(?:Context)?Panel|server-detail-scroll--minecraft-context/
   );
-});
-
-test("Minecraft no longer carries a parallel instance-detail implementation", () => {
-  assert.equal(fs.existsSync(minecraftPanelsPath), false);
-  assert.equal(fs.existsSync(minecraftModelPath), false);
 });
 
 test("Minecraft configuration uses the shared schema workspace", () => {

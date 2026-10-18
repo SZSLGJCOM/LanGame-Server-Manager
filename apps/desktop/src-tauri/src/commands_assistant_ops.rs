@@ -2080,6 +2080,7 @@ async fn assistant_operation_inner(
                     state.clone(),
                     instance.id.clone(),
                     mod_references.clone(),
+                    None,
                 )
                 .await?;
                 downloaded_package_count = stage_result.items.len();

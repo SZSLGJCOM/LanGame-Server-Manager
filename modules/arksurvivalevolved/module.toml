@@ -21,6 +21,7 @@ args_template = [
   "-FORCELOGFLUSH",
   "{{arkse.multihome_flag}}",
   "{{arkse.cluster_dir_override_flag}}",
+  "{{arkse.map_ini_flags}}",
   "{{arkse.official_launch_flags}}",
   "{{arkse.custom_launch_flags}}",
 ]

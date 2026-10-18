@@ -98,3 +98,51 @@ try {
         assert_eq!(row["accepted"], false, "Invalid signature accepted: {row}");
     }
 }
+
+#[test]
+fn signature_verification_uses_its_system_module_despite_inherited_module_path() {
+    let before = r#"
+$ErrorActionPreference='Stop'
+[Console]::OutputEncoding=New-Object Text.UTF8Encoding($false)
+$temporary=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+$root=$temporary+'lgsm-security-module-'+[Guid]::NewGuid().ToString('N')
+if ([IO.Directory]::Exists($root)) { throw 'Fixture directory already exists' }
+$moduleRoot=$root+'\Microsoft.PowerShell.Security'
+[void][IO.Directory]::CreateDirectory($moduleRoot)
+[IO.File]::WriteAllText($moduleRoot+'\Microsoft.PowerShell.Security.psd1',"@{ RootModule='Microsoft.PowerShell.Security.psm1'; ModuleVersion='99.0.0'; GUID='2ad945b6-aefa-4ed2-8cc9-1131ab1841fd'; FunctionsToExport='Get-AuthenticodeSignature' }")
+[IO.File]::WriteAllText($moduleRoot+'\Microsoft.PowerShell.Security.psm1',"[IO.File]::WriteAllText((`$PSScriptRoot+'\shadow-loaded'),'yes'); function Get-AuthenticodeSignature { throw 'Untrusted shadow module loaded' }")
+$original=$env:PSModulePath
+$env:PSModulePath=$root+';'+$original
+try {
+"#;
+    let after = r#"
+Assert-MicrosoftSignature ($PSHOME+'\powershell.exe')
+[pscustomobject]@{
+    trusted_module=(Get-Module Microsoft.PowerShell.Security).Path.StartsWith($PSHOME+'\Modules\',[StringComparison]::OrdinalIgnoreCase)
+    shadow_loaded=[IO.File]::Exists($moduleRoot+'\shadow-loaded')
+}|ConvertTo-Json -Compress
+} finally {
+    $env:PSModulePath=$original
+    if (![IO.Path]::GetFullPath($root).StartsWith($temporary,[StringComparison]::OrdinalIgnoreCase)) { throw 'Fixture cleanup escaped its temporary directory' }
+    [IO.Directory]::Delete($root,$true)
+}
+"#;
+    let before_fix = process::SIGNATURE_FUNCTION.replace(
+        "Import-Module -Name ($PSHOME+'\\Modules\\Microsoft.PowerShell.Security\\Microsoft.PowerShell.Security.psd1') -ErrorAction Stop",
+        "",
+    );
+    let previous = capture_fixture_script(&[before, &before_fix, after].concat());
+    assert!(
+        !previous.status.success(),
+        "The inherited module fixture must reproduce the old failure"
+    );
+    let output = capture_fixture_script(&[before, process::SIGNATURE_FUNCTION, after].concat());
+    assert!(
+        output.status.success(),
+        "{}",
+        output_excerpt(&output.stdout, &output.stderr)
+    );
+    let result: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(result["trusted_module"], true);
+    assert_eq!(result["shadow_loaded"], false);
+}

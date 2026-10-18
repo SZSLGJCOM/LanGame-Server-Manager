@@ -1,6 +1,7 @@
 //! Commands authorized only through the current-user named pipe. Keeping
 //! destructive maintenance out of the HTTP dispatcher preserves the LAN boundary.
 use crate::commands::commands_ark_cluster_backups as backups;
+use crate::commands::commands_nexus_mods as nexus;
 use crate::commands::commands_storage_management as storage;
 use crate::state::DesktopState;
 use serde_json::Value;
@@ -18,6 +19,39 @@ pub(super) fn dispatch<'a>(
     // Box each construction separately, as in the shared dispatcher. Large
     // native command futures must not accumulate on a connection worker's stack.
     match command {
+        "nexus_account_status" => Some(Box::pin(async move {
+            to_json(nexus::nexus_account_status().await?)
+        })),
+        "nexus_store_api_key" => Some(Box::pin(async move {
+            to_json(nexus::nexus_store_api_key(string_argument(&args, "apiKey")?).await?)
+        })),
+        "nexus_clear_api_key" => Some(Box::pin(async move {
+            to_json(nexus::nexus_clear_api_key().await?)
+        })),
+        "review_nexus_mod_references" => Some(Box::pin(async move {
+            let request: NexusReviewInput = serde_json::from_value(args)
+                .map_err(|_| String::from("Invalid Nexus Mod review input."))?;
+            to_json(
+                nexus::review_nexus_mod_references(
+                    app.state::<DesktopState>(),
+                    request.instance_id,
+                    request.references,
+                )
+                .await?,
+            )
+        })),
+        "install_nexus_mod_files" => Some(Box::pin(async move {
+            let request: NexusInstallInput = serde_json::from_value(args)
+                .map_err(|_| String::from("Invalid Nexus Mod installation input."))?;
+            to_json(
+                nexus::install_nexus_mod_files(
+                    app.state::<DesktopState>(),
+                    request.instance_id,
+                    request.selections,
+                )
+                .await?,
+            )
+        })),
         "start_steam_workshop_account_login" => Some(Box::pin(async move {
             to_json(crate::commands::commands_steam_workshop_account::start_steam_workshop_account_login(
                 app.state::<DesktopState>(), steam_login_target_argument(&args)?, string_argument(&args, "sessionId")?,
@@ -272,6 +306,20 @@ fn steam_login_target_argument(
             .ok_or("Missing SteamCMD login target")?,
     )
     .map_err(|_| String::from("Invalid SteamCMD login target."))
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NexusReviewInput {
+    instance_id: String,
+    references: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NexusInstallInput {
+    instance_id: String,
+    selections: Vec<crate::commands::nexus_mods::NexusFileSelection>,
 }
 
 #[derive(serde::Deserialize)]

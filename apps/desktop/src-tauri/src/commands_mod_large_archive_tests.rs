@@ -156,6 +156,7 @@ async fn install_large_archive(payload_bytes: u64, chunked: bool) {
                 path: source_path,
                 label: "Fixture-Large".into(),
                 identity: OnlineModIdentity {
+                    thunderstore_intent: None,
                     provider: "thunderstore".into(),
                     project: "Fixture-Large".into(),
                     historical_names: Vec::new(),

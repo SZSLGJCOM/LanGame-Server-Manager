@@ -369,6 +369,7 @@ async fn install_manual_mod_references_command_rejects_unverified_minecraft_runt
             app.state::<DesktopState>(),
             provisioning.summary.id.clone(),
             vec![String::from("mr:fabric-api")],
+            None,
         )
         .await,
     )

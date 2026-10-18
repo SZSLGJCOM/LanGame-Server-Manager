@@ -366,7 +366,7 @@ async fn asa_budget_path_keeps_listener_evidence_and_cancellation_authoritative(
     let reservation = reserve(&state);
     let mut images = super::super::super::commands_asa_startup_budget::StartupSession::default();
     let budget = super::super::super::commands_asa_startup_budget::StartupBudget::prepare(
-        "arksurvivalascended",
+        &instance(),
         &mut [],
         Duration::from_secs(300),
         &reservation,
@@ -410,7 +410,7 @@ async fn asa_budget_path_still_requires_three_consecutive_owned_listener_samples
     let reservation = reserve(&state);
     let mut images = super::super::super::commands_asa_startup_budget::StartupSession::default();
     let budget = super::super::super::commands_asa_startup_budget::StartupBudget::prepare(
-        "arksurvivalascended",
+        &instance(),
         &mut [],
         Duration::from_secs(1),
         &reservation,

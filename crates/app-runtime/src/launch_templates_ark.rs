@@ -11,6 +11,9 @@ use ase::*;
 #[path = "launch_ark_mods_tests.rs"]
 mod mod_tests;
 #[cfg(test)]
+#[path = "launch_ark_query_port_tests.rs"]
+mod query_port_tests;
+#[cfg(test)]
 #[path = "launch_ark_cluster_tests.rs"]
 mod tests;
 
@@ -33,6 +36,7 @@ pub(super) fn lookup_ark_evolved_launch_token(
         "native_log_path" => Some(render_ark_native_log_path(context, "evolved")),
         "multihome_flag" => Some(render_bind_ip_presence_flag(context, "-MULTIHOME")),
         "cluster_dir_override_flag" => Some(render_ark_cluster_dir_override_flag(context)),
+        "map_ini_flags" => Some(render_ark_map_ini_flags(context)),
         "official_launch_flags" => Some(render_ark_official_launch_flags(
             context.settings,
             ARK_ASE_ADDITIONAL_LAUNCH_SETTINGS,
@@ -54,6 +58,7 @@ pub(super) fn lookup_ark_ascended_launch_token(
         "native_log_path" => Some(render_ark_native_log_path(context, "ascended")),
         "multihome_flag" => Some(render_bind_ip_presence_flag(context, "-MULTIHOME")),
         "cluster_dir_override_flag" => Some(render_ark_cluster_dir_override_flag(context)),
+        "map_ini_flags" => Some(render_ark_map_ini_flags(context)),
         "mod_ids_flag" => Some(render_ark_mod_list_flag(
             context.settings,
             "mod_ids_csv",
@@ -127,6 +132,21 @@ fn render_ark_cluster_dir_override_flag(context: &TemplateContext<'_>) -> String
     }
 }
 
+fn render_ark_map_ini_flags(context: &TemplateContext<'_>) -> String {
+    let Some(directory) = lookup_json_text(context.settings, "_managed_ark_ini_directory") else {
+        return String::new();
+    };
+    let directory = compatible_native_path(rendered_path(directory));
+    // Each line expands to one argv entry, retaining paths containing spaces.
+    // Unreal's dedicated-server builds support destination INI overrides even
+    // in Shipping; these paths do not change the existing world-save layout.
+    format!(
+        "-GameINI={}\n-GameUserSettingsINI={}",
+        directory.join("Game.ini").display(),
+        directory.join("GameUserSettings.ini").display(),
+    )
+}
+
 fn render_ark_native_log_path(context: &TemplateContext<'_>, edition: &str) -> String {
     lookup_json_text(context.settings, "_managed_ark_native_log")
         .map(|path| {
@@ -147,11 +167,56 @@ fn render_ark_save_directory(context: &TemplateContext<'_>) -> String {
         .unwrap_or_else(|| context.instance.summary.id.clone())
 }
 
-pub(crate) fn collect_ark_cluster_launch_issues(settings: &Value) -> Vec<LaunchValidationIssue> {
+pub(crate) fn collect_ark_cluster_launch_issues(
+    module_id: &str,
+    settings: &Value,
+) -> Vec<LaunchValidationIssue> {
     let cluster_id = lookup_json_text(settings, "cluster_id").unwrap_or_default();
     let directory = lookup_json_text(settings, "cluster_directory").unwrap_or_default();
     let raw = lookup_json_text(settings, "custom_launch_flags").unwrap_or_default();
     let raw_arguments = parse_custom_launch_flags(&raw);
+    if let Err(error) = app_core::ark_mod_scopes::validate_overrides(module_id, settings) {
+        return vec![ark_cluster_issue(
+            app_core::ark_mod_scopes::OVERRIDES_FIELD,
+            "ark_mod_map_overrides_invalid",
+            &error,
+        )];
+    }
+    let isolated_ini = app_core::ark_mod_scopes::has_overrides(settings);
+    if isolated_ini
+        && raw_arguments.iter().any(|argument| {
+            ark_option_is_managed(
+                argument,
+                &[
+                    "gameini",
+                    "gameusersettingsini",
+                    "defgameini",
+                    "defgameusersettingsini",
+                    "inifile",
+                    "inibootstrap",
+                    "configsubdir",
+                    "userdir",
+                ],
+            )
+        })
+    {
+        return vec![ark_cluster_issue(
+            "custom_launch_flags",
+            "managed_launch_option_conflict",
+            "Per-map Mod configurations use managed INI files. Remove custom INI or user-directory overrides before launching.",
+        )];
+    }
+    if module_id == "arksurvivalascended"
+        && raw_arguments
+            .iter()
+            .any(|argument| ark_option_is_managed(argument, &["queryport"]))
+    {
+        return vec![ark_cluster_issue(
+            "custom_launch_flags",
+            "managed_launch_option_conflict",
+            "ASA QueryPort must use the managed query port binding for each map. Remove the conflicting custom option and edit the instance query port instead.",
+        )];
+    }
     if settings
         .get("additional_maps")
         .and_then(Value::as_array)
@@ -216,12 +281,9 @@ pub(crate) fn collect_ark_cluster_launch_issues(settings: &Value) -> Vec<LaunchV
 }
 
 fn ark_map_option_is_managed(argument: &str) -> bool {
-    let is_managed = |option: &str| {
-        let key = option
-            .split_once('=')
-            .map_or(option, |(key, _)| key)
-            .trim_start_matches(['-', '?']);
-        [
+    ark_option_is_managed(
+        argument,
+        &[
             "port",
             "queryport",
             "rconport",
@@ -230,9 +292,19 @@ fn ark_map_option_is_managed(argument: &str) -> bool {
             "abslog",
             "sessionname",
             "multihome",
-        ]
-        .iter()
-        .any(|managed| key.eq_ignore_ascii_case(managed))
+        ],
+    )
+}
+
+fn ark_option_is_managed(argument: &str, managed_options: &[&str]) -> bool {
+    let is_managed = |option: &str| {
+        let key = option
+            .split_once('=')
+            .map_or(option, |(key, _)| key)
+            .trim_start_matches(['-', '?']);
+        managed_options
+            .iter()
+            .any(|managed| key.eq_ignore_ascii_case(managed))
     };
     if argument.starts_with('-') {
         // Inspect the option key, never arbitrary expert-option values.

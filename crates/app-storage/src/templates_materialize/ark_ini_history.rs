@@ -28,6 +28,18 @@ impl Snapshot {
         config_path: &Path,
         module_id: &str,
     ) -> Result<Self, StorageError> {
+        Self::load_inner(config_dir, Some(config_path), module_id)
+    }
+
+    pub(super) fn load_map(config_dir: &Path, module_id: &str) -> Result<Self, StorageError> {
+        Self::load_inner(config_dir, None, module_id)
+    }
+
+    fn load_inner(
+        config_dir: &Path,
+        config_path: Option<&Path>,
+        module_id: &str,
+    ) -> Result<Self, StorageError> {
         let path = config_dir.join(OWNERSHIP_FILE);
         let original = read_optional_bytes(&path)?;
         let ownership: Ownership = if let Some(bytes) = &original {
@@ -39,22 +51,25 @@ impl Snapshot {
                 )
             })?
         } else {
-            let previous_json = crate::instances::read_instance_settings_json(config_path)?;
-            let settings: Map<String, Value> =
+            let settings: Map<String, Value> = if let Some(config_path) = config_path {
+                let previous_json = crate::instances::read_instance_settings_json(config_path)?;
                 serde_json::from_str(&previous_json).map_err(|error| {
                     materialization_error(
                         module_id,
                         config_path,
                         format!("invalid prior ARK settings: {error}"),
                     )
-                })?;
+                })?
+            } else {
+                Map::new()
+            };
             let mut keys = BTreeMap::new();
             for (filename, game_ini) in [
                 (ARK_GAME_INI_FILE, true),
                 (ARK_GAME_USER_SETTINGS_FILE, false),
             ] {
                 let mut entries = extra_document(&settings, game_ini)
-                    .map_err(|error| materialization_error(module_id, config_path, error))?
+                    .map_err(|error| materialization_error(module_id, &path, error))?
                     .keys()
                     .into_iter()
                     .collect::<Vec<_>>();

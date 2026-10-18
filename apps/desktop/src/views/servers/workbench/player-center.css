@@ -77,11 +77,19 @@
   overflow: hidden;
 }
 
+/* The 玩家管理 title stays fixed; only the action stack below it scrolls (one scroll owner per column). */
 .player-center-controls {
   min-width: 0;
   min-height: 0;
   display: grid;
-  align-content: start;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.player-center-total-controls {
+  min-width: 0;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
@@ -135,7 +143,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  /* Tabs and actions share one row: the tab strip scrolls horizontally instead of pushing actions down. */
+  flex-wrap: nowrap;
   gap: 12px;
   padding: 10px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 58%, transparent);
@@ -167,12 +176,28 @@
 
 .player-center-pane-tools {
   flex: 0 1 auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 7px;
 }
 
+/* Status chips give way before the refresh action does; the observed time is always shown in full. */
+.player-center-pane-tools > .page-chip {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-center-pane-tools > .player-center-observed-chip {
+  flex-shrink: 0;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 .player-center-refresh-button {
+  flex: 0 0 auto;
+  white-space: nowrap;
   min-height: 32px;
   display: inline-flex;
   align-items: center;
@@ -216,7 +241,9 @@
   height: 34px;
   padding: 7px 11px;
   border-bottom: 1px solid color-mix(in srgb, var(--shell-line) 58%, transparent);
-  background: color-mix(in srgb, var(--theme-card-muted) 96%, transparent);
+  /* Opaque pane surface (the list pane is card-muted over the matching page background in both themes),
+     so rows scrolled beneath the sticky header never show through. */
+  background: var(--theme-card-muted);
   color: var(--shell-text-muted, var(--shell-text));
   font-size: var(--text-body);
   font-weight: var(--font-weight-medium);
@@ -301,6 +328,18 @@
   min-height: 0;
   align-content: start;
   overflow: clip;
+}
+
+/* Isolated workspaces keep action notices here instead of the shell activity bar. */
+.player-center-member-pane > .shell-activity-notice {
+  align-items: flex-start;
+  padding: 8px 12px 0;
+}
+
+.player-center-member-pane > .shell-activity-notice .shell-activity-notice-text {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .player-center-member-header {

@@ -111,3 +111,87 @@ test("start rejection refreshes installation state, keeps the localized error an
   assert.match(render("en-US", activity.at(-1)), /not installed/);
   assert.equal(activity.at(-1).tone, "error", "start rejection must stay visible alongside active downloads");
 });
+
+test("ASA query rejection stays localized and never reports startup success", async () => {
+  const source = path.join(__dirname, "../src/hooks/useDesktopActions.ts");
+  const payload = JSON.stringify({ code: "asa_curseforge_startup_failed", message: "Safe native fallback",
+    stage: "query", reason: "server_unreachable", http_status: null, map_key: "main",
+    cache_verified: true, native_process_exited: true });
+  const activity = [];
+  let started = 0;
+  const deps = {
+    react: { useRef: (value) => ({ current: value }),
+      useState: (initial) => [typeof initial === "function" ? initial() : initial, () => assert.fail("start must not mutate creation state")] },
+    "../api": { startInstance: async () => { started++; throw new Error(payload); }, logFrontendEvent: async () => {} },
+    "../app-state": { describeError: (error) => error instanceof Error ? error.message : String(error) },
+    "../app-ui": { message: (key, params) => ({ key, params }) },
+    "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
+    "../installation-cancellation": {}, "../steam-installation-account": {},
+    "../i18n": { useI18n: () => ({ t: (key) => key }) },
+    "../install-state-presentation": {}, "../instance-panel-refresh": {}, "../server-start-error": errors,
+    "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => {} }) }
+  };
+  const exports = {};
+  vm.runInNewContext(transpileTypeScript(fs.readFileSync(source, "utf8"), source), {
+    exports, require: (id) => { assert.ok(Object.hasOwn(deps, id), id); return deps[id]; }
+  });
+  const actions = exports.useInstanceActions({ setActivity: (value) => activity.push(value),
+    reloadBootstrap: () => assert.fail("failed start cannot report success"),
+    refreshInstallationState: () => assert.fail("CurseForge network failure must not request program repair") });
+  assert.equal(await actions.handleStartServer("asa-one"), false);
+  assert.equal(started, 1);
+  assert.equal(activity.at(-1).tone, "error");
+  assert.equal(activity.at(-1).params.message, payload);
+  assert.match(render("zh-CN", activity.at(-1)), /模组版本查询失败/);
+  assert.match(render("en-US", activity.at(-1)), /Mod version query failed/i);
+  assert.match(render("zh-CN", activity.at(-1)), /内容完整性已验证.*原生模组初始化失败/);
+  assert.match(render("en-US", activity.at(-1)), /cache passed content integrity checks.*native Mod initialization failed/i);
+  assert.match(render("zh-CN", activity.at(-1)), /进程已退出/);
+  assert.match(render("en-US", activity.at(-1)), /process has exited/i);
+  assert.equal(activity.at(-1).runtimeStartNotice, undefined);
+});
+
+for (const [code, provider, itemIds, activityKey] of [
+  ["mod_update_using_cache", "steam_workshop", ["1234"], "activity.serverStartUsingCache"],
+  ["mod_update_source_required", "thunderstore", ["Namespace-Package"], "activity.serverStartModSourceRequired"]
+]) test(`manual startup publishes its actual ${code} result after refreshing server state`, async () => {
+  const source = path.join(__dirname, "../src/hooks/useDesktopActions.ts");
+  const warning = { code, provider, reason: code === "mod_update_source_required" ? "unknown" : "network",
+    item_ids: itemIds, message: "https://native.invalid/?signature=PRIVATE_RESPONSE",
+    log_path: "C:/fixture/start.log", map_key: null, http_status: null };
+  const result = { summary: { id: "workshop-one", name: "Workshop server" }, run_id: 37, warnings: [warning] };
+  const activity = [];
+  const order = [];
+  const deps = {
+    react: { useRef: (value) => ({ current: value }),
+      useState: (initial) => [typeof initial === "function" ? initial() : initial, () => assert.fail("start must not mutate creation state")] },
+    "../api": { startInstance: async (...args) => { order.push(["start", ...args]); return result; }, logFrontendEvent: async () => {} },
+    "../app-state": { describeError: (error) => error instanceof Error ? error.message : String(error) },
+    "../app-ui": { message: (key, params) => ({ key, params }) },
+    "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
+    "../installation-cancellation": {}, "../steam-installation-account": {},
+    "../i18n": { useI18n: () => ({ t: (key) => key }) },
+    "../install-state-presentation": {}, "../instance-panel-refresh": {}, "../server-start-error": errors,
+    "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => { order.push(["flush"]); } }) }
+  };
+  const exports = {};
+  vm.runInNewContext(transpileTypeScript(fs.readFileSync(source, "utf8"), source), {
+    exports, require: (id) => { assert.ok(Object.hasOwn(deps, id), id); return deps[id]; }
+  });
+  const actions = exports.useInstanceActions({ setActivity: (value) => { activity.push(value); order.push(["activity", value.key]); },
+    reloadBootstrap: async () => { order.push(["refresh"]); },
+    setSelectedInstanceId: () => {}, markRuntimeRefreshed: () => {},
+    refreshInstallationState: () => assert.fail("a cached successful start must not request program repair") });
+  assert.equal(await actions.handleStartServer("workshop-one"), true);
+  assert.equal(activity.at(-1).tone, "warning");
+  assert.equal(activity.at(-1).runtimeStartNotice.id, "manual-start:workshop-one:37");
+  assert.deepEqual(activity.at(-1).runtimeStartNotice.warnings, [warning]);
+  assert.equal(activity.at(-1).key, activityKey);
+  assert.ok(order.findIndex((entry) => entry[0] === "refresh") < order.findIndex((entry) => entry[1] === activityKey));
+  if (code === "mod_update_source_required") {
+    assert.match(render("zh-CN", activity.at(-1)), /更新来源需要确认.*尚未检查最新版本/);
+    assert.match(render("en-US", activity.at(-1)), /sources need confirmation.*latest versions were not checked/);
+    assert.doesNotMatch(render("zh-CN", activity.at(-1)) + render("en-US", activity.at(-1)), /缓存|cached|failed|did not complete/);
+  } else assert.match(render("zh-CN", activity.at(-1)), /缓存/);
+  assert.doesNotMatch(render("en-US", activity.at(-1)), /PRIVATE_RESPONSE|native\.invalid/);
+});

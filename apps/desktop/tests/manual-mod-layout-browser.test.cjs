@@ -5,7 +5,7 @@ const test = require("node:test");
 const { runBrowserFixture } = require("./helpers/runtime-browser-process.cjs");
 
 for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 }]) {
-  test(`manual Mod lists receive drops without permanent guidance at ${viewport.width}x${viewport.height}`,
+  test(`community store headers align reference entry and source actions at ${viewport.width}x${viewport.height}`,
     { timeout: 90000 }, async () => {
       const output = process.env.LANGAME_MANUAL_MOD_LAYOUT_OUTPUT;
       if (output) {
@@ -15,8 +15,8 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
         await fs.mkdir(output, { recursive: true });
       }
       const name = `${viewport.width}x${viewport.height}`;
-      const report = await runBrowserFixture({ fixturePath: "manual-mod-layout-browser.html", viewport, keyboard: true,
-        screenshotPath: output ? path.join(output, `${name}.png`) : undefined });
+      const report = await runBrowserFixture({ fixturePath: "manual-mod-layout-browser.html", viewport, keyboard: true, pointer: true,
+        screenshotPath: output ? path.join(output, `source-header-${name}.png`) : undefined });
       if (output) await fs.writeFile(path.join(output, `${name}.json`), JSON.stringify(report, null, 2));
       console.log(`MANUAL_MOD_LAYOUT ${JSON.stringify({ viewport: report.viewport, checks: report.checks?.length,
         failures: report.failures, measurements: report.measurements, writes: report.writes,
@@ -28,5 +28,7 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       assert.equal(report.browser_exited, true);
       assert.equal(report.browser_processes_remaining, 0);
       assert.equal(report.scratch_removed, true);
+      assert.equal(report.settings_writes, 2);
+      assert.equal(report.reference_resolves, 2);
     });
 }

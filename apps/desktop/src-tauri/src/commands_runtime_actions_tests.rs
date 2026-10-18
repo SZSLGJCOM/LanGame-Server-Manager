@@ -3,6 +3,71 @@ use super::*;
 use serde_json::json;
 
 #[test]
+fn dst_client_table_command_fits_the_production_dispatch_budget() {
+    let modules = app_modules::discover_modules(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules"),
+    )
+    .unwrap();
+    let module = modules
+        .iter()
+        .find(|module| module.summary.id == "dontstarve")
+        .unwrap();
+    let command = resolve_declared_runtime_action(
+        module,
+        "list_online_players",
+        None,
+        None,
+        Some("0123456789abcdef0123456789abcdef"),
+        false,
+    )
+    .expect("the real correlated player query must fit the production dispatcher");
+    assert_eq!(command.process_key.as_deref(), Some("master"));
+    assert_eq!(command.transport, "stdin");
+    assert!(command.command.contains("GetPlayerClientTable()"));
+    assert!(!command.command.contains("{{"));
+}
+
+#[test]
+fn dst_player_kick_revalidates_online_identity_without_inferring_permissions_from_role() {
+    let modules = app_modules::discover_modules(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules"),
+    )
+    .unwrap();
+    let module = modules
+        .iter()
+        .find(|module| module.summary.id == "dontstarve")
+        .unwrap();
+    let resolved =
+        resolve_declared_runtime_action(module, "kick_userid", Some("KU_target"), None, None, true)
+            .unwrap();
+    for (clients, expected_error) in [
+        (r#"{{userid="KU_target",admin=false}}"#, None),
+        (r#"{{userid="KU_target",admin=true}}"#, None),
+        (
+            r#"{{userid="KU_other",admin=false}}"#,
+            Some("DST_PLAYER_OFFLINE"),
+        ),
+        ("{}", Some("DST_PLAYER_OFFLINE")),
+    ] {
+        let lua = mlua::Lua::new();
+        lua.load(format!(
+            r#"kicks=0;function GetPlayerClientTable() return {clients} end;
+            TheNet={{Kick=function(_,u) assert(u=="KU_target");kicks=kicks+1 end}}"#
+        ))
+        .exec()
+        .unwrap();
+        let result = lua.load(&resolved.command).exec();
+        if let Some(message) = expected_error {
+            assert!(result.unwrap_err().to_string().contains(message));
+            assert_eq!(lua.globals().get::<usize>("kicks").unwrap(), 0);
+        } else {
+            result.unwrap();
+            assert_eq!(lua.globals().get::<usize>("kicks").unwrap(), 1);
+        }
+    }
+}
+
+#[test]
 fn dragonwilds_native_rows_cannot_bypass_snapshot_binding() {
     let modules = app_modules::discover_modules(
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules"),

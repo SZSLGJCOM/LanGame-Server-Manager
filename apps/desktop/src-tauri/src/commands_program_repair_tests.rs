@@ -128,6 +128,7 @@ impl Fixture {
             .unwrap()
             .jobs
             .push(BackgroundJob {
+                warnings: Vec::new(),
                 id: id.clone(),
                 kind: JobKind::ValidateGame,
                 label: "Create fixture".into(),

@@ -97,6 +97,9 @@ name = "volcano_steam_auth"
 protocol = "udp"
 port = 8769
 
+[runtime]
+player_count_source = "player_list"
+
 [runtime.bind_address]
 mode = "strict"
 port_names = ["master"]
@@ -110,7 +113,8 @@ id = "list_online_players"
 label = "Refresh live players"
 label_zh_cn = "刷新在线玩家"
 transport = "stdin"
-command_template = 'print("[LGM-DST-PLAYERS-BEGIN]\t{{request_id}}");local n=0;local s=function(x)return tostring(x or ""):gsub("[\r\n\t]"," ") end;for _,v in ipairs(TheNet:GetClientTable() or {}) do if v.userid and v.userid~="" then n=n+1;print("[LGM-DST-PLAYER]\t{{request_id}}\t"..n.."\t"..s(v.userid).."\t"..s(v.name).."\t"..s(v.prefab).."\t"..(v.admin and "1" or "0")) end end;print("[LGM-DST-PLAYERS-END]\t{{request_id}}\t"..n)'
+# The native helper excludes the dedicated host; count each player account once.
+command_template = 'local r="{{request_id}}";local p="[LGM-DST-";print(p.."PLAYERS-BEGIN]\t"..r);local n=0;local u={};local s=function(x)return tostring(x or ""):gsub("[\r\n\t]"," ") end;for _,v in ipairs(GetPlayerClientTable()) do if v.userid and v.userid~="" and not u[v.userid] then u[v.userid]=1;n=n+1;print(p.."PLAYER]\t"..r.."\t"..n.."\t"..s(v.userid).."\t"..s(v.name).."\t"..s(v.prefab).."\t"..(v.admin and "1" or "0")) end end;print(p.."PLAYERS-END]\t"..r.."\t"..n)'
 process_key = "master"
 
 [[runtime.player_actions]]
@@ -118,7 +122,7 @@ id = "kick_userid"
 label = "Kick"
 label_zh_cn = "踢出"
 transport = "stdin"
-command_template = "TheNet:Kick({{target}})"
+command_template = 'local u={{target}};for _,v in ipairs(GetPlayerClientTable()) do if v.userid==u then TheNet:Kick(u);return end end;error("DST_PLAYER_OFFLINE")'
 target_label = "Klei user ID"
 target_label_zh_cn = "Klei 用户 ID"
 target_placeholder = "KU_..."

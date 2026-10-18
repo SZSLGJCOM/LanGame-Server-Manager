@@ -17,7 +17,7 @@ export const ZH_CN_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_1: MessageCatalog = {
   "settings.schema.arksurvivalascended.custom_notification_url.title": "公告来源 URL",
   "settings.schema.arksurvivalascended.active_map_mod.title": "自定义地图模组 ID",
   "settings.schema.arksurvivalascended.asa_mod_configurations.title": "Mod 配置",
-  "settings.schema.arksurvivalascended.asa_mod_configurations.description": "分别保存各 CurseForge Mod 的 INI 配置。各地图共用这些配置，请停止实例后保存，下次启动服务器时生效。",
+  "settings.schema.arksurvivalascended.asa_mod_configurations.description": "分别保存各 CurseForge Mod 的 INI 配置作为共用默认参数，也可为当前 Mod 多选地图单独配置；其他 Mod 和未覆盖的文件继续继承。请停止实例后保存，下次启动服务器时生效。",
   "settings.schema.arksurvivalascended.duration.title": "登录公告显示时长（秒）",
   "settings.schema.arksurvivalascended.message.title": "登录公告",
   "arkse.settings.sections.modsDescription": "Steam Workshop Mod ID 写入 ActiveMods，-automanagedmods 控制自动安装和更新。",

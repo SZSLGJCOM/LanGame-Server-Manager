@@ -1,5 +1,6 @@
 import type { ProjectZomboidWorkshopModsSnapshot } from "../../types";
 import { parseWorkshopIdList } from "../settings/guided-setting-values";
+import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import type { SettingsObject } from "../settings/settings-schema";
 import {
   isCanonicalWorkshopModId, mergeProjectZomboidMapList, mergeTextList, mergeWorkshopList,
@@ -39,8 +40,8 @@ export function supportsWorkshopModEnablement(moduleId: string): boolean {
 function readWorkshopOwnership(moduleId: string, settings: SettingsObject): { ids: string[]; active: Set<string> } {
   if (moduleId === "projectzomboid") return { ids: parseWorkshopIdList(settings.workshop_items), active: new Set() };
   if (moduleId === "arksurvivalevolved") {
-    const active = new Set(parseWorkshopIdList(settings.active_mod_ids));
-    return { ids: [...new Set([...active, ...parseWorkshopIdList(settings.auto_managed_mod_ids)])], active };
+    const active = new Set(parseEvolvedModIds(settings.active_mod_ids));
+    return { ids: [...new Set([...active, ...parseEvolvedModIds(settings.auto_managed_mod_ids)])], active };
   }
   if (DISABLED_MODULES.has(moduleId)) {
     const active = new Set(parseWorkshopIdList(settings.mod_workshop_ids));
@@ -183,9 +184,9 @@ export function buildWorkshopModEnablementPlan(
     if (mods.length) nextSettings.mods = mergeTextList(settings, "mods", mods, parseLineOrSemicolonEntries).value;
     if (maps.length) nextSettings.map_name = mergeProjectZomboidMapList(settings, "map_name", maps).value;
   } else if (moduleId === "arksurvivalevolved") {
-    nextSettings.auto_managed_mod_ids = mergeWorkshopList(settings, "auto_managed_mod_ids", selected).value;
-    nextSettings.active_mod_ids = enabled ? mergeWorkshopList(settings, "active_mod_ids", selected).value
-      : removeWorkshopListIds(settings, "active_mod_ids", selected).value;
+    nextSettings.auto_managed_mod_ids = mergeTextList(settings, "auto_managed_mod_ids", selected, parseEvolvedModIds).value;
+    nextSettings.active_mod_ids = enabled ? mergeTextList(settings, "active_mod_ids", selected, parseEvolvedModIds).value
+      : removeTextListValues(settings, "active_mod_ids", selected, parseEvolvedModIds).value;
   } else {
     nextSettings.mod_workshop_ids = enabled ? mergeWorkshopList(settings, "mod_workshop_ids", selected).value
       : removeWorkshopListIds(settings, "mod_workshop_ids", selected).value;
@@ -214,7 +215,7 @@ export function buildWorkshopDownloadOwnershipPlan(moduleId: string, settings: S
   const next = { ...settings };
   if (moduleId === "projectzomboid") next.workshop_items = mergeWorkshopList(settings, "workshop_items", selected).value;
   else if (moduleId === "arksurvivalevolved") {
-    next.auto_managed_mod_ids = mergeWorkshopList(settings, "auto_managed_mod_ids", selected).value;
+    next.auto_managed_mod_ids = mergeTextList(settings, "auto_managed_mod_ids", selected, parseEvolvedModIds).value;
     next.auto_managed_mods = true;
   } else {
     const enabled = new Set(parseWorkshopIdList(settings.mod_workshop_ids));

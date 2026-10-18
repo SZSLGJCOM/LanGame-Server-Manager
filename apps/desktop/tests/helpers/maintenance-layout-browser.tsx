@@ -129,6 +129,28 @@ function localScrollOwner(element: HTMLElement, outer: HTMLElement): HTMLElement
   return null;
 }
 
+interface PolicyRowAlignment { toggle_top: number; toggle_bottom: number; input_top: number; input_bottom: number; columns: number }
+let policyAlignment: PolicyRowAlignment | null = null;
+// The stop-backup toggle and retention input are one row of 38px controls: equal tops and bottoms in
+// the two-column grid, or the same column edges once the container collapses to one column.
+function policyFooter() {
+  return select<HTMLElement>(".server-backup-policy-card .server-backup-policy-footer");
+}
+function measureBackupPolicyRow(): PolicyRowAlignment {
+  const toggle = select<HTMLElement>(".server-managed-backup-policy .server-backup-policy-toggle").getBoundingClientRect();
+  const field = select<HTMLElement>(".server-managed-backup-policy input[type=number]").getBoundingClientRect();
+  const columns = toggle.right <= field.left + 1 ? 2 : 1;
+  const result = { toggle_top: toggle.top, toggle_bottom: toggle.bottom, input_top: field.top, input_bottom: field.bottom, columns };
+  if (columns === 2) {
+    check(Math.abs(toggle.top - field.top) <= 1 && Math.abs(toggle.bottom - field.bottom) <= 1,
+      `Backup toggle and retention input must share one control row: ${JSON.stringify(result)}`);
+  } else {
+    check(toggle.bottom <= field.top && Math.abs(toggle.left - field.left) <= 1 && Math.abs(toggle.width - field.width) <= 1,
+      `Single-column backup controls must stack on the same edges: ${JSON.stringify(result)}`);
+  }
+  return result;
+}
+
 async function run() {
   const fonts = await document.fonts.load('500 13px "Inter"', "LanGame 0123456789");
   check(fonts.length > 0 && fonts.every((face) => face.status === "loaded"), "Bundled Inter must load before layout checks");
@@ -222,6 +244,9 @@ async function run() {
   });
   await waitFor(() => Boolean(fixture.querySelector('[role="tab"][id$="-maintenance"]')), "server tabs");
   const tabsBefore = fixture.querySelectorAll('[role="tab"]').length;
+  const initialTab = fixture.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+  check(initialTab?.id && !initialTab.id.endsWith("-maintenance"), "Fixture must start outside maintenance");
+  const initialTabSelector = `[role="tab"][id="${initialTab.id}"]`;
   await click('[role="tab"][id$="-maintenance"]');
   await waitFor(() => fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "directory diagnosis");
   check(tabsBefore === 6 && fixture.querySelectorAll('[role="tab"]').length === tabsBefore,
@@ -291,34 +316,62 @@ async function run() {
   checks++;
 
   await maintenanceSection("save-policy");
+  policyAlignment = measureBackupPolicyRow();
+  check(!policyPanel.querySelector("button[type=submit]"), "Autosaved policy still offers a manual save button");
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "7");
+  check(savedSettings.length === 0, "Typed retention must wait for the autosave pause");
   await maintenanceSection("storage");
   await maintenanceSection("save-import");
   check(importPanel.textContent?.includes("fixture/import/Cluster_1"), "Navigation discarded the selected import source");
   await maintenanceSection("save-policy");
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "7",
     "Navigation discarded an unsaved backup-policy draft");
-  await click(".server-backup-policy-card button[type=submit]");
-  check(savedSettings.length === 1 && savedSettings[0].backup_retention_count === 7, "Backup strategy did not save the edited retention");
+  await waitFor(() => savedSettings.length === 1, "debounced retention autosave");
+  check(savedSettings[0].backup_retention_count === 7 && savedSettings[0].auto_backup_on_stop,
+    "Backup strategy did not autosave the edited retention");
   check(JSON.parse(savedSettings[0].settings_json).fixture_preserved_value === "keep", "Backup strategy overwrote unrelated settings");
+  await waitFor(() => policyFooter().dataset.saveState === "saved", "policy saved status");
+  check(policyFooter().textContent?.includes("策略已保存"), "Autosave does not report the saved policy");
+  await click(".server-managed-backup-policy input[type=checkbox]");
+  await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 100)); });
+  check(savedSettings.length === 2 && savedSettings[1].auto_backup_on_stop === false && savedSettings[1].backup_retention_count === 7,
+    "The stop-backup toggle must save immediately without losing retention");
+  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "0");
+  check(select(".server-backup-policy-card .server-save-policy-group input[type=number]").getAttribute("aria-invalid") === "true"
+    && select(".server-backup-policy-validation").getBoundingClientRect().height > 0, "Invalid retention hides its error");
+  await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 900)); });
+  check(savedSettings.length === 2 && policyFooter().dataset.saveState === "blocked", "Invalid retention reached storage");
+  check(await coordinator.flush(instance.id).then(() => false, () => true), "Start ignored an invalid policy draft");
+  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "7");
+  await waitFor(() => policyFooter().dataset.saveState === "saved", "restored valid retention");
+  check(savedSettings.length === 2, "Restoring the persisted retention wrote it again");
   verifyHorizontalFit(policyPanel, "Save strategy form");
   checks++;
 
   await maintenanceSection("runtime");
-  await click('.server-runtime-recovery-editor input[name="enabled"]');
-  check(!select<HTMLInputElement>('.server-runtime-recovery-editor input[name="waitSeconds"]').disabled, "Enabling recovery did not enable its limits");
+  check(!fixture.querySelector(".server-runtime-recovery-editor button[type=submit], .server-resource-policy button[type=submit]"),
+    "Autosaved runtime policies still offer manual save buttons");
+  const recoveryFooter = () => select<HTMLElement>(".server-runtime-recovery-editor .server-backup-policy-footer");
   await input('.server-runtime-recovery-editor input[name="maxRestarts"]', "0");
-  check(select<HTMLButtonElement>(".server-runtime-recovery-editor button[type=submit]").disabled, "Invalid recovery limits can be saved");
+  check(select('.server-runtime-recovery-editor input[name="maxRestarts"]').getAttribute("aria-invalid") === "true"
+    && recoveryFooter().dataset.saveState === "blocked", "Invalid recovery limits are not blocked");
+  await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 900)); });
+  check(savedSettings.length === 2, "Invalid recovery limits reached storage");
   await input('.server-runtime-recovery-editor input[name="maxRestarts"]', "4");
   await input('.server-runtime-recovery-editor input[name="waitSeconds"]', "7.25");
-  await click(".server-runtime-recovery-editor button[type=submit]");
+  check(savedSettings.length === 2, "Typed recovery limits skipped the autosave pause");
+  // The toggle saves at once and carries the typed limits with it.
+  await click('.server-runtime-recovery-editor input[name="enabled"]');
+  check(!select<HTMLInputElement>('.server-runtime-recovery-editor input[name="waitSeconds"]').disabled, "Enabling recovery did not enable its limits");
+  await waitFor(() => savedSettings.length === 3, "immediate recovery toggle autosave");
   const recoveryWrite = savedSettings.at(-1)!;
   const recoveredSettings = JSON.parse(recoveryWrite.settings_json);
-  check(savedSettings.length === 2 && recoveredSettings.runtime_restart.enabled
+  check(savedSettings.length === 3 && recoveredSettings.runtime_restart.enabled
     && recoveredSettings.runtime_restart.max_restarts === 4 && recoveredSettings.runtime_restart.backoff_ms === 7250,
   "Recovery save changed its limits or seconds-to-milliseconds contract");
-  check(recoveryWrite.backup_retention_count === 7 && recoveredSettings.fixture_preserved_value === "keep",
+  check(recoveryWrite.backup_retention_count === 7 && !recoveryWrite.auto_backup_on_stop && recoveredSettings.fixture_preserved_value === "keep",
     "Recovery save lost another maintenance policy");
+  await waitFor(() => recoveryFooter().dataset.saveState === "saved", "recovery saved status");
   verifyHorizontalFit(runtimeCard, "Recovery controls");
   checks++;
 
@@ -327,24 +380,26 @@ async function run() {
   const disabledRecoveryLimit = select<HTMLInputElement>('.server-runtime-recovery-editor input[name="maxRestarts"]');
   check(!disabledRecoveryLimit.disabled && disabledRecoveryLimit.value === "",
     "Disabling recovery locked its invalid parameter and prevented correction");
-  check(select<HTMLButtonElement>(".server-runtime-recovery-editor button[type=submit]").disabled,
+  await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 100)); });
+  check(recoveryFooter().dataset.saveState === "blocked" && savedSettings.length === 3,
     "Disabling recovery bypassed parameter validation");
   await input('.server-runtime-recovery-editor input[name="maxRestarts"]', "4");
-  check(!select<HTMLButtonElement>(".server-runtime-recovery-editor button[type=submit]").disabled,
-    "Correcting a disabled recovery parameter did not restore saving");
-  await click(".server-runtime-recovery-editor button[type=submit]");
-  check(savedSettings.length === 3 && JSON.parse(savedSettings[2].settings_json).runtime_restart.enabled === false,
+  await waitFor(() => savedSettings.length === 4, "corrected disabled recovery autosave");
+  check(savedSettings.length === 4 && JSON.parse(savedSettings[3].settings_json).runtime_restart.enabled === false,
     "Disabled recovery could not be persisted");
+  // Another editor's write becomes the policy editor's baseline instead of a conflict or a second write.
+  await act(async () => { await new Promise<void>((resolve) => setTimeout(resolve, 800)); });
+  check(savedSettings.length === 4 && settingsSaveAttempts === 4, "A recovery write triggered a policy autosave");
   checks++;
 
   await maintenanceSection("save-policy");
-  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "9");
   holdNextSettingsSave = true;
-  await click(".server-backup-policy-card button[type=submit]");
-  check(rejectSettingsSave, "Policy save did not reach the controlled storage boundary");
+  rejectSettingsSave = null;
+  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "9");
+  await waitFor(() => rejectSettingsSave !== null, "policy autosave to reach the controlled storage boundary");
   check(select(".server-backup-policy-card .shell-activity-notice.is-info").textContent?.includes("保存"),
     "In-flight policy save does not show its progress");
-  check(savedSettings.length === 3 && settingsSaveAttempts === 4, "Pending policy save was reported as persisted");
+  check(savedSettings.length === 4 && settingsSaveAttempts === 5, "Pending policy save was reported as persisted");
   let startSettled = false;
   const pendingStart = coordinator.flush(instance.id).then(
     () => { startSettled = true; return null; },
@@ -362,24 +417,27 @@ async function run() {
     "Failed policy save hid its actual storage error");
   check(visibleInside(policyError, policyPanel) && visibleInside(policyError, outer), "Policy error cannot be reached by local scrolling");
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "9"
-    && !select<HTMLButtonElement>(".server-backup-policy-card button[type=submit]").disabled,
-    "Failed policy save lost its draft or disabled retry");
-  await click(".server-backup-policy-card button[type=submit]");
-  check(settingsSaveAttempts === 5 && savedSettings.length === 4 && savedSettings[3].backup_retention_count === 9,
+    && !select<HTMLButtonElement>(".server-backup-policy-footer .secondary-button").disabled,
+    "Failed policy save lost its draft or its retry");
+  await click(".server-backup-policy-footer .secondary-button");
+  await waitFor(() => savedSettings.length === 5, "policy retry");
+  check(settingsSaveAttempts === 6 && savedSettings[4].backup_retention_count === 9,
     "Retry did not persist the retained policy draft exactly once");
+  await waitFor(() => policyFooter().dataset.saveState === "saved", "retried policy saved status");
   check(policyPanel.querySelector(".shell-activity-notice.is-success") && !policyPanel.querySelector(".shell-activity-notice.is-error"),
     "Successful policy retry left the failure status visible");
   await coordinator.flush(instance.id);
-  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "10");
   holdNextSettingsSave = true;
-  await click(".server-backup-policy-card button[type=submit]");
+  rejectSettingsSave = null;
+  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "10");
+  await waitFor(() => rejectSettingsSave !== null, "discarded policy write to reach storage");
   await act(async () => { rejectSettingsSave!(new Error("Fixture discarded policy write")); });
   const discardedFailure = await coordinator.flush(instance.id).then(() => null, (error: unknown) => error);
   check(discardedFailure instanceof Error, "The policy failure was not tracked before discarding");
   await click(".server-backup-policy-footer .ghost-button");
   await coordinator.flush(instance.id);
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "9"
-    && savedSettings.length === 4, "Discard changed the persisted policy");
+    && savedSettings.length === 5, "Discard changed the persisted policy");
   checks++;
 
   await maintenanceSection("runtime");
@@ -519,6 +577,22 @@ async function run() {
   check(outer.isConnected, "Restored instance maintenance panel is detached");
   checks++;
 
+  // Leaving the maintenance tab inside the typing pause persists the edit instead of discarding it.
+  await maintenanceSection("save-policy");
+  const writesBeforeTabSwitch = savedSettings.length;
+  await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "8");
+  check(savedSettings.length === writesBeforeTabSwitch, "Typed retention skipped the autosave pause");
+  await click(initialTabSelector);
+  await waitFor(() => savedSettings.length === writesBeforeTabSwitch + 1, "tab switch to flush the pending policy edit");
+  check(savedSettings.at(-1)!.backup_retention_count === 8, "Tab switch saved a different retention");
+  await click('[role="tab"][id$="-maintenance"]');
+  await waitFor(() => fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "maintenance remount");
+  await maintenanceSection("save-policy");
+  check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "8", "Returning to maintenance lost the saved retention");
+  outer = select<HTMLElement>(".server-detail-scroll--maintenance");
+  policyAlignment = measureBackupPolicyRow();
+  checks++;
+
   const toggle = select<HTMLButtonElement>(`${workspaceSelector} .configuration-workspace__navigation-toggle`);
   if (innerWidth <= 1100) {
     check(toggle.getBoundingClientRect().height > 0 && toggle.getAttribute("aria-expanded") === "false",
@@ -542,7 +616,7 @@ async function run() {
       "Keyboard focus entered a hidden maintenance category");
   }
   for (const [id, selector] of [
-    ["save-import", ".dst-world-import-source-row .secondary-button"], ["save-policy", ".server-backup-policy-card button[type=submit]"],
+    ["save-import", ".dst-world-import-source-row .secondary-button"], ["save-policy", ".server-managed-backup-policy input[type=number]"],
     ["runtime", '.server-runtime-recovery-editor input[name="enabled"]'], ["runtime", ".server-resource-policy input[name=cpu]"],
     ["storage", ".instance-isolation-paths button"], ["broadcast", "textarea[name=broadcast-intent]"]
   ] as const) {
@@ -571,7 +645,7 @@ async function run() {
   checks++;
   return { status: "passed", checks, browser_errors: errors, control_measurements: controlMeasurements,
     control_violations: controlContractViolations(controlMeasurements), tab_count: tabsBefore,
-    viewport: { width: innerWidth, height: innerHeight },
+    viewport: { width: innerWidth, height: innerHeight }, policy_alignment: policyAlignment,
     initial_maintenance_height: initialHeight, available_tab_height: select<HTMLElement>(".server-detail-scroll--maintenance").clientHeight,
     navigation_width: select(`${workspaceSelector} .configuration-workspace__sidebar`).getBoundingClientRect().width, compact_navigation: innerWidth <= 1100,
     settings_writes: savedSettings.length, settings_save_attempts: settingsSaveAttempts,

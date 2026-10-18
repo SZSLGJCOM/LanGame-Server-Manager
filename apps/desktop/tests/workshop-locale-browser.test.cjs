@@ -11,7 +11,8 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       screenshotPath: output ? path.join(output, `workshop-locale-${viewport.width}x${viewport.height}.png`) : undefined });
     assert.equal(report.status, "passed");
     for (const flag of ["stale_requests_ignored", "parent_language_preserved", "author_text_preserved", "manifest_review_isolated", "pending_install_lock", "latest_validation_preserved",
-      "localized_failure_retains_text", "localized_retry_recovers", "unverified_fallback_blocks_download"]) assert.equal(report[flag], true, flag);
+      "localized_failure_retains_text", "localized_retry_recovers", "unverified_fallback_blocks_download", "warning_compact",
+      "warning_diagnostics_preserved", "warning_duplicates_merged"]) assert.equal(report[flag], true, flag);
     assert.equal(report.writes, 1); assert.equal(report.downloads, 1); assert.deepEqual(report.browser_errors, []);
     assert.equal(report.browser_exited, true); assert.equal(report.browser_processes_remaining, 0); assert.equal(report.scratch_removed, true);
     if (output) await fs.writeFile(path.join(output, `workshop-locale-${viewport.width}x${viewport.height}.json`), JSON.stringify(report, null, 2));

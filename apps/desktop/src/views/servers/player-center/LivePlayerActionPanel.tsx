@@ -36,7 +36,8 @@ interface PlayerActionRequest {
 
 interface PlayerActionFeedback {
   request: PlayerActionRequest;
-  tone: "success" | "error";
+  sent: boolean;
+  tone: "info" | "error";
   text: string;
 }
 
@@ -72,8 +73,10 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
   const hasPendingRequest = pendingRequest !== null && pendingRequest.instanceId === instanceId;
   const busyActionId = pendingRequest && hasPendingRequest && pendingRequest.playerKey === props.player?.player_key
     ? pendingRequest.actionId : null;
+  // A refresh can replace player keys and clear selection; a sent notice records
+  // the original command without preserving that snapshot's action authority.
   const feedback = actionFeedback && actionFeedback.request.instanceId === instanceId
-    && actionFeedback.request.playerKey === props.player?.player_key ? actionFeedback : null;
+    && (actionFeedback.sent || actionFeedback.request.playerKey === props.player?.player_key) ? actionFeedback : null;
 
   async function execute(actionId: string) {
     const snapshot = props.snapshot;
@@ -84,6 +87,10 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
       return;
     }
     const request: PlayerActionRequest = { instanceId: snapshot.instance_id, playerKey: player.player_key, actionId };
+    const feedbackParams = {
+      action: actionLabel(actionId, props.declaredActions.find((action) => action.id === actionId), props.locale),
+      player: player.display_name
+    };
     // Selection and snapshot changes do not cancel a command already sent to the server.
     inFlightRef.current = request;
     setPendingRequest(request);
@@ -99,21 +106,24 @@ export function LivePlayerActionPanel(props: LivePlayerActionPanelProps) {
       if (!ownsRequest()) return;
       setFeedback({
         request,
-        tone: "success",
-        text: props.t("servers.playerCenter.member.sent", undefined, "Player action sent. Refreshing the member list.")
+        sent: true,
+        tone: "info",
+        text: props.t("servers.playerCenter.member.sent", feedbackParams,
+          "“{action}” was sent for “{player}”. The actual outcome has not been confirmed.")
       });
       try {
         await props.onActionCompleted();
       } catch (error) {
         if (ownsRequest()) setFeedback({
           request,
+          sent: true,
           tone: "error",
-          text: props.t("servers.playerCenter.member.refreshFailed", { error: describeError(error) },
-            "Action sent, but refreshing the player list failed: {error}")
+          text: props.t("servers.playerCenter.member.sentRefreshFailed", { ...feedbackParams, error: describeError(error) },
+            "Action sent for “{player}” ({action}), but refreshing the player list failed: {error}. The actual outcome has not been confirmed.")
         });
       }
     } catch (error) {
-      if (ownsRequest()) setFeedback({ request, tone: "error", text: describeError(error) });
+      if (ownsRequest()) setFeedback({ request, sent: false, tone: "error", text: describeError(error) });
     } finally {
       if (ownsRequest()) {
         inFlightRef.current = null;

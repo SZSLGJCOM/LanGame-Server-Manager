@@ -163,7 +163,7 @@ async fn autostart_reports_failure_and_continues_remaining_instances_in_order() 
             if instance.id == "broken" {
                 Err(String::from("fixture executable missing"))
             } else {
-                Ok(())
+                Ok(Vec::new())
             }
         }
     })
@@ -180,6 +180,39 @@ async fn autostart_reports_failure_and_continues_remaining_instances_in_order() 
     );
     assert!(!state.autostart.is_eligible("broken").unwrap());
     assert!(!state.autostart.is_eligible("healthy").unwrap());
+}
+
+#[tokio::test]
+async fn autostart_preserves_successful_cached_mod_start_warnings() {
+    let fixture = Fixture::new();
+    let app = fixture.app();
+    let state = app.state::<DesktopState>();
+    let batch = capture(
+        &state.autostart,
+        &fixture.storage,
+        &[instance("cached", true, InstanceStatus::Stopped)],
+    );
+    let warning = app_core::RuntimeStartWarning {
+        code: app_core::RuntimeStartWarningCode::ModUpdateUsingCache,
+        provider: app_core::RuntimeModProvider::SteamWorkshop,
+        reason: app_core::RuntimeModUpdateReason::Network,
+        item_ids: vec!["42".into()],
+        message: "Using verified cached content; latest revision unconfirmed.".into(),
+        log_path: None,
+        map_key: None,
+        http_status: None,
+    };
+    run_autostart_batch_with(&state, &batch, |_| {
+        let warning = warning.clone();
+        async move { Ok(vec![warning]) }
+    })
+    .await
+    .unwrap();
+    let app_state = state.app_state.read().unwrap();
+    assert_eq!(app_state.jobs.len(), 1);
+    assert!(matches!(app_state.jobs[0].status, JobStatus::Completed));
+    assert_eq!(app_state.jobs[0].warnings, vec![warning]);
+    assert!(app_state.jobs[0].output_excerpt.is_none());
 }
 
 #[tokio::test]
@@ -239,7 +272,7 @@ async fn autostart_shutdown_cancels_unstarted_instances() {
     run_autostart_batch_with(&state, &batch, |instance| {
         started.push(instance.id);
         state.shutdown_in_progress.store(true, Ordering::SeqCst);
-        async { Ok(()) }
+        async { Ok(Vec::new()) }
     })
     .await
     .unwrap();
@@ -484,7 +517,7 @@ async fn autostart_persists_and_dispatches_every_repository_game() {
     let mut dispatched = HashSet::new();
     run_autostart_batch_with(&state, &batch, |instance| {
         assert!(dispatched.insert(instance.module_id));
-        async { Ok(()) }
+        async { Ok(Vec::new()) }
     })
     .await
     .unwrap();

@@ -395,6 +395,32 @@ pub(in crate::commands) fn stage_thunderstore_online_mod_sources(
     sources: &[DownloadedManualModSource],
     archive: Option<&Path>,
 ) -> Result<ManualModStageResult, String> {
+    stage_thunderstore_online_mod_sources_checked(target, sources, archive, None)
+}
+
+pub(in crate::commands) fn stage_thunderstore_online_mod_sources_for_startup(
+    target: ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    proof: &online_packages::ThunderstoreStartPlan,
+    cancellation: &app_steamcmd::InstallCancellation,
+) -> Result<ManualModStageResult, String> {
+    stage_thunderstore_online_mod_sources_checked(
+        target,
+        sources,
+        None,
+        Some((proof, cancellation)),
+    )
+}
+
+fn stage_thunderstore_online_mod_sources_checked(
+    target: ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    archive: Option<&Path>,
+    startup: Option<(
+        &online_packages::ThunderstoreStartPlan,
+        &app_steamcmd::InstallCancellation,
+    )>,
+) -> Result<ManualModStageResult, String> {
     let game = thunderstore_game_profile(&target.module_id)?;
     let root = runtime_root(&target, game)?;
     let Some(loader) = game.loader else {
@@ -412,9 +438,17 @@ pub(in crate::commands) fn stage_thunderstore_online_mod_sources(
                 &source.path,
             )?;
         }
-        return online_packages::stage_online_mod_sources(target, sources);
+        return match startup {
+            Some((proof, cancellation)) => online_packages::stage_online_mod_sources_for_startup(
+                target,
+                sources,
+                proof,
+                cancellation,
+            ),
+            None => online_packages::stage_online_mod_sources(target, sources),
+        };
     };
-    stage_with_profile(target, sources, archive, game, loader)
+    stage_with_profile_checked(target, sources, archive, game, loader, startup)
 }
 
 fn runtime_root(
@@ -433,12 +467,27 @@ fn runtime_root(
     Ok(root.to_path_buf())
 }
 
+#[cfg(test)]
 fn stage_with_profile(
     target: ResolvedManualModTarget,
     sources: &[DownloadedManualModSource],
     archive: Option<&Path>,
     game: &ThunderstoreGameProfile,
     loader: &BepInExProfile,
+) -> Result<ManualModStageResult, String> {
+    stage_with_profile_checked(target, sources, archive, game, loader, None)
+}
+
+fn stage_with_profile_checked(
+    target: ResolvedManualModTarget,
+    sources: &[DownloadedManualModSource],
+    archive: Option<&Path>,
+    game: &ThunderstoreGameProfile,
+    loader: &BepInExProfile,
+    startup: Option<(
+        &online_packages::ThunderstoreStartPlan,
+        &app_steamcmd::InstallCancellation,
+    )>,
 ) -> Result<ManualModStageResult, String> {
     let root = runtime_root(&target, game)?;
     let root_lock = manual_mod_target_lock(&root)?;
@@ -485,6 +534,11 @@ fn stage_with_profile(
                 sources,
                 &transaction,
                 &[loader.identity()],
+                if startup.is_some() {
+                    online_packages::PackageUserDataPolicy::PreserveVerifiedStartup
+                } else {
+                    online_packages::PackageUserDataPolicy::RejectConflicts
+                },
             )?
         };
         let names = staged_manual_mod_root_names(&plugin_transaction)?;
@@ -513,12 +567,25 @@ fn stage_with_profile(
             Ok(prepared) => prepared,
             Err(error) => return Err(manual_mod_staging_failure(error, &transaction, true)),
         };
+    if let Some((proof, cancellation)) = startup {
+        let checked = if cancellation.is_cancelled() {
+            Err("Thunderstore startup Mod publication was cancelled".into())
+        } else {
+            proof.verify_unchanged(&target)
+        };
+        checked.map_err(|error| manual_mod_staging_failure(error, &transaction, true))?;
+    }
     if let Err(failure) = commit_manual_mod_transaction(&transaction, &root, &replace_roots) {
         return Err(manual_mod_staging_failure(
             failure.message,
             &transaction,
             failure.rollback_complete,
         ));
+    }
+    if let Some((proof, _)) = startup {
+        proof
+            .verify_backup(&transaction.backup, &root, &replace_roots)
+            .map_err(|error| manual_mod_staging_failure(error, &transaction, false))?;
     }
     let warning = cleanup_manual_mod_transaction(&transaction).err();
     Ok(ManualModStageResult {

@@ -13,6 +13,8 @@ use crate::settings_value_formats::{
     is_date_or_local_datetime, is_iso_calendar_date, validate_platform_account_id,
 };
 
+#[path = "settings_validation_ark_mod_scopes.rs"]
+mod ark_mod_scopes;
 #[path = "settings_validation_curseforge_membership.rs"]
 mod curseforge_membership;
 #[path = "settings_validation_program_update.rs"]
@@ -64,6 +66,10 @@ pub(crate) fn validate_settings_against_schema(
 ) -> Result<(), StorageError> {
     workshop_collections::validate(descriptor, settings)?;
     curseforge_membership::validate(descriptor, settings)?;
+    ark_mod_scopes::validate(
+        descriptor.map_or("runtime", |descriptor| descriptor.summary.id.as_str()),
+        settings,
+    )?;
     runtime_resources::validate(
         descriptor.map_or("runtime", |descriptor| descriptor.summary.id.as_str()),
         settings,

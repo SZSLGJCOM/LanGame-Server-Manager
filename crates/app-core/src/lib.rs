@@ -16,10 +16,12 @@ mod download_integrity;
 pub use download_integrity::DownloadIntegritySpec;
 pub mod ark_cluster;
 pub mod ark_maps;
+pub mod ark_mod_scopes;
 pub mod ark_mods;
 pub mod astroneer_saves;
 mod dragonwilds_bans;
 mod native_bans;
+pub mod workshop_ids;
 pub use native_bans::{NativeBanEntry, NativeBanRoster};
 pub mod dragonwilds_world;
 pub use dragonwilds_bans::{DragonwildsBanEntry, DragonwildsBanRoster};
@@ -35,6 +37,10 @@ mod runtime_resources;
 pub use runtime_resources::RuntimeResourceLimits;
 mod program_update;
 pub use program_update::InstanceProgramUpdatePolicy;
+mod runtime_start_warnings;
+pub use runtime_start_warnings::{
+    RuntimeModProvider, RuntimeModUpdateReason, RuntimeStartWarning, RuntimeStartWarningCode,
+};
 
 pub const DEFAULT_LANGAME_DATA_ROOT: &str = "D:/LanGame";
 pub const DEFAULT_LANGAME_INSTANCES_ROOT: &str = "D:/LanGame/instances";
@@ -1232,6 +1238,8 @@ pub struct StartedProcess {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StartInstanceResult {
+    #[serde(default)]
+    pub warnings: Vec<RuntimeStartWarning>,
     pub summary: InstanceSummary,
     pub run_id: i64,
     pub session_id: Option<String>,
@@ -1268,6 +1276,8 @@ pub struct StopInstanceResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BackgroundJob {
+    #[serde(default)]
+    pub warnings: Vec<RuntimeStartWarning>,
     pub id: String,
     pub kind: JobKind,
     pub label: String,

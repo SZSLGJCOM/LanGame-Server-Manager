@@ -239,6 +239,7 @@ pub(in crate::commands::commands_mod_staging) fn prepare_local_mod_ownership(
         manifest.packages.insert(
             key,
             InstalledPackage {
+                thunderstore_intent: None,
                 routed_files: BTreeMap::new(),
                 target_name: name,
                 files,

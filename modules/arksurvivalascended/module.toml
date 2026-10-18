@@ -13,6 +13,7 @@ executable = "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
 args_template = [
   "{{arksa.server_url}}",
   "-port={{ports.game.port}}",
+  "-QueryPort={{ports.query.port}}",
   "-WinLiveMaxPlayers={{settings.max_players}}",
   "-NullRHI",
   "-Unattended",
@@ -20,6 +21,7 @@ args_template = [
   "-abslog={{arksa.native_log_path}}",
   "{{arksa.multihome_flag}}",
   "{{arksa.cluster_dir_override_flag}}",
+  "{{arksa.map_ini_flags}}",
   "{{arksa.mod_ids_flag}}",
   "{{arksa.official_launch_flags}}",
   "{{arksa.custom_launch_flags}}",

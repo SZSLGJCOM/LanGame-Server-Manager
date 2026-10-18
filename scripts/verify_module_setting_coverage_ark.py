@@ -15,6 +15,7 @@ ARK_AGGREGATE_TOKEN_INVENTORIES: dict[tuple[str, str], tuple[str, str] | set[str
     ("arkse", "mod_installer_section"): {"auto_managed_mod_ids"},
     ("arkse", "multihome_ini_line"): set(),
     ("arkse", "official_launch_flags"): ("runtime", "ARK_ASE_ADDITIONAL_LAUNCH_SETTINGS"),
+    ("arkse", "map_ini_flags"): {"ark_mod_map_overrides"},
     ("arksa", "active_mods_ini_line"): {"mod_ids_csv"},
     ("arksa", "additional_gus_server_settings"): ("storage", "ARK_ASA_GUS_SERVER_SETTINGS"),
     ("arksa", "additional_gus_session_settings"): ("storage", "ARK_ASA_GUS_SESSION_SETTINGS"),
@@ -23,6 +24,7 @@ ARK_AGGREGATE_TOKEN_INVENTORIES: dict[tuple[str, str], tuple[str, str] | set[str
     ("arksa", "additional_game_ini"): ("storage", "ARK_ASA_GAME_INI"),
     ("arksa", "multihome_ini_line"): set(),
     ("arksa", "official_launch_flags"): ("runtime", "ARK_ASA_ADDITIONAL_LAUNCH_SETTINGS"),
+    ("arksa", "map_ini_flags"): {"ark_mod_map_overrides"},
 }
 
 

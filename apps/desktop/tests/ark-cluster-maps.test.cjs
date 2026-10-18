@@ -10,6 +10,8 @@ require.extensions[".css"] = (loaded) => loaded._compile("module.exports = {};",
 const { ARK_ADDITIONAL_MAP_LIMIT, readAdditionalArkMaps, validateAdditionalArkMaps, readArkMapSuggestions,
   buildArkMapSelectionPatch, mergeArkMapSuggestions, newArkMapId, getArkMapSettingsValidationIssues, buildArkMapPortGroups } = require("../src/views/settings/ark-cluster-maps.ts");
 const { parseInstanceArkMapAvailability } = require("../src/ark-map-availability.ts");
+const { projectArkModSettings } = require("../src/views/servers/ark-map-mods.ts");
+const { readAsaModMembership } = require("../src/views/servers/mod-workbench-asa.ts");
 const map = (overrides = {}) => ({ id: "scorched", map_name: "ScorchedEarth_WP", name: "焦土", enabled: true, ...overrides });
 
 test("maps preserve distinct save identities and paused configurations across JSON readback", () => {
@@ -134,14 +136,19 @@ test("selecting either map control atomically enables its discovered Mod, preser
     for (const mapPatch of [{ map_name: "ActualDownloaded_WP" }, { additional_maps: [map({ map_name: "ActualDownloaded_WP" })] }]) {
       const current = { server_name: "Retain this name", ...settings };
       const before = structuredClone(current);
-      const patch = buildArkMapSelectionPatch(current, "ActualDownloaded_WP", choices, mapPatch);
+      const scope = mapPatch.map_name ? "main" : "map-scorched";
+      const patch = buildArkMapSelectionPatch(current, "ActualDownloaded_WP", choices, mapPatch, scope);
       const next = { ...current, ...patch };
+      const projected = projectArkModSettings(next, "arksurvivalascended", scope);
       assert.deepEqual(current, before);
       assert.deepEqual(patch.map_name ?? patch.additional_maps, mapPatch.map_name ?? mapPatch.additional_maps);
-      assert.equal(next.mod_ids_csv, settings.mod_ids_csv.includes("893657") ? "100,893657,200" : "100\n200\n893657");
-      if ("passive_mod_ids_csv" in settings) assert.equal(next.passive_mod_ids_csv, "300\n400");
-      assert.deepEqual(next.curseforge_disabled_mod_ids ?? [], settings.curseforge_disabled_mod_ids ? ["500"] : []);
-      assert.deepEqual(next.curseforge_removed_mod_ids ?? [], settings.curseforge_removed_mod_ids ? ["600"] : []);
+      assert.equal(projected.mod_ids_csv, settings.mod_ids_csv.includes("893657") ? "100\n893657\n200" : "100\n200\n893657");
+      if ("passive_mod_ids_csv" in settings) assert.equal(projected.passive_mod_ids_csv, "300\n400");
+      assert.deepEqual(projected.curseforge_disabled_mod_ids ?? [], settings.curseforge_disabled_mod_ids ? ["500"] : []);
+      assert.deepEqual(projected.curseforge_removed_mod_ids ?? [], settings.curseforge_removed_mod_ids ? ["600"] : []);
+      assert.equal(next.mod_ids_csv, settings.mod_ids_csv);
+      assert.equal(next.passive_mod_ids_csv, settings.passive_mod_ids_csv);
+      assert.ok(readAsaModMembership(projected).active.includes("893657"));
       assert.equal(next.server_name, current.server_name);
     }
   }

@@ -122,6 +122,7 @@ impl Fixture {
             path,
             label: "Author-Plugin".into(),
             identity: OnlineModIdentity {
+                thunderstore_intent: None,
                 provider: "thunderstore".into(),
                 project: "Author-Plugin".into(),
                 historical_names: vec!["Author-Plugin".into()],
@@ -516,6 +517,7 @@ fn corekeeper_uses_native_mod_staging_without_bepinex() {
         path: source,
         label: "Author-NativeMod".into(),
         identity: OnlineModIdentity {
+            thunderstore_intent: None,
             provider: "thunderstore".into(),
             project: "Author-NativeMod".into(),
             historical_names: vec![],

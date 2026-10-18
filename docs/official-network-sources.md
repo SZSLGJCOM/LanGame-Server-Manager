@@ -28,6 +28,7 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Java prerequisite | Adoptium API, with the official Adoptium GitHub release API as metadata fallback for the same required Java major; Windows x64 HotSpot JRE GA identity, size and SHA-256 are mandatory. The ZIP still comes from the selected official GitHub release, not an independent China CDN |
 | Terraria and RimWorld Together server archives | The module's official release URL and bounded retries; RimWorld Together pins its release SHA-256 and byte size; no verified second independent official source |
 | Modrinth and Thunderstore metadata and packages | The original provider APIs and their actual package URLs, with bounded retries; Modrinth verifies the metadata's byte size and SHA-512 (SHA-1 only when SHA-512 is absent); no verified alternate source |
+| Nexus account, Mod files and packages | Authenticated metadata stays on `api.nexusmods.com` without redirects. Only download URLs returned by that API on HTTPS `*.nexus-cdn.com` or the exact `cf-files.nexusmods.com` host are accepted, including redirects; a separate client carries no API key. Local-only credentials, bounded responses/downloads and the existing import transaction; no mirror or regional substitution |
 | CurseForge slug resolution | `api.curse.tools`, an existing third-party integration; neither a CurseForge-operated API nor an official CDN, and no source substitution |
 | ARK Server API extension preparation | Pinned ASE/ASA releases from the extension maintainers' GitHub repositories; archive size, SHA-256 and expected payload are verified; no China-specific alternative |
 | ASA extension offset cache | The extension's configured cache services at `cdn.pelayori.com`, `cdn.shadowhunter.co.za` and `cdn.shadowhunter-systems.co.za`; the extension sends the server EXE SHA-256 to retrieve matching files after the installation notice obtains permission; these third-party services are not Valve or the game's official CDN |
@@ -60,9 +61,15 @@ Anonymous Workshop search, localized details and item-type lookup use a built-in
 
 Community reads share one in-flight request across browsing and item verification. Concurrent verification of the same item shares its result, and verified types retain the bounded 15-minute cache. A 429 pauses both Community connections; a server `Retry-After` (seconds or HTTP date) determines the wait, with a 60-second local cooldown when no usable value is supplied. No automatic retry is scheduled. A failed item-type lookup retains public metadata as `unverified` / `unknown`, without authorizing a download or misclassifying the item as a guide. Other successfully verified items remain usable. Warnings and retry actions appear in the desktop's bottom activity bar.
 
+These requests contact Steam's public services and its Akamai connection, without passing through a LanGame CDN. The metadata API can return HTTP 200 without a content type while the Community page returns HTTP 429; the item then remains pending verification. During a shared cooldown, another warning can be returned locally without sending another HTTP request. A later verified Mod catalog result for the same game clears an older root-item verification failure; collection-member verification still requires its own evidence.
+
+Workshop warnings show one short summary of the impact with a retry action. A shared rate limit groups item verification and selected-language fallback into one notice; the original-text hint remains visible. Item IDs, service origins, HTTP status, retry windows and original payloads are available in the activity bar's message-details panel. Changes to item counts or retry diagnostics do not reopen a dismissed summary.
+
 Item details request public API metadata and the selected-language Community page concurrently. When metadata succeeds but the page fails its network, parsing or identity checks, the details retain the API's original title, description and collection members. A visible warning identifies the text as the author's original content and offers a retry; a successful retry replaces it with localized content and clears the warning. That failed details request does not issue additional Community type lookups for the root item or its members. Only authoritative API/collection evidence or an existing valid type cache can establish their types: otherwise they remain unverified and cannot be downloaded. A missing or private item keeps the API's unavailable status even when a page response exists.
 
 Searching an exact item ID or Steam item URL retains an unverified result when the public API confirms that it belongs to the selected game but Community type verification is unavailable. It is shown as pending verification, not as an empty search or an installable Mod. Confirmed other-game items, guides and items outside the selected Mod/collection category remain excluded.
+
+The desktop workbench shares concurrent reads of the same item and language, and reuses up to 32 successfully verified individual Mod detail responses for 60 seconds. Collections still refresh their membership. Failures, unverified results and localization fallbacks are not cached as successful details. The explicit retry action invalidates both cached and pending entries before requesting fresh details. Changing the instance or module clears this cache; actual download validation remains fresh.
 
 These two HTML connections have a separate, fixed-size failure cache. A failure eligible for source fallback puts that connection behind the other for 60 seconds, before applying the current request's language preference. Both connections remain available; equal health or an expired cooldown restores the language order. An HTTP 200 alone does not clear a failure because the caller must still validate the Workshop content. Authentication, throttling and deferred-retry responses neither switch connections nor create a cooldown that would bypass the same restriction on the next request.
 
@@ -165,6 +172,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | Java 前置 | 优先 Adoptium API，同一所需 Java 主版本的官方 Adoptium GitHub 发行 API 作为元数据备用；必须匹配 Windows x64 HotSpot JRE 正式版身份、大小及 SHA-256。ZIP 仍来自所选官方 GitHub 发行，不是独立国内 CDN |
 | Terraria、RimWorld Together 服务端 | 官方发行地址与有限重试；RimWorld Together 固定发行包 SHA-256 与字节数；未确认第二个独立官方备用源 |
 | Modrinth、Thunderstore 元数据与模组包 | 原提供方 API 及其返回的实际下载地址，采用有限重试；Modrinth 校验元数据声明的字节数与 SHA-512，仅缺少 SHA-512 时使用 SHA-1；未确认备用等价源 |
+| Nexus 账号、Mod 文件与下载包 | 认证元数据固定访问 `api.nexusmods.com`，不跟随重定向；只采用该 API 返回的 HTTPS `*.nexus-cdn.com` 或精确 `cf-files.nexusmods.com` 下载地址，重定向逐跳沿用此限制，下载客户端不带 API Key。凭据和认证操作限本机，响应／下载有界，复用现有导入事务；无镜像或地区替换 |
 | CurseForge slug 解析 | 既有第三方集成 `api.curse.tools`；不是 CurseForge 运营的 API 或官方 CDN，不做换源 |
 | ARK Server API 扩展准备 | 扩展维护者 GitHub 仓库中的固定 ASE/ASA 发行包，核验归档大小、SHA-256 和预期文件；无国内专用备用源 |
 | ASA 扩展偏移缓存 | 扩展配置的 `cdn.pelayori.com`、`cdn.shadowhunter.co.za`、`cdn.shadowhunter-systems.co.za` 缓存服务；安装说明征得许可后，由扩展发送服务器 EXE 的 SHA-256 获取匹配文件；这些第三方服务不是 Valve 或游戏官方 CDN |
@@ -200,6 +208,12 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 此连接仅允许两个精确路径的匿名 `GET` 请求：`/workshop/browse/` 的参数白名单为 `appid`、`section`、`browsesort`、`actualsort`、`p`、`numperpage`、`l`、`days`、`searchtext`；`/sharedfiles/filedetails/` 仅允许 `id`、`l`。含认证信息、Cookie、其他参数或其他路径的请求不进入该线路，禁止跟随重定向。不修改系统 hosts、不安装证书、不固定 CDN IP，也不引入第三方代理。HTTP 401、403、429 或要求延后重试的 `Retry-After` 不会触发换源绕过。
 
 浏览与类型核验共用一个正在执行的社区请求；同一条目的并发核验共享结果，已核验类型继续使用有界的 15 分钟缓存。收到 429 后，两条社区连接共同暂停：按服务端 `Retry-After`（秒数或 HTTP 日期）等待，没有可用值时采用 60 秒本地冷却，不安排自动重试。单项类型核验失败时保留已取得的公开资料，以 `unverified` / `unknown` 表示待核验，不放行下载，也不误判成指南；其他核验成功的条目仍可使用。警告和重试入口统一显示在桌面底部动态栏。
+
+这些请求直接访问 Steam 官方服务及其 Akamai 连接，不经过 LanGame CDN。元数据 API 可能返回 HTTP 200 但缺少内容类型，同时社区网页返回 HTTP 429，此时条目保持待核验。共用冷却期内再次显示警告，可能只是在本地返回等待状态，并未再次发送 HTTP 请求。后续工坊列表成功确认同一游戏中的 Mod 类型后，会清除该根条目此前的核验失败；集合成员仍需各自的核验证据。
+
+工坊警告只显示简短的影响说明和重试入口。同一限流引起的条目核验失败及当前语言回退合并为一条，仍保留显示作者原文的提示。条目 ID、服务域名、HTTP 状态、等待时间及原始响应放在动态栏的“消息详情”中；条目数量或等待诊断变化不会让已关闭的摘要重新出现。
+
+桌面工作区合并同一条目、同一语言的并发详情请求，并在 60 秒内复用最多 32 个已成功核验的单项 Mod 详情；集合仍重新读取成员。失败、待核验和回退到原始语言的结果不会作为成功详情缓存。“重试”会先清除对应缓存及等待记录，再重新读取；切换实例或模块会清空缓存，实际下载前仍重新验证。
 
 条目详情并行读取公开 API 元数据与当前语言的社区网页。元数据成功但网页联网、解析或身份校验失败时，详情保留 API 返回的原始标题、说明和集合成员；界面明确提示正在显示作者原始内容，并提供重试，成功重试后替换为本地化内容并清除警告。该次失败的详情请求不再为根条目或成员追加社区类型查询；只有可信 API/集合证据或已有有效类型缓存可以确定类型，其余保持待核验且不能下载。缺失或私有条目仍按 API 标记为不可用，不因收到网页而改成成功。
 

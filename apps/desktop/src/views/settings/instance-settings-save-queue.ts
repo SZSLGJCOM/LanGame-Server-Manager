@@ -49,6 +49,7 @@ export class InstanceSettingsSaveQueue {
   private disposed = false;
   private emitStatusChanges = true;
   private generation = 0;
+  private deferredAdoption: { settingsBaseline: string; savedSignature: string } | null = null;
   private status: InstanceSettingsSaveStatus = { state: "saved" };
   private readonly idleWaiters = new Set<{ resolve(): void; reject(error: Error): void }>();
 
@@ -64,6 +65,7 @@ export class InstanceSettingsSaveQueue {
   reset(instanceId: string, settingsBaseline: string, savedSignature: string) {
     this.rejectIdleWaiters(new Error("Settings save was reset before persistence completed."));
     this.generation += 1;
+    this.deferredAdoption = null;
     this.instanceId = instanceId;
     this.settingsBaseline = settingsBaseline;
     this.savedSignature = savedSignature;
@@ -111,6 +113,23 @@ export class InstanceSettingsSaveQueue {
 
     this.flush();
     this.finishClosingIfIdle();
+  }
+
+  /**
+   * Adopts a record persisted by another writer (or the refreshed echo of this queue's own write) as the
+   * next compare-and-swap baseline. A record observed while a write runs is adopted once that write settles.
+   */
+  adoptPersisted(instanceId: string, settingsBaseline: string, savedSignature: string) {
+    if (this.disposed || this.closing || instanceId !== this.instanceId) {
+      return;
+    }
+    if (this.running || this.pending) {
+      this.deferredAdoption = { settingsBaseline, savedSignature };
+      return;
+    }
+    this.deferredAdoption = null;
+    this.settingsBaseline = settingsBaseline;
+    this.savedSignature = savedSignature;
   }
 
   isSaved(signature: string): boolean {
@@ -213,6 +232,8 @@ export class InstanceSettingsSaveQueue {
     const generation = this.generation;
     const instanceId = this.instanceId;
     const expectedSettingsJson = this.settingsBaseline;
+    const previousSavedSignature = this.savedSignature;
+    let acknowledged = false;
     this.running = true;
     this.activeSignature = pending.signature;
     this.setStatus({ state: "saving" });
@@ -234,6 +255,7 @@ export class InstanceSettingsSaveQueue {
         this.savedSignature = pending.signature;
         // Storage may restore defaults or normalize fields before committing.
         this.settingsBaseline = savedSettingsJson;
+        acknowledged = true;
       })
       .catch((error: unknown) => {
         if (!this.isCurrent(generation, instanceId)) {
@@ -250,6 +272,17 @@ export class InstanceSettingsSaveQueue {
         }
         this.running = false;
         this.activeSignature = null;
+        if (this.deferredAdoption) {
+          // A delayed read of the write's original baseline cannot supersede
+          // its successful ACK. Other observed records still become the baseline.
+          if (!acknowledged
+            || this.deferredAdoption.settingsBaseline !== expectedSettingsJson
+            || this.deferredAdoption.savedSignature !== previousSavedSignature) {
+            this.settingsBaseline = this.deferredAdoption.settingsBaseline;
+            this.savedSignature = this.deferredAdoption.savedSignature;
+          }
+          this.deferredAdoption = null;
+        }
         if (this.pending) {
           this.failedRequest = null;
           this.flush();

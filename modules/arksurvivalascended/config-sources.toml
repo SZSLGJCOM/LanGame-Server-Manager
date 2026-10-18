@@ -3,6 +3,26 @@ last_verified = "2026-09-08"
 notes = "SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
 
 [[sources]]
+id = "asa_query_port"
+kind = "documentation"
+authority = "epic_games_unreal_engine_5_5"
+path = "modules/arksurvivalascended/module.toml:[process].args_template"
+description = "Unreal Engine 5.5 documents QueryPort as a -Keyword=Value argument for OnlineSubsystemSteam, with default 27015 and Engine.ini [OnlineSubsystemSteam].GameServerQueryPort as an alternative. LanGame renders the independent keyword from each map's registered query binding while retaining the existing ARK URL and INI values. This source establishes the native parameter contract; fixtures do not by themselves prove native socket ownership."
+url = "https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-command-line-arguments-reference?application_version=5.5"
+
+[[sources]]
+id = "asa_query_port_native_20261018"
+kind = "runtime_probe"
+authority = "installed_ark_survival_ascended_dedicated_server"
+path = "docs/server-configuration.md:ARK SE and ASA configuration"
+description = "On 2026-10-18, isolated Windows ASA 94.29 processes with unquoted map URLs initialized Steam successfully and owned their configured UDP query port, both with and without AsaApi 2.03. With the same API and configuration, a whole-quoted map URL containing a server name with spaces, without an independent QueryPort keyword, reported Steam initialization FAILED and owned its game UDP port but not its configured query port. Two concurrent processes retaining whole-quoted map URLs and adding independent -QueryPort=47015 and -QueryPort=47025 each owned the corresponding query UDP port. These observations establish socket ownership for the tested invocation forms; they do not establish that all ARK URL options are ineffective or that the API caused the failure."
+
+[[exclusions]]
+source = "asa_query_port"
+key = "-QueryPort"
+reason = "OnlineSubsystemSteam query port is managed instance/map port-binding state, not an independently editable gameplay setting."
+
+[[sources]]
 id = "managed_mod_ini"
 kind = "documentation"
 authority = "langame_managed_configuration"
@@ -16,11 +36,25 @@ schema_key = "asa_mod_configurations"
 surface = "materializer"
 
 [[sources]]
+id = "map_mod_scopes"
+kind = "documentation"
+authority = "langame_managed_runtime_and_unreal_server_configuration"
+path = "crates/app-core/src/ark_mod_scopes.rs"
+description = "Shared Mod defaults with sparse per-Mod, per-map overrides and fixed per-map native INI paths. Dedicated-server category INI overrides preserve the existing world-save layout. Contract fixtures and Rust tests verify rendering and isolation; third-party Mod gameplay and transfer compatibility require native testing."
+url = "https://dev.epicgames.com/documentation/unreal-engine/configuration-files-in-unreal-engine"
+
+[[items]]
+source = "map_mod_scopes"
+key = "ark_mod_map_overrides"
+schema_key = "ark_mod_map_overrides"
+surface = "materializer"
+
+[[sources]]
 id = "map_processes"
 kind = "documentation"
 authority = "langame_managed_runtime"
 path = "crates/app-core/src/ark_maps.rs"
-description = "Managed map process group: one native process and CMD per enabled map, shared installation and INI, stable map save directories and port bindings."
+description = "Managed map process group: one native process and CMD per enabled map, shared installation and server defaults, optional independent Mod INI files, stable map save directories and port bindings."
 
 [[items]]
 source = "map_processes"

@@ -79,6 +79,7 @@ fn source_failure(network: bool, detail: &str) -> SteamCmdError {
         detail: detail.into(),
         permits_source_fallback: true,
         source_unavailable: network,
+        permits_ip_family_retry: false,
     }
 }
 

@@ -29,3 +29,20 @@ test('unrecognized diagnostics and unrelated job labels remain intact', () => {
   assert.equal(formatInstanceAutostartJobDetail({ ...job, detail: 'Missing executable: server.exe' }, t('zh-CN')), 'Missing executable: server.exe');
   assert.equal(formatInstanceAutostartJobLabel({ ...job, kind: 'InstallModule' }, t('zh-CN')), job.label);
 });
+
+test('failed ASA autostart jobs use the same bilingual native query explanation', () => {
+  const detail = JSON.stringify({ code: 'asa_curseforge_startup_failed', message: 'Native fallback',
+    stage: 'query', reason: 'server_unreachable', http_status: null, map_key: 'main',
+    native_log_path: 'C:/asa/logs/main.log' });
+  const failed = { ...job, status: 'Failed', detail, output_excerpt: 'DO_NOT_DISPLAY_RAW_BODY' };
+  const zh = formatInstanceAutostartJobDetail(failed, t('zh-CN'));
+  const en = formatInstanceAutostartJobDetail(failed, t('en-US'));
+  assert.match(zh, /模组版本查询失败/);
+  assert.match(en, /Mod version query failed/i);
+  for (const rendered of [zh, en]) {
+    assert.ok(rendered.includes('C:/asa/logs/main.log'));
+    assert.ok(rendered.includes('main'));
+    assert.doesNotMatch(rendered, /asa_curseforge_startup_failed|Native fallback|DO_NOT_DISPLAY_RAW_BODY/);
+  }
+  assert.equal(failed.detail, detail);
+});

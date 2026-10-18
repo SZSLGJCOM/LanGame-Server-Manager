@@ -156,6 +156,7 @@ pub(in crate::commands) fn decorate_inventory(
 
 pub(super) fn copy_package(package: &InstalledPackage) -> InstalledPackage {
     InstalledPackage {
+        thunderstore_intent: package.thunderstore_intent.clone(),
         routed_files: package.routed_files.clone(),
         target_name: package.target_name.clone(),
         files: package.files.clone(),
@@ -172,6 +173,7 @@ pub(super) fn validate_management_manifest(manifest: &InstalledPackages) -> Resu
     let mut targets = HashSet::new();
     let mut routed_paths = HashSet::new();
     for (key, package) in &manifest.packages {
+        thunderstore_intent::validate_thunderstore_intent(key, package)?;
         routed::validate_routes(package, &mut routed_paths)?;
         validate_component(key)?;
         validate_component(&package.target_name)?;
@@ -333,6 +335,7 @@ fn adopt_package(
     // Adoption records files already in the loading tree. Retain declarations
     // even for a broken install so it can be disabled; enabling validates them.
     Ok(InstalledPackage {
+        thunderstore_intent: None,
         routed_files: BTreeMap::new(),
         target_name: name.into(),
         files,
@@ -354,7 +357,10 @@ pub(super) fn loadable_file(relative: &str) -> bool {
         })
 }
 
-fn validate_exclusive_payload(package: &InstalledPackage, path: &Path) -> Result<(), String> {
+pub(super) fn validate_exclusive_payload(
+    package: &InstalledPackage,
+    path: &Path,
+) -> Result<(), String> {
     for relative in fingerprint_tree(path)?.keys() {
         let candidate = if relative.is_empty() {
             package.target_name.as_str()
@@ -547,3 +553,14 @@ fn loader_satisfies(
 #[cfg(test)]
 #[path = "commands_mod_management_tests.rs"]
 mod tests;
+
+/// Startup must not recover an unfinished user mutation or read its partial
+/// ownership state implicitly. Keep storage internals private to management.
+pub(super) fn ensure_no_pending_recovery(target: &Path) -> Result<(), String> {
+    let paths = storage::ManagementPaths::new(target)?;
+    match fs::symlink_metadata(&paths.journal) {
+        Ok(_) => Err("A Mod management operation needs recovery before startup".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(_) => Err("Cannot verify pending Mod management recovery before startup".into()),
+    }
+}

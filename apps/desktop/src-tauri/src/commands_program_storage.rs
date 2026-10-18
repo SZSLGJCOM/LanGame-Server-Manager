@@ -407,6 +407,7 @@ pub(super) async fn update_instance_program_inner(
         &state,
         &storage,
         BackgroundJob {
+            warnings: Vec::new(),
             id: job_id.clone(),
             kind: JobKind::ValidateGame,
             label: format!("更新 {} 的程序", instance.summary.name),

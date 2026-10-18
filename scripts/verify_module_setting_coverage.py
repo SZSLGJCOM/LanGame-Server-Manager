@@ -957,6 +957,12 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
             and not is_broadcast_action
             and not PLAYER_ACTION_QUOTED_TEXT_TARGET_RE.search(target_descriptor)
             and "({{target}})" not in command_template
+            # DST Lua may bind the string ID before checking the current roster.
+            and not (
+                module_id == "dontstarve"
+                and transport == "stdin"
+                and re.match(r"local\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*\{\{target\}\}\s*;", command_template)
+            )
         ):
             failures.append(
                 f"{module_id}: runtime.player_actions[{action_id or index}] uses target_encoding quoted_string but target_label/target_placeholder describe a pure ID token; keep it raw unless the command syntax requires a quoted literal"

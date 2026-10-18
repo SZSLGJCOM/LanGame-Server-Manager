@@ -1,5 +1,6 @@
 use super::*;
 use crate::player_access_normalization::normalize_barotrauma_account;
+use app_core::workshop_ids::normalize_reference as normalize_workshop_id_line;
 
 #[path = "templates_materialize.rs"]
 mod templates_materialize;
@@ -341,56 +342,6 @@ fn lookup_materialized_setting_text(settings: &Map<String, Value>, key: &str) ->
         Value::Number(number) => Some(number.to_string()),
         Value::String(text) => Some(text.clone()),
         other => Some(other.to_string()),
-    }
-}
-
-fn normalize_workshop_id_line(line: &str) -> Option<String> {
-    let trimmed = line.trim();
-    if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with("--") {
-        return None;
-    }
-
-    let normalized = trimmed.strip_prefix("workshop-").unwrap_or(trimmed);
-    if normalized.len() >= 6
-        && normalized
-            .chars()
-            .all(|character| character.is_ascii_digit())
-    {
-        return Some(String::from(normalized));
-    }
-
-    if let Some(id_index) = trimmed.find("id=") {
-        let digits = trimmed[id_index + 3..]
-            .chars()
-            .take_while(|character| character.is_ascii_digit())
-            .collect::<String>();
-        if digits.len() >= 6 {
-            return Some(digits);
-        }
-    }
-
-    extract_first_long_digit_group(trimmed)
-}
-
-fn extract_first_long_digit_group(text: &str) -> Option<String> {
-    let mut current = String::new();
-
-    for character in text.chars() {
-        if character.is_ascii_digit() {
-            current.push(character);
-            continue;
-        }
-
-        if current.len() >= 6 {
-            return Some(current);
-        }
-        current.clear();
-    }
-
-    if current.len() >= 6 {
-        Some(current)
-    } else {
-        None
     }
 }
 

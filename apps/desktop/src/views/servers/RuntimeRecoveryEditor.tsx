@@ -1,13 +1,14 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
-import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
-import { useConfigurationFieldHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
+import { useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
 import { parseSettingsObject, serializeSettingsObject } from "../settings/guided-settings";
 import type { SettingsObject } from "../settings/settings-schema";
+import { useAutoSaveInstanceSettings } from "../settings/useAutoSaveInstanceSettings";
+import { MAINTENANCE_TYPING_DELAY_MS, MaintenanceAutoSaveFooter } from "./MaintenanceAutoSaveFooter";
 import { mergeRecoveryPolicy, parseRecoveryDraft, readRecoveryPolicy, recoveryDraft,
-  recoveryDraftChanged, type RecoveryDraft } from "./runtime-recovery-model";
+  type RecoveryDraft, type RecoveryPolicy } from "./runtime-recovery-model";
 
 interface Props {
   details: InstanceDetails;
@@ -16,23 +17,17 @@ interface Props {
   t: TranslateFn;
   onSaveSettings?(input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions): Promise<InstanceDetails | undefined>;
 }
-interface Scope { instanceId: string; saving: boolean }
-interface Draft {
-  scope: Scope;
-  values: RecoveryDraft;
-  baseline: SettingsObject;
-  observedJson: string;
-  confirmedJson: string | null;
-  status: "idle" | "saving" | "saved" | "failed";
-  error: string | null;
+/** Only a touched policy overrides the persisted record; `base` is the persisted policy the edit started from. */
+interface RecoveryEdits {
+  instanceId: string;
+  values: RecoveryDraft | null;
+  base: SettingsObject;
+  delayMs: number;
 }
-function initial(scope: Scope, settingsJson: string, readOnly = false, savedCrashRestartLimit?: number | null): Draft {
-  const baseline = parseSettingsObject(settingsJson).value ?? {};
-  const values = readOnly ? retainedRecoveryValues(baseline, savedCrashRestartLimit)
-    : recoveryDraft(readRecoveryPolicy(baseline));
-  return { scope, baseline, values, observedJson: settingsJson,
-    confirmedJson: null, status: "idle", error: null };
+function noEdits(instanceId: string): RecoveryEdits {
+  return { instanceId, values: null, base: {}, delayMs: MAINTENANCE_TYPING_DELAY_MS };
 }
+const policyKey = (policy: RecoveryPolicy) => JSON.stringify(policy);
 
 function retainedRecoverySource(settings: SettingsObject, savedCrashRestartLimit?: number | null) {
   const native = settings.runtime_restart && typeof settings.runtime_restart === "object" && !Array.isArray(settings.runtime_restart)
@@ -64,100 +59,119 @@ function retainedRecoveryValues(settings: SettingsObject, savedCrashRestartLimit
 }
 
 export function RuntimeRecoveryEditor(props: Props) {
-  const scope = useMemo<Scope>(() => ({ instanceId: props.details.summary.id, saving: false }), [props.details.summary.id]);
-  const currentScope = useRef<Scope | null>(scope);
-  currentScope.current = scope;
-  const latestDetails = useRef(props.details);
-  latestDetails.current = props.details;
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const instanceId = props.details.summary.id;
+  const currentInstanceId = useRef(instanceId);
+  currentInstanceId.current = instanceId;
+  const [edits, setEdits] = useState(() => noEdits(instanceId));
+  // Policies this editor handed to auto-save; their refreshed echo rebases the edit instead of looking external.
+  const ownPolicies = useRef(new Set<string>());
   const validationId = useId();
   const exitHelp = useConfigurationFieldHelp(useId(), props.t("servers.recovery.exitBehavior"),
     undefined, undefined, "instructions");
-  const scoped = draft?.scope === scope ? draft : null;
-  const latestJson = scoped?.confirmedJson && scoped.observedJson === props.details.settings_json
-    ? scoped.confirmedJson : props.details.settings_json;
-  const latest = parseSettingsObject(latestJson, props.t);
-  const active = scoped && (scope.saving || recoveryDraftChanged(scoped.values, scoped.baseline)
-    || scoped.observedJson === props.details.settings_json) ? scoped : initial(scope, latestJson, props.readOnly, props.savedCrashRestartLimit);
-  const parsed = parseRecoveryDraft(active.values);
-  const dirty = !props.readOnly && recoveryDraftChanged(active.values, active.baseline);
-  const saving = active.status === "saving";
-  const error = latest.error ?? active.error;
-  const retained = props.readOnly ? retainedRecoverySource(active.baseline, props.savedCrashRestartLimit) : null;
+  const active = edits.instanceId === instanceId ? edits : noEdits(instanceId);
+  const latest = parseSettingsObject(props.details.settings_json, props.t);
+  const latestSettings = latest.value ?? {};
+  const persistedPolicy = readRecoveryPolicy(latestSettings);
+  const editing = !props.readOnly && active.values !== null;
+  const values = props.readOnly ? retainedRecoveryValues(latestSettings, props.savedCrashRestartLimit)
+    : active.values ?? recoveryDraft(persistedPolicy);
+  const parsed = parseRecoveryDraft(values);
+  let merged: SettingsObject | null = null;
+  let conflict = false;
+  // The refreshed echo of this editor's own earlier write is a new base, not an external change.
+  const base = ownPolicies.current.has(policyKey(persistedPolicy)) ? latestSettings : active.base;
+  if (editing && parsed.value && latest.value) {
+    // A policy edited here and also changed elsewhere is never overwritten silently.
+    try { merged = mergeRecoveryPolicy(latest.value, base, parsed.value); } catch { conflict = true; }
+  }
+  const changed = Boolean(merged && parsed.value && policyKey(parsed.value) !== policyKey(persistedPolicy));
+  if (changed && parsed.value) ownPolicies.current.add(policyKey(parsed.value));
+  // Unchanged policies keep the persisted text, so a refresh never looks like a new draft.
+  const settingsJson = changed && merged ? serializeSettingsObject(merged) : props.details.settings_json;
+  const valid = !latest.error && !conflict && parsed.value !== null;
+  const save = useAutoSaveInstanceSettings({
+    enabled: !props.readOnly,
+    details: props.details,
+    bindIp: props.details.summary.bind_ip,
+    autoBackupOnStop: props.details.auto_backup_on_stop,
+    backupRetentionCount: String(props.details.backup_retention_count),
+    settingsJson,
+    ports: props.details.ports,
+    ready: !latest.error,
+    disabled: !valid,
+    delayMs: active.delayMs,
+    adoptExternalWrites: true,
+    onSave: props.onSaveSettings
+  });
+  const retained = props.readOnly ? retainedRecoverySource(latestSettings, props.savedCrashRestartLimit) : null;
   const enabledIsRaw = Boolean(retained && retainedBoolean(retained.enabled) === undefined);
   const exitIsRaw = Boolean(retained && retainedBoolean(retained.onlyNonzeroExit) === undefined);
 
   useEffect(() => {
-    currentScope.current = scope;
-    return () => { if (currentScope.current === scope) currentScope.current = null; };
-  }, [scope]);
+    // A persisted policy that caught up with the edit ends it; the echo of an earlier own write becomes its base.
+    setEdits((current) => {
+      if (current.instanceId !== instanceId) {
+        ownPolicies.current.clear();
+        return noEdits(instanceId);
+      }
+      const persisted = parseSettingsObject(props.details.settings_json).value;
+      if (!current.values || !persisted) return current;
+      const persistedKey = policyKey(readRecoveryPolicy(persisted));
+      const draft = parseRecoveryDraft(current.values).value;
+      if (draft && policyKey(draft) === persistedKey) {
+        ownPolicies.current.clear();
+        return noEdits(instanceId);
+      }
+      if (ownPolicies.current.has(persistedKey) && policyKey(readRecoveryPolicy(current.base)) !== persistedKey) {
+        return { ...current, base: persisted };
+      }
+      return current;
+    });
+  }, [instanceId, props.details.settings_json]);
 
-  function edit(patch: Partial<RecoveryDraft>) {
-    if (props.readOnly || scope.saving || currentScope.current !== scope) return;
-    setDraft((current) => {
-      if (props.readOnly || scope.saving || currentScope.current !== scope) return current;
-      const base = current?.scope === scope
-        && (recoveryDraftChanged(current.values, current.baseline)
-          || current.observedJson === latestDetails.current.settings_json) ? current : active;
-      return { ...base, values: { ...base.values, ...patch }, status: "idle", error: null };
+  function edit(patch: Partial<RecoveryDraft>, delayMs: number) {
+    if (props.readOnly) return;
+    const owner = instanceId;
+    const persisted = latestSettings;
+    setEdits((current) => {
+      // Events retained from a previous instance's controls must not edit the new instance.
+      if (currentInstanceId.current !== owner) return current;
+      const scoped = current.instanceId === owner ? current : noEdits(owner);
+      const base = scoped.values ? scoped.base : persisted;
+      const start = scoped.values ?? recoveryDraft(readRecoveryPolicy(persisted));
+      return { instanceId: owner, values: { ...start, ...patch }, base, delayMs };
     });
   }
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (props.readOnly || !props.onSaveSettings || scope.saving || !dirty || !parsed.value || !latest.value || currentScope.current !== scope) return;
-    scope.saving = true;
-    setDraft({ ...active, status: "saving", error: null });
-    try {
-      const submitted = mergeRecoveryPolicy(latest.value, active.baseline, parsed.value);
-      const submittedJson = serializeSettingsObject(submitted);
-      await props.onSaveSettings({
-        id: scope.instanceId, bind_ip: props.details.summary.bind_ip,
-        auto_backup_on_stop: props.details.auto_backup_on_stop,
-        backup_retention_count: props.details.backup_retention_count,
-        settings_json: submittedJson, ports: props.details.ports
-      }, { expectedSettingsJson: latestJson, silent: true, throwOnError: true });
-      if (currentScope.current !== scope) return;
-      const observedJson = latestDetails.current.settings_json;
-      const observed = parseSettingsObject(observedJson).value;
-      const refreshed = observed !== null && observedJson !== latestJson
-        && JSON.stringify(readRecoveryPolicy(observed)) === JSON.stringify(parsed.value);
-      setDraft({ ...active, baseline: refreshed ? observed : submitted, values: recoveryDraft(parsed.value),
-        observedJson, confirmedJson: refreshed ? observedJson : submittedJson, status: "saved", error: null });
-    } catch (error) {
-      if (currentScope.current !== scope) return;
-      const message = error instanceof Error && error.message === "runtime_recovery_conflict"
-        ? props.t("servers.recovery.conflict") : normalizeConfigurationSaveError(error).message;
-      setDraft({ ...active, status: "failed", error: message });
-    } finally { scope.saving = false; }
-  }
 
-  return <form className="server-save-policy-editor server-runtime-recovery-editor" onSubmit={(event) => void save(event)} noValidate>
-    {error && <ActivityNotice tone="error">{error}</ActivityNotice>}
+  const blocked = !props.readOnly && !latest.error && !valid;
+  const typing = MAINTENANCE_TYPING_DELAY_MS;
+  return <form className="server-save-policy-editor server-runtime-recovery-editor" onSubmit={(event) => event.preventDefault()} noValidate>
+    {latest.error && <ActivityNotice tone="error">{latest.error}</ActivityNotice>}
     <label className="settings-toggle-card server-backup-policy-toggle">
       <span className="settings-toggle-copy"><span className="settings-field-title">{props.t("servers.recovery.enabled")}</span>
         {enabledIsRaw ? <span className="form-note">{retained?.enabled === undefined
           ? props.t("servers.archives.configuration.notSaved") : retainedValueText(retained.enabled)}</span> : null}
       </span>
-      <input name="enabled" type="checkbox" checked={active.values.enabled} disabled={saving || Boolean(props.readOnly)}
+      <input name="enabled" type="checkbox" checked={values.enabled} disabled={Boolean(props.readOnly)}
         hidden={enabledIsRaw}
-        onChange={(event) => edit({ enabled: event.target.checked })} />
+        onChange={(event) => edit({ enabled: event.target.checked }, 0)} />
     </label>
     <div className="server-recovery-options">
     <p className="form-note">{props.t("servers.recovery.description")}</p>
     <div className="server-backup-policy-editor">
       <label className="server-backup-policy-field"><span className="detail-label">{props.t("servers.recovery.maxRestarts")}</span>
         <input className="settings-schema-input" name="maxRestarts" type={props.readOnly ? "text" : "number"} min={1} max={10} step={1}
-          value={active.values.maxRestarts} placeholder={props.readOnly ? props.t("servers.archives.configuration.notSaved") : undefined}
-          readOnly={props.readOnly} disabled={saving || Boolean(props.readOnly)} aria-invalid={!props.readOnly && parsed.error === "count"}
+          value={values.maxRestarts} placeholder={props.readOnly ? props.t("servers.archives.configuration.notSaved") : undefined}
+          readOnly={props.readOnly} disabled={Boolean(props.readOnly)} aria-invalid={!props.readOnly && parsed.error === "count"}
           aria-describedby={!props.readOnly && parsed.error === "count" ? validationId : undefined}
-          onChange={(event) => edit({ maxRestarts: event.target.value })} />
+          onChange={(event) => edit({ maxRestarts: event.target.value }, typing)} />
       </label>
       <label className="server-backup-policy-field"><span className="detail-label">{props.t("servers.recovery.waitSeconds")}</span>
         <input className="settings-schema-input" name="waitSeconds" type={props.readOnly ? "text" : "number"} min={0} max={300} step={0.001}
-          value={active.values.waitSeconds} placeholder={props.readOnly ? props.t("servers.archives.configuration.notSaved") : undefined}
-          readOnly={props.readOnly} disabled={saving || Boolean(props.readOnly)} aria-invalid={!props.readOnly && parsed.error === "wait"}
+          value={values.waitSeconds} placeholder={props.readOnly ? props.t("servers.archives.configuration.notSaved") : undefined}
+          readOnly={props.readOnly} disabled={Boolean(props.readOnly)} aria-invalid={!props.readOnly && parsed.error === "wait"}
           aria-describedby={!props.readOnly && parsed.error === "wait" ? validationId : undefined}
-          onChange={(event) => edit({ waitSeconds: event.target.value })} />
+          onChange={(event) => edit({ waitSeconds: event.target.value }, typing)} />
       </label>
     </div>
     {!props.readOnly && parsed.error && <p id={validationId} className="server-backup-policy-validation" role="alert">
@@ -169,20 +183,14 @@ export function RuntimeRecoveryEditor(props: Props) {
         {exitIsRaw ? <span className="form-note">{retained?.onlyNonzeroExit === undefined
           ? props.t("servers.archives.configuration.notSaved") : retainedValueText(retained.onlyNonzeroExit)}</span> : null}
       </span>
-      <input name="onlyNonzeroExit" type="checkbox" checked={active.values.onlyNonzeroExit} disabled={saving || Boolean(props.readOnly)}
+      <input name="onlyNonzeroExit" type="checkbox" checked={values.onlyNonzeroExit} disabled={Boolean(props.readOnly)}
         hidden={exitIsRaw}
         aria-describedby={exitHelp.descriptionId}
-        onChange={(event) => edit({ onlyNonzeroExit: event.target.checked })} />
+        onChange={(event) => edit({ onlyNonzeroExit: event.target.checked }, 0)} />
     </label>
     </div>
-    <div className="server-backup-policy-footer">
-      <ActivityNotice tone={saving ? "info" : "success"}>
-        {saving ? props.t("servers.backups.policySaving") : active.status === "saved" ? props.t("servers.backups.policySaved") : ""}
-      </ActivityNotice>
-      {(dirty || active.status === "failed") && <button type="button" className="ghost-button" disabled={saving || Boolean(props.readOnly)}
-        onClick={() => setDraft(initial(scope, latestJson))}>{props.t("servers.savePolicy.reload")}</button>}
-      <ConfigurationActionHelp reason={props.readOnly ? null : !dirty ? props.t("servers.maintenance.noChanges") : null}><button type="submit" className="secondary-button" disabled={props.readOnly || saving || !dirty || !parsed.value || !latest.value}>
-        {props.t("servers.backups.policySave")}</button></ConfigurationActionHelp>
-    </div>
+    {!props.readOnly && <MaintenanceAutoSaveFooter status={save.status} blocked={blocked}
+      conflictMessage={conflict ? props.t("servers.recovery.conflict") : null} edited={editing} t={props.t}
+      onRetry={save.retry} onDiscard={() => { ownPolicies.current.clear(); setEdits(noEdits(instanceId)); }} />}
   </form>;
 }

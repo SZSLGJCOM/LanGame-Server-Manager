@@ -1,17 +1,18 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { LocaleCode, TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
-import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
-import { useInstanceSettingsSaveCoordinator } from "../settings/InstanceSettingsSaveContext";
 import { parseGuidedSettingsSchema, parseSettingsObject, serializeSettingsObject,
   readGuidedFieldValue, validateGuidedSettingsObject, writeGuidedFieldValue } from "../settings/guided-settings";
 import { resolveSettingsModuleDefinition } from "../settings/module-registry";
 import { nativeSavePolicyKeys } from "../settings/save-policy";
 import type { GuidedSettingsField, SettingsObject } from "../settings/settings-schema";
+import { useAutoSaveInstanceSettings } from "../settings/useAutoSaveInstanceSettings";
 import { changedSettingKeys, mergeSettingPatch } from "./mod-settings-patch";
 import { NativeSavePolicyFields } from "./NativeSavePolicyFields";
+
+/** Typed values wait for a pause, like the configuration workspace; discrete choices save at once. */
+export const SAVE_POLICY_TYPING_DELAY_MS = 650;
 
 interface SavePolicyEditorProps {
   details: InstanceDetails;
@@ -22,43 +23,20 @@ interface SavePolicyEditorProps {
   onSaveSettings?: (input: UpdateInstanceInput, options?: SaveInstanceSettingsOptions) => Promise<InstanceDetails | undefined>;
 }
 
-interface PolicyScope {
+/** Only fields the user touched override the persisted record; everything else follows refreshes. */
+interface PolicyEdits {
   instanceId: string;
-  saving: boolean;
-}
-
-interface PolicyDraft {
-  scope: PolicyScope;
-  autoBackupOnStop: boolean;
-  retention: string;
-  savedAutoBackupOnStop: boolean;
-  savedRetention: number;
+  autoBackupOnStop?: boolean;
+  retention?: string;
+  /** Edited native values, and the persisted value each edit started from. */
   settings: SettingsObject;
-  savedSettings: SettingsObject;
-  observedSettingsJson: string;
-  observedAutoBackupOnStop: boolean;
-  observedRetention: number;
-  confirmedSettingsJson: string | null;
-  status: "idle" | "saving" | "saved" | "failed";
-  error: string | null;
+  baseSettings: SettingsObject;
+  editedKeys: readonly string[];
+  delayMs: number;
 }
 
-function initialDraft(details: InstanceDetails, scope: PolicyScope): PolicyDraft {
-  return {
-    scope,
-    autoBackupOnStop: details.auto_backup_on_stop,
-    retention: String(details.backup_retention_count),
-    savedAutoBackupOnStop: details.auto_backup_on_stop,
-    savedRetention: details.backup_retention_count,
-    settings: parseSettingsObject(details.settings_json).value ?? {},
-    savedSettings: parseSettingsObject(details.settings_json).value ?? {},
-    observedSettingsJson: details.settings_json,
-    observedAutoBackupOnStop: details.auto_backup_on_stop,
-    observedRetention: details.backup_retention_count,
-    confirmedSettingsJson: null,
-    status: "idle",
-    error: null
-  };
+function noEdits(instanceId: string): PolicyEdits {
+  return { instanceId, settings: {}, baseSettings: {}, editedKeys: [], delayMs: SAVE_POLICY_TYPING_DELAY_MS };
 }
 
 function retentionValue(value: string): number | null {
@@ -70,15 +48,13 @@ function retentionValue(value: string): number | null {
     : null;
 }
 
-function isDirty(draft: PolicyDraft, keys: readonly string[]): boolean {
-  return draft.autoBackupOnStop !== draft.savedAutoBackupOnStop
-    || retentionValue(draft.retention) !== draft.savedRetention
-    || changedSettingKeys(draft.savedSettings, draft.settings, keys).length > 0;
+function discreteField(field: GuidedSettingsField, value: unknown): boolean {
+  return typeof value === "boolean" || field.control === "checkbox" || field.control === "select";
 }
 
 export function SavePolicyEditor(props: SavePolicyEditorProps) {
-  const coordinator = useInstanceSettingsSaveCoordinator();
   const moduleId = props.details.summary.module_id;
+  const instanceId = props.details.summary.id;
   const keys = useMemo(() => nativeSavePolicyKeys(moduleId), [moduleId]);
   const moduleReady = props.moduleDetails?.summary.id === moduleId && Boolean(props.moduleDetails?.schema_json);
   const schema = useMemo(() => {
@@ -88,25 +64,19 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
       title: props.t(`servers.savePolicy.field.${field.key}`, undefined, field.title)
     })) };
   }, [moduleReady, props.moduleDetails, props.locale, props.t, keys]);
-  const scope = useMemo<PolicyScope>(
-    () => ({ instanceId: props.details.summary.id, saving: false }),
-    [props.details.summary.id]
-  );
-  const currentScope = useRef<PolicyScope | null>(scope);
-  currentScope.current = scope;
-  const currentDetails = useRef(props.details);
-  currentDetails.current = props.details;
-  const [draft, setDraft] = useState(() => initialDraft(props.details, scope));
+  const currentInstanceId = useRef(instanceId);
+  currentInstanceId.current = instanceId;
+  const [edits, setEdits] = useState(() => noEdits(instanceId));
+  // Native values this editor handed to auto-save, by key; their refreshed echo is a new base, not an external change.
+  const ownValues = useRef(new Map<string, Set<string>>());
   const validationId = useId();
-  const activeDraft = draft.scope === scope ? draft : initialDraft(props.details, scope);
-  const retention = retentionValue(activeDraft.retention);
-  const dirtyKeys = changedSettingKeys(activeDraft.savedSettings, activeDraft.settings, keys);
-  // A successful write remains authoritative while the panel refresh is delayed or fails.
-  const latestSettingsJson = activeDraft.confirmedSettingsJson !== null
-    && activeDraft.observedSettingsJson === props.details.settings_json
-    ? activeDraft.confirmedSettingsJson : props.details.settings_json;
-  const latest = parseSettingsObject(latestSettingsJson, props.t);
-  const settings = mergeSettingPatch(latest.value ?? {}, activeDraft.settings, keys);
+  const active = edits.instanceId === instanceId ? edits : noEdits(instanceId);
+  const latest = parseSettingsObject(props.details.settings_json, props.t);
+  const latestSettings = latest.value ?? {};
+  const settings = mergeSettingPatch(latestSettings, active.settings, active.editedKeys);
+  const autoBackupOnStop = active.autoBackupOnStop ?? props.details.auto_backup_on_stop;
+  const retentionText = active.retention ?? String(props.details.backup_retention_count);
+  const retention = retentionValue(retentionText);
   const moduleDefinition = resolveSettingsModuleDefinition(moduleId);
   const validationSettings = { ...settings };
   if (!props.readOnly) for (const field of schema.fields) validationSettings[field.key] = readGuidedFieldValue(field, settings);
@@ -123,191 +93,140 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
   const policyError = latest.error ?? schema.parseError
     ?? (!props.readOnly && keys.length > 0 && (!moduleReady || keys.some((key) => !schema.fields.some((field) => field.key === key)))
       ? props.t("servers.savePolicy.schemaUnavailable") : null);
-  const valid = !policyError && issues.length === 0 && retention !== null;
-  const dirty = isDirty(activeDraft, keys);
-  const saving = activeDraft.status === "saving";
+  const ownEcho = (key: string) => {
+    const persisted = JSON.stringify(latestSettings[key]);
+    return persisted !== undefined && ownValues.current.get(key)?.has(persisted) === true;
+  };
+  // A native value edited here and also changed elsewhere is never overwritten silently.
+  const conflict = active.editedKeys.some((key) => !ownEcho(key)
+    && changedSettingKeys(active.baseSettings, latestSettings, [key]).length > 0
+    && changedSettingKeys(active.settings, latestSettings, [key]).length > 0);
+  const valid = !policyError && !conflict && issues.length === 0 && retention !== null;
+  const nativeChangedKeys = changedSettingKeys(latestSettings, settings, active.editedKeys);
+  const nativeChanged = nativeChangedKeys.length > 0;
+  if (valid) for (const key of nativeChangedKeys) {
+    const value = JSON.stringify(settings[key]);
+    if (value === undefined) continue;
+    const owned = ownValues.current.get(key) ?? new Set<string>();
+    owned.add(value);
+    ownValues.current.set(key, owned);
+  }
+  // Unchanged settings keep their persisted text, so a refresh never looks like a new draft.
+  const settingsJson = nativeChanged ? serializeSettingsObject(settings) : props.details.settings_json;
+  const save = useAutoSaveInstanceSettings({
+    enabled: !props.readOnly,
+    details: props.details,
+    bindIp: props.details.summary.bind_ip,
+    autoBackupOnStop,
+    backupRetentionCount: retention === null ? String(props.details.backup_retention_count) : String(retention),
+    settingsJson,
+    ports: props.details.ports,
+    ready: !latest.error && !schema.parseError && (keys.length === 0 || moduleReady),
+    disabled: !valid,
+    delayMs: active.delayMs,
+    adoptExternalWrites: true,
+    onSave: props.onSaveSettings
+  });
 
   useEffect(() => {
-    if (!props.readOnly && !policyError) {
-      // Reopening loads persisted policy; pending writes retain their start barrier.
-      void coordinator.runOperation(scope.instanceId, async () => undefined, "save-policy");
-    }
-  }, [coordinator, scope, props.readOnly, Boolean(policyError)]);
-
-  useEffect(() => {
-    currentScope.current = scope;
-    return () => {
-      if (currentScope.current === scope) currentScope.current = null;
-    };
-  }, [scope]);
-
-  useEffect(() => {
-    setDraft((current) => {
-      if (current.scope !== scope) return initialDraft(props.details, scope);
-      if (scope.saving || (current.confirmedSettingsJson !== null
-        && current.observedSettingsJson === props.details.settings_json
-        && current.observedAutoBackupOnStop === props.details.auto_backup_on_stop
-        && current.observedRetention === props.details.backup_retention_count)) return current;
-      const confirmedSettingsJson = current.observedSettingsJson === props.details.settings_json
-        ? current.confirmedSettingsJson : null;
-      const refreshedDetails = confirmedSettingsJson === null ? props.details
-        : { ...props.details, settings_json: confirmedSettingsJson };
-      if (isDirty(current, keys)) {
-        const latestSettings = parseSettingsObject(refreshedDetails.settings_json).value;
-        if (!latestSettings) return current;
-        const editedKeys = new Set(changedSettingKeys(current.savedSettings, current.settings, keys));
-        const untouchedKeys = keys.filter((key) => !editedKeys.has(key));
-        const keepToggle = current.autoBackupOnStop !== current.savedAutoBackupOnStop;
-        const keepRetention = retentionValue(current.retention) !== current.savedRetention;
-        return { ...current,
-          observedSettingsJson: props.details.settings_json,
-          confirmedSettingsJson,
-          observedAutoBackupOnStop: props.details.auto_backup_on_stop,
-          observedRetention: props.details.backup_retention_count,
-          settings: mergeSettingPatch(current.settings, latestSettings, untouchedKeys),
-          savedSettings: mergeSettingPatch(current.savedSettings, latestSettings, untouchedKeys),
-          autoBackupOnStop: keepToggle ? current.autoBackupOnStop : props.details.auto_backup_on_stop,
-          savedAutoBackupOnStop: keepToggle ? current.savedAutoBackupOnStop : props.details.auto_backup_on_stop,
-          retention: keepRetention ? current.retention : String(props.details.backup_retention_count),
-          savedRetention: keepRetention ? current.savedRetention : props.details.backup_retention_count
-        };
+    // Persisted values that caught up with an edit end that edit, so later refreshes are followed again.
+    setEdits((current) => {
+      if (current.instanceId !== instanceId) {
+        ownValues.current.clear();
+        return noEdits(instanceId);
       }
-      if (current.savedAutoBackupOnStop === props.details.auto_backup_on_stop
-        && current.savedRetention === props.details.backup_retention_count
-        && changedSettingKeys(current.savedSettings, parseSettingsObject(refreshedDetails.settings_json).value ?? {}, keys).length === 0) return current;
-      return { ...initialDraft(refreshedDetails, scope),
-        observedSettingsJson: props.details.settings_json, confirmedSettingsJson };
+      const persisted = parseSettingsObject(props.details.settings_json).value;
+      const editedKeys = persisted
+        ? current.editedKeys.filter((key) => changedSettingKeys(current.settings, persisted, [key]).length > 0)
+        : current.editedKeys;
+      for (const key of current.editedKeys) if (!editedKeys.includes(key)) ownValues.current.delete(key);
+      const keepToggle = current.autoBackupOnStop !== undefined && current.autoBackupOnStop !== props.details.auto_backup_on_stop;
+      const keepRetention = current.retention !== undefined && retentionValue(current.retention) !== props.details.backup_retention_count;
+      if (editedKeys.length === current.editedKeys.length && keepToggle === (current.autoBackupOnStop !== undefined)
+        && keepRetention === (current.retention !== undefined)) return current;
+      return { ...current, editedKeys,
+        autoBackupOnStop: keepToggle ? current.autoBackupOnStop : undefined,
+        retention: keepRetention ? current.retention : undefined };
     });
-  }, [scope, keys, props.details.settings_json, props.details.auto_backup_on_stop, props.details.backup_retention_count]);
+  }, [instanceId, props.details.settings_json, props.details.auto_backup_on_stop, props.details.backup_retention_count]);
+
+  function update(change: (current: PolicyEdits) => PolicyEdits) {
+    if (props.readOnly) return;
+    const owner = instanceId;
+    setEdits((current) => {
+      // Events retained from a previous instance's controls must not edit the new instance.
+      if (currentInstanceId.current !== owner) return current;
+      return change(current.instanceId === owner ? current : noEdits(owner));
+    });
+  }
 
   function editNative(field: GuidedSettingsField, value: unknown) {
-    if (props.readOnly || scope.saving) return;
-    setDraft((current) => {
-      if (currentScope.current !== scope) return current;
-      const currentDraft = current.scope === scope ? current : initialDraft(props.details, scope);
-      return { ...currentDraft, settings: writeGuidedFieldValue(currentDraft.settings, field, value), status: "idle", error: null };
+    update((current) => {
+      const edited = current.editedKeys.includes(field.key);
+      return { ...current,
+        settings: writeGuidedFieldValue(current.settings, field, value),
+        baseSettings: edited ? current.baseSettings : mergeSettingPatch(current.baseSettings, latestSettings, [field.key]),
+        editedKeys: edited ? current.editedKeys : [...current.editedKeys, field.key],
+        delayMs: discreteField(field, value) ? 0 : SAVE_POLICY_TYPING_DELAY_MS };
     });
   }
 
-  function edit(next: Partial<Pick<PolicyDraft, "autoBackupOnStop" | "retention">>) {
-    if (props.readOnly || scope.saving) return;
-    setDraft((current) => {
-      if (currentScope.current !== scope) return current;
-      const currentDraft = current.scope === scope ? current : initialDraft(props.details, scope);
-      return { ...currentDraft, ...next, status: "idle", error: null };
-    });
-  }
-
-  async function savePolicy(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const onSaveSettings = props.onSaveSettings;
-    if (props.readOnly || !onSaveSettings || scope.saving || !dirty || !valid || retention === null || currentScope.current !== scope) return;
-    scope.saving = true;
-    const observedBeforeSave = props.details;
-    setDraft({ ...activeDraft, status: "saving", error: null });
-    try {
-      await coordinator.runOperation(scope.instanceId, async () => {
-        // Only owned, edited fields are merged; a simultaneous edit to the same native setting requires reloading.
-        const changedElsewhere = changedSettingKeys(activeDraft.savedSettings, latest.value ?? {}, dirtyKeys);
-        const submittedSettings = mergeSettingPatch(latest.value ?? {}, activeDraft.settings, dirtyKeys);
-        if (changedSettingKeys(submittedSettings, latest.value ?? {}, changedElsewhere).length > 0) {
-          throw new Error(props.t("servers.savePolicy.conflict"));
-        }
-        const autoBackupOnStop = activeDraft.autoBackupOnStop !== activeDraft.savedAutoBackupOnStop
-          || activeDraft.observedAutoBackupOnStop === props.details.auto_backup_on_stop
-          ? activeDraft.autoBackupOnStop : props.details.auto_backup_on_stop;
-        const savedRetention = retention !== activeDraft.savedRetention
-          || activeDraft.observedRetention === props.details.backup_retention_count ? retention : props.details.backup_retention_count;
-        const submittedJson = dirtyKeys.length ? serializeSettingsObject(submittedSettings) : latestSettingsJson;
-        await onSaveSettings({
-          id: scope.instanceId,
-          bind_ip: props.details.summary.bind_ip,
-          auto_backup_on_stop: autoBackupOnStop,
-          backup_retention_count: savedRetention,
-          settings_json: submittedJson,
-          ports: props.details.ports
-        }, { expectedSettingsJson: latestSettingsJson, silent: true, throwOnError: true });
-        if (currentScope.current !== scope) return;
-        const observedSettingsJson = currentDetails.current.settings_json;
-        const observed = parseSettingsObject(observedSettingsJson).value;
-        const refreshed = observed !== null && observedSettingsJson !== observedBeforeSave.settings_json
-          && changedSettingKeys(submittedSettings, observed, dirtyKeys).length === 0;
-        const confirmedSettingsJson = refreshed ? observedSettingsJson : submittedJson;
-        const confirmedSettings = refreshed ? observed : submittedSettings;
-        const confirmedAutoBackup = currentDetails.current.auto_backup_on_stop !== observedBeforeSave.auto_backup_on_stop
-          ? currentDetails.current.auto_backup_on_stop : autoBackupOnStop;
-        const confirmedRetention = currentDetails.current.backup_retention_count !== observedBeforeSave.backup_retention_count
-          ? currentDetails.current.backup_retention_count : savedRetention;
-        setDraft({
-          ...activeDraft,
-          autoBackupOnStop: confirmedAutoBackup,
-          retention: String(confirmedRetention),
-          savedAutoBackupOnStop: confirmedAutoBackup,
-          savedRetention: confirmedRetention,
-          settings: confirmedSettings,
-          savedSettings: confirmedSettings,
-          observedSettingsJson,
-          observedAutoBackupOnStop: currentDetails.current.auto_backup_on_stop,
-          observedRetention: currentDetails.current.backup_retention_count,
-          confirmedSettingsJson,
-          status: "saved",
-          error: null
-        });
-      }, "save-policy");
-    } catch (error) {
-      if (currentScope.current !== scope) return;
-      setDraft({ ...activeDraft, status: "failed", error: normalizeConfigurationSaveError(error).message });
-    } finally {
-      scope.saving = false;
-    }
-  }
+  const blocked = !props.readOnly && !policyError && !valid;
+  const failed = save.status.state === "failed" || save.status.state === "conflict";
+  const state = blocked ? "blocked" : save.status.state;
+  const tone = state === "saved" ? "success" : failed ? "error" : blocked ? "warning" : "info";
+  const statusText = conflict ? props.t("servers.savePolicy.conflict")
+    : blocked ? props.t("settings.configuration.save.blocked", undefined, "Fix invalid settings to save")
+      : state === "saving" ? props.t("servers.backups.policySaving", undefined, "Saving policy…")
+        : state === "dirty" ? props.t("settings.configuration.save.pending", undefined, "Changes waiting to save")
+          : failed && "message" in save.status ? props.t("servers.backups.policyError", { message: save.status.message },
+            `Unable to save policy: ${save.status.message}`)
+            : props.t("servers.backups.policySaved", undefined, "Policy saved");
+  const edited = active.editedKeys.length > 0 || active.autoBackupOnStop !== undefined || active.retention !== undefined;
 
   return (
-    <form className="server-save-policy-editor" onSubmit={(event) => void savePolicy(event)} noValidate>
+    <form className="server-save-policy-editor" onSubmit={(event) => event.preventDefault()} noValidate>
       {policyError && <ActivityNotice tone="error">{policyError}</ActivityNotice>}
       <div className="server-native-save-policies">
-        <NativeSavePolicyFields instanceId={scope.instanceId} moduleId={moduleId} fields={schema.fields} settings={settings}
-          issues={props.readOnly ? [] : issues} readOnly={props.readOnly} disabled={saving || Boolean(props.readOnly)} t={props.t} onChange={editNative} />
+        <NativeSavePolicyFields instanceId={instanceId} moduleId={moduleId} fields={schema.fields} settings={settings}
+          issues={props.readOnly ? [] : issues} readOnly={props.readOnly} disabled={Boolean(props.readOnly)} t={props.t} onChange={editNative} />
       </div>
-      <fieldset className="server-save-policy-group server-managed-backup-policy" disabled={saving || Boolean(props.readOnly)} aria-label={props.t("servers.savePolicy.stopBackups")}>
+      <fieldset className="server-save-policy-group server-managed-backup-policy" disabled={Boolean(props.readOnly)} aria-label={props.t("servers.savePolicy.stopBackups")}>
       <legend>{props.locale === "zh-CN" ? "\u5907\u4efd" : "Backups"}</legend>
       <div className="server-backup-policy-editor">
       <label className="settings-toggle-card server-backup-policy-toggle">
         <span className="settings-toggle-copy">
           <span className="settings-field-title">{props.t("servers.savePolicy.stopBackups")}</span>
         </span>
-        <input type="checkbox" checked={activeDraft.autoBackupOnStop} disabled={saving || Boolean(props.readOnly)}
-          onChange={(event) => edit({ autoBackupOnStop: event.target.checked })} />
+        <input type="checkbox" checked={autoBackupOnStop} disabled={Boolean(props.readOnly)}
+          onChange={(event) => {
+            const checked = event.target.checked;
+            update((current) => ({ ...current, autoBackupOnStop: checked, delayMs: 0 }));
+          }} />
       </label>
       <label className="server-backup-policy-field">
         <span className="detail-label">{props.t("settings.backups.retention")}</span>
         <input className="settings-schema-input" type="number" min={1} max={4_294_967_295} step={1}
-          value={activeDraft.retention} disabled={saving || Boolean(props.readOnly)} aria-invalid={!props.readOnly && retention === null}
+          value={retentionText} disabled={Boolean(props.readOnly)} aria-invalid={!props.readOnly && retention === null}
           aria-describedby={!props.readOnly && retention === null ? validationId : undefined}
-          onChange={(event) => edit({ retention: event.target.value })} />
+          onChange={(event) => {
+            const value = event.target.value;
+            update((current) => ({ ...current, retention: value, delayMs: SAVE_POLICY_TYPING_DELAY_MS }));
+          }} />
       </label>
       {!props.readOnly && retention === null && <div id={validationId} className="server-backup-policy-validation" role="alert">
         {props.t("servers.backups.retentionInvalid", undefined, "Enter a whole number from 1 to 4294967295.")}
       </div>}
       </div>
       </fieldset>
-      <div className="server-backup-policy-footer">
-        <ActivityNotice tone={activeDraft.status === "failed" ? "error" : saving ? "info" : "success"}>
-          {saving ? props.t("servers.backups.policySaving", undefined, "Saving policy…")
-            : activeDraft.status === "saved" ? props.t("servers.backups.policySaved", undefined, "Policy saved")
-              : activeDraft.status === "failed" ? props.t("servers.backups.policyError", { message: activeDraft.error ?? "" },
-                `Unable to save policy: ${activeDraft.error ?? ""}`) : ""}
-        </ActivityNotice>
-        {(dirty || activeDraft.status === "failed") && <button className="ghost-button" type="button" disabled={saving || Boolean(props.readOnly)}
-          onClick={() => {
-            if (scope.saving || props.readOnly || currentScope.current !== scope) return;
-            setDraft(initialDraft(props.details, scope));
-            if (!policyError) void coordinator.runOperation(scope.instanceId, async () => undefined, "save-policy");
-          }}>{props.t("servers.savePolicy.reload")}</button>}
-        <ConfigurationActionHelp reason={props.readOnly ? null : !dirty ? props.t("servers.maintenance.noChanges") : null}><button className="secondary-button" type="submit" disabled={props.readOnly || !dirty || saving || !valid}>
-          {props.t("servers.backups.policySave", undefined, "Save policy")}
-        </button></ConfigurationActionHelp>
-      </div>
+      {!props.readOnly && <div className="server-backup-policy-footer" data-save-state={state}>
+        <ActivityNotice tone={tone}>{statusText}</ActivityNotice>
+        {failed && !blocked && <button className="secondary-button" type="button" onClick={save.retry}>
+          {props.t("settings.configuration.save.retry", undefined, "Retry save")}
+        </button>}
+        {edited && (failed || blocked) && <button className="ghost-button" type="button"
+          onClick={() => { ownValues.current.clear(); update(() => noEdits(instanceId)); }}>{props.t("servers.savePolicy.reload")}</button>}
+      </div>}
     </form>
   );
 }

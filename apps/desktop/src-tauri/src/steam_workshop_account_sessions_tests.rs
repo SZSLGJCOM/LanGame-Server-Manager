@@ -700,5 +700,225 @@ fn module_login_inputs_and_receipts_cannot_cross_into_an_instance_with_the_same_
     assert!(input.try_recv().is_err());
 }
 
+#[test]
+fn automatic_workshop_account_requires_the_exact_authenticated_instance_and_context() {
+    let (sessions, _) = fixture();
+    let steamcmd_root = std::path::Path::new("steamcmd-a");
+    let storage_root = std::path::Path::new("profile-a");
+    assert_eq!(
+        sessions
+            .workshop_download_account(&target("palworld-a"), steamcmd_root, storage_root)
+            .unwrap(),
+        None
+    );
+    sessions.finish(
+        "session-a",
+        Ok(SteamWorkshopAccountAuthenticationResult {
+            account_name: "alice".into(),
+            steamcmd_root: "steamcmd-a".into(),
+        }),
+    );
+    assert_eq!(
+        sessions
+            .workshop_download_account(&target("palworld-a"), steamcmd_root, storage_root)
+            .unwrap()
+            .as_deref(),
+        Some("alice")
+    );
+    for (requested, native, profile) in [
+        (target("palworld-b"), "steamcmd-a", "profile-a"),
+        (
+            SteamAccountLoginTarget::Module("palworld-a".into()),
+            "steamcmd-a",
+            "profile-a",
+        ),
+        (target("palworld-a"), "steamcmd-b", "profile-a"),
+        (target("palworld-a"), "steamcmd-a", "profile-b"),
+    ] {
+        assert_eq!(
+            sessions
+                .workshop_download_account(
+                    &requested,
+                    std::path::Path::new(native),
+                    std::path::Path::new(profile),
+                )
+                .unwrap(),
+            None
+        );
+    }
+}
+
+#[test]
+fn module_authentication_never_grants_automatic_workshop_access() {
+    let sessions = SteamWorkshopAccountSessions::default();
+    let module = SteamAccountLoginTarget::Module("palworld-a".into());
+    let (sender, _) = mpsc::channel(1);
+    let storage_root = std::path::Path::new("profile-a");
+    let steamcmd_root = std::path::Path::new("steamcmd-a");
+    sessions
+        .begin(&module, "module-session", sender, storage_root)
+        .unwrap();
+    sessions.finish(
+        "module-session",
+        Ok(SteamWorkshopAccountAuthenticationResult {
+            account_name: "alice".into(),
+            steamcmd_root: "steamcmd-a".into(),
+        }),
+    );
+    for requested in [module, target("palworld-a")] {
+        assert_eq!(
+            sessions
+                .workshop_download_account(&requested, steamcmd_root, storage_root)
+                .unwrap(),
+            None
+        );
+    }
+}
+
+#[test]
+fn failed_cancelled_or_replaced_sessions_revoke_the_automatic_workshop_account() {
+    let steamcmd_root = std::path::Path::new("steamcmd-a");
+    let storage_root = std::path::Path::new("profile-a");
+    for failure in ["authentication failed", "installation_cancelled"] {
+        let (sessions, _) = fixture();
+        sessions.finish(
+            "session-a",
+            Ok(SteamWorkshopAccountAuthenticationResult {
+                account_name: "alice".into(),
+                steamcmd_root: "steamcmd-a".into(),
+            }),
+        );
+        sessions.finish("session-a", Err(failure.into()));
+        assert_eq!(
+            sessions
+                .workshop_download_account(&target("palworld-a"), steamcmd_root, storage_root)
+                .unwrap(),
+            None
+        );
+    }
+    let (sessions, _) = fixture();
+    sessions.finish(
+        "session-a",
+        Ok(SteamWorkshopAccountAuthenticationResult {
+            account_name: "alice".into(),
+            steamcmd_root: "steamcmd-a".into(),
+        }),
+    );
+    let (sender, _) = mpsc::channel(1);
+    sessions
+        .begin(
+            &target("palworld-a"),
+            "session-b",
+            sender,
+            std::path::Path::new("profile-b"),
+        )
+        .unwrap();
+    sessions.finish(
+        "session-a",
+        Ok(SteamWorkshopAccountAuthenticationResult {
+            account_name: "alice".into(),
+            steamcmd_root: "steamcmd-a".into(),
+        }),
+    );
+    for profile in [storage_root, std::path::Path::new("profile-b")] {
+        assert_eq!(
+            sessions
+                .workshop_download_account(&target("palworld-a"), steamcmd_root, profile)
+                .unwrap(),
+            None
+        );
+    }
+}
+
+#[test]
+fn anonymous_selection_revokes_workshop_reuse_until_a_fresh_explicit_request() {
+    let (sessions, _) = fixture();
+    let target = target("palworld-a");
+    let steamcmd_root = std::path::Path::new("steamcmd-a");
+    let storage_root = std::path::Path::new("profile-a");
+    sessions.finish(
+        "session-a",
+        Ok(SteamWorkshopAccountAuthenticationResult {
+            account_name: "alice".into(),
+            steamcmd_root: "steamcmd-a".into(),
+        }),
+    );
+    let queued = sessions
+        .authorize_account(&target, "alice", steamcmd_root, storage_root)
+        .unwrap();
+    sessions.clear_server_download(&target).unwrap();
+    assert_eq!(
+        sessions
+            .workshop_download_account(&target, steamcmd_root, storage_root)
+            .unwrap(),
+        None
+    );
+    assert!(
+        sessions
+            .authorize_workshop_download_account(
+                &target,
+                "alice",
+                &queued,
+                steamcmd_root,
+                storage_root,
+            )
+            .is_err()
+    );
+    let explicit = sessions
+        .authorize_account(&target, "alice", steamcmd_root, storage_root)
+        .unwrap();
+    for (requested, account, native, profile) in [
+        (
+            SteamAccountLoginTarget::Instance("palworld-b".into()),
+            "alice",
+            "steamcmd-a",
+            "profile-a",
+        ),
+        (
+            SteamAccountLoginTarget::Module("palworld-a".into()),
+            "alice",
+            "steamcmd-a",
+            "profile-a",
+        ),
+        (target.clone(), "bob", "steamcmd-a", "profile-a"),
+        (target.clone(), "alice", "steamcmd-b", "profile-a"),
+        (target.clone(), "alice", "steamcmd-a", "profile-b"),
+    ] {
+        assert!(
+            sessions
+                .authorize_workshop_download_account(
+                    &requested,
+                    account,
+                    &explicit,
+                    std::path::Path::new(native),
+                    std::path::Path::new(profile),
+                )
+                .is_err()
+        );
+    }
+    assert_eq!(
+        sessions
+            .workshop_download_account(&target, steamcmd_root, storage_root)
+            .unwrap(),
+        None
+    );
+    sessions
+        .authorize_workshop_download_account(
+            &target,
+            "alice",
+            &explicit,
+            steamcmd_root,
+            storage_root,
+        )
+        .unwrap();
+    assert_eq!(
+        sessions
+            .workshop_download_account(&target, steamcmd_root, storage_root)
+            .unwrap()
+            .as_deref(),
+        Some("alice")
+    );
+}
+
 #[path = "steam_server_account_authorization_tests.rs"]
 mod server_authorization;

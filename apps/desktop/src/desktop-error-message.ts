@@ -1,6 +1,8 @@
 import type { TranslateFn } from "./i18n";
 import { formatLaunchValidationIssue } from "./launch-validation-message";
 import { formatSteamCmdError } from "./steamcmd-error-message";
+import { formatAsaCurseForgeError } from "./asa-curseforge-error-message";
+import { formatWindowsFirewallError } from "./windows-firewall-error-message";
 
 const PROGRAM_CREATION_ERRORS = [
   ["服务器程序尚未下载完成，请先在游戏库完成安装或校验，再创建实例；本次没有启动下载。", "errors.creationDownloadIncomplete"],
@@ -42,6 +44,10 @@ export function formatDesktopError(t: TranslateFn, error: unknown): string {
   const installError = formatSteamCmdError(t, value);
   if (installError !== null) return installError;
   switch (value.code) {
+    case "windows_firewall_setup_failed":
+      return formatWindowsFirewallError(t, value) ?? original;
+    case "asa_curseforge_startup_failed":
+      return formatAsaCurseForgeError(t, value) ?? original;
     case "system_telemetry_contract_missing":
       return t("errors.systemTelemetryBackendOutOfDate");
     case "mod_runtime_unverified":

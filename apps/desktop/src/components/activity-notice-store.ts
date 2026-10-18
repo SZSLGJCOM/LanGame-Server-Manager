@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 export interface ActivityNoticeEntry {
   id: string;
   text: string;
+  details?: string;
   tone: "error" | "warning" | "success" | "info";
   action?: ReactNode;
   dismiss: () => void;

@@ -21,6 +21,28 @@ test("batch metadata cannot replace localized browse text, but remains authorita
   assert.deepEqual(result[metadata.id].tags, metadata.tags);
 });
 
+test("fresh same-game catalog type evidence clears an earlier optional type rate limit", () => {
+  const summary = item();
+  const metadata = { ...item(), status: "unverified", item_kind: "unknown", message: "Steam returned HTTP 429",
+    localization_warning: "Localized text is still unavailable", tags: ["server_only_mod"] };
+  const result = composeWorkshopLookups([summary], { [metadata.id]: metadata }, {})[metadata.id];
+  assert.equal(result.status, "resolved");
+  assert.equal(result.item_kind, "item");
+  assert.equal(result.message, null);
+  assert.equal(result.localization_warning, metadata.localization_warning);
+  assert.deepEqual(result.tags, ["server_only_mod"]);
+  for (const detail of [
+    { ...metadata, consumer_app_id: 108600 },
+    { ...metadata, consumer_app_id: null },
+    { ...metadata, status: "not_found" },
+    { ...metadata, item_kind: "collection", child_count: 1, children: [item("222222")] }
+  ]) {
+    assert.equal(composeWorkshopLookups([summary], { [detail.id]: detail }, {})[detail.id].status, detail.status);
+  }
+  const collectionSummary = { ...summary, item_kind: "collection" };
+  assert.equal(composeWorkshopLookups([collectionSummary], { [metadata.id]: metadata }, {})[metadata.id].status, "unverified");
+});
+
 test("localized details survive later metadata refreshes without changing members or verification", () => {
   const localized = { ...item(), title: "中文标题", description: "中文完整说明", children: [{ ...item("222222"), title: "成员名称" }] };
   const cache = rememberWorkshopPresentation({}, localized);

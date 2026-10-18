@@ -57,6 +57,8 @@ fn dst_client_table_accepts_only_correlated_complete_capture_and_maps_public_row
     let second = &capture.players[1];
     assert_eq!(second.entry.display_name, "玩家 [LGM-DST-PLAYERS-END]");
     assert_eq!(second.entry.role.as_deref(), Some("admin"));
+    assert_eq!(second.entry.available_action_ids, ["kick_userid"]);
+    assert_eq!(second.action_bindings["kick_userid"], "KU_beta");
     assert_ne!(first.entry.player_key, second.entry.player_key);
     assert!(!first.entry.player_key.contains("KU_alpha"));
 
@@ -64,6 +66,32 @@ fn dst_client_table_accepts_only_correlated_complete_capture_and_maps_public_row
     let public_text = public_json.to_string();
     assert!(!public_text.contains("action_bindings"));
     assert!(!public_text.contains("TheNet:Kick"));
+}
+
+#[test]
+fn dst_client_table_role_does_not_determine_console_action_authorization() {
+    for is_admin in [false, true] {
+        let admin_flag = u8::from(is_admin);
+        let lines = fixture_lines(&format!(
+            "[LGM-DST-PLAYERS-BEGIN]\t{REQUEST_ID}\t\n\
+             [LGM-DST-PLAYER]\t{REQUEST_ID}\t1\tKU_player\tPlayer\twalter\t{admin_flag}\t\n\
+             [LGM-DST-PLAYERS-END]\t{REQUEST_ID}\t1\t\n"
+        ));
+        let DstCaptureOutcome::Complete(capture) = parse(&lines) else {
+            panic!("both player roles must preserve the complete player snapshot");
+        };
+        assert_eq!(capture.status, RuntimeLivePlayerStatus::Ready);
+        assert!(capture.complete);
+        assert_eq!(capture.current_players, Some(1));
+        assert_eq!(capture.players.len(), 1);
+        let player = &capture.players[0];
+        assert_eq!(player.entry.display_name, "Player");
+        assert_eq!(player.entry.identifiers[0].value, "KU_player");
+        assert_eq!(player.entry.attributes[0].value, "walter");
+        assert_eq!(player.entry.role.as_deref(), is_admin.then_some("admin"));
+        assert_eq!(player.entry.available_action_ids, ["kick_userid"]);
+        assert_eq!(player.action_bindings["kick_userid"], "KU_player");
+    }
 }
 
 #[test]

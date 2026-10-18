@@ -17,11 +17,25 @@ authority = "installed_ark_survival_evolved_binary_static_analysis"
 description = "Read-only inspection of installed build 21241282 confirms AllowStdOutLogVerbosity is parsed into the stdout device. The serializer otherwise drops Log (5), accepting only levels through Display (4); with the switch it also accepts Log. This explains the missing normal startup output with stdout alone. The module requests both switches and preserves abslog. Run 101 subsequently confirmed the managed transcript but exposed delayed native-file visibility; run 107 with FORCELOGFLUSH passed the bounded lifecycle and same-source UI samples. The runtime fixture preserves both earlier failures and the exact scope of those observations."
 
 [[sources]]
+id = "map_mod_scopes"
+kind = "documentation"
+authority = "langame_managed_runtime_and_unreal_server_configuration"
+path = "crates/app-core/src/ark_mod_scopes.rs"
+description = "Shared Mod defaults with sparse per-Mod, per-map overrides and fixed per-map native INI paths. Dedicated-server category INI overrides preserve the existing world-save layout. Contract fixtures and Rust tests verify rendering and isolation; third-party Mod gameplay and transfer compatibility require native testing."
+url = "https://dev.epicgames.com/documentation/unreal-engine/configuration-files-in-unreal-engine"
+
+[[items]]
+source = "map_mod_scopes"
+key = "ark_mod_map_overrides"
+schema_key = "ark_mod_map_overrides"
+surface = "materializer"
+
+[[sources]]
 id = "map_processes"
 kind = "documentation"
 authority = "langame_managed_runtime"
 path = "crates/app-core/src/ark_maps.rs"
-description = "Managed map process group: one native process and CMD per enabled map, shared installation and INI, stable map save directories and port bindings."
+description = "Managed map process group: one native process and CMD per enabled map, shared installation and server defaults, optional independent Mod INI files, stable map save directories and port bindings."
 
 [[items]]
 source = "map_processes"

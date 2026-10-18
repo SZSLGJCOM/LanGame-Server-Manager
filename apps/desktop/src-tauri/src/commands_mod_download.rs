@@ -196,10 +196,23 @@ pub(in crate::commands) struct ModDownloadRequest<'a> {
     pub(in crate::commands) download_root: &'a Path,
 }
 
-enum ModDownloadFailure {
+#[derive(Debug)]
+pub(in crate::commands) enum ModDownloadFailure {
     Network(String),
     Interrupted(String),
+    Http(String),
     Terminal(String),
+}
+
+impl ModDownloadFailure {
+    fn message(self) -> String {
+        match self {
+            Self::Network(value)
+            | Self::Interrupted(value)
+            | Self::Http(value)
+            | Self::Terminal(value) => value,
+        }
+    }
 }
 
 impl From<String> for ModDownloadFailure {
@@ -212,11 +225,36 @@ pub(in crate::commands) async fn download_mod_site_file_with_limit(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
 ) -> Result<PathBuf, String> {
+    download_mod_site_file_with_limit_inner(client, request, None)
+        .await
+        .map_err(ModDownloadFailure::message)
+}
+
+pub(in crate::commands) async fn download_mod_site_file_with_limit_and_cancellation(
+    client: &reqwest::Client,
+    request: ModDownloadRequest<'_>,
+    cancellation: &app_steamcmd::InstallCancellation,
+) -> Result<PathBuf, ModDownloadFailure> {
+    download_mod_site_file_with_limit_inner(client, request, Some(cancellation)).await
+}
+
+async fn cancelled(cancellation: Option<&app_steamcmd::InstallCancellation>) {
+    match cancellation {
+        Some(cancellation) => cancellation.cancelled().await,
+        None => std::future::pending().await,
+    }
+}
+
+async fn download_mod_site_file_with_limit_inner(
+    client: &reqwest::Client,
+    request: ModDownloadRequest<'_>,
+    cancellation: Option<&app_steamcmd::InstallCancellation>,
+) -> Result<PathBuf, ModDownloadFailure> {
     if let Some(integrity) = request.integrity
         && let Some(max_bytes) = request.max_bytes
         && integrity.size > max_bytes
     {
-        return Err(mod_download_size_limit_error(integrity.size, max_bytes));
+        return Err(mod_download_size_limit_error(integrity.size, max_bytes).into());
     }
     let candidates = app_network::official_url_candidates(
         request.download_url,
@@ -231,12 +269,17 @@ pub(in crate::commands) async fn download_mod_site_file_with_limit(
                 download_url: candidate,
                 ..request
             };
-            match download_mod_file_from_source(client, attempt).await {
+            if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
+                return Err(String::from("Mod package preparation was cancelled").into());
+            }
+            match download_mod_file_from_source(client, attempt, cancellation).await {
                 Ok(path) => {
                     app_network::record_success(candidate);
                     return Ok(path);
                 }
-                Err(ModDownloadFailure::Terminal(error)) => return Err(error),
+                Err(error @ (ModDownloadFailure::Terminal(_) | ModDownloadFailure::Http(_))) => {
+                    return Err(error);
+                }
                 Err(ModDownloadFailure::Network(error)) => {
                     app_network::record_failure(candidate);
                     failures.push(error);
@@ -252,15 +295,16 @@ pub(in crate::commands) async fn download_mod_site_file_with_limit(
             }
         }
     }
-    Err(format!(
+    Err(ModDownloadFailure::Network(format!(
         "mod package could not be downloaded: {}",
         failures.join("; ")
-    ))
+    )))
 }
 
 async fn download_mod_file_from_source(
     client: &reqwest::Client,
     request: ModDownloadRequest<'_>,
+    cancellation: Option<&app_steamcmd::InstallCancellation>,
 ) -> Result<PathBuf, ModDownloadFailure> {
     let ModDownloadRequest {
         download_url,
@@ -276,15 +320,24 @@ async fn download_mod_file_from_source(
         .get(download_url)
         .build()
         .map_err(|error| format!("failed to prepare mod package download: {error}"))?;
-    let mut response = app_network::send_with_retry(client, http_request, Duration::from_secs(20))
-        .await
-        .map_err(|error| {
-            if error.permits_source_fallback() {
-                ModDownloadFailure::Network(format!("failed to download mod package: {error}"))
-            } else {
-                ModDownloadFailure::Terminal(format!("failed to download mod package: {error}"))
-            }
-        })?;
+    let response = tokio::select! {
+        biased;
+        _=cancelled(cancellation)=>return Err(ModDownloadFailure::Terminal("Mod package preparation was cancelled".into())),
+        result=app_network::send_with_retry(client,http_request,Duration::from_secs(20))=>result,
+    };
+    let mut response = response.map_err(|error| {
+        if error.permits_source_fallback() {
+            ModDownloadFailure::Network(format!("failed to download mod package: {error}"))
+        } else if matches!(
+            error,
+            app_network::NetworkError::Status { .. }
+                | app_network::NetworkError::RetryDeferred { .. }
+        ) {
+            ModDownloadFailure::Http(format!("failed to download mod package: {error}"))
+        } else {
+            ModDownloadFailure::Terminal(format!("failed to download mod package: {error}"))
+        }
+    })?;
     if let Some(length) = response.content_length()
         && let Some(max_bytes) = max_bytes
         && length > max_bytes
@@ -332,7 +385,16 @@ async fn download_mod_file_from_source(
     let started = std::time::Instant::now();
     loop {
         let wait_budget = download_read_budget(started.elapsed(), received_bytes)?;
-        let chunk = match tokio::time::timeout(wait_budget, response.chunk()).await {
+        let received = tokio::select! {
+            biased;
+            _=cancelled(cancellation)=> {
+                drop(message_sender);
+                let _=wait_for_mod_download_writer(writer).await;
+                return Err(ModDownloadFailure::Terminal("Mod package preparation was cancelled".into()));
+            },
+            result=tokio::time::timeout(wait_budget,response.chunk())=>result,
+        };
+        let chunk = match received {
             Ok(Ok(Some(chunk))) => chunk,
             Ok(Ok(None)) => break,
             Ok(Err(error)) => {
@@ -408,6 +470,14 @@ async fn download_mod_file_from_source(
         drop(message_sender);
         let _ = wait_for_mod_download_writer(writer).await;
         return Err(error.into());
+    }
+    if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
+        drop(commit_sender);
+        drop(message_sender);
+        let _ = wait_for_mod_download_writer(writer).await;
+        return Err(ModDownloadFailure::Terminal(
+            "Mod package preparation was cancelled".into(),
+        ));
     }
     commit_sender
         .send(())

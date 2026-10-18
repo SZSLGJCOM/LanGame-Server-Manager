@@ -7,7 +7,7 @@ test("configuration fields align controls across mixed rows and retain input beh
     viewport: { width: 1280, height: 1000 }, fixtureCleanup: true,
     screenshotPath: process.env.LANGAME_ALIGNMENT_SCREENSHOT });
   assert.equal(report.status, "passed", report.error);
-  assert.equal(report.checks, 19);
+  assert.equal(report.checks, 20);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);
   assert.equal(report.browser_processes_remaining, 0);

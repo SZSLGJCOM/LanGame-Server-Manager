@@ -13,7 +13,7 @@ for (const { viewport, reducedMotion } of scenarios) {
       screenshotPath: viewport.width === 1560 && reducedMotion === "no-preference" ? process.env.LANGAME_ACTIVITY_NOTICES_SCREENSHOT : undefined });
     assert.equal(report.status, "passed");
     assert.equal(report.reduced_motion, reducedMotion === "reduce");
-    assert.equal(report.scenarios, 24);
+    assert.equal(report.scenarios, 25);
     assert.equal(report.create_calls, 1);
     assert.equal(report.update_retries, 1);
     assert.equal(report.local_retries, 1);

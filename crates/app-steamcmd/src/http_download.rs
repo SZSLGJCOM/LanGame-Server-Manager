@@ -53,12 +53,16 @@ impl Drop for DownloadedFile {
 }
 
 pub(super) fn http_client() -> Result<reqwest::Client, SteamCmdError> {
+    http_client_builder()
+        .build()
+        .map_err(|error| download_error("HTTP client", error))
+}
+
+pub(super) fn http_client_builder() -> reqwest::ClientBuilder {
     reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(10))
         .read_timeout(READ_IDLE_TIMEOUT)
         .user_agent("LanGame Server Manager/0.1.0")
-        .build()
-        .map_err(|error| download_error("HTTP client", error))
 }
 
 fn download_error(url: &str, error: impl std::fmt::Display) -> SteamCmdError {
@@ -73,16 +77,77 @@ fn download_error(url: &str, error: impl std::fmt::Display) -> SteamCmdError {
         .unwrap_or_else(|_| String::from("download source"));
     SteamCmdError::HttpDownload {
         url: safe_url,
-        detail: error.to_string(),
+        detail: redact_diagnostic_urls(&error.to_string()),
         permits_source_fallback: true,
         source_unavailable: false,
+        permits_ip_family_retry: false,
     }
+}
+
+fn redact_diagnostic_urls(text: &str) -> String {
+    // Inner TLS/proxy errors can carry a redirected URL even after reqwest's
+    // outer URL was removed. Keep only its origin, never credentials or tokens.
+    let lower = text.to_ascii_lowercase();
+    let mut sanitized = String::new();
+    let mut position = 0;
+    loop {
+        let next = ["http://", "https://"]
+            .into_iter()
+            .filter_map(|scheme| lower[position..].find(scheme))
+            .min();
+        let Some(next) = next else {
+            sanitized.push_str(&text[position..]);
+            break;
+        };
+        let start = position + next;
+        sanitized.push_str(&text[position..start]);
+        let remainder = &text[start..];
+        let length = remainder
+            .find(char::is_whitespace)
+            .unwrap_or(remainder.len());
+        let token = &remainder[..length];
+        let url = token.trim_end_matches([')', ']', '}', ',', ';', '.', '\'', '"']);
+        let origin = reqwest::Url::parse(url)
+            .map(|url| url.origin().ascii_serialization())
+            .unwrap_or_else(|_| "[redacted URL]".to_owned());
+        sanitized.push_str(&origin);
+        sanitized.push_str(&token[url.len()..]);
+        position = start + length;
+    }
+    sanitized
+}
+
+fn network_error_detail(error: &(dyn std::error::Error + 'static)) -> String {
+    let mut chain = Some(error);
+    let mut messages = Vec::new();
+    // Error sources are external implementations; bound both depth and text.
+    for _ in 0..8 {
+        let Some(error) = chain else { break };
+        let message = redact_diagnostic_urls(&error.to_string())
+            .chars()
+            .take(1024)
+            .collect::<String>();
+        if messages.last() != Some(&message) {
+            messages.push(message);
+        }
+        chain = error.source();
+    }
+    messages.join(": ")
 }
 
 async fn response(
     client: &reqwest::Client,
     url: &str,
     deadline: InstallDeadline,
+) -> Result<reqwest::Response, SteamCmdError> {
+    response_with_budget(client, url, deadline, REQUEST_BUDGET).await
+}
+
+async fn response_with_budget(
+    client: &reqwest::Client,
+    url: &str,
+    deadline: InstallDeadline,
+    header_budget: Duration,
 ) -> Result<reqwest::Response, SteamCmdError> {
     let request = client
         .get(url)
@@ -91,6 +156,7 @@ async fn response(
     let budget = deadline
         .expires_at()
         .saturating_duration_since(tokio::time::Instant::now())
+        .min(header_budget)
         .min(REQUEST_BUDGET);
     if budget.is_zero() {
         return Err(operation_timeout(deadline));
@@ -101,6 +167,11 @@ async fn response(
         .map_err(|_| operation_timeout(deadline))?
         .map_err(|error| {
             let permits = error.permits_source_fallback();
+            let permits_ip_family = matches!(
+                &error,
+                app_network::NetworkError::Transport { .. }
+                    | app_network::NetworkError::Deadline { .. }
+            );
             let unavailable = matches!(
                 &error,
                 app_network::NetworkError::Transport { .. }
@@ -108,15 +179,17 @@ async fn response(
                     | app_network::NetworkError::Status { .. }
                     | app_network::NetworkError::RetryDeferred { .. }
             );
-            let mut failure = download_error(url, error);
+            let mut failure = download_error(url, network_error_detail(&error));
             if let SteamCmdError::HttpDownload {
                 permits_source_fallback,
                 source_unavailable,
+                permits_ip_family_retry,
                 ..
             } = &mut failure
             {
                 *permits_source_fallback = permits;
                 *source_unavailable = unavailable;
+                *permits_ip_family_retry = permits_ip_family;
             }
             failure
         })?;
@@ -261,6 +334,36 @@ pub(super) async fn download_file_with_progress<F>(
     destination: &Path,
     integrity: DownloadIntegrity<'_>,
     deadline: InstallDeadline,
+    on_progress: F,
+) -> Result<DownloadedFile, SteamCmdError>
+where
+    F: FnMut(u64, Option<u64>),
+{
+    download_file_with_header_budget(
+        client,
+        url,
+        destination,
+        integrity,
+        deadline,
+        REQUEST_BUDGET,
+        on_progress,
+    )
+    .await
+}
+
+#[derive(Clone, Copy)]
+struct DownloadRequest<'a> {
+    client: &'a reqwest::Client,
+    header_budget: Duration,
+}
+
+async fn download_file_with_header_budget<F>(
+    client: &reqwest::Client,
+    url: &str,
+    destination: &Path,
+    integrity: DownloadIntegrity<'_>,
+    deadline: InstallDeadline,
+    header_budget: Duration,
     mut on_progress: F,
 ) -> Result<DownloadedFile, SteamCmdError>
 where
@@ -269,8 +372,11 @@ where
     let candidates = attempts(url);
     // Only cancellable network boundaries race the token. The owner must stay
     // alive until queued file writes finish and the staging handle is closed.
-    download_file_from_candidates_with_progress(
-        client,
+    download_file_from_candidates_with_request(
+        DownloadRequest {
+            client,
+            header_budget,
+        },
         &candidates,
         destination,
         integrity,
@@ -299,8 +405,34 @@ async fn download_file_from_candidates(
     .await
 }
 
+#[cfg(test)]
 pub(super) async fn download_file_from_candidates_with_progress<F>(
     client: &reqwest::Client,
+    candidates: &[String],
+    destination: &Path,
+    integrity: DownloadIntegrity<'_>,
+    deadline: InstallDeadline,
+    on_progress: &mut F,
+) -> Result<DownloadedFile, SteamCmdError>
+where
+    F: FnMut(u64, Option<u64>),
+{
+    download_file_from_candidates_with_request(
+        DownloadRequest {
+            client,
+            header_budget: REQUEST_BUDGET,
+        },
+        candidates,
+        destination,
+        integrity,
+        deadline,
+        on_progress,
+    )
+    .await
+}
+
+async fn download_file_from_candidates_with_request<F>(
+    request: DownloadRequest<'_>,
     candidates: &[String],
     destination: &Path,
     integrity: DownloadIntegrity<'_>,
@@ -342,7 +474,7 @@ where
                     .map_err(|error| download_error(candidate, error))?;
                 deadline.check_cancelled()?;
                 let result = stream_file(
-                    client,
+                    request,
                     candidate,
                     &mut file,
                     &downloaded.path,
@@ -398,7 +530,7 @@ where
 }
 
 async fn stream_file<F>(
-    client: &reqwest::Client,
+    request: DownloadRequest<'_>,
     url: &str,
     file: &mut tokio::fs::File,
     file_path: &Path,
@@ -409,7 +541,8 @@ async fn stream_file<F>(
 where
     F: FnMut(u64, Option<u64>),
 {
-    let mut response = response(client, url, deadline).await?;
+    let mut response =
+        response_with_budget(request.client, url, deadline, request.header_budget).await?;
     let advertised_size = response.content_length();
     let limit = integrity.size.unwrap_or(ARCHIVE_LIMIT).min(ARCHIVE_LIMIT);
     if advertised_size.is_some_and(|size| size > limit) {
@@ -502,3 +635,9 @@ where
 #[cfg(test)]
 #[path = "http_download_tests.rs"]
 mod tests;
+
+#[cfg(windows)]
+#[path = "http_native_download.rs"]
+mod native;
+#[cfg(windows)]
+pub(super) use native::{NativeDownloadEvent, download_native_package_with_progress};

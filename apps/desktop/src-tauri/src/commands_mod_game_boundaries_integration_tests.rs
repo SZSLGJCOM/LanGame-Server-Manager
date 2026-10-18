@@ -155,6 +155,7 @@ async fn external_manager_commands_reject_without_changing_instance_programs() -
                 "https://thunderstore.io/c/valheim/p/JereKuusela/Server_devcommands/1.115.0/"
                     .into(),
             ],
+            None,
         )
         .await
         .expect_err("unsupported online workflow must reject before copying the program");

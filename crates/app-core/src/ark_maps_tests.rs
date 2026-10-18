@@ -92,6 +92,36 @@ fn every_map_uses_its_complete_server_name_without_a_shared_prefix() {
 }
 
 #[test]
+fn mod_scopes_project_each_map_and_attach_owned_native_ini_paths() {
+    let mut instance = fixture("arksurvivalascended");
+    let mut settings: Value = serde_json::from_str(&instance.settings_json).unwrap();
+    settings["mod_ids_csv"] = json!("111");
+    settings["ark_mod_map_overrides"] =
+        json!({"map-desert": {"mods": {"111": {"active": false}, "222": {"active": true}}}});
+    settings["_managed_ark_ini_directory"] = json!("untrusted-other-instance");
+    instance.settings_json = settings.to_string();
+    for (key, ids) in [("main", "111"), ("map-desert", "222")] {
+        let projected = project_process(&instance, Some(key)).unwrap();
+        let projected: Value = serde_json::from_str(&projected.settings_json).unwrap();
+        assert_eq!(projected["mod_ids_csv"], ids);
+        let expected = Path::new(&instance.config_file_path)
+            .parent()
+            .unwrap()
+            .join("ark-maps")
+            .join(key);
+        assert_eq!(
+            projected["_managed_ark_ini_directory"],
+            expected.to_string_lossy().as_ref()
+        );
+    }
+    settings["ark_mod_map_overrides"] = json!({});
+    instance.settings_json = settings.to_string();
+    let projected = project_process(&instance, None).unwrap();
+    let projected: Value = serde_json::from_str(&projected.settings_json).unwrap();
+    assert!(projected.get("_managed_ark_ini_directory").is_none());
+}
+
+#[test]
 fn complete_server_names_keep_lengths_previously_allowed_by_the_primary_name() {
     let mut instance = fixture("arksurvivalascended");
     let complete_name = format!("{} | {}", "界".repeat(100), "焦土");

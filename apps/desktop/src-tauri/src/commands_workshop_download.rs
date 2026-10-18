@@ -68,6 +68,27 @@ pub(super) struct WorkshopMutation {
 }
 
 impl WorkshopMutation {
+    pub(super) fn for_locked_install(
+        install: app_steamcmd::GameInstallLifecycleGuard,
+        steamcmd: app_steamcmd::SteamCmdLifecycleGuard,
+    ) -> Self {
+        Self {
+            program: WorkshopInstallOwner::AlreadyLocked(install),
+            steamcmd,
+        }
+    }
+
+    pub(super) fn into_locked_install(
+        self,
+    ) -> Result<app_steamcmd::GameInstallLifecycleGuard, String> {
+        match self.program {
+            WorkshopInstallOwner::AlreadyLocked(install) => Ok(install),
+            WorkshopInstallOwner::Instance(_) => {
+                Err("Workshop mutation is owned by a Mod operation".into())
+            }
+        }
+    }
+
     pub(super) fn for_instance(
         program: super::commands_program_storage::ModProgramMutation,
         steamcmd: app_steamcmd::SteamCmdLifecycleGuard,
@@ -78,11 +99,15 @@ impl WorkshopMutation {
         }
     }
 
-    fn install(&self) -> &app_steamcmd::GameInstallLifecycleGuard {
+    pub(super) fn install(&self) -> &app_steamcmd::GameInstallLifecycleGuard {
         match &self.program {
             WorkshopInstallOwner::Instance(program) => &program.install,
             WorkshopInstallOwner::AlreadyLocked(install) => install,
         }
+    }
+
+    pub(super) fn steamcmd(&self) -> &app_steamcmd::SteamCmdLifecycleGuard {
+        &self.steamcmd
     }
 }
 

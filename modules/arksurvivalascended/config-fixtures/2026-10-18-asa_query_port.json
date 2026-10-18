@@ -1,0 +1,35 @@
+{
+  "fixture_version": 1,
+  "module_id": "arksurvivalascended",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-18",
+    "source_ids": ["asa_query_port", "asa_query_port_native_20261018"],
+    "build": "Windows ASA 94.29 with AsaApi 2.03: the same API/configuration with a whole-quoted map URL containing a spaced server name and no independent keyword reported Steam initialization FAILED and lacked its configured query socket. Two concurrent processes retaining quoted URLs with independent -QueryPort=47015/47025 each owned their declared UDP query socket. Unquoted URL-only controls initialized Steam successfully and bound their configured query port, with and without the API. These observations cover query socket ownership. This fixture verifies rendered arguments while retaining the ARK URL and INI values, using the Epic UE 5.5 keyword contract."
+  },
+  "coverage": { "editable": 0, "specialized": 0, "derived": 0, "generated": 0, "excluded": 1 },
+  "classifications": { "editable": [], "specialized": [], "derived": [], "generated": [], "excluded": ["asa_query_port.-QueryPort"] },
+  "settings": {
+    "server_name": "LanGame Query Port",
+    "map_name": "TheIsland_WP",
+    "max_players": 8,
+    "rcon_enabled": true,
+    "admin_password": "fixture-admin-password",
+    "additional_maps": []
+  },
+  "expected": {
+    "files": [
+      { "root": "config", "path": "GameUserSettings.ini", "format": "ini", "fragments": ["[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5", "SessionName=LanGame Query Port", "Port=7777", "QueryPort=27015", "MaxPlayers=8", "RCONPort=27020", "ServerAdminPassword=fixture-admin-password"] },
+      { "root": "install", "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini", "format": "ini", "fragments": ["[/Script/ShooterGame.ShooterGameUserSettings]\nVersion=5", "SessionName=LanGame Query Port", "Port=7777", "QueryPort=27015", "MaxPlayers=8", "RCONPort=27020", "ServerAdminPassword=fixture-admin-password"] }
+    ],
+    "launch": {
+      "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+      "arguments": [
+        "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=8?SessionName=LanGame Query Port?RCONEnabled=true?RCONPort=27020",
+        "-port=7777", "-QueryPort=27015", "-WinLiveMaxPlayers=8", "-NullRHI", "-Unattended", "-NoSplash",
+        "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+        "-servergamelog", "-servergamelogincludetribelogs", "-ServerRCONOutputTribeLogs", "-NoTransferFromFiltering"
+      ]
+    }
+  }
+}

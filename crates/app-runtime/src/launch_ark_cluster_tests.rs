@@ -26,6 +26,7 @@ fn cluster_arguments(settings: &Value, saves: &Path, edition: &str) -> Vec<Strin
     };
     [
         "cluster_dir_override_flag",
+        "map_ini_flags",
         "official_launch_flags",
         "custom_launch_flags",
     ]
@@ -34,6 +35,190 @@ fn cluster_arguments(settings: &Value, saves: &Path, edition: &str) -> Vec<Strin
         expand_resolved_argument_segments(&format!("{{{{{prefix}.{name}}}}}"), &context)
     })
     .collect()
+}
+
+#[test]
+fn ark_map_ini_paths_are_separate_arguments_and_preserve_spaces() {
+    for edition in ["arksurvivalascended", "arksurvivalevolved"] {
+        let directory = Path::new("D:/ARK Worlds/config/ark-maps/main");
+        let settings = json!({"_managed_ark_ini_directory": directory.to_string_lossy()});
+        let args = cluster_arguments(&settings, Path::new("D:/instance/saves"), edition);
+        assert_eq!(
+            args,
+            [
+                format!("-GameINI={}", directory.join("Game.ini").display()),
+                format!(
+                    "-GameUserSettingsINI={}",
+                    directory.join("GameUserSettings.ini").display()
+                ),
+            ]
+        );
+        let executable = directory.join(if edition == "arksurvivalascended" {
+            "ArkAscendedServer.exe"
+        } else {
+            "ShooterGameServer.exe"
+        });
+        let command = crate::build_spawn_command_line(&executable.to_string_lossy(), &args);
+        assert!(command.contains(&format!(
+            "-GameINI=\"{}\"",
+            directory.join("Game.ini").display()
+        )));
+        assert!(command.contains(&format!(
+            "-GameUserSettingsINI=\"{}\"",
+            directory.join("GameUserSettings.ini").display()
+        )));
+        assert_eq!(command, build_command_line(&executable, &args));
+        assert_eq!(
+            quote_launch_argument(Path::new("OtherServer.exe"), &args[0]),
+            quote_command_segment(&args[0])
+        );
+        assert!(cluster_arguments(&json!({}), directory, edition).is_empty());
+    }
+}
+
+#[test]
+fn ark_map_ini_overrides_cannot_be_redirected_by_shared_expert_flags() {
+    for edition in ["arksurvivalascended", "arksurvivalevolved"] {
+        for raw in [
+            "-GameINI=D:/other.ini",
+            "GAMEUSERSETTINGSINI=D:/other.ini",
+            "-DefGameIni=other.ini",
+            "-iniFile=other.ini",
+            "-IniBootstrap=other.ini",
+            "-ConfigSubDir=other",
+            "-UserDir=D:/other",
+        ] {
+            let settings = json!({"ark_mod_map_overrides":{"main":{"mods":{"1254808":{"active":false}}}}, "custom_launch_flags":raw});
+            let issues = collect_module_launch_setting_issues(edition, &settings, &[]);
+            assert!(
+                issues
+                    .iter()
+                    .any(|issue| issue.code == "managed_launch_option_conflict"),
+                "{edition}: {raw}"
+            );
+        }
+        let shared =
+            json!({"ark_mod_map_overrides":{}, "custom_launch_flags":"-GameINI=D:/expert.ini"});
+        assert!(collect_module_launch_setting_issues(edition, &shared, &[]).is_empty());
+    }
+}
+
+#[test]
+fn ark_current_mod_map_targets_reach_native_launch_plans() {
+    let descriptors =
+        app_modules::discover_modules(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../modules"))
+            .unwrap();
+    for edition in ["arksurvivalascended", "arksurvivalevolved"] {
+        let descriptor = descriptors
+            .iter()
+            .find(|module| module.summary.id == edition)
+            .unwrap();
+        let module = ModuleDetails {
+            summary: descriptor.summary.clone(),
+            schema_json: descriptor.schema_json.clone(),
+            default_ports: descriptor.default_ports.clone(),
+            install: descriptor.install.clone(),
+            process: descriptor.process.clone(),
+            workshop: descriptor.workshop.clone(),
+            mods: None,
+            runtime: descriptor.runtime.clone(),
+        };
+        let active_key = if edition == "arksurvivalascended" {
+            "mod_ids_csv"
+        } else {
+            "active_mod_ids"
+        };
+        let settings = json!({
+            active_key: "1254808,939713",
+            "map_name":"TheIsland", "max_players":8, "server_name":"Map Targets",
+            "additional_maps":[
+                {"id":"desert","name":"Desert","map_name":"ScorchedEarth_P","enabled":true},
+                {"id":"center","name":"Center","map_name":"TheCenter","enabled":true}
+            ],
+            "ark_mod_map_overrides":{
+                "main":{"mods":{"1254808":{"active":true}}},
+                "map-desert":{"mods":{"1254808":{"active":true}}},
+                "map-center":{"mods":{"1254808":{"active":false}}}
+            }
+        });
+        let ports = app_core::ark_maps::requested_ports(
+            edition,
+            &settings,
+            &module.default_ports,
+            &module.default_ports,
+            &[],
+        )
+        .unwrap();
+        let instance: InstanceDetails = serde_json::from_value(json!({
+            "summary":{"id":"mod-targets","name":"Map Targets","module_id":edition,
+                "status":"Stopped","bind_ip":"0.0.0.0","port_count":ports.len(),"autostart":false},
+            "config_file_path":"C:/fixture/map targets/config/instance.json",
+            "saves_path":"C:/fixture/map targets/runtime/ShooterGame/Saved",
+            "auto_backup_on_stop":false,"backup_retention_count":0,
+            "settings_json":settings.to_string(), "ports":ports, "active_run":null
+        }))
+        .unwrap();
+        for (key, expected) in [
+            ("main", "1254808,939713"),
+            ("map-desert", "1254808,939713"),
+            ("map-center", "939713"),
+        ] {
+            let projected = app_core::ark_maps::project_process(&instance, Some(key)).unwrap();
+            let effective: Value = serde_json::from_str(&projected.settings_json).unwrap();
+            assert_eq!(effective[active_key], expected, "{edition}: {key}");
+            let plan = build_launch_plan_with_override(
+                &AppSettings::default(),
+                &module,
+                &projected,
+                Some("C:/fixture/program"),
+            )
+            .unwrap();
+            let path = Path::new("C:/fixture/map targets/config/ark-maps").join(key);
+            for (option, filename) in [
+                ("-GameINI=", "Game.ini"),
+                ("-GameUserSettingsINI=", "GameUserSettings.ini"),
+            ] {
+                let actual = plan
+                    .args
+                    .iter()
+                    .find_map(|arg| arg.strip_prefix(option))
+                    .unwrap_or_else(|| panic!("missing {option}: {:?}", plan.args));
+                assert_eq!(
+                    Path::new(actual),
+                    path.join(filename),
+                    "{edition}: {key} must consume its own native file"
+                );
+            }
+            if edition == "arksurvivalascended" {
+                assert!(plan.args.contains(&format!("-mods={expected}")));
+            }
+            assert!(
+                !plan
+                    .validation_issues
+                    .iter()
+                    .any(|issue| issue.code == "ark_mod_map_overrides_invalid")
+            );
+        }
+    }
+}
+
+#[test]
+fn ark_map_ini_paths_always_quote_native_separator_characters() {
+    for executable in ["ArkAscendedServer.exe", "ShooterGameServer.exe"] {
+        for directory in [
+            "D:/ARK,Worlds/config",
+            "D:/ARK)Worlds/config",
+            "D:/ARK/config",
+        ] {
+            for key in ["-GameINI", "-GameUserSettingsINI"] {
+                let argument = format!("{key}={directory}/Game.ini");
+                assert_eq!(
+                    quote_launch_argument(Path::new(executable), &argument),
+                    format!("{key}=\"{directory}/Game.ini\""),
+                );
+            }
+        }
+    }
 }
 
 #[test]

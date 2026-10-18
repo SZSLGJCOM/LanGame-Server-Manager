@@ -63,6 +63,35 @@ pub fn deploy_dst_workshop_cache(
     target_ugc_root: &Path,
     item_ids: &[String],
 ) -> Result<DstWorkshopCacheDeployment, DstWorkshopCacheError> {
+    deploy_cache(source_workshop_root, target_ugc_root, item_ids, None)
+}
+
+/// Publish an older installed revision only with exact cached file-hash proof.
+/// Available/newer source metadata is left unchanged; target metadata describes
+/// the revision actually published. Ordinary fresh-download publication remains strict.
+pub fn deploy_verified_dst_workshop_cache(
+    source_workshop_root: &Path,
+    target_ugc_root: &Path,
+    item_ids: &[String],
+    verified: &crate::VerifiedWorkshopCache,
+) -> Result<DstWorkshopCacheDeployment, DstWorkshopCacheError> {
+    if verified.download_result().consumer_app_id != 322_330 {
+        return Err(incomplete("", "verified package belongs to another app"));
+    }
+    deploy_cache(
+        source_workshop_root,
+        target_ugc_root,
+        item_ids,
+        Some(verified),
+    )
+}
+
+fn deploy_cache(
+    source_workshop_root: &Path,
+    target_ugc_root: &Path,
+    item_ids: &[String],
+    verified: Option<&crate::VerifiedWorkshopCache>,
+) -> Result<DstWorkshopCacheDeployment, DstWorkshopCacheError> {
     let _guard = DEPLOY_LOCK
         .lock()
         .map_err(|_| DstWorkshopCacheError::LockUnavailable)?;
@@ -84,7 +113,18 @@ pub fn deploy_dst_workshop_cache(
 
     let mut source_items = Vec::with_capacity(item_ids.len());
     for id in &item_ids {
-        source_items.push(load_source_item(&source_root, source_app, id)?);
+        let item = load_source_item(&source_root, source_app, id, verified.is_some())?;
+        if let Some(verified) = verified {
+            verified
+                .verify_deployed_item(id, &item.source_path, &crate::InstallCancellation::new())
+                .map_err(|error| {
+                    incomplete(
+                        id,
+                        &format!("cached file integrity verification failed: {error}"),
+                    )
+                })?;
+        }
+        source_items.push(item);
     }
     let totals = source_items
         .iter()
@@ -115,7 +155,29 @@ pub fn deploy_dst_workshop_cache(
     if target_exists {
         let target_app = app_workshop(&target_document, &target_manifest_path)?;
         for item in &source_items {
-            if target_item_is_current(target_ugc_root, target_app, item)? {
+            if target_item_is_current(target_ugc_root, target_app, item)?
+                && match verified {
+                    Some(verified) => match verified.verify_deployed_item(
+                        &item.id,
+                        &target_ugc_root.join("content/322330").join(&item.id),
+                        &crate::InstallCancellation::new(),
+                    ) {
+                        Ok(()) => true,
+                        Err(error)
+                            if matches!(
+                                error.kind(),
+                                std::io::ErrorKind::InvalidData | std::io::ErrorKind::NotFound
+                            ) =>
+                        {
+                            false
+                        }
+                        Err(error) => {
+                            return Err(io("verify cached deployment", target_ugc_root, error));
+                        }
+                    },
+                    None => true,
+                }
+            {
                 unchanged_items.insert(item.id.clone());
             }
         }
@@ -151,6 +213,20 @@ pub fn deploy_dst_workshop_cache(
                     item_id: item.id.clone(),
                     message: String::from("payload changed while it was copied"),
                 });
+            }
+            if let Some(verified) = verified {
+                verified
+                    .verify_deployed_item(
+                        &item.id,
+                        &destination,
+                        &crate::InstallCancellation::new(),
+                    )
+                    .map_err(|error| {
+                        incomplete(
+                            &item.id,
+                            &format!("staged cached file integrity verification failed: {error}"),
+                        )
+                    })?;
             }
         }
         fs::write(&staged_manifest, rendered_manifest.as_bytes())
@@ -216,13 +292,18 @@ fn load_source_item(
     source_root: &Path,
     source_app: &[KvEntry],
     id: &str,
+    allow_verified_installed: bool,
 ) -> Result<SourceItem, DstWorkshopCacheError> {
     let installed = section_entry(source_app, "WorkshopItemsInstalled", id)
         .cloned()
         .ok_or_else(|| incomplete(id, "missing WorkshopItemsInstalled metadata"))?;
-    let details = section_entry(source_app, "WorkshopItemDetails", id)
-        .cloned()
-        .ok_or_else(|| incomplete(id, "missing WorkshopItemDetails metadata"))?;
+    let details = if allow_verified_installed {
+        installed.clone()
+    } else {
+        section_entry(source_app, "WorkshopItemDetails", id)
+            .cloned()
+            .ok_or_else(|| incomplete(id, "missing WorkshopItemDetails metadata"))?
+    };
     let installed_object = object_value(&installed)
         .ok_or_else(|| incomplete(id, "installed metadata is not an object"))?;
     let details_object =

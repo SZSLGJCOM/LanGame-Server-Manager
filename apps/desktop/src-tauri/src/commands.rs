@@ -154,12 +154,18 @@ mod commands_mod_capacity;
 mod commands_mod_staging;
 #[path = "commands_mods.rs"]
 mod commands_mods;
+#[path = "commands_nexus_mods.rs"]
+pub(crate) mod commands_nexus_mods;
 #[path = "commands_steam_app_account.rs"]
 pub(crate) mod commands_steam_app_account;
 #[path = "commands_workshop_collection_removal.rs"]
 pub(crate) mod commands_workshop_collection_removal;
 #[path = "dst_import_mods.rs"]
 mod dst_import_mods;
+#[path = "commands_mod_curseforge_reference.rs"]
+mod mod_curseforge_reference;
+#[path = "nexus_mods.rs"]
+pub(super) mod nexus_mods;
 pub use commands_workshop_collection_removal::remove_instance_workshop_collection;
 #[path = "commands_module_mutation_locks.rs"]
 pub(super) mod commands_module_mutation_locks;
@@ -955,6 +961,7 @@ struct DownloadedManualModSource {
 
 #[derive(Debug, Clone)]
 struct OnlineModIdentity {
+    thunderstore_intent: Option<commands_mod_staging::ThunderstoreInstallIntent>,
     provider: String,
     project: String,
     historical_names: Vec<String>,
@@ -962,6 +969,7 @@ struct OnlineModIdentity {
     dependencies: Vec<String>,
 }
 
+#[derive(Clone)]
 struct ResolvedManualModTarget {
     instance_id: String,
     module_id: String,
@@ -1867,11 +1875,18 @@ pub async fn install_manual_mod_references(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
     references: Vec<String>,
+    thunderstore_version_policy: Option<String>,
 ) -> Result<ManualModStageResult, String> {
     let storage_context_operation =
         state.begin_storage_context_operation("manual mod installation")?;
-    install_manual_mod_references_inner(&state, &storage_context_operation, instance_id, references)
-        .await
+    install_manual_mod_references_inner(
+        &state,
+        &storage_context_operation,
+        instance_id,
+        references,
+        thunderstore_version_policy,
+    )
+    .await
 }
 
 #[tauri::command]

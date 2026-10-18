@@ -8,11 +8,11 @@
 
 [简体中文](README.md) | [English](README.en.md)
 
-[官网](https://langame.cn/) · [产品页](https://langame.cn/products/langame-server-manager/) · [开服教程](https://langame.cn/hosting/) · [公众号](#关注熵灵硅界)
+[官网](https://langame.cn/) · [产品页](https://langame.cn/products/langame-server-manager/) · [使用文档](docs/README.md#简体中文) · [开服教程](https://langame.cn/hosting/) · [公众号](#关注熵灵硅界)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向 **Windows** 的游戏服务器管理工具。家里或机房里的 Windows 电脑、Windows Server 开服机，都可以在桌面里完成服务端安装、原生配置、多实例启停、日志和备份。
+[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) 是面向 **Windows** 的游戏专用服务器桌面管理工具。家里或机房里的 Windows 电脑、Windows Server 开服机，都可以在同一个桌面应用中完成服务端安装、原生配置、Mod 管理、多实例运维与存档备份。
 
-自己开服往往要对付 SteamCMD、配置文件和一堆原生控制台窗口。这里把日常运维收进同一个应用：服务器在后台运行，桌面不堆黑窗口；需要时从托盘打开即可。服务器文件、配置和存档通常保存在运行管理端的电脑上。
+自己开服往往要应付 SteamCMD、散乱的配置文件和一桌面的原生黑框控制台。这里把日常运维收进同一个应用：服务器在后台运行，桌面不堆黑窗口，需要时从系统托盘打开即可；服务器文件、配置和存档通常保存在运行管理端的电脑上。
 
 <p align="center">
   <img src="assets/lgsm-system-49eec728.webp" alt="系统页：主机资源与示例实例" width="920">
@@ -22,28 +22,44 @@
 
 ## 主要功能
 
-当前支持 **32** 款游戏服务器。完整列表见 [产品页](https://langame.cn/products/langame-server-manager/)。
+当前支持 **32** 款游戏服务器（含幻兽帕鲁、Minecraft、方舟 ASE / ASA、饥荒联机版、雾锁王国、七日杀、僵尸毁灭工程、英灵神殿等，完整列表见下方展开项或[产品页](https://langame.cn/products/langame-server-manager/)）。
 
-- 安装与更新专用服务器
-- 按游戏调整原生配置
-- 多实例：端口、存档与启停集中管理
-- 主机监控
-- 备份与恢复
-- 控制台在应用内查看，可最小化到托盘
+- **一键部署与运行库准备**：内置受管 SteamCMD（支持匿名与账号令牌登录），启动前自动检查并补齐所需的 Java、.NET、VC++、旧版 DirectX 与 XNA 运行库。
+- **深度原生配置与多实例**：按游戏结构化编辑房间、权限与世界规则（含方舟多图集群、饥荒地表/洞穴双分片等），多实例独立管理目录、端口与启停（[配置说明](docs/server-configuration.md#简体中文)）。
+- **Mod 生命周期管理**：支持 Steam 创意工坊自动更新与缓存回退、方舟 ASA 原生 CurseForge 更新，以及本地 Mod 导入、依赖检查与保留配置删除（[Mod 说明](docs/mod-management.md#简体中文)）。
+- **玩家中心与运维工具**：支持 31 款游戏的在线名单采集，集中管理管理员、白名单、原生封禁列表（BanList）与定时广播（[能力矩阵](docs/player-center-capability-matrix.md)）。
+- **存档迁入与备份恢复**：支持 31 款游戏的已有专服存档校验迁入，提供定时/停服备份与实例回收站归档（[存档导入](docs/game-save-import.md)）。
+- **主机监控与后台托管**：实时查看主机资源与实例状态，应用内统一查看控制台，可最小化到系统托盘（[监控说明](docs/system-monitoring.md#简体中文)）。
+- **LAN AI 助手（BYOK）**：支持接入自有模型服务，结合内置的 32 款游戏同步文档库与实例日志协助排障和受控修复；使用时会向你配置的模型服务发送消息和所需诊断信息（[助手说明](docs/assistant.md#简体中文) · [隐私说明](PRIVACY.md#简体中文)）。
 
-LAN AI 助手支持自带模型服务（BYOK），可结合日志协助排障。使用时会向你配置的模型服务发送消息和所需诊断信息，详见[隐私说明](PRIVACY.md#简体中文)。
+<details>
+<summary>展开全部 32 款支持游戏</summary>
+
+- **幻兽帕鲁**（Palworld） · **Minecraft Java 版** · **方舟：生存飞升**（ARK: Survival Ascended） · **方舟：生存进化**（ARK: Survival Evolved）
+- **饥荒联机版**（Don't Starve Together） · **雾锁王国**（Enshrouded） · **七日杀**（7 Days to Die） · **僵尸毁灭工程**（Project Zomboid）
+- **英灵神殿**（Valheim） · **泰拉瑞亚**（Terraria） · **腐蚀**（Rust） · **幸福工厂**（Satisfactory）
+- **人渣**（SCUM） · **夜族崛起**（V Rising） · **灵魂面甲**（Soulmask） · **流放者柯南**（Conan Exiles）
+- **森林之子**（Sons Of The Forest） · **森林**（The Forest） · **护核纪元**（Core Keeper） · **潜渊症**（Barotrauma）
+- **非生物因素**（Abiotic Factor） · **符文世界：龙之荒野**（RuneScape: Dragonwilds） · **指环王：重返莫瑞亚**（Return to Moria） · **异星探险家**（ASTRONEER）
+- **环世界联机**（RimWorld Together） · **战术小队**（Squad） · **未转变者**（Unturned） · **奈斯启示录**（Necesse）
+- **夜莺传说**（Nightingale） · **人类Z**（HumanitZ） · **风启之旅**（Windrose） · **罗马斯泰德**（Romestead）
+
+</details>
 
 ## 下载与安装
 
-前往 [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) 下载 Windows x64 安装包。日常安装和软件内更新使用较小的 `x64-setup.exe`，安装向导提供简体中文；已有 WebView2 时直接复用，缺少时由内置微软引导器联网安装。无法连接微软下载服务或需要断网安装时，选择内置完整 WebView2 安装程序的 `x64-offline-setup.exe`。两种安装包安装相同应用，离线包不包含游戏服务端文件。
+前往 [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) 下载 Windows x64 安装包（安装向导提供简体中文，两种安装包安装相同应用，均不含游戏服务端文件）：
 
-程序安装目录与数据目录分开。首次使用会优先选择可写固定非系统盘中可用空间最多的一块，自动创建盘根 `LanGame`；没有可用的其他盘时使用系统盘。无法识别归属的非空 `LanGame` 目录会跳过，不接管或覆盖其中的数据。选定后不会随剩余空间变化，已有数据保留原位、不自动迁移。目录明细见[数据位置说明](docs/desktop-release.md#数据位置与卸载)。
+- **`x64-setup.exe`（日常安装与软件内更新）**：体积较小；已有 WebView2 时直接复用，缺少时由内置微软引导器联网安装。
+- **`x64-offline-setup.exe`（离线安装）**：内置完整 WebView2 安装程序，适合断网或无法连接微软下载服务的开服机。
+
+程序安装目录与数据目录分开。首次使用优先在可用空间最多的可写固定非系统盘创建盘根 `LanGame`（无其他可用盘时使用系统盘）；无法识别归属的非空 `LanGame` 目录会跳过，不接管或覆盖其中的数据，选定后不随剩余空间变化，已有数据保留原位、不自动迁移。目录明细见[数据位置说明](docs/desktop-release.md#数据位置与卸载)。
 
 手动安装或卸载前，从系统托盘选择**退出**并等待服务器停止。卸载保留游戏数据、服务器设置、数据库、旧数据和位置记录；可选的界面数据清理会重置语言、主题、模型服务配置等界面设置。
 
 ## 运行环境
 
-支持 **Windows 10 / 11** 和 **Windows Server**，界面为简体中文和英文。各游戏对硬件、存储和网络的要求不同。启动实例时会检查实际程序依赖，自动准备所需的 Java、.NET、VC++ 和旧版 DirectX；Terraria 原版所需的 [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914) 也在启动时检查并补齐。下载使用官方来源并校验，系统运行库安装可能需要允许 Windows 提权提示；安装失败或要求重启时会阻止实例启动并说明原因。公网联机还需配置端口与防火墙；同一局域网，以及 Radmin VPN、Hamachi 这类组网软件组成的虚拟局域网，可按检测到的网卡绑定联机地址。部分设置需重启服务器后生效。
+支持 **Windows 10 / 11** 和 **Windows Server**，界面为简体中文和英文。各游戏对硬件、存储和网络的要求不同。启动实例时会检查实际程序依赖，自动从官方来源下载并校验所需的 Java、.NET、VC++、旧版 DirectX，以及 Terraria 原版所需的 [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914)；系统运行库安装可能需要允许 Windows 提权提示，安装失败或要求重启时会阻止实例启动并说明原因。同一局域网，以及 Radmin VPN、Hamachi 这类组网软件组成的虚拟局域网，可按检测到的网卡绑定联机地址；公网联机还需配置端口与防火墙。部分设置需重启服务器后生效。
 
 ## 使用与授权
 
@@ -56,7 +72,7 @@ LAN AI 助手支持自带模型服务（BYOK），可结合日志协助排障。
 ## 教程与反馈
 
 - 开服教程：[幻兽帕鲁](https://langame.cn/articles/langame-palworld-server-guide/)、[Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/)、[饥荒联机版](https://langame.cn/articles/langame-dst-server-guide/)，以及[更多游戏](https://langame.cn/hosting/)
-- [联机教程](https://langame.cn/networking/)
+- [联机教程](https://langame.cn/networking/) · [完整使用文档](docs/README.md#简体中文)
 - [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues)：功能建议和项目反馈。请勿在公开内容中填写凭据、私有服务器信息或玩家数据
 
 ## LanGame 产品系列

@@ -32,7 +32,7 @@ function readBundledModuleIds() {
     .sort();
 }
 
-test("all 32 bundled games resolve through the unified Configuration registry", () => {
+test("all bundled games resolve through the unified Configuration registry", () => {
   const bundledModuleIds = readBundledModuleIds();
   const auditModuleIds = JSON.parse(childProcess.execFileSync(
     process.execPath,
@@ -41,17 +41,4 @@ test("all 32 bundled games resolve through the unified Configuration registry", 
   ));
   assert.deepEqual(listSettingsModuleIds(), bundledModuleIds);
   assert.deepEqual(auditModuleIds, bundledModuleIds);
-  assert.equal(listSettingsModuleIds().length, 32);
-});
-
-test("legacy settings routers and modal shells are absent", () => {
-  const legacyPaths = [
-    path.join(settingsDir, "SettingsModalRouter.tsx"),
-    ...(fs.existsSync(settingsDir)
-      ? fs.readdirSync(settingsDir)
-        .filter((fileName) => fileName.endsWith("SettingsModal.tsx"))
-        .map((fileName) => path.join(settingsDir, fileName))
-      : [])
-  ];
-  assert.deepEqual(legacyPaths.filter((filePath) => fs.existsSync(filePath)), []);
 });

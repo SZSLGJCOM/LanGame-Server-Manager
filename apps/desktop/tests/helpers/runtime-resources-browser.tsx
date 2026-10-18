@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { bootstrapApp, readInstanceDetails } from "../../src/api";
 import { I18nProvider, useI18n } from "../../src/i18n";
 import { RuntimePerformanceEditor } from "../../src/views/servers/RuntimePerformanceEditor";
+import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
 import type { InstanceDetails, RuntimeResourceLimits, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
 import "../../src/views/servers/instance-themes.css";
@@ -40,7 +41,7 @@ function View() {
     return details;
   }} />;
 }
-async function render() { await act(async () => root.render(<I18nProvider><View /></I18nProvider>)); }
+async function render() { await act(async () => root.render(<I18nProvider><InstanceSettingsSaveProvider><View /></InstanceSettingsSaveProvider></I18nProvider>)); }
 async function waitFor(ready: () => boolean) {
   const deadline = performance.now() + 8000;
   while (!ready()) { check(performance.now() < deadline, "Timed out waiting for resource editor");
@@ -53,7 +54,11 @@ async function input(name: string, value: string) {
     control.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
-async function save() { await act(async () => select<HTMLFormElement>("form").requestSubmit()); }
+function saveState() { return fixture.querySelector<HTMLElement>(".server-backup-policy-footer")?.dataset.saveState ?? ""; }
+/** Typed limits auto-save after the shared Maintenance debounce; wait past it instead of submitting. */
+async function settleAutosave(expected: string) {
+  await waitFor(() => saveState() === expected);
+}
 async function run() {
   // Load the real catalog before mounting so its dynamic import settles within
   // React's act boundary rather than racing the interaction checks.
@@ -70,12 +75,18 @@ async function run() {
 
   await input("cpu", "101");
   check(select<HTMLInputElement>("input[name=cpu]").getAttribute("aria-invalid") === "true", "Invalid CPU not exposed accessibly");
-  await save(); check(writes.length === 0, "Invalid cap was saved"); checks++;
+  check(!fixture.querySelector("button[type=submit]"), "Redundant resource save button is still rendered");
+  await settleAutosave("blocked");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 800)); });
+  check(writes.length === 0, "Invalid cap was saved"); checks++;
+  rejectSave = true;
   await input("cpu", "25"); await input("memory", "8192"); await input("reserve", "2048");
-  rejectSave = true; await save();
+  await settleAutosave("failed");
   check(fixture.textContent?.includes("fixture write rejected"), "Write failure hidden");
   check(select<HTMLInputElement>("input[name=memory]").value === "8192", "Failed save discarded draft"); checks++;
-  rejectSave = false; await save();
+  rejectSave = false;
+  await act(async () => select<HTMLButtonElement>(".server-backup-policy-footer .secondary-button").click());
+  await settleAutosave("saved");
   check(writes.length === 1, "Valid retry did not persist once");
   const saved = JSON.parse(writes[0].settings_json);
   check(saved.server_name === "Keep this world" && saved.runtime_performance.resource_limits.memory_limit_mib === 8192, "Resource save changed game data or units"); checks++;

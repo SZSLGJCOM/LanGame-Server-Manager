@@ -250,3 +250,144 @@ test("the exact assistant conversation schema rejection explains the native and 
     assert.equal(formatDesktopError(translator("en-US"), new Error(unrelated)), unrelated);
   }
 });
+
+const asaError = (fields = {}) => ({
+  code: "asa_curseforge_startup_failed", message: "UNTRUSTED_RESPONSE_BODY api_key=hidden",
+  stage: "query", reason: "server_unreachable", http_status: null, ...fields
+});
+
+test("ASA native query failures explain uncertainty, stop this start and switch languages", () => {
+  const fields = { native_log_path: "C:/asa/logs/main.log", instance_id: "asa-one", map_key: "main",
+    before_process_key: "map-two", body: "DO_NOT_DISPLAY_BODY", token: "synthetic-fixture" };
+  const payload = asaError(fields);
+  for (const error of [JSON.stringify(payload), new Error(JSON.stringify(payload)), payload]) {
+    const zh = formatDesktopError(translator("zh-CN"), error);
+    const en = formatDesktopError(translator("en-US"), error);
+    assert.match(zh, /模组版本查询失败/);
+    assert.match(zh, /DNS.*TLS.*连接.*超时/);
+    assert.match(en, /Mod version query failed/i);
+    assert.match(en, /does not distinguish DNS, TLS, connection or timeout/i);
+    for (const text of [zh, en]) {
+      assert.match(text, /CurseForge/);
+      for (const context of Object.values(fields).slice(0, 4)) assert.ok(text.includes(context));
+      assert.doesNotMatch(text, /UNTRUSTED_RESPONSE_BODY|api_key|DO_NOT_DISPLAY|synthetic-fixture|asa_curseforge_startup_failed|server_unreachable/);
+    }
+    assert.match(zh, /检查服务器主机.*联网.*重试/);
+    assert.match(zh, /尚未检查.*缓存.*完整性/);
+    assert.match(zh, /本次启动已中止/);
+    assert.match(en, /Check the server host.*connection.*retry/);
+    assert.match(en, /cache content integrity was not checked/i);
+    assert.doesNotMatch(en, /[\u4e00-\u9fff]/);
+  }
+  const activity = message("activity.startServerFailed", { message: JSON.stringify(payload) });
+  assert.match(resolveUiMessage(translator("zh-CN"), activity), /模组版本查询失败/);
+  assert.match(resolveUiMessage(translator("en-US"), activity), /Mod version query failed/i);
+  assert.equal(activity.params.message, JSON.stringify(payload));
+});
+
+test("ASA cache integrity and native exit evidence never imply a successful offline start", () => {
+  for (const [cache_verified, zhCache, enCache] of [
+    [true, /内容完整性已验证.*原生模组初始化失败/, /cache passed content integrity checks.*native Mod initialization failed/i],
+    [false, /缺失、不完整.*尚无足够.*完整性证据/, /missing, incomplete, or lacks sufficient integrity evidence/i],
+    [null, /尚未检查.*缓存.*完整性/, /cache content integrity was not checked/i]
+  ]) {
+    for (const native_process_exited of [true, false, null]) {
+      const payload = asaError({ cache_verified, native_process_exited });
+      const zh = formatDesktopError(translator("zh-CN"), payload);
+      const en = formatDesktopError(translator("en-US"), payload);
+      assert.match(zh, zhCache);
+      assert.match(en, enCache);
+      assert.match(zh, /本次启动已中止/);
+      assert.match(en, /This start was aborted/i);
+      if (native_process_exited === true) {
+        assert.match(zh, /进程已退出/);
+        assert.match(en, /process has exited/i);
+      } else if (native_process_exited === false) {
+        assert.match(zh, /检查时.*进程尚未退出.*其后.*清理/);
+        assert.match(en, /had not exited when checked.*cleanup follows/i);
+      } else {
+        assert.doesNotMatch(zh + en, /进程已退出|进程尚未退出|process has exited|had not exited/);
+      }
+      assert.doesNotMatch(zh + en, /latest|最新|已使用.*缓存启动|started using.*cache/i);
+    }
+  }
+});
+
+test("ASA stages and verified failure categories retain their distinct meanings", () => {
+  const reasons = [
+    ["authentication", /认证失败/, /authentication failed/i],
+    ["access_denied", /拒绝访问/, /access was denied/i],
+    ["request", /拒绝了原生请求.*Mod ID.*配置/, /rejected the native request.*Mod IDs.*configuration/i],
+    ["not_found", /未找到.*资源/, /resource was not found/i],
+    ["expired", /模组资源已过期或失效/, /Mod resource expired or is no longer available/i],
+    ["response", /响应.*无效|响应.*无法识别/, /response.*invalid|response.*unrecognized/i],
+    ["cancelled", /操作已取消/, /operation was cancelled/i],
+    ["unknown", /未提供.*明确.*原因/, /did not provide.*specific.*cause/i],
+    ["missing_mods", /缺少.*模组/, /required Mods.*missing/i],
+    ["unavailable_mod", /模组.*不可用/, /Mod.*unavailable/i],
+    ["missing_file", /未提供发布的主文件/, /did not provide its published main file/i],
+    ["timeout", /时限内.*未完成/, /did not complete.*time limit/i],
+    ["http", /HTTP 503/, /HTTP 503/],
+    ["process_exited", /ASA 进程.*退出或身份改变/, /ASA process exited or its identity changed/]
+  ];
+  for (const [reason, zhReason, enReason] of reasons) {
+    const payload = asaError({ stage: "validation", reason, http_status: reason === "http" ? 503 : null });
+    const zh = formatDesktopError(translator("zh-CN"), payload);
+    const en = formatDesktopError(translator("en-US"), payload);
+    assert.match(zh, /无法确认.*模组.*验证/);
+    assert.match(en, /could not confirm.*Mod validation/i);
+    assert.match(zh, zhReason);
+    assert.match(en, enReason);
+    assert.doesNotMatch(zh + en, /UNTRUSTED_RESPONSE_BODY|api_key|errors\.asa/);
+    if (reason === "process_exited") assert.doesNotMatch(zh + en, /联网|network connection|DNS|TLS/);
+  }
+  const installed = asaError({ stage: "install", reason: "missing_file" });
+  assert.match(formatDesktopError(translator("zh-CN"), installed), /模组安装未完成/);
+  assert.match(formatDesktopError(translator("en-US"), installed), /Mod installation did not complete/);
+  assert.doesNotMatch(formatDesktopError(translator("en-US"), installed), /network connection/);
+  for (const reason of ["authentication", "access_denied", "request", "not_found", "expired", "response", "cancelled", "unknown", "process_exited"]) {
+    const payload = asaError({ reason });
+    assert.doesNotMatch(formatDesktopError(translator("zh-CN"), payload), /联网/);
+    assert.doesNotMatch(formatDesktopError(translator("en-US"), payload), /network connection/);
+  }
+  for (const status of [100, 400, 401, 403, 404, 429, 499, 500, 503, 599]) {
+    const payload = asaError({ reason: "http", http_status: status });
+    const zh = formatDesktopError(translator("zh-CN"), payload);
+    const en = formatDesktopError(translator("en-US"), payload);
+    assert.ok(zh.includes(`HTTP ${status}`));
+    assert.equal(zh.includes("联网"), status === 429 || status >= 500);
+    assert.equal(en.includes("network connection"), status === 429 || status >= 500);
+  }
+});
+
+test("ASA cleanup failures remain visible without claiming every process stopped", () => {
+  const payload = asaError({ cleanup_error: "Owned process tree still running (pid 123)",
+    native_log_path: null, instance_id: null, map_key: null, before_process_key: null,
+    download_issue: { reason: "server_unreachable", http_status: null } });
+  const zh = formatDesktopError(translator("zh-CN"), payload);
+  const en = formatDesktopError(translator("en-US"), payload);
+  assert.match(zh, /清理.*未确认完成.*可能.*进程/s);
+  assert.match(en, /cleanup.*not confirmed.*process.*may still be running/is);
+  assert.ok(zh.includes(payload.cleanup_error));
+  assert.ok(en.includes(payload.cleanup_error));
+  assert.doesNotMatch(zh + en, /本次启动已中止|This start was aborted|download_issue|server_unreachable/);
+});
+
+test("unknown or malformed ASA contracts keep their original diagnostic", () => {
+  const malformed = [
+    { stage: "future" }, { reason: "future" }, { message: 42 }, { http_status: 503 },
+    { reason: "http", http_status: null }, { reason: "http", http_status: 99 },
+    { reason: "http", http_status: 600 }, { reason: "http", http_status: 200.5 },
+    { reason: "http", http_status: "503" }, { native_log_path: 42 }, { cleanup_error: {} },
+    { instance_id: [] }, { map_key: false }, { before_process_key: 0 }, { code: "future_code" },
+    { cache_verified: "true" }, { cache_verified: 1 }, { native_process_exited: "false" }, { native_process_exited: [] }
+  ];
+  for (const fields of malformed) {
+    const original = JSON.stringify(asaError(fields));
+    assert.equal(formatDesktopError(translator("zh-CN"), original), original);
+    assert.equal(formatDesktopError(translator("en-US"), new Error(original)), original);
+  }
+  const missingStatus = asaError();
+  delete missingStatus.http_status;
+  assert.equal(formatDesktopError(translator("zh-CN"), JSON.stringify(missingStatus)), JSON.stringify(missingStatus));
+});

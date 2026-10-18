@@ -18,6 +18,13 @@ pub(super) fn validate(
     settings: &Map<String, Value>,
 ) -> Result<(), StorageError> {
     let module_id = descriptor.map_or("runtime", |descriptor| descriptor.summary.id.as_str());
+    validate_for_module(module_id, settings)
+}
+
+pub(super) fn validate_for_module(
+    module_id: &str,
+    settings: &Map<String, Value>,
+) -> Result<(), StorageError> {
     for field in FIELDS {
         let Some(value) = settings.get(field) else {
             continue;

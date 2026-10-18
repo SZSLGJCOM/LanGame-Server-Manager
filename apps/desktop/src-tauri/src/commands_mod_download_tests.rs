@@ -3,6 +3,133 @@ use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Instant;
 
+#[tokio::test]
+async fn thunderstore_download_cancellation_settles_active_writer_and_removes_partial_file() {
+    // Even a failed assertion must reap this fixture's bounded server thread.
+    struct ReapedServer {
+        thread: Option<thread::JoinHandle<()>>,
+        cancellation: app_steamcmd::InstallCancellation,
+    }
+    impl Drop for ReapedServer {
+        fn drop(&mut self) {
+            self.cancellation.cancel();
+            if let Some(thread) = self.thread.take() {
+                let _ = thread.join();
+            }
+        }
+    }
+
+    let root = download_test_root("thunderstore-cancel-body");
+    let client = download_test_client();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let url = format!("http://{}/fixture.zip", listener.local_addr().unwrap());
+    let cancellation = app_steamcmd::InstallCancellation::new();
+    let worker_cancellation = cancellation.clone();
+    let worker_root = root.clone();
+    let server = thread::spawn(move || {
+        let deadline = Instant::now() + HTTP_TEST_TIMEOUT;
+        let mut stream = loop {
+            assert!(
+                !worker_cancellation.is_cancelled(),
+                "download ended before the fixture received its request"
+            );
+            assert!(
+                Instant::now() < deadline,
+                "download fixture received no request"
+            );
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    thread::sleep(Duration::from_millis(5));
+                }
+                Err(error) => panic!("download fixture accept failed: {error}"),
+            }
+        };
+        stream.set_nonblocking(false).unwrap();
+        stream.set_write_timeout(Some(HTTP_TEST_TIMEOUT)).unwrap();
+        stream.set_read_timeout(Some(HTTP_TEST_TIMEOUT)).unwrap();
+        read_request_headers(&mut stream);
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 1048576\r\nConnection: close\r\n\r\n")
+            .unwrap();
+        stream.write_all(&[b'z'; 4096]).unwrap();
+        stream.flush().unwrap();
+        let deadline = Instant::now() + HTTP_TEST_TIMEOUT;
+        // Cancel after the real owned writer has written the first chunk;
+        // this proves more than dropping an unstarted request future.
+        loop {
+            let wrote = fs::read_dir(&worker_root)
+                .unwrap()
+                .any(|entry| entry.unwrap().metadata().unwrap().len() > 0);
+            if wrote {
+                break;
+            }
+            assert!(
+                !worker_cancellation.is_cancelled(),
+                "download ended before its writer consumed the fixture body"
+            );
+            assert!(
+                Instant::now() < deadline,
+                "download writer never consumed fixture body"
+            );
+            thread::sleep(Duration::from_millis(5));
+        }
+        worker_cancellation.cancel();
+        let mut byte = [0u8; 1];
+        assert_eq!(stream.read(&mut byte).unwrap(), 0);
+    });
+    let mut server = ReapedServer {
+        thread: Some(server),
+        cancellation: cancellation.clone(),
+    };
+    let result = {
+        let download = download_mod_site_file_with_limit_and_cancellation(
+            &client,
+            ModDownloadRequest {
+                download_url: &url,
+                package_name: "Author-Plugin",
+                version: "1.0.0",
+                preferred_filename: None,
+                fallback_extension: "zip",
+                integrity: None,
+                max_bytes: None,
+                download_root: &root,
+            },
+            &cancellation,
+        );
+        tokio::pin!(download);
+        match tokio::time::timeout(HTTP_TEST_TIMEOUT, &mut download).await {
+            Ok(result) => Some(result),
+            Err(_) => {
+                // Drain the cooperative downloader instead of abandoning a
+                // future that still owns its file writer.
+                cancellation.cancel();
+                let _ = download.await;
+                None
+            }
+        }
+    };
+    cancellation.cancel();
+    drop(client);
+    // #[tokio::test] runs on one reactor thread by default. A synchronous
+    // join here prevents Hyper from driving the cancelled connection's EOF.
+    let server_result =
+        tokio::task::spawn_blocking(move || server.thread.take().unwrap().join()).await;
+    server_result.unwrap().unwrap();
+    let result = result.expect("download did not settle within its fixture budget");
+    assert!(
+        matches!(result, Err(ModDownloadFailure::Terminal(_))),
+        "cancellation must end the active writer without publication: {result:?}"
+    );
+    assert_eq!(
+        fs::read_dir(&root).unwrap().count(),
+        0,
+        "cancelled writer retained a partial package"
+    );
+    fs::remove_dir(root).unwrap();
+}
+
 const HTTP_TEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[test]

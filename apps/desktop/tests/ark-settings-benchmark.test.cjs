@@ -86,47 +86,91 @@ test("ASE and ASA retain gameplay domains while shared administration and runtim
 
 test("ARK configuration remains reachable while save policies belong to Maintenance", () => {
   const expectations = {
-    arksurvivalevolved: { schema: 374, configuration: 368, guided: 367, structured: 18, maintenance: ["auto_save_period_minutes", "max_num_of_save_backups"] },
-    arksurvivalascended: { schema: 275, configuration: 269, guided: 268, structured: 16, maintenance: ["auto_save_period_minutes"] }
+    arksurvivalevolved: {
+      maintenance: ["auto_save_period_minutes", "max_num_of_save_backups"],
+      mods: ["active_mod_ids", "ark_mod_map_overrides"],
+      structured: ["player_base_stat_multipliers_attribute", "override_engram_entries"]
+    },
+    arksurvivalascended: {
+      maintenance: ["auto_save_period_minutes"],
+      mods: ["mod_ids_csv", "asa_mod_configurations", "ark_mod_map_overrides"],
+      structured: []
+    }
   };
+  const sharedStructuredKeys = [
+    "additional_maps",
+    "per_level_stats_multiplier_player_integer",
+    "per_level_stats_multiplier_dino_wild_integer",
+    "per_level_stats_multiplier_dino_tamed_type_integer",
+    "level_experience_ramp_overrides",
+    "override_player_level_engram_points",
+    "engram_entry_auto_unlocks",
+    "override_named_engram_entries",
+    "npc_replacements",
+    "dino_spawn_weight_multipliers",
+    "config_add_npc_spawn_entries_container",
+    "config_subtract_npc_spawn_entries_container",
+    "config_override_npc_spawn_entries_container",
+    "config_override_supply_crate_items",
+    "config_override_item_crafting_costs",
+    "config_override_item_max_quantity"
+  ];
 
   for (const [moduleId, expected] of Object.entries(expectations)) {
+    const currentSchema = schema(moduleId);
+    const schemaKeys = Object.keys(currentSchema.properties).sort();
     const parsed = parseGuidedSettingsSchema({
       summary: { id: moduleId, name: moduleId },
-      schema_json: JSON.stringify(schema(moduleId))
+      schema_json: JSON.stringify(currentSchema)
     }, "en-US", translate);
+    assert.equal(parsed.parseError, null, `${moduleId} schema must parse`);
     const model = buildConfigurationWorkspaceModel(parsed);
     const configurationItems = model.items.filter((item) => item.owner === "configuration");
-    assert.deepEqual(model.items.filter((item) => item.owner === "maintenance").map((item) => item.fieldKey).sort(),
-      [...expected.maintenance].sort(), `${moduleId} Maintenance ownership`);
+    const workspaceKeys = {
+      maintenance: expected.maintenance,
+      mods: expected.mods,
+      player_access: ["exclusive_join_list", "priority_join_list", "admin_account_ids"]
+    };
+    for (const [owner, keys] of Object.entries(workspaceKeys)) {
+      assert.deepEqual(model.items.filter((item) => item.owner === owner).map((item) => item.fieldKey).sort(),
+        [...keys].sort(), `${moduleId} ${owner} ownership`);
+    }
+    const separatelyOwnedKeys = new Set(Object.values(workspaceKeys).flat());
+    const expectedConfigurationKeys = schemaKeys.filter((key) => !separatelyOwnedKeys.has(key));
+    const expectedGuidedKeys = expectedConfigurationKeys.filter((key) =>
+      !["object", "array"].includes(currentSchema.properties[key].type));
 
-    assert.equal(parsed.presentationFields.length, expected.schema, `${moduleId} presentation`);
-    assert.equal(model.items.length, expected.schema, `${moduleId} model`);
-    assert.equal(parsed.fields.length, expected.guided, `${moduleId} scalar field contracts`);
+    assert.deepEqual(parsed.presentationFields.map((field) => field.key).sort(), schemaKeys, `${moduleId} presentation`);
+    assert.deepEqual(model.items.map((item) => item.fieldKey).sort(), schemaKeys, `${moduleId} model`);
+    assert.deepEqual(parsed.fields.map((field) => field.key).sort(), expectedGuidedKeys, `${moduleId} scalar field contracts`);
     const structured = configurationItems.filter((item) => item.state === "specialized");
-    assert.equal(structured.length, expected.structured, `${moduleId} structured controls`);
+    assert.deepEqual(structured.map((item) => item.fieldKey).sort(),
+      [...sharedStructuredKeys, ...expected.structured].sort(), `${moduleId} structured controls`);
+    const definition = resolveSettingsModuleDefinition(moduleId);
     for (const item of structured) {
-      assert.ok(resolveSettingsModuleDefinition(moduleId).specializedRenderers[item.field.presentation.rendererId],
+      const renderer = definition.specializedRenderers[item.field.presentation.rendererId];
+      assert.equal(renderer?.kind, "module-addon", `${moduleId} ${item.fieldKey} requires a structured editor`);
+      assert.equal(typeof renderer.Renderer, "function",
         `${moduleId} ${item.fieldKey} requires an actual structured editor`);
     }
-    assert.equal(configurationItems.length, expected.configuration, `${moduleId} Configuration ownership`);
-    assert.equal(
-      configurationItems.filter((item) => model.actionableSectionIds.includes(item.sectionId)).length,
-      expected.configuration,
+    assert.deepEqual(configurationItems.map((item) => item.fieldKey).sort(),
+      expectedConfigurationKeys, `${moduleId} Configuration ownership`);
+    assert.deepEqual(
+      configurationItems.filter((item) => model.actionableSectionIds.includes(item.sectionId))
+        .map((item) => item.fieldKey).sort(),
+      expectedConfigurationKeys,
       `${moduleId} every Configuration field must have a reachable section`
     );
 
-    const definition = resolveSettingsModuleDefinition(moduleId);
     const renderedKeys = parsed.sections.flatMap((section) => {
       const fields = parsed.fields.filter((field) => field.sectionId === section.id);
       const groups = definition.buildFieldGroups?.(section.id, fields, "en-US", translate) ?? [];
       return (groups.length > 0 ? groups.flatMap((group) => group.fields) : fields)
         .map((field) => field.key);
     });
-    assert.equal(new Set(renderedKeys).size, expected.guided, `${moduleId} unique scalar field groups`);
     assert.deepEqual(
       [...renderedKeys].sort(),
-      parsed.fields.map((field) => field.key).sort(),
+      expectedGuidedKeys,
       `${moduleId} field grouping must neither drop nor duplicate controls`
     );
     const mapField = configurationItems.find((item) => item.fieldKey === "additional_maps");

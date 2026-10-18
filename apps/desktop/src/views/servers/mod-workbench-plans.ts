@@ -1,6 +1,7 @@
 import type { ProjectZomboidWorkshopModsSnapshot, SteamWorkshopLookupItem } from "../../types";
 import type { SettingsObject } from "../settings/settings-schema";
 import { parseWorkshopIdList } from "../settings/guided-setting-values";
+import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import { DST_RAW_MOD_WARNING, hasDstRawModOverrides } from "./mod-workbench-dst-policy";
 import { DONTSTARVE_SHARDS, getDontStarveLayoutShards } from "../settings/modules/dontstarve-shards";
 import { buildProjectZomboidWorkshopRemovalPlan } from "./mod-workbench-workshop-controls";
@@ -13,7 +14,6 @@ import {
   mergeWorkshopList,
   isUnsupportedWorkshopItem,
   isIncompleteWorkshopCollection,
-  parseDelimitedEntries,
   parseLineOrSemicolonEntries,
   readDstRemovedWorkshopModIds,
   readDisabledWorkshopModIds,
@@ -203,8 +203,8 @@ export function buildModSettingsApplyPlan(
       break;
     }
     case "arksurvivalevolved": {
-      const activeMods = mergeTextList(nextSettings, "active_mod_ids", buckets.itemIds, parseDelimitedEntries);
-      const managedMods = mergeTextList(nextSettings, "auto_managed_mod_ids", buckets.itemIds, parseDelimitedEntries);
+      const activeMods = mergeTextList(nextSettings, "active_mod_ids", buckets.itemIds, parseEvolvedModIds);
+      const managedMods = mergeTextList(nextSettings, "auto_managed_mod_ids", buckets.itemIds, parseEvolvedModIds);
       nextSettings.active_mod_ids = activeMods.value;
       nextSettings.auto_managed_mod_ids = managedMods.value;
       if (buckets.itemIds.length > 0) {
@@ -448,8 +448,8 @@ export function buildModSettingsRemovePlan(
       break;
     }
     case "arksurvivalevolved": {
-      const activeMods = removeTextListValues(nextSettings, "active_mod_ids", buckets.itemIds, parseDelimitedEntries);
-      const managedMods = removeTextListValues(nextSettings, "auto_managed_mod_ids", buckets.itemIds, parseDelimitedEntries);
+      const activeMods = removeTextListValues(nextSettings, "active_mod_ids", buckets.itemIds, parseEvolvedModIds);
+      const managedMods = removeTextListValues(nextSettings, "auto_managed_mod_ids", buckets.itemIds, parseEvolvedModIds);
       nextSettings.active_mod_ids = activeMods.value;
       nextSettings.auto_managed_mod_ids = managedMods.value;
       removedIds.push(...activeMods.removedValues, ...managedMods.removedValues);

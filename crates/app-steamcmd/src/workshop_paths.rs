@@ -256,6 +256,7 @@ pub(super) fn resolve_workshop_content_roots(
     }
 }
 
+#[cfg(test)]
 pub(super) fn inspect_workshop_item_paths(
     consumer_app_id: u32,
     workshop_root: &Path,

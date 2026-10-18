@@ -8,6 +8,7 @@ import { createDefaultAiSettings, type AiSettings } from "../../src/ai-settings"
 import { fallbackBootstrap } from "../../src/app-state";
 import type { AssistantBuildInput } from "../../src/assistant-types";
 import privacyDocument from "../../../../PRIVACY.md?raw";
+import { version as previewVersion } from "../../package.json";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -84,6 +85,13 @@ async function enter(target: HTMLElement) {
 async function settle() {
   await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
 }
+async function waitForVersion() {
+  const deadline = performance.now() + 3000;
+  while (element(".privacy-notice-version").getAttribute("aria-busy") === "true") {
+    if (performance.now() > deadline) throw new Error("Application version did not settle");
+    await settle();
+  }
+}
 async function scrollPolicyToEnd(body: HTMLElement) {
   body.focus();
   check(document.activeElement === body, "Privacy text cannot receive keyboard focus");
@@ -147,7 +155,13 @@ async function run() {
     visible(".assistant-back-button");
     visible(".assistant-close-button");
     await scrollPolicyToEnd(body);
-    const lastParagraph = element(".assistant-privacy-surface section:last-child p:last-child");
+    await waitForVersion();
+    check(element(".privacy-notice-app-info").textContent?.includes("LanGame Server Manager"), "Application name is missing");
+    check(element(".privacy-notice-version").textContent === `${locale === "zh-CN" ? "当前版本" : "Current version"} v${previewVersion}`,
+      "Version footer has the wrong version or language");
+    visible(".privacy-notice-app-info");
+    check(getComputedStyle(element(".privacy-notice-version")).userSelect === "text", "Application version cannot be selected for support reports");
+    const lastParagraph = element(".assistant-privacy-surface > section:last-of-type p:last-child");
     const lastBox = lastParagraph.getBoundingClientRect();
     const bodyBox = body.getBoundingClientRect();
     check(lastBox.bottom <= bodyBox.bottom && lastBox.bottom > bodyBox.top, "Last policy paragraph cannot be read in the page");
@@ -202,11 +216,41 @@ async function run() {
   await enter(element(".assistant-settings-button"));
   check(element(".ai-data-recipient").textContent?.includes("管理端本机"), "Loopback should refer to management host");
   await enter(element(".assistant-back-button"));
+  let resolveVersion = (_version: string) => {};
+  const pendingVersion = new Promise<string>((resolve) => { resolveVersion = resolve; });
+  const versionCommands: string[] = [];
+  Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string) => {
+    versionCommands.push(command);
+    if (command !== "app_version") throw new Error(`Unexpected native command: ${command}`);
+    return pendingVersion;
+  } } });
+  await act(async () => { element(".assistant-privacy-button").click(); });
+  check(element(".privacy-notice-version").textContent === "正在读取版本…"
+    && element(".privacy-notice-version").getAttribute("aria-busy") === "true", "Version loading state is missing");
+  await act(async () => { resolveVersion("9.8.7-rc.1+fixture"); });
+  await waitForVersion();
+  check(element(".privacy-notice-version").textContent === "当前版本 v9.8.7-rc.1+fixture",
+    "Version footer did not use the running host's exact version");
+  await enter(element(".assistant-back-button"));
+  Object.assign(window, { __TAURI_INTERNALS__: { invoke: async (command: string) => {
+    versionCommands.push(command);
+    throw new Error("Version metadata unavailable");
+  } } });
+  await render("en-US", settings);
+  await act(async () => { element(".assistant-privacy-button").click(); });
+  await waitForVersion();
+  check(element(".privacy-notice-version").textContent === "Version unavailable", "Version failure must not show a guessed version");
+  check(versionCommands.length > 0 && versionCommands.every((command) => command === "app_version"), "Reading version invoked an unrelated native operation");
+  await enter(element(".assistant-back-button"));
+  Reflect.deleteProperty(window, "isTauri");
+  Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
   const screenshotLocale = innerWidth < 1000 ? "en-US" : "zh-CN";
   await render(screenshotLocale, settings);
   await act(async () => { element(".assistant-privacy-button").click(); });
   visible(".assistant-privacy-surface");
   check(element(".assistant-privacy-surface").scrollTop === 0, "Reopening privacy must start at the beginning");
+  await waitForVersion();
+  await scrollPolicyToEnd(element(".assistant-privacy-surface"));
   check(sends === 0 && externalRequests === 0, "Reading notices triggered AI or external requests");
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });

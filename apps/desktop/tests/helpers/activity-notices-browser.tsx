@@ -164,7 +164,7 @@ async function run() {
       total_lines: 2, truncated: false, read_error: null } };
   const settings = createDefaultAiSettings();
   let activity: UiMessage = { key: "fixture.activity.ready", fallback: "活动栏已就绪" };
-  let localNotices: Array<{ id: string; text: string; tone: "error" | "warning" | "success" | "info" }> = [];
+  let localNotices: Array<{ id: string; text: string; details?: string; tone: "error" | "warning" | "success" | "info" }> = [];
   let localRetries = 0;
   let localDismissals = 0;
   let showCreationForm = false;
@@ -231,7 +231,7 @@ async function run() {
     return <AppShell {...shellProps} activityText={resolveUiMessage(t, activity)} activityTone={activity.tone}>
       {showCreationForm ? <div style={{ width: 380 }}><LibraryServerActions {...createProps} creating={creating} /></div>
         : <ServersView {...viewProps} />}
-      {localNotices.map((notice) => <ActivityNotice key={notice.id} tone={notice.tone}
+      {localNotices.map((notice) => <ActivityNotice key={notice.id} tone={notice.tone} details={notice.details}
         onDismiss={() => { localDismissals++; }} action={notice.id === "workshop" ?
           <button type="button" className="auto-refresh-status-resume" onClick={() => {
             localRetries++; localNotices = localNotices.filter((item) => item.id !== notice.id); render();
@@ -313,9 +313,10 @@ async function run() {
   check(!stop.disabled, "Installation notice disabled cancellation"); insideFooter(stop, "Installation stop control");
   await act(async () => { stop.click(); }); scenarios++;
   const longWorkshopError = `工坊条目类型核验失败，Steam 返回 HTTP 429。${"完整诊断及请求限流详情。".repeat(60)}\nWORKSHOP_ERROR_END`;
+  const warningDetails = ["原始诊断", "Synthetic request: HTTP 429", "完整限流诊断。".repeat(60), "WARNING_DIAGNOSTIC_END"].join("\n");
   localNotices = [
     { id: "workshop", text: longWorkshopError, tone: "error" },
-    { id: "warning", text: "停服后修改 Mod。WARNING_LOCAL_END", tone: "warning" },
+    { id: "warning", text: "停服后修改 Mod。WARNING_LOCAL_END", details: warningDetails, tone: "warning" },
     { id: "success", text: "设置已保存。SUCCESS_LOCAL_END", tone: "success" },
     { id: "info", text: "正在读取配置。INFO_LOCAL_END", tone: "info" }
   ];
@@ -329,6 +330,12 @@ async function run() {
   for (const notice of localNotices) {
     const selected = await selectActivity(".shell-activity-notice", notice.text);
     insideFooter(selected.querySelector<HTMLButtonElement>(".shell-activity-notice-close")!, "Notification close control");
+    if (notice.details) {
+      check(!selected.querySelector(".shell-activity-notice-diagnostics") && !selected.textContent?.includes(notice.details),
+        "Collapsed notification exposed raw diagnostics");
+      check(selected.querySelector(".shell-activity-notice-text")?.getAttribute("title") === notice.text,
+        "Collapsed notification tooltip replaced its short summary with raw diagnostics");
+    }
   }
   scenarios++;
   const beforeRotation = element(".shell-activity-viewport").textContent;
@@ -343,6 +350,19 @@ async function run() {
   check(diagnostic?.textContent === longWorkshopError, "Complete messages lost multiline workshop diagnostics");
   check(diagnostic.scrollHeight <= diagnostic.clientHeight + 1 && getComputedStyle(diagnostic).whiteSpace === "pre-wrap",
     "Expanded diagnostics are still truncated");
+  const warningDiagnostic = panel.querySelector<HTMLElement>(".shell-activity-notice.is-warning .shell-activity-notice-diagnostics");
+  check(warningDiagnostic?.textContent === warningDetails, "Complete messages lost separate raw diagnostics");
+  check(warningDiagnostic.scrollHeight <= warningDiagnostic.clientHeight + 1 && getComputedStyle(warningDiagnostic).whiteSpace === "pre-wrap",
+    "Separate raw diagnostics are still truncated");
+  check(getComputedStyle(warningDiagnostic).userSelect === "text", "Separate raw diagnostics cannot be selected");
+  const selection = getSelection();
+  check(selection, "Browser selection is unavailable");
+  const diagnosticRange = document.createRange();
+  diagnosticRange.selectNodeContents(warningDiagnostic);
+  selection.removeAllRanges();
+  selection.addRange(diagnosticRange);
+  check(selection.toString() === warningDetails, "Selecting raw diagnostics omitted part of the original output");
+  selection.removeAllRanges();
   check(panel.textContent?.includes(refreshError) && panel.textContent.includes(startupError), "Complete messages lost global failures");
   await closeMessages();
   unchanged(baseline, "expanded message details"); scenarios++;
@@ -384,6 +404,13 @@ async function run() {
   check(document.activeElement === element(".shell-activity-expand"), "Dismissing the selected notice lost keyboard focus");
   unchanged(baseline, "closing a local notification"); scenarios++;
   const warningIndex = localNotices.findIndex((notice) => notice.id === "warning");
+  localNotices[warningIndex] = { ...localNotices[warningIndex], details: `${warningDetails}\nUPDATED_DIAGNOSTIC_END` };
+  await act(async () => { render(); });
+  check(!fixture.querySelector(".shell-activity-notice.is-warning"), "Details-only update restored a dismissed notification");
+  check(!(await openMessages()).querySelector(".shell-activity-notice.is-warning"), "Details-only update restored a dismissed notification in complete messages");
+  await closeMessages();
+  check(localDismissals === 1, "Details-only update repeated the dismissal callback");
+  unchanged(baseline, "updating diagnostics on a dismissed notification"); scenarios++;
   const previousWarning = localNotices[warningIndex].text;
   localNotices[warningIndex] = { ...localNotices[warningIndex], text: "正在重新检查 Mod。" };
   await act(async () => { render(); });

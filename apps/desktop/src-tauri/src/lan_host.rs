@@ -1048,6 +1048,11 @@ pub(crate) fn dispatch_command<'a>(
                     app_handle.state::<DesktopState>(),
                     arg(&args, "instanceId", "instance_id")?,
                     arg(&args, "references", "references")?,
+                    opt_arg(
+                        &args,
+                        "thunderstoreVersionPolicy",
+                        "thunderstore_version_policy",
+                    )?,
                 )
                 .await?,
             )

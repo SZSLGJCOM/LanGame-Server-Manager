@@ -12,6 +12,9 @@ use history::{Snapshot, Target};
 #[path = "ark_mod_configuration.rs"]
 mod mod_configuration;
 pub(crate) use mod_configuration::validate as validate_asa_mod_configurations;
+#[path = "ark_ini_maps.rs"]
+mod maps;
+pub(super) use maps::render_map_files;
 
 #[derive(Clone, Copy, Default)]
 enum Encoding {

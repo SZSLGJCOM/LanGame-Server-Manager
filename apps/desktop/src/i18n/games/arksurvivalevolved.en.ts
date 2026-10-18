@@ -2,6 +2,9 @@ import type { MessageCatalog } from "../../i18n-config";
 import { buildArkFieldHelpMessages } from "./ark-field-help";
 
 export const EN_US_ARK_SURVIVAL_EVOLVED_MESSAGES: MessageCatalog = {
+  "settings.schema.arksurvivalevolved.ark_mod_map_overrides.title": "Mod map selection",
+  "settings.schema.arksurvivalevolved.ark_mod_map_overrides.description": "Mods inherit shared defaults. Select a Mod in My Mods and choose multiple enabled maps; other Mods keep inheriting. Parameter targets are separate. Differences may affect cross-server transfers.",
+  "settings.schema.arksurvivalevolved.additional_maps.description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; maps share server settings and cluster transfers, with shared Mod defaults and optional map selections for each Mod.",
   "ark.settings.groups.leveling.rules.title": "Leveling and respec rules",
   "ark.settings.groups.leveling.player.title": "Player stats",
   "ark.settings.groups.leveling.wild.title": "Wild dino per-level stats",

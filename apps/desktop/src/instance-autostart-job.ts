@@ -1,6 +1,7 @@
 import type { TranslateFn } from "./i18n";
 import type { BackgroundJob } from "./types";
 import { formatDesktopError } from "./desktop-error-message";
+import { formatRuntimeStartWarning, readRuntimeStartWarnings } from "./runtime-start-warning";
 
 export function isInstanceAutostartJob(job: BackgroundJob): boolean {
   return job.kind === "StartInstance" && job.label.startsWith("Autostart ");
@@ -12,6 +13,11 @@ export function formatInstanceAutostartJobLabel(job: BackgroundJob, t: Translate
 }
 
 export function formatInstanceAutostartJobDetail(job: BackgroundJob, t: TranslateFn): string {
+  const warnings = job.status === "Completed" ? readRuntimeStartWarnings(job.warnings) : [];
+  if (warnings.length) return warnings.map((warning) => {
+    const rendered = formatRuntimeStartWarning(t, warning, formatInstanceAutostartJobLabel(job, t));
+    return `${rendered.text}\n${rendered.details}`;
+  }).join("\n\n");
   if (isInstanceAutostartJob(job)) {
     switch (job.detail) {
       case "Starting automatically with LGSM.": return t("servers.autostart.starting");

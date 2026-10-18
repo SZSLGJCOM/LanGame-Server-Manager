@@ -14,9 +14,9 @@ mod desktop_app_log;
 mod desktop_reliability;
 mod desktop_window;
 mod dst_mods;
-mod enshrouded_extension;
 #[cfg(all(test, feature = "custom-protocol"))]
 mod embedded_frontend_tests;
+mod enshrouded_extension;
 mod knowledge_runtime;
 mod lan_directory;
 mod lan_host;
@@ -116,6 +116,10 @@ fn resolve_desktop_storage() -> Result<app_storage::StoragePaths, app_storage::S
 }
 
 fn main() {
+    #[cfg(windows)]
+    if let Some(code) = app_platform_win::run_elevated_firewall_if_requested() {
+        std::process::exit(code);
+    }
     #[cfg(windows)]
     if let Some(code) = app_runtime::run_elevated_launcher_if_requested() {
         std::process::exit(code);

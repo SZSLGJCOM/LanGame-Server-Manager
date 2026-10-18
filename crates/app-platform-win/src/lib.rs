@@ -11,7 +11,9 @@ use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+mod firewall;
 mod host_inventory;
+pub use firewall::run_elevated_firewall_if_requested;
 #[cfg(test)]
 mod host_monitor_tests;
 mod host_telemetry;
@@ -20,7 +22,7 @@ mod process_inspection;
 mod system_utility;
 pub use process_inspection::WindowInspectionTarget;
 use process_inspection::{TargetProcessRecord, collect_verified_target_process_records};
-use system_utility::{FIREWALL_TIMEOUT, QUERY_TIMEOUT, SystemUtility};
+use system_utility::{QUERY_TIMEOUT, SystemUtility};
 
 const MAX_PATH_WIDE: usize = 260;
 const TH32CS_SNAPPROCESS: u32 = 0x0000_0002;
@@ -2290,80 +2292,7 @@ fn ensure_instance_firewall_rules(
 fn apply_firewall_rule_specs(
     specs: &[WindowsFirewallRuleSpec],
 ) -> Result<Vec<WindowsFirewallRuleApplyResult>, String> {
-    if specs.is_empty() {
-        return Ok(Vec::new());
-    }
-
-    let script = build_firewall_rule_batch_script(specs)?;
-    let output = system_utility::capture(
-        SystemUtility::PowerShell,
-        &[
-            "-NoLogo",
-            "-NoProfile",
-            "-NonInteractive",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-Command",
-            &script,
-        ],
-        FIREWALL_TIMEOUT,
-    )
-    .map_err(|error| format!("failed to run Windows Firewall PowerShell command: {error}"))?;
-
-    if !output.status.success() {
-        let stderr = decode_powershell_text(&output.stderr).trim().to_string();
-        let stdout = decode_powershell_text(&output.stdout).trim().to_string();
-        let detail = if !stderr.is_empty() {
-            stderr
-        } else if !stdout.is_empty() {
-            stdout
-        } else {
-            format!("powershell exited with status {}", output.status)
-        };
-        return Err(format!("failed to create Windows Firewall rules: {detail}"));
-    }
-
-    deserialize_powershell_json_object::<Vec<WindowsFirewallRuleApplyResult>>(&output.stdout)
-        .ok_or_else(|| String::from("Windows Firewall command returned invalid JSON"))
-}
-
-fn build_firewall_rule_batch_script(specs: &[WindowsFirewallRuleSpec]) -> Result<String, String> {
-    let rules_json = serde_json::to_string(specs)
-        .map_err(|error| format!("failed to serialize Windows Firewall rules: {error}"))?;
-
-    Ok(format!(
-        r#"
-[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
-$ErrorActionPreference = 'Stop'
-$rulesJson = @'
-{rules_json}
-'@
-$rules = $rulesJson | ConvertFrom-Json
-$results = foreach ($rule in $rules) {{
-  $name = [string]$rule.rule_name
-  $protocol = [string]$rule.protocol
-  $localPort = [int]$rule.local_port
-  $localAddress = [string]$rule.local_address
-  $existing = @(Get-NetFirewallRule -DisplayName $name -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -eq $name }})
-  $status = if ($existing.Count -gt 0) {{ 'replaced' }} else {{ 'created' }}
-  if ($existing.Count -gt 0) {{
-    $existing | Remove-NetFirewallRule -ErrorAction Stop
-  }}
-  New-NetFirewallRule -DisplayName $name -Direction Inbound -Action Allow -Protocol $protocol -LocalPort $localPort -LocalAddress $localAddress -Profile Any -Enabled True -Group 'LanGame Server Manager' -Description 'Created by LanGame Server Manager for a managed server instance port.' | Out-Null
-  [pscustomobject]@{{
-    rule_name = $name
-    protocol = $protocol
-    local_port = $localPort
-    local_address = $localAddress
-    status = $status
-    message = $null
-  }}
-}}
-ConvertTo-Json -InputObject @($results) -Compress
-"#,
-        rules_json = rules_json,
-    ))
+    firewall::apply(specs)
 }
 
 fn normalize_firewall_protocol(protocol: &str) -> Option<String> {
@@ -2630,146 +2559,5 @@ mod tests {
         assert_eq!(specs[0].local_port, 27_017);
         assert_eq!(specs[1].local_port, 27_018);
         assert!(specs.iter().all(|spec| spec.protocol == "UDP"));
-    }
-
-    #[test]
-    fn firewall_rule_batch_script_contains_all_rule_specs_in_one_payload() {
-        let specs = vec![
-            WindowsFirewallRuleSpec {
-                rule_name: String::from("LanGame alpha game UDP 8211"),
-                protocol: String::from("UDP"),
-                local_port: 8211,
-                local_address: String::from("192.168.31.150"),
-            },
-            WindowsFirewallRuleSpec {
-                rule_name: String::from("LanGame alpha query TCP 27015"),
-                protocol: String::from("TCP"),
-                local_port: 27015,
-                local_address: String::from("192.168.31.150"),
-            },
-        ];
-
-        let script = build_firewall_rule_batch_script(&specs).expect("batch script");
-
-        assert!(script.contains("$rulesJson = @'"));
-        assert!(script.contains("LanGame alpha game UDP 8211"));
-        assert!(script.contains("LanGame alpha query TCP 27015"));
-        assert!(script.contains("-LocalAddress $localAddress"));
-        assert!(script.contains("$rules = $rulesJson | ConvertFrom-Json"));
-        assert!(!script.contains("$rules = @($rulesJson | ConvertFrom-Json)"));
-        assert!(script.contains("ConvertTo-Json -InputObject @($results) -Compress"));
-        assert_eq!(script.matches("New-NetFirewallRule").count(), 1);
-        assert_eq!(script.matches("ConvertFrom-Json").count(), 1);
-    }
-
-    #[test]
-    #[cfg(windows)]
-    fn firewall_rule_batch_script_roundtrips_multiple_rules_in_windows_powershell() {
-        struct PhaseDirectory(std::path::PathBuf);
-        impl Drop for PhaseDirectory {
-            fn drop(&mut self) {
-                std::fs::remove_dir_all(&self.0).expect("remove firewall fixture phases");
-            }
-        }
-        let phase_root = std::env::temp_dir().join(format!(
-            "lgsm-firewall-fixture-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir(&phase_root).expect("create firewall fixture phases");
-        let phases = PhaseDirectory(phase_root);
-        let phase_path = phases.0.join("phases.log");
-        let phase_path_literal = phase_path.to_string_lossy().replace('\'', "''");
-        let specs = vec![
-            WindowsFirewallRuleSpec {
-                rule_name: String::from("LanGame alpha game UDP 8211"),
-                protocol: String::from("UDP"),
-                local_port: 8211,
-                local_address: String::from("192.168.31.150"),
-            },
-            WindowsFirewallRuleSpec {
-                rule_name: String::from("LanGame alpha query TCP 27015"),
-                protocol: String::from("TCP"),
-                local_port: 27015,
-                local_address: String::from("192.168.31.150"),
-            },
-        ];
-        let firewall_script = build_firewall_rule_batch_script(&specs).expect("batch script");
-        let script = format!(
-            r#"
-$phasePath = '{phase_path_literal}'
-function Write-TestPhase {{
-  param([string]$Phase)
-  [IO.File]::AppendAllText($phasePath, $Phase + [Environment]::NewLine)
-}}
-Write-TestPhase 'entry'
-function Get-NetFirewallRule {{
-  [CmdletBinding()]
-  param([string]$DisplayName)
-  Write-TestPhase ('get:' + $DisplayName)
-  @()
-}}
-function New-NetFirewallRule {{
-  [CmdletBinding()]
-  param(
-    [string]$DisplayName,
-    [string]$Direction,
-    [string]$Action,
-    [string]$Protocol,
-    [int]$LocalPort,
-    [string]$LocalAddress,
-    [string]$Profile,
-    [string]$Enabled,
-    [string]$Group,
-    [string]$Description
-  )
-  Write-TestPhase ('new:' + $DisplayName)
-}}
-Write-TestPhase 'script'
-{firewall_script}
-Write-TestPhase 'complete'
-"#
-        );
-        let started = Instant::now();
-        let output = system_utility::capture(
-            SystemUtility::PowerShell,
-            &[
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-Command",
-                &script,
-            ],
-            QUERY_TIMEOUT,
-        )
-        .unwrap_or_else(|error| {
-            panic!(
-                "PowerShell test process after {:?}; phases: {:?}; error: {error:?}",
-                started.elapsed(),
-                std::fs::read_to_string(&phase_path)
-            )
-        });
-        eprintln!(
-            "PowerShell fixture completed after {:?}; phases: {:?}",
-            started.elapsed(),
-            std::fs::read_to_string(&phase_path)
-        );
-
-        assert!(
-            output.status.success(),
-            "{}",
-            decode_powershell_text(&output.stderr)
-        );
-        let results = deserialize_powershell_json_object::<Vec<WindowsFirewallRuleApplyResult>>(
-            &output.stdout,
-        )
-        .expect("firewall result array");
-        assert_eq!(results.len(), 2);
-        assert_eq!(results[0].local_port, 8211);
-        assert_eq!(results[0].local_address, "192.168.31.150");
-        assert_eq!(results[1].local_port, 27015);
     }
 }

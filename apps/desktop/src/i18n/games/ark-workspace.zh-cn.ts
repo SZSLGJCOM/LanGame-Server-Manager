@@ -2,7 +2,7 @@ import type { MessageCatalog } from "../../i18n-config";
 export const ARK_WORKSPACE_ZH_CN: MessageCatalog = {
   "ark.maps.title": "集群地图",
   "ark.maps.count": "{count} 张地图",
-  "ark.maps.shared": "各地图共用本实例的服务器文件、配置和模组，每张地图拥有独立存档、端口和 LanGameCMD 输出，可通过控制台右上角的下拉框切换。",
+  "ark.maps.shared": "各地图共用本实例的服务器文件和服务器设置，MOD 默认共用，也可在「模组」中按地图单独配置。每张地图拥有独立存档、端口和 LanGameCMD 输出，可通过控制台右上角的下拉框切换。",
   "ark.maps.stopFirst": "请先停止本实例，再修改地图配置。",
   "ark.maps.name": "服务器名称",
   "ark.maps.names": "填写每张地图在游戏服务器列表中显示的完整名称，不会自动拼接前缀或地图名。主地图名称与「房间设置」中的服务器名称同步。",

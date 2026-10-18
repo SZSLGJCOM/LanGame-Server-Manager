@@ -91,10 +91,10 @@ async fn replacement_truncation_and_same_length_rewrites_disable_evidence() {
 }
 
 #[tokio::test]
-async fn excessive_growth_and_unreadable_snapshot_cannot_trigger_recovery() {
+async fn overlong_records_and_unreadable_snapshot_cannot_trigger_recovery() {
     let fixture = Fixture::new(Some(b"previous\n"));
     let evidence = ContentLogEvidence::before_spawn(&fixture.0).await;
-    fixture.append(&vec![b'x'; MAX_NEW_BYTES as usize]);
+    fixture.append(&vec![b'x'; 4 * 1024 * 1024]);
     fixture.append(DENIED.as_bytes());
     assert!(evidence.finish().await.is_empty());
 
@@ -104,4 +104,40 @@ async fn excessive_growth_and_unreadable_snapshot_cannot_trigger_recovery() {
     std::fs::remove_dir(fixture.path()).unwrap();
     fixture.append(DENIED.as_bytes());
     assert!(evidence.finish().await.is_empty());
+}
+
+#[tokio::test]
+async fn fresh_denials_survive_more_than_four_megabytes_of_later_output() {
+    let fixture = Fixture::new(Some(b"previous\n"));
+    let evidence = ContentLogEvidence::before_spawn(&fixture.0).await;
+    fixture.append(DENIED.as_bytes());
+    fixture.append("later scheduler diagnostics\n".repeat(200_000).as_bytes());
+    let (denials, excerpt) = evidence.finish_with_excerpt().await;
+    assert_eq!(denials.len(), 1);
+    assert_eq!(excerpt.as_deref(), Some(DENIED.trim()));
+}
+
+#[tokio::test]
+async fn split_records_and_invalid_unrelated_utf8_do_not_lose_fresh_denials() {
+    let fixture = Fixture::new(Some(b"previous\n"));
+    let mut evidence = ContentLogEvidence::before_spawn(&fixture.0).await;
+    fixture.append(b"invalid unrelated record: \xff\n");
+    fixture.append(&DENIED.as_bytes()[..80]);
+    assert!(evidence.poll().await.activity);
+    assert!(evidence.denials.is_empty());
+    fixture.append(&DENIED.as_bytes()[80..]);
+    assert_eq!(evidence.finish().await.len(), 1);
+}
+
+#[tokio::test]
+async fn rotation_preserves_captured_current_evidence_without_importing_replacement_history() {
+    let fixture = Fixture::new(Some(b"previous\n"));
+    let mut evidence = ContentLogEvidence::before_spawn(&fixture.0).await;
+    fixture.append(DENIED.as_bytes());
+    assert!(evidence.poll().await.activity);
+    std::fs::rename(fixture.path(), fixture.path().with_extension("previous")).unwrap();
+    fixture.append(DENIED.replace("6497701753597013477", "42").as_bytes());
+    let denials = evidence.finish().await;
+    assert_eq!(denials.len(), 1);
+    assert_eq!(denials[0].manifest, 6_497_701_753_597_013_477);
 }

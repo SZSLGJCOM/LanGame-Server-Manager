@@ -127,3 +127,27 @@ export function buildAsaModPlan(settings: SettingsObject, rawIds: readonly strin
   }
   return next;
 }
+
+/**
+ * Replace the shared active list (`mod_ids_csv`) with exactly `rawIds`, in order. IDs dropped from the list stay in
+ * My Mods as disabled entries (files and per-Mod options retained); passive loading, per-map overrides, Mod options
+ * and every other setting are untouched. Enabling or disabling individual Mods otherwise lives in My Mods.
+ */
+export function buildAsaActiveListPlan(settings: SettingsObject, rawIds: readonly string[]): SettingsObject {
+  if (hasAsaRawModFlags(settings)) throw new AsaModControlError("raw-mod-flags");
+  const ids = unique(rawIds.map((id) => { const normalized = canonicalAsaModId(id); if (!normalized) throw new AsaModControlError("invalid-id"); return normalized; }));
+  if (ids.length > 8192) throw new AsaModControlError("invalid-id");
+  const state = readAsaModMembership(settings);
+  const listed = new Set(ids);
+  const next = { ...settings };
+  const text = ids.join("\n");
+  if ((typeof settings.mod_ids_csv === "string" ? settings.mod_ids_csv : "") !== text) next.mod_ids_csv = text;
+  const disabledActive = new Set(state.disabledActive.filter((id) => !listed.has(id)));
+  for (const id of state.active) if (!listed.has(id)) disabledActive.add(id);
+  const removed = markerIds(settings, "curseforge_removed_mod_ids").filter((id) => !listed.has(id));
+  for (const [key, values] of [["curseforge_disabled_mod_ids", [...disabledActive]], ["curseforge_removed_mod_ids", removed]] as const) {
+    const current = markerIds(settings, key);
+    if ((values.length || key in settings) && (values.length !== current.length || values.some((id, index) => id !== current[index]))) next[key] = values;
+  }
+  return next;
+}

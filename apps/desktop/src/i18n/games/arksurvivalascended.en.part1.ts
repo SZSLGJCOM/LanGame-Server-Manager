@@ -17,7 +17,7 @@ export const EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_1: MessageCatalog = {
   "settings.schema.arksurvivalascended.custom_notification_url.title": "Announcement source URL",
   "settings.schema.arksurvivalascended.active_map_mod.title": "Custom map Mod ID",
   "settings.schema.arksurvivalascended.asa_mod_configurations.title": "Mod configuration",
-  "settings.schema.arksurvivalascended.asa_mod_configurations.description": "Save each CurseForge Mod's INI configuration. All maps share these settings; stop the instance before saving. Changes apply on the next server start.",
+  "settings.schema.arksurvivalascended.asa_mod_configurations.description": "Save each CurseForge Mod's INI configuration as shared defaults, or select multiple maps for the current Mod. Other Mods and unmodified files keep inheriting. Stop the instance before saving. Changes apply on the next server start.",
   "settings.schema.arksurvivalascended.duration.title": "Login message duration (seconds)",
   "settings.schema.arksurvivalascended.message.title": "Login message",
   "arkse.settings.sections.modsDescription": "Steam Workshop mod IDs rendered into ActiveMods, with -automanagedmods controlling install posture.",

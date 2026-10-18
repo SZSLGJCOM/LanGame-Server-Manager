@@ -1628,6 +1628,7 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         activeView={activeView}
         activityText={resolveUiMessage(t, activity)}
         activityTone={activity.tone}
+        runtimeStartNotice={activity.runtimeStartNotice}
         runtimeRefreshIssue={activeView === "system" ? systemRefreshIssue : runtimeRefreshIssue}
         runtimeAutoRefreshPaused={activeView === "system" ? false : runtimeAutoRefreshPaused}
         runtimePollIntervalMs={activeView === "system" ? systemPollIntervalMs : runtimePollIntervalMs}

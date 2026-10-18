@@ -100,6 +100,7 @@ pub(in crate::commands::commands_mod_staging) fn prepare_thunderstore_mod_transa
     sources: &[DownloadedManualModSource],
     transaction: &ManualModTransactionPaths,
     runtime_dependencies: &[OnlineModIdentity],
+    policy: PackageUserDataPolicy,
 ) -> Result<PreparedPackages, String> {
     management::recover_management(target)?;
     reject_untracked_downloads(&target.target_path, sources)?;
@@ -116,15 +117,26 @@ pub(in crate::commands::commands_mod_staging) fn prepare_thunderstore_mod_transa
     let mut result = (Vec::new(), 0, 0, HashSet::new());
     for source in sources {
         let key = package_key(&source.identity)?;
+        let previous = manifest.packages.get(&key).map(management::copy_package);
         let prepared = prepare_package(
             target,
             &source.path,
             &key,
-            Some(source.identity.version.clone()),
-            Some(source.identity.dependencies.clone()),
+            Some(PackageReleaseMetadata {
+                version: &source.identity.version,
+                dependencies: &source.identity.dependencies,
+            }),
             transaction,
             &mut manifest,
+            policy,
         )?;
+        if let Some(package) = manifest.packages.get_mut(&key) {
+            package.thunderstore_intent = thunderstore_intent::retained_intent(
+                previous.as_ref(),
+                source.identity.thunderstore_intent.as_ref(),
+                &source.identity.version,
+            )?;
+        }
         result.0.extend(prepared.0);
         result.1 += prepared.1;
         result.2 += prepared.2;
@@ -151,10 +163,13 @@ pub(in crate::commands::commands_mod_staging) fn prepare_local_thunderstore_tran
         target,
         source,
         &format!("local-local-{name}"),
-        metadata.map(|metadata| metadata.version.clone()),
-        metadata.map(|metadata| metadata.dependencies.clone()),
+        metadata.map(|metadata| PackageReleaseMetadata {
+            version: &metadata.version,
+            dependencies: &metadata.dependencies,
+        }),
         transaction,
         &mut manifest,
+        PackageUserDataPolicy::RejectConflicts,
     )?;
     publish_record(transaction, &manifest)?;
     Ok(result)
@@ -199,6 +214,7 @@ pub(in crate::commands::commands_mod_staging) fn finalize_thunderstore_transacti
         if let Some(dependencies) = &package.dependencies {
             if let Some(project) = key.strip_prefix("thunderstore-") {
                 identities.push(OnlineModIdentity {
+                    thunderstore_intent: package.thunderstore_intent.clone(),
                     provider: "thunderstore".into(),
                     project: project.into(),
                     version: package.version.clone().unwrap_or_default(),
@@ -208,6 +224,7 @@ pub(in crate::commands::commands_mod_staging) fn finalize_thunderstore_transacti
             } else {
                 // Local author identity is unknown; validate its declared requirements only.
                 identities.push(OnlineModIdentity {
+                    thunderstore_intent: package.thunderstore_intent.clone(),
                     provider: "thunderstore".into(),
                     project: format!("Local-{key}"),
                     version: package.version.clone().unwrap_or_default(),
@@ -267,14 +284,19 @@ pub(super) fn verify_patchers(
     Ok(())
 }
 
+struct PackageReleaseMetadata<'a> {
+    version: &'a str,
+    dependencies: &'a [String],
+}
+
 fn prepare_package(
     target: &ResolvedManualModTarget,
     source: &Path,
     key: &str,
-    version: Option<String>,
-    dependencies: Option<Vec<String>>,
+    release: Option<PackageReleaseMetadata<'_>>,
     transaction: &ManualModTransactionPaths,
     manifest: &mut InstalledPackages,
+    policy: PackageUserDataPolicy,
 ) -> Result<PreparedPackages, String> {
     let root = runtime_root(&target.target_path)?;
     management::validate_component(key)?;
@@ -376,7 +398,7 @@ fn prepare_package(
     let incoming = fingerprint_tree(&plugin_staged)?;
     let destination = target.target_path.join(target_name);
     if let Some(previous) = manifest.packages.get(key) {
-        preserve_user_files(&destination, &plugin_staged, previous, &incoming)?;
+        preserve_user_files_with_policy(&destination, &plugin_staged, previous, &incoming, policy)?;
         for (relative, hash) in previous
             .routed_files
             .iter()
@@ -403,11 +425,15 @@ fn prepare_package(
     manifest.packages.insert(
         key.into(),
         InstalledPackage {
+            thunderstore_intent: manifest
+                .packages
+                .get(key)
+                .and_then(|package| package.thunderstore_intent.clone()),
             target_name: target_name.into(),
             files: incoming,
             routed_files,
-            version,
-            dependencies,
+            version: release.as_ref().map(|release| release.version.to_owned()),
+            dependencies: release.map(|release| release.dependencies.to_vec()),
             enabled: true,
         },
     );

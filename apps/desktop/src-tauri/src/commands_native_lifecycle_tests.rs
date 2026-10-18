@@ -6,6 +6,9 @@ use std::time::Instant;
 
 #[path = "commands_native_archive.rs"]
 mod archive;
+#[cfg(windows)]
+#[path = "commands_asa_curseforge_native_acceptance.rs"]
+mod asa_curseforge_native_acceptance;
 #[path = "commands_native_astroneer_probe.rs"]
 mod astroneer_console;
 #[path = "commands_native_astroneer_readiness.rs"]

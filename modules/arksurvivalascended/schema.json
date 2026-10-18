@@ -2,10 +2,71 @@
   "type": "object",
   "title": "ARK: Survival Ascended Dedicated Server",
   "properties": {
+    "ark_mod_map_overrides": {
+      "type": "object",
+      "title": "Per-Mod Map Overrides",
+      "description": "Each Mod inherits shared enablement and INI defaults. Select multiple maps for the current Mod in the Mods workspace; omitted Mods and properties continue inheriting shared defaults.",
+      "default": {},
+      "maxProperties": 16,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mods"],
+        "properties": {
+          "mods": {
+            "type": "object",
+            "maxProperties": 65536,
+            "propertyNames": { "pattern": "^[1-9][0-9]{0,19}$" },
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "active": { "type": "boolean" },
+                "passive": { "type": "boolean" },
+                "disabled_active": { "type": "boolean" },
+                "disabled_passive": { "type": "boolean" },
+                "removed": { "type": "boolean" },
+                "configuration": {
+                  "type": ["object", "null"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "game_ini": { "type": "string", "maxLength": 65536 },
+                    "game_user_settings_ini": { "type": "string", "maxLength": 65536 }
+                  }
+                }
+              }
+            }
+          },
+          "active_order": {
+            "type": "array",
+            "maxItems": 65536,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          },
+          "passive_order": {
+            "type": "array",
+            "maxItems": 65536,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,19}$"
+            }
+          }
+        }
+      },
+      "x-lsgm-section": "mods",
+      "x-lsgm-order": 703,
+      "x-lsgm-source": "map_mod_scopes",
+      "x-lsgm-source-key": "ark_mod_map_overrides",
+      "x-lsgm-source-surface": "materializer"
+    },
     "asa_mod_configurations": {
       "type": "object",
       "title": "Per-Mod INI Configuration",
-      "description": "INI fragments owned by each CurseForge Mod. Enabled Mods share these settings across this instance's maps.",
+      "description": "INI fragments owned by each CurseForge Mod. These are shared defaults; select multiple maps for the current Mod to override a file without changing other Mods.",
       "default": {},
       "maxProperties": 256,
       "additionalProperties": {
@@ -25,7 +86,7 @@
     "additional_maps": {
       "type": "array",
       "title": "Additional Map Servers",
-      "description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
+      "description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; maps share server settings and cluster transfers, with shared Mod defaults and optional per-map Mod overrides.",
       "default": [],
       "maxItems": 15,
       "items": {

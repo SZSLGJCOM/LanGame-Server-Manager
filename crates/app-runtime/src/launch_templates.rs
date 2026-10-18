@@ -1669,7 +1669,10 @@ pub(super) fn build_command_line(executable_path: &Path, args: &[String]) -> Str
 
     let mut segments = Vec::with_capacity(args.len() + 1);
     segments.push(quote_command_segment(&executable_path.to_string_lossy()));
-    segments.extend(args.iter().map(|segment| quote_command_segment(segment)));
+    segments.extend(
+        args.iter()
+            .map(|segment| quote_launch_argument(executable_path, segment)),
+    );
     segments.join(" ")
 }
 pub(super) fn build_spawn_command(
@@ -1753,8 +1756,34 @@ pub(super) fn is_script_entrypoint(_executable_path: &Path, _args: &[String]) ->
     false
 }
 
+pub(super) fn quote_launch_argument(executable: &Path, argument: &str) -> String {
+    let ark = executable
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            name.eq_ignore_ascii_case("ArkAscendedServer.exe")
+                || name.eq_ignore_ascii_case("ShooterGameServer.exe")
+        });
+    if ark
+        && let Some((key, value)) = argument.split_once('=')
+        && (key.eq_ignore_ascii_case("-GameINI")
+            || key.eq_ignore_ascii_case("-GameUserSettingsINI"))
+    {
+        // ARK parses the raw Windows command line, not CRT argv. Quoting the
+        // entire option hides its key from ASA's parser; quote only its value.
+        // Native FParse also stops unquoted values at commas and parentheses.
+        return format!("{key}={}", quote_command_segment_with_mode(value, true));
+    }
+    quote_command_segment(argument)
+}
+
 pub(super) fn quote_command_segment(segment: &str) -> String {
-    if !segment.is_empty()
+    quote_command_segment_with_mode(segment, false)
+}
+
+fn quote_command_segment_with_mode(segment: &str, force_quote: bool) -> String {
+    if !force_quote
+        && !segment.is_empty()
         && !segment
             .chars()
             .any(|character| character.is_whitespace() || character == '"')

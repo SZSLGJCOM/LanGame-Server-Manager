@@ -3,6 +3,7 @@ import { parseWorkshopIdList } from "../settings/guided-setting-values";
 import type { SettingsObject } from "../settings/settings-schema";
 import type { ModProviderKind } from "./mod-workbench-capability";
 import { readAsaModMembership } from "./mod-workbench-asa";
+import { parseEvolvedModIds } from "./ark-evolved-mod-ids";
 import { DONTSTARVE_SHARDS } from "../settings/modules/dontstarve-shards";
 import { readDstRawModDeclarations } from "./mod-workbench-dst-raw";
 
@@ -223,12 +224,12 @@ export function buildConfiguredEntries(
       enablement.setting_label,
       enablement.setting_key,
       enablementKind,
-      parseDelimitedEntries(settings[enablement.setting_key])
+      moduleId === "arksurvivalevolved" ? parseEvolvedModIds(settings[enablement.setting_key]) : parseDelimitedEntries(settings[enablement.setting_key])
     ));
     if (["arksurvivalevolved", "barotrauma", "conanexiles", "soulmask"].includes(moduleId)) {
-      const enabled = new Set(parseWorkshopIdList(settings[enablement.setting_key]));
+      const enabled = new Set(moduleId === "arksurvivalevolved" ? parseEvolvedModIds(settings[enablement.setting_key]) : parseWorkshopIdList(settings[enablement.setting_key]));
       const owned = moduleId === "arksurvivalevolved"
-        ? parseWorkshopIdList(settings.auto_managed_mod_ids) : readDisabledWorkshopModIds(settings);
+        ? parseEvolvedModIds(settings.auto_managed_mod_ids) : readDisabledWorkshopModIds(settings);
       entries.push(buildEntry(`${moduleId}-disabled`, enablement.setting_label, enablement.setting_key,
         "steam-item", owned.filter((id) => !enabled.has(id))));
     }

@@ -28,6 +28,7 @@ import type { PlayerAccessState } from "./use-player-access";
 import { NativeBanRosterActions, NativeBanRosterList } from "./NativeBanRoster";
 import { nativeBanRosterModules, useNativeBanRoster } from "./use-native-ban-roster";
 import { manualPlayerActionTargetError } from "./manual-player-action-model";
+import { useTabStripOverflow } from "./use-tab-strip-overflow";
 import { enshroudedPlayerManagementUnavailableReason } from "./enshrouded-extension-status";
 
 interface OnlinePlayersViewProps {
@@ -123,6 +124,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
     ...(props.extraLists ?? []).map((list) => ({ key: list.key, title: list.title })),
     // 手动查询: the ID lookup is its own category; its actions use the shared right-side controls.
     ...(canManual ? [{ key: "manual", title: props.t("servers.playerCenter.manual.tab", undefined, "Manual lookup") }] : [])];
+  const tabStrip = useTabStripOverflow<HTMLDivElement>(activeKey, tabs.map((tab) => `${tab.key}:${tab.title}`).join("|"));
   function selectBanText(zh: string, en: string) { return props.locale === "zh-CN" ? zh : en; }
   function selectList(key: string) {
     if (!saving) { clearSelection(); setActiveListKey(key); }
@@ -255,7 +257,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
     <div className={`player-center-member-layout${showMemberPane ? "" : " is-read-only"}`}>
       <section className="player-center-list-pane" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")} aria-busy={online ? props.loading : bannedTab && bans.loading}>
         <header className="player-center-pane-header">
-          <div className="player-center-list-tabs" role="tablist" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")}
+          <div ref={tabStrip} className="player-center-list-tabs" role="tablist" aria-label={props.t("servers.playerCenter.lists.label", undefined, "Player lists")}
             onKeyDown={(event) => {
               const index = tabs.findIndex((tab) => tab.key === activeKey);
               const nextIndex = event.key === "ArrowRight" ? (index + 1) % tabs.length
@@ -281,9 +283,9 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
             })}
           </div>
           {online ? <div className="player-center-pane-tools">
-            {props.snapshot?.stale ? <span className="page-chip">{props.t("servers.playerCenter.online.stale", undefined, "Stale")}</span> : null}
-            {props.snapshot?.truncated ? <span className="page-chip">{props.t("servers.playerCenter.online.truncated", undefined, "Truncated")}</span> : null}
-            {observedAt ? <span className="page-chip" title={props.t("servers.playerCenter.online.observedAt", undefined, "Observed at")}>{observedAt}</span> : null}
+            {props.snapshot?.stale ? <span className="page-chip" title={props.t("servers.playerCenter.online.stale", undefined, "Stale")}>{props.t("servers.playerCenter.online.stale", undefined, "Stale")}</span> : null}
+            {props.snapshot?.truncated ? <span className="page-chip" title={props.t("servers.playerCenter.online.truncated", undefined, "Truncated")}>{props.t("servers.playerCenter.online.truncated", undefined, "Truncated")}</span> : null}
+            {observedAt ? <span className="page-chip player-center-observed-chip" title={props.t("servers.playerCenter.online.observedAt", undefined, "Observed at")}>{observedAt}</span> : null}
             <button
               type="button"
               className="secondary-button player-center-refresh-button"
@@ -408,6 +410,7 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
           />
         ) : null}
         {props.access && fields.length > 0 ? <SelectedPlayerRosterActions key={JSON.stringify([activeKey, selectionVersion, selectedPlayer?.player_key, selectedPlayer?.identifiers, manualTab ? manualTarget : null])}
+          moduleId={props.moduleId}
           selectedPlayer={selectedPlayer} selectedRoster={selectedRoster} manualTarget={manualTab && manualTarget ? manualTarget : undefined} onClearSelection={clearSelection}
           suppressedAddFieldKeys={nativeBanField && !manualTab ? [nativeBanField.key] : undefined}
           fields={fields} busyFieldKey={props.access.busyFieldKey}

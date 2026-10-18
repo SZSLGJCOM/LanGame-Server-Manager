@@ -52,7 +52,7 @@ const badge = field("badge", "重新启动后生效的设置", "text", {
 const textarea = field("notes", "多行公告", "textarea", {
   presentation: { ...text.presentation, behavior: "multiline" } });
 interface CaseProps { fields: GuidedSettingsField[]; width?: number; disabled?: boolean; readOnly?: boolean;
-  invalid?: string[]; values?: SettingsObject; title?: string; maintenance?: boolean;
+  invalid?: string[]; values?: SettingsObject; title?: string; maintenance?: boolean; moduleId?: string;
   consumer?: Omit<ConfigurationSpecializedRendererProps, "settings" | "onPatch"> }
 function Case(props: CaseProps) {
   const { t } = useI18n();
@@ -67,7 +67,7 @@ function Case(props: CaseProps) {
     <div className="configuration-workspace__main" style={{ display: "block", width: props.width ?? 900, marginTop: 16 }}>
       {props.consumer ? <WindroseWorldSettingsPanel {...props.consumer} settings={settings} onPatch={patch} />
         : props.maintenance ? <div className="server-save-policy-editor"><div className="server-native-save-policies">
-          <NativeSavePolicyFields instanceId="alignment-fixture" moduleId="dontstarve" fields={props.fields}
+          <NativeSavePolicyFields instanceId="alignment-fixture" moduleId={props.moduleId ?? "dontstarve"} fields={props.fields}
             settings={settings} issues={[]} disabled={false} t={t} onChange={(candidate, value) => patch({ [candidate.key]: value })} />
         </div></div> : <GuidedSettingsForm schema={{ title: "配置", fields: props.fields, sections: [{ id: "room", title: "配置" }] }}
         selectedSectionId="room" idPrefix="alignment" settings={settings} disabled={props.disabled} readOnly={props.readOnly}
@@ -236,6 +236,17 @@ async function run() {
     "Native save fields must retain the maintenance 6px label/control gap");
   check(Math.abs(control("autosaver_enabled").getBoundingClientRect().top - fieldRoot("autosaver_enabled").getBoundingClientRect().top) <= 1,
     "Native save toggles must not create an empty heading track");
+  checks++;
+
+  // LGSM-managed autosave renders a bare toggle card beside a labelled interval; both share one control row.
+  await render({ maintenance: true, moduleId: "unturned", fields: [field("managed_save_interval_seconds", "保存间隔（秒）", "number",
+    { type: "integer", defaultValue: 300, minimum: 0, maximum: 86_400 })] });
+  const managedToggle = element(".server-save-policy-fields > .settings-toggle-card").getBoundingClientRect();
+  const managedInterval = control("managed_save_interval_seconds").getBoundingClientRect();
+  check(managedToggle.width > 0 && managedToggle.right <= managedInterval.left + 1, "Managed autosave toggle and interval must occupy two columns");
+  measurements.push({ pair: "managed-autosave/interval", left: managedToggle.top, right: managedInterval.top });
+  check(Math.abs(managedToggle.top - managedInterval.top) <= 1 && Math.abs(managedToggle.bottom - managedInterval.bottom) <= 1,
+    `Managed autosave toggle must align with its interval input: ${managedToggle.top} / ${managedInterval.top}`);
   checks++;
 
   await render({ fields: [text, toggle, secret, otherToggle, badge, mode], title: "配置控件 · 对齐结果" });

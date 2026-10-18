@@ -173,10 +173,23 @@ async function run() {
     check(maps().length === 1 && element(".ark-map-editor [role='alert']").textContent?.includes("地图包标识"), "Invalid custom map was accepted");
     await change(addInputs()[0], "CustomIsland_WP"); await change(addInputs()[1], "自定义群岛"); await click(addButton());
     check(maps().length === 2 && maps()[1].map_name === "CustomIsland_WP", "Custom package did not reach settings patch");
+    const retainedScope = `map-${maps()[1].id}`;
+    const primaryOverride = { mods: { "1254808": { active: false } } };
+    const removedOverride = { mods: { "939713": { active: true } } };
+    const retainedOverride = { mods: { "1254808": { active: true } } };
+    const overrides = { main: primaryOverride, [`map-${firstId}`]: removedOverride, [retainedScope]: retainedOverride };
+    settings = { ...settings, ark_mod_map_overrides: overrides };
+    await render();
+    await click(additionalRows()[0].querySelector<HTMLInputElement>('input[type="checkbox"]')!);
+    check(JSON.stringify(settings.ark_mod_map_overrides) === JSON.stringify(overrides),
+      "Pausing a map retains every current Mod target");
+    await click(additionalRows()[0].querySelector<HTMLInputElement>('input[type="checkbox"]')!);
     await click(additionalRows()[0].querySelector<HTMLButtonElement>("button")!);
     check(element(".inline-confirm-message").textContent?.includes("地图存档会保留"), "Removal must explain retained saves");
     await click(element<HTMLButtonElement>(".inline-confirm-submit"));
     check(maps().length === 1 && maps()[0].name === "自定义群岛", "Removal changed another map");
+    check(JSON.stringify(settings.ark_mod_map_overrides) === JSON.stringify({ main: primaryOverride, [retainedScope]: retainedOverride }),
+      "Removing a map clears only its Mod targets and preserves the primary and sibling overrides");
     await change(element<HTMLSelectElement>(".ark-map-editor__add select"), secondary); await click(addButton());
     check(maps()[1].id !== firstId, "A removed map's save identity was reused");
     details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 3 } }; await render();

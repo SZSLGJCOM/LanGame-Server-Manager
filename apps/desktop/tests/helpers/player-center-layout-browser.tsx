@@ -147,7 +147,7 @@ function verifyScrollOwnership() {
   check(outer.scrollTop === 0, "Outer tab moved away from its allocated region");
   check(getComputedStyle(outer).overflowY === "hidden", "Outer tab owns vertical scrolling");
   for (const element of outer.querySelectorAll<HTMLElement>("*")) {
-    if (visible(element) && ["auto", "scroll"].includes(getComputedStyle(element).overflowY)) check(element.matches(".player-center-table-scroll, .player-access-roster-list, .player-center-controls"), `Unexpected nested vertical scroll owner: ${element.className}`);
+    if (visible(element) && ["auto", "scroll"].includes(getComputedStyle(element).overflowY)) check(element.matches(".player-center-table-scroll, .player-access-roster-list, .player-center-total-controls"), `Unexpected nested vertical scroll owner: ${element.className}`);
   }
   check(outer.scrollWidth <= outer.clientWidth + 1, "Player workspace caused horizontal overflow");
   const box = outer.getBoundingClientRect(); const work = select<HTMLElement>(".player-access-workbench").getBoundingClientRect();
@@ -245,7 +245,7 @@ async function run() {
   await selectPlayer(3); await click(rosterAction("blocklist", "add")); await click(".inline-confirm-submit");
   check(mutations.length === 3 && mutations[2].value === "76561198000000003", "Quick action consumed a different draft identity"); checks++;
   await scenario(snapshot(60));
-  const table = select<HTMLElement>(".player-center-table-scroll"); const controls = select<HTMLElement>(".player-center-controls");
+  const table = select<HTMLElement>(".player-center-table-scroll"); const controls = select<HTMLElement>(".player-center-total-controls");
   const controlTop = controls.getBoundingClientRect().top; const controlScroll = controls.scrollTop;
   table.scrollTop = table.scrollHeight;
   const lastRow = select<HTMLElement>(".player-center-player-table tbody tr:last-child").getBoundingClientRect();

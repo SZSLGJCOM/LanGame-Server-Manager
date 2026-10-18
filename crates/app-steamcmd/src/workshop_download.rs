@@ -3,6 +3,17 @@
 use super::steamcmd_stream::StreamingCommandResult;
 use super::*;
 
+#[path = "workshop_download_paths.rs"]
+mod paths;
+pub(crate) use paths::DownloadPaths;
+
+#[path = "workshop_manifest_access.rs"]
+mod manifest_access;
+pub(crate) use manifest_access::WorkshopEvidence;
+#[path = "workshop_manifest_seed.rs"]
+mod manifest_seed;
+pub(crate) use manifest_seed::requested_item_manifests;
+
 pub(super) fn is_workshop_download_failure_line(line: &str) -> bool {
     let Some((_, remainder)) = line.split_once("ERROR! Download item ") else {
         return false;
@@ -27,6 +38,7 @@ pub(super) fn verify_command_result(
     }
     if output.success
         && !output.workshop_download_failed
+        && !has_missing_key(consumer_app_id, output)
         && !has_workshop_permission_denial(consumer_app_id, output)
     {
         return Ok(());
@@ -59,20 +71,21 @@ pub(super) fn failure_context(output: &StreamingCommandResult) -> String {
 pub(super) fn command_error(
     consumer_app_id: u32,
     output: &StreamingCommandResult,
-    output_excerpt: String,
+    mut output_excerpt: String,
 ) -> SteamCmdError {
     // The content-log diagnostic tail may retain older records when new lines
     // are appended. Only this invocation's output and Workshop log establish
-    // the reason; historical context must never turn a network failure into a
-    // claim about Steam access.
-    let missing_key = [
-        Some(output.excerpt.as_str()),
-        output.workshop_log_excerpt.as_deref(),
-    ]
-    .into_iter()
-    .flatten()
-    .any(|text| text.to_ascii_lowercase().contains("missing decryption key"));
-    if missing_key {
+    // the reason, together with separately captured invocation-only manifest
+    // evidence; historical context must never classify a network failure.
+    if let Some(evidence) = output
+        .workshop_command_evidence
+        .diagnostic_excerpt(consumer_app_id, &output.denied_manifests)
+        && !output_excerpt.contains(&evidence)
+    {
+        output_excerpt.push_str("\n\n[steamcmd retained Workshop evidence]\n");
+        output_excerpt.push_str(&evidence);
+    }
+    if has_missing_key(consumer_app_id, output) {
         SteamCmdError::WorkshopDecryptionKeyMissing {
             consumer_app_id,
             output_excerpt,
@@ -88,14 +101,18 @@ pub(super) fn command_error(
 }
 
 fn has_workshop_permission_denial(consumer_app_id: u32, output: &StreamingCommandResult) -> bool {
-    [
-        Some(output.excerpt.as_str()),
-        output.workshop_log_excerpt.as_deref(),
-    ]
-    .into_iter()
-    .flatten()
-    .flat_map(str::lines)
-    .any(|line| is_workshop_permission_denial(consumer_app_id, line))
+    output
+        .workshop_command_evidence
+        .permission_denial(consumer_app_id)
+        || manifest_access::tail_evidence(output).permission_denial(consumer_app_id)
+        || manifest_access::has_permission_denial(consumer_app_id, output)
+}
+
+fn has_missing_key(consumer_app_id: u32, output: &StreamingCommandResult) -> bool {
+    output
+        .workshop_command_evidence
+        .missing_key(consumer_app_id)
+        || manifest_access::tail_evidence(output).missing_key(consumer_app_id)
 }
 
 fn is_workshop_permission_denial(consumer_app_id: u32, line: &str) -> bool {
@@ -113,12 +130,19 @@ fn is_workshop_permission_denial(consumer_app_id: u32, line: &str) -> bool {
         let Some((id, result)) = remainder.split_once(" failed (") else {
             return false;
         };
-        let Some((result, tail)) = result.split_once(").") else {
+        let Some((result, tail)) = result.split_once(')') else {
             return false;
         };
         return decimal_id(id)
-            && matches!(tail.trim(), "" | "quit")
+            && matches!(tail.trim(), "" | "." | "quit" | ".quit")
             && steam_permission_result(result);
+    }
+    if let Some((app, reason)) = message
+        .strip_prefix("AppID ")
+        .and_then(|rest| rest.split_once(" update canceled : "))
+    {
+        return app.parse::<u32>().ok() == Some(consumer_app_id)
+            && no_subscription_result(final_result(reason));
     }
     // Workshop log result rows identify the consumer application explicitly.
     let Some(remainder) = message.strip_prefix("[AppID ") else {
@@ -137,17 +161,24 @@ fn is_workshop_permission_denial(consumer_app_id: u32, line: &str) -> bool {
         };
         return decimal_id(id) && steam_permission_result(result.trim());
     }
-    if let Some(reason) = remainder.strip_prefix("Update canceled: ") {
+    if let Some(reason) = remainder
+        .strip_prefix("Update canceled: ")
+        .or_else(|| remainder.strip_prefix("Update canceled : "))
+    {
         // NoSubscription is unambiguously a Steam entitlement failure. An
         // Update-canceled AccessDenied can instead describe local file I/O;
         // that ambiguous form keeps the original generic failure diagnostic.
-        let result = reason
-            .rsplit_once(" (")
-            .and_then(|(_, result)| result.strip_suffix(')'))
-            .unwrap_or(reason);
-        return no_subscription_result(result.trim());
+        return no_subscription_result(final_result(reason));
     }
     false
+}
+
+fn final_result(reason: &str) -> &str {
+    reason
+        .rsplit_once(" (")
+        .and_then(|(_, result)| result.strip_suffix(')'))
+        .unwrap_or(reason)
+        .trim()
 }
 
 fn decimal_id(id: &str) -> bool {
@@ -155,7 +186,10 @@ fn decimal_id(id: &str) -> bool {
 }
 
 fn no_subscription_result(result: &str) -> bool {
-    result.eq_ignore_ascii_case("No subscription") || result.eq_ignore_ascii_case("NoSubscription")
+    result.eq_ignore_ascii_case("No subscription")
+        || result.eq_ignore_ascii_case("NoSubscription")
+        || result.eq_ignore_ascii_case("No license")
+        || result.eq_ignore_ascii_case("NoLicense")
 }
 
 fn steam_permission_result(result: &str) -> bool {
@@ -176,6 +210,7 @@ mod tests {
             content_log_excerpt: None,
             workshop_log_excerpt: None,
             workshop_download_failed,
+            workshop_command_evidence: Default::default(),
             app_command_evidence: Default::default(),
             authenticated_account_name: None,
             denied_manifests: Vec::new(),

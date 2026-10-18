@@ -3,7 +3,14 @@ use super::*;
 #[path = "commands_mod_thunderstore_plan.rs"]
 mod thunderstore_plan;
 pub(in crate::commands) use thunderstore_plan::prepare_thunderstore_install;
+pub(in crate::commands) use thunderstore_plan::{
+    prepare_thunderstore_install_for_startup, prepare_thunderstore_install_with_policy,
+};
 
+#[cfg(test)]
+pub(in crate::commands) use thunderstore_plan::{
+    prepare_thunderstore_fixture, provider_fixture::FixtureProvider,
+};
 const MAX_ONLINE_PACKAGES: usize = 32;
 
 pub(in crate::commands) fn validate_runtime(
@@ -189,7 +196,7 @@ fn validate_thunderstore_metadata(
     Ok(())
 }
 
-pub(super) fn valid_thunderstore_version(version: &str) -> bool {
+pub(in crate::commands) fn valid_thunderstore_version(version: &str) -> bool {
     version.len() <= 32
         && version.split('.').count() == 3
         && version.split('.').all(|part| {

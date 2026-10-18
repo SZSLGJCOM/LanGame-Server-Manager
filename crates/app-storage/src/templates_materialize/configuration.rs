@@ -173,6 +173,7 @@ fn write_pending_configuration_with_native_snapshot(
                 prepared,
                 native_bans.as_ref(),
             )?;
+            ark_ini::render_map_files(templates_root, render_input, &mut files)?;
         }
         files.write(config_path, &render_instance_config(input)?)?;
         Ok(())

@@ -1,0 +1,24 @@
+.nexus-dialog { width: min(760px, calc(100vw - 48px)); max-width: none; max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--shell-line); border-radius: 12px; background: var(--panel); color: var(--shell-text); box-shadow: var(--shell-shadow); }
+.nexus-dialog[open] { display: flex; flex-direction: column; overflow: hidden; }
+.nexus-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.nexus-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--shell-line); }
+.nexus-dialog__header h2 { margin: 0; font-size: var(--text-body); }
+.nexus-dialog__header button svg { width: 16px; height: 16px; }
+.nexus-dialog__body { min-height: 0; overflow: auto; padding: 16px 20px; font-size: var(--text-body); line-height: var(--leading-body); overflow-wrap: anywhere; }
+.nexus-dialog__body > :first-child { margin-top: 0; }
+.nexus-dialog__body a { color: var(--shell-accent); text-decoration: underline; text-underline-offset: 3px; }
+.nexus-dialog__muted { color: var(--shell-muted); font-size: var(--text-secondary); }
+.nexus-dialog__error { color: var(--theme-danger-text); font-size: var(--text-secondary); }
+.nexus-dialog__footer { display: flex; align-items: center; justify-content: end; flex-wrap: wrap; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--shell-line); }
+.nexus-dialog__footer > span { flex: 1 1 200px; }
+.nexus-credentials__field { display: grid; gap: 8px; }
+.nexus-file-selection__project { margin: 20px 0 0; padding: 0; min-width: 0; border: 0; }
+.nexus-file-selection__project legend { font-weight: var(--font-weight-medium); }
+.nexus-file-selection__project > p { margin: 4px 0; }
+.nexus-file-selection__file { display: flex; align-items: start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--shell-line); cursor: pointer; }
+.nexus-file-selection__file > input { margin-top: 4px; flex-shrink: 0; }
+.nexus-file-selection__copy { display: grid; gap: 5px; min-width: 0; }
+.nexus-file-selection__file.is-unavailable { cursor: default; }
+.nexus-file-selection__description,.nexus-file-selection__requirements { white-space: pre-wrap; font-size: var(--text-secondary); }
+.mw-nexus-local-note { margin: 0; padding: 10px 14px 0; color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
+.mw-community-workspace--nexus .mw-nexus-auth-btn { height: 36px; box-sizing: border-box; }

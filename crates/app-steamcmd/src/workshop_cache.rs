@@ -10,6 +10,12 @@ const MAX_MANIFEST_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_PAYLOAD_ENTRIES: usize = 200_000;
 const MAX_PAYLOAD_DEPTH: usize = 64;
 
+#[derive(Clone, Copy)]
+pub(super) struct InstalledItem {
+    pub(super) manifest: u64,
+    pub(super) bytes: u64,
+}
+
 // Steam creates content directories before finishing a download. Only an installed
 // manifest and its complete byte count authorize reuse or publication of that cache.
 pub(super) fn inspect_cached_items(
@@ -28,12 +34,12 @@ pub(super) fn inspect_cached_items(
         let mut complete = false;
         for (root, inventory) in content_roots.iter().zip(&inventories) {
             let candidate = root.join(&item_id);
-            let Some(expected_bytes) = inventory.get(&item_id) else {
+            let Some(installed) = inventory.get(&item_id) else {
                 continue;
             };
             if let Some((files, bytes)) = inspect_payload(&candidate, 0, &mut remaining)?
                 && files > 0
-                && bytes == *expected_bytes
+                && bytes == installed.bytes
             {
                 expected_path = candidate;
                 complete = true;
@@ -49,7 +55,110 @@ pub(super) fn inspect_cached_items(
     Ok(result)
 }
 
-fn read_inventory(content_root: &Path, app_id: u32) -> Result<HashMap<String, u64>, SteamCmdError> {
+/// A successful native item location identifies the cache validated by this
+/// invocation. Another complete cache must never replace an incomplete or failed
+/// reported location. Without that evidence, conflicting manifests are ambiguous.
+pub(super) fn inspect_downloaded_items(
+    app_id: u32,
+    content_roots: &[PathBuf],
+    item_ids: Vec<String>,
+    evidence: &crate::workshop_download::WorkshopEvidence,
+) -> Result<Vec<SteamWorkshopDownloadItemResult>, SteamCmdError> {
+    let inventories = content_roots
+        .iter()
+        .map(|root| read_inventory(root, app_id))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut remaining = MAX_PAYLOAD_ENTRIES;
+    let mut result = Vec::with_capacity(item_ids.len());
+    for item_id in item_ids {
+        if !evidence.item_download_succeeded(&item_id) {
+            return Err(SteamCmdError::SteamCmdCommandFailed {
+                output_excerpt: format!(
+                    "SteamCMD did not confirm Workshop item {item_id} downloaded or validated during this invocation."
+                ),
+            });
+        }
+        let selected = match evidence.downloaded_item_path(&item_id) {
+            Some(reported) => Some(
+                content_roots
+                    .iter()
+                    .position(|root| same_cache_path(reported, &root.join(&item_id)))
+                    .ok_or_else(|| SteamCmdError::SteamCmdCommandFailed {
+                        output_excerpt: format!(
+                            "SteamCMD reported Workshop item {item_id} outside its managed cache roots: {}",
+                            reported.display()
+                        ),
+                    })?,
+            ),
+            None => None,
+        };
+        let mut complete: Option<(PathBuf, u64)> = None;
+        for (index, (root, inventory)) in content_roots.iter().zip(&inventories).enumerate() {
+            if selected.is_some_and(|selected| selected != index) {
+                continue;
+            }
+            let candidate = root.join(&item_id);
+            let Some(installed) = inventory.get(&item_id) else {
+                continue;
+            };
+            let Some((files, bytes)) = inspect_payload(&candidate, 0, &mut remaining)? else {
+                continue;
+            };
+            if files == 0 || bytes != installed.bytes {
+                continue;
+            }
+            if complete
+                .as_ref()
+                .is_some_and(|(_, manifest)| *manifest != installed.manifest)
+            {
+                return Err(SteamCmdError::SteamCmdCommandFailed {
+                    output_excerpt: format!(
+                        "Workshop item {item_id} has conflicting complete cached manifests and SteamCMD did not identify the validated download location."
+                    ),
+                });
+            }
+            complete.get_or_insert((candidate, installed.manifest));
+        }
+        let expected_path = complete
+            .as_ref()
+            .map(|(path, _)| path.clone())
+            .unwrap_or_else(|| content_roots[selected.unwrap_or(0)].join(&item_id));
+        result.push(SteamWorkshopDownloadItemResult {
+            item_id,
+            expected_path: expected_path.to_string_lossy().into_owned(),
+            expected_path_exists: complete.is_some(),
+        });
+    }
+    Ok(result)
+}
+
+fn same_cache_path(reported: &Path, expected: &Path) -> bool {
+    let reported = fs::canonicalize(reported).unwrap_or_else(|_| reported.to_path_buf());
+    let expected = fs::canonicalize(expected).unwrap_or_else(|_| expected.to_path_buf());
+    #[cfg(windows)]
+    {
+        crate::command_path_string(&reported)
+            .replace('\\', "/")
+            .eq_ignore_ascii_case(&crate::command_path_string(&expected).replace('\\', "/"))
+    }
+    #[cfg(not(windows))]
+    {
+        reported == expected
+    }
+}
+
+fn read_inventory(
+    content_root: &Path,
+    app_id: u32,
+) -> Result<HashMap<String, InstalledItem>, SteamCmdError> {
+    read_installed_inventory(content_root, app_id, true)
+}
+
+pub(super) fn read_installed_inventory(
+    content_root: &Path,
+    app_id: u32,
+    require_current: bool,
+) -> Result<HashMap<String, InstalledItem>, SteamCmdError> {
     if !plain_directory_chain(content_root)? {
         return Ok(HashMap::new());
     }
@@ -76,10 +185,14 @@ fn read_inventory(content_root: &Path, app_id: u32) -> Result<HashMap<String, u6
     else {
         return Ok(HashMap::new());
     };
-    Ok(installed_sizes(&document, app_id).unwrap_or_default())
+    Ok(installed_records(&document, app_id, require_current).unwrap_or_default())
 }
 
-fn installed_sizes(document: &[KvEntry], app_id: u32) -> Option<HashMap<String, u64>> {
+fn installed_records(
+    document: &[KvEntry],
+    app_id: u32,
+    require_current: bool,
+) -> Option<HashMap<String, InstalledItem>> {
     let app = object(document, "AppWorkshop")?;
     if text(app, "appid")?.parse::<u32>().ok()? != app_id {
         return None;
@@ -121,9 +234,10 @@ fn installed_sizes(document: &[KvEntry], app_id: u32) -> Option<HashMap<String, 
         // A newer detail manifest means the installed bytes are still the old
         // package. Some native clients omit details, so installed metadata is
         // sufficient when no detail record for this item exists.
-        if let Some(fields) = details
-            .as_ref()
-            .and_then(|entries| entries.get(item.key.as_str()))
+        if require_current
+            && let Some(fields) = details
+                .as_ref()
+                .and_then(|entries| entries.get(item.key.as_str()))
             && text(fields, "manifest").and_then(|value| value.parse::<u64>().ok())
                 != Some(manifest)
         {
@@ -132,7 +246,13 @@ fn installed_sizes(document: &[KvEntry], app_id: u32) -> Option<HashMap<String, 
         if let Some(size) = text(fields, "size").and_then(|value| value.parse::<u64>().ok())
             && size > 0
         {
-            sizes.insert(item.key.clone(), size);
+            sizes.insert(
+                item.key.clone(),
+                InstalledItem {
+                    manifest,
+                    bytes: size,
+                },
+            );
         }
     }
     Some(sizes)
@@ -268,5 +388,28 @@ mod tests {
     #[test]
     fn workshop_cache_accepts_existing_relative_directory_roots() {
         assert!(plain_directory_chain(Path::new(".")).unwrap());
+    }
+
+    #[test]
+    fn workshop_download_rejects_native_locations_outside_both_cache_roots() {
+        let root = crate::tests::unique_test_root();
+        let caches = [
+            root.join("install/content/42"),
+            root.join("steamcmd/content/42"),
+        ];
+        for cache in &caches {
+            fs::create_dir_all(cache).unwrap();
+        }
+        let mut evidence = crate::workshop_download::WorkshopEvidence::default();
+        evidence.observe_line(&format!(
+            "Success. Downloaded item 123456 to \"{}\" (6 bytes)",
+            root.join("unmanaged/123456").display()
+        ));
+        let result = inspect_downloaded_items(42, &caches, vec!["123456".into()], &evidence);
+        fs::remove_dir_all(root).unwrap();
+        let Err(SteamCmdError::SteamCmdCommandFailed { output_excerpt }) = result else {
+            panic!("native output must not authorize an unmanaged cache path");
+        };
+        assert!(output_excerpt.contains("outside its managed cache roots"));
     }
 }

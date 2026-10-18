@@ -24,6 +24,7 @@ import type {
   AssistantSecretDescriptor,
   AssistantSecretStatus,
   BackgroundJob,
+  StartInstanceResult,
   BootstrapResponse,
   CreateInstanceInput,
   InstanceBackupRestoreResult,
@@ -65,6 +66,7 @@ import type {
   BindAddressCandidate,
   DstModConfigurationSpec,
   ManualModStageResult,
+  ThunderstoreVersionPolicy,
   SteamCmdStatus,
   SteamCmdPrepareSnapshot,
   SteamNewsItem,
@@ -214,10 +216,11 @@ export const stageManualModFiles = (instanceId: string, sourcePaths: string[]) =
     instanceId,
     sourcePaths
   });
-export const installManualModReferences = (instanceId: string, references: string[]) =>
+export const installManualModReferences = (instanceId: string, references: string[], thunderstoreVersionPolicy?: ThunderstoreVersionPolicy) =>
   invokeOrMock<ManualModStageResult>("install_manual_mod_references", {
     instanceId,
-    references
+    references,
+    ...(thunderstoreVersionPolicy === undefined ? {} : { thunderstoreVersionPolicy })
   });
 export const readManualModInventory = (instanceId: string) =>
   invokeOrMock<ManualModInventoryResult>("read_manual_mod_inventory", { instanceId });
@@ -353,7 +356,7 @@ export const openExternalUrl = async (url: string) => {
 };
 export const openLocalPath = (path: string) => invokeOrMock<void>("open_local_path", { path });
 export const startInstance = async (instanceId: string, expectedWorldStart: DstWorldStartPreview | null = null) => {
-  await invokeOrMock("start_instance_process", { instanceId, expectedWorldStart });
+  return await invokeOrMock<StartInstanceResult>("start_instance_process", { instanceId, expectedWorldStart });
 };
 export const stopInstance = async (instanceId: string) => { await invokeOrMock("stop_instance_process", { instanceId }); };
 export const readInstanceLivePlayers = (instanceId: string) =>

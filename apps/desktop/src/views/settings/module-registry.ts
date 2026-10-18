@@ -223,14 +223,14 @@ function withWorkspaceRenderedField(
   };
 }
 
-const arkSurvivalEvolvedPresentation = withWorkspaceRenderedField(
-  arkSurvivalEvolvedSettingsDefinition,
-  "active_mod_ids",
+const arkSurvivalEvolvedPresentation = ["active_mod_ids", "ark_mod_map_overrides"].reduce<SettingsModuleDefinition>((definition, field) => withWorkspaceRenderedField(
+  definition,
+  field,
   "mods",
   "mod-workbench-workshop-ids",
   "mods"
-);
-const arkSurvivalAscendedPresentation = ["mod_ids_csv", "asa_mod_configurations"].reduce<SettingsModuleDefinition>((definition, field) => withWorkspaceRenderedField(
+), arkSurvivalEvolvedSettingsDefinition);
+const arkSurvivalAscendedPresentation = ["mod_ids_csv", "asa_mod_configurations", "ark_mod_map_overrides"].reduce<SettingsModuleDefinition>((definition, field) => withWorkspaceRenderedField(
   definition,
   field,
   "mods",

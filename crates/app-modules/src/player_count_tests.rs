@@ -1,4 +1,26 @@
 use super::*;
+use app_core::ModulePlayerListCodec;
+
+#[test]
+fn player_count_source_dst_uses_the_same_structured_snapshot_as_the_player_tab() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../modules");
+    let modules = discover_modules(root).expect("discover production contracts");
+    let module = modules
+        .iter()
+        .find(|module| module.summary.id == "dontstarve")
+        .unwrap();
+    assert_eq!(
+        module.runtime.player_count_source,
+        ModulePlayerCountSource::PlayerList
+    );
+    assert_eq!(
+        module.runtime.player_query.as_ref().unwrap().protocol,
+        "none"
+    );
+    let list = module.runtime.player_list.as_ref().unwrap();
+    assert_eq!(list.source, ModulePlayerListSource::StructuredLog);
+    assert_eq!(list.response_codec, ModulePlayerListCodec::DstClientTableV1);
+}
 
 #[test]
 fn player_count_source_defaults_to_the_declared_player_query() {

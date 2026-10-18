@@ -48,6 +48,7 @@ for (const entry of cases) {
   function run(selection, ids) {
     const updates = [];
     const context = {
+      isArk: false,
       showsManualInventory: entry.name === "manual",
       selectedInventoryPath: null, unconfiguredInventoryItems: [],
       setSelectedInventoryPath() { assert.fail("changed another list's selection"); },
@@ -123,7 +124,7 @@ function renderList(overrides = {}) {
   const actions = [];
   const context = {
     ...workshopControls, ...workshopInventory, settings: {}, pzSnapshot: null, readOnly: false,
-    moduleId: "unturned", enabledRows: configuredRows, isManualEnablementModule: false,
+    moduleId: "unturned", isArk: false, enabledRows: configuredRows, isManualEnablementModule: false,
     showsManualInventory: false, usesFileModManagement: false, unconfiguredInventoryItems: [], selectedInventoryItem: null,
     managedManualMods: {
       change: (item, action) => actions.push(["managed", item.path, action]),
@@ -150,7 +151,7 @@ function renderList(overrides = {}) {
   context.workshopControlStates = context.moduleId === "palworld"
     ? workshopInventory.palworldWorkshopStates(context.settings, context.manualInventory)
     : workshopControls.readWorkshopControlStates(context.moduleId, context.settings, context.pzSnapshot);
-  const { renderModList } = loadFunctions(["renderModList", "formatEnabledRowDisplayId"], context);
+  const { renderModList } = loadFunctions(["renderModList", "formatEnabledRowDisplayId", "canSortWorkbenchRow"], context);
   return { tree: renderModList(), actions };
 }
 
@@ -272,8 +273,8 @@ test("pointer sorting starts only for an unlocked, sortable row with the primary
     { locked: false, button: 0, row: { ...configuredRows[0], entry: { ...configuredRows[0].entry, key: "dst-enabled" } }, allowed: false }
   ]) {
     const updates = [];
-    const { handleEnabledRowPointerDown } = loadFunctions(["handleEnabledRowPointerDown"], {
-      modMutationsDisabled: locked, canReorderEnabledRow,
+    const { handleEnabledRowPointerDown } = loadFunctions(["handleEnabledRowPointerDown", "canSortWorkbenchRow"], {
+      modMutationsDisabled: locked, isArk: false, canReorderEnabledRow,
       setDraggedEnabledRow: (value) => updates.push(value),
       setEnabledDropTargetKey: (value) => updates.push(value)
     });

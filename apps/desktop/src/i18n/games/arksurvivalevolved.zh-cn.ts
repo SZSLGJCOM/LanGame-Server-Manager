@@ -2,6 +2,9 @@ import type { MessageCatalog } from "../../i18n-config";
 import { buildArkFieldLabelMessages } from "./ark-field-labels";
 import { buildArkFieldHelpMessages } from "./ark-field-help";
 export const ZH_CN_ARK_SURVIVAL_EVOLVED_MESSAGES: MessageCatalog = {
+  "settings.schema.arksurvivalevolved.ark_mod_map_overrides.title": "MOD 生效地图",
+  "settings.schema.arksurvivalevolved.ark_mod_map_overrides.description": "默认继承共用 MOD 配置。在「我的 Mod」选中当前 MOD，可同时勾选多张生效地图；其他 MOD 继续继承。参数范围单独设置，地图间差异可能影响跨服兼容性。",
+  "settings.schema.arksurvivalevolved.additional_maps.description": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；各地图共用服务器设置和跨服传输数据，MOD 默认共用，也可针对当前 MOD 多选生效地图。",
   "ark.settings.groups.leveling.rules.title": "升级与重置规则",
   "ark.settings.groups.leveling.player.title": "玩家属性",
   "ark.settings.groups.leveling.wild.title": "野生恐龙每级属性",

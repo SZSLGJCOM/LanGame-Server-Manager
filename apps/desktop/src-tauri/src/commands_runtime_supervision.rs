@@ -1174,6 +1174,7 @@ pub(super) async fn ensure_firewall_rules_for_start(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     source: &str,
+    console_log_path: Option<&str>,
 ) -> Result<(), String> {
     #[cfg(all(test, windows))]
     if super::tests::assistant_lifecycle_workflow_tests::fixture_firewall_applies(
@@ -1225,11 +1226,29 @@ pub(super) async fn ensure_firewall_rules_for_start(
             Ok(())
         }
         Err(error) => {
+            let diagnostic = serde_json::from_str::<serde_json::Value>(&error)
+                .ok()
+                .filter(|value| value["code"] == "windows_firewall_setup_failed");
+            let detail = diagnostic
+                .as_ref()
+                .and_then(|value| value["message"].as_str())
+                .unwrap_or(&error);
             let decision = firewall_rule_failure_start_decision(
                 &instance.summary.name,
-                &error,
+                detail,
                 firewall_local_address.as_deref(),
             );
+            if let Some(path) = console_log_path
+                && let Err(console_error) = append_startup_console_line(path, &decision.message, "")
+            {
+                append_desktop_app_log(
+                    storage,
+                    "warn",
+                    "instance.firewall_rules.console_failed",
+                    "The firewall warning could not be written to the instance console",
+                    json!({"instance_id":instance.summary.id,"error":console_error}),
+                );
+            }
             append_desktop_app_log(
                 storage,
                 decision.log_level,
@@ -1242,10 +1261,20 @@ pub(super) async fn ensure_firewall_rules_for_start(
                     "ports": &instance.ports,
                     "local_address": firewall_local_address.as_deref().unwrap_or("Any"),
                     "continue_start": decision.continue_start,
+                    "code": diagnostic.as_ref().and_then(|value| value["code"].as_str()),
+                    "reason": diagnostic.as_ref().and_then(|value| value["reason"].as_str()),
                 }),
             );
             if decision.continue_start {
                 return Ok(());
+            }
+            if let Some(mut diagnostic) = diagnostic {
+                diagnostic["message"] = json!(decision.message);
+                diagnostic["instance_name"] = json!(instance.summary.name);
+                diagnostic["local_address"] = json!(firewall_local_address);
+                diagnostic["log_path"] = json!(desktop_app_log_path(storage).to_string_lossy());
+                diagnostic["continue_start"] = json!(false);
+                return Err(diagnostic.to_string());
             }
             Err(logged_error_message(storage, decision.message))
         }
@@ -1297,7 +1326,7 @@ pub(super) fn firewall_rule_failure_start_decision(
         continue_start: true,
         log_level: "warn",
         message: format!(
-            "failed to configure Windows Firewall allow rules for `{instance_name}`: {error}; continuing startup. Run LanGame Server Manager as administrator or create inbound allow rules for the instance ports manually."
+            "failed to configure Windows Firewall allow rules for `{instance_name}`: {error}; continuing startup, but external connections may be blocked. Approve the Windows administrator prompt on the server host or inspect the instance's inbound rules."
         ),
     }
 }
@@ -1525,6 +1554,13 @@ impl ListenerStartupBudget<'_> {
             Self::Vrising(budget) => budget.timeout_message(),
         }
     }
+
+    fn filter_evaluation(&self, evaluation: StrictBindEvaluation) -> StrictBindEvaluation {
+        match self {
+            Self::Standard(budget) => budget.filter_evaluation(evaluation),
+            Self::Vrising(_) => evaluation,
+        }
+    }
 }
 
 pub(super) async fn verify_spawned_process_bind_address(
@@ -1544,6 +1580,12 @@ pub(super) async fn verify_spawned_process_bind_address(
     let expected_address = normalize_strict_bind_address(&instance.summary.bind_ip)?;
     if is_wildcard_bind_address(&expected_address)
         && !super::commands_runtime_ark::has_multiple_maps(instance)?
+        && !spawned_processes.iter().any(|(plan, _)| {
+            super::commands_asa_startup_budget::requires_mod_validation(
+                &instance.summary.module_id,
+                &plan.launch_plan.args,
+            )
+        })
     {
         return Ok(());
     }
@@ -1577,7 +1619,7 @@ pub(super) async fn verify_spawned_process_bind_address(
     } else {
         ListenerStartupBudget::Standard(
             super::commands_asa_startup_budget::StartupBudget::prepare(
-                &instance.summary.module_id,
+                instance,
                 spawned_processes,
                 timeout,
                 start_reservation,
@@ -1660,6 +1702,7 @@ pub(super) async fn verify_spawned_process_bind_address(
                 &inspection.endpoints,
             )
         };
+        let evaluation = startup_budget.filter_evaluation(evaluation);
         startup_budget.record_evaluation(&evaluation)?;
         match evaluation {
             StrictBindEvaluation::Ready => {
