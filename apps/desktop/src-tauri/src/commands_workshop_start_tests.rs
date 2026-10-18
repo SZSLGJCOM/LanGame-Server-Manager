@@ -162,14 +162,18 @@ using System;
 using System.IO;
 using System.Threading;
 public static class WorkshopStartFixture {
+  private static string NativePath(string path) {
+    string absolute = Path.GetFullPath(path);
+    return absolute.StartsWith(@"\\?\", StringComparison.Ordinal) ? absolute : @"\\?\" + absolute;
+  }
   public static int Main(string[] args) {
     Console.WriteLine("Steam Console Client (c) Valve Corporation - fixture\nLoading Steam API...OK");
     int index = Array.IndexOf(args, "+runscript");
     if (index < 0) return 0;
-    string script = File.ReadAllText(args[index+1]);
+    string script = File.ReadAllText(NativePath(args[index+1]));
     File.WriteAllText("captured-script", script);
     if (!script.Contains("workshop_download_item 1623730 123456789 validate")) return 81;
-    string workshop = Path.Combine(File.ReadAllText("install-root"), "steamapps", "workshop");
+    string workshop = Path.Combine(NativePath(File.ReadAllText("install-root")), "steamapps", "workshop");
     string item = Path.Combine(workshop, "content", "1623730", "123456789");
     if (File.Exists("fail")) { Console.WriteLine("ERROR! Download item 123456789 failed (No Connection)."); return 0; }
     if (File.Exists("unchanged")) { Console.WriteLine("Success. Downloaded item 123456789 to cache"); return 0; }
@@ -198,6 +202,12 @@ public static class WorkshopStartFixture {
   }
 }
 "#,
+    )?;
+    // Framework csc targets legacy path handling by default. Keep this native
+    // fixture usable at the same long managed-test paths as the Rust caller.
+    fs::write(
+        root.join("steamcmd.exe.config"),
+        r#"<configuration><runtime><AppContextSwitchOverrides value="Switch.System.IO.UseLegacyPathHandling=false;Switch.System.IO.BlockLongPaths=false"/></runtime></configuration>"#,
     )?;
     let compiler = PathBuf::from(std::env::var_os("SystemRoot").ok_or("SystemRoot is missing")?)
         .join("Microsoft.NET/Framework64/v4.0.30319/csc.exe");
@@ -398,7 +408,13 @@ async fn exercise(fault: &str, cancel: bool) -> Result<(), Box<dyn std::error::E
         tokio::time::timeout(Duration::from_secs(10), async {
             loop {
                 tokio::select! {
-                    result = &mut update => panic!("update finished before cancellation: {:?}", result.err()),
+                    result = &mut update => {
+                        let detail = match result {
+                            Ok(outcome) => format!("warnings: {:?}", outcome.warnings),
+                            Err(error) => error,
+                        };
+                        panic!("update finished before cancellation: {detail}; jobs: {:?}", state.app_state.read().unwrap().jobs);
+                    },
                     _ = tokio::time::sleep(Duration::from_millis(10)) => {
                         if fixture.storage.paths.steamcmd_root.join("entered").exists() { break; }
                     }
@@ -511,7 +527,11 @@ async fn exercise(fault: &str, cancel: bool) -> Result<(), Box<dyn std::error::E
         }
     } else if fault == "unchanged-user-data" {
         let outcome = result?;
-        assert!(outcome.warnings.is_empty());
+        assert!(
+            outcome.warnings.is_empty(),
+            "unexpected cache fallback: {:?}; job: {job:?}",
+            outcome.warnings
+        );
         assert!(matches!(job.status, JobStatus::Completed));
         assert_eq!(
             fs::read_to_string(fixture.target.join(format!("{ITEM}/old.pak")))?,
@@ -560,7 +580,11 @@ async fn exercise(fault: &str, cancel: bool) -> Result<(), Box<dyn std::error::E
         outcome
             .install_guard
             .ensure_scope("palworld", &fixture.program)?;
-        assert!(outcome.warnings.is_empty());
+        assert!(
+            outcome.warnings.is_empty(),
+            "unexpected cache fallback: {:?}; job: {job:?}",
+            outcome.warnings
+        );
         assert!(matches!(job.status, JobStatus::Completed));
         assert!(!fixture.target.join(format!("{ITEM}/old.pak")).exists());
         assert_eq!(
