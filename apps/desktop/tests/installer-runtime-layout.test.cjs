@@ -68,7 +68,7 @@ test("local installers need no release key and keep the update feed dormant", ()
 test("installer identity, supported languages and maintenance policy are explicit", () => {
   const windows = tauriConfig.bundle.windows;
   assert.equal(tauriConfig.identifier, "cn.langame.servermanager");
-  assert.equal(tauriConfig.bundle.publisher, "LanGame Team");
+  assert.equal(tauriConfig.bundle.publisher, "Entro Genesis");
   assert.equal(windows.allowDowngrades, false);
   assert.equal(windows.nsis.installMode, "currentUser");
   assert.deepEqual(windows.nsis.languages, ["English", "SimpChinese"]);

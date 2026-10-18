@@ -4,7 +4,7 @@
 
 ### Scope and responsibility
 
-Updated: 2026-09-30. LanGame Team provides this notice for LanGame Server Manager. It describes the application and its configured connections, not every game, mod, website, model service, or independently operated management host. Those operators have their own data practices and terms.
+Updated: 2026-10-18. Entro Genesis provides this notice for LanGame Server Manager. It describes the application and its configured connections, not every game, mod, website, model service, or independently operated management host. Those operators have their own data practices and terms.
 
 The manager runs on a Windows computer without requiring a LanGame account. Server data is normally stored on the computer running the manager. If you connect to someone else's management interface, your instructions and submitted data reach that host. The host's administrator controls its storage and connected services; running the application locally does not make all its network activity local.
 
@@ -64,7 +64,7 @@ These services can receive the source IP address, requested resource, feature pa
 
 The application does not automatically attach your local logs to an issue. Review and remove credentials, player information, private addresses and proprietary files before sharing logs or screenshots. Public issues and pull requests are public; do not place private evidence in them.
 
-For a privacy or data question addressed to LanGame Team, use the project repository's Private contact request form and choose Privacy or data request. The initial issue is public: request a private channel without including the underlying data. Follow the private channel supplied by the maintainers. For data held by another management host, model provider or game service, contact that operator; deleting a local record does not submit a deletion request to them.
+For a privacy or data question addressed to Entro Genesis, use the project repository's Private contact request form and choose Privacy or data request. The initial issue is public: request a private channel without including the underlying data. Follow the private channel supplied by the maintainers. For data held by another management host, model provider or game service, contact that operator; deleting a local record does not submit a deletion request to them.
 
 This notice must track changes to actual storage, recipients and network behavior. Its date does not create consent to new processing, grant rights over player data or replace permissions required for a particular service or deployment.
 
@@ -72,7 +72,7 @@ This notice must track changes to actual storage, recipients and network behavio
 
 ### 范围与责任
 
-更新日期：2026-09-30。本说明由 LanGame Team 提供，介绍 LanGame Server Manager 及其所配置连接的数据行为，不覆盖所有游戏、Mod、网站、模型服务或他人独立运营的管理端。这些运营方有各自的数据处理方式与条款。
+更新日期：2026-10-18。本说明由 Entro Genesis 提供，介绍 LanGame Server Manager 及其所配置连接的数据行为，不覆盖所有游戏、Mod、网站、模型服务或他人独立运营的管理端。这些运营方有各自的数据处理方式与条款。
 
 管理器运行在 Windows 电脑上，无需 LanGame 账号。服务器数据通常保存在运行管理端的电脑。如果你连接的是他人的管理界面，指令及提交的数据会到达那台主机，由其管理员控制存储与所连接的服务。在本机运行应用，不代表应用的全部网络活动都留在本机。
 
@@ -132,6 +132,6 @@ Windows 下关闭主窗口会隐藏到托盘，运行时服务、服务器和定
 
 应用不会自动把本机日志附到 Issue 中。分享日志或截图前，请检查并移除凭据、玩家信息、私有地址和专有文件。公开 Issue 与 Pull Request 的内容对外可见，不得放入私有证明材料。
 
-向 LanGame Team 提出隐私或数据问题时，可使用项目仓库的“请求私下联系”表单，选择“隐私或数据请求”。最初生成的 Issue 是公开的，只请求建立私下渠道，不填写具体数据；再通过维护者提供的私下渠道沟通。他人管理端、模型服务商或游戏服务持有的数据，应联系相应运营方；删除本地记录不会自动向他们提交删除请求。
+向 Entro Genesis 提出隐私或数据问题时，可使用项目仓库的“请求私下联系”表单，选择“隐私或数据请求”。最初生成的 Issue 是公开的，只请求建立私下渠道，不填写具体数据；再通过维护者提供的私下渠道沟通。他人管理端、模型服务商或游戏服务持有的数据，应联系相应运营方；删除本地记录不会自动向他们提交删除请求。
 
 实际存储、接收方或联网行为变化时，应同步本说明。更新日期不代表你同意新的处理行为，也不授予处理玩家数据的权利，或替代某项服务及部署所需的许可。

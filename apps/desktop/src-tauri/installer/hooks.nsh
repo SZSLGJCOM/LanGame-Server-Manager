@@ -3,6 +3,7 @@
 ; The desktop and runtime service share an executable name. Neither may be
 ; force-terminated by installation or removal: servers must save and stop first.
 !include FileFunc.nsh
+!include "${__FILEDIR__}\publisher-settings.nsh"
 
 ; Tauri invokes this macro in .onInit, before any install hook. MUI's default
 ; skips its dialog for /S but not /P, so an older updater can wait forever when
@@ -14,6 +15,7 @@
 !macroundef MUI_LANGDLL_DISPLAY
 
 !macro MUI_LANGDLL_DISPLAY
+  !insertmacro LGSM_RESTORE_PUBLISHER_SETTINGS
   !define LGSM_LANGUAGE_ID ${__LINE__}
   Push $R0
   ReadRegStr $R0 "${MUI_LANGDLL_REGISTRY_ROOT}" "${MUI_LANGDLL_REGISTRY_KEY}" "${MUI_LANGDLL_REGISTRY_VALUENAME}"
@@ -42,6 +44,7 @@
 
 !macro NSIS_HOOK_POSTINSTALL
   !insertmacro LGSM_REMOVE_RETIRED_RESOURCES ""
+  !insertmacro LGSM_RETIRE_PUBLISHER_SETTINGS
 !macroend
 
 !macro NSIS_HOOK_PREUNINSTALL

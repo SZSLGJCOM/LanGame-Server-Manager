@@ -6,8 +6,8 @@
 
 ### 1. Parties and scope
 
-This agreement is between the contributor who expressly accepts it and LanGame
-Team, acting through the maintainers authorized to represent the official
+This agreement is between the contributor who expressly accepts it and
+Entro Genesis, acting through the maintainers authorized to represent the official
 LanGame Server Manager project ("Official Maintainers"). It applies only to
 the original code, documentation, translations, tests, or other material
 identified in that contributor's acceptance record ("Contribution").
@@ -113,7 +113,7 @@ excluded. Nothing here promises acceptance, payment, or official endorsement.
 
 ### 1. 当事方与适用范围
 
-本协议由明确接受协议的贡献者与 LanGame Team 达成，后者通过获授权代表 LanGame
+本协议由明确接受协议的贡献者与 Entro Genesis 达成，后者通过获授权代表 LanGame
 Server Manager 官方项目的维护者（“官方维护者”）行事。本协议仅覆盖该贡献者的确认
 记录中明确指定的原创代码、文档、翻译、测试或其他材料（“贡献”）。
 

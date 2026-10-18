@@ -120,7 +120,8 @@ RequestExecutionLevel user
 SilentInstall silent
 SilentUnInstall silent
 Name "LGSM disposable resource cleanup"
-!define PRODUCTNAME "LGSM disposable resource cleanup"
+!define PRODUCTNAME "@MAINBINARYNAME@"
+!define MANUPRODUCTKEY "Software\Entro Genesis\${PRODUCTNAME}"
 !define VERSION "0.1.0"
 !define MAINBINARYNAME "@MAINBINARYNAME@"
 OutFile "@INSTALLER@"

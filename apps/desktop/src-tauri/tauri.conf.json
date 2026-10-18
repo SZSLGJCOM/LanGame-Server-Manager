@@ -50,7 +50,7 @@
     "active": true,
     "targets": "nsis",
     "createUpdaterArtifacts": false,
-    "publisher": "LanGame Team",
+    "publisher": "Entro Genesis",
     "homepage": "https://langame.cn/",
     "shortDescription": "Install, configure and manage dedicated game servers.",
     "licenseFile": "../../../LICENSE",

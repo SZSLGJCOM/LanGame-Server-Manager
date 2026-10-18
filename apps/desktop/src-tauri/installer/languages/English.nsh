@@ -30,3 +30,5 @@ LangString deleteAppData ${LANG_ENGLISH} "Clear interface data (keep servers and
 LangString lgsmCloseBeforeMaintenance ${LANG_ENGLISH} "${PRODUCTNAME} is still running. Choose Exit from its system tray menu and wait for servers to save and stop, then run this installer again."
 LangString lgsmProcessCheckFailed ${LANG_ENGLISH} "Setup stopped because it could not verify that ${PRODUCTNAME} has exited. Exit the application from its system tray menu and retry."
 LangString lgsmResourceCleanupFailed ${LANG_ENGLISH} "A retired application file could not be removed. Close programs using the installation folder, check its permissions, and run setup again."
+LangString lgsmPublisherMigrationFailed ${LANG_ENGLISH} "Setup could not preserve the previous installation settings. Check your registry permissions and run setup again."
+LangString lgsmPublisherCleanupDeferred ${LANG_ENGLISH} "Windows did not allow removing the previous publisher's installation settings. The settings have been retained."

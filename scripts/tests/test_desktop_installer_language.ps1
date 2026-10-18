@@ -9,10 +9,17 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $nsis = (Resolve-Path -LiteralPath (Join-Path $NsisRoot 'makensis.exe')).Path
 $hooks = Join-Path $repoRoot 'apps/desktop/src-tauri/installer/hooks.nsh'
+$languages = Join-Path $repoRoot 'apps/desktop/src-tauri/installer/languages'
 $tempRoot = [System.IO.Path]::GetFullPath([System.IO.Path]::GetTempPath())
 $fixtureId = [guid]::NewGuid().ToString('N')
 $fixtureRoot = Join-Path $tempRoot "lgsm-installer-language-$fixtureId with spaces"
-$registryPath = "Software\LGSMInstallerLanguageTest-$fixtureId"
+$productName = "LGSMInstallerLanguageTest-$fixtureId"
+$registryPath = "Software\Entro Genesis\$productName"
+$legacyRegistryPath = "Software\LanGame Team\$productName"
+$defaultDirectory = Join-Path $fixtureRoot 'default app'
+$oldDirectory = Join-Path $fixtureRoot 'previous custom app'
+$newDirectory = Join-Path $fixtureRoot 'current custom app'
+$explicitDirectory = Join-Path $fixtureRoot 'explicit app'
 $null = New-Item -ItemType Directory -Path $fixtureRoot
 $ownedProcesses = [System.Collections.Generic.List[System.Diagnostics.Process]]::new()
 $registry = $null
@@ -81,6 +88,8 @@ try {
     $executable = Join-Path $fixtureRoot 'language.exe'
     $before = Join-Path $fixtureRoot 'before.txt'
     $after = Join-Path $fixtureRoot 'after.txt'
+    $location = Join-Path $fixtureRoot 'location.txt'
+    $installed = Join-Path $fixtureRoot 'installed.txt'
     # Match Tauri's initialization order, but never install anything. A private
     # desktop keeps the real LangDLL dialog away from the user's desktop.
     $source = @'
@@ -93,13 +102,25 @@ OutFile "@EXE@"
 !macro CheckIfAppIsRunning executablePath productName
 !macroend
 !include "@HOOKS@"
+; Like Tauri, define the product after including hooks, before expanding them.
+!define PRODUCTNAME "@PRODUCT@"
+!define VERSION "0.1.0"
+!define MAINBINARYNAME "@PRODUCT@"
+!define MANUFACTURER "Entro Genesis"
+!define MANUKEY "Software\${MANUFACTURER}"
+!define MANUPRODUCTKEY "${MANUKEY}\${PRODUCTNAME}"
+!define PLACEHOLDER_INSTALL_DIR "placeholder\${PRODUCTNAME}"
+InstallDir "${PLACEHOLDER_INSTALL_DIR}"
 Var PassiveMode
 Var UpdateMode
+Var MigrationProbe
 !define MUI_LANGDLL_REGISTRY_ROOT "HKCU"
-!define MUI_LANGDLL_REGISTRY_KEY "@KEY@"
+!define MUI_LANGDLL_REGISTRY_KEY "${MANUPRODUCTKEY}"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "Installer Language"
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "SimpChinese"
+!include "@LANGUAGES@\English.nsh"
+!include "@LANGUAGES@\SimpChinese.nsh"
 Function .onInit
   ${GetOptions} $CMDLINE "/P" $PassiveMode
   ${IfNot} ${Errors}
@@ -116,15 +137,54 @@ Function .onInit
   FileOpen $0 "@AFTER@" w
   FileWrite $0 "$LANGUAGE"
   FileClose $0
-  SetErrorLevel 0
-  Quit
+  ${GetOptions} $CMDLINE "/MIGRATION" $MigrationProbe
+  ${If} ${Errors}
+    SetErrorLevel 0
+    Quit
+  ${EndIf}
+  ; Match current-user x64 Tauri initialization: language precedes SetContext,
+  ; and /D already sets INSTDIR so restoration only replaces the placeholder.
+  SetShellVarContext current
+  SetRegView 64
+  ${If} $INSTDIR == "${PLACEHOLDER_INSTALL_DIR}"
+    StrCpy $INSTDIR "@DEFAULT@"
+    ReadRegStr $4 SHCTX "${MANUPRODUCTKEY}" ""
+    ${If} $4 != ""
+      StrCpy $INSTDIR $4
+    ${EndIf}
+  ${EndIf}
+  FileOpen $0 "@LOCATION@" w
+  FileWrite $0 "$INSTDIR"
+  FileClose $0
+  ${GetOptions} $CMDLINE "/CANCEL" $0
+  ${IfNot} ${Errors}
+    SetErrorLevel 23
+    Abort
+  ${EndIf}
+  ; Manual language initialization has already run; the remaining fixture has
+  ; no wizard pages or product payload and can complete without interaction.
+  SetSilent silent
 FunctionEnd
 Section
+  ${GetOptions} $CMDLINE "/FAIL" $0
+  ${IfNot} ${Errors}
+    SetErrorLevel 24
+    Abort
+  ${EndIf}
+  ; Tauri stores these settings before its successful post-install hook.
+  WriteRegStr SHCTX "${MANUPRODUCTKEY}" "" $INSTDIR
+  WriteRegStr HKCU "${MANUPRODUCTKEY}" "Installer Language" $LANGUAGE
+  !insertmacro NSIS_HOOK_POSTINSTALL
+  FileOpen $0 "@INSTALLED@" w
+  FileWrite $0 "completed"
+  FileClose $0
 SectionEnd
 '@
     $source = $source.Replace('@EXE@', $executable).Replace('@HOOKS@', $hooks)
-    $source = $source.Replace('@KEY@', $registryPath)
+    $source = $source.Replace('@PRODUCT@', $productName).Replace('@LANGUAGES@', $languages)
     $source = $source.Replace('@BEFORE@', $before).Replace('@AFTER@', $after)
+    $source = $source.Replace('@LOCATION@', $location).Replace('@INSTALLED@', $installed)
+    $source = $source.Replace('@DEFAULT@', $defaultDirectory)
     $sourcePath = Join-Path $fixtureRoot 'language.nsi'
     [System.IO.File]::WriteAllText($sourcePath, $source, [System.Text.UTF8Encoding]::new($false))
     $compilerOutput = & $nsis /V2 $sourcePath 2>&1
@@ -132,7 +192,7 @@ SectionEnd
         throw "NSIS language fixture compilation failed: $compilerOutput"
     }
     if ($CompileOnly) {
-        Write-Output 'NSIS language fixture compiled; runtime behavior was not tested.'
+        Write-Output 'NSIS language and publisher-settings fixture compiled; runtime behavior was not tested.'
         return
     }
     $registry = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($registryPath)
@@ -183,7 +243,94 @@ SectionEnd
         Test-Language "updater retains saved language $language" @('/P', '/UPDATE', '/R', '/ARGS') $language $false
         Test-Language "manual installation retains saved language $language" @() $language $false
     }
-    Write-Output 'NSIS language initialization: 8 scenarios passed; application registry and data untouched.'
+
+    function Assert-RegistryValues([string]$Path, [hashtable]$Expected, [string]$Name) {
+        $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($Path)
+        try {
+            if ($Expected.Count -eq 0) {
+                if ($null -ne $key) { throw "$Name left an obsolete product key." }
+                return
+            }
+            if ($null -eq $key -or $key.GetValueNames().Count -ne $Expected.Count) {
+                throw "$Name changed the expected registry value set."
+            }
+            foreach ($value in $Expected.Keys) {
+                if ($key.GetValue($value) -cne $Expected[$value]) {
+                    throw "$Name changed registry value '$value'."
+                }
+            }
+        }
+        finally { if ($null -ne $key) { $key.Dispose() } }
+    }
+
+    function Test-PublisherSettings {
+        param(
+            [string]$Name,
+            [string[]]$Arguments,
+            [hashtable]$OldValues,
+            [hashtable]$NewValues,
+            [string]$ExpectedDirectory,
+            [string]$ExpectedLanguage,
+            [hashtable]$ExpectedOldValues,
+            [int]$ExpectedExit = 0,
+            [switch]$Repeat
+        )
+        foreach ($value in $registry.GetValueNames()) { $registry.DeleteValue($value) }
+        [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($legacyRegistryPath, $false)
+        foreach ($value in $NewValues.Keys) { $registry.SetValue($value, $NewValues[$value]) }
+        if ($OldValues.Count -gt 0) {
+            $oldKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey($legacyRegistryPath)
+            try {
+                foreach ($value in $OldValues.Keys) { $oldKey.SetValue($value, $OldValues[$value]) }
+            }
+            finally { $oldKey.Dispose() }
+        }
+        $runs = if ($Repeat) { 2 } else { 1 }
+        for ($run = 0; $run -lt $runs; $run++) {
+            foreach ($path in @($before, $after, $location, $installed)) {
+                if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path }
+            }
+            # /D must remain last and unquoted, as required by NSIS.
+            $process = $desktop.Start($executable, '/MIGRATION ' + ($Arguments -join ' '))
+            $ownedProcesses.Add($process)
+            if (-not $process.WaitForExit(10000)) { throw "$Name blocked during publisher-settings migration." }
+            if ($process.ExitCode -ne $ExpectedExit -or -not (Test-Path -LiteralPath $after) -or
+                -not (Test-Path -LiteralPath $location)) {
+                throw "$Name did not complete the expected initialization (exit $($process.ExitCode))."
+            }
+            $language = if ($ExpectedLanguage) { $ExpectedLanguage } else { [IO.File]::ReadAllText($before) }
+            if ([IO.File]::ReadAllText($after) -cne $language -or
+                [IO.File]::ReadAllText($location) -cne $ExpectedDirectory) {
+                throw "$Name changed the expected language or installation directory."
+            }
+            if ((Test-Path -LiteralPath $installed) -ne ($ExpectedExit -eq 0)) {
+                throw "$Name reached post-install completion despite cancellation or failure."
+            }
+            $expectedNew = @{ '' = $ExpectedDirectory; 'Installer Language' = $language }
+            foreach ($value in $NewValues.Keys) {
+                if ($value -ne '' -and $value -ne 'Installer Language') { $expectedNew[$value] = $NewValues[$value] }
+            }
+            Assert-RegistryValues $registryPath $expectedNew $Name
+            Assert-RegistryValues $legacyRegistryPath $ExpectedOldValues $Name
+        }
+        Write-Output "PASS: $Name"
+    }
+
+    $old = @{ '' = $oldDirectory; 'Installer Language' = '2052' }
+    $current = @{ '' = $newDirectory; 'Installer Language' = '1033' }
+    Test-PublisherSettings 'updater migrates old settings and preserves unrelated values' @('/P', '/UPDATE', '/R', '/ARGS') `
+        (@{ 'Keep' = 'old sentinel' } + $old) @{ 'Keep' = 'new sentinel' } $oldDirectory '2052' @{ 'Keep' = 'old sentinel' }
+    Test-PublisherSettings 'manual installation migrates old directory and language' @() $old @{} $oldDirectory '2052' @{}
+    Test-PublisherSettings 'fresh installation without old settings is repeatable' @('/P') @{} @{} $defaultDirectory '' @{} -Repeat
+    Test-PublisherSettings 'new publisher settings take priority' @('/P', '/UPDATE') $old $current $newDirectory '1033' $old
+    Test-PublisherSettings 'new directory wins while missing language is restored' @('/P') $old @{ '' = $newDirectory } $newDirectory '2052' $old
+    Test-PublisherSettings 'new language wins while missing directory is restored' @('/P') $old @{ 'Installer Language' = '1033' } $oldDirectory '1033' @{}
+    Test-PublisherSettings 'explicit directory overrides restored settings' @('/P', "/D=$explicitDirectory") $old @{} $explicitDirectory '2052' $old
+    Test-PublisherSettings 'unidentified old directory retains its language record' @('/P') @{ 'Installer Language' = '2052' } @{} $defaultDirectory '2052' @{ 'Installer Language' = '2052' }
+    Test-PublisherSettings 'old directory without a language migrates' @('/P') @{ '' = $oldDirectory } @{} $oldDirectory '' @{}
+    Test-PublisherSettings 'initialization cancellation preserves old settings' @('/P', '/CANCEL') $old @{} $oldDirectory '2052' $old -ExpectedExit 23
+    Test-PublisherSettings 'installation failure preserves old settings' @('/P', '/FAIL') $old @{} $oldDirectory '2052' $old -ExpectedExit 24
+    Write-Output 'NSIS initialization: 8 language scenarios and 11 publisher-settings scenarios passed; real product keys and data untouched.'
 }
 finally {
     foreach ($process in $ownedProcesses) {
@@ -194,6 +341,7 @@ finally {
     if ($null -ne $registry) {
         $registry.Dispose()
         [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($registryPath, $false)
+        [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($legacyRegistryPath, $false)
     }
     $resolved = [System.IO.Path]::GetFullPath($fixtureRoot)
     if (-not $resolved.StartsWith($tempRoot.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or

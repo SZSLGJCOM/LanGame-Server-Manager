@@ -30,3 +30,5 @@ LangString deleteAppData ${LANG_SIMPCHINESE} "清除界面数据（保留服务�
 LangString lgsmCloseBeforeMaintenance ${LANG_SIMPCHINESE} "${PRODUCTNAME} 仍在运行。请在系统托盘菜单中选择退出，等待服务器完成保存和停服后，再次运行安装程序。"
 LangString lgsmProcessCheckFailed ${LANG_SIMPCHINESE} "无法确认 ${PRODUCTNAME} 已退出，安装或卸载已停止。请从系统托盘退出应用后重试。"
 LangString lgsmResourceCleanupFailed ${LANG_SIMPCHINESE} "无法清理旧版应用文件。请关闭占用安装目录的程序，检查目录权限后重新运行安装程序。"
+LangString lgsmPublisherMigrationFailed ${LANG_SIMPCHINESE} "无法保留旧版安装设置。请检查当前账户的注册表权限后重新运行安装程序。"
+LangString lgsmPublisherCleanupDeferred ${LANG_SIMPCHINESE} "Windows 未允许移除旧出品方的安装记录，原记录已保留。"
