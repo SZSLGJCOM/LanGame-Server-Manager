@@ -154,6 +154,34 @@ test("selecting either map control atomically enables its discovered Mod, preser
   }
 });
 
+test("selecting a Mod map preserves every other map's inherited and disabled membership", () => {
+  const choices = [{ value: "Downloaded_WP", label: "Downloaded", modId: "893657" }];
+  const current = { map_name: "TheIsland_WP", mod_ids_csv: "100,200", passive_mod_ids_csv: "300,893657,400",
+    curseforge_disabled_mod_ids: ["893657", "500"], curseforge_removed_mod_ids: ["600"],
+    additional_maps: [map({ id: "passive" }), map({ id: "disabled", enabled: false })],
+    ark_mod_map_overrides: { "map-disabled": { active_order: ["200", "100"], passive_order: ["400", "300"],
+      mods: { "893657": { active: false, passive: false, disabled_active: true, disabled_passive: true,
+        configuration: { game_ini: "[MapOptions]\nRetain=true", game_user_settings_ini: "" } } } } } };
+  const before = structuredClone(current);
+  for (const scope of ["main", "map-passive"]) {
+    const mapPatch = scope === "main" ? { map_name: "Downloaded_WP" }
+      : { additional_maps: current.additional_maps.map((entry) => entry.id === "passive" ? { ...entry, map_name: "Downloaded_WP" } : entry) };
+    const next = { ...current, ...buildArkMapSelectionPatch(current, "Downloaded_WP", choices, mapPatch, scope) };
+    const selected = readAsaModMembership(projectArkModSettings(next, "arksurvivalascended", scope));
+    assert.deepEqual(selected.active, ["100", "200", "893657"]);
+    assert.deepEqual(selected.passive, ["300", "400"]);
+    for (const other of ["main", "map-passive", "map-disabled"].filter((key) => key !== scope)) {
+      assert.deepEqual(next.ark_mod_map_overrides[other], current.ark_mod_map_overrides[other], `${other} overrides`);
+      assert.deepEqual(readAsaModMembership(projectArkModSettings(next, "arksurvivalascended", other)),
+        readAsaModMembership(projectArkModSettings(current, "arksurvivalascended", other)), `${other} effective membership`);
+    }
+    for (const field of ["mod_ids_csv", "passive_mod_ids_csv", "curseforge_disabled_mod_ids", "curseforge_removed_mod_ids"]) {
+      assert.deepEqual(next[field], current[field], `shared ${field}`);
+    }
+    assert.deepEqual(current, before, "map selection must not mutate its input");
+  }
+});
+
 test("official or unknown choices leave membership alone; raw Mod flags reject a known Mod selection without a partial patch", () => {
   const current = { custom_launch_flags: "-mods=100", mod_ids_csv: "200", map_name: "TheIsland_WP" };
   const choices = [{ value: "ActualDownloaded_WP", label: "Downloaded", modId: "893657" }];

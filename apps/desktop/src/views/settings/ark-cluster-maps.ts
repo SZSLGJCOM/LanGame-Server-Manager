@@ -3,8 +3,8 @@ import type { TranslateFn } from "../../i18n";
 import { ARK_WORKSPACE_EN } from "../../i18n/games/ark-workspace.en";
 import { isArkModule } from "../../ark-clusters";
 import type { ModulePortGroupDetails } from "../../types";
-import { ASA_RAW_MOD_WARNING, AsaModControlError, hasAsaRawModFlags, readAsaModMembership } from "../servers/mod-workbench-asa";
-import { ARK_MOD_MAP_OVERRIDES, applyArkModChange, arkModEnabledMaps, projectArkModSettings, readArkModMapOverrides } from "../servers/ark-map-mods";
+import { ASA_RAW_MOD_WARNING, AsaModControlError, canonicalAsaModId, hasAsaRawModFlags, readAsaModMembership } from "../servers/mod-workbench-asa";
+import { ARK_MOD_MAP_OVERRIDES, ArkModScopeError, projectArkModSettings, readArkModMapOverrides } from "../servers/ark-map-mods";
 
 export const ARK_ADDITIONAL_MAP_LIMIT = 15;
 export interface AdditionalArkMap {
@@ -103,13 +103,13 @@ export function buildArkMapSelectionPatch(settings: Readonly<SettingsObject>, ma
   if (!id) return { ...mapPatch };
   const root = { ...settings, ...mapPatch };
   if (hasAsaRawModFlags(root)) throw new AsaModControlError("raw-mod-flags");
-  const enabled = arkModEnabledMaps(root, "arksurvivalascended", id);
-  const next = applyArkModChange(root, "arksurvivalascended", { kind: "membership", modId: id, maps: [...new Set([...enabled, scope])] });
-  const overrides = readArkModMapOverrides(next, "arksurvivalascended");
-  const entry = overrides[scope];
-  const mod = entry.mods[id];
+  if (canonicalAsaModId(id) !== id) throw new ArkModScopeError("shape");
+  const active = readAsaModMembership(projectArkModSettings(root, "arksurvivalascended", scope)).active;
+  const overrides = structuredClone(readArkModMapOverrides(root, "arksurvivalascended"));
+  const entry = overrides[scope] ??= { mods: {} };
+  const mod = entry.mods[id] ??= {};
   Object.assign(mod, { active: true, passive: false, disabled_active: false, disabled_passive: false, removed: false });
-  entry.active_order = [...new Set([...readAsaModMembership(projectArkModSettings(root, "arksurvivalascended", scope)).active, id])];
+  entry.active_order = [...new Set([...active, id])];
   return { ...mapPatch, [ARK_MOD_MAP_OVERRIDES]: overrides };
 }
 

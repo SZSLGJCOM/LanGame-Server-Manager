@@ -8,6 +8,7 @@ import type { InstanceDetails, UpdateInstanceInput } from "../../src/types";
 import type { InstalledArkMap, InstanceArkMapAvailability } from "../../src/ark-map-availability";
 import { ConfigurationWorkspace } from "../../src/views/settings/ConfigurationWorkspace";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
+import { projectArkModSettings } from "../../src/views/servers/ark-map-mods";
 import "../../src/app.css";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -126,8 +127,12 @@ async function run() {
   await click(mainChoices().find((choice) => choice.textContent?.includes("已下载作者地图"))!);
   await settle(() => saves.length === 1, "Choosing the primary Mod map did not save");
   let saved = JSON.parse(saves[0].settings_json);
-  check(saved.map_name === installed.map_name && saved.mod_ids_csv === "100\n200\n893657" && saved.passive_mod_ids_csv === "300\n400",
+  let selectedMap = projectArkModSettings(saved, "arksurvivalascended", "main");
+  check(saved.map_name === installed.map_name && selectedMap.mod_ids_csv === "100\n200\n893657" && selectedMap.passive_mod_ids_csv === "300\n400",
     "The primary map and its active Mod membership must share one saved mutation");
+  check(saved.mod_ids_csv === "100,200" && saved.passive_mod_ids_csv === "300,893657,400"
+    && !projectArkModSettings(saved, "arksurvivalascended", "map-retained").mod_ids_csv?.toString().includes(installed.mod_id),
+    "Choosing the primary map preserves shared defaults and does not activate its Mod on another map");
   check(saved.additional_maps[0].map_name === "MissingAdditional_WP", "Choosing the primary map changed a retained additional world");
   check(!fixture.querySelector(`[data-ark-map-unavailable="${installed.map_name}"]`), "A discovered selected map is incorrectly marked missing");
 
@@ -136,8 +141,14 @@ async function run() {
   await change(addPicker(), installed.map_name); await click(addButton());
   await settle(() => saves.length === 2, "Adding a downloaded map did not save");
   saved = JSON.parse(saves[1].settings_json);
-  check(saved.additional_maps.length === 2 && saved.additional_maps[1].map_name === installed.map_name && saved.mod_ids_csv === "100\n200\n893657",
+  selectedMap = projectArkModSettings(saved, "arksurvivalascended", `map-${saved.additional_maps[1].id}`);
+  check(saved.additional_maps.length === 2 && saved.additional_maps[1].map_name === installed.map_name
+    && selectedMap.mod_ids_csv === "100\n200\n893657" && selectedMap.passive_mod_ids_csv === "300\n400",
     "Adding a map and enabling its discovered Mod must share one saved mutation");
+  check(saved.mod_ids_csv === "100,200" && saved.passive_mod_ids_csv === "300,893657,400"
+    && !projectArkModSettings(saved, "arksurvivalascended", "main").mod_ids_csv?.toString().includes(installed.mod_id)
+    && !projectArkModSettings(saved, "arksurvivalascended", "map-retained").mod_ids_csv?.toString().includes(installed.mod_id),
+    "Adding a map preserves shared defaults and does not activate its Mod on existing maps");
   check(saved.map_name === "MissingMain_WP" && saved.additional_maps[0].map_name === "MissingAdditional_WP", "Adding a map silently replaced a missing saved map");
 
   await mount("raw", { custom_launch_flags: "-mods=100" });

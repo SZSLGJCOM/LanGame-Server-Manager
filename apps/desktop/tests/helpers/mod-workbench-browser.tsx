@@ -5,6 +5,8 @@ import { readInstanceDetails, readModuleDetails, updateInstance } from "../../sr
 import { I18nProvider } from "../../src/i18n";
 import { ModWorkbench } from "../../src/views/servers/ModWorkbench";
 import { ActivityNoticeTarget } from "../../src/components/ActivityNotice";
+import { ActivityBar } from "../../src/components/ActivityBar";
+import { createActivityNoticeStore } from "../../src/components/activity-notice-store";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
 import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../src/types";
 import "../../src/app.css";
@@ -69,8 +71,8 @@ async function select(target: HTMLSelectElement, value: string) {
   await act(async () => { target.value = value; target.dispatchEvent(new Event("change", { bubbles: true })); });
 }
 function Harness() {
-  const [noticeTarget, setNoticeTarget] = useState<HTMLDivElement | null>(null);
-  return <ActivityNoticeTarget.Provider value={{ element: noticeTarget, dismissLabel: "Close" }}>
+  const [noticeStore] = useState(createActivityNoticeStore);
+  return <ActivityNoticeTarget.Provider value={{ element: null, dismissLabel: "Close", store: noticeStore }}>
     <div style={{ flex: 1, minHeight: 0 }}>
       <ModWorkbench key={`${epoch}:${details.summary.id}`} details={details} moduleDetails={moduleDetails}
         launchPlan={null} onSaveSettings={async (input, options) => {
@@ -80,7 +82,7 @@ function Harness() {
         }} />
     </div>
     <footer className="shell-activity-bar"><span className="shell-activity-label">Activity</span>
-      <div className="shell-activity-notices" ref={setNoticeTarget} />
+      <ActivityBar store={noticeStore} entries={[]} />
     </footer>
   </ActivityNoticeTarget.Provider>;
 }
@@ -99,6 +101,14 @@ async function myMods() {
     .find((target) => target.textContent === "My Mods");
   if (!button) throw new Error("My Mods tab missing");
   await click(button);
+}
+async function openMessages() {
+  await settle(() => Boolean(fixture.querySelector(".shell-activity-expand")), "Message details control did not appear");
+  if (!fixture.querySelector(".shell-activity-panel")) await click(element(".shell-activity-expand"));
+  return element('.shell-activity-panel[role="dialog"][aria-label="Message details"]');
+}
+async function closeMessages() {
+  if (fixture.querySelector(".shell-activity-panel")) await click(element(".shell-activity-panel-close"));
 }
 function optionsControl(name: string): HTMLSelectElement {
   const label = [...fixture.querySelectorAll<HTMLLabelElement>(".dst-mod-spec-copy")]
@@ -119,7 +129,9 @@ async function run() {
     active_run: null, settings_json: "{}" };
   setSettings({ ...baseSettings(), shared_workshop_mod_ids: `${id}\n${invalidId}`,
     master_enabled_workshop_mod_ids: `${id}\n${invalidId}` });
-  const limitMessage = `Steam returned HTTP 429. ${"Workshop type verification is temporarily rate-limited. ".repeat(20)}RATE_LIMIT_END`;
+  const limitMessage = JSON.stringify({ code: "steam_workshop_network_failed", stage: "item_type", reason: "http",
+    origin: "https://steamcommunity.com", status: 429,
+    message: `${"Workshop type verification is temporarily rate-limited. ".repeat(20)}RATE_LIMIT_END` });
   const item = (modId: string) => ({ id: modId, title: modId === id ? "Owned server Mod" : "Steam guide",
     status: modId === invalidId ? "unsupported" : rateLimited ? "unverified" : "resolved",
     item_kind: modId === invalidId ? "guide" : rateLimited ? "unknown" : "item", message: rateLimited ? limitMessage : null,
@@ -171,7 +183,8 @@ async function run() {
   await settle(() => row(id)?.querySelector<HTMLInputElement>("input")?.checked === false, "Disabled entry disappeared");
   assert(Boolean(row(id)), "Disabled owned Mod remains available in My Mods");
   await settle(() => Boolean(fixture.querySelector(".dst-mod-spec-list")), "Disabled Mod options did not load");
-  assert(fixture.textContent?.includes("Existing shard values differ"), "Implicit-default shard difference is warned before editing");
+  assert((await openMessages()).textContent?.includes("Existing shard values differ"), "Implicit-default shard difference is warned before editing");
+  await closeMessages();
   await select(optionsControl("Other"), "boolean:true");
   await settle(() => Boolean((settings().caves_mod_configuration_options as Record<string, Record<string, unknown>>)?.[id]?.other),
     "Disabled Mod option change was not saved");
@@ -180,8 +193,11 @@ async function run() {
   rateLimited = true;
   await render(true);
   await myMods();
-  await settle(() => [...fixture.querySelectorAll<HTMLElement>(".shell-activity-notice-text")]
-    .some((notice) => notice.title.includes("RATE_LIMIT_END")), "Rate-limit warning did not reach the activity bar");
+  const messages = await openMessages();
+  await settle(() => messages.querySelector(".shell-activity-notice-diagnostics")?.textContent?.includes(limitMessage) === true,
+    "Complete rate-limit diagnostics did not reach message details");
+  assert(messages.textContent?.includes("Steam is limiting requests."), "Structured HTTP 429 receives the rate-limit summary");
+  assert(!element(".shell-activity-message-row").textContent?.includes("RATE_LIMIT_END"), "Long diagnostics stay outside the compact activity summary");
   await settle(() => Boolean(fixture.querySelector(".dst-mod-spec-list")), "Unverified remote metadata hid local Mod configuration");
   assert(!element(".mw-workbench").querySelector(".shell-activity-notice"), "Workshop warnings occupy no space above the workspace");
   assert(row(id)?.textContent?.includes("Owned server Mod"), "Rate-limited metadata retains the known Mod title");
@@ -192,10 +208,11 @@ async function run() {
   "Rate-limit warning does not resize or move the local configuration panel",
   `before=${JSON.stringify(beforeLimit.toJSON())}; after=${JSON.stringify(afterLimit.toJSON())}`);
   rateLimited = false;
-  const retry = [...fixture.querySelectorAll<HTMLElement>(".shell-activity-notice")]
+  const retry = [...messages.querySelectorAll<HTMLElement>(".shell-activity-notice")]
     .find((notice) => notice.textContent?.includes("RATE_LIMIT_END"))!.querySelector<HTMLButtonElement>(".shell-activity-notice-actions button")!;
   await click(retry);
   await settle(() => !fixture.textContent?.includes("RATE_LIMIT_END"), "Successful metadata retry did not clear the rate-limit warning");
+  await closeMessages();
   offline = true;
   await render(true);
   await myMods();
@@ -293,9 +310,10 @@ async function run() {
   rateLimited = true;
   await render(true);
   await myMods();
-  await settle(() => fixture.textContent?.includes("RATE_LIMIT_END") === true && Boolean(fixture.querySelector(".dst-mod-spec-list")),
+  const finalMessages = await openMessages();
+  await settle(() => finalMessages.textContent?.includes(limitMessage) === true && Boolean(fixture.querySelector(".dst-mod-spec-list")),
     "Final rate-limit screenshot state did not preserve the local configuration");
-  const syncNotice = [...fixture.querySelectorAll<HTMLElement>(".shell-activity-notice-text")]
+  const syncNotice = [...finalMessages.querySelectorAll<HTMLElement>(".shell-activity-notice-text")]
     .find((notice) => notice.textContent?.startsWith("Existing shard values differ"));
   assert(syncNotice && syncNotice.title.includes("the next change will synchronize this Mod configuration") && syncNotice.title === syncNotice.textContent,
     "Truncated shard warning retains the complete synchronization message in its title and accessible text");
