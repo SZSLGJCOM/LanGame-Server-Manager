@@ -11,7 +11,7 @@ export interface NexusModReview {
   files: NexusModFileChoice[]; selected_file_id: string | null;
 }
 export interface NexusModFileSelection { reference: string; file_id: string }
-const errorCodes = ["nexus_auth_required", "nexus_auth_invalid", "nexus_premium_required", "nexus_rate_limited",
+const errorCodes = ["nexus_api_unavailable", "nexus_auth_required", "nexus_auth_invalid", "nexus_premium_required", "nexus_rate_limited",
   "nexus_game_mismatch", "nexus_reference_invalid", "nexus_download_expired", "nexus_file_unavailable", "nexus_network_error",
   "nexus_local_desktop_required", "nexus_invalid_response", "nexus_operation_failed", "nexus_installation_failed"] as const;
 export type NexusErrorCode = typeof errorCodes[number];
@@ -33,9 +33,9 @@ function requiredText(value: unknown): string {
   if (typeof value !== "string") throw new NexusApiError("nexus_invalid_response");
   return value;
 }
-export function canUseNexusApi(): boolean { return canUseLocalDesktopApi(); }
+export function canUseNexusApi(): boolean { return false; }
 async function request(command: string, args?: Record<string, unknown>): Promise<unknown> {
-  if (!canUseNexusApi()) throw new NexusApiError("nexus_local_desktop_required");
+  if (!canUseLocalDesktopApi()) throw new NexusApiError("nexus_local_desktop_required");
   try { return await invokeOrMock<unknown>(command, args); }
   catch (reason) {
     let error: unknown = reason instanceof Error ? reason.message : reason;

@@ -7,12 +7,17 @@ test("Mod drop entry accepts file, link and selected text payloads across declar
   assert.equal(report.covered.length, 15);
   assert.deepEqual(report.workshop_covered, ["barotrauma", "conanexiles", "palworld", "squad", "terraria"]);
   assert.deepEqual(report.version_policy_covered, ["corekeeper", "valheim", "vrising"]);
-  assert.equal(report.stages, 30, "Four Nexus providers additionally install an explicitly selected reviewed file");
+  assert.deepEqual(report.nexus_covered, ["abioticfactor", "enshrouded", "humanitz", "sevendaystodie"].map((module) => ({
+    module, local_imports: 1, rejected_inputs: ["id", "http", "nxm"]
+  })));
+  assert.deepEqual(report.nexus_requests, []);
+  assert.equal(report.stages, 26, "15 community imports, six Thunderstore file-priority imports and five Workshop imports");
   assert.ok(report.references >= 6);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);
   assert.equal(report.browser_processes_remaining, 0);
   assert.equal(report.scratch_removed, true);
   console.log(JSON.stringify({ covered: report.covered, workshop_covered: report.workshop_covered,
+    nexus_covered: report.nexus_covered, nexus_requests: report.nexus_requests,
     checks: report.checks.length, references: report.references, files: report.stages }));
 });

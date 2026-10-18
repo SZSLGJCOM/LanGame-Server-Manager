@@ -8,6 +8,14 @@ mod credentials;
 
 static CREDENTIAL_WRITES: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
+fn require_nexus_api() -> Result<(), String> {
+    Err(serde_json::json!({
+        "code": "nexus_api_unavailable",
+        "message": "Nexus API downloads are not available in this release. Download files from the Nexus Mods website and import them locally.",
+    })
+    .to_string())
+}
+
 fn unconfigured_account() -> NexusAccountStatus {
     NexusAccountStatus {
         configured: false,
@@ -42,6 +50,7 @@ async fn configured_key() -> Result<credentials::ApiKey, String> {
 
 #[tauri::command]
 pub(crate) async fn nexus_account_status() -> Result<NexusAccountStatus, String> {
+    require_nexus_api()?;
     match credentials::read().await? {
         Some(key) => nexus_mods::validate_api_key(key.expose()).await,
         None => Ok(unconfigured_account()),
@@ -50,6 +59,7 @@ pub(crate) async fn nexus_account_status() -> Result<NexusAccountStatus, String>
 
 #[tauri::command]
 pub(crate) async fn nexus_store_api_key(api_key: String) -> Result<NexusAccountStatus, String> {
+    require_nexus_api()?;
     let normalized = normalize_api_key(&api_key)?;
     let _write = CREDENTIAL_WRITES.lock().await;
     let account = nexus_mods::validate_api_key(&normalized).await?;
@@ -101,6 +111,7 @@ pub(crate) async fn review_nexus_mod_references(
     instance_id: String,
     references: Vec<String>,
 ) -> Result<Vec<NexusModReview>, String> {
+    require_nexus_api()?;
     let operation = state.begin_storage_context_operation("Nexus Mod reference review")?;
     let storage = state.bootstrap_storage()?;
     let (source, accepts) = instance_source(&storage, &instance_id).await?;
@@ -118,6 +129,7 @@ pub(crate) async fn install_nexus_mod_files(
     instance_id: String,
     selections: Vec<NexusFileSelection>,
 ) -> Result<ManualModStageResult, String> {
+    require_nexus_api()?;
     let operation = state.begin_storage_context_operation("Nexus Mod installation")?;
     let storage = state.bootstrap_storage()?;
     let (source, accepts) = instance_source(&storage, &instance_id).await?;

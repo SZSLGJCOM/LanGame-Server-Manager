@@ -294,7 +294,6 @@ async function run() {
   mockWindows("manual-layout-fixture");
   mockIPC(async (command, args) => {
     switch (command) {
-      case "nexus_account_status": return { configured: false, user_name: null, is_premium: false };
       case "read_manual_mod_inventory":
         inventoryReads += 1;
         return { instance_id: details.summary.id, module_id: details.summary.module_id,
@@ -329,12 +328,12 @@ async function run() {
   Object.assign(window, { isTauri: true });
 
   await render("sevendaystodie");
-  layout("empty", true);
+  layout("empty", false);
   await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragenter", {
     bubbles: true, cancelable: true, dataTransfer: fileTransfer()
   })); });
   check(element(".mw-dropzone").classList.contains("mw-dropzone--active"), "File drag enters the real drop target");
-  layout("drag-active", true);
+  layout("drag-active", false);
   await act(async () => { element(".mw-dropzone").dispatchEvent(new DragEvent("dragleave", {
     bubbles: true, relatedTarget: element(".mw-dropzone-title")
   })); });
@@ -348,12 +347,12 @@ async function run() {
   check(!fixture.querySelector(".mw-dropzone-feedback"), "Cancelling a drag removes temporary store feedback");
   await dropFiles();
   await settle(() => Boolean(fixture.querySelector(".mw-manual-success-bar")), "File installation result did not render");
-  layout("installed", true);
+  layout("installed", false);
   await selectView("My Mods");
   await settle(() => fixture.textContent?.includes("FixtureMod") === true, "The imported file did not appear after switching to My Mods");
-  layout("installed-my-mods", true, "my-mods");
+  layout("installed-my-mods", false, "my-mods");
   await selectView("Store");
-  layout("returned-store", true);
+  layout("returned-store", false);
 
   await render("minecraft");
   layout("empty", false);

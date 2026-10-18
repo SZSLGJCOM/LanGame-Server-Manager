@@ -66,6 +66,45 @@ impl Drop for StagingFixture {
     }
 }
 
+#[tokio::test]
+async fn nexus_api_commands_refuse_before_credentials_storage_or_network() {
+    use tauri::Manager;
+
+    let app = tauri::test::mock_builder()
+        .manage(DesktopState::default())
+        .build(tauri::test::mock_context(tauri::test::noop_assets()))
+        .unwrap();
+    let state = app.state::<DesktopState>();
+    let errors = [
+        nexus_account_status()
+            .await
+            .err()
+            .expect("API is unavailable"),
+        nexus_store_api_key("synthetic-key".into())
+            .await
+            .err()
+            .expect("API is unavailable"),
+        review_nexus_mod_references(state.clone(), "uninitialized-instance".into(), vec![])
+            .await
+            .err()
+            .expect("API is unavailable"),
+        install_nexus_mod_files(state, "uninitialized-instance".into(), vec![])
+            .await
+            .err()
+            .expect("API is unavailable"),
+    ];
+    for error in errors {
+        let error: Value = serde_json::from_str(&error).unwrap();
+        assert_eq!(error["code"], "nexus_api_unavailable");
+        assert!(
+            error["message"]
+                .as_str()
+                .unwrap()
+                .contains("import them locally")
+        );
+    }
+}
+
 #[test]
 fn nexus_credentials_are_local_runtime_commands_with_owned_installation() {
     use crate::command_registry::{Completion, Execution, LanAccess, find};

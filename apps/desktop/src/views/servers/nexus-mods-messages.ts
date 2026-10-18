@@ -1,6 +1,8 @@
 import { NexusApiError } from "../../nexus-mods-api";
 
 const copy = {
+  manualImportHelp: ["从 Nexus Mods 官网下载适用于此服务器的文件，然后在“商店”中导入。请按作者说明准备加载器和依赖。", "Download server-compatible files from the Nexus Mods website, then import them in Store. Follow the author's loader and dependency requirements."],
+  nexus_api_unavailable: ["此版本不提供 Nexus API 下载。请从 Nexus Mods 官网下载后导入本地文件。", "Nexus API downloads are not available in this release. Download files from the Nexus Mods website and import them locally."],
   auth: ["Nexus 授权", "Nexus authorization"], key: ["API Key", "API Key"],
   authTitle: ["Nexus Mods 授权", "Nexus Mods authorization"],
   authHelp: ["个人 API Key 保存在这台电脑的 Windows 凭据存储中，供此应用的所有 Nexus 来源共用。不会写入服务器配置。", "Your personal API key is kept in this computer's Windows credential store and shared by this app's Nexus sources. It is never written to server settings."],

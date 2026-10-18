@@ -18,6 +18,8 @@ const modules = ["abioticfactor", "arksurvivalascended", "astroneer", "corekeepe
 const workshopModules = ["barotrauma", "conanexiles", "palworld", "squad", "terraria"];
 const checks: string[] = [], errors: string[] = [], covered: string[] = [], workshopCovered: string[] = [];
 const versionPolicyCovered: string[] = [];
+const nexusRequests: string[] = [];
+const nexusCovered: { module: string; local_imports: number; rejected_inputs: string[] }[] = [];
 let details: InstanceDetails, moduleDetails: ModuleDetails, inventory: ManualModInventoryResult;
 let epoch = 0, stages = 0, references = 0, saves = 0, inventoryReads = 0;
 let lastReferences: string[] = [];
@@ -77,21 +79,9 @@ async function run() {
     check, save: (saved) => { details = saved; }
   });
   mockIPC(async (command, payload) => {
-    if (command === "nexus_account_status") return { configured: true, user_name: "Fixture", is_premium: true };
-    if (command === "review_nexus_mod_references") {
-      const args = payload as { instanceId: string; references: string[] };
-      check(args.instanceId === details.summary.id && moduleDetails.mods?.source?.provider === "nexus", "Nexus review stays scoped to its current instance");
-      references++; lastReferences = args.references;
-      return args.references.map((reference, reference_index) => ({ reference_index, game_domain: "fixture", mod_id: reference,
-        mod_name: "Fixture server Mod", page_url: "https://www.nexusmods.com/7daystodie/mods/123", selected_file_id: null,
-        files: [{ file_id: "101", name: "Server files", file_name: "server.zip", version: "1.0", category: "MAIN", size_bytes: 1024,
-          description: "Dedicated server payload", downloadable: true, unavailable_reason: null }] }));
-    }
-    if (command === "install_nexus_mod_files") {
-      const args = payload as { instanceId: string; selections: { reference: string; file_id: string }[] };
-      check(args.instanceId === details.summary.id && args.selections.length === 1 && args.selections[0].file_id === "101",
-        "Nexus installation uses the explicitly reviewed file in its current instance");
-      stages++; return stageResult();
+    if (command.includes("nexus")) {
+      nexusRequests.push(command);
+      throw new Error(`Nexus local imports must not call ${command}`);
     }
     const args = payload as { instanceId: string; references: string[]; sourcePaths: string[]; thunderstoreVersionPolicy?: string };
     if (command === "read_manual_mod_inventory") inventoryReads++;
@@ -140,16 +130,24 @@ async function run() {
       await drop(fileDrop); await settle(() => stages === previousStage + 1);
       check(references === previousReferences, "File drop wins over incidental URL payload");
       if (moduleDetails.mods?.source?.provider === "nexus") {
-        const data = new DataTransfer(); data.setData("text/plain", "123");
-        const beforeReview = references, beforeInstall = stages;
-        await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
-        await drop(data); await settle(() => references === beforeReview + 1 && Boolean(fixture.querySelector("[data-nexus-file-review]")));
-        check(stages === beforeInstall && fixture.querySelector<HTMLButtonElement>("[data-nexus-install]")?.disabled,
-          "Nexus reference drops always require an explicit file selection before installation");
-        await act(async () => { fixture.querySelector<HTMLInputElement>('[data-nexus-file-id="101"]')!.click(); });
-        await act(async () => { fixture.querySelector<HTMLButtonElement>("[data-nexus-install]")!.click(); });
-        await settle(() => stages === beforeInstall + 1 && !fixture.querySelector("[data-nexus-file-review]"));
-        check(lastReferences[0] === "123", "Nexus short IDs reach the dedicated review provider unchanged");
+        const source = new URL(moduleDetails.mods.source.url);
+        const rejectedInputs: string[] = [];
+        for (const [kind, format, value] of [
+          ["id", "text/plain", "123"],
+          ["http", "text/uri-list", `${source.href}/mods/123`],
+          ["nxm", "text/uri-list", `nxm://${source.pathname.slice(1)}/mods/123/files/456?key=fixture&expires=2000000000&user_id=1`]
+        ]) {
+          const data = new DataTransfer(); data.setData(format, value);
+          await settle(() => !fixture.querySelector('[aria-disabled="true"].mw-dropzone'));
+          const beforeReferences = references, beforeImports = stages, beforeSaves = saves;
+          await drop(data, false);
+          check(nexusRequests.length === 0 && references === beforeReferences && stages === beforeImports && saves === beforeSaves,
+            `${id}: Nexus ${kind} drops are rejected without API requests, reference resolution, imports or settings writes`);
+          check(!fixture.querySelector("[data-nexus-file-review],[data-nexus-install]"),
+            `${id}: rejected Nexus ${kind} drops do not open file selection`);
+          rejectedInputs.push(kind);
+        }
+        nexusCovered.push({ module: id, local_imports: stages - previousStage, rejected_inputs: rejectedInputs });
       }
       const supportsReferences = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
       if (supportsReferences) for (const [type, text] of [
@@ -350,9 +348,11 @@ async function run() {
         `${id}: running Workshop instances refuse My Mods file drops`);
       workshopCovered.push(id);
     }
+    check(nexusRequests.length === 0, "Nexus file workflows never dispatch account, review or download requests");
     check(errors.length === 0, "No console errors or unhandled rejections");
     return { status: "passed", checks, covered, workshop_covered: workshopCovered,
-      version_policy_covered: versionPolicyCovered, stages, references, saves, browser_errors: errors };
+      version_policy_covered: versionPolicyCovered, nexus_covered: nexusCovered, nexus_requests: nexusRequests,
+      stages, references, saves, browser_errors: errors };
   } finally { cleanup(); }
 }
 void run().catch((error) => ({ status: "failed", checks, covered, workshop_covered: workshopCovered, error: String(error), browser_errors: errors }))

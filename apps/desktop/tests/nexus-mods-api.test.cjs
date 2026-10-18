@@ -10,6 +10,14 @@ function load(invoke, local = true) {
     require(name) { assert.equal(name, "./api-transport"); return { invokeOrMock: invoke, canUseLocalDesktopApi: () => local }; } });
   return module.exports;
 }
+
+test("Nexus API controls stay unavailable and native refusal is preserved", async () => {
+  const api = load(async () => { throw JSON.stringify({ code: "nexus_api_unavailable" }); });
+  assert.equal(api.canUseNexusApi(), false);
+  assert.equal(load(async () => {}, false).canUseNexusApi(), false);
+  await assert.rejects(api.installNexusModFiles("instance", [{ reference: "123", file_id: "456" }]),
+    (error) => error.code === "nexus_api_unavailable");
+});
 test("every Nexus operation refuses LAN before sending a key, reference or request", async () => {
   let calls = 0;
   const api = load(async () => { calls++; }, false);

@@ -1334,7 +1334,7 @@ pub(super) async fn download_manual_mod_sources_for_staging(
     match provider.as_str() {
         "modrinth" => download_modrinth_mod_sources(&client, source, references).await,
         "nexus" => Err(String::from(
-            "Nexus Mods downloads require an authenticated browser/API session and an explicit file selection; use the Nexus header input to select a file, or provide a downloaded local package.",
+            "Nexus API downloads are not available in this release. Download files from the Nexus Mods website and import them locally.",
         )),
         other => Err(format!(
             "module source `{other}` does not support automatic package downloads yet; download the archive first and provide a local path"

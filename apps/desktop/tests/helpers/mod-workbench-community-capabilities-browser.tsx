@@ -103,9 +103,10 @@ async function runCommunity(template: InstanceDetails, id: string) {
   await mount();
   await settle(() => inventoryReads > readsBefore && Boolean(fixture.querySelector(".mw-dropzone")), "Community store did not initialize");
   noSteamControls();
-  const references = Boolean(moduleDetails.mods?.enablement || ["thunderstore", "nexus"].includes(moduleDetails.mods?.source?.provider ?? ""));
+  const references = Boolean(moduleDetails.mods?.enablement || moduleDetails.mods?.source?.provider === "thunderstore");
   independentStore(references);
   check(Boolean(fixture.querySelector(".mw-reference-input")) === references, "Only supported online/reference contracts expose an input");
+  check(!fixture.querySelector("[data-nexus-auth-open],.mw-nexus-auth-btn"), "Community workflows do not expose a Nexus API key button");
   const sourceUrl = moduleDetails.mods?.source?.url;
   check(sourceUrl, "Community installation has an actual source URL");
   const sourcesBefore = openedSources.length;
@@ -186,7 +187,6 @@ async function run() {
   });
   mockWindows("community-capabilities-fixture");
   mockIPC(async (command, payload) => {
-    if (command === "nexus_account_status") return { configured: false, user_name: null, is_premium: false };
     if (command === "read_manual_mod_inventory") inventoryReads += 1;
     if (command === "open_external_url") {
       openedSources.push(String((payload as { url: string }).url));

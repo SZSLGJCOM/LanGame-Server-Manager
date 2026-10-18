@@ -211,7 +211,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   const canInstallSiteReferences = Boolean(
     manualStaging &&
     !manualEnablement &&
-    ["thunderstore", "nexus"].includes(manualSourceProvider)
+    (manualSourceProvider === "thunderstore" || (nexusSource && nexusLocal))
   );
   const canUseManualReferences = Boolean(manualEnablement || canInstallSiteReferences);
   const managedCollections = useMemo(() => readManagedWorkshopCollections(settings, moduleId), [settings, moduleId]);
@@ -2607,7 +2607,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
               onClick={() => { setActiveWorkbenchView("config"); setManifestMode(true); }}
             >{t("servers.mods.manifest.mode")}</button> : null}
           </div>
-          {nexusSource ? <button type="button" className="mw-btn mw-btn--secondary mw-nexus-auth-btn" data-nexus-auth-open
+          {nexusSource && nexusLocal ? <button type="button" className="mw-btn mw-btn--secondary mw-nexus-auth-btn" data-nexus-auth-open
             data-nexus-authorized={nexusAccount ? String(nexusAccount.configured) : "unknown"}
             disabled={modMutationsDisabled || !nexusLocal} aria-label={nexusText(locale, "auth")}
             onClick={() => setNexusCredentialsOpen(true)}><ShellIcon name={nexusAccount?.configured ? "check-circle" : "lock"} className="mw-btn-icon" />{nexusText(locale, "key")}</button> : null}
@@ -2663,7 +2663,7 @@ export function ModWorkbench(props: ModWorkbenchProps) {
   }
 
   function renderManualImportFeedback() {
-    const nexusLocalNote = nexusSource && !nexusLocal ? <p className="mw-nexus-local-note">{nexusText(locale, "nexus_local_desktop_required")}</p> : null;
+    const nexusLocalNote = nexusSource && !nexusLocal && !readOnly ? <p className="mw-nexus-local-note">{nexusText(locale, "manualImportHelp")}</p> : null;
     if (!manualStageResult && !manualReferenceResult && !manualReferenceError && !manualStageError && manualStageState !== "running" && manualReferenceState !== "running") return nexusLocalNote;
     return <div className="mw-manual-feedback">
       {nexusLocalNote}

@@ -28,7 +28,7 @@ The news panel keeps successful responses for ten minutes under separate game/la
 | Java prerequisite | Adoptium API, with the official Adoptium GitHub release API as metadata fallback for the same required Java major; Windows x64 HotSpot JRE GA identity, size and SHA-256 are mandatory. The ZIP still comes from the selected official GitHub release, not an independent China CDN |
 | Terraria and RimWorld Together server archives | The module's official release URL and bounded retries; RimWorld Together pins its release SHA-256 and byte size; no verified second independent official source |
 | Modrinth and Thunderstore metadata and packages | The original provider APIs and their actual package URLs, with bounded retries; Modrinth verifies the metadata's byte size and SHA-512 (SHA-1 only when SHA-512 is absent); no verified alternate source |
-| Nexus account, Mod files and packages | Authenticated metadata stays on `api.nexusmods.com` without redirects. Only download URLs returned by that API on HTTPS `*.nexus-cdn.com` or the exact `cf-files.nexusmods.com` host are accepted, including redirects; a separate client carries no API key. Local-only credentials, bounded responses/downloads and the existing import transaction; no mirror or regional substitution |
+| Nexus Mods | Opens the official website in the system browser. In-app API downloads are unavailable; manually downloaded packages use the existing local-import workflow |
 | CurseForge slug resolution | `api.curse.tools`, an existing third-party integration; neither a CurseForge-operated API nor an official CDN, and no source substitution |
 | ARK Server API extension preparation | Pinned ASE/ASA releases from the extension maintainers' GitHub repositories; archive size, SHA-256 and expected payload are verified; no China-specific alternative |
 | ASA extension offset cache | The extension's configured cache services at `cdn.pelayori.com`, `cdn.shadowhunter.co.za` and `cdn.shadowhunter-systems.co.za`; the extension sends the server EXE SHA-256 to retrieve matching files after the installation notice obtains permission; these third-party services are not Valve or the game's official CDN |
@@ -172,7 +172,7 @@ Before adding or changing a group, establish publisher ownership, verify the sam
 | Java 前置 | 优先 Adoptium API，同一所需 Java 主版本的官方 Adoptium GitHub 发行 API 作为元数据备用；必须匹配 Windows x64 HotSpot JRE 正式版身份、大小及 SHA-256。ZIP 仍来自所选官方 GitHub 发行，不是独立国内 CDN |
 | Terraria、RimWorld Together 服务端 | 官方发行地址与有限重试；RimWorld Together 固定发行包 SHA-256 与字节数；未确认第二个独立官方备用源 |
 | Modrinth、Thunderstore 元数据与模组包 | 原提供方 API 及其返回的实际下载地址，采用有限重试；Modrinth 校验元数据声明的字节数与 SHA-512，仅缺少 SHA-512 时使用 SHA-1；未确认备用等价源 |
-| Nexus 账号、Mod 文件与下载包 | 认证元数据固定访问 `api.nexusmods.com`，不跟随重定向；只采用该 API 返回的 HTTPS `*.nexus-cdn.com` 或精确 `cf-files.nexusmods.com` 下载地址，重定向逐跳沿用此限制，下载客户端不带 API Key。凭据和认证操作限本机，响应／下载有界，复用现有导入事务；无镜像或地区替换 |
+| Nexus Mods | 通过系统浏览器打开官方网站。应用内 API 下载不可用；手动下载后的包沿用现有本地导入流程 |
 | CurseForge slug 解析 | 既有第三方集成 `api.curse.tools`；不是 CurseForge 运营的 API 或官方 CDN，不做换源 |
 | ARK Server API 扩展准备 | 扩展维护者 GitHub 仓库中的固定 ASE/ASA 发行包，核验归档大小、SHA-256 和预期文件；无国内专用备用源 |
 | ASA 扩展偏移缓存 | 扩展配置的 `cdn.pelayori.com`、`cdn.shadowhunter.co.za`、`cdn.shadowhunter-systems.co.za` 缓存服务；安装说明征得许可后，由扩展发送服务器 EXE 的 SHA-256 获取匹配文件；这些第三方服务不是 Valve 或游戏官方 CDN |
