@@ -90,8 +90,7 @@ async fn nexus_api_commands_refuse_before_credentials_storage_or_network() {
             .expect("API is unavailable"),
         install_nexus_mod_files(state, "uninitialized-instance".into(), vec![])
             .await
-            .err()
-            .expect("API is unavailable"),
+            .expect_err("API is unavailable"),
     ];
     for error in errors {
         let error: Value = serde_json::from_str(&error).unwrap();

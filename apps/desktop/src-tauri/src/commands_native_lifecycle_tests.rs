@@ -660,7 +660,7 @@ async fn run_native_package(
         );
     }
     if std::env::var_os("LANGAME_NATIVE_STEAMCMD_ROOT").is_none()
-        && package.root.join("steamcmd").is_dir()
+        && package.root.join("steamcmd/steamcmd.exe").is_file()
     {
         let before = probe_steamcmd_status(state.clone())?;
         if !before.ready || !before.can_uninstall {
