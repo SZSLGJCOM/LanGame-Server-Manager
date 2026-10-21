@@ -1,11 +1,15 @@
 //! Global listener ownership for authenticated IPv4 loopback requests.
 use std::collections::BTreeSet;
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr};
 
 use super::system_utility::{self, QUERY_TIMEOUT, SystemUtility};
 use super::{parse_netstat_local_endpoint, parse_netstat_network_endpoints};
 
 pub(super) fn inspect(port: u16) -> Result<BTreeSet<u32>, String> {
+    inspect_address(Ipv4Addr::LOCALHOST, port)
+}
+
+pub(super) fn inspect_address(address: Ipv4Addr, port: u16) -> Result<BTreeSet<u32>, String> {
     if port == 0 {
         return Err("cannot inspect listener ownership for port zero".into());
     }
@@ -18,10 +22,15 @@ pub(super) fn inspect(port: u16) -> Result<BTreeSet<u32>, String> {
             output.status
         ));
     }
-    parse(&String::from_utf8_lossy(&output.stdout), port)
+    parse_address(&String::from_utf8_lossy(&output.stdout), address, port)
 }
 
+#[cfg(test)]
 fn parse(stdout: &str, port: u16) -> Result<BTreeSet<u32>, String> {
+    parse_address(stdout, Ipv4Addr::LOCALHOST, port)
+}
+
+fn parse_address(stdout: &str, address: Ipv4Addr, port: u16) -> Result<BTreeSet<u32>, String> {
     // The general endpoint parser skips malformed rows. Ownership is a trust
     // boundary: an unreadable listener must not silently hide a competing PID.
     for line in stdout.lines() {
@@ -51,7 +60,10 @@ fn parse(stdout: &str, port: u16) -> Result<BTreeSet<u32>, String> {
                 && endpoint.local_port == port
                 // An IPv6 wildcard can also accept IPv4 on a dual-stack socket.
                 // ::1 cannot receive the explicitly IPv4 destination 127.0.0.1.
-                && matches!(endpoint.local_address.as_str(), "127.0.0.1" | "0.0.0.0" | "::")
+                && endpoint.local_address.parse::<IpAddr>().is_ok_and(|candidate| match candidate {
+                    IpAddr::V4(ip) => ip.is_unspecified() || ip == address,
+                    IpAddr::V6(ip) => ip.is_unspecified() || ip.to_ipv4_mapped() == Some(address),
+                })
         })
         .map(|endpoint| endpoint.owning_pid)
         .collect())
@@ -61,6 +73,15 @@ fn parse(stdout: &str, port: u16) -> Result<BTreeSet<u32>, String> {
 mod tests {
     use super::*;
     use crate::WindowsPlatform;
+
+    #[test]
+    fn ipv4_listener_owners_includes_exact_wildcard_and_mapped_addresses() {
+        let text = "TCP 192.0.2.1:8212 0.0.0.0:0 LISTENING 1\nTCP 127.0.0.1:8212 0.0.0.0:0 LISTENING 2\nTCP 0.0.0.0:8212 0.0.0.0:0 LISTENING 3\nTCP [::ffff:192.0.2.1]:8212 [::]:0 LISTENING 4\nTCP [::]:8212 [::]:0 LISTENING 5\n";
+        assert_eq!(
+            parse_address(text, "192.0.2.1".parse().unwrap(), 8212).unwrap(),
+            BTreeSet::from([1, 3, 4, 5])
+        );
+    }
 
     #[test]
     fn loopback_tcp_listener_owners_retains_foreign_and_dual_stack_owners() {

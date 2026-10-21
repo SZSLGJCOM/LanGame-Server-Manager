@@ -19,7 +19,7 @@ pub(super) fn tick() -> Result<u64, String> {
     }
 }
 
-fn verify_process(context: &Context) -> Result<(), String> {
+pub(super) fn verify_process(context: &Context) -> Result<(), String> {
     if app_runtime::process_matches_identity(context.pid, &context.identity)
         .map_err(|_| "Cannot verify the native server process.")?
     {
@@ -29,7 +29,14 @@ fn verify_process(context: &Context) -> Result<(), String> {
     }
 }
 
-fn open(context: &Context) -> Result<(File, File), String> {
+pub(super) fn open(context: &Context) -> Result<(File, File), String> {
+    open_with_executable(context, None)
+}
+
+pub(super) fn open_with_executable(
+    context: &Context,
+    executable: Option<&str>,
+) -> Result<(File, File), String> {
     verify_process(context)?;
     let root = io::pin_directory(&context.root)?;
     let directory = io::pin_directory(&context.root.join(io::DIRECTORY))?;
@@ -41,10 +48,13 @@ fn open(context: &Context) -> Result<(File, File), String> {
         crate::enshrouded_extension::MAX_DLL,
     )?;
     let hash = io::digest(&payload);
-    let executable = io::digest(&io::read_regular(
-        Path::new(&context.identity.image_path),
-        32 * 1024 * 1024,
-    )?);
+    let executable = match executable {
+        Some(executable) => executable.to_owned(),
+        None => io::digest(&io::read_regular(
+            Path::new(&context.identity.image_path),
+            32 * 1024 * 1024,
+        )?),
+    };
     crate::enshrouded_extension::verify_installed(&context.root, &executable, &payload)?;
     if owner.get("schema").and_then(|v| v.as_u64()) != Some(1)
         || owner.get("module_id").and_then(|v| v.as_str()) != Some("enshrouded")
@@ -88,7 +98,12 @@ struct Reply {
     issue: String,
 }
 
-fn request_body(action: &str, request_id: &str, target: &Target, expires: u64) -> String {
+pub(super) fn request_body(
+    action: &str,
+    request_id: &str,
+    target: &Target,
+    expires: u64,
+) -> String {
     format!(
         "LGSM_ENSHROUDED_CONTROL_1\nrequest_id={request_id}\nrun_id={}\naction={action}\nsnapshot_sequence={}\nsession_handle={}\ngeneration={}\naccount_id={}\nexpires_at_tick={expires}\n",
         target.run_id, target.sequence, target.handle, target.generation, target.account
@@ -180,7 +195,7 @@ pub(super) fn execute(
     let body = request_body(action, &request_id, &target, expires);
     let destination = context.root.join(io::DIRECTORY).join("request.txt");
     verify_process(context)?;
-    io::publish(&destination, body.as_bytes())?;
+    io::publish_request(&destination, body.as_bytes())?;
     // Never resend after an unknown outcome. The extension also deduplicates IDs.
     let deadline = Instant::now() + Duration::from_secs(10);
     let mut dispatched = false;

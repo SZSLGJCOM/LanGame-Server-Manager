@@ -96,6 +96,14 @@ command = "stop"
 wait_after_ms = 6000
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "save"
+process_key = "main"
+
+[[runtime.player_actions]]
 id = "broadcast"
 kind = "broadcast"
 label = "Broadcast"

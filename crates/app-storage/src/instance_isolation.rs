@@ -34,6 +34,7 @@ pub struct InstanceIsolationReport {
     pub data_path: String,
     pub config_path: String,
     pub saves_path: String,
+    pub backups_path: String,
     pub conflicts: Vec<InstancePathConflict>,
     pub issues: Vec<String>,
 }
@@ -96,6 +97,9 @@ pub(crate) async fn read_instance_isolation_from_executor(
             data_path: target.root.to_string_lossy().into_owned(),
             config_path: target.config.to_string_lossy().into_owned(),
             saves_path: target.saves.to_string_lossy().into_owned(),
+            backups_path: crate::backups::instance_backup_root_for_config(&target.config)
+                .to_string_lossy()
+                .into_owned(),
             conflicts,
             issues,
         })

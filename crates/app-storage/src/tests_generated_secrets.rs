@@ -90,6 +90,113 @@ fn persisted_settings(instance: &InstanceProvisioning) -> Map<String, Value> {
 }
 
 #[tokio::test]
+async fn new_manual_save_instances_enable_unique_authenticated_rcon_and_preserve_explicit_disable()
+{
+    let root = unique_test_root();
+    let mut paths = test_paths(&root);
+    paths.modules_root = repo_root().join("modules");
+    let descriptors = app_modules::discover_modules(&paths.modules_root).unwrap();
+    fs::create_dir_all(paths.database_path.parent().unwrap()).unwrap();
+    initialize_database(&paths).await.unwrap();
+    sync_modules(&paths, &descriptors).await.unwrap();
+
+    for (module, enabled, filename, native_key) in [
+        (
+            "minecraft",
+            "enable_rcon",
+            "server.properties",
+            "enable-rcon",
+        ),
+        (
+            "humanitz",
+            "rcon_enabled",
+            "GameServerSettings.ini",
+            "RCONEnabled",
+        ),
+    ] {
+        let descriptor = descriptors
+            .iter()
+            .find(|item| item.summary.id == module)
+            .unwrap();
+        let create = |suffix| CreateInstanceInput {
+            name: format!("{module} {suffix}"),
+            module_id: module.into(),
+        };
+        replenish_test_library(&paths, descriptor).await;
+        let first = create_instance(&paths, descriptor, create("First"))
+            .await
+            .unwrap();
+        replenish_test_library(&paths, descriptor).await;
+        let second = create_instance(&paths, descriptor, create("Second"))
+            .await
+            .unwrap();
+        let initial = persisted_settings(&first);
+        let other = persisted_settings(&second);
+        assert_eq!(
+            initial[enabled], true,
+            "{module}: new instances prepare their save channel"
+        );
+        assert_eq!(other[enabled], true);
+        let secret = initial["rcon_password"].as_str().unwrap();
+        assert_eq!(secret.len(), 32);
+        assert!(secret.bytes().all(|byte| byte.is_ascii_hexdigit()));
+        assert_ne!(initial["rcon_password"], other["rcon_password"]);
+        let config = Path::new(&first.config_file_path)
+            .parent()
+            .unwrap()
+            .join(filename);
+        assert!(
+            fs::read_to_string(&config)
+                .unwrap()
+                .lines()
+                .any(|line| line == format!("{native_key}=true"))
+        );
+
+        // Model an operator's explicit disable on an already persisted instance.
+        // Omitting the password from this update must also retain its identity.
+        let mut disabled = initial.clone();
+        disabled.insert(enabled.into(), Value::Bool(false));
+        disabled.remove("rcon_password");
+        update_instance(
+            &paths,
+            UpdateInstanceInput {
+                id: first.summary.id.clone(),
+                bind_ip: "127.0.0.1".into(),
+                auto_backup_on_stop: false,
+                backup_retention_count: 2,
+                settings_json: serde_json::to_string(&disabled).unwrap(),
+                ports: first.ports.clone(),
+            },
+        )
+        .await
+        .unwrap();
+        materialize_instance_configuration(&paths, &first.summary.id)
+            .await
+            .unwrap();
+        let retained = persisted_settings(&first);
+        assert_eq!(
+            retained[enabled], false,
+            "{module}: regeneration must preserve explicit disable"
+        );
+        assert_eq!(retained["rcon_password"], initial["rcon_password"]);
+        assert!(
+            fs::read_to_string(&config)
+                .unwrap()
+                .lines()
+                .any(|line| line == format!("{native_key}=false"))
+        );
+        let readback = read_instance_details(&paths, &first.summary.id)
+            .await
+            .unwrap();
+        let read_settings: Value = serde_json::from_str(&readback.settings_json).unwrap();
+        assert_eq!(read_settings[enabled], false);
+        assert_eq!(read_settings["rcon_password"], initial["rcon_password"]);
+        assert_eq!(persisted_settings(&second)[enabled], true);
+    }
+    cleanup_root(&root);
+}
+
+#[tokio::test]
 async fn repository_instances_generate_distinct_secrets_and_preserve_operator_values() {
     let root = unique_test_root();
     let mut paths = test_paths(&root);

@@ -49,6 +49,13 @@ port = 27015
 mode = "strict"
 port_names = ["game"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "abioticfactor_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "a2s_info"
 port_names = ["query"]
@@ -74,7 +81,7 @@ command = "CTRL_C"
 wait_after_ms = 10000
 
 [storage]
-runtime_copy_exclusions = ["AbioticFactor/Saved", "AbioticFactor/Binaries/Win64/ue4ss/Mods"]
+runtime_copy_exclusions = ["AbioticFactor/Saved", "AbioticFactor/Binaries/Win64/ue4ss/Mods", "langame_world_save"]
 saves_path_template = "{{paths.install_root}}/AbioticFactor/Saved/SaveGames/Server/Worlds/{{settings.world_save_name}}"
 retained_paths = [
   "AbioticFactor/Saved/Config/WindowsServer/LanGame",
@@ -85,7 +92,7 @@ retained_paths = [
 provider = "nexus"
 label = "Abiotic Factor UE4SS mods"
 url = "https://www.nexusmods.com/abioticfactor"
-install_note = "Abiotic Factor server mods commonly require UE4SS in the dedicated server Win64 directory first. LanGame only stages UE4SS mod payloads here; install the correct UE4SS loader separately and follow each mod page for any Content/Paks placement."
+install_note = "Clicking Start automatically prepares the reviewed UE4SS loader, dedicated-server proxy and save extension in this instance's private server directory. This importer stages UE4SS mod payloads; follow each mod page for Content/Paks placement and compatibility requirements. Existing conflicting loader files are preserved and reported."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64/ue4ss/Mods"

@@ -30,11 +30,12 @@ function load({ desktop, development, hostname, token = null }) {
       if (id === "../../app-state") return { describeError: String };
       if (id === "../../components/ActivityNotice") return { ActivityNotice: () => null };
       if (id === "./ArkClusterBackupPanel") return { ArkClusterBackupPanel: () => null };
+      if (id === "./ark-cluster-activity") return { useArkClusterActivity: () => false };
       throw new Error(`Unexpected dependency: ${id}`);
     }
   });
   return { render: () => component.exports.ArkClusterMaintenance({ instanceId: "a", report: null, busy: false,
-    onChanged: async () => {}, onBusyChange: () => {} }), get requests() { return requests; } };
+    onChanged: async () => {} }), get requests() { return requests; } };
 }
 
 for (const hostname of ["192.168.1.8", "127.0.0.1"]) {

@@ -41,6 +41,13 @@ mode = "strict"
 port_names = ["game"]
 startup_timeout_ms = 180000
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "vrising_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "a2s_info"
 port_names = ["query"]
@@ -81,7 +88,7 @@ saves_path_template = "{{paths.instance_root}}/Saves"
 provider = "thunderstore"
 label = "Thunderstore"
 url = "https://thunderstore.io/c/v-rising/"
-install_note = "With the instance stopped, the first Thunderstore Mod installation automatically prepares the reviewed BepInExPack_V_Rising 1.733.2 loader, including its bundled dotnet runtime, and installs supported dependencies and plugins into this instance's private server directory. Installing server files alone keeps the server native. Existing conflicting loader files are preserved and reported."
+install_note = "Clicking Start automatically prepares the reviewed BepInExPack_V_Rising 1.733.2 loader, its bundled dotnet runtime and save extension in this instance's private server directory. With the instance stopped, Thunderstore Mod installation also prepares this loader and installs supported dependencies and plugins. Existing conflicting loader files are preserved and reported."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/BepInEx/plugins"

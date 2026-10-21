@@ -17,6 +17,14 @@ pub struct StartupConsoleWriter {
 }
 
 impl StartupConsoleWriter {
+    /// False once an incomplete or failed write has closed the shared input.
+    pub fn is_healthy(&self) -> bool {
+        #[cfg(windows)]
+        return self.stdin.is_healthy();
+        #[cfg(not(windows))]
+        true
+    }
+
     pub fn write_line(&mut self, command: &str) -> io::Result<()> {
         #[cfg(windows)]
         return self

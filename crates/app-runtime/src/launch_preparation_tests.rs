@@ -5,10 +5,7 @@ use app_core::{InstallState, InstanceStatus, InstanceSummary};
 fn generated_entrypoints_are_preparable_only_when_their_source_program_exists() {
     let modules_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../modules");
     let modules = app_modules::discover_modules(modules_root).expect("module catalog");
-    for (module_id, source_name) in [
-        ("barotrauma", "DedicatedServer.exe"),
-        ("romestead", "Server.exe"),
-    ] {
+    for (module_id, source_name) in [("barotrauma", "DedicatedServer.exe")] {
         let root = crate::test_support::unique_test_root();
         let install_root = root.join("games").join(module_id);
         let config_dir = root.join("instances/one/config");

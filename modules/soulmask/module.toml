@@ -74,6 +74,13 @@ startup_timeout_ms = 180000
 protocol = "a2s_info"
 port_names = ["query"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Force world persistence"
+label_zh_cn = "立即保存世界"
+transport = "soulmask_save"
+command_template = "SaveWorld 1"
+
 [runtime.player_list]
 scope = "online"
 source = "tcp_console"
@@ -170,12 +177,13 @@ password_setting_key = "rcon_password"
 destructive = true
 
 [runtime.shutdown]
-grace_period_ms = 15000
+grace_period_ms = 90000
 
 [[runtime.shutdown.commands]]
-transport = "console_ctrl_c"
-command = "CTRL_C"
-wait_after_ms = 12000
+transport = "soulmask_echo_shutdown"
+command = "SaveAndExit 1"
+port_name = "echo"
+wait_after_ms = 1000
 
 [player_management]
 status = "runtime_actions"

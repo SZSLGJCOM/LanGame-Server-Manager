@@ -123,10 +123,16 @@ impl Fixture {
             format!(
                 r#"
 param([string]$Shard)
+# A shard still loading mods does not read its console yet.
+if ('{mode}' -eq 'slow-reader') {{ Start-Sleep -Seconds 4 }}
 while ($null -ne ($line = [Console]::In.ReadLine())) {{
     if ($line -eq '[LGSM-DST-FIXTURE-EXIT]') {{ exit 0 }}
     [Console]::WriteLine($line)
     [Console]::Out.Flush()
+    if ($line -match "^print\('\[LGSM-DST-PROBE:([a-f0-9]+)\]'\)") {{
+        [Console]::WriteLine('[00:00:01]: [LGSM-DST-PROBE:' + $Matches[1] + ']')
+        [Console]::Out.Flush()
+    }}
     if ($line -match '\[LGSM-DST-READY:([a-f0-9]+)\]') {{
         if ('{mode}' -eq 'early-exit') {{ exit 7 }}
         if ('{mode}' -eq 'workshop-timeout') {{
@@ -354,6 +360,79 @@ impl Drop for Fixture {
 }
 
 #[tokio::test]
+async fn dst_immediate_save_uses_one_stock_master_command_without_observers_or_shutdown() {
+    for island in [false, true] {
+        let mut fixture = Fixture::new_with_layout("normal", island).await;
+        fixture.ready().await.unwrap();
+        fixture.details.active_run = Some(fixture.register().await);
+        let processes = immediate_save::enabled_processes(&fixture.details).unwrap();
+        let receipt = immediate_save::request_save(&fixture.state, &fixture.details)
+            .await
+            .unwrap();
+        assert_eq!(
+            receipt.confirmation,
+            crate::commands::commands_stdin_dispatch::RuntimeStdinDispatchConfirmation::Confirmed
+        );
+        let master = processes
+            .iter()
+            .find(|process| process.process_key == "master")
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let log = fs::read_to_string(master.log_path.as_ref().unwrap()).unwrap();
+                if log.lines().any(|line| line.trim() == "c_save()") {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .unwrap();
+        for process in &processes {
+            let log = fs::read_to_string(process.log_path.as_ref().unwrap()).unwrap();
+            assert_eq!(
+                log.lines().filter(|line| line.trim() == "c_save()").count(),
+                usize::from(process.process_key == "master")
+            );
+            assert!(!log.contains("__lgsm_immediate_save"));
+            assert!(!log.contains("SAVE-READY"));
+            assert!(!log.contains("c_shutdown"));
+            assert!(
+                shutdown_process_is_running(
+                    &fixture.state,
+                    &fixture.details.summary.id,
+                    process,
+                    process_matches_identity
+                )
+                .unwrap()
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn dst_immediate_save_preflights_all_enabled_shards_before_sending() {
+    let mut fixture = Fixture::new_with_layout("normal", true).await;
+    fixture.ready().await.unwrap();
+    fixture.details.active_run = Some(fixture.register().await);
+    let mut partial = fixture.details.clone();
+    partial
+        .active_run
+        .as_mut()
+        .unwrap()
+        .processes
+        .retain(|process| process.process_key != "volcano");
+    let error = immediate_save::request_save(&fixture.state, &partial)
+        .await
+        .unwrap_err();
+    assert!(error.contains("Volcano"), "{error}");
+    for process in &fixture.details.active_run.as_ref().unwrap().processes {
+        let log = fs::read_to_string(process.log_path.as_ref().unwrap()).unwrap();
+        assert!(!log.contains("c_save()"));
+    }
+}
+
+#[tokio::test]
 async fn dst_lifecycle_confirms_ready_save_and_actual_zero_exit() {
     let mut fixture = Fixture::new("normal").await;
     fixture.ready().await.unwrap();
@@ -564,6 +643,62 @@ async fn dst_lifecycle_stop_preserves_inspection_failure_without_exact_owned_han
         assert!(error.contains("os error 5"), "{variant}: {error}");
     }
     fixture.shutdown().await.unwrap();
+}
+
+#[test]
+fn dst_probe_schedule_retries_an_unread_console_and_writes_again_only_after_its_ack() {
+    let start = Instant::now();
+    let mut schedule = startup_probe::ProbeSchedule::new(start);
+    assert!(schedule.may_write(start));
+    schedule.write_started(start);
+    let full = std::io::Error::new(std::io::ErrorKind::TimedOut, "full");
+    schedule.write_finished(Err(full), true).unwrap();
+    assert!(!schedule.may_write(start + Duration::from_secs(1)));
+    assert!(schedule.may_write(start + Duration::from_secs(2)));
+    schedule.write_started(start + Duration::from_secs(2));
+    schedule.write_finished(Ok(()), true).unwrap();
+    let later = start + Duration::from_secs(60);
+    assert!(
+        !schedule.may_write(later),
+        "an unacknowledged probe must not be queued behind"
+    );
+    schedule.observe("[00:00:30]: [LGSM-DST-PROBE:old]", "n");
+    assert!(!schedule.may_write(later));
+    schedule.observe("[00:00:30]: [LGSM-DST-PROBE:n]", "n");
+    assert!(schedule.may_write(later));
+    schedule.observe("[00:00:31]: [LGSM-DST-READY:n]", "n");
+    assert!(schedule.is_ready() && !schedule.may_write(later));
+}
+
+#[test]
+fn dst_probe_schedule_fails_on_a_broken_or_partially_written_console() {
+    let mut schedule = startup_probe::ProbeSchedule::new(Instant::now());
+    let broken = std::io::Error::new(std::io::ErrorKind::BrokenPipe, "closed");
+    assert!(schedule.write_finished(Err(broken), false).is_err());
+    // A timed-out write that accepted bytes closes the stream, so it is unhealthy.
+    let partial = std::io::Error::new(std::io::ErrorKind::TimedOut, "partial");
+    assert!(schedule.write_finished(Err(partial), false).is_err());
+}
+
+#[tokio::test]
+async fn dst_readiness_waits_while_a_loading_shard_leaves_its_full_stdin_unread() {
+    let mut fixture = Fixture::new("slow-reader").await;
+    // Fill the shard's whole stdin buffer before it starts reading, as a shard
+    // still loading mods does with queued commands.
+    let mut console = fixture.processes[0].1.startup_console().unwrap();
+    let filled = tokio::task::spawn_blocking(move || {
+        let filler = "-".repeat(1023);
+        loop {
+            if let Err(error) = console.write_line(&filler) {
+                return (error.kind(), console.is_healthy());
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(filled, (std::io::ErrorKind::TimedOut, true));
+    fixture.ready().await.unwrap();
+    fixture.finish_readiness_fixture().await;
 }
 
 #[tokio::test]

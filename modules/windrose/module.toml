@@ -31,6 +31,13 @@ port = 7777
 id = "direct_transport"
 members = ["direct", "direct_tcp"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "windrose_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "none"
 
@@ -57,7 +64,7 @@ reason = "The optional LgsmPlayerQuery server extension provides a read-only con
 verification = "Keep player rows read-only. Verify a documented, authenticated moderation contract before exposing kick or ban controls."
 
 [storage]
-runtime_copy_exclusions = ["R5/Saved", "R5/ServerDescription.json", "R5/Content/Paks/~mods", "langame_player_query"]
+runtime_copy_exclusions = ["R5/Saved", "R5/ServerDescription.json", "R5/Content/Paks/~mods", "langame_player_query", "R5/Binaries/Win64/ue4ss/Mods/LgsmWorldSave", "langame_world_save"]
 saves_path_template = "{{paths.install_root}}/R5/Saved/SaveProfiles/Default"
 retained_paths = ["R5/ServerDescription.json"]
 

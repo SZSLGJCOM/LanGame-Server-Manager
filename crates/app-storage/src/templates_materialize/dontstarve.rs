@@ -1,5 +1,9 @@
 use super::*;
 
+#[path = "dst_map_observer.rs"]
+mod dst_map_observer;
+pub use dst_map_observer::is_managed_dst_map_observer;
+
 #[cfg(test)]
 static FAIL_NEXT_SETUP_WRITE: std::sync::Mutex<Option<PathBuf>> = std::sync::Mutex::new(None);
 
@@ -29,6 +33,9 @@ pub(super) fn sync_dst_mod_setup(
             path: context.install_root.to_path_buf(),
             root: runtime,
         });
+    }
+    if !context.instance_running {
+        dst_map_observer::materialize(context.install_root, files)?;
     }
     write_dst_mod_setup(context.install_root, context.settings, files)
 }

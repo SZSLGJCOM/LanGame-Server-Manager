@@ -14,7 +14,12 @@ import { NativeSavePolicyFields } from "./NativeSavePolicyFields";
 /** Typed values wait for a pause, like the configuration workspace; discrete choices save at once. */
 export const SAVE_POLICY_TYPING_DELAY_MS = 650;
 
+/** "native" edits the game's own autosave fields; "backup" edits LanGame's stop backup and retention. */
+export type SavePolicyScope = "native" | "backup";
+
 interface SavePolicyEditorProps {
+  /** Omitted edits both groups as one policy; Maintenance renders each scope in its own section. */
+  scope?: SavePolicyScope;
   details: InstanceDetails;
   readOnly?: boolean;
   moduleDetails: ModuleDetails | null;
@@ -55,7 +60,10 @@ function discreteField(field: GuidedSettingsField, value: unknown): boolean {
 export function SavePolicyEditor(props: SavePolicyEditorProps) {
   const moduleId = props.details.summary.module_id;
   const instanceId = props.details.summary.id;
-  const keys = useMemo(() => nativeSavePolicyKeys(moduleId), [moduleId]);
+  const nativeScope = props.scope !== "backup";
+  const backupScope = props.scope !== "native";
+  // Each scope validates and saves only its own fields; the other scope's values are passed through unchanged.
+  const keys = useMemo(() => nativeScope ? nativeSavePolicyKeys(moduleId) : [], [moduleId, nativeScope]);
   const moduleReady = props.moduleDetails?.summary.id === moduleId && Boolean(props.moduleDetails?.schema_json);
   const schema = useMemo(() => {
     const parsed = parseGuidedSettingsSchema(moduleReady ? props.moduleDetails : null,
@@ -187,12 +195,12 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
   return (
     <form className="server-save-policy-editor" onSubmit={(event) => event.preventDefault()} noValidate>
       {policyError && <ActivityNotice tone="error">{policyError}</ActivityNotice>}
-      <div className="server-native-save-policies">
+      {nativeScope ? <div className="server-native-save-policies">
         <NativeSavePolicyFields instanceId={instanceId} moduleId={moduleId} fields={schema.fields} settings={settings}
           issues={props.readOnly ? [] : issues} readOnly={props.readOnly} disabled={Boolean(props.readOnly)} t={props.t} onChange={editNative} />
-      </div>
-      <fieldset className="server-save-policy-group server-managed-backup-policy" disabled={Boolean(props.readOnly)} aria-label={props.t("servers.savePolicy.stopBackups")}>
-      <legend>{props.locale === "zh-CN" ? "\u5907\u4efd" : "Backups"}</legend>
+      </div> : null}
+      {backupScope ? <fieldset className="server-save-policy-group server-managed-backup-policy" disabled={Boolean(props.readOnly)} aria-label={props.t("servers.savePolicy.stopBackups")}>
+      <legend>{props.t("servers.maintenance.backupPolicy")}</legend>
       <div className="server-backup-policy-editor">
       <label className="settings-toggle-card server-backup-policy-toggle">
         <span className="settings-toggle-copy">
@@ -218,7 +226,7 @@ export function SavePolicyEditor(props: SavePolicyEditorProps) {
         {props.t("servers.backups.retentionInvalid", undefined, "Enter a whole number from 1 to 4294967295.")}
       </div>}
       </div>
-      </fieldset>
+      </fieldset> : null}
       {!props.readOnly && <div className="server-backup-policy-footer" data-save-state={state}>
         <ActivityNotice tone={tone}>{statusText}</ActivityNotice>
         {failed && !blocked && <button className="secondary-button" type="button" onClick={save.retry}>

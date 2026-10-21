@@ -38,8 +38,8 @@ fn warning(
         } else {
             app_core::RuntimeStartWarningCode::ModUpdateSourceRequired
         },
-        provider: app_core::RuntimeModProvider::Thunderstore,
-        reason: reason.unwrap_or(app_core::RuntimeModUpdateReason::Unknown),
+        provider: Some(app_core::RuntimeModProvider::Thunderstore),
+        reason: Some(reason.unwrap_or(app_core::RuntimeModUpdateReason::Unknown)),
         item_ids: if reason.is_some() {
             plan.item_ids()
         } else {

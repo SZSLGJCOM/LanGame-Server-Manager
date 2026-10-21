@@ -5,6 +5,13 @@ description = "Dedicated server module for Conan Exiles Enhanced via SteamCMD."
 steam_app_id = 443030
 supported_platforms = ["windows"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save current world"
+label_zh_cn = "立即保存世界"
+transport = "conanexiles_save"
+command_template = "save"
+
 [install]
 shared_game_dir = "conanexiles"
 

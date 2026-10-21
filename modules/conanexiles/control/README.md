@@ -1,0 +1,41 @@
+# Current-world native save
+
+Starting the instance automatically prepares its independent runtime, installs and configures the fixed official UE4SS **3.0.1-1125-g527a483b**, a correctly generated genuine upstream **DSOUND proxy**, and the owned `LgsmWorldSave` policy and native bridge before creating the game process. **Prepare save extension early** is an optional stopped-instance action for the same setup. This Shipping image imports `DSOUND.dll`; it does not import the default DWM proxy or the version proxy. Renaming a DLL does not supply the required exports. The generated proxy is bundled with LanGame; users need no native build tools. Archive/core/proxy hashes are checked and required [native-save settings](../../abioticfactor/control/UE4SS-settings.ini) are merged while preserving unrelated fields, comments and existing Mods. A compatible verified loader can be reused; ambiguous entries, unknown core/proxy files and externally edited owned files are preserved and reported as conflicts. Owned interrupted publication can resume. Shared program files remain untouched. The private mod contains `Scripts/main.lua`, `enabled.txt` and `native/LgsmConanSaveControl.dll` plus its ownership marker.
+
+The closed adapter supports Enhanced Steam build **25488622** only:
+
+| File | SHA-256 |
+| --- | --- |
+| `ConanSandboxServer-Win64-Shipping.exe` | `2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1` |
+| `Dreamworld.dll` | `d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2` |
+| `ue4ss/UE4SS.dll` | `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958` |
+
+The native bridge verifies actual loaded-module paths, pins/hashes these files and rejects a changed contract. It calls the whole-world persistence component, not the reflected **CharacterPersistenceComponent.ForceSave** method.
+
+| Fixed-image evidence | Contract |
+| --- | --- |
+| `UDbTransfer::SaveWorldState`, RVA `0x4e6ea00` | Finds the current game mode's WorldPersistenceComponent and calls `0x44dd2a0` before exporting current database state. |
+| Whole-world flush, RVA `0x44dd2a0` | Takes component plus a completion carrier, compacts the pending persistent-actor set and calls native writer `0x44dd390`. |
+| Writer, RVA `0x44dd390` | Requires the native database provider's ready state `2`, opens the engine's database transaction, walks the pending world objects, invokes their native serialization and submits the native database completion. |
+| Pre-removal flush, RVA `0x44e2850` | Establishes the 0x48-byte native JobBase ABI: 0x40-byte MSVC `std::function<void(std::shared_ptr<QueryResultBase>)>` and the originating Dreamworld thread ID. The adapter now constructs that actual compiler-generated callable and retains its request-owned completion state. It does not fabricate a callable/vtable. |
+| Dreamworld `DBEngineSQLite::AsyncQuery`, export RVA `0x5ab0` | Receives this request's builder and owned callable. The default builder dispatches each SQL result to this callable; its native result index and last-statement flag identify the complete sequence. |
+| Dreamworld SQL worker, RVA `0x11bb90` | Performs SQL prepare/step/finalize and records native query status before dispatching the owned per-statement callback. `IsDone` is assigned before executing the final statement, so it is never polled as completion on its own. |
+| Component class singleton, RVA `0xaac3dd0` | Exact `/Script/UE4Dreamworld.WorldPersistenceComponent`. Its outer and native weak game-mode reference at `0x150` must match the authoritative current game mode; its cached world at `0xc0` must match the authoritative current world. |
+
+The Lua policy and native bridge run only on EngineTick. The authenticated protocol selects the unique server GameNetDriver and retains its begun-play world, game mode, game state, owning game instance and exact persistence component. The bridge rechecks the fixed class, owner/world, weak owner and ready database before entry. Process-only launch identity, current managed/native PID and creation identity, boot/world tokens, closed request fields, short deadlines and a bounded native replay table prevent stale or duplicate dispatch. An unknown native receipt is written before the one native entry. There is no automatic resend after any timeout, exception or incomplete receipt.
+
+The current adapter observes the original native job without invoking another save. It confirms only after receiving every unique native result index from zero through the final statement, with at least the BEGIN/END statements and successful status for every statement. Native aggregate mode also requires its complete owned result and all successful statuses. Any SQL error reports failure only after that owned sequence settles. A missing, malformed, duplicate, late or mismatched callback remains unknown. No file timestamp, shared autosave event or bare void return can confirm this request. This contract covers the world's native pending persistent-actor transaction; it does not claim a hardware fsync or serialize unrelated game state.
+
+Every pending poll republishes the exact original nonce, operation, timestamp and world/component addresses. The native replay cache observes that job only, rejects changed keys and retains unexpired entries under saturation. The overall deadline is also bounded by a monotonic clock. One outstanding job remains busy after a timeout or world change until its actual callbacks settle; expiry never cancels a job or permits its callback storage to be freed. Callback modules are pinned for process lifetime and the one bounded state survives Lua cancellation. Existing shutdown, backup and moderation behavior are separate.
+
+## Native acceptance
+
+The following is historical admission-only evidence, before the owned SQL completion adapter. On 2026-10-19 a normal task-owned program copy excluded all original Saved data, Steam configuration/cache/logs and application ownership metadata. It used a new private world and loopback bind arguments. The genuine upstream proxy was built from the 32 hash-checked source files at fixed UE4SS commit `527a483b63b4dd0104fe1ca1a3934a06b87fcfb2`; the local system DSOUND DLL's signature was checked before generating its 12 forwarding exports. CMake and native link succeeded. The tested proxy SHA-256 was `e0066aeb6abad295ee5f27a5da06254c00859058f8babfdaf2dfc78e922312d0`. No injector or system DLL replacement was used.
+
+Normal startup loaded that proxy, the fixed loader and production payload. The current native database reached ready state; production saveprobe returned ready. **One** authenticated save request returned `invoked=true`, `call_returned=true`, `write_confirmed=false`, with a matching native `returned` receipt and no crash. The new world's `game_0.db` and native WAL were readable after the process was reclaimed; SQLite `quick_check` returned `ok`, with 16 native actor-position and 16 game-event records. No client/constructed character or building was imported, and the initial world had zero loaded mutable persistent actors.
+
+A separate startup of the same private Saved directory loaded the native database, completed `WorldPersistenceDone`, and reached the unchanged production saveprobe ready state. No second save request was sent. Both trials ended with zero task-owned processes remaining. This proved the actual native whole-world flush entry and database reopen in an empty-world fixture; it did not prove a populated-player/building reload or per-request completion.
+
+The strict `/W4 /WX` native build and malformed-request tests cover both adapters. The deterministic Lua fixture executes the actual policy and production protocol, including wrong owner/class, changed worlds, client/ambiguous drivers, replay, nonce/PID mismatches and deadline races. It mocks external boundaries and is not substituted for the native trial.
+
+References: [fixed upstream proxy generator](https://github.com/UE4SS-RE/RE-UE4SS/tree/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/proxy_generator), [UE4SS Lua API](https://docs.ue4ss.com/lua-api.html). Method/class/ABI evidence comes from the installed official build and its actual private native run, rather than a save-sounding console command.

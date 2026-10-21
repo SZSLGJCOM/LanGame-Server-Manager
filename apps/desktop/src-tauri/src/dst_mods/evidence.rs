@@ -208,8 +208,22 @@ pub fn read_dst_installed_mod_evidence(
             }
         }
     }
+    let mut internal_names = HashSet::new();
+    let mut visible = Vec::with_capacity(candidates.len());
+    for candidate in candidates {
+        if let Some(path) = &candidate.path
+            && app_storage::is_managed_dst_map_observer(path).map_err(|error| error.to_string())?
+        {
+            internal_names.insert(candidate.name);
+        } else {
+            visible.push(candidate);
+        }
+    }
+    let mut candidates = visible;
     for name in requested {
-        if !candidates.iter().any(|candidate| candidate.name == name) {
+        if !internal_names.contains(&name)
+            && !candidates.iter().any(|candidate| candidate.name == name)
+        {
             candidates.push(ModCandidate {
                 name,
                 path: None,

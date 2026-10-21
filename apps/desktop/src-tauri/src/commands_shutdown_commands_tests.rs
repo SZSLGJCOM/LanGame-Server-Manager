@@ -12,6 +12,82 @@ fn unreal_console_details(module_id: &str) -> InstanceDetails {
     .unwrap()
 }
 
+#[test]
+fn soulmask_shutdown_requires_native_save_exit_without_fallback() {
+    let module_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let descriptor = app_modules::discover_modules(&module_root)
+        .unwrap()
+        .into_iter()
+        .find(|module| module.summary.id == "soulmask")
+        .unwrap();
+    let shutdown = descriptor.runtime.shutdown.unwrap();
+    let details = unreal_console_details("soulmask");
+    assert_eq!(shutdown.grace_period_ms, 90000);
+    assert_eq!(shutdown.commands.len(), 1);
+    assert_eq!(shutdown.commands[0].transport, "soulmask_echo_shutdown");
+    assert_eq!(shutdown.commands[0].command, "SaveAndExit 1");
+    assert_eq!(shutdown.commands[0].port_name.as_deref(), Some("echo"));
+    assert!(crate::live_players::soulmask::validate_shutdown_spec(&details, &shutdown).is_ok());
+    for altered in 0..6 {
+        let mut invalid = shutdown.clone();
+        match altered {
+            0 => invalid.commands[0].fallback_transport = Some("console_ctrl_c".into()),
+            1 => invalid.commands[0].command = "SaveWorld 1".into(),
+            2 => invalid.commands[0].port_name = Some("rcon".into()),
+            3 => invalid.commands[0].password_setting_key = Some("rcon_password".into()),
+            4 => invalid.commands[0].enabled_setting_key = Some("rcon_enabled".into()),
+            _ => invalid.commands.push(invalid.commands[0].clone()),
+        }
+        assert!(crate::live_players::soulmask::validate_shutdown_spec(&details, &invalid).is_err());
+    }
+}
+
+#[test]
+fn soulmask_help_and_tree_exit_share_one_shutdown_allowance() {
+    assert_eq!(
+        shutdown_observation_budget("soulmask", 90000, 90000, Duration::from_secs(60)),
+        Duration::from_secs(30)
+    );
+    assert_eq!(
+        shutdown_observation_budget("soulmask", 90000, 90000, Duration::from_secs(95)),
+        Duration::ZERO
+    );
+    assert_eq!(
+        shutdown_observation_budget("returntomoria", 25000, 15000, Duration::from_secs(12)),
+        Duration::from_secs(25)
+    );
+}
+
+#[tokio::test]
+async fn soulmask_shutdown_is_unavailable_through_ordinary_runtime_transport() {
+    for (module, command) in [
+        ("returntomoria", "SaveAndExit 1"),
+        ("soulmask", "SaveAndExit 1"),
+        ("soulmask", "SaveWorld 1"),
+        ("soulmask", "SaveAndExit 0"),
+        ("soulmask", "SaveAndExit 1\nCTRL_C"),
+    ] {
+        let error = dispatch_instance_runtime_transport(
+            &DesktopState::default(),
+            &unreal_console_details(module),
+            &RuntimeTransportRequest {
+                command,
+                transport: "soulmask_echo_shutdown",
+                process_key: None,
+                port_name: None,
+                password_setting_key: None,
+                enabled_setting_key: None,
+            },
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            error,
+            "unsupported runtime command transport `soulmask_echo_shutdown`"
+        );
+    }
+}
+
 #[tokio::test]
 async fn unreal_console_supported_modules_reach_runtime_ownership_validation() {
     for module_id in ["windrose", "runescapedragonwilds"] {
@@ -70,6 +146,93 @@ async fn unreal_console_rejects_every_other_catalog_module_before_runtime_dispat
         rejected += 1;
     }
     assert_eq!(rejected, 30);
+}
+
+#[tokio::test]
+async fn moria_console_exit_requires_runtime_ownership_and_preserves_shutdown_budget() {
+    let details = unreal_console_details("returntomoria");
+    let error = dispatch_instance_runtime_transport(
+        &DesktopState::default(),
+        &details,
+        &RuntimeTransportRequest {
+            command: "exit",
+            transport: "moria_console",
+            process_key: None,
+            port_name: None,
+            password_setting_key: None,
+            enabled_setting_key: None,
+        },
+    )
+    .await
+    .expect_err("Moria exit still requires the tracked launch owner");
+    assert_eq!(
+        error,
+        "tracked instance `untracked-unreal-fixture` is not running"
+    );
+    let module_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let descriptor = app_modules::discover_modules(&module_root)
+        .unwrap()
+        .into_iter()
+        .find(|module| module.summary.id == "returntomoria")
+        .unwrap();
+    let shutdown = descriptor.runtime.shutdown.unwrap();
+    assert_eq!(shutdown.grace_period_ms, 15000);
+    assert_eq!(shutdown.commands.len(), 1);
+    assert_eq!(shutdown.commands[0].transport, "moria_console");
+    assert_eq!(shutdown.commands[0].command, "exit");
+    assert_eq!(shutdown.commands[0].wait_after_ms, 12000);
+    assert!(shutdown.commands[0].fallback_transport.is_none());
+}
+
+#[tokio::test]
+async fn moria_console_rejects_other_modules_and_every_other_command() {
+    let module_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    for descriptor in app_modules::discover_modules(&module_root).unwrap() {
+        let module_id = descriptor.summary.id;
+        if module_id == "returntomoria" {
+            continue;
+        }
+        let error = dispatch_instance_runtime_transport(
+            &DesktopState::default(),
+            &unreal_console_details(&module_id),
+            &RuntimeTransportRequest {
+                command: "exit",
+                transport: "moria_console",
+                process_key: None,
+                port_name: None,
+                password_setting_key: None,
+                enabled_setting_key: None,
+            },
+        )
+        .await
+        .expect_err("Moria exit cannot control another module");
+        assert_eq!(error, "Moria console exit is not declared for this module");
+    }
+    for command in [
+        "",
+        "quit",
+        "players",
+        "save",
+        "EXIT",
+        "exit\nplayers",
+        "exit; players",
+    ] {
+        let error = dispatch_instance_runtime_transport(
+            &DesktopState::default(),
+            &unreal_console_details("returntomoria"),
+            &RuntimeTransportRequest {
+                command,
+                transport: "moria_console",
+                process_key: None,
+                port_name: None,
+                password_setting_key: None,
+                enabled_setting_key: None,
+            },
+        )
+        .await
+        .expect_err("the native Moria channel has a fixed command allowlist");
+        assert_eq!(error, "Moria console transport only accepts exit");
+    }
 }
 
 #[tokio::test]

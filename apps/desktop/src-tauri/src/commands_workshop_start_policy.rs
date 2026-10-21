@@ -75,8 +75,8 @@ pub(super) fn cache_warning(
 ) -> app_core::RuntimeStartWarning {
     app_core::RuntimeStartWarning {
         code: app_core::RuntimeStartWarningCode::ModUpdateUsingCache,
-        provider: app_core::RuntimeModProvider::SteamWorkshop,
-        reason,
+        provider: Some(app_core::RuntimeModProvider::SteamWorkshop),
+        reason: Some(reason),
         item_ids: ids.to_vec(),
         message: "创意工坊模组更新未完成；已恢复并校验完整缓存，使用已有版本继续启动，尚未确认是否为最新版。".into(),
         log_path: log_path.map(str::to_owned),
@@ -156,6 +156,9 @@ mod tests {
         });
         let warning = cache_warning(&["123456".into()], failure.fallback_reason.unwrap(), None);
         assert!(!serde_json::to_string(&warning).unwrap().contains("secret"));
-        assert_eq!(warning.reason, app_core::RuntimeModUpdateReason::Download);
+        assert_eq!(
+            warning.reason,
+            Some(app_core::RuntimeModUpdateReason::Download)
+        );
     }
 }

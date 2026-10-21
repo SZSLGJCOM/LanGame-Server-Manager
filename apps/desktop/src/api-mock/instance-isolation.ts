@@ -61,6 +61,7 @@ export function buildMockInstanceIsolation(details: InstanceDetails, instances: 
     data_path: mockInstanceRootFromDetails(details),
     config_path: paths.configuration,
     saves_path: paths.saves,
+    backups_path: `${mockInstanceRootFromDetails(details)}/backups`,
     conflicts,
     issues: []
   };

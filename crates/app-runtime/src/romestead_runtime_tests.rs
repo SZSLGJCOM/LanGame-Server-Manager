@@ -123,7 +123,7 @@ fn romestead_portable_runtime_follows_configured_tools_across_launch_roots() {
     let isolated = fixture.root.join("isolated-copy");
     for root in [&fixture.install, &private, &isolated] {
         write_runtime_config(root, "8.0.0");
-        fs::write(root.join("start-romestead.bat"), b"fixture").unwrap();
+        fs::write(root.join("Server.exe"), b"fixture").unwrap();
         let plan = if root == &fixture.install {
             build_launch_plan(&fixture.settings, &module, &instance).unwrap()
         } else {

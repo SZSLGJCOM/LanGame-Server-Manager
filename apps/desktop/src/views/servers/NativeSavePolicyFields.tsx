@@ -3,6 +3,7 @@ import type { TranslateFn } from "../../i18n";
 import { ConfigurationField } from "../settings/ConfigurationField";
 import { buildConfigurationFieldCopy } from "../settings/GuidedSettingsForm";
 import { readGuidedFieldValue } from "../settings/guided-settings";
+import { MaintenanceHelp } from "./MaintenanceToolbar";
 import { NATIVE_SAVE_POLICIES } from "../settings/save-policy";
 import type { GuidedSettingsField, GuidedSettingsValidationIssue, SettingsObject } from "../settings/settings-schema";
 
@@ -48,11 +49,10 @@ export function NativeSavePolicyFields(props: NativeSavePolicyFieldsProps) {
           : <>
             <dl className="server-autosave-mechanism">
               <div><dt>{props.t("servers.savePolicy.control")}</dt>
-                <dd>{props.t(props.moduleId === "squad" ? "servers.savePolicy.notApplicable" : "servers.savePolicy.gameControlled")}</dd></div>
+                <dd><MaintenanceHelp help={props.t(`servers.savePolicy.mechanism.${props.moduleId}`, undefined, props.t("servers.savePolicy.gameManaged"))}>
+                  {props.t("servers.savePolicy.gameControlled")}</MaintenanceHelp></dd></div>
               <div><dt>{props.t("servers.savePolicy.frequency")}</dt><dd>{frequency}</dd></div>
             </dl>
-            <p className="form-note">{props.t(`servers.savePolicy.mechanism.${props.moduleId}`,
-              undefined, props.t("servers.savePolicy.gameManaged"))}</p>
           </>)}
         <div className="server-save-policy-fields">
           {group.key === "autosave" && managedField && (!props.readOnly || managedValue !== undefined && managedValue !== null) && <label className="settings-toggle-card server-backup-policy-toggle">

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
@@ -50,6 +51,7 @@ namespace Lgsm.Valheim.Control
     {
         internal ControlPlayer[] Players = new ControlPlayer[0];
         internal ControlAccess Access = new ControlAccess();
+        internal WorldSaveReceipt WorldSave;
     }
 
     [DataContract]
@@ -63,7 +65,8 @@ namespace Lgsm.Valheim.Control
         [DataMember(Name = "error", EmitDefaultValue = false)] public string Error;
         [DataMember(Name = "players")] public ControlPlayer[] Players = new ControlPlayer[0];
         [DataMember(Name = "access")] public ControlAccess Access = new ControlAccess();
-        [DataMember(Name = "capabilities")] public string[] Capabilities = new[] { "query", "reload", "kick" };
+        [DataMember(Name = "world_save", EmitDefaultValue = false)] public WorldSaveReceipt WorldSave;
+        [DataMember(Name = "capabilities")] public string[] Capabilities = new[] { "query", "reload", "kick", "save" };
     }
 
     internal sealed class ControlFailure : Exception
@@ -259,7 +262,7 @@ namespace Lgsm.Valheim.Control
         {
             if (request.Protocol != 1) return "unsupported_protocol";
             if (!IsToken(request.Token) || !SameToken(request.Token, token)) return "unauthorized";
-            if (request.Op != "query" && request.Op != "reload" && request.Op != "kick")
+            if (request.Op != "query" && request.Op != "reload" && request.Op != "kick" && request.Op != "save")
                 return "unsupported_operation";
             if (request.Op == "kick")
                 return IsNonce(request.SessionKey) && SafeText(request.HostId, 256, false)
@@ -281,9 +284,9 @@ namespace Lgsm.Valheim.Control
         }
     }
 
-    // The Unity owner calls this serial state machine. Only one kick can be
+    // The Unity owner calls this serial state machine. Only one mutation can be
     // pending; completed nonces retain their exact byte fingerprint and result.
-    internal sealed class ControlLoop
+    internal sealed class ControlLoop : IDisposable
     {
         private sealed class Completed
         {
@@ -293,18 +296,20 @@ namespace Lgsm.Valheim.Control
         private readonly IValheimControl native;
         private readonly string token;
         private readonly int pid;
+        private readonly Action<string> diagnostic;
         private readonly Dictionary<string, Completed> completed = new Dictionary<string, Completed>();
         private readonly Queue<string> order = new Queue<string>();
         private ControlRequest pending;
         private double pendingUntil;
         internal bool HasPending { get { return pending != null; } }
 
-        internal ControlLoop(IValheimControl native, string token, int pid)
+        internal ControlLoop(IValheimControl native, string token, int pid, Action<string> diagnostic = null)
         {
             if (!ControlProtocol.IsToken(token)) throw new ControlFailure("invalid_bootstrap");
             this.native = native;
             this.token = token;
             this.pid = pid;
+            this.diagnostic = diagnostic;
         }
 
         internal ControlResponse Submit(byte[] bytes, double now)
@@ -320,6 +325,15 @@ namespace Lgsm.Valheim.Control
                     ? null : Response(request, pending.Nonce == request.Nonce ? "nonce_conflict" : "busy", null);
             try
             {
+                if (request.Op == "save")
+                {
+                    IValheimWorldSave saving = native as IValheimWorldSave;
+                    if (saving == null) throw new ControlFailure("unsupported_native_save_contract");
+                    saving.BeginSave();
+                    pending = request;
+                    pendingUntil = now + 120.0;
+                    return null;
+                }
                 if (request.Op == "kick")
                 {
                     native.Kick(request.SessionKey, request.HostId);
@@ -329,7 +343,11 @@ namespace Lgsm.Valheim.Control
                 }
                 return Finish(request, null, request.Op == "reload" ? native.Reload() : native.Query());
             }
-            catch (Exception error) { return Finish(request, FailureCode(error), null); }
+            catch (Exception error)
+            {
+                string loggingFailure = ReportFailure(request.Op, "begin", error);
+                return Finish(request, FailureCode(error, loggingFailure), null);
+            }
         }
 
         internal ControlResponse Tick(double now)
@@ -338,6 +356,16 @@ namespace Lgsm.Valheim.Control
             ControlRequest request = pending;
             try
             {
+                if (request.Op == "save")
+                {
+                    IValheimWorldSave saving = (IValheimWorldSave)native;
+                    WorldSaveReceipt receipt = saving.PollSave();
+                    if (receipt == null && now < pendingUntil) return null;
+                    pending = null;
+                    saving.EndSaveObservation();
+                    return Finish(request, receipt == null ? "save_outcome_unknown" : null,
+                        receipt == null ? null : new ControlSnapshot { WorldSave = receipt });
+                }
                 ControlSnapshot snapshot = native.Query();
                 bool present = false;
                 foreach (ControlPlayer player in snapshot.Players)
@@ -348,25 +376,89 @@ namespace Lgsm.Valheim.Control
             }
             catch (Exception error)
             {
+                string loggingFailure = ReportFailure(request.Op, "observe", error);
                 pending = null;
-                return Finish(request, FailureCode(error), null);
+                if (request.Op == "save") ((IValheimWorldSave)native).EndSaveObservation();
+                string code = FailureCode(error, loggingFailure);
+                return Finish(request, request.Op == "save" && code != "save_failed"
+                    ? "save_outcome_unknown" : code, null);
             }
         }
 
-        private static string FailureCode(Exception error)
+        public void Dispose()
+        {
+            IDisposable owned = native as IDisposable;
+            if (owned != null) owned.Dispose();
+            pending = null;
+        }
+
+        private static string FailureCode(Exception error, string loggingFailure)
         {
             ControlFailure known = error as ControlFailure;
-            return known == null ? "native_error" : known.Code;
+            if (known != null) return known.Code;
+            StringBuilder detail = new StringBuilder("native_error");
+            AppendFailureMetadata(detail, error, 2);
+            if (loggingFailure != null) detail.Append(" log_failure=").Append(loggingFailure);
+            // Error text already has a closed 512-scalar consumer limit. Native
+            // metadata is diagnostic only; a failure still has no save receipt.
+            return detail.Length > 512 ? detail.ToString(0, 512) : detail.ToString();
+        }
+
+        private static void AppendFailureMetadata(StringBuilder detail, Exception error, int frameLimit)
+        {
+            List<Exception> causes = new List<Exception>();
+            for (int cause = 0; error != null && cause < 4; cause++, error = error.InnerException) causes.Add(error);
+            // Put the native cause first so the bounded IPC error retains it
+            // even when reflection wrappers have long implementation names.
+            for (int cause = causes.Count - 1; cause >= 0; cause--)
+            {
+                error = causes[cause];
+                detail.Append(" type=").Append(error.GetType().FullName);
+                StackFrame[] frames;
+                try { frames = new StackTrace(error, false).GetFrames(); }
+                catch (Exception unavailable)
+                {
+                    detail.Append(" stack_unavailable=").Append(unavailable.GetType().FullName);
+                    continue;
+                }
+                if (frames == null) continue;
+                for (int index = 0; index < frames.Length && index < frameLimit; index++)
+                {
+                    System.Reflection.MethodBase method = frames[index].GetMethod();
+                    if (method == null) continue;
+                    detail.Append(" at=").Append(method.DeclaringType == null ? "" : method.DeclaringType.FullName)
+                        .Append('.').Append(method.Name);
+                }
+            }
+        }
+
+        private string ReportFailure(string operation, string phase, Exception error)
+        {
+            if (diagnostic == null || error is ControlFailure) return null;
+            // Native exception messages may contain paths or request data.
+            // Record only bounded type/method identities, never the message,
+            // request envelope, bootstrap token, or a full user stack trace.
+            StringBuilder detail = new StringBuilder("LGSM_VALHEIM_CONTROL_FAILURE op=" + operation + " phase=" + phase);
+            AppendFailureMetadata(detail, error, 4);
+            try { diagnostic(detail.Length > 4096 ? detail.ToString(0, 4096) : detail.ToString()); }
+            catch (Exception loggingFailure)
+            {
+                // A failed diagnostic sink must not replace the native failure
+                // or prevent publishing and caching its one-shot response.
+                return loggingFailure.GetType().FullName;
+            }
+            return null;
         }
 
         private ControlResponse Response(ControlRequest request, string error, ControlSnapshot snapshot)
         {
             return new ControlResponse {
                 Nonce = request.Nonce, Pid = pid,
-                Op = request.Op == "query" || request.Op == "reload" || request.Op == "kick" ? request.Op : "",
+                Op = request.Op == "query" || request.Op == "reload" || request.Op == "kick" || request.Op == "save" ? request.Op : "",
                 Status = error == null ? "ok" : "error", Error = error,
                 Players = snapshot == null ? new ControlPlayer[0] : snapshot.Players,
-                Access = snapshot == null ? new ControlAccess() : snapshot.Access
+                Access = snapshot == null ? new ControlAccess() : snapshot.Access,
+                WorldSave = snapshot == null ? null : snapshot.WorldSave
             };
         }
 

@@ -88,7 +88,7 @@
       "type": "string",
       "default": "",
       "title": "Public IPv4 Address",
-      "description": "Required before starting: the server's public IPv4 address used for native server registration. Saving an incomplete draft is allowed; the app does not guess or automatically publish an address.",
+      "description": "Leave empty to discover and save this host's public unicast IPv4 automatically at startup. An explicitly configured public IPv4 is retained. Discovery failure stops startup without using a private address.",
       "x-lsgm-section": "network",
       "x-lsgm-order": 300,
       "x-lsgm-source": "astro_server_settings",

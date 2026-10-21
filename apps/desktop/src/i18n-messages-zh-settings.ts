@@ -23,7 +23,6 @@ export const ZH_CN_SETTINGS_MESSAGES: MessageCatalog = {
   "settings.details.ports": "端口",
   "settings.details.module": "模块",
   "settings.details.bindIp": "监听地址",
-  "settings.details.autostart": "应用启动时自动启动该服务器",
   "settings.network.playerPorts": "玩家连接端口",
   "settings.network.joinAddress": "玩家连接地址",
   "settings.network.servicePorts": "管理服务端口",

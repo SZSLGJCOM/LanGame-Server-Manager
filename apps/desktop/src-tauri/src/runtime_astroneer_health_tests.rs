@@ -25,7 +25,7 @@ fn key() -> Key {
 }
 
 #[test]
-fn astroneer_health_start_preflight_requires_explicit_ipv4_only_for_astroneer() {
+fn astroneer_health_start_preflight_requires_prepared_public_unicast_ipv4_only_for_astroneer() {
     for value in [
         "",
         " ",
@@ -33,6 +33,10 @@ fn astroneer_health_start_preflight_requires_explicit_ipv4_only_for_astroneer() 
         "999.2.3.4",
         "::1",
         "203.0.113.1\n",
+        "203.0.113.1",
+        "10.0.0.1",
+        "127.0.0.1",
+        "224.0.0.1",
     ] {
         let mut details = instance();
         details.settings_json = serde_json::json!({"public_ip":value}).to_string();
@@ -44,7 +48,7 @@ fn astroneer_health_start_preflight_requires_explicit_ipv4_only_for_astroneer() 
     }
     let mut details = instance();
     assert!(crate::astroneer_console::validate_start_settings(&details).is_err());
-    details.settings_json = serde_json::json!({"public_ip":"203.0.113.10"}).to_string();
+    details.settings_json = serde_json::json!({"public_ip":"1.1.1.1"}).to_string();
     assert!(crate::astroneer_console::validate_start_settings(&details).is_ok());
 }
 

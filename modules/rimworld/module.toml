@@ -43,6 +43,13 @@ install_note = "Players need the RimWorld Together client mod, Steam Workshop it
 protocol = "none"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Request active client saves"
+label_zh_cn = "立即保存在线客户端"
+transport = "rimworld_save"
+command_template = "save"
+
+[[runtime.player_actions]]
 id = "list_players"
 label = "Players"
 label_zh_cn = "玩家列表"

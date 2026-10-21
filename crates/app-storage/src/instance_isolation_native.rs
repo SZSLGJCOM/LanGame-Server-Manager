@@ -36,7 +36,7 @@ pub(crate) fn configuration_paths(module_id: &str, runtime: &Path, id: &str) -> 
             "MoriaServerPermissions.txt",
         ],
         "rimworld" => &["Configs"],
-        "romestead" => &["config.json", "start-romestead.bat"],
+        "romestead" => &["config.json"],
         "runescapedragonwilds" => &["RSDragonwilds/Saved/Config/WindowsServer/DedicatedServer.ini"],
         "scum" => &["SCUM/Saved/Config/WindowsServer"],
         "soulmask" => &["WS/Saved/GameplaySettings/GameXishu.json"],

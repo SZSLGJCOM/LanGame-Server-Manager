@@ -53,6 +53,13 @@ id_strategy = "numeric_prefix"
 protocol = "none"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save campaign checkpoint"
+label_zh_cn = "立即保存战役检查点"
+transport = "barotrauma_save"
+command_template = "save"
+
+[[runtime.player_actions]]
 id = "list_clients"
 label = "Clients"
 label_zh_cn = "客户端列表"

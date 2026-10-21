@@ -16,6 +16,18 @@ const details = (id, install = {}, extra = {}) => ({ summary: summary(id, "NotIn
 const preview = (id, extra = {}) => ({ instance_id: id, install_state: "Installed", uses_private_runtime: true, executable_exists: true, ready_to_launch: true, validation_issues: [], ...extra });
 const options = (modules, instances = modules.map((item) => instance(item.id))) => ({ enabled: true, modules, instances, selectedInstanceModuleDetails: null, selectedLaunchPlan: null });
 
+test("card save visibility follows loaded module actions and capability changes without extra reads", () => {
+  const state = harness();
+  const input = options([summary("custom-game")]);
+  const module = { ...details("custom-game"), runtime: { player_actions: [] } };
+  state.reader.update({ ...input, selectedInstanceModuleDetails: module });
+  assert.equal(state.snapshot.moduleInstallations["custom-game"].hasImmediateWorldSave, false);
+  module.runtime.player_actions.push({ id: "save_world", command_template: "save", transport: "stdin" });
+  state.reader.update({ ...input, selectedInstanceModuleDetails: module });
+  assert.equal(state.snapshot.moduleInstallations["custom-game"].hasImmediateWorldSave, true);
+  assert.deepEqual(state.reads.filter((read) => read.startsWith("module:")), []);
+});
+
 function deferred() {
   let resolve;
   let reject;

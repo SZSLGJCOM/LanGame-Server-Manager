@@ -263,3 +263,43 @@ pub(crate) fn publish(path: &Path, bytes: &[u8]) -> Result<(), String> {
     }
     result.map_err(|_| "Cannot atomically publish the Valheim control file.".into())
 }
+
+pub(crate) fn publish_request(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    if path.file_name().and_then(|name| name.to_str()) != Some("request.json") {
+        return Err("The Valheim control request destination is invalid.".into());
+    }
+    let parent = path
+        .parent()
+        .ok_or("Valheim control destination has no parent.")?;
+    let _guards = pin_directories(parent)?;
+    let temporary = parent.join(format!(".{}.pending", uuid::Uuid::new_v4().simple()));
+    let mut pending = crate::native_control_publish::PendingFile::create(&temporary, bytes)
+        .map_err(|_| "Cannot create the Valheim control temporary file.")?;
+    pending
+        .replace(path)
+        .map_err(|_| "Cannot atomically publish the Valheim control file.".into())
+}
+
+#[cfg(all(test, windows))]
+#[test]
+fn live_request_replaces_an_open_peer_snapshot_without_changing_its_bytes() {
+    use std::os::windows::fs::OpenOptionsExt;
+    let root = std::env::temp_dir().join(format!("valheim-request-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let path = root.join("request.json");
+    fs::write(&path, b"old").unwrap();
+    let mut peer = OpenOptions::new()
+        .read(true)
+        .share_mode(7)
+        .open(&path)
+        .unwrap();
+    publish_request(&path, b"new").unwrap();
+    let mut old = Vec::new();
+    peer.read_to_end(&mut old).unwrap();
+    assert_eq!(old, b"old");
+    assert_eq!(read_regular(&path, 16).unwrap(), b"new");
+    assert!(publish_request(&root.join(SESSION), b"forbidden").is_err());
+    drop(peer);
+    assert_eq!(root.parent(), Some(std::env::temp_dir().as_path()));
+    fs::remove_dir_all(root).unwrap();
+}

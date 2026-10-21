@@ -38,6 +38,13 @@ startup_timeout_ms = 180000
 id = "game_transport"
 members = ["game", "game_tcp"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "returntomoria_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "none"
 
@@ -51,8 +58,8 @@ refresh_interval_ms = 30000
 grace_period_ms = 15000
 
 [[runtime.shutdown.commands]]
-transport = "console_ctrl_c"
-command = "CTRL_C"
+transport = "moria_console"
+command = "exit"
 wait_after_ms = 12000
 
 [player_management]
@@ -62,7 +69,7 @@ reason = "Connected-player labels are read through a separate, bounded Windows c
 verification = "Verified on isolated build 21872765 on 2026-09-08: production background spawn_launch_plan registered the bootstrap PID; the helper resolved its verified shipping descendant on the hidden desktop and returned two complete fresh-nonce Players: 0/8 responses through private IPC. The helper rejects identity changes, screen rewrites, wrapping, truncation or partially connected responses. Runtime moderation commands stay hidden until their transport and account targets are verified with real clients."
 
 [storage]
-runtime_copy_exclusions = ["Moria/Saved", "MoriaServerConfig.ini", "MoriaServerRules.txt", "MoriaServerPermissions.txt"]
+runtime_copy_exclusions = ["Moria/Saved", "MoriaServerConfig.ini", "MoriaServerRules.txt", "MoriaServerPermissions.txt", "Moria/Binaries/Win64/ue4ss/Mods/LgsmWorldSave", "langame_world_save"]
 saves_path_template = "{{paths.install_root}}/Moria/Saved/SaveGamesDedicated"
 retained_paths = [
   "MoriaServerConfig.ini",

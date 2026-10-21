@@ -478,8 +478,47 @@ export interface InstanceIsolationReport {
   data_path: string;
   config_path: string;
   saves_path: string;
+  /** Backup root resolved by the backend; the UI never derives it. */
+  backups_path: string;
   conflicts: InstanceIsolationConflict[];
   issues: string[];
+}
+
+export interface SaveFileEntry {
+  relative_path: string;
+  is_directory: boolean;
+  size_bytes: number;
+  modified_at_unix_ms: number | null;
+}
+
+/** Read-only listing of an instance saves directory or one backup, confined server-side. */
+export interface SaveFileListing {
+  instance_id: string;
+  backup_id: string | null;
+  root_path: string;
+  exists: boolean;
+  entries: SaveFileEntry[];
+  truncated: boolean;
+  skipped_links: string[];
+  /** `native` when the game defines save slots, else top-level `fallback` rows. */
+  slot_model: "native" | "fallback";
+  /** Every listed file belongs to exactly one slot. */
+  slots: SaveSlot[];
+}
+
+export type SaveSlotLabelKind = "save_slot" | "world" | "map" | "world_id" | "campaign" | "session";
+
+export interface SaveSlot {
+  id: string;
+  name: string;
+  label: { kind: SaveSlotLabelKind; value: string } | null;
+  kind: "native" | "directory" | "files";
+  /** Relative roots (directories or files) whose entries belong to this slot. */
+  paths: string[];
+  size_bytes: number;
+  file_count: number;
+  modified_at_unix_ms: number | null;
+  current: boolean;
 }
 
 export interface InstanceConnectionInfo {
@@ -782,6 +821,8 @@ export interface InstanceRuntimeCommandResult {
   command: string;
   response_text?: string | null;
   write_confirmation_pending: boolean;
+  /** Native completion of this save request; transport delivery alone is insufficient. */
+  save_completion?: "requested" | "confirmed" | "unconfirmed" | null;
   submitted_at_unix_ms: number;
 }
 
@@ -949,7 +990,7 @@ export interface LaunchPlan {
   performance_preview?: RuntimePerformancePolicyPreview;
 }
 
-export interface RuntimeStartWarning {
+interface RuntimeModStartWarning {
   code: "mod_update_using_cache" | "mod_update_source_required";
   provider: "steam_workshop" | "curse_forge" | "thunderstore";
   reason: "network" | "authentication" | "access_denied" | "request" | "not_found" | "expired"
@@ -960,6 +1001,19 @@ export interface RuntimeStartWarning {
   map_key: string | null;
   http_status: number | null;
 }
+
+interface RuntimeWorldStartWarning {
+  code: "world_initialization_incomplete";
+  provider: null;
+  reason: null;
+  item_ids: [];
+  message: string;
+  log_path: string | null;
+  map_key: null;
+  http_status: null;
+}
+
+export type RuntimeStartWarning = RuntimeModStartWarning | RuntimeWorldStartWarning;
 
 export interface ProcessLaunchPlan {
   process_key: string;

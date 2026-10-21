@@ -235,6 +235,7 @@ namespace Lgsm.Valheim.Control
                     ControlFiles.LocalAbsolute(arguments[1]), "Absolute owned fixtures required");
                 ProtocolTests();
                 NativeControlTests.Run(arguments[0]);
+                WorldSaveTests.Run();
                 FileTests(arguments[0]);
                 Test("reparse root and native access ancestor rejected", delegate {
                     Fails("unsafe_control_path", delegate { using (new ControlFiles(arguments[1])) { } });

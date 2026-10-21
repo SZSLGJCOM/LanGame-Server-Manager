@@ -28,7 +28,10 @@ async fn program_removal_migration_preserves_existing_v4_database() {
 
     initialize_database(&fixture.paths).await.unwrap();
     let pool = fixture.open().await;
-    assert_eq!(pragma_user_version(&pool).await, 5);
+    assert_eq!(
+        pragma_user_version(&pool).await,
+        MIGRATOR.iter().last().unwrap().version
+    );
     assert_eq!(sentinel_counts(&pool).await, counts);
     assert_eq!(&history_snapshot(&pool).await[..history.len()], history);
     assert_eq!(
@@ -114,10 +117,13 @@ async fn baseline_contains_only_active_domain_tables() {
             "instance_archives",
             "instance_broadcast_events",
             "instance_broadcast_policies",
+            "instance_maintenance_schedules",
             "instance_ports",
             "instance_runs",
             "instances",
             "modules",
+            "player_history_cursors",
+            "player_history_events",
             "program_removals"
         ]
     );

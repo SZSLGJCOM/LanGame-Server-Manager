@@ -632,6 +632,43 @@ impl RuntimeSupervisor {
         })
     }
 
+    /// Queue Moria's documented save-and-exit command once. This confirms input
+    /// delivery only; the shutdown owner must still wait for the complete Job.
+    pub fn request_moria_console_exit(
+        &mut self,
+        instance_id: &str,
+        process_key: Option<&str>,
+    ) -> Result<RuntimeCommandDispatchTarget, RuntimeProcessError> {
+        if self
+            .instances
+            .get(instance_id)
+            .is_some_and(|instance| instance.summary.module_id != "returntomoria")
+        {
+            return Err(RuntimeProcessError::WriteTrackedProcessStdin {
+                pid: 0,
+                source: std::io::Error::other("Moria console exit is not declared for this module"),
+            });
+        }
+        self.request_native_control(instance_id, process_key, |process| {
+            #[cfg(windows)]
+            {
+                let child = process
+                    .child
+                    .as_ref()
+                    .ok_or(RuntimeProcessError::ProcessIdentityUnavailable { pid: process.pid })?;
+                crate::windows_moria_console::request(child, &process.root_process_identity)
+            }
+            #[cfg(not(windows))]
+            Err(RuntimeProcessError::WriteTrackedProcessStdin {
+                pid: process.pid,
+                source: std::io::Error::new(
+                    std::io::ErrorKind::Unsupported,
+                    "Moria console exit requires Windows",
+                ),
+            })
+        })
+    }
+
     pub fn request_unreal_console_command(
         &mut self,
         instance_id: &str,

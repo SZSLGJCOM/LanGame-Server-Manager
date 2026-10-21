@@ -26,35 +26,13 @@ pub(super) fn rust(
     tree: &io::Inventory,
 ) -> Result<ServerScope, StorageError> {
     let level = setting(context, source, "level")?;
-    let custom = context
-        .settings
-        .get("level_url")
-        .and_then(Value::as_str)
-        .is_some_and(|url| !url.trim().is_empty());
-    let prefix = if custom {
-        String::new()
-    } else if matches!(level, "Procedural Map" | "Barren") {
-        let number = |key| {
-            context
-                .settings
-                .get(key)
-                .and_then(Value::as_u64)
-                .ok_or_else(|| {
-                    invalid(
-                        source,
-                        format!("Set {key} before importing the matching Rust map."),
-                    )
-                })
-        };
-        format!(
-            "{}.{}.{}.",
-            level.replace(' ', "").to_ascii_lowercase(),
-            number("world_size")?,
-            number("seed")?
+    let prefix = slots::rust_world_prefix(&context.settings, level).map_err(|key| {
+        invalid(
+            source,
+            format!("Set {key} before importing the matching Rust map."),
         )
-    } else {
-        format!("{}.", level.to_ascii_lowercase())
-    };
+    })?;
+    let custom = prefix.is_empty();
     let saves: Vec<_> = tree
         .entries
         .keys()

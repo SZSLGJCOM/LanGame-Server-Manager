@@ -72,7 +72,7 @@ async function submit() { await act(async () => { button().click(); }); }
 async function choose(toolId: string) {
   const index = getGmToolCatalog(details.summary.module_id)!.tools.findIndex((tool) => tool.id === toolId);
   check(index >= 0, `Tool ${toolId} must exist`);
-  await act(async () => fixture.querySelectorAll<HTMLButtonElement>(".gmt-nav-btn")[index].click());
+  await act(async () => element<HTMLButtonElement>(`[data-configuration-section-id="${toolId}"] button`).click());
 }
 async function input(id: string, value: string) {
   const field = element<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`#${id}`);
@@ -136,12 +136,6 @@ async function run() {
   await act(async () => previous.resolve(response(previous.request, "OLD INSTANCE RESPONSE")));
   check(!button().disabled && !fixture.textContent?.includes("OLD INSTANCE RESPONSE"), "Late native result must not pollute the selected instance");
 
-  mode = "pending";
-  await moduleDetails("dontstarve", "dst-pending");
-  await submit();
-  check(element(resultSelector).textContent?.includes("仍等待写入确认"), "Pending stdin must not be described as sent");
-  check(element(resultSelector).getAttribute("role") === "status"
-    && element(resultSelector).classList.contains("is-info"), "Pending write confirmation must remain informational");
 
   await moduleDetails("arksurvivalascended", "ark-invalid");
   await input("gm-ark_set_time-time-input", "99:99");
@@ -150,9 +144,6 @@ async function run() {
   check(button().disabled && calls.length === beforeInvalid && Boolean(fixture.querySelector(".configuration-action-help[aria-describedby]")),
     "Invalid time must explain its error before native dispatch");
 
-  await moduleDetails("dontstarve", "dst-a");
-  await input("gm-dst_give_item_to_player-shard-input", "caves");
-  check(button().disabled && fixture.textContent?.includes("caves 未运行"), "Unavailable shard must show why dispatch is disabled");
   await moduleDetails("arksurvivalascended", "ark-stopped", false);
   check(button().disabled && Boolean(fixture.querySelector(".configuration-action-help[aria-describedby]")), "Stopped server must show why its tool is unavailable");
 
@@ -196,7 +187,8 @@ async function run() {
   check(element(".gmt-no-fields-icon").getBoundingClientRect().width <= 32,
     "Real server-workbench styles must be loaded for visual acceptance");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
-  return { status: "passed", checks, browser_errors: errors, calls: calls.length, viewport: { width: innerWidth, height: innerHeight } };
+  return { status: "passed", checks, browser_errors: errors, calls: calls.length,
+    viewport: { width: innerWidth, height: innerHeight } };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

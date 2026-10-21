@@ -8,7 +8,6 @@ probe_mode = "all"
 
 [fixture.settings]
 enable_query = true
-enable_rcon = true
 
 [[preconditions]]
 id = "minecraft-eula"

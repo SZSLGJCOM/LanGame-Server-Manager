@@ -1094,9 +1094,10 @@ test("maintenance tab opens stable instance folders", () => {
   const maintenance = readSource("apps", "desktop", "src", "views", "servers", "ServerMaintenanceWorkspace.tsx");
 
   assert.match(serversView, /<ServerMaintenanceWorkspace[\s\S]*?details=\{props\.selectedDetails\}/);
-  assert.match(maintenance, /function instanceRootFromConfigFilePath/);
-  assert.match(maintenance, /selectedInstanceRoot = instanceRootFromConfigFilePath\(props\.details\.config_file_path\)/);
-  assert.match(maintenance, /selectedBackupDirectory = selectedInstanceRoot \? normalizePath\(`\$\{selectedInstanceRoot\}\/backups`\) : ""/);
+  const isolation = readSource("apps", "desktop", "src", "views", "servers", "InstanceIsolationPanel.tsx");
+  // The backup root comes from the backend isolation report; the UI never derives it from the config path.
+  assert.doesNotMatch(maintenance, /instanceRootFromConfigFilePath|selectedBackupDirectory|backupPath=/);
+  assert.match(isolation, /path: report\.backups_path/);
   assert.doesNotMatch(`${serversView}\n${maintenance}`, /props\.selectedBackups\.length > 0 \? dirname\(normalizePath\(props\.selectedBackups\[0\]\.backup_path\)\) : ""/);
 });
 
@@ -1145,8 +1146,11 @@ test("maintenance keeps storage, policy and broadcast in its section navigation 
   assert.match(maintenanceWorkspace, /maintenance-workspace/);
   assert.match(
     serverMaintenance,
-    /id: "backups"[\s\S]*server-backup-history-card[\s\S]*id: "save-import"[\s\S]*SaveImportPanel[\s\S]*id: "save-policy"[\s\S]*server-backup-policy-card[\s\S]*id: "runtime"[\s\S]*InstanceAutostartEditor[\s\S]*RuntimeRecoveryEditor[\s\S]*id: "storage"[\s\S]*InstanceIsolationPanel/
+    /id: "saves"[\s\S]*scope="native"[\s\S]*SaveImportPanel[\s\S]*SaveSlotTable[\s\S]*id: "backups"[\s\S]*server-backup-history-card[\s\S]*server-backup-policy-card[\s\S]*scope="backup"[\s\S]*action="backup"[\s\S]*id: "runtime"[\s\S]*InstanceIsolationPanel[\s\S]*policies=\{policies\}/
   );
+  // Runtime merges policies and directories: one entry, a policy chip grid above the directory rows.
+  assert.match(serverMaintenance, /const policies = <MaintenanceGroup[\s\S]*runtime-policies__grid[\s\S]*RuntimePerformanceEditor[\s\S]*InstanceAutostartEditor[\s\S]*RuntimeRecoveryEditor[\s\S]*action="restart"[\s\S]*ProgramUpdatePolicyEditor/);
+  assert.doesNotMatch(serverMaintenance, /id: "storage"/);
   assert.doesNotMatch(serverMaintenance, /<details|<summary|maintenance-disclosure/);
   assert.doesNotMatch(serverMaintenance, /role="tablist"|server-file-panel--paths|server-maintenance-backup-grid/);
   assert.doesNotMatch(maintenanceWorkspace, /role="tablist"|<details|<summary/);
@@ -1155,10 +1159,11 @@ test("maintenance keeps storage, policy and broadcast in its section navigation 
   assert.match(serverMaintenance, /server-workbench-surface/);
   assert.match(broadcastWorkbench, /server-maintenance-card server-broadcast-panel/);
   assert.doesNotMatch(broadcastWorkbench, /<details|<summary/);
-  assert.match(serverMaintenance, /backupPath=\{selectedBackupDirectory\}/);
+  assert.doesNotMatch(serverMaintenance, /id: "save-import"|id: "save-policy"/);
   assert.equal((serverMaintenance.match(/<InstanceIsolationPanel/g) ?? []).length, 1);
-  assert.match(serverMaintenance, /server-file-backup-summary/);
-  assert.match(backupTable, /server-file-backup-table/);
+  assert.match(serverMaintenance, /server-backup-count/);
+  assert.match(backupTable, /<StorageRecordList/);
+  assert.match(readSource("apps", "desktop", "src", "views", "servers", "StorageRecordList.tsx"), /server-file-backup-table/);
   assert.doesNotMatch(serversView, /function HostShortcutCard/);
   assert.doesNotMatch(serversView, /function BackupSectionPanel/);
   assert.doesNotMatch(serversView, /server-local-files-grid/);
@@ -1168,7 +1173,7 @@ test("maintenance keeps storage, policy and broadcast in its section navigation 
   assert.match(operationsCss, /\.server-workbench-surface/);
   assert.match(operationsCss, /\.maintenance-workspace__section/);
   assert.match(operationsCss, /\.server-backup-policy-editor/);
-  assert.match(serverMaintenance, /server-runtime-policy-card/);
+  assert.match(operationsCss, /\.runtime-policies__grid/);
   assert.match(operationsCss, /\.server-recovery-options/);
   assert.match(operationsCss, /\.server-file-backup-table/);
   assert.match(operationsCss, /\.server-native-save-policies/);
@@ -1192,4 +1197,22 @@ test("server list instance cards do not use per-game cover overrides", () => {
 
   assert.doesNotMatch(moduleArt, /dontstarve-server-list/);
   assert.doesNotMatch(moduleArt, /serverListSrc/);
+});
+
+test("autosave chip availability follows the native save-policy capability table", () => {
+  const maintenance = fs.readFileSync(path.join(__dirname, "../src/views/servers/ServerMaintenanceWorkspace.tsx"), "utf8");
+  const toolbar = fs.readFileSync(path.join(__dirname, "../src/views/servers/MaintenanceToolbar.tsx"), "utf8");
+  assert.match(maintenance, /autoSaveUnavailable = nativeSavePolicyKeys\(moduleId\)\.length === 0/);
+  assert.match(maintenance, /className="server-save-policy-card"\s+disabledReason=\{autoSaveUnavailable\}/);
+  assert.doesNotMatch(maintenance, /sevendaystodie/, "Support must not be a hardcoded game list");
+  assert.match(toolbar, /aria-disabled="true" aria-describedby=\{bubble\.descriptionId\}/);
+});
+
+test("maintenance list headings read as matching lists", () => {
+  const zh = fs.readFileSync(path.join(__dirname, "../src/i18n-messages-zh-extra.ts"), "utf8");
+  const en = fs.readFileSync(path.join(__dirname, "../src/i18n-messages-en-extra.ts"), "utf8");
+  assert.match(zh, /"servers\.saveSlots\.title": "存档列表"/);
+  assert.match(zh, /"servers\.maintenance\.backupHistory": "备份列表"/);
+  assert.match(en, /"servers\.saveSlots\.title": "Save list"/);
+  assert.match(en, /"servers\.maintenance\.backupHistory": "Backup list"/);
 });

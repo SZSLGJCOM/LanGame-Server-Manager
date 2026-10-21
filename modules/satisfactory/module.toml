@@ -56,6 +56,13 @@ members = ["game", "game_tcp"]
 [runtime.player_query]
 protocol = "none"
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "satisfactory_https"
+command_template = "save"
+
 [runtime.player_list]
 source = "http_api"
 response_codec = "satisfactory_frm_players"

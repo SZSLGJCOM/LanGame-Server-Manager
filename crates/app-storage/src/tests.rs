@@ -502,6 +502,83 @@ async fn broadcast_policy_and_events_roundtrip() {
         Some(r#"{"enabled":true}"#)
     );
 
+    for result in [Ok(()), Err("runtime stdin write failed")] {
+        let pending = insert_instance_broadcast_event(
+            &paths,
+            InsertInstanceBroadcastEventInput {
+                instance_id: created.summary.id.clone(),
+                module_id: descriptor.summary.id.clone(),
+                source: "manual".into(),
+                rule_id: None,
+                message: "One submission only".into(),
+                ai_provider: None,
+                ai_model: None,
+                action_id: Some("broadcast".into()),
+                transport: Some("stdin".into()),
+                command_preview: None,
+                status: "pending".into(),
+                response_text: None,
+                error_message: None,
+                initiator: Some("manual".into()),
+                policy_snapshot_json: None,
+            },
+        )
+        .await
+        .unwrap();
+        // Reopening storage leaves an unconfirmed submission pending.
+        let reloaded = list_instance_broadcast_events(&paths, &created.summary.id, 10)
+            .await
+            .unwrap();
+        assert_eq!(
+            reloaded
+                .iter()
+                .find(|item| item.event_id == pending.event_id)
+                .unwrap()
+                .status,
+            "pending"
+        );
+        assert!(
+            !complete_instance_broadcast_event(&paths, "other-instance", &pending.event_id, result)
+                .await
+                .unwrap()
+        );
+        assert!(
+            complete_instance_broadcast_event(
+                &paths,
+                &created.summary.id,
+                &pending.event_id,
+                result
+            )
+            .await
+            .unwrap()
+        );
+        // A second callback cannot replace a terminal outcome.
+        assert!(
+            !complete_instance_broadcast_event(
+                &paths,
+                &created.summary.id,
+                &pending.event_id,
+                Err("duplicate completion")
+            )
+            .await
+            .unwrap()
+        );
+        let completed = list_instance_broadcast_events(&paths, &created.summary.id, 10)
+            .await
+            .unwrap();
+        let matching = completed
+            .iter()
+            .filter(|item| item.event_id == pending.event_id)
+            .collect::<Vec<_>>();
+        assert_eq!(matching.len(), 1);
+        assert_eq!(
+            matching[0].status,
+            if result.is_ok() { "sent" } else { "failed" }
+        );
+        assert_eq!(matching[0].error_message.as_deref(), result.err());
+        assert_eq!(matching[0].created_at_unix_ms, pending.created_at_unix_ms);
+    }
+
     cleanup_root(&root);
 }
 

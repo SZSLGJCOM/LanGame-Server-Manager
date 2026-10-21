@@ -30,6 +30,8 @@ function descendants(node) {
 function harness(read = async (id) => cluster(id), operation = async () => ({ action: "start", members: [] })) {
   const hooks = [], effects = [], calls = [];
   let cursor = 0, writes = 0, changed = 0;
+  // Shared ARK cluster activity: published start/stop state and the snapshot lock read back.
+  const activity = { snapshotBusy: false, published: [] };
   const react = {
     ...React, useId: () => "cluster",
     useRef(initial) { const slot = cursor++; return hooks[slot] ??= { current: initial }; },
@@ -52,6 +54,7 @@ function harness(read = async (id) => cluster(id), operation = async () => ({ ac
   loaded.require = (id) => {
     if (id === "react") return react;
     if (id === "../../i18n") return { useI18n: () => ({ locale: "en-US", t: (key, params, fallback) => fallback ?? key }), selectLocaleText: (locale, zh, en) => en };
+    if (id === "./ark-cluster-activity") return { useArkClusterActivity: (instanceId, kind, busy) => { activity.published.push([instanceId, kind, busy]); return activity.snapshotBusy; } };
     if (id === "../../app-state") return { describeError: (error) => error.message ?? String(error) };
     if (id.endsWith(".css")) return {};
     return originalRequire(id);
@@ -70,7 +73,7 @@ function harness(read = async (id) => cluster(id), operation = async () => ({ ac
     }
     return { html: renderToStaticMarkup(root), buttons: descendants(root).filter((node) => node.type === "button") };
   }
-  return { props, calls, render, get writes() { return writes; }, get changed() { return changed; }, unmount() { hooks.forEach((hook) => hook?.cleanup?.()); } };
+  return { props, calls, activity, render, get writes() { return writes; }, get changed() { return changed; }, unmount() { hooks.forEach((hook) => hook?.cleanup?.()); } };
 }
 
 test("cluster inspection renders real member map and ports, and forwards the inspected identity", async () => {
@@ -123,4 +126,28 @@ test("late inspection and operation results cannot overwrite another selected in
   other.unmount(); const before = other.writes;
   pending.resolve({ action: "start", members: [] }); await settle();
   assert.equal(other.writes, before);
+});
+
+test("cluster snapshot work in the Backups category locks start/stop, and start/stop is published to it", async () => {
+  const operation = deferred();
+  const state = harness(undefined, () => operation.promise);
+  state.render(); await settle();
+  state.activity.snapshotBusy = true;
+  let view = state.render();
+  for (const label of ["Start cluster", "Stop cluster"]) {
+    const control = view.buttons.find((button) => button.props.children === label);
+    assert.equal(control.props.disabled, true, `${label} must wait for snapshot backup/restore/recovery`);
+    control.props.onClick();
+  }
+  assert.equal(state.calls.length, 0, "a locked start/stop must not reach the backend");
+  state.activity.snapshotBusy = false;
+  view = state.render();
+  assert.deepEqual(state.activity.published.at(-1), ["island", "operation", false]);
+  view.buttons.find((button) => button.props.children === "Start cluster").props.onClick();
+  state.render();
+  assert.deepEqual(state.activity.published.at(-1), ["island", "operation", true], "running start/stop locks snapshots");
+  operation.resolve({ action: "start", members: [] }); await settle();
+  state.render();
+  assert.deepEqual(state.activity.published.at(-1), ["island", "operation", false]);
+  state.unmount();
 });

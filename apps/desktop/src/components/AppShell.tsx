@@ -22,6 +22,8 @@ import { SteamCmdActivity } from "./SteamCmdActivity";
 import { InstallationActivity } from "./InstallationActivity";
 import { getLocalizedModuleDisplayName } from "../store-media";
 import { selectActiveInstallationJob } from "../installation-job";
+import { selectActiveDstRegenerationJob } from "../dst-regeneration-job";
+import { DstRegenerationActivity, DstRegenerationOutcome, useFinishedDstRegeneration } from "./DstRegenerationActivity";
 import type { UiMessage } from "../app-ui";
 import type { RuntimeRefreshIssue } from "../app-state";
 import { AutoRefreshStatus } from "./AutoRefreshStatus";
@@ -105,10 +107,15 @@ export function AppShell(props: AppShellProps) {
   const installationJob = selectActiveInstallationJob(props.jobs);
   const showInstallationProgress = installationJob && (!props.steamCmdProgress?.active
     || (props.steamCmdProgress.phase === "queued" && installationJob.install_progress?.phase !== "queued"));
+  const regenerationJob = showInstallationProgress || showSteamCmdProgress ? null : selectActiveDstRegenerationJob(props.jobs);
   const showActivityFeedback = !props.runtimeStartNotice
     && (Boolean(props.activityTone) || (!showInstallationProgress && !showSteamCmdProgress));
   const showRefreshFeedback = Boolean(props.runtimeRefreshIssue || props.runtimeAutoRefreshPaused);
+  const finishedRegeneration = useFinishedDstRegeneration(props.jobs);
   const activityEntries: ActivityBarEntry[] = [];
+  if (finishedRegeneration.job) activityEntries.push({ id: `regeneration:${finishedRegeneration.job.id}`, content:
+    <DstRegenerationOutcome job={finishedRegeneration.job} locale={locale} onDismiss={finishedRegeneration.dismiss}
+      dismissLabel={t("servers.mods.closeToast", undefined, "Close")} /> });
   if (showActivityFeedback) activityEntries.push({
     id: `activity:${props.activityText}`,
     content: <div className="shell-activity-feedback">
@@ -173,7 +180,7 @@ export function AppShell(props: AppShellProps) {
           ) : showSteamCmdProgress && props.steamCmdProgress ? (
             <SteamCmdActivity snapshot={props.steamCmdProgress} message={props.steamCmdMessage} locale={locale} t={t}
               onStop={() => { if (props.steamCmdProgress) props.onCancelSteamCmd(props.steamCmdProgress.operation_id); }} stopPending={props.steamCmdStopPending} stopError={props.steamCmdStopError} />
-          ) : null} />
+          ) : regenerationJob ? <DstRegenerationActivity job={regenerationJob} locale={locale} /> : null} />
         </footer>
       </div>
     </div>

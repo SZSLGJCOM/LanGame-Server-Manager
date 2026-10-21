@@ -6,11 +6,6 @@ poll_interval_ms = 1000
 stability_window_ms = 3000
 probe_mode = "all"
 
-[[preconditions]]
-id = "windows-elevation"
-kind = "elevation"
-reason_code = "windows_elevation_required"
-
 [[probes]]
 id = "running-world"
 kind = "log_marker"

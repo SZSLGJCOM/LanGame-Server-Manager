@@ -256,10 +256,12 @@ fn humanitz_readiness_reuses_only_the_declared_read_only_info_action() {
         .find(|descriptor| descriptor.summary.id == "humanitz")
         .unwrap();
     let manifest = SmokeManifest::load(&descriptor).unwrap();
-    assert_eq!(
-        manifest.fixture.settings.get("rcon_enabled"),
-        Some(&serde_json::json!(true))
-    );
+    // Exercise the product default: a smoke-only override used to hide new
+    // instances starting with their required authenticated RCON disabled.
+    assert!(!manifest.fixture.settings.contains_key("rcon_enabled"));
+    let schema: serde_json::Value =
+        serde_json::from_str(descriptor.schema_json.as_deref().unwrap()).unwrap();
+    assert_eq!(schema["properties"]["rcon_enabled"]["default"], true);
     assert!(manifest.probes.iter().any(|probe| matches!(probe,
         Probe::HumanitzInfo { port_name, .. } if port_name == "rcon"
     )));

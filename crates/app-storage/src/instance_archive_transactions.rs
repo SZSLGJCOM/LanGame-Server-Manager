@@ -415,6 +415,42 @@ async fn restore_rows(
             store::insert_row(connection, table, child).await?;
         }
     }
+    for table in [
+        "instance_maintenance_schedules",
+        "player_history_cursors",
+        "player_history_events",
+    ] {
+        for child in snapshot.tables.get(table).into_iter().flatten() {
+            let mut row = child.clone();
+            if table == "instance_maintenance_schedules" {
+                // Restoring retained data must not arm a scheduled server stop.
+                row.insert("enabled".into(), serde_json::json!(0));
+                if row.get("run_status").and_then(serde_json::Value::as_str) == Some("running") {
+                    row.insert("run_status".into(), serde_json::json!("interrupted"));
+                    row.insert("detail".into(), serde_json::json!("Interrupted before archival; check the instance and backups before retrying."));
+                }
+            } else if table == "player_history_events" {
+                // A join may point forward to a later leave. Restore both rows
+                // before publishing their retained session relationship.
+                row.insert("paired_event_id".into(), serde_json::Value::Null);
+            }
+            store::insert_row(connection, table, &row).await?;
+        }
+    }
+    for event in snapshot
+        .tables
+        .get("player_history_events")
+        .into_iter()
+        .flatten()
+    {
+        if let Some(paired) = event["paired_event_id"].as_i64() {
+            sqlx::query("UPDATE player_history_events SET paired_event_id=?2 WHERE id=?1")
+                .bind(event["id"].as_i64())
+                .bind(paired)
+                .execute(&mut *connection)
+                .await?;
+        }
+    }
     Ok(())
 }
 

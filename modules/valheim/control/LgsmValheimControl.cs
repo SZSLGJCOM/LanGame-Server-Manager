@@ -26,7 +26,8 @@ namespace Lgsm.Valheim.Control
                 string token = files.ReadSessionToken();
                 if (!String.IsNullOrEmpty(environmentToken) && !ControlProtocol.SameToken(environmentToken, token))
                     throw new ControlFailure("invalid_bootstrap");
-                loop = new ControlLoop(new ValheimNativeControl(), token, Process.GetCurrentProcess().Id);
+                loop = new ControlLoop(new ValheimNativeControl(), token, Process.GetCurrentProcess().Id,
+                    delegate(string diagnostic) { Logger.LogError(diagnostic); });
                 Logger.LogInfo("LGSM_VALHEIM_CONTROL_READY protocol=1 pid=" + Process.GetCurrentProcess().Id);
             }
             catch (Exception)
@@ -43,7 +44,7 @@ namespace Lgsm.Valheim.Control
             nextPoll = Time.realtimeSinceStartup + 0.2f;
             try
             {
-                // Publication failures cannot suspend the native kick deadline.
+                // Publication failures cannot suspend a pending operation's deadline.
                 publication.Offer(loop.Tick(Time.realtimeSinceStartup), Time.realtimeSinceStartup);
                 if (publication.Response == null)
                 {
@@ -78,6 +79,7 @@ namespace Lgsm.Valheim.Control
 
         private void Deactivate(string code)
         {
+            if (loop != null) loop.Dispose();
             if (files != null) files.Dispose();
             files = null;
             Logger.LogError("LanGame Valheim control inactive: " + code);
@@ -92,6 +94,7 @@ namespace Lgsm.Valheim.Control
 
         private void OnDestroy()
         {
+            if (loop != null) loop.Dispose();
             if (files != null) files.Dispose();
             files = null;
         }

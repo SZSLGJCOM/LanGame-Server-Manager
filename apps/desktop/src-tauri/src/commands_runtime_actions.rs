@@ -101,6 +101,11 @@ pub(super) fn resolve_declared_runtime_action(
             action.id
         ));
     }
+    if action.id == "save_world" {
+        super::commands_world_save::validate_action(&descriptor.summary.id, action)?;
+    } else if let Some(save) = super::commands_world_save::NativeSave::from_transport(transport) {
+        save.validate_action(&descriptor.summary.id, action)?;
+    }
     if transport == "palworld_rest" && descriptor.summary.id != "palworld" {
         return Err(String::from(
             "Palworld REST actions require the Palworld module.",

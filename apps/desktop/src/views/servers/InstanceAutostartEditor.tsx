@@ -4,6 +4,7 @@ import type { TranslateFn } from "../../i18n";
 import type { BackgroundJob, InstanceDetails } from "../../types";
 import { formatInstanceAutostartJobDetail, isInstanceAutostartJob } from "../../instance-autostart-job";
 import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
+import { MaintenanceChip } from "./MaintenanceToolbar";
 
 interface InstanceAutostartEditorProps {
   details: InstanceDetails;
@@ -57,14 +58,10 @@ export function InstanceAutostartEditor(props: InstanceAutostartEditorProps) {
     }
   }
 
-  return <div className="server-autostart-policy-editor">
-    <label className="settings-toggle-card server-backup-policy-toggle">
-      <span className="settings-toggle-copy">
-        <span className="settings-field-title">{props.t("settings.details.autostart")}</span>
-      </span>
-      <input type="checkbox" checked={checked} disabled={saving || Boolean(props.readOnly)}
-        onChange={(event) => void save(event.target.checked)} />
-    </label>
+  // A pure on/off setting: the chip is a checkbox (same dot as daily maintenance); progress and failures report through the activity bar.
+  return <MaintenanceChip icon="play-circle" label={props.t("servers.maintenance.autostart")} className="server-autostart-chip"
+    value={props.t(checked ? "servers.maintenance.on" : "servers.maintenance.off")} checked={checked}
+    disabled={Boolean(props.readOnly) || !props.onSaveAutostart} busy={saving} onCheckedChange={(next) => void save(next)}>
     {activeDraft && activeDraft.status !== "idle" ? <ActivityNotice
       tone={activeDraft.status === "failed" ? "error" : saving ? "info" : "success"}
       action={activeDraft.status === "failed" ? <button type="button" className="secondary-button"
@@ -79,5 +76,5 @@ export function InstanceAutostartEditor(props: InstanceAutostartEditorProps) {
       tone={latestJob.status === "Failed" ? "error" : latestJob.status === "Completed" ? "success" : "info"}>
       {`${props.t(`status.job.${latestJob.status.toLowerCase()}`)} · ${formatInstanceAutostartJobDetail(latestJob, props.t)}`}
     </ActivityNotice> : null}
-  </div>;
+  </MaintenanceChip>;
 }

@@ -14,7 +14,7 @@ pub(super) async fn dispatch_startup_broadcast(
     details: &InstanceDetails,
     descriptor: &ModuleDescriptor,
     request: &RuntimeTransportRequest<'_>,
-) -> Result<(), String> {
+) -> Result<RuntimeTransportDispatch, String> {
     let endpoint = startup_broadcast_tcp_endpoint(details, request)?;
     let run = details.active_run.as_ref().ok_or_else(|| {
         String::from("Startup broadcast cancelled because the instance is no longer running.")

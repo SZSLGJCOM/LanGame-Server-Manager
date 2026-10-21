@@ -114,7 +114,7 @@ function statusClass(status: string): string {
   const normalized = status.toLowerCase();
   if (normalized === "sent") return "is-success";
   if (normalized === "failed") return "is-danger";
-  if (normalized === "blocked") return "is-warning";
+  if (normalized === "blocked" || normalized === "pending") return "is-warning";
   return "";
 }
 
@@ -122,13 +122,14 @@ function statusIcon(status: string): ShellIconName {
   const normalized = status.toLowerCase();
   if (normalized === "sent") return "check-circle";
   if (normalized === "failed") return "alert-circle";
-  if (normalized === "blocked") return "clock";
+  if (normalized === "blocked" || normalized === "pending") return "clock";
   return "bell";
 }
 
 const BROADCAST_STATUS_LABELS = {
   generated: ["servers.broadcast.status.generated", "Generated"],
   sent: ["servers.broadcast.status.sent", "Sent"],
+  pending: ["servers.broadcast.status.pending", "Awaiting confirmation"],
   failed: ["servers.broadcast.status.failed", "Failed"],
   blocked: ["servers.broadcast.status.blocked", "Blocked"]
 } as const;
@@ -175,6 +176,7 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
   const instanceScope = useMemo(() => ({ instanceId }), [instanceId]);
   const currentInstanceScopeRef = useRef(instanceScope);
   const policyRevisionRef = useRef(0);
+  const eventRequestRef = useRef(0);
   const policySaveQueueRef = useRef<BroadcastPolicySaveQueue | null>(null);
   currentInstanceScopeRef.current = instanceScope;
   const moduleReady = props.moduleDetails?.summary.id === props.details.summary.module_id;
@@ -220,17 +222,34 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
   }, [instanceId, instanceScope]);
 
   const refreshEvents = useCallback(async () => {
+    const request = ++eventRequestRef.current;
     try {
       const nextEvents = await listInstanceBroadcastEvents(instanceId, 50);
-      if (currentInstanceScopeRef.current === instanceScope) {
+      if (currentInstanceScopeRef.current === instanceScope && eventRequestRef.current === request) {
         setEvents(nextEvents);
       }
     } catch (refreshError) {
-      if (currentInstanceScopeRef.current === instanceScope) {
+      if (currentInstanceScopeRef.current === instanceScope && eventRequestRef.current === request) {
         setError(describeError(refreshError));
       }
     }
   }, [instanceId, instanceScope]);
+
+  const hasPendingEvents = events.some((event) => event.status === "pending");
+  useEffect(() => {
+    if (!props.active || !broadcastSupported || !hasPendingEvents) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      await refreshEvents();
+      if (!cancelled) timer = setTimeout(() => void refresh(), 2_000);
+    };
+    timer = setTimeout(() => void refresh(), 2_000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [props.active, broadcastSupported, hasPendingEvents, refreshEvents]);
 
   useEffect(() => {
     if (!props.active || !broadcastSupported) {
@@ -238,6 +257,7 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
     }
     let cancelled = false;
     const loadRevision = policyRevisionRef.current;
+    const loadEventRequest = ++eventRequestRef.current;
     setPolicy(null);
     setEvents([]);
     setLoading(true);
@@ -265,7 +285,7 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
         if (policyRevisionRef.current === loadRevision) {
           setPolicy(normalizePolicy(nextPolicy, instanceId));
         }
-        setEvents(nextEvents);
+        if (eventRequestRef.current === loadEventRequest) setEvents(nextEvents);
       })
       .catch((loadError) => {
         if (
@@ -507,6 +527,9 @@ export function AiBroadcastWorkbench(props: AiBroadcastWorkbenchProps) {
                   <time>{formatTime(locale, event.created_at_unix_ms)}</time>
                 </div>
                 <p className="server-broadcast-event-message">{event.message}</p>
+                {event.status === "pending" ? <p className="server-broadcast-event-meta" role="status">
+                  {t("servers.broadcast.pendingNotice")}
+                </p> : null}
                 {[event.initiator ? formatBroadcastLabel(event.initiator, BROADCAST_INITIATOR_LABELS, t) : null,
                   event.ai_model].filter(Boolean).length > 0 ? <p className="server-broadcast-event-meta">
                   {[event.initiator ? formatBroadcastLabel(event.initiator, BROADCAST_INITIATOR_LABELS, t) : null,

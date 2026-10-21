@@ -499,7 +499,15 @@ pub(super) fn read_pipe(pipe: &File, buffer: &mut [u8]) -> io::Result<usize> {
 pub(super) fn create_pipe() -> io::Result<(OwnedWindowsHandle, OwnedWindowsHandle)> {
     let mut read = std::ptr::null_mut();
     let mut write = std::ptr::null_mut();
-    if unsafe { super::CreatePipe(&mut read, &mut write, std::ptr::null_mut(), 65536) } == 0 {
+    if unsafe {
+        super::CreatePipe(
+            &mut read,
+            &mut write,
+            std::ptr::null_mut(),
+            super::CHILD_PIPE_BUFFER_BYTES,
+        )
+    } == 0
+    {
         return Err(io::Error::last_os_error());
     }
     Ok((

@@ -466,6 +466,7 @@ fn snapshot(admin: bool) -> ControlSnapshot {
             permitted: vec![],
         },
         capabilities: std::collections::HashSet::new(),
+        world_save: None,
     }
 }
 

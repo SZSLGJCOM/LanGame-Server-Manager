@@ -15,6 +15,12 @@ use super::service::failed_snapshot;
 mod response;
 #[path = "file_ipc_transport.rs"]
 pub(crate) mod transport;
+#[path = "unreal_save_process.rs"]
+pub(crate) mod unreal_save_process;
+#[path = "unreal_world_save.rs"]
+pub(crate) mod unreal_world_save;
+#[path = "windrose_world_save.rs"]
+pub(crate) mod windrose_world_save;
 
 const MAX_BYTES: usize = 64 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(5);

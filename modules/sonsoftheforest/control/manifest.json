@@ -1,0 +1,10 @@
+{
+  "id": "LanGame.Sons.Save",
+  "name": "LanGame Save Control",
+  "author": "LanGame",
+  "version": "0.1.0",
+  "description": "Authenticated local native world save requests.",
+  "loaderVersion": "0.8.6",
+  "platform": "Server",
+  "type": "Mod"
+}

@@ -39,6 +39,42 @@ pub struct RuntimeRestartScheduler {
 }
 
 impl RuntimeRestartScheduler {
+    /// A scheduled normal restart shares the same cancellation and launch gates
+    /// as crash recovery. It never replaces a pending or in-flight recovery.
+    pub(crate) fn begin_planned_restart(
+        &mut self,
+        instance_id: &str,
+        instance_name: &str,
+        run_ids: impl IntoIterator<Item = i64>,
+    ) -> Option<RuntimeRestartScheduleEntry> {
+        if !self.accepts_exit(instance_id)
+            || self.pending.contains_key(instance_id)
+            || self.in_flight.contains_key(instance_id)
+        {
+            return None;
+        }
+        self.generation = self.generation.wrapping_add(1);
+        let now = Instant::now();
+        let entry = RuntimeRestartScheduleEntry {
+            instance_id: instance_id.to_owned(),
+            instance_name: instance_name.to_owned(),
+            scheduled_at: now,
+            due_at: now,
+            recent_crash_count: 0,
+            exit_code: None,
+            generation: self.generation,
+        };
+        self.in_flight.insert(
+            instance_id.to_owned(),
+            RuntimeRestartFlight {
+                generation: entry.generation,
+                valid: true,
+                shutdown_run_ids: run_ids.into_iter().collect(),
+            },
+        );
+        Some(entry)
+    }
+
     pub fn schedule(
         &mut self,
         request: RuntimeRestartScheduleRequest,

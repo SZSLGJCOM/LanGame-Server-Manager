@@ -1,0 +1,56 @@
+.maintenance-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-left: auto; min-width: 0; }
+.maintenance-toolbar > .configuration-action-help { display: inline-flex; }
+
+.maintenance-action { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 3px 10px; font-size: var(--text-meta); white-space: nowrap; }
+.maintenance-action--icon { justify-content: center; width: 30px; padding: 0; }
+.maintenance-action__icon { width: 15px; height: 15px; flex: none; }
+.maintenance-action[aria-busy="true"] .maintenance-action__icon { animation: maintenance-action-spin 1s linear infinite; }
+@keyframes maintenance-action-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .maintenance-action[aria-busy="true"] .maintenance-action__icon { animation: none; } }
+
+/* Settings chips open a popover anchored to the chip, over the content (same surface as .dst-gm-confirm), never an inline long form. */
+.maintenance-chip { position: relative; display: inline-flex; }
+.maintenance-chip__summary {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 3px 10px; cursor: pointer;
+  border: 1px solid var(--shell-line); border-radius: 999px; font-size: var(--text-meta); white-space: nowrap; color: var(--shell-text);
+}
+.maintenance-chip__summary { background: transparent; }
+.maintenance-chip__summary:hover, .maintenance-chip__summary[aria-expanded="true"] { background: var(--theme-control-hover); }
+.maintenance-chip__summary:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 1px; }
+.maintenance-chip__value { color: var(--shell-muted); font-variant-numeric: tabular-nums; }
+/* Checkbox chip (pure on/off settings): keeps the chip surface; the dot comes from .settings-toggle-card. */
+.maintenance-chip--toggle .maintenance-chip__summary { justify-content: flex-start; }
+.maintenance-chip.is-unavailable .maintenance-chip__summary { cursor: not-allowed; opacity: .56; }
+.maintenance-chip__panel[hidden] { display: none; }
+.maintenance-chip__panel {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 20; display: grid; gap: 12px;
+  width: min(420px, calc(100vw - 48px)); max-height: min(70vh, 520px); overflow: auto; padding: 12px;
+  border: 1px solid var(--shell-line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+/* The popover sits inside a card heading; reset heading typography for the editor it hosts. */
+.maintenance-chip__panel, .maintenance-toolbar { font-size: var(--text-body); font-weight: var(--font-weight-regular); letter-spacing: normal; text-transform: none; line-height: var(--leading-body); }
+.maintenance-chip__panel { color: var(--shell-text); text-align: left; }
+.maintenance-chip__panel > .form-note { margin: 0; }
+.server-backup-count { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: var(--theme-control-hover); color: var(--shell-muted); font-size: var(--text-meta); font-weight: var(--font-weight-regular); font-variant-numeric: tabular-nums; }
+/* ⓘ help: a label (or the icon alone) carrying the shared bubble; explanations never sit as prose in a popover. */
+.maintenance-help { display: inline-flex; align-items: center; min-width: 0; cursor: help; }
+.maintenance-help:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 2px; border-radius: 4px; }
+.maintenance-chip__heading { font-weight: var(--font-weight-semibold); }
+/* Titled groups inside a card (Runtime: 策略 / 目录); the heading carries the ⓘ. */
+.maintenance-group { display: grid; gap: 10px; min-width: 0; }
+.maintenance-group__heading { margin: 0; color: var(--shell-muted); font-size: var(--text-meta); font-weight: var(--font-weight-semibold); letter-spacing: .02em; }
+/* Policy chips as a balanced grid of tiles (2 columns wide, 1 narrow); each popover is anchored to its own chip. */
+.runtime-policies__grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@container configuration-fields (max-width: 560px) { .runtime-policies__grid { grid-template-columns: minmax(0, 1fr); } }
+.runtime-policies__grid > .maintenance-chip { display: flex; min-width: 0; }
+.runtime-policies__grid .maintenance-chip__summary {
+  flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border-radius: 8px; background: var(--theme-card-muted);
+  font-size: var(--text-body);
+}
+.runtime-policies__grid .maintenance-chip__summary > span:not(.maintenance-chip__value) { font-weight: var(--font-weight-medium); }
+.runtime-policies__grid .maintenance-chip__value { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.runtime-status-tag { padding: 0 8px; border-radius: 999px; background: var(--theme-control-hover); color: var(--shell-muted);
+  font-size: var(--text-meta); font-weight: var(--font-weight-regular); white-space: nowrap; }
+.runtime-status-tag.is-running { color: var(--success); }
+.runtime-status-tag.is-error { color: var(--theme-danger-text); }
+.maintenance-chip__panel .server-daily-maintenance-editor > .settings-toggle-card { width: 100%; }

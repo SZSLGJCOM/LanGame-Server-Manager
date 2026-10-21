@@ -10,14 +10,14 @@ shared_game_dir = "romestead"
 verification_path = "Server.exe"
 
 [process]
-executable = "start-romestead.bat"
+executable = "Server.exe"
 args_template = [
   "{{romestead.extra_launch_args}}"
 ]
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "Steam appinfo for app 4763510 reports Server.exe as the Windows launch executable. The inspected package is framework-dependent and requires a .NET 8 runtime. Before startup LanGame reads Server.runtimeconfig.json, prepares a compatible verified Microsoft portable runtime beside the configured SteamCMD directory, verifies managed code execution and supplies DOTNET_ROOT_X64 and DOTNET_ROOT. Compatible existing runtimes can be reused with an explicit log message when the update source is unavailable. This also applies to private instances and relocated installations. The generated start-romestead.bat wrapper launches Server.exe. Romestead reads config.json from the server install root for automatic world loading, join password, port, max players, and the reserved EnableCheats switch. LanGame renders and materializes config.json before launch, keeps the server in a managed terminal, and uses the configured UDP game port through the Port field."
+host_notes = "LanGame directly launches the official Server.exe and uses its native stdin save command. Before startup it prepares a verified portable .NET 8 runtime, supplies DOTNET_ROOT_X64 and DOTNET_ROOT, without a save startup hook. Compatible existing runtimes can be reused with an explicit log message when the update source is unavailable. This also applies to private instances and relocated installations. Romestead reads config.json from the server install root for automatic world loading, join password, port and max players. LanGame materializes this configuration before launch, retains managed stdin, and uses the configured UDP game port through the Port field."
 
 [[default_ports]]
 name = "game"
@@ -35,6 +35,14 @@ player_action_ids = []
 response_codec = "romestead_players"
 identity_kind = "player_name"
 refresh_interval_ms = 30000
+
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "save"
+process_key = "main"
 
 [[runtime.player_actions]]
 id = "list_online_players"

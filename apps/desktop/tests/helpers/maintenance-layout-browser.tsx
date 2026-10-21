@@ -1,13 +1,15 @@
 import React, { act, StrictMode, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { bootstrapApp, readInstanceDetails, readInstanceIsolation, readModuleDetails } from "../../src/api";
+import { invokeMock } from "../../src/api-mock";
 import { createDefaultAiSettings } from "../../src/ai-settings";
 import { I18nProvider } from "../../src/i18n";
 import { instancePanelReader } from "../../src/instance-panel-loader";
 import { ServersView } from "../../src/views/ServersView";
 import { InstanceSettingsSaveProvider, useInstanceSettingsSaveCoordinator } from "../../src/views/settings/InstanceSettingsSaveContext";
 import type { InstanceSettingsSaveCoordinator } from "../../src/views/settings/instance-settings-save-coordinator";
-import type { DstWorldImportResult, InstanceBackupResult, InstanceDetails, InstanceIsolationReport, UpdateInstanceInput } from "../../src/types";
+import type { DstWorldImportResult, InstanceBackupResult, InstanceBroadcastEvent, InstanceDetails, InstanceIsolationReport,
+  SendInstanceBroadcastInput, UpdateInstanceInput } from "../../src/types";
 import { measureMaintenanceControls } from "./maintenance-control-measurements";
 import { controlContractViolations } from "./measure-control-contracts";
 import "../../src/app.css";
@@ -69,8 +71,9 @@ async function click(selector: string) {
 }
 async function input(selector: string, value: string) {
   await act(async () => {
-    const element = select<HTMLInputElement>(selector);
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    const element = select<HTMLInputElement | HTMLTextAreaElement>(selector);
+    const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
     check(setter, "Native input setter is missing");
     setter.call(element, value);
     element.dispatchEvent(new Event("input", { bubbles: true }));
@@ -88,15 +91,42 @@ function verifyHorizontalFit(container: HTMLElement, label: string) {
     const box = element.getBoundingClientRect();
     if (!box.width || !box.height) continue;
     check(box.left >= outer.left - 1 && box.right <= outer.right + 1,
-      `${label} clips a control or path: ${element.className || element.tagName}`);
+      `${label} clips a control or path: ${element.className || element.tagName} (${Math.round(box.left)}-${Math.round(box.right)} outside ${
+        Math.round(outer.left)}-${Math.round(outer.right)} at ${innerWidth}px)`);
   }
 }
-type MaintenanceSection = "backups" | "save-import" | "save-policy" | "runtime" | "storage" | "broadcast";
-const sectionIds: MaintenanceSection[] = ["backups", "save-import", "save-policy", "runtime", "storage", "broadcast"];
+type MaintenanceSection = "saves" | "backups" | "runtime" | "broadcast";
+const sectionIds: MaintenanceSection[] = ["saves", "backups", "runtime", "broadcast"];
 const workspaceSelector = ".server-detail-scroll--maintenance .configuration-workspace";
 function navigationButton(id: MaintenanceSection) {
   return `${workspaceSelector} [data-configuration-section-id="${id}"] > button`;
 }
+const policyChip = '[data-maintenance-section="backups"] .server-backup-policy-card > .maintenance-chip__summary';
+const importChip = '[data-maintenance-section="saves"] .save-import > .maintenance-chip__summary';
+const chipSummary = (chip: string) => `.${chip} > .maintenance-chip__summary`;
+const previewChips: Record<string, string> = { autosave: '[data-maintenance-section="saves"] .server-save-policy-card > .maintenance-chip__summary',
+  import: importChip, policy: policyChip, resources: chipSummary("server-resource-policy"),
+  recovery: chipSummary("server-runtime-recovery-chip"), daily: chipSummary("server-daily-maintenance-chip"), program: chipSummary("server-program-policy") };
+/** Runtime and storage settings live in chip popovers; open one (closing the others) before using its controls. */
+async function openChip(chip: string) {
+  for (const open of fixture.querySelectorAll<HTMLButtonElement>('.maintenance-chip__summary[aria-expanded="true"]')) {
+    if (!open.parentElement?.classList.contains(chip)) await act(async () => open.click());
+  }
+  if (select(chipSummary(chip)).getAttribute("aria-expanded") !== "true") await click(chipSummary(chip));
+}
+/** A settings popover is anchored to its chip (below it, or above when flipped) and opens without reflowing its group. */
+async function verifyAnchoredPopover(chip: string, group: string) {
+  const groupHeight = select(group).getBoundingClientRect().height;
+  await openChip(chip);
+  const summary = select(chipSummary(chip)).getBoundingClientRect();
+  const panel = select(`.${chip} > .maintenance-chip__panel`).getBoundingClientRect();
+  const anchored = panel.top >= summary.bottom - 1 ? panel.top - summary.bottom <= 8 : summary.top - panel.bottom >= -1 && summary.top - panel.bottom <= 8;
+  check(anchored, `${chip} popover must sit against its chip (chip ${summary.top}-${summary.bottom}, panel ${panel.top}-${panel.bottom})`);
+  check(panel.left >= -1 && panel.right <= innerWidth + 1, `${chip} popover must stay inside the viewport`);
+  check(Math.abs(select(group).getBoundingClientRect().height - groupHeight) < 1, `${chip} popover must not change the ${group} layout height`);
+  await click(chipSummary(chip));
+}
+
 async function maintenanceSection(id: MaintenanceSection) {
   const toggle = select<HTMLButtonElement>(`${workspaceSelector} .configuration-workspace__navigation-toggle`);
   if (toggle.getBoundingClientRect().height > 0 && toggle.getAttribute("aria-expanded") !== "true") {
@@ -109,6 +139,9 @@ async function maintenanceSection(id: MaintenanceSection) {
     `Maintenance must display only the selected functional section: ${id}`);
   check(visible[0].getBoundingClientRect().height > 0, `Selected section is not rendered: ${id}`);
   verifyHorizontalFit(select(".server-detail-scroll--maintenance"), `Maintenance section ${id}`);
+  // Backup policy and save import live in toolbar chip popovers; open them so their controls can be measured and used.
+  if (id === "backups" && select(policyChip).getAttribute("aria-expanded") !== "true") await click(policyChip);
+  if (id === "saves" && select(importChip).getAttribute("aria-expanded") !== "true") await click(importChip);
 }
 function verifyWorkspaceBounds() {
   const outer = select<HTMLElement>(".server-detail-scroll--maintenance");
@@ -255,17 +288,18 @@ async function run() {
     && !select(workspaceSelector).querySelector('[role="tablist"]'), "Maintenance introduced nested tabs");
   checks++;
 
-  const runtimeCard = select<HTMLElement>(".server-runtime-policy-card");
+  // Runtime is one card: status header with program actions, a policy chip grid and the directory rows.
   const isolation = select<HTMLElement>(".instance-isolation-panel");
+  const runtimeCard = isolation;
   let outer = select<HTMLElement>(".server-detail-scroll--maintenance");
   const initialHeight = outer.scrollHeight;
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   const importPanel = select<HTMLElement>(".dst-world-import");
   await maintenanceSection("backups");
-  const policyPanel = select<HTMLElement>(".server-backup-policy-card");
+  const policyPanel = select<HTMLElement>(".server-backup-policy-card .maintenance-chip__panel");
   const navigation = select<HTMLElement>(`${workspaceSelector} .configuration-workspace__sidebar`);
   const content = select<HTMLElement>(`${workspaceSelector} .configuration-workspace__main`);
-  check(select(navigationButton("backups")).getAttribute("aria-current") === "page", "Maintenance must open on backups");
+  check(select(navigationButton("backups")).getAttribute("aria-current") === "page", "Maintenance must keep the selected backups category");
   check(!fixture.querySelector('[data-maintenance-section="cluster"]'), "A DST instance exposes ARK cluster maintenance");
   if (innerWidth > 1100) {
     const navBox = navigation.getBoundingClientRect();
@@ -279,6 +313,22 @@ async function run() {
 
   check(!fixture.querySelector('.server-file-panel--paths, .server-file-path-list'), "A second local directory panel remains");
   await maintenanceSection("runtime");
+  const policyChips = [...select(".runtime-policies__grid").querySelectorAll<HTMLElement>(":scope > .maintenance-chip")];
+  check(!isolation.querySelector("details") && policyChips.length === 5
+    && policyChips.every((chip) => chip.querySelector(".maintenance-chip__value")?.textContent), "Runtime policies must collapse into chips that show their current value");
+  const chipColumns = new Set(policyChips.map((chip) => Math.round(chip.getBoundingClientRect().left))).size;
+  check(chipColumns === (select(".runtime-policies__grid").getBoundingClientRect().width > 560 ? 2 : 1), "Policy chips must form a balanced grid");
+  check(isolation.querySelector(".runtime-status-tag")?.textContent === "已停止" && isolation.querySelectorAll(".maintenance-group__heading").length === 2,
+    "Runtime header must show the instance status and group headings");
+  const autostartCheckbox = select<HTMLInputElement>(".server-autostart-chip input[type=checkbox]");
+  check(!autostartCheckbox.checked && autostartCheckbox.closest(".maintenance-chip__summary.settings-toggle-card")
+    && !fixture.querySelector(".server-autostart-chip [aria-expanded]")
+    && !fixture.querySelector(".server-autostart-chip .maintenance-chip__panel"), "Autostart must be a checkbox chip (shared toggle dot), not a popover");
+  for (const chip of ["server-resource-policy", "server-runtime-recovery-chip", "server-daily-maintenance-chip", "server-program-policy"]) {
+    await verifyAnchoredPopover(chip, ".runtime-policies");
+  }
+  checks++;
+  await openChip("server-runtime-recovery-chip");
   for (const name of ["maxRestarts", "waitSeconds", "onlyNonzeroExit"]) {
     const control = select<HTMLInputElement>(`.server-runtime-recovery-editor input[name="${name}"]`);
     control.scrollIntoView({ block: "nearest" });
@@ -286,18 +336,50 @@ async function run() {
   }
   checks++;
 
+  await openChip("server-resource-policy");
+  verifyHorizontalFit(runtimeCard, "Resource popover");
   const resourceControls = [...fixture.querySelectorAll<HTMLInputElement>(".server-resource-policy input")];
   check(resourceControls.length === 3 && resourceControls.every((control) => !control.disabled),
     "Stopped instance must expose editable CPU, memory and reserve controls");
   check(resourceControls.map((control) => control.name).join(",") === "cpu,memory,reserve", "Resource policy lost a supported limit");
   checks++;
 
+  await maintenanceSection("saves");
+  await verifyAnchoredPopover("server-save-policy-card", '[data-maintenance-section="saves"]');
   await maintenanceSection("backups");
-  await click(".server-file-backup-toolbar button");
+  check(!fixture.querySelector(".server-backup-policy-card > .maintenance-chip__summary .maintenance-chip__value")
+    && !fixture.querySelector(".server-save-policy-card > .maintenance-chip__summary .maintenance-chip__value"),
+    "Header toolbar policy chips are label-only; their details live in the popover");
+  await verifyAnchoredPopover("server-backup-policy-card", ".server-backup-history-card");
+  await click(".server-backup-history-card .maintenance-toolbar > button.secondary-button");
   check(backupWrites.length === 1 && backupWrites[0] === instance.id, "Immediate backup lost its instance callback");
   checks++;
 
-  await maintenanceSection("save-import");
+  // Save slots share the backup table's row layout, mark the slot in use and expand to their files.
+  await maintenanceSection("saves");
+  await waitFor(() => !!fixture.querySelector('[data-maintenance-section="saves"] .save-slot-table .server-file-backup-row'), "save slot rows");
+  const slotRow = select<HTMLElement>('[data-maintenance-section="saves"] .save-slot-table .server-file-backup-row');
+  const backupRowStyle = getComputedStyle(select('[data-maintenance-section="backups"] .server-file-backup-row'));
+  const slotRowStyle = getComputedStyle(slotRow);
+  check(slotRowStyle.display === backupRowStyle.display && slotRowStyle.borderRadius === backupRowStyle.borderRadius
+    && slotRowStyle.paddingTop === backupRowStyle.paddingTop, "Save slot rows must match the backup table style");
+  check(slotRow.dataset.current === "true" && slotRow.textContent?.includes("当前使用"), "The slot in use is not marked");
+  check(!slotRow.querySelector(".inline-confirm-action") && !/恢复|删除|重命名/.test(slotRow.querySelector(".server-file-backup-actions")?.textContent ?? ""),
+    "Save slots must stay read-only");
+  const slotToggle = slotRow.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
+  await act(async () => { slotToggle.click(); });
+  check(slotToggle.getAttribute("aria-expanded") === "true" && !!slotRow.querySelector(".save-file-browser__table"),
+    "Expanding a save slot did not list its files");
+  check(slotRow.querySelector(".save-file-browser__table")?.textContent?.includes("Master/world.dat"), "Slot file list lost its file");
+  verifyHorizontalFit(select(".server-detail-scroll--maintenance"), "Expanded save slot");
+  const openedBefore = openedPaths.length;
+  await act(async () => { [...slotRow.querySelectorAll<HTMLButtonElement>(".server-file-backup-actions button")].at(-1)!.click(); });
+  check(openedPaths.length === openedBefore + 1 && /Master$/.test(openedPaths.at(-1)!), "Slot folder action targeted another path");
+  openedPaths.splice(openedBefore);
+  await act(async () => { slotToggle.click(); });
+  checks++;
+
+  await maintenanceSection("saves");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled, "Import without a source is enabled");
   await click(".dst-world-import-source-row .secondary-button");
   check(importPanel.textContent?.includes("fixture/import/Cluster_1"), "Selected import source is not displayed");
@@ -315,15 +397,15 @@ async function run() {
   verifyHorizontalFit(importPanel, "Import form");
   checks++;
 
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   policyAlignment = measureBackupPolicyRow();
   check(!policyPanel.querySelector("button[type=submit]"), "Autosaved policy still offers a manual save button");
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "7");
   check(savedSettings.length === 0, "Typed retention must wait for the autosave pause");
-  await maintenanceSection("storage");
-  await maintenanceSection("save-import");
+  await maintenanceSection("runtime");
+  await maintenanceSection("saves");
   check(importPanel.textContent?.includes("fixture/import/Cluster_1"), "Navigation discarded the selected import source");
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "7",
     "Navigation discarded an unsaved backup-policy draft");
   await waitFor(() => savedSettings.length === 1, "debounced retention autosave");
@@ -345,12 +427,13 @@ async function run() {
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "7");
   await waitFor(() => policyFooter().dataset.saveState === "saved", "restored valid retention");
   check(savedSettings.length === 2, "Restoring the persisted retention wrote it again");
-  verifyHorizontalFit(policyPanel, "Save strategy form");
+  verifyHorizontalFit(select<HTMLElement>(".server-backup-policy-card .maintenance-chip__panel"), "Save strategy form");
   checks++;
 
   await maintenanceSection("runtime");
   check(!fixture.querySelector(".server-runtime-recovery-editor button[type=submit], .server-resource-policy button[type=submit]"),
     "Autosaved runtime policies still offer manual save buttons");
+  await openChip("server-runtime-recovery-chip");
   const recoveryFooter = () => select<HTMLElement>(".server-runtime-recovery-editor .server-backup-policy-footer");
   await input('.server-runtime-recovery-editor input[name="maxRestarts"]', "0");
   check(select('.server-runtime-recovery-editor input[name="maxRestarts"]').getAttribute("aria-invalid") === "true"
@@ -392,7 +475,7 @@ async function run() {
   check(savedSettings.length === 4 && settingsSaveAttempts === 4, "A recovery write triggered a policy autosave");
   checks++;
 
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   holdNextSettingsSave = true;
   rejectSettingsSave = null;
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "9");
@@ -441,16 +524,23 @@ async function run() {
   checks++;
 
   await maintenanceSection("runtime");
-  await click(".server-autostart-policy-editor input[type=checkbox]");
-  check(autostartWrites.length === 1 && autostartWrites[0] && select<HTMLInputElement>(".server-autostart-policy-editor input").checked,
+  await click(".server-autostart-chip input[type=checkbox]");
+  check(autostartWrites.length === 1 && autostartWrites[0] && select<HTMLInputElement>(".server-autostart-chip input[type=checkbox]").checked,
     "Autostart no longer persists independently from recovery");
   checks++;
 
-  await maintenanceSection("storage");
-  const directoryButtons = [...isolation.querySelectorAll<HTMLButtonElement>(".instance-isolation-paths button")];
-  check(directoryButtons.length === 5, "Unified directories must include program, data, config, saves and backups");
-  check(directoryButtons[0].textContent?.includes("程序位置") && directoryButtons[1].textContent?.includes("数据位置"),
+  await maintenanceSection("runtime");
+  const directoryRows = [...isolation.querySelectorAll<HTMLElement>(".instance-isolation-paths .server-file-backup-row")];
+  const directoryButtons = [...isolation.querySelectorAll<HTMLButtonElement>(".instance-isolation-paths .instance-isolation-open")];
+  check(directoryRows.length === 5 && directoryButtons.length === 5, "Unified directories must include program, data, config, saves and backups");
+  check(directoryRows[0].textContent?.includes("程序位置") && directoryRows[1].textContent?.includes("数据位置"),
     "Program and instance data locations must be named explicitly");
+  check(directoryRows.every((row) => row.getBoundingClientRect().height <= 44 && !row.querySelector("details")),
+    "Directory rows must stay dense single lines");
+  const copiedPaths: string[] = [];
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (text: string) => { copiedPaths.push(text); } } });
+  await act(async () => { directoryRows[2].querySelector<HTMLButtonElement>('button[aria-label="复制路径"]')!.click(); });
+  check(copiedPaths.length === 1 && copiedPaths[0] === healthyReport.config_path, "Copying a directory did not copy its full path");
   for (const button of directoryButtons) await act(async () => { button.click(); });
   check(openedPaths.length === 5 && new Set(openedPaths).size === 5, "Directory actions are duplicated or target the same path");
   check(openedPaths.includes(healthyReport.runtime_path) && openedPaths.includes(healthyReport.data_path)
@@ -501,7 +591,7 @@ async function run() {
   await maintenanceSection("broadcast");
   check(select<HTMLTextAreaElement>("textarea[name=broadcast-intent]").value === "保留广播草稿",
     "Category navigation discarded the broadcast draft");
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   await click(".dst-world-import-source-row .secondary-button");
   verifyWorkspaceBounds();
   checks++;
@@ -510,7 +600,7 @@ async function run() {
   const manyBackups = Array.from({ length: 30 }, (_, index) => ({ ...backup, backup_id: `history-${index}`,
     display_name: `联机备份 ${index + 1}`, backup_path: `fixture/backups/history-${index}` }));
   await act(async () => { props = { ...props, selectedBackups: manyBackups }; render(); });
-  const lastRow = select<HTMLElement>(".server-file-backup-row:last-child");
+  const lastRow = select<HTMLElement>('[data-maintenance-section="backups"] .server-file-backup-row:last-child');
   const backupScroll = localScrollOwner(lastRow, outer);
   check(backupScroll && backupScroll.matches("[data-configuration-scroll-owner]"),
     "Long backup history must scroll inside the selected configuration-style content region");
@@ -528,16 +618,16 @@ async function run() {
   await act(async () => { props = { ...props, selectedBackups: [backup] }; render(); });
   checks++;
 
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   holdNextImport = true;
   await click(".dst-world-import-actions .primary-button");
   check(resolveImport && importedSources.length === 2, "Pending import did not reach its storage boundary");
-  check([...fixture.querySelectorAll<HTMLButtonElement>(".dst-world-import button")].every((button) => button.disabled),
+  check([...fixture.querySelectorAll<HTMLButtonElement>(".dst-world-import-form button")].every((button) => button.disabled),
     "An in-flight import permits overlapping source selection or import");
   await click(".dst-world-import-actions .primary-button");
   check(importedSources.length === 2, "A repeated click dispatched a second import");
   await maintenanceSection("runtime");
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled
     && importedSources.length === 2, "Navigation discarded an in-flight import or allowed duplicate dispatch");
   const firstDetails = props.selectedDetails!;
@@ -553,14 +643,14 @@ async function run() {
     render();
   });
   await waitFor(() => fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "alternate instance directories");
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   check(select<HTMLButtonElement>(".dst-world-import-actions .primary-button").disabled
     && !select(".dst-world-import").textContent?.includes("fixture/import/Cluster_1"), "Changing instances leaked the previous import source");
   await act(async () => { resolveImport!({ instance_id: instance.id, source_cluster_path: "fixture/import/Cluster_1",
     target_cluster_path: "fixture/current", safeguard_path: "fixture/backups/stale-result", imported_master: true,
     imported_caves: true, copied_file_count: 5, copied_total_bytes: 8192 }); });
   check(!select(".dst-world-import").textContent?.includes("stale-result"), "A completed old import changed the newly selected instance");
-  await maintenanceSection("storage");
+  await maintenanceSection("runtime");
   await click(".instance-isolation-paths button");
   check(openedPaths.at(-1) === "fixture/alternate/runtime", "Instance switch retained the old directory action");
   check(!fixture.querySelector(".server-backup-policy-card .is-failed"), "Instance switch retained an old save error");
@@ -578,7 +668,7 @@ async function run() {
   checks++;
 
   // Leaving the maintenance tab inside the typing pause persists the edit instead of discarding it.
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   const writesBeforeTabSwitch = savedSettings.length;
   await input(".server-backup-policy-card .server-save-policy-group input[type=number]", "8");
   check(savedSettings.length === writesBeforeTabSwitch, "Typed retention skipped the autosave pause");
@@ -587,7 +677,7 @@ async function run() {
   check(savedSettings.at(-1)!.backup_retention_count === 8, "Tab switch saved a different retention");
   await click('[role="tab"][id$="-maintenance"]');
   await waitFor(() => fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "maintenance remount");
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   check(select<HTMLInputElement>(".server-backup-policy-card .server-save-policy-group input[type=number]").value === "8", "Returning to maintenance lost the saved retention");
   outer = select<HTMLElement>(".server-detail-scroll--maintenance");
   policyAlignment = measureBackupPolicyRow();
@@ -616,30 +706,122 @@ async function run() {
       "Keyboard focus entered a hidden maintenance category");
   }
   for (const [id, selector] of [
-    ["save-import", ".dst-world-import-source-row .secondary-button"], ["save-policy", ".server-managed-backup-policy input[type=number]"],
-    ["runtime", '.server-runtime-recovery-editor input[name="enabled"]'], ["runtime", ".server-resource-policy input[name=cpu]"],
-    ["storage", ".instance-isolation-paths button"], ["broadcast", "textarea[name=broadcast-intent]"]
+    ["saves", ".dst-world-import-source-row .secondary-button"], ["backups", ".server-managed-backup-policy input[type=number]"],
+    ["runtime:server-runtime-recovery-chip", '.server-runtime-recovery-editor input[name="enabled"]'],
+    ["runtime:server-resource-policy", ".server-resource-policy input[name=cpu]"],
+    ["runtime", ".instance-isolation-paths button"], ["broadcast", "textarea[name=broadcast-intent]"]
   ] as const) {
-    await maintenanceSection(id);
+    const [section, chip] = id.split(":") as [MaintenanceSection, string | undefined];
+    await maintenanceSection(section);
+    if (chip) await openChip(chip);
     const control = select<HTMLElement>(selector);
     control.scrollIntoView({ block: "nearest", inline: "nearest" });
     check(visibleInside(control, outer), `Maintenance cannot reach ${selector} at ${innerWidth} x ${innerHeight}`);
   }
   await maintenanceSection("backups");
-  await click(".server-file-backup-toolbar button");
+  await click(".server-backup-history-card .maintenance-toolbar > button.secondary-button");
   check(backupWrites.length === 2 && backupWrites[1] === instance.id, "Category navigation lost immediate backup");
   checks++;
 
+  // Only delayed native receipts are controlled; the real forms, API envelope,
+  // history refresh timer and instance lifecycle remain mounted in ServersView.
+  const beforeBroadcastProps = props;
+  const broadcastEvents = new Map<string, InstanceBroadcastEvent[]>();
+  const broadcastHistoryStatuses: string[] = [];
+  let broadcastSendCount = 0;
+  let holdNextHistory = false;
+  let resolveLateHistory: ((events: InstanceBroadcastEvent[]) => void) | null = null;
+  Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (command: string, args?: Record<string, unknown>) => {
+    if (command === "send_instance_broadcast") {
+      const request = args?.input as SendInstanceBroadcastInput;
+      check(request.instanceId === instance.id && request.source === "manual", "Broadcast targeted the wrong instance or source");
+      const event: InstanceBroadcastEvent = { event_id: `receipt-${++broadcastSendCount}`, instance_id: request.instanceId,
+        module_id: "dontstarve", source: "manual", message: request.message, status: "pending",
+        action_id: "broadcast", transport: "stdin", created_at_unix_ms: 1_800_000_000_000 + broadcastSendCount };
+      broadcastEvents.set(request.instanceId, [event, ...(broadcastEvents.get(request.instanceId) ?? [])]);
+      return { event: { ...event }, actionId: "broadcast", transport: "stdin", commandPreview: "fixture pending stdin receipt" };
+    }
+    if (command === "list_instance_broadcast_events") {
+      const id = String(args?.instanceId);
+      if (holdNextHistory && id === instance.id) {
+        holdNextHistory = false;
+        return new Promise<InstanceBroadcastEvent[]>((resolve) => { resolveLateHistory = resolve; });
+      }
+      return structuredClone(broadcastEvents.get(id) ?? []);
+    }
+    return invokeMock(command, args);
+  } } });
+  await running(true);
+  await maintenanceSection("broadcast");
+  const latestBroadcastStatus = () => select<HTMLElement>(".server-broadcast-event-status");
+  for (const status of ["sent", "failed"] as const) {
+    await input("textarea[name=broadcast-message]", `等待确认后${status === "sent" ? "发送" : "失败"}的广播`);
+    await click(".server-broadcast-actions .primary-button");
+    await waitFor(() => fixture.querySelector(".server-broadcast-event-status")?.textContent?.includes("待确认") === true,
+      "pending broadcast receipt in history");
+    broadcastHistoryStatuses.push(latestBroadcastStatus().textContent?.trim() ?? "");
+    check(!latestBroadcastStatus().classList.contains("is-success")
+      && select(".server-broadcast-panel").textContent?.includes("系统不会自动重发")
+      && select<HTMLTextAreaElement>("textarea[name=broadcast-message]").value === "",
+      "An accepted pending receipt must explain uncertainty, clear the submitted draft and never claim success");
+    const sendsBeforeRefresh = broadcastSendCount;
+    const events = broadcastEvents.get(instance.id)!;
+    broadcastEvents.set(instance.id, events.map((event, index) => index === 0 ? { ...event, status,
+      error_message: status === "failed" ? "Fixture stdin pipe closed before confirmation" : null } : event));
+    await waitFor(() => fixture.querySelector(".server-broadcast-event-status")?.textContent?.includes(status === "sent" ? "已发送" : "失败") === true,
+      `pending broadcast to refresh as ${status}`);
+    broadcastHistoryStatuses.push(latestBroadcastStatus().textContent?.trim() ?? "");
+    check(broadcastSendCount === sendsBeforeRefresh && fixture.querySelectorAll(".server-broadcast-event").length === sendsBeforeRefresh,
+      "Receipt refresh must update the same history entry without resending or duplicating a broadcast");
+    check(status === "sent" ? latestBroadcastStatus().classList.contains("is-success")
+      : select(".server-broadcast-event .server-broadcast-error[role=alert]").textContent?.includes("Fixture stdin pipe closed"),
+      "Settled broadcast history must preserve its confirmed status or original transport error");
+    checks++;
+  }
+  await input("textarea[name=broadcast-message]", "旧实例待确认广播");
+  await click(".server-broadcast-actions .primary-button");
+  await waitFor(() => fixture.querySelector(".server-broadcast-event-status")?.textContent?.includes("待确认") === true,
+    "old instance pending receipt");
+  holdNextHistory = true;
+  await waitFor(() => resolveLateHistory !== null, "pending receipt refresh to reach the delayed native boundary");
+  instancePanelReader.readIsolation = async (id, signal) => id === alternate.summary.id
+    ? { ...healthyReport, instance_id: id } : originalReadIsolation.call(instancePanelReader, id, signal);
+  await act(async () => {
+    props = { ...props, instances: [alternate.summary], selectedInstanceId: alternate.summary.id,
+      selectedDetails: alternate, selectedBackups: [], selectedModuleDetails: supportedModule };
+    render();
+  });
+  await maintenanceSection("broadcast");
+  await waitFor(() => !select<HTMLTextAreaElement>("textarea[name=broadcast-intent]").disabled, "alternate broadcast policy");
+  const lateEvent = { ...broadcastEvents.get(instance.id)![0], status: "sent", message: "LATE OLD INSTANCE HISTORY" };
+  await act(async () => { resolveLateHistory!([lateEvent]); });
+  const broadcastHistoryIsolated = !select(".server-broadcast-history").textContent?.includes("LATE OLD INSTANCE HISTORY")
+    && fixture.querySelectorAll(".server-broadcast-event").length === 0 && broadcastSendCount === 3;
+  check(broadcastHistoryIsolated,
+    "Late pending-history refresh must not replace the new instance's history or resend old messages");
+  checks++;
+  broadcastEvents.set(instance.id, [lateEvent, ...broadcastEvents.get(instance.id)!.slice(1)]);
+  instancePanelReader.readIsolation = originalReadIsolation;
+  await act(async () => { props = beforeBroadcastProps; render(); });
+  await waitFor(() => !select<HTMLTextAreaElement>("textarea[name=broadcast-intent]").disabled
+    && fixture.querySelector(".instance-isolation-panel")?.getAttribute("aria-busy") === "false", "restored maintenance controls");
+  // The keyed instance panel remounted; visit its lazy import section again before
+  // checking the complete workspace's original disclosure contract.
+  await maintenanceSection("saves");
+
   const controlMeasurements = await measureMaintenanceControls(fixture, maintenanceSection, click);
-  const previewSection = sectionIds.find((id) => id === document.documentElement.dataset.maintenancePreview);
-  if (previewSection) await maintenanceSection(previewSection);
+  // "saves", "saves:autosave", "saves:import", "backups" or "backups:policy": a section at rest or with one popover open.
+  const [previewId, previewChip] = (document.documentElement.dataset.maintenancePreview ?? "").split(":");
+  const previewSection = sectionIds.find((id) => id === previewId);
+  if (previewSection) {
+    await maintenanceSection(previewSection);
+    for (const open of fixture.querySelectorAll<HTMLButtonElement>('.maintenance-chip__summary[aria-expanded="true"]')) await act(async () => open.click());
+    if (previewChips[previewChip]) await click(previewChips[previewChip]);
+  }
   check(fixture.querySelectorAll('[role="tab"]').length === tabsBefore
     && fixture.querySelectorAll('[role="tablist"]').length === 1, "Maintenance introduced additional navigation tabs");
   const disclosures = [...select(".server-detail-scroll--maintenance").querySelectorAll("details")];
-  check(disclosures.length === 1 && disclosures[0].matches(".save-import__format")
-    && disclosures[0].closest('[data-maintenance-section="save-import"]')
-    && !disclosures[0].querySelector("button, input, select, textarea"),
-    "Only save format guidance may be collapsed; maintenance operations must remain directly accessible");
+  check(disclosures.length === 0, "Maintenance guidance lives in help bubbles and operations in popovers, never in disclosures");
   verifyWorkspaceBounds();
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   checks++;
@@ -649,7 +831,9 @@ async function run() {
     initial_maintenance_height: initialHeight, available_tab_height: select<HTMLElement>(".server-detail-scroll--maintenance").clientHeight,
     navigation_width: select(`${workspaceSelector} .configuration-workspace__sidebar`).getBoundingClientRect().width, compact_navigation: innerWidth <= 1100,
     settings_writes: savedSettings.length, settings_save_attempts: settingsSaveAttempts,
-    import_attempts: importedSources.length, backup_restore_attempts: restoredBackups.length };
+    import_attempts: importedSources.length, backup_restore_attempts: restoredBackups.length,
+    broadcast_send_count: broadcastSendCount, broadcast_history_statuses: broadcastHistoryStatuses,
+    broadcast_history_instance_isolated: broadcastHistoryIsolated };
 }
 
 let watchdog: ReturnType<typeof setTimeout>;

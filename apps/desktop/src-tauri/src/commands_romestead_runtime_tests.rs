@@ -128,13 +128,12 @@ async fn romestead_second_private_instance_resolves_configured_portable_runtime(
             plan.environment.get("DOTNET_ROOT_X64")
         );
         assert!(plan.ready_to_launch, "{:?}", plan.validation_issues);
-        let wrapper =
-            fs::read_to_string(Path::new(&plan.install_root).join("start-romestead.bat"))?;
+        assert!(Path::new(&plan.executable_path).ends_with("Server.exe"));
         assert!(
-            !wrapper.contains("%~dp0.."),
-            "wrapper must not infer configured tools from instance depth"
+            !Path::new(&plan.install_root)
+                .join("start-romestead.bat")
+                .exists()
         );
-        assert!(wrapper.contains("\"%~dp0Server.exe\" %*"));
     }
     Ok(())
 }

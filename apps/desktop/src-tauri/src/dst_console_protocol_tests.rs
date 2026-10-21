@@ -74,26 +74,50 @@ fn console_echo_old_nonce_and_listener_do_not_confirm_ready_or_saved() {
     }
 }
 
+/// Printed lines other than the consumption marker every probe emits first.
+fn world_lines(lua: &mlua::Lua) -> Vec<String> {
+    let lines: Vec<String> = lua.load("return out").eval().unwrap();
+    lines
+        .into_iter()
+        .filter(|line| !line.starts_with("[LGSM-DST-PROBE:"))
+        .collect()
+}
+
+#[test]
+fn every_probe_acknowledges_consumption_before_gameplay_starts() {
+    let lua = mlua::Lua::new();
+    lua.load(
+        "out={};function print(s) table.insert(out,s) end;function InGamePlay() return false end",
+    )
+    .exec()
+    .unwrap();
+    lua.load(ready_command("probe", &["Caves"])).exec().unwrap();
+    let lines: Vec<String> = lua.load("return out").eval().unwrap();
+    assert_eq!(lines, ["[LGSM-DST-PROBE:probe]"]);
+    assert!(is_ack(
+        "[00:00:21]: [LGSM-DST-PROBE:probe]",
+        "PROBE",
+        "probe"
+    ));
+}
+
 #[test]
 fn ready_requires_gameplay_and_the_enabled_caves_connection() {
     let lua = mlua::Lua::new();
     lua.load("out={};function print(s) table.insert(out,s) end;playing=false;function InGamePlay() return playing end;TheWorld={ismastersim=true};ModManager={mods={},failedmods={}};peers={};function Shard_GetConnectedShards() return peers end").exec().unwrap();
     lua.load(ready_command("probe", &["Caves"])).exec().unwrap();
-    assert_eq!(lua.load("return #out").eval::<usize>().unwrap(), 0);
+    assert_eq!(world_lines(&lua).len(), 0);
     lua.load("playing=true").exec().unwrap();
     lua.load(ready_command("probe", &["Caves"])).exec().unwrap();
-    assert_eq!(lua.load("return #out").eval::<usize>().unwrap(), 0);
+    assert_eq!(world_lines(&lua).len(), 0);
     lua.load("peers={['2']={ready=true,shard_name='Caves'}}")
         .exec()
         .unwrap();
     lua.load(ready_command("probe", &["Caves"])).exec().unwrap();
-    assert_eq!(
-        lua.load("return out[1]").eval::<String>().unwrap(),
-        "[LGSM-DST-READY:probe]"
-    );
+    assert_eq!(world_lines(&lua)[0], "[LGSM-DST-READY:probe]");
     lua.load("out={};peers={}").exec().unwrap();
     lua.load(ready_command("single", &[])).exec().unwrap();
-    assert_eq!(lua.load("return #out").eval::<usize>().unwrap(), 1);
+    assert_eq!(world_lines(&lua).len(), 1);
 }
 
 #[test]
@@ -110,18 +134,11 @@ fn island_adventures_ready_requires_every_secondary_and_uses_native_names() {
     ] {
         lua.load(format!("out={{}};peers={peers}")).exec().unwrap();
         lua.load(&command).exec().unwrap();
-        assert_eq!(
-            lua.load("return #out").eval::<usize>().unwrap(),
-            0,
-            "{peers}"
-        );
+        assert_eq!(world_lines(&lua).len(), 0, "{peers}");
     }
     lua.load("peers={['native-17']={ready=true,shard_name='Caves'},['native-29']={ready=true,shard_name='Islands'},['native-31']={ready=true,shard_name='Volcano'}}").exec().unwrap();
     lua.load(&command).exec().unwrap();
-    assert_eq!(
-        lua.load("return out").eval::<Vec<String>>().unwrap(),
-        ["[LGSM-DST-READY:four]"]
-    );
+    assert_eq!(world_lines(&lua), ["[LGSM-DST-READY:four]"]);
 }
 
 fn probe_mod_state(mod_state: &str) -> Vec<String> {
@@ -129,7 +146,7 @@ fn probe_mod_state(mod_state: &str) -> Vec<String> {
     lua.load("out={};function print(s) table.insert(out,s) end;function InGamePlay() return true end;TheWorld={ismastersim=true};ModManager={mods={},failedmods={}}").exec().unwrap();
     lua.load(mod_state).exec().unwrap();
     lua.load(ready_command("mods", &[])).exec().unwrap();
-    lua.load("return out").eval().unwrap()
+    world_lines(&lua)
 }
 
 #[test]
@@ -182,12 +199,9 @@ fn shutdown_ack_is_emitted_only_from_the_native_save_completion_callback() {
     let lua = mlua::Lua::new();
     lua.load("out={};function print(s) table.insert(out,s) end;function InGamePlay() return true end;TheWorld={ismastersim=true};quit=false;function Shutdown() quit=true end;function c_shutdown(save) assert(save==true);pending=Shutdown end").exec().unwrap();
     lua.load(shutdown_command("stop")).exec().unwrap();
-    assert_eq!(lua.load("return #out").eval::<usize>().unwrap(), 0);
+    assert_eq!(world_lines(&lua).len(), 0);
     assert!(!lua.globals().get::<bool>("quit").unwrap());
     lua.load("pending()").exec().unwrap();
-    assert_eq!(
-        lua.load("return out[1]").eval::<String>().unwrap(),
-        "[LGSM-DST-SAVED:stop]"
-    );
+    assert_eq!(world_lines(&lua)[0], "[LGSM-DST-SAVED:stop]");
     assert!(lua.globals().get::<bool>("quit").unwrap());
 }

@@ -65,7 +65,7 @@ export const ZH_CN_MINECRAFT_MESSAGES: MessageCatalog = {
   "settings.schema.minecraft.enable_query.title": "启用 Query",
   "settings.schema.minecraft.enable_code_of_conduct.description": "要求玩家加入前接受服务器的 codeofconduct.json 行为准则。",
   "settings.schema.minecraft.enable_code_of_conduct.title": "启用行为准则",
-  "settings.schema.minecraft.enable_rcon.description": "在配置的 RCON TCP 端口上暴露远程控制台。",
+  "settings.schema.minecraft.enable_rcon.description": "写入 server.properties 的 enable-rcon。新实例默认启用 RCON 并生成独立密码，供即时保存及玩家操作使用。已有的关闭设置会保留，修改后需重启生效。",
   "settings.schema.minecraft.enable_rcon.title": "启用 RCON",
   "settings.schema.minecraft.enable_whitelist.description": "Minecraft 会读取 whitelist.json，并只允许名单中的玩家加入。",
   "settings.schema.minecraft.enable_whitelist.title": "启用白名单",

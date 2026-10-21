@@ -474,6 +474,20 @@ export function formatTime(locale: LocaleCode, value: string | number | Date | n
   });
 }
 
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 31_536_000_000], ["month", 2_592_000_000], ["day", 86_400_000], ["hour", 3_600_000], ["minute", 60_000]
+];
+
+/** Short "3 hours ago" style time for dense rows; the absolute time belongs in the row's help bubble. */
+export function formatRelativeTime(locale: LocaleCode, valueMs: number, nowMs = Date.now()): string {
+  const delta = valueMs - nowMs;
+  const format = new Intl.RelativeTimeFormat(locale, { numeric: "auto", style: "short" });
+  for (const [unit, size] of RELATIVE_UNITS) {
+    if (Math.abs(delta) >= size) return format.format(Math.round(delta / size), unit);
+  }
+  return format.format(0, "minute");
+}
+
 export function formatRuntimeAge(
   value: string | number | Date | null | undefined,
   t: TranslateFn

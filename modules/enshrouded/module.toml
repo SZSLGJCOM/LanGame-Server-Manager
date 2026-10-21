@@ -112,3 +112,11 @@ command_template = "unban {{target}}"
 target_required = true
 target_encoding = "raw"
 destructive = true
+
+# Verified native server-thread world save; independent of player moderation.
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save current world"
+label_zh_cn = "立即保存世界"
+transport = "enshrouded_save"
+command_template = "save"

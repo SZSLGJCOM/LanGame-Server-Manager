@@ -178,6 +178,11 @@ fn read_items_with_budget(
     let mut items = Vec::with_capacity(paths.len());
     for path in paths {
         let metadata = plain_metadata(&path)?;
+        if metadata.is_dir()
+            && app_storage::is_managed_dst_map_observer(&path).map_err(|error| error.to_string())?
+        {
+            continue;
+        }
         let stats = path_stats(&path, budget)?;
         let name = path
             .file_name()

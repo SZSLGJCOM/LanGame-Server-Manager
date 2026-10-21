@@ -74,6 +74,13 @@ verification = "Enable account management while stopped, start through the norma
 [runtime.shutdown]
 grace_period_ms = 30000
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "立即保存世界"
+transport = "valheim_native"
+command_template = "save"
+
 [[runtime.shutdown.commands]]
 transport = "console_ctrl_c"
 command = "CTRL_C"

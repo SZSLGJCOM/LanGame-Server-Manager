@@ -19,6 +19,12 @@ pub(crate) mod save_import;
 #[path = "backups_publication.rs"]
 pub(crate) mod publication;
 
+#[path = "save_file_listing.rs"]
+mod save_file_listing;
+pub use save_file_listing::{
+    MAX_SAVE_FILE_LISTING_ENTRIES, SaveFileEntry, SaveFileListing, list_instance_save_files,
+};
+
 #[cfg(test)]
 #[path = "backups_concurrency_tests.rs"]
 mod concurrency_tests;
@@ -805,15 +811,20 @@ fn write_instance_backup_manifest(
 }
 
 fn instance_backup_root(record: &StoredInstanceRecord) -> PathBuf {
-    instance_root(record).join("backups")
+    instance_backup_root_for_config(&record.config_dir)
+}
+
+/// The one place that maps an instance configuration directory to its backups.
+pub(crate) fn instance_backup_root_for_config(config_dir: &Path) -> PathBuf {
+    instance_root_for_config(config_dir).join("backups")
 }
 
 fn instance_root(record: &StoredInstanceRecord) -> PathBuf {
-    record
-        .config_dir
-        .parent()
-        .unwrap_or(record.config_dir.as_path())
-        .to_path_buf()
+    instance_root_for_config(&record.config_dir)
+}
+
+fn instance_root_for_config(config_dir: &Path) -> PathBuf {
+    config_dir.parent().unwrap_or(config_dir).to_path_buf()
 }
 
 fn validated_backup_path(

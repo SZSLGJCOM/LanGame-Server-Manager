@@ -256,8 +256,8 @@ async function run() {
     bindAddressCandidates: [{ address: "0.0.0.0", kind: "all" }, { address: "192.0.2.42", kind: "lan" },
       { address: "198.51.100.4", kind: "overlay", family_name: "联机网络" }],
     instances: [selected.summary, other.summary],
-    moduleInstallations: { minecraft: { installState: "Installed", hasManagedInstallSource: true },
-      arksurvivalascended: { installState: "Installed", hasManagedInstallSource: true } },
+    moduleInstallations: { minecraft: { installState: "Installed", hasManagedInstallSource: true, hasImmediateWorldSave: true },
+      arksurvivalascended: { installState: "Installed", hasManagedInstallSource: true, hasImmediateWorldSave: false } },
     instanceLaunchPlans: {}, instanceLaunchFailures: {}, section: "overview", onWorkspaceSectionChange: noOperation,
     selectedInstanceId: selected.summary.id, selectedDetails: selected, selectedBackups: [], selectedModuleDetails: null,
     runtime: null, runtimeWindows: null, launchPlan: null, launchPlanError: null,
@@ -301,6 +301,12 @@ async function run() {
   contained(meta(), card, "Connection label");
   check(copy().getBoundingClientRect().right <= start().getBoundingClientRect().left, "Copy action must sit left of Start");
   check(Boolean(copy().getAttribute("aria-label")?.includes("复制")), "Copy action needs an accessible name");
+  const save = card.querySelector<HTMLButtonElement>(".server-list-card-save-action")!;
+  check(save?.disabled && save.getAttribute("aria-label")?.includes("保存存档"), "Stopped supported cards expose a disabled, accessible save shortcut");
+  contained(save, card, "Save action");
+  check(copy().getBoundingClientRect().right <= save.getBoundingClientRect().left
+    && save.getBoundingClientRect().right <= start().getBoundingClientRect().left, "Save must sit between Copy and Start");
+  check(!otherCard.querySelector(".server-list-card-save-action"), "A card without a loaded save declaration must not offer immediate save");
   checks++;
 
   let releaseClipboard: (() => void) | undefined;
@@ -389,6 +395,8 @@ async function run() {
   await checkConnectionRefresh(selected, other);
   await checkCrossplayConnection(selected);
   check(errors.length === 0, `Connection loader produced browser errors: ${errors.join("; ")}`);
+  card.scrollIntoView({ block: "center", behavior: "instant" });
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   return { status: "passed", checks, native_dialogs: nativeDialogs, browser_errors: errors,
     card_width: Math.round(card.getBoundingClientRect().width), card_height: Math.round(card.getBoundingClientRect().height), card_shell_height: Math.round(shell.getBoundingClientRect().height), start_width: Math.round(start().getBoundingClientRect().width),
     copied_endpoints: clipboardWrites, selection_events: selections.length, start_events: starts.length };

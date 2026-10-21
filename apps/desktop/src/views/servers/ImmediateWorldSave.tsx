@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { sendInstanceRuntimeCommand } from "../../api";
@@ -6,13 +6,16 @@ import { describeError } from "../../app-state";
 import { ShellIcon } from "../../components/ShellIcon";
 import { selectLocaleText, useI18n } from "../../i18n";
 import type { InstanceDetails, InstanceRuntimeCommandResult, ModuleDetails } from "../../types";
-import { resolveWorldSaveAction } from "./world-save-action";
+import { requestImmediateWorldSave, resolveWorldSaveAction, worldSaveDescription, worldSaveTitle, worldSaveResultMessage } from "./world-save-action";
+import { MaintenanceToolbar } from "./MaintenanceToolbar";
 import "./immediate-world-save.css";
 
 interface Props {
   details: InstanceDetails;
   moduleDetails: ModuleDetails | null;
   readOnly?: boolean;
+  /** Further compact controls of the saves strip (e.g. the auto-save chip). */
+  children?: ReactNode;
 }
 
 interface SaveState {
@@ -22,7 +25,7 @@ interface SaveState {
   error: string | null;
 }
 
-export function ImmediateWorldSave({ details, moduleDetails, readOnly }: Props) {
+export function ImmediateWorldSave({ details, moduleDetails, readOnly, children }: Props) {
   const { locale, t } = useI18n();
   const scope = useMemo(() => ({ instanceId: details.summary.id }), [details.summary.id]);
   const currentScope = useRef<typeof scope | null>(scope);
@@ -43,8 +46,7 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly }: Props) 
     request.current = operationScope;
     setState({ instanceId: scope.instanceId, sending: true, response: null, error: null });
     try {
-      const response = await sendInstanceRuntimeCommand(scope.instanceId, model.action.command_template,
-        model.action.process_key ?? null, { runtimeActionId: "save_world" });
+      const response = await requestImmediateWorldSave(details, moduleDetails, locale, sendInstanceRuntimeCommand);
       if (currentScope.current === operationScope) {
         setState({ instanceId: scope.instanceId, sending: false, response, error: null });
       }
@@ -58,25 +60,39 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly }: Props) 
     }
   }
 
-  if (!model) return null;
-  const pending = visible?.response?.write_confirmation_pending;
-  const status = visible?.sending ? text("正在发送保存请求…", "Sending save request…")
-    : pending ? text("保存命令已受理，但仍等待写入确认。请先核对运行日志，再决定是否重试。",
-      "The save command was accepted and is awaiting write confirmation. Check the runtime log before retrying.")
-    : visible?.response ? text("保存请求已发送，请核对服务器响应、运行日志或存档更新时间。",
-      "Save request sent. Check the server response, runtime log, or save file modification time.") : null;
-  return <section className="server-workbench-surface server-maintenance-card immediate-world-save"
-    aria-label={text("立即保存世界", "Save world now")}>
+  if (!model) {
+    return children ? <section className="server-workbench-surface server-maintenance-card immediate-world-save"
+      aria-label={t("servers.maintenance.savesTitle")}>
+      <div className="server-workbench-section-label server-maintenance-card-label">
+        <ShellIcon name="database" className="server-workbench-section-icon" />
+        <span>{t("servers.maintenance.savesTitle")}</span>
+        <MaintenanceToolbar label={t("servers.maintenance.savesTitle")}>{children}</MaintenanceToolbar>
+      </div>
+    </section> : null;
+  }
+  const status = visible?.sending ? text("正在请求保存…", "Requesting save…")
+    : visible?.response ? worldSaveResultMessage(visible.response, locale) : null;
+  const title = worldSaveTitle(details.summary.module_id, locale);
+  return <section className="server-workbench-surface server-maintenance-card immediate-world-save" aria-label={title}>
     <div className="server-workbench-section-label server-maintenance-card-label">
       <ShellIcon name="database" className="server-workbench-section-icon" />
-      <ConfigurationHelp description={text("请求游戏服务器将当前世界写入存档。", "Ask the game server to write the current world to its save files.")}>{(help) =>
-        <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{text("立即保存世界", "Save world now")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
-      <ConfigurationActionHelp reason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : model.unavailable || null}><button type="button" className="secondary-button" disabled={readOnly || Boolean(model.unavailable) || Boolean(state?.sending)}
-        onClick={() => void saveWorld()}>{state?.sending ? text("发送中…", "Sending…") : text("立即保存", "Save now")}</button></ConfigurationActionHelp>
+      <ConfigurationHelp description={worldSaveDescription(details.summary.module_id, locale)}>{(help) =>
+        <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{title}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
+      <MaintenanceToolbar label={title}>
+        <ConfigurationActionHelp reason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : model.unavailable || null}>
+          <button type="button" className="secondary-button maintenance-action" aria-busy={Boolean(visible?.sending) || undefined}
+            disabled={readOnly || Boolean(model.unavailable) || Boolean(state?.sending)} onClick={() => void saveWorld()}>
+            <ShellIcon name="download" className="maintenance-action__icon" aria-hidden="true" />
+            {state?.sending ? text("保存中…", "Saving…") : text("保存存档", "Save game")}
+          </button>
+        </ConfigurationActionHelp>
+        {children}
+      </MaintenanceToolbar>
     </div>
-    {readOnly ? <p className="form-note" role="status">{t("servers.archives.workspace.restoreForMaintenance")}</p>
-      : model.unavailable ? <p className="form-note" role="status">{model.unavailable}</p> : null}
-    <ActivityNotice tone={pending ? "warning" : "info"}>{status ? [status, visible?.response?.response_text?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" · ") : ""}</ActivityNotice>
+    {/* A save that cannot reach part of the world must say so before it is pressed; the full scope is in the title bubble. */}
+    {["rimworld", "barotrauma"].includes(details.summary.module_id) && model.action
+      ? <p className="form-note">{t(`servers.worldSave.limit.${details.summary.module_id}`)}</p> : null}
+    <ActivityNotice tone="info">{status ? [status, visible?.response?.response_text?.replace(/\s+/g, " ").trim()].filter(Boolean).join(" · ") : ""}</ActivityNotice>
     <ActivityNotice tone="error">{visible?.error ?? ""}</ActivityNotice>
   </section>;
 }

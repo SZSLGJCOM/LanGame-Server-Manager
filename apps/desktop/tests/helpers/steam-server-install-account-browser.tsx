@@ -127,18 +127,18 @@ async function anonymous() {
 }
 async function maintenance() {
   await tab("maintenance");
-  await settle(() => Boolean(fixture.querySelector('.maintenance-workspace [data-maintenance-section="storage"]')), "Maintenance did not load");
-  const storage = fixture.querySelector<HTMLElement>('.maintenance-workspace [data-maintenance-section="storage"]')!;
-  if (storage.hidden) {
-    await click(element('.maintenance-workspace [data-configuration-section-id="storage"] > button'));
+  await settle(() => Boolean(fixture.querySelector('.maintenance-workspace [data-maintenance-section="runtime"]')), "Maintenance did not load");
+  const runtime = fixture.querySelector<HTMLElement>('.maintenance-workspace [data-maintenance-section="runtime"]')!;
+  if (runtime.hidden) {
+    await click(element('.maintenance-workspace [data-configuration-section-id="runtime"] > button'));
   }
-  await settle(() => Boolean(storage.querySelector(".instance-isolation-content .inline-confirm-action")), "Program update actions did not load");
+  await settle(() => Boolean(runtime.querySelector(".instance-program-action")), "Program update actions did not load");
 }
 async function update(validate = false) {
   await maintenance();
-  const buttons = fixture.querySelectorAll<HTMLButtonElement>('.instance-isolation-content .button-row > .inline-confirm-action > button');
+  const buttons = fixture.querySelectorAll<HTMLButtonElement>('.instance-program-action');
   await click(buttons[validate ? 1 : 0]);
-  await click(element(".instance-isolation-content .inline-confirm-submit"));
+  await click(element(".instance-isolation-panel .inline-confirm-submit"));
 }
 function noSecrets() {
   const recorded = [fixture.textContent ?? "", ...activity, ...errors, ...Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? ""),
@@ -313,7 +313,7 @@ async function run() {
   await update(false); await settle(() => native?.phase === "ready" && Boolean(fixture.querySelector(".server-steamcmd-console")), "Cancellable update login did not start");
   await click(element(".server-steamcmd-console .server-runtime-terminal-actions button"));
   await maintenance();
-  await settle(() => !element<HTMLButtonElement>(".instance-isolation-content .button-row button").disabled, "Cancelling login did not release the program update control");
+  await settle(() => !element<HTMLButtonElement>(".instance-program-action").disabled, "Cancelling login did not release the program update control");
   check(calls.length === 14, "Cancelling authentication does not retry the original program update");
   await update(false); await settle(() => native?.phase === "ready" && Boolean(fixture.querySelector(".server-steamcmd-console")), "Instance-change login did not start");
   await click(element(`.server-list-card[data-card-id="${second.summary.id}"] .server-list-card-hitarea`));

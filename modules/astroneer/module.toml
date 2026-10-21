@@ -35,6 +35,15 @@ port = 1234
 [runtime.player_query]
 protocol = "none"
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "astroneer_save"
+command_template = "save"
+port_name = "console"
+password_setting_key = "console_password"
+
 [runtime.player_list]
 scope = "online"
 source = "tcp_console"

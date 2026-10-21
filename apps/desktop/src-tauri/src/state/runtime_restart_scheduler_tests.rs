@@ -1,5 +1,40 @@
 use super::*;
 
+#[test]
+fn planned_restart_preserves_manual_stop_priority_and_does_not_compete_with_crash_recovery() {
+    let mut scheduler = RuntimeRestartScheduler::default();
+    let flight = scheduler
+        .begin_planned_restart("world", "World", [10, 11])
+        .unwrap();
+    assert!(scheduler.entry_is_current(&flight));
+    assert!(scheduler.exit_is_expected("world", 10));
+    assert!(scheduler.exit_is_expected("world", 11));
+    assert!(!scheduler.exit_is_expected("world", 12));
+    assert!(
+        scheduler
+            .begin_planned_restart("world", "World", [12])
+            .is_none()
+    );
+    scheduler.request_stop("world");
+    assert!(!scheduler.entry_is_current(&flight));
+    scheduler.reset_for_manual_start("world");
+    assert!(!scheduler.entry_is_current(&flight));
+    assert!(
+        scheduler
+            .begin_planned_restart("world", "World", [12])
+            .is_none()
+    );
+    scheduler.finish_restart(&flight);
+    scheduler
+        .schedule(request("world", Duration::from_secs(5)))
+        .unwrap();
+    assert!(
+        scheduler
+            .begin_planned_restart("world", "World", [12])
+            .is_none()
+    );
+}
+
 fn request(instance_id: &str, backoff: Duration) -> RuntimeRestartScheduleRequest {
     RuntimeRestartScheduleRequest {
         instance_id: instance_id.to_owned(),

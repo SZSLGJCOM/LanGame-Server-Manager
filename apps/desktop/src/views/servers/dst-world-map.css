@@ -1,0 +1,113 @@
+.dst-world-map { min-width: 0; min-height: 0; width: 100%; height: 100%; container: dst-world-map / size; }
+/* A square map pane as tall as the tab region (flush top, bottom and left); the rail takes the rest.
+   A narrow region shrinks the square to the width left after the rail's minimum, still flush top-left.
+   220px keeps the 1280x800 tab (1004x752 region) full height while every rail control still fits. */
+.dst-map-layout {
+  --dst-map-rail-min: 220px; --dst-map-gap: 16px;
+  display: grid; grid-template-columns: minmax(0, min(100cqh, calc(100cqw - var(--dst-map-rail-min) - var(--dst-map-gap)))) minmax(var(--dst-map-rail-min), 1fr);
+  height: 100%; gap: var(--dst-map-gap); align-items: start;
+}
+/* The rail is a full-height column: status and panel content flex (and clip) above, the player strip and GM grid stay pinned to the bottom.
+   It fits without scrolling at 1280x800 and larger; scrolling remains only as a small-window fallback. */
+.dst-map-sidebar {
+  position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0;
+  height: 100cqh; overflow: hidden auto; overscroll-behavior: contain; padding: 10px 12px 10px 0; box-sizing: border-box;
+  font-size: var(--text-meta);
+}
+.dst-map-rail-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.dst-map-rail-main > * { flex: none; }
+/* The item results take all the space left above the pinned grid. */
+.dst-map-rail-main > .dst-gm-spawn { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+.dst-gm-spawn .gmt-dst-prefab-assist { flex: 1 1 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr); }
+/* The page holds exactly the rows that fit (DstPrefabPicker measures this box), so nothing scrolls and the content never sizes it. */
+.dst-gm-spawn .gmt-dst-prefab-results { min-height: 0; overflow: hidden; align-content: start; grid-auto-rows: 26px; }
+.dst-map-rail-dock { flex: none; display: grid; gap: 8px; border-top: 1px solid var(--shell-line); padding-top: 8px; }
+.dst-map-rail-main > .dst-gm-spawn, .dst-map-rail-main > .dst-map-canvas-details:not(:empty) { border-top: 1px solid var(--shell-line); padding-top: 10px; }
+.dst-map-canvas-details { display: grid; gap: 10px; }
+.dst-map-canvas-details:empty { display: none; }
+.dst-map-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.dst-map-toolbar select { min-width: 0; width: 100%; }
+.dst-map-status { color: var(--shell-muted); white-space: nowrap; }
+/* Zoom floats over the map's top-left corner as compact icon buttons. */
+.dst-map-controls {
+  position: absolute; top: 8px; left: 8px; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 2px;
+  border-radius: 6px; background: rgba(10, 14, 20, .72); cursor: default;
+}
+.dst-map-controls button { display: inline-grid; place-items: center; width: 26px; height: 26px; min-height: 0; padding: 0; flex: none; }
+.dst-map-controls svg { width: 15px; height: 15px; }
+.dst-map-controls .dst-map-zoom { width: 84px; height: 26px; min-height: 0; padding-block: 0; font-size: var(--text-meta); font-variant-numeric: tabular-nums; }
+.dst-map-viewport, .dst-map-empty { width: 100%; aspect-ratio: 1; min-width: 0; }
+.dst-map-empty { display: grid; place-items: center; color: var(--shell-muted); font-size: var(--text-body); }
+.dst-map-viewport { position: relative; container-type: size; overflow: hidden; border: 0; background: transparent; touch-action: none; user-select: none; cursor: grab; }
+.dst-map-viewport.is-dragging { cursor: grabbing; }
+.dst-map-viewport:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 2px; }
+.dst-map-plane { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+.dst-map-plane canvas { display: block; width: 100%; height: 100%; }
+.dst-map-players, .dst-map-landmarks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.dst-map-landmark-fallback { fill: rgba(255, 255, 255, .55); }
+/* Fixed hover readout in the map's bottom-left corner: always present, so pointer movement never changes layout. */
+.dst-map-readout {
+  position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); padding: 2px 8px; border-radius: 6px;
+  background: rgba(10, 14, 20, .72); color: #e8edf2; font-size: var(--text-meta); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+}
+.dst-map-note { color: var(--shell-muted); font-size: var(--text-meta); margin: 0; }
+.dst-map-art-issues { color: var(--shell-muted); font-size: var(--text-meta); }
+.dst-map-art-issues summary { cursor: pointer; }
+.dst-map-art-issues ul { max-height: 120px; overflow: auto; padding-left: 20px; overflow-wrap: anywhere; }
+
+/* Slim player chip strip directly above the GM grid; it wraps and never grows past two rows. */
+.dst-map-roster { position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; min-height: 26px; }
+.dst-map-roster ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; flex: 1; max-height: 56px; overflow: hidden; }
+.dst-map-roster li { min-width: 0; max-width: 100%; }
+.dst-map-roster li button {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 26px; padding: 0 8px 0 3px;
+  border: 1px solid var(--shell-line); border-radius: 13px; background: transparent; color: inherit; font: inherit; font-size: var(--text-meta); cursor: pointer;
+}
+.dst-map-roster li button img, .dst-map-roster li button svg { width: 18px; height: 18px; flex: none; border-radius: 50%; object-fit: cover; }
+.dst-map-roster li button:hover { background: var(--shell-focus-soft); }
+.dst-map-roster li button[aria-pressed="true"] { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+.dst-map-roster li button:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: -2px; }
+.dst-map-roster strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--font-weight-medium); }
+.dst-map-roster-clear { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; flex: none; border: 0; border-radius: 4px; background: transparent; color: var(--shell-muted); cursor: pointer; }
+.dst-map-roster-clear:hover { color: inherit; background: var(--shell-focus-soft); }
+.dst-map-roster-clear svg { width: 14px; height: 14px; }
+.dst-map-roster p { margin: 0; color: var(--shell-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dst-map-roster ul + p:empty { display: none; }
+/* Only short regions (below the rail's ~650px content) can scroll: reserve the gutter there so both panels keep identical widths. */
+@container dst-world-map (max-height: 660px) {
+  .dst-map-sidebar { scrollbar-gutter: stable; }
+}
+@container dst-world-map (max-width: 560px) {
+  .dst-map-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 100cqw auto; height: auto; }
+  .dst-map-sidebar { height: auto; overflow: visible; }
+}
+
+/* GM tools: one icon-over-label button style for every world, player and regeneration action. */
+.dst-gm-tools, .dst-gm-spawn { display: grid; gap: 6px; min-width: 0; }
+.dst-gm-tool-group { display: grid; gap: 4px; min-width: 0; }
+.dst-gm-tool-group h3 { display: flex; gap: 6px; min-width: 0; margin: 0; font-size: var(--text-meta); font-weight: var(--font-weight-semibold); color: var(--shell-muted); }
+.dst-gm-tool-group h3 span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: var(--font-weight-regular); }
+/* Four columns everywhere; labels stay at most three CJK characters so they fit the 220px-minimum rail, tooltips carry the detail. */
+.dst-gm-tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.secondary-button.dst-gm-tool, .primary-button.dst-gm-tool, .dst-gm-amount {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 100%; min-width: 0; height: 46px;
+  padding: 4px 2px; font-size: var(--text-meta); line-height: 1.2;
+}
+.dst-gm-confirm { display: contents; }
+.dst-gm-tool > svg { width: 18px; height: 18px; flex: none; }
+.dst-gm-tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dst-gm-tool[aria-pressed="true"] { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+/* Confirmation opens as a popover anchored to the rail's bottom edge, over the content, never as an inline long form. */
+.dst-gm-confirm .inline-confirm-review {
+  position: absolute; left: 0; right: 12px; bottom: 10px; z-index: 5; display: grid; gap: 8px; padding: 10px;
+  border: 1px solid var(--shell-line); border-radius: 8px; background: var(--panel); box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+.dst-gm-confirm .inline-confirm-buttons { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.dst-gm-result { margin: 0; color: var(--shell-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.dst-gm-result.is-error { color: var(--danger, #f87171); }
+/* The amount is a GM-tool-sized cell: same height, border and radius as the buttons beside it. */
+.dst-gm-amount { box-sizing: border-box; border: 1px solid var(--border); border-radius: 8px; background: var(--theme-card-surface); color: var(--shell-muted); cursor: text; }
+.dst-gm-amount:focus-within { border-color: var(--shell-focus); }
+.dst-gm-amount.is-invalid { border-color: var(--danger, #f87171); }
+.dst-gm-amount input { width: 100%; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--shell-text, inherit); font: inherit; font-size: var(--text-body); text-align: center; font-variant-numeric: tabular-nums; outline: none; }

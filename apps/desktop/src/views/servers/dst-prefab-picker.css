@@ -1,0 +1,25 @@
+/* DST item and creature chooser, sized for the world map's narrow tool rail: no inner scrolling, paged rows. */
+.gmt-dst-prefab-assist { display: grid; gap: 6px; min-width: 0; }
+.gmt-dst-prefab-toolbar { display: grid; gap: 6px; min-width: 0; }
+.gmt-dst-prefab-search { width: 100%; min-width: 0; box-sizing: border-box; }
+.gmt-dst-prefab-status { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+.gmt-dst-prefab-current { display: inline-flex; align-items: baseline; gap: 4px; min-width: 0; overflow: hidden; color: var(--shell-muted); font-size: var(--text-meta); white-space: nowrap; }
+.gmt-dst-prefab-current code { overflow: hidden; text-overflow: ellipsis; color: var(--shell-text, inherit); }
+.gmt-dst-prefab-pager {
+  display: inline-flex; align-items: center; flex: none; height: 24px; overflow: hidden; margin-left: auto;
+  border: 1px solid var(--shell-line); border-radius: 999px; color: var(--shell-muted);
+}
+.gmt-dst-prefab-page-btn { display: inline-grid; place-items: center; width: 24px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.gmt-dst-prefab-page-btn:not(:disabled):hover { color: var(--shell-accent, #38bdf8); }
+.gmt-dst-prefab-page-btn:disabled { cursor: not-allowed; opacity: .36; }
+.gmt-dst-prefab-page-icon { width: 13px; height: 13px; }
+.gmt-dst-prefab-page-label { min-width: 40px; padding: 0 4px; font-size: var(--text-meta); line-height: 22px; text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.gmt-dst-prefab-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.gmt-dst-prefab-option {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; height: 26px; padding: 0 8px;
+  border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; font: inherit; font-size: var(--text-meta); text-align: left; cursor: pointer;
+}
+.gmt-dst-prefab-option:hover, .gmt-dst-prefab-option--active { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+.gmt-dst-prefab-option-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 24px; }
+.gmt-dst-prefab-option code { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--shell-muted); line-height: 24px; }
+.gmt-dst-prefab-empty { color: var(--shell-muted); font-size: var(--text-meta); padding: 6px 0; }

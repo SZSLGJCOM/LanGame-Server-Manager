@@ -1125,6 +1125,43 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "read_dontstarve_world_map" => boxed_command(|| async move {
+            to_json(
+                commands::commands_dst_map::read_dontstarve_world_map(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "read_instance_maintenance_schedule" => boxed_command(|| async move {
+            to_json(
+                commands::read_instance_maintenance_schedule(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                    arg(&args, "action", "action")?,
+                )
+                .await?,
+            )
+        }),
+        "update_instance_maintenance_schedule" => boxed_command(|| async move {
+            to_json(
+                commands::update_instance_maintenance_schedule(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
+        "read_instance_player_history" => boxed_command(|| async move {
+            to_json(
+                commands::read_instance_player_history(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
         "read_instance_live_players" => boxed_command(|| async move {
             to_json(
                 commands::read_instance_live_players(

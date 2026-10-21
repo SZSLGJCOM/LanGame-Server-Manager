@@ -3,7 +3,7 @@ fn main() {
     println!("cargo:rerun-if-changed=icons/icon.ico");
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let root = project_root();
         println!(
             "cargo:rerun-if-changed={}",
             root.join("scripts/build_control_output.ps1").display()
@@ -203,6 +203,100 @@ fn main() {
                 String::from_utf8_lossy(&result.stderr)
             );
         }
+        let script = root.join("scripts/build_windrose_save_control.ps1");
+        println!("cargo:rerun-if-changed={}", script.display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/windrose/control").display()
+        );
+        let output = std::path::PathBuf::from(
+            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
+        )
+        .join("windrose-save-control");
+        let mut command = std::process::Command::new("powershell.exe");
+        command
+            .args([
+                "-NoLogo",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+            ])
+            .arg(script)
+            .arg("-OutDir")
+            .arg(output);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+        }
+        let result = command
+            .output()
+            .expect("failed to start the Windrose save control builder");
+        if !result.status.success() {
+            panic!(
+                "Windrose save control build failed:\n{}\n{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        let root = project_root();
+        println!(
+            "cargo:rerun-if-changed={}",
+            root.join("modules/returntomoria/control").display()
+        );
+        for (script, leaf) in [
+            ("build_unreal_save_control.ps1", "native-world-save"),
+            ("build_scum_save_control.ps1", "scum-save-control"),
+            ("build_unreal_loader_proxies.ps1", "unreal-loader-proxies"),
+            ("build_vrising_save_control.ps1", "vrising-save-control"),
+        ] {
+            let source = root.join("scripts").join(script);
+            println!("cargo:rerun-if-changed={}", source.display());
+            let output = std::path::PathBuf::from(
+                std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
+            )
+            .join(leaf);
+            let mut command = std::process::Command::new("powershell.exe");
+            command
+                .args([
+                    "-NoLogo",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                ])
+                .arg(source)
+                .arg("-OutDir")
+                .arg(output);
+            use std::os::windows::process::CommandExt;
+            command.creation_flags(0x0800_0000);
+            let result = command
+                .output()
+                .expect("failed to start native persistence adapter builder");
+            if !result.status.success() {
+                panic!(
+                    "Native persistence adapter build failed:\n{}\n{}",
+                    String::from_utf8_lossy(&result.stdout),
+                    String::from_utf8_lossy(&result.stderr)
+                );
+            }
+        }
+        for directory in [
+            "modules/nightingale/control",
+            "modules/conanexiles/control",
+            "modules/scum/control",
+            "modules/vrising/control",
+            "apps/desktop/src-tauri/native",
+        ] {
+            println!("cargo:rerun-if-changed={}", root.join(directory).display());
+        }
     }
 
     let windows = tauri_build::WindowsAttributes::new()
@@ -214,4 +308,13 @@ fn main() {
         .codegen(tauri_build::CodegenContext::new());
 
     tauri_build::try_build(attributes).expect("failed to run Tauri build script")
+}
+
+fn project_root() -> std::path::PathBuf {
+    // The same cached build executable can run for a snapshot or the live tree.
+    // Resolve the source location supplied by this Cargo invocation at runtime.
+    std::path::PathBuf::from(
+        std::env::var_os("CARGO_MANIFEST_DIR").expect("Cargo CARGO_MANIFEST_DIR is missing"),
+    )
+    .join("../../..")
 }

@@ -86,7 +86,11 @@ impl Resources {
     }
 }
 
-fn open_checked_file(root: &Path, path: &Path, limit: u64) -> Result<Option<File>, String> {
+pub(crate) fn open_checked_file(
+    root: &Path,
+    path: &Path,
+    limit: u64,
+) -> Result<Option<File>, String> {
     let relative = path
         .strip_prefix(root)
         .map_err(|_| String::from("DST asset path escaped installation"))?;
@@ -132,7 +136,7 @@ fn open_checked_file(root: &Path, path: &Path, limit: u64) -> Result<Option<File
     Ok(Some(file))
 }
 
-pub(super) fn is_reparse(metadata: &fs::Metadata) -> bool {
+pub(crate) fn is_reparse(metadata: &fs::Metadata) -> bool {
     if metadata.file_type().is_symlink() {
         return true;
     }
@@ -147,7 +151,7 @@ pub(super) fn is_reparse(metadata: &fs::Metadata) -> bool {
     }
 }
 
-fn read_limited(reader: impl Read, limit: usize) -> Result<Vec<u8>, String> {
+pub(crate) fn read_limited(reader: impl Read, limit: usize) -> Result<Vec<u8>, String> {
     let mut output = Vec::new();
     reader
         .take(limit as u64 + 1)

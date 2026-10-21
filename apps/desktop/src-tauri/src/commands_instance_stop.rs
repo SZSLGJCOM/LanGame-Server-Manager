@@ -28,7 +28,8 @@ pub(super) async fn stop_run<L: StorageContextTaskLease>(
         active_run.session_id.as_deref(),
     )
     .await?;
-    request_instance_graceful_shutdown(state, storage, details, shutdown, source).await?;
+    request_instance_graceful_shutdown(state, storage, storage_lease, details, shutdown, source)
+        .await?;
     if details.summary.module_id == "dontstarve" {
         dst_lifecycle::finish_confirmed_stop(state, storage, &details.summary.id, active_run).await
     } else {

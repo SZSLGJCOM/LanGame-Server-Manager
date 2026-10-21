@@ -112,11 +112,17 @@ export function resolveRuntimeConsoleTransport(
   };
   const actions = module.runtime.player_actions ?? [];
   const shutdown = module.runtime.shutdown?.commands ?? [];
-  const routes = uniqueRoutes([...actions, ...shutdown]);
+  const declaredRoutes = uniqueRoutes([...actions, ...shutdown]);
   const ark = module.summary.id === "arksurvivalascended" || module.summary.id === "arksurvivalevolved";
   // ARK selects maps through RCON. Shutdown's stdin fallback does not verify interactive map routing.
-  const nativeDeclared = routes.some(route => route.transport === "stdin")
-    || (!ark && shutdown.some(command => normalized(command.fallback_transport)?.toLowerCase() === "stdin"));
+  const nativeIsFallback = !ark
+    && shutdown.some(command => normalized(command.fallback_transport)?.toLowerCase() === "stdin");
+  const nativeDeclared = declaredRoutes.some(route => route.transport === "stdin") || nativeIsFallback;
+  // A native action (for example save) may use the same declared fallback.
+  // Prefer the configured remote console without treating that fallback as a second destination.
+  const routes = nativeIsFallback && declaredRoutes.some(route => route.transport !== "stdin")
+    ? declaredRoutes.filter(route => route.transport !== "stdin")
+    : declaredRoutes;
   // A command-specific shutdown fallback is not a competing interactive route.
   if (!routes.length && nativeDeclared) return { available: true, options: { ...nativeOptions }, hint: null };
   if (!routes.length) return {

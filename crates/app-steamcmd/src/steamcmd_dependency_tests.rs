@@ -60,10 +60,19 @@ impl Fixture {
     async fn reject_install(&self, validate: bool) {
         let cancellation = InstallCancellation::new();
         let mut prepared_dependency = false;
-        let result = install_or_update_module_with_progress_and_cancellation(
+        let target = Path::new(&self.settings.games_root).join("game");
+        let guard = acquire_game_install_lifecycle(
             crate::test_install_lock_context(),
+            &self.module.summary.id,
+            std::slice::from_ref(&target),
+        )
+        .await
+        .unwrap();
+        let result = install_or_update_module_at_with_progress_and_cancellation(
             &self.settings,
             &self.module,
+            &target,
+            &guard,
             validate,
             &cancellation,
             |update| {

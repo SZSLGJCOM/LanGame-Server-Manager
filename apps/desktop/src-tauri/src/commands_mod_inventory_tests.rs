@@ -1,6 +1,35 @@
 use super::*;
 
 #[test]
+fn manual_mod_inventory_omits_owned_helpers_but_retains_same_named_user_mods() {
+    let root = std::env::temp_dir().join(format!(
+        "langame-mod-helper-inventory-{}",
+        uuid::Uuid::new_v4()
+    ));
+    let helper = root.join("lgsm_world_map_observer");
+    fs::create_dir_all(&helper).unwrap();
+    fs::write(
+        helper.join("modinfo.lua"),
+        include_bytes!("../../../../modules/dontstarve/world_map_observer/modinfo.lua"),
+    )
+    .unwrap();
+    fs::write(
+        helper.join("modmain.lua"),
+        include_bytes!("../../../../modules/dontstarve/world_map_observer/modmain.lua"),
+    )
+    .unwrap();
+    fs::create_dir(root.join("user-addon")).unwrap();
+    fs::write(root.join("user-addon/modmain.lua"), b"user content").unwrap();
+    let items = read_manual_mod_inventory_items(None, &root).unwrap();
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].name, "user-addon");
+    fs::write(helper.join("modinfo.lua"), b"name='User Mod'\n").unwrap();
+    let items = read_manual_mod_inventory_items(None, &root).unwrap();
+    assert_eq!(items.len(), 2);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn manual_mod_inventory_rejects_linked_payloads_instead_of_reporting_success() {
     let root = std::env::temp_dir().join(format!("langame-mod-inventory-{}", uuid::Uuid::new_v4()));
     let inventory = root.join("inventory");

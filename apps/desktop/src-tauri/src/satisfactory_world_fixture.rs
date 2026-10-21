@@ -2,7 +2,7 @@
 //! store. Tests still execute the production service, validation and decoder.
 use std::collections::{BTreeMap, VecDeque};
 use std::sync::{
-    Mutex,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 
@@ -26,11 +26,17 @@ pub(crate) fn step(function: &'static str, data: Value) -> Step {
 
 pub(crate) struct Fixture {
     steps: Mutex<VecDeque<Step>>,
-    pub(crate) calls: Mutex<Vec<(&'static str, Value)>>,
+    pub(crate) calls: Arc<Mutex<Vec<(&'static str, Value)>>>,
     pub(crate) checks: Mutex<Vec<bool>>,
     pub(crate) names: Mutex<VecDeque<Result<String, String>>>,
     saved_name: Mutex<Option<String>>,
     listener_closed: AtomicBool,
+    save_reply_gate: Mutex<
+        Option<(
+            tokio::sync::oneshot::Sender<()>,
+            tokio::sync::oneshot::Receiver<()>,
+        )>,
+    >,
 }
 
 impl Fixture {
@@ -39,11 +45,12 @@ impl Fixture {
         api.test_credentials = Some(std::sync::Arc::new(Mutex::new(BTreeMap::new())));
         api.fixture = Some(Self {
             steps: Mutex::new(steps.into()),
-            calls: Mutex::new(Vec::new()),
+            calls: Arc::new(Mutex::new(Vec::new())),
             checks: Mutex::new(Vec::new()),
             names: Mutex::new(VecDeque::new()),
             saved_name: Mutex::new(None),
             listener_closed: AtomicBool::new(false),
+            save_reply_gate: Mutex::new(None),
         });
         api
     }
@@ -62,6 +69,28 @@ impl Fixture {
             .unwrap()
             .pop_front()
             .unwrap_or_else(|| Ok("Fixture".into()))
+    }
+
+    pub(crate) fn pause_save_reply(
+        &self,
+    ) -> (
+        tokio::sync::oneshot::Receiver<()>,
+        tokio::sync::oneshot::Sender<()>,
+    ) {
+        let (entered, started) = tokio::sync::oneshot::channel();
+        let (release, wait) = tokio::sync::oneshot::channel();
+        *self.save_reply_gate.lock().unwrap() = Some((entered, wait));
+        (started, release)
+    }
+
+    pub(crate) async fn wait_for_reply(&self, function: &str) {
+        if function == "SaveGame" {
+            let gate = self.save_reply_gate.lock().unwrap().take();
+            if let Some((entered, release)) = gate {
+                let _ = entered.send(());
+                let _ = release.await;
+            }
+        }
     }
 
     pub(crate) fn reply(&self, function: &'static str, data: &Value) -> Result<Reply, ApiError> {

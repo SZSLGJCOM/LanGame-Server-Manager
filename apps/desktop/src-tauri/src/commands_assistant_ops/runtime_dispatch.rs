@@ -19,6 +19,9 @@ fn runtime_action_response_text(
 #[path = "../commands_runtime_response_tests.rs"]
 mod runtime_response_tests;
 
+#[path = "ark_world_save.rs"]
+mod ark_world_save;
+
 fn source_rcon_executor(module_id: &str) -> fn(&str, &str, &str) -> Result<String, String> {
     match module_id {
         "conanexiles" => crate::runtime_transport::conan_rcon_exec,
@@ -27,6 +30,72 @@ fn source_rcon_executor(module_id: &str) -> fn(&str, &str, &str) -> Result<Strin
             crate::runtime_transport::player_list_rcon_exec
         }
         _ => source_rcon_exec,
+    }
+}
+
+fn is_humanitz_native_save_action(
+    module_id: &str,
+    transport: &str,
+    action_id: Option<&str>,
+) -> bool {
+    module_id == "humanitz"
+        && transport.eq_ignore_ascii_case("source_rcon")
+        && action_id == Some("save_world")
+}
+
+fn rcon_runtime_action_executor(
+    module_id: &str,
+    transport: &str,
+    action_id: Option<&str>,
+) -> fn(&str, &str, &str) -> Result<String, String> {
+    if is_humanitz_native_save_action(module_id, transport, action_id) {
+        crate::runtime_transport_humanitz::humanitz_rcon_save
+    } else if transport.eq_ignore_ascii_case("humanitz_rcon") {
+        crate::runtime_transport_humanitz::humanitz_rcon_info
+    } else {
+        source_rcon_executor(module_id)
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn humanitz_native_save_selection_and_pending_are_limited_to_the_declared_action() {
+    for (module, transport, action, pending) in [
+        ("humanitz", "source_rcon", Some("save_world"), true),
+        ("humanitz", "SOURCE_RCON", Some("save_world"), true),
+        ("humanitz", "source_rcon", Some("show_players"), false),
+        ("humanitz", "source_rcon", None, false),
+        ("humanitz", "humanitz_rcon", Some("save_world"), false),
+        (
+            "humanitz",
+            "humanitz_rcon",
+            Some("list_online_players"),
+            false,
+        ),
+        ("minecraft", "source_rcon", Some("save_world"), false),
+        (
+            "arksurvivalevolved",
+            "source_rcon",
+            Some("save_world"),
+            false,
+        ),
+    ] {
+        assert_eq!(
+            is_humanitz_native_save_action(module, transport, action),
+            pending,
+        );
+        let expected = if pending {
+            crate::runtime_transport_humanitz::humanitz_rcon_save
+                as fn(&str, &str, &str) -> Result<String, String>
+        } else if transport.eq_ignore_ascii_case("humanitz_rcon") {
+            crate::runtime_transport_humanitz::humanitz_rcon_info
+        } else {
+            source_rcon_executor(module)
+        };
+        assert!(std::ptr::fn_addr_eq(
+            rcon_runtime_action_executor(module, transport, action),
+            expected,
+        ));
     }
 }
 
@@ -86,6 +155,15 @@ async fn dispatch_rcon_command(
         password_setting_key,
         enabled_setting_key,
     )?;
+    dispatch_prepared_rcon_command(endpoint, password, command, execute).await
+}
+
+async fn dispatch_prepared_rcon_command(
+    endpoint: String,
+    password: String,
+    command: &str,
+    execute: fn(&str, &str, &str) -> Result<String, String>,
+) -> Result<String, String> {
     let command = command.to_string();
     tokio::task::spawn_blocking(move || execute(&endpoint, &password, &command))
         .await
@@ -781,6 +859,58 @@ async fn send_instance_runtime_command_inner(
         .duration_since(UNIX_EPOCH)
         .map_err(|_| String::from("failed to compute runtime command timestamp"))?
         .as_millis();
+    if let Some(save) =
+        super::commands_world_save::NativeSave::from_transport(&normalized_transport)
+    {
+        let details =
+            runtime_command_instance_details(&storage, &instance_id, &mut instance_details).await?;
+        let result = save
+            .execute(
+                state,
+                details,
+                runtime_action_id.as_deref(),
+                &normalized_command,
+                submitted_at_unix_ms,
+                _instance_mutation,
+            )
+            .await?;
+        append_desktop_app_log(
+            &storage,
+            "info",
+            "instance.runtime_command.native_save_received",
+            "Native world-save receipt received",
+            json!({ "instance_id": instance_id, "transport": normalized_transport,
+                "runtime_action_id": runtime_action_id, "write_confirmation_pending": result.write_confirmation_pending }),
+        );
+        return Ok(result);
+    }
+    if runtime_action_id.as_deref() == Some("save_world") {
+        let details =
+            runtime_command_instance_details(&storage, &instance_id, &mut instance_details).await?;
+        if details.summary.module_id == "dontstarve" {
+            return crate::commands::commands_runtime_lifecycle::dst_lifecycle::immediate_save::save_world(
+                state, &storage, details, submitted_at_unix_ms,
+            ).await;
+        }
+        if details.summary.module_id == "theforest" {
+            if normalized_command != "save"
+                || normalized_transport != "stdin"
+                || process_key.as_deref() != Some("main")
+                || port_name.is_some()
+                || password_setting_key.is_some()
+                || enabled_setting_key.is_some()
+            {
+                return Err("The Forest save confirmation requires the declared primary-console save action.".into());
+            }
+            return super::commands_world_save::theforest::save_world(
+                state,
+                details,
+                submitted_at_unix_ms,
+                _instance_mutation,
+            )
+            .await;
+        }
+    }
     if normalized_transport.eq_ignore_ascii_case("enshrouded_native") {
         if runtime_action_id.is_none() {
             return Err("Native Enshrouded control requires a declared action.".into());
@@ -816,6 +946,7 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text: None,
             write_confirmation_pending: false,
+            save_completion: None,
             submitted_at_unix_ms,
         });
     }
@@ -848,6 +979,9 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text: (!redact_audit_payload).then_some(response_text),
             write_confirmation_pending: false,
+            // HTTP success acknowledges the native request, without a disk observer.
+            save_completion: (runtime_action_id.as_deref() == Some("save_world"))
+                .then_some(WorldSaveCompletion::Requested),
             submitted_at_unix_ms,
         });
     }
@@ -856,6 +990,26 @@ async fn send_instance_runtime_command_inner(
     {
         let details =
             runtime_command_instance_details(&storage, &instance_id, &mut instance_details).await?;
+        if runtime_action_id.as_deref() == Some("save_world")
+            && process_key.is_none()
+            && app_core::ark_maps::is_ark(&details.summary.module_id)
+        {
+            return ark_world_save::save_world(
+                state,
+                &storage,
+                details,
+                ark_world_save::WorldSaveRequest {
+                    command: &normalized_command,
+                    port_name: port_name.as_deref(),
+                    password_setting_key: password_setting_key.as_deref(),
+                    enabled_setting_key: enabled_setting_key.as_deref(),
+                    expected_run_id,
+                    redact_audit_payload,
+                    submitted_at_unix_ms,
+                },
+            )
+            .await;
+        }
         let projected = crate::commands::commands_runtime_ark::project_running_command(
             details,
             process_key.as_deref(),
@@ -877,24 +1031,28 @@ async fn send_instance_runtime_command_inner(
                 })
             })
             .unwrap_or(0);
-        let execute = if normalized_transport.eq_ignore_ascii_case("humanitz_rcon") {
-            crate::runtime_transport_humanitz::humanitz_rcon_info
-                as fn(&str, &str, &str) -> Result<String, String>
-        } else {
-            source_rcon_executor(&details.summary.module_id)
-        };
-        let response_text = runtime_action_response_text(
-            dispatch_rcon_command(
-                projected.as_ref().unwrap_or(details),
-                &normalized_command,
-                port_name.as_deref(),
-                password_setting_key.as_deref(),
-                enabled_setting_key.as_deref(),
-                execute,
-            )
-            .await?,
-            redact_audit_payload,
+        let execute = rcon_runtime_action_executor(
+            &details.summary.module_id,
+            &normalized_transport,
+            runtime_action_id.as_deref(),
+        );
+        let native_response = dispatch_rcon_command(
+            projected.as_ref().unwrap_or(details),
+            &normalized_command,
+            port_name.as_deref(),
+            password_setting_key.as_deref(),
+            enabled_setting_key.as_deref(),
+            execute,
+        )
+        .await?;
+        let save_completion = super::commands_world_save::network_save_completion(
+            &details.summary.module_id,
+            &normalized_transport,
+            runtime_action_id.as_deref(),
+            &normalized_command,
+            &native_response,
         )?;
+        let response_text = runtime_action_response_text(native_response, redact_audit_payload)?;
         let audited_response = (!redact_audit_payload)
             .then_some(response_text.as_deref())
             .flatten();
@@ -923,6 +1081,7 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text,
             write_confirmation_pending: false,
+            save_completion,
             submitted_at_unix_ms,
         });
     }
@@ -968,6 +1127,8 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text,
             write_confirmation_pending: false,
+            save_completion: (runtime_action_id.as_deref() == Some("save_world"))
+                .then_some(WorldSaveCompletion::Requested),
             submitted_at_unix_ms,
         });
     }
@@ -984,18 +1145,23 @@ async fn send_instance_runtime_command_inner(
         } else {
             telnet_exec
         };
-        let response_text = runtime_action_response_text(
-            dispatch_telnet_command_using(
-                details,
-                &normalized_command,
-                port_name.as_deref(),
-                password_setting_key.as_deref(),
-                enabled_setting_key.as_deref(),
-                execute,
-            )
-            .await?,
-            redact_audit_payload,
+        let raw_response = dispatch_telnet_command_using(
+            details,
+            &normalized_command,
+            port_name.as_deref(),
+            password_setting_key.as_deref(),
+            enabled_setting_key.as_deref(),
+            execute,
+        )
+        .await?;
+        let save_completion = super::super::commands_world_save::network_save_completion(
+            &details.summary.module_id,
+            "telnet",
+            runtime_action_id.as_deref(),
+            &normalized_command,
+            &raw_response,
         )?;
+        let response_text = runtime_action_response_text(raw_response, redact_audit_payload)?;
         let audited_response = (!redact_audit_payload)
             .then_some(response_text.as_deref())
             .flatten();
@@ -1023,6 +1189,7 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text,
             write_confirmation_pending: false,
+            save_completion,
             submitted_at_unix_ms,
         });
     }
@@ -1068,6 +1235,8 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text,
             write_confirmation_pending: false,
+            save_completion: (runtime_action_id.as_deref() == Some("save_world"))
+                .then_some(WorldSaveCompletion::Requested),
             submitted_at_unix_ms,
         });
     }
@@ -1126,6 +1295,7 @@ async fn send_instance_runtime_command_inner(
             command: normalized_command,
             response_text: None,
             write_confirmation_pending: false,
+            save_completion: None,
             submitted_at_unix_ms,
         });
     }
@@ -1196,6 +1366,13 @@ async fn send_instance_runtime_command_inner(
         command: normalized_command,
         response_text,
         write_confirmation_pending: confirmation_pending,
+        save_completion: (runtime_action_id.as_deref() == Some("save_world")).then_some(
+            if confirmation_pending {
+                WorldSaveCompletion::Unconfirmed
+            } else {
+                WorldSaveCompletion::Requested
+            },
+        ),
         submitted_at_unix_ms,
     })
 }

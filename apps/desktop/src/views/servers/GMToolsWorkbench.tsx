@@ -1,7 +1,7 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { InlineConfirmAction } from "../../components/InlineConfirmAction";
 import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { describeError } from "../../app-state";
 import { sendInstanceGmCommand } from "../../api";
 import { ShellIcon } from "../../components/ShellIcon";
@@ -15,24 +15,22 @@ import {
   buildGmToolCommand,
   getArkGmItemOptions,
   getArkGmNumericItemOptions,
-  getDstPrefabOptions,
   getGmToolCatalog,
   getInitialGmToolValues,
   localizeArkCatalogCategory,
   localizeArkCatalogName,
-  localizeDstPrefabCategory,
-  localizeDstPrefabCategoryTerm,
-  localizeDstPrefabName,
   searchArkGmItemOptions,
   searchArkGmNumericItemOptions,
-  searchDstPrefabOptions,
   type ArkGmItemOption,
   type GmToolDefinition,
   type GmToolField,
   type GmToolFieldOption
 } from "./gm-tools";
-import { gmExecutionText, gmToolConfigurationIssue, useGmToolExecution } from "./gm-tool-execution";
+import { GmExecutionNotice } from "./GmExecutionNotice";
+import { gmToolConfigurationIssue, useGmToolExecution } from "./gm-tool-execution";
 import { ArkCreatureSpawner } from "./ArkCreatureSpawner";
+import { DST_GM_PANELS, DstWorldMapWorkbench } from "./DstWorldMapWorkbench";
+import { GmToolsNavigation } from "./GmToolsNavigation";
 import "./gm-tool-execution.css";
 
 interface GMToolsWorkbenchProps {
@@ -42,20 +40,6 @@ interface GMToolsWorkbenchProps {
 const ARK_CATALOG_SEARCH_RESULT_LIMIT = 12;
 const ARK_ITEM_TOTAL_COUNT = getArkGmItemOptions().length;
 const ARK_NUMERIC_ITEM_TOTAL_COUNT = getArkGmNumericItemOptions().length;
-const DST_PREFAB_SEARCH_RESULT_LIMIT = 12;
-const DST_PREFAB_TOTAL_COUNT = getDstPrefabOptions().length;
-const DST_PREFAB_CATEGORY_TERMS = [
-  "\u88c5\u5907",
-  "\u70f9\u996a",
-  "\u98df\u7269",
-  "\u6750\u6599",
-  "\u5de5\u5177",
-  "\u9b54\u6cd5",
-  "\u9053\u5177",
-  "\u79cd\u5b50",
-  "\u52a8\u7269",
-  "\u77ff\u77f3"
-];
 
 function localizedFieldPlaceholder(t: TranslateFn, field: GmToolField): string {
   const fallback = field.placeholder ?? "";
@@ -69,33 +53,12 @@ function localizedFieldOption(t: TranslateFn, option: GmToolFieldOption): string
   return option.labelKey ? t(option.labelKey, undefined, option.label) : option.label;
 }
 
-function groupTools(tools: GmToolDefinition[]): Array<{ category: string; tools: GmToolDefinition[] }> {
-  const groups: Array<{ category: string; tools: GmToolDefinition[] }> = [];
-  for (const tool of tools) {
-    const existing = groups.find((group) => group.category === tool.category);
-    if (existing) {
-      existing.tools.push(tool);
-    } else {
-      groups.push({ category: tool.category, tools: [tool] });
-    }
-  }
-  return groups;
-}
-
 function fieldListId(tool: GmToolDefinition, field: GmToolField): string {
   return `gm-${tool.id}-${field.key}-options`;
 }
 
 function fieldInputId(tool: GmToolDefinition, field: GmToolField): string {
   return `gm-${tool.id}-${field.key}-input`;
-}
-
-function copySegment(value: string): string {
-  return value.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "").toLowerCase();
-}
-
-function localizedCategory(t: TranslateFn, category: string): string {
-  return t(`servers.gmTools.categories.${copySegment(category)}`, undefined, category);
 }
 
 function localizedToolTitle(t: TranslateFn, tool: GmToolDefinition): string {
@@ -127,34 +90,19 @@ function isArkCatalogField(moduleId: string, field: GmToolField): boolean {
   return isArkItemCatalogField(moduleId, field);
 }
 
-function isDstModule(moduleId: string): boolean {
-  return moduleId.trim().toLowerCase() === "dontstarve";
-}
-
-function isDstPrefabField(moduleId: string, field: GmToolField): boolean {
-  return isDstModule(moduleId) && field.key === "prefab";
-}
-
-function shouldDisableField(moduleId: string, tool: GmToolDefinition, field: GmToolField, values: Record<string, string>): boolean {
-  return isDstModule(moduleId)
-    && tool.id === "dst_give_item_to_player"
-    && field.key === "playerIndex"
-    && values.allPlayers === "true";
-}
 
 function shouldUseFieldDatalist(moduleId: string, field: GmToolField): boolean {
-  return Boolean(field.options?.length) && !isDstPrefabField(moduleId, field) && !isArkCatalogField(moduleId, field);
+  return Boolean(field.options?.length) && !isArkCatalogField(moduleId, field);
 }
 
 function fieldClassName(moduleId: string, field: GmToolField): string {
-  const isFullWidth = field.type === "textarea" || isDstPrefabField(moduleId, field) || isArkCatalogField(moduleId, field);
+  const isFullWidth = field.type === "textarea" || isArkCatalogField(moduleId, field);
   const classes = [
     "gmt-field",
     field.key === "blueprintPath" ? "gmt-field--blueprint-path" : "",
     field.key === "lines" ? "gmt-field--lines" : "",
     isFullWidth ? "gmt-field--full" : "",
     field.type === "checkbox" ? "gmt-field--checkbox" : "",
-    isDstPrefabField(moduleId, field) ? "gmt-field--dst-prefab" : "",
     isArkCatalogField(moduleId, field) ? "gmt-field--ark-catalog" : "",
     "settings-schema-field",
     isFullWidth ? "settings-schema-field--full" : ""
@@ -174,19 +122,7 @@ function fieldGridClassName(moduleId: string, tool: GmToolDefinition): string {
   if (isArkModule(moduleId) && tool.id === "ark_give_item_to_player") {
     classes.push("gmt-fields-grid--ark-give-item");
   }
-  if (isDstModule(moduleId) && tool.id === "dst_give_item_to_player") {
-    classes.push("gmt-fields-grid--dst-item-action");
-  }
   return classes.join(" ");
-}
-
-function categoryIcon(category: string): "users" | "sun" | "zap" | "shield" | "database" {
-  const lower = category.toLowerCase();
-  if (lower === "players") return "users";
-  if (lower === "world") return "sun";
-  if (lower === "server") return "shield";
-  if (lower === "items") return "database";
-  return "zap";
 }
 
 type ArkCatalogKind = "blueprint" | "number";
@@ -339,151 +275,17 @@ function arkCatalogSearchPlaceholder(kind: ArkCatalogKind, t: TranslateFn): stri
   return t("servers.gmTools.arkItemSearchPlaceholder", undefined, "Search item, GFI, or blueprint");
 }
 
-interface DstPrefabPickerAssistProps {
-  locale: string;
-  onPick: (prefab: string) => void;
-  onQueryChange: (query: string) => void;
-  query: string;
-  t: TranslateFn;
-  value: string;
-}
-
-function DstPrefabPickerAssist(props: DstPrefabPickerAssistProps) {
-  const [pageIndex, setPageIndex] = useState(0);
-  const activeQuery = props.query.trim();
-  const allResults = useMemo(
-    () => searchDstPrefabOptions(activeQuery, DST_PREFAB_TOTAL_COUNT),
-    [activeQuery]
-  );
-  const pageCount = Math.max(1, Math.ceil(allResults.length / DST_PREFAB_SEARCH_RESULT_LIMIT));
-  const safePageIndex = Math.min(pageIndex, pageCount - 1);
-  const pageStart = safePageIndex * DST_PREFAB_SEARCH_RESULT_LIMIT;
-  const results = allResults.slice(pageStart, pageStart + DST_PREFAB_SEARCH_RESULT_LIMIT);
-  const visibleStart = allResults.length > 0 ? pageStart + 1 : 0;
-  const visibleEnd = pageStart + results.length;
-  const canGoPrevious = safePageIndex > 0;
-  const canGoNext = safePageIndex < pageCount - 1;
-  const activeValue = props.value.trim();
-
-  useEffect(() => {
-    setPageIndex(0);
-  }, [activeQuery]);
-
-  useEffect(() => {
-    setPageIndex((current) => Math.min(current, pageCount - 1));
-  }, [pageCount]);
-
-  return (
-    <div className="gmt-dst-prefab-assist">
-      <div className="gmt-dst-prefab-toolbar">
-        <input
-          className="gmt-text-input gmt-dst-prefab-search"
-          value={props.query}
-          placeholder={props.t("servers.gmTools.dstPrefabSearchPlaceholder", undefined, "Search item, creature, or category")}
-          onChange={(event) => props.onQueryChange(event.target.value)}
-        />
-        <div className="gmt-dst-prefab-status">
-          {activeValue ? (
-            <span className="gmt-dst-prefab-current" title={activeValue}>
-              <span>{props.t("servers.gmTools.dstPrefabCurrent", undefined, "Current")}</span>
-              <code>{activeValue}</code>
-            </span>
-          ) : null}
-          <div className="gmt-dst-prefab-pager" aria-label={props.t("servers.gmTools.dstPrefabPager", undefined, "Item pages")}>
-            <button
-              type="button"
-              className="gmt-dst-prefab-page-btn"
-              disabled={!canGoPrevious}
-              title={props.t("servers.gmTools.dstPrefabPreviousPage", undefined, "Previous page")}
-              onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
-            >
-              <ShellIcon name="chevron-left" className="gmt-dst-prefab-page-icon" />
-            </button>
-            <span className="gmt-dst-prefab-page-label">{safePageIndex + 1}/{pageCount}</span>
-            <button
-              type="button"
-              className="gmt-dst-prefab-page-btn"
-              disabled={!canGoNext}
-              title={props.t("servers.gmTools.dstPrefabNextPage", undefined, "Next page")}
-              onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))}
-            >
-              <ShellIcon name="chevron-right" className="gmt-dst-prefab-page-icon" />
-            </button>
-          </div>
-          <span className="gmt-dst-prefab-count">
-            {props.t(
-              "servers.gmTools.dstPrefabResultCount",
-              {
-                count: results.length,
-                start: visibleStart,
-                end: visibleEnd,
-                matches: allResults.length,
-                total: DST_PREFAB_TOTAL_COUNT
-              },
-              allResults.length === DST_PREFAB_TOTAL_COUNT
-                ? `${visibleStart}-${visibleEnd} / ${DST_PREFAB_TOTAL_COUNT}`
-                : `${visibleStart}-${visibleEnd} / ${allResults.length} (${DST_PREFAB_TOTAL_COUNT})`
-            )}
-          </span>
-        </div>
-      </div>
-
-      <div className="gmt-dst-prefab-categories" aria-label={props.t("servers.gmTools.dstPrefabCategories", undefined, "DST item categories")}>
-        {DST_PREFAB_CATEGORY_TERMS.map((term) => {
-          const label = localizeDstPrefabCategoryTerm(term, props.locale);
-          const active = props.query === term || props.query === label;
-          return (
-            <button
-              key={term}
-              type="button"
-              className={active ? "gmt-dst-prefab-category gmt-dst-prefab-category--active" : "gmt-dst-prefab-category"}
-              onClick={() => props.onQueryChange(label)}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
-      {results.length > 0 ? (
-        <div className="gmt-dst-prefab-results" role="listbox">
-          {results.map((option) => {
-            const optionName = localizeDstPrefabName(option, props.locale);
-            const optionCategory = localizeDstPrefabCategory(option, props.locale);
-            return (
-              <button
-                key={option.value}
-                type="button"
-                className={option.value === activeValue ? "gmt-dst-prefab-option gmt-dst-prefab-option--active" : "gmt-dst-prefab-option"}
-                title={`${optionName} / ${optionCategory} / ${option.value}`}
-                aria-pressed={option.value === activeValue}
-                onClick={() => props.onPick(option.value)}
-              >
-                <span className="gmt-dst-prefab-option-name">{optionName}</span>
-                <span className="gmt-dst-prefab-option-meta">
-                  <span>{optionCategory}</span>
-                  <code>{option.value}</code>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="gmt-dst-prefab-empty">
-          {props.t("servers.gmTools.dstPrefabNoResults", undefined, "No matching item or creature")}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
   const { locale, t } = useI18n();
+  const navigationId = useId();
+  const navigationToggle = useRef<HTMLButtonElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const moduleId = props.details.summary.module_id;
   const [arkCatalogSearchByField, setArkCatalogSearchByField] = useState<Record<string, string>>({});
-  const [dstPrefabSearchByField, setDstPrefabSearchByField] = useState<Record<string, string>>({});
+  const dontStarve = moduleId === "dontstarve";
   const catalog = useMemo(() => getGmToolCatalog(moduleId), [moduleId]);
-  const firstToolId = catalog?.tools[0]?.id ?? "";
+  const firstToolId = dontStarve ? DST_GM_PANELS[0] : catalog?.tools[0]?.id ?? "";
   const [activeToolId, setActiveToolId] = useState(firstToolId);
   const [valuesByToolId, setValuesByToolId] = useState<Record<string, Record<string, string>>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -496,14 +298,15 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
     setValuesByToolId({});
     setFeedback(null);
     setArkCatalogSearchByField({});
-    setDstPrefabSearchByField({});
+    setNavigationOpen(false);
   }, [firstToolId, moduleId, props.details.settings_json, props.details.summary.id]);
 
   const activeTool = catalog?.tools.find((tool) => tool.id === activeToolId) ?? catalog?.tools[0] ?? null;
+  const dstPanel = DST_GM_PANELS.find(panel => panel === activeToolId) ?? DST_GM_PANELS[0];
   const toolValues = activeTool
     ? valuesByToolId[activeTool.id] ?? getInitialGmToolValues(activeTool)
     : {};
-  const commandPreview = activeTool && activeTool.id !== "ark_spawn_creature"
+  const commandPreview = !dontStarve && activeTool && activeTool.id !== "ark_spawn_creature"
     ? buildGmToolCommand(moduleId, activeTool.id, toolValues, t)
     : null;
   const visibleActiveFields = activeTool
@@ -521,7 +324,6 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
         `Target shard or process ${commandPreview.processKey} is not running. Start it first.`)
       : t("servers.gmTools.startFirst", undefined, "Start the server before sending GM commands.")
     : null);
-  const toolGroups = useMemo(() => groupTools(catalog?.tools ?? []), [catalog]);
 
   function updateField(tool: GmToolDefinition, field: GmToolField, value: string) {
     setValuesByToolId((current) => ({
@@ -567,39 +369,31 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
   if (!catalog) return null;
 
   return (
-    <section className="gmt-workbench">
-      <div className="gmt-body">
-        <aside className="gmt-nav" aria-label={t("servers.gmTools.actions", undefined, "GM actions")}>
-          {toolGroups.map((group) => (
-            <section key={group.category} className="gmt-nav-group">
-              <div className="gmt-nav-group-label">
-                <ShellIcon name={categoryIcon(group.category)} className="gmt-nav-group-icon" />
-                {localizedCategory(t, group.category)}
-              </div>
-              {group.tools.map((tool) => (
-                <button
-                  key={tool.id}
-                  type="button"
-                  className={tool.id === activeTool?.id ? "gmt-nav-btn gmt-nav-btn--active" : "gmt-nav-btn"}
-                  onClick={() => {
-                    setActiveToolId(tool.id);
-                    setFeedback(null);
-                  }}
-                >
-                  <ShellIcon
-                    name={categoryIcon(tool.category)}
-                    className="gmt-nav-btn-icon"
-                  />
-                  <span className="gmt-nav-btn-copy">
-                    <span className="gmt-nav-btn-title">{localizedToolTitle(t, tool)}</span>
-                    <span className="gmt-nav-btn-desc">{localizedToolDescription(t, tool)}</span>
-                  </span>
-                </button>
-              ))}
-            </section>
-          ))}
+    <section className={`configuration-workspace gmt-workbench${dontStarve ? " gmt-workbench--map" : ""}`}>
+      <div className="configuration-workspace__body" data-navigation-open={navigationOpen || undefined}
+        onKeyDown={event => {
+          if (event.key === "Escape" && !event.nativeEvent.isComposing && navigationOpen) {
+            event.stopPropagation(); setNavigationOpen(false); navigationToggle.current?.focus();
+          }
+        }}>
+        <button type="button" ref={navigationToggle} className="configuration-workspace__navigation-toggle"
+          aria-expanded={navigationOpen} aria-controls={navigationId}
+          onClick={() => setNavigationOpen(open => !open)}>
+          <ShellIcon name="list" aria-hidden="true" />
+          {t("servers.gmTools.actions", undefined, "GM actions")}
+          <ShellIcon name="chevron-right" aria-hidden="true" />
+        </button>
+        <aside id={navigationId} className="configuration-workspace__sidebar gmt-tools-sidebar"
+          aria-label={t("servers.gmTools.actions", undefined, "GM actions")}>
+          <GmToolsNavigation moduleId={moduleId} tools={catalog.tools} selectedId={dontStarve ? dstPanel : activeTool?.id ?? ""}
+            onSelect={id => {
+              setActiveToolId(id); setFeedback(null); setNavigationOpen(false);
+              content.current?.scrollTo({ top: 0 });
+              if (navigationToggle.current?.getClientRects().length) navigationToggle.current.focus();
+            }} />
         </aside>
-
+        <div ref={content} className="configuration-workspace__main" data-configuration-scroll-owner>
+          <div className="configuration-workspace__content">
         {isArkModule(moduleId) ? (
           <div hidden={activeTool?.id !== "ark_spawn_creature"}>
             <ArkCreatureSpawner
@@ -610,7 +404,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
             />
           </div>
         ) : null}
-        {activeTool?.id === "ark_spawn_creature" ? null : activeTool ? (
+        {dontStarve ? <DstWorldMapWorkbench details={props.details} panel={dstPanel} /> : activeTool?.id === "ark_spawn_creature" ? null : activeTool ? (
           <form
             className="gmt-form"
             onSubmit={(event) => {
@@ -633,11 +427,10 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                   const fieldStateKey = `${activeTool.id}:${field.key}`;
                   const fieldOptions = field.options ?? [];
                   const useDatalist = shouldUseFieldDatalist(moduleId, field);
-                  const fieldDisabled = shouldDisableField(moduleId, activeTool, field, toolValues);
-                  return (
+                                  return (
                   <div
                     key={field.key}
-                    className={`${fieldClassName(moduleId, field)}${fieldDisabled ? " gmt-field--disabled" : ""}`}
+                    className={`${fieldClassName(moduleId, field)}`}
                   >
                     {field.type === "checkbox" ? null : (
                       <label htmlFor={inputId} className="gmt-field-label detail-label">{localizedFieldLabel(t, activeTool, field)}</label>
@@ -658,7 +451,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                         id={inputId}
                         className="gmt-select settings-schema-select"
                         value={toolValues[field.key] ?? field.defaultValue ?? ""}
-                        disabled={fieldDisabled}
+
                         onChange={(event) => updateField(activeTool, field, event.target.value)}
                       >
                         {(field.options ?? []).map((option) => (
@@ -673,7 +466,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                         className="gmt-textarea settings-schema-textarea"
                         value={toolValues[field.key] ?? ""}
                         placeholder={localizedFieldPlaceholder(t, field)}
-                        disabled={fieldDisabled}
+
                         onChange={(event) => updateField(activeTool, field, event.target.value)}
                       />
                     ) : (
@@ -687,7 +480,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                           min={field.min}
                           max={field.max}
                           step={field.step}
-                          disabled={fieldDisabled}
+
                           list={useDatalist ? datalistId : undefined}
                           onChange={(event) => updateField(activeTool, field, event.target.value)}
                         />
@@ -709,20 +502,6 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                               setArkCatalogSearchByField((current) => ({ ...current, [fieldStateKey]: query }));
                             }}
                             onPick={(value) => updateField(activeTool, field, value)}
-                            t={t}
-                            value={toolValues[field.key] ?? ""}
-                          />
-                        ) : null}
-                        {isDstPrefabField(moduleId, field) ? (
-                          <DstPrefabPickerAssist
-                            locale={locale}
-                            query={dstPrefabSearchByField[fieldStateKey] ?? ""}
-                            onQueryChange={(query) => {
-                              setDstPrefabSearchByField((current) => ({ ...current, [fieldStateKey]: query }));
-                            }}
-                            onPick={(prefab) => {
-                              updateField(activeTool, field, prefab);
-                            }}
                             t={t}
                             value={toolValues[field.key] ?? ""}
                           />
@@ -780,20 +559,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
               )}
               </ConfigurationActionHelp>
             </div>
-            {execution.result ? (
-              <ActivityNotice tone={execution.result.error ? "error" : "info"}>
-                {[gmExecutionText(locale, execution.result),
-                  ...execution.result.responses.map((response) => [response.command,
-                    response.write_confirmation_pending
-                      ? selectLocaleText(locale, "等待写入确认", "Awaiting write confirmation")
-                      : selectLocaleText(locale, "已发送", "Sent"),
-                    response.response_text || selectLocaleText(locale,
-                      "服务器没有返回响应文本，请查看运行日志或游戏内结果。",
-                      "The server returned no response text. Check the runtime log or in-game result.")
-                  ].join(" · "))
-                ].join("\n")}
-              </ActivityNotice>
-            ) : null}
+            {execution.result ? <GmExecutionNotice result={execution.result} /> : null}
           </form>
         ) : (
           <div className="gmt-form gmt-empty-tool">
@@ -803,6 +569,8 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
             </div>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </section>
   );

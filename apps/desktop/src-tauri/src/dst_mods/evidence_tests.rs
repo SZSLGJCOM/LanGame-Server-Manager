@@ -143,6 +143,40 @@ impl Drop for Fixture {
 }
 
 #[test]
+fn installed_mod_evidence_omits_only_owned_internal_observers() {
+    let fixture = Fixture::new();
+    let helper = fixture.write_mod(
+        "install/mods/lgsm_world_map_observer",
+        include_str!("../../../../../modules/dontstarve/world_map_observer/modinfo.lua"),
+    );
+    fs::write(
+        helper.join("modmain.lua"),
+        include_bytes!("../../../../../modules/dontstarve/world_map_observer/modmain.lua"),
+    )
+    .unwrap();
+    fixture.write_mod("install/mods/user-addon", "name='User addon';version='1.0'");
+    let page = fixture.read(&[], 0).unwrap();
+    assert_eq!(page.total_matches, 1);
+    assert_eq!(page.entries[0].folder_name, "user-addon");
+    let explicit = fixture.read(&["lgsm_world_map_observer"], 0).unwrap();
+    assert_eq!(explicit.total_matches, 0);
+    assert!(explicit.entries.is_empty());
+
+    fs::write(
+        helper.join("modinfo.lua"),
+        "name='User-owned same name';version='1.0'",
+    )
+    .unwrap();
+    let page = fixture.read(&[], 0).unwrap();
+    assert_eq!(page.total_matches, 2);
+    assert!(
+        page.entries
+            .iter()
+            .any(|entry| entry.metadata["name"] == "User-owned same name")
+    );
+}
+
+#[test]
 fn installed_mod_evidence_reads_local_metadata_and_preserves_dependency_candidates() {
     let fixture = Fixture::new();
     fixture.write_mod(

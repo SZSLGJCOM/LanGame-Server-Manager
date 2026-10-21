@@ -53,6 +53,7 @@ pub(super) fn query_player_count(protocol: &str, port: u16) -> Result<(), String
 pub(super) fn contains_private_runtime_identity(line: &str) -> bool {
     let lower = line.to_ascii_lowercase();
     if [
+        "gameanalytics",
         "public ip",
         "session with info",
         "gameinfo path",
@@ -171,6 +172,7 @@ pub(super) fn failed_run_logs(
     }
     let native_log = match instance.summary.module_id.as_str() {
         "corekeeper" => Some(instance_root.join("logs/CoreKeeperServer.log")),
+        "valheim" => Some(install_root.join("BepInEx/LogOutput.log")),
         "astroneer" => Some(install_root.join("Astro/Saved/Logs/Astro.log")),
         "runescapedragonwilds" => {
             Some(install_root.join("RSDragonwilds/Saved/Logs/RSDragonwilds.log"))
@@ -179,7 +181,14 @@ pub(super) fn failed_run_logs(
         "satisfactory" => Some(instance_root.join("data/Saved/Logs/FactoryGame.log")),
         _ => None,
     };
-    if let Some(path) = native_log.filter(|path| path.is_file()) {
+    for path in native_log
+        .into_iter()
+        .chain(crate::unreal_loader::diagnostic_log_path(
+            install_root,
+            &instance.summary.module_id,
+        ))
+        .filter(|path| path.is_file())
+    {
         let path = path
             .canonicalize()
             .map_err(|_| "native game log unavailable")?;
@@ -191,7 +200,149 @@ pub(super) fn failed_run_logs(
             160,
         ));
     }
+    if app_core::ark_maps::is_ark(&instance.summary.module_id) {
+        logs.extend(ark_log_markers(instance, install_root, &root)?);
+    }
     Ok(logs)
+}
+
+// The renderer's -abslog path is authoritative. Saved/Logs may additionally
+// contain engine/game logs, but no raw lines from either location are exposed.
+fn ark_log_markers(
+    instance: &InstanceDetails,
+    install_root: &Path,
+    fixture: &Path,
+) -> Result<Vec<LogTailSnapshot>, &'static str> {
+    use std::io::Read;
+    let mut paths = app_core::ark_maps::processes(instance)
+        .map_err(|_| "invalid ARK fixture log contract")?
+        .into_iter()
+        .map(|map| std::path::PathBuf::from(map.native_log_path))
+        .collect::<Vec<_>>();
+    let saved = install_root.join("ShooterGame/Saved/Logs");
+    if saved.exists() {
+        let saved = saved
+            .canonicalize()
+            .map_err(|_| "ARK log directory unavailable")?;
+        if !saved.starts_with(fixture) {
+            return Err("ARK log directory escaped this fixture");
+        }
+        let entries = std::fs::read_dir(saved).map_err(|_| "ARK log directory unavailable")?;
+        for (index, entry) in entries.enumerate() {
+            if index >= 32 {
+                return Err("ARK log discovery exceeds its bound");
+            }
+            let path = entry.map_err(|_| "ARK log entry unavailable")?.path();
+            if path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("log"))
+                && path.is_file()
+            {
+                paths.push(path);
+            }
+        }
+    }
+    if paths.len() > 64 {
+        return Err("ARK native log count exceeds its bound");
+    }
+    let mut result = Vec::new();
+    for path in paths.into_iter().filter(|path| path.is_file()) {
+        let path = path
+            .canonicalize()
+            .map_err(|_| "ARK native log unavailable")?;
+        if !path.starts_with(fixture) {
+            return Err("ARK native log escaped this fixture");
+        }
+        let mut bytes = Vec::new();
+        const LIMIT: usize = 2 * 1024 * 1024;
+        std::fs::File::open(&path)
+            .map_err(|_| "ARK native log unavailable")?
+            .take((LIMIT + 1) as u64)
+            .read_to_end(&mut bytes)
+            .map_err(|_| "ARK native log read failed")?;
+        let truncated = bytes.len() > LIMIT;
+        bytes.truncate(LIMIT);
+        let text = String::from_utf8_lossy(&bytes);
+        let mut lines = ark_fixed_markers(&text);
+        lines.insert(
+            0,
+            format!(
+                "NATIVE_ARK_LOG bounded_bytes={} input_truncated={truncated} raw_content=omitted",
+                bytes.len()
+            ),
+        );
+        result.push(LogTailSnapshot {
+            source_path: None,
+            total_lines: lines.len(),
+            lines,
+            truncated,
+            read_error: None,
+        });
+    }
+    Ok(result)
+}
+
+fn ark_fixed_markers(text: &str) -> Vec<String> {
+    const MARKERS: [(&str, &str); 8] = [
+        ("saving world", "save_begin"),
+        ("world save complete", "save_complete"),
+        ("closing by request", "closing_by_request"),
+        ("fplatformmisc::requestexit", "request_exit"),
+        ("advertising for join", "advertised"),
+        ("full startup:", "startup_complete"),
+        ("fatal error", "fatal"),
+        ("critical error", "critical"),
+    ];
+    let mut result = Vec::new();
+    for line in text.lines() {
+        let lower = line.to_ascii_lowercase();
+        if lower.contains("gameanalytics") {
+            continue;
+        }
+        for (needle, marker) in MARKERS {
+            if lower.contains(needle) {
+                let stamp = line
+                    .strip_prefix('[')
+                    .and_then(|rest| rest.split_once(']').map(|pair| pair.0))
+                    .filter(|stamp| {
+                        stamp.len() == 23
+                            && stamp.bytes().enumerate().all(|(i, b)| match i {
+                                4 | 7 | 13 | 16 => b == b'.',
+                                10 => b == b'-',
+                                19 => b == b':',
+                                _ => b.is_ascii_digit(),
+                            })
+                    })
+                    .unwrap_or("unavailable");
+                result.push(format!("NATIVE_ARK_LOG marker={marker} timestamp={stamp}"));
+                if result.len() == 64 {
+                    result.push("NATIVE_ARK_LOG markers_truncated=true".into());
+                    return result;
+                }
+            }
+        }
+    }
+    result
+}
+
+#[test]
+fn ark_native_markers_never_copy_log_bodies_or_identity() {
+    let lines = ark_fixed_markers(
+        "[2026.10.19-13.05.54:242][1] Saving world... PRIVATE\n[2026.10.19-13.05.55:123][1] World Save Complete. PRIVATE\n[SECRET] Closing by request PRIVATE\nGameAnalytics Fatal error PRIVATE\nCritical error: PRIVATE",
+    );
+    assert_eq!(lines.len(), 4);
+    assert!(lines[0].contains("marker=save_begin timestamp=2026.10.19-13.05.54:242"));
+    assert!(lines[1].contains("marker=save_complete"));
+    assert!(lines[2].ends_with("timestamp=unavailable"));
+    assert!(!lines.join(" ").contains("PRIVATE"));
+    assert!(!lines.join(" ").contains("SECRET"));
+    assert!(contains_private_runtime_identity(
+        "Info/GameAnalytics : private device identity"
+    ));
+    assert_eq!(
+        ark_fixed_markers(&"World Save Complete\n".repeat(100)).len(),
+        65
+    );
 }
 
 pub(super) fn observation_seconds() -> Result<u64, &'static str> {
@@ -250,13 +401,20 @@ pub(super) async fn report_success(
             settings,
             root,
         );
-        let files = super::save_inventory(Path::new(&instance.saves_path))
-            .map_err(|_| "failed to observe this fixture's save inventory")?;
-        for (path, (bytes, _)) in files.iter().take(16) {
-            eprintln!(
-                "NATIVE_DIAGNOSTIC phase={phase} save_file={} bytes={bytes}",
-                path.display()
-            );
+        if phase == "stopped" {
+            // Live worlds can hold exclusive locks (Minecraft session.lock,
+            // for example). Hash only after normal shutdown, when the native
+            // writer has released its files and the snapshot can be coherent.
+            let files = super::save_inventory(Path::new(&instance.saves_path))
+                .map_err(|_| "failed to observe this fixture's stopped save inventory")?;
+            for (path, (bytes, _)) in files.iter().take(16) {
+                eprintln!(
+                    "NATIVE_DIAGNOSTIC phase={phase} save_file={} bytes={bytes}",
+                    path.display()
+                );
+            }
+        } else {
+            eprintln!("NATIVE_DIAGNOSTIC phase={phase} save_inventory=deferred_until_stopped");
         }
         if instance.summary.module_id == "astroneer" && phase != "stopped" {
             match super::astroneer_console::inspect(instance).await {

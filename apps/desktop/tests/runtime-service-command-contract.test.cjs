@@ -50,6 +50,12 @@ test("cluster backup and recovery commands stay out of the LAN dispatcher", () =
   }
 });
 
+test("save extensions are prepared only by server startup", () => {
+  assert.doesNotMatch(read("lan_host.rs"), /prepare_instance_world_save/);
+  assert.doesNotMatch(read("command_registry.rs"), /prepare_instance_world_save/);
+  assert.match(read("commands_runtime_lifecycle.rs"), /commands_save_startup::ensure_for_start\(/);
+});
+
 test("file Mod management forwards package identity and retains completion ownership", () => {
   const route = read("lan_host.rs").split('"manage_manual_mod" =>')[1]?.split('"read_manual_mod_inventory" =>')[0];
   assert.ok(route, "File Mod management must be reachable through the service");

@@ -27,8 +27,8 @@ async fn canonical_history_starts_without_rewriting_migration_rows() {
 async fn retired_history_is_refused_without_conversion() {
     for mutation in [
         "UPDATE _sqlx_migrations SET version = 11 WHERE version = 1; PRAGMA user_version = 11",
-        "UPDATE _sqlx_migrations SET version = 6 WHERE version = 1; PRAGMA user_version = 6",
-        "UPDATE _sqlx_migrations SET version = 7 WHERE version = 1; PRAGMA user_version = 7",
+        "DELETE FROM _sqlx_migrations WHERE version = 6; UPDATE _sqlx_migrations SET version = 6 WHERE version = 1; PRAGMA user_version = 6",
+        "DELETE FROM _sqlx_migrations WHERE version = 7; UPDATE _sqlx_migrations SET version = 7 WHERE version = 1; PRAGMA user_version = 7",
         "UPDATE _sqlx_migrations SET version = 8 WHERE version = 1; PRAGMA user_version = 8",
         "UPDATE _sqlx_migrations SET version = 9 WHERE version = 1; PRAGMA user_version = 9",
         "UPDATE _sqlx_migrations SET version = 10 WHERE version = 1; PRAGMA user_version = 10",
@@ -60,7 +60,7 @@ async fn mismatched_description_is_refused_without_modifying_data_or_history() {
 
 #[tokio::test]
 async fn schema_version_must_match_successful_history() {
-    assert_refused_without_changes("PRAGMA user_version = 7").await;
+    assert_refused_without_changes("PRAGMA user_version = 99").await;
 }
 
 #[tokio::test]

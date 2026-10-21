@@ -88,7 +88,11 @@ pub(super) fn exchange(context: &Context, operation: Operation) -> Result<Contro
         context,
         operation,
         io::bundled_payload(),
-        Duration::from_secs(10),
+        if operation == Operation::Save {
+            Duration::from_secs(125)
+        } else {
+            Duration::from_secs(10)
+        },
         || verify_process(context),
     )
 }
@@ -115,8 +119,8 @@ pub(super) fn exchange_with(
     .map_err(|_| "Cannot encode the Valheim control request.")?;
     verify()?;
     let directory = context.root.join(io::DIRECTORY);
-    io::publish(&directory.join("request.json"), &request)?;
-    // Never resend a request after publication, especially a reload whose
+    io::publish_request(&directory.join("request.json"), &request)?;
+    // Never resend a request after publication, including a save or reload whose
     // reply can be lost after its side effect has already completed.
     let deadline = Instant::now() + timeout;
     while Instant::now() < deadline {

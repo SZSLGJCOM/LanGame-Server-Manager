@@ -29,6 +29,7 @@ import type {
   CreateInstanceInput,
   InstanceBackupRestoreResult,
   InstanceBackupResult,
+  SaveFileListing,
   GenerateInstanceBroadcastInput,
   GenerateInstanceBroadcastOutput,
   InstanceDeletionResult,
@@ -249,6 +250,22 @@ export const archiveInstance = (instanceId: string) => {
 };
 export const createInstanceBackup = (instanceId: string) => invokeOrMock<InstanceBackupResult>("create_instance_backup", { instanceId });
 export const listInstanceBackups = (instanceId: string) => invokeOrMock<InstanceBackupResult[]>("list_instance_backups", { instanceId });
+/** The one place the save listing contract is normalized: a host built before
+ * a field existed still renders, with absent collections read as empty. */
+export const listInstanceSaveFiles = async (instanceId: string, backupId: string | null): Promise<SaveFileListing> => {
+  const listing = await invokeOrMock<Partial<SaveFileListing>>("list_instance_save_files", { instanceId, backupId });
+  return {
+    instance_id: listing.instance_id ?? instanceId,
+    backup_id: listing.backup_id ?? backupId,
+    root_path: listing.root_path ?? "",
+    exists: listing.exists ?? false,
+    entries: listing.entries ?? [],
+    truncated: listing.truncated ?? false,
+    skipped_links: listing.skipped_links ?? [],
+    slot_model: listing.slot_model ?? "fallback",
+    slots: (listing.slots ?? []).map((slot) => ({ ...slot, paths: slot.paths ?? [] }))
+  };
+};
 export const renameInstanceBackup = (instanceId: string, backupId: string, displayName: string | null) =>
   invokeOrMock<InstanceBackupResult>("rename_instance_backup", {
     instanceId,

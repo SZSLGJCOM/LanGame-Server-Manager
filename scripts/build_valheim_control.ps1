@@ -44,7 +44,7 @@ $common = @('/nologo', '/noconfig', '/optimize+', '/warnaserror+', '/langversion
 foreach ($assembly in @('System.dll', 'System.Core.dll', 'System.Runtime.Serialization.dll', 'System.Xml.dll')) {
     $common += '/reference:' + (Join-Path $framework $assembly)
 }
-$shared = @('ControlProtocol.cs', 'ControlFiles.cs', 'NativeAccessPins.cs', 'ValheimNativeControl.cs') | ForEach-Object { Join-Path $source $_ }
+$shared = @('ControlProtocol.cs', 'ControlFiles.cs', 'NativeAccessPins.cs', 'ValheimNativeControl.cs', 'ValheimWorldSave.cs') | ForEach-Object { Join-Path $source $_ }
 $plugin = Join-Path $output 'LanGame.Valheim.Control.dll'
 if ($provided -eq 0) {
     $referenceOutput = Join-Path $output 'reference'
@@ -71,7 +71,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Valheim control compilation failed.' }
 if ($RunTests) {
     $test = Join-Path $output 'ValheimControlTests.exe'
     & $compiler @common /define:CONTROL_TESTS /target:exe ('/out:' + $test) @shared `
-        (Join-Path $source 'ControlTests.cs') (Join-Path $source 'NativeControlTests.cs')
+        (Join-Path $source 'ControlTests.cs') (Join-Path $source 'NativeControlTests.cs') (Join-Path $source 'WorldSaveTests.cs')
     if ($LASTEXITCODE -ne 0) { throw 'Valheim control test compilation failed.' }
     $reparseRoot = Join-Path $output ('reparse_' + [Guid]::NewGuid().ToString('N'))
     $target = Join-Path $reparseRoot 'target'

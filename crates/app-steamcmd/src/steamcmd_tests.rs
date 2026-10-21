@@ -1403,11 +1403,21 @@ async fn fresh_direct_install_creates_root_before_entering_publish_helper() {
         runtime: app_core::ModuleRuntimeSpec::default(),
     };
 
-    let result = install_or_update_module(
+    let guard = acquire_game_install_lifecycle(
         crate::test_install_lock_context(),
+        &module.summary.id,
+        std::slice::from_ref(&install_root),
+    )
+    .await
+    .unwrap();
+    let result = install_or_update_module_at_with_progress_and_cancellation(
         &settings,
         &module,
+        &install_root,
+        &guard,
         false,
+        &InstallCancellation::new(),
+        |_| {},
     )
     .await;
 

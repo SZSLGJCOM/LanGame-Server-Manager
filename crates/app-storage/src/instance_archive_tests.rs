@@ -18,6 +18,8 @@ mod concurrency;
 mod details;
 #[path = "instance_archive_external_tests.rs"]
 mod external_programs;
+#[path = "instance_archive_maintenance_history_tests.rs"]
+mod maintenance_history;
 #[path = "instance_archive_roots_tests.rs"]
 mod roots;
 

@@ -33,6 +33,7 @@ pub(super) fn verify_bounded_targets(
                         SetPosition=function() end}}
             end
             AllPlayers={player(),player()}
+            function PrefabExists() return true end
             function SpawnPrefab()
                 spawned=spawned+1
                 assert(spawned<=budget, 'all-player delivery expanded its own target list')
@@ -73,7 +74,7 @@ pub(super) async fn prepare<R: tauri::Runtime>(
         .processes
     {
         let value = probe(runtime, running, &process.process_key,
-            "assert(#AllPlayers==0,'native fixture unexpectedly has clients'); _LGSM_GM_PLAYERS={}; for i=1,2 do local p=SpawnPrefab('wilson'); assert(p and p.components.inventory,'native player spawn failed'); p.entity:SetCanSleep(false); p.Transform:SetPosition((i-1)*20,0,0); p.components.health:SetInvincible(true); _LGSM_GM_PLAYERS[i]=p end;",
+            "assert(#AllPlayers==0,'native fixture unexpectedly has clients'); _LGSM_GM_PLAYERS={}; for i=1,2 do local p=SpawnPrefab('wilson'); assert(p and p.components.inventory,'native player spawn failed'); p.userid='KU_LGSM_NATIVE_'..i; p.entity:SetCanSleep(false); p.Transform:SetPosition((i-1)*20,0,0); p.components.health:SetInvincible(true); _LGSM_GM_PLAYERS[i]=p end;",
             "tostring(#AllPlayers)").await?;
         if value != "2" {
             return Err("DST did not create two real native player entities".into());
@@ -239,6 +240,19 @@ pub(super) async fn after<R: tauri::Runtime>(
             )
             .await?;
         }
+        "dst_set_phase" => {
+            let phase = case.values.get("phase").ok_or("missing DST phase")?;
+            // ms_nextcycle runs the clock past night, so the next day starts.
+            let expected = if phase == "next" { "day" } else { phase };
+            wait_state(
+                runtime,
+                running,
+                shard(case),
+                "tostring(TheWorld.state.phase)",
+                expected,
+            )
+            .await?;
+        }
         "dst_revive_player" => {
             let index = player_index(case)?;
             wait_state(
@@ -260,15 +274,11 @@ fn shard(case: &ToolCase) -> &str {
 }
 
 fn player_index(case: &ToolCase) -> Result<usize, Box<dyn std::error::Error>> {
-    let index: usize = case
-        .values
-        .get("playerIndex")
-        .ok_or("missing DST player index")?
-        .parse()?;
-    if !(1..=2).contains(&index) {
-        return Err("DST native probe requires player index 1 or 2".into());
+    match case.values.get("playerId").map(String::as_str) {
+        Some("KU_LGSM_NATIVE_1") => Ok(1),
+        Some("KU_LGSM_NATIVE_2") => Ok(2),
+        _ => Err("DST native probe requires one of its two fixture player IDs".into()),
     }
-    Ok(index)
 }
 
 fn parse_counts(value: &str) -> Result<Vec<i64>, Box<dyn std::error::Error>> {

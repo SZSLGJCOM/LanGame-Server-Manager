@@ -539,7 +539,7 @@ async fn dispatch_player_access_action(
         },
     )
     .await
-    .map(|()| None)
+    .map(|_| None)
 }
 
 fn append_player_access_result_log(

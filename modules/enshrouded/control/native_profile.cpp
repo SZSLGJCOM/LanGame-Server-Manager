@@ -6,14 +6,9 @@ namespace enshrouded_control {
 namespace {
 struct Build {
     const char* sha256;
-    DWORD timestamp;
-    std::uintptr_t update, copy, action, callerA, callerB;
-};
-constexpr Build kBuilds[] = {
-    {"4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba", 1792083984,
-        0x7b33e0, 0x9f54d0, 0x79ba20, 0x7b3aaf, 0x7b489e},
-    {"b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf", 1792148062,
-        0x7b34c0, 0x9f5bc0, 0x79bb00, 0x7b3b8f, 0x7b497e},
+    DWORD timestamp, imageSize;
+    std::uintptr_t update, copy, action, callerA, callerB, save, commit, result;
+    const unsigned char* resultBytes;
 };
 constexpr unsigned char kUpdateBytes[] = {0x48,0x8b,0xc4,0x55,0x53,0x56,0x57,0x41,0x54,0x41,0x56,0x41,
     0x57,0x48,0x8d,0xa8,0x48,0xf6,0xff,0xff,0x48,0x81,0xec,0x80,0x0a,0x00,0x00,0x44,0x0f,0x29,0x40,0x88};
@@ -21,6 +16,22 @@ constexpr unsigned char kCopyBytes[] = {0x40,0x53,0x48,0x83,0xec,0x20,0x8b,0x42,
     0x40,0x90,0xf0,0x41,0xff,0x04,0x82,0x4c,0x69,0xc8,0x68,0x26,0x00,0x00,0x41,0x8b,0xc0,0x83,0xe0,0x3f};
 constexpr unsigned char kActionBytes[] = {0x48,0x89,0x5c,0x24,0x18,0x48,0x89,0x74,0x24,0x20,0x55,0x57,
     0x41,0x54,0x41,0x56,0x41,0x57,0x48,0x8d,0xac,0x24,0x00,0xfe,0xff,0xff,0x48,0x81,0xec,0x00,0x03,0x00};
+constexpr unsigned char kSaveBytes[] = {0x40,0x53,0x48,0x83,0xec,0x20,0x80,0xb9,0xaa,0x18,0x00,0x00,
+    0x00,0x48,0x8b,0xd9,0x75,0x37,0x48,0x8b,0x49,0x20,0x80,0x79,0x78,0x00,0x75,0x2d,0x0f,0xb6,0x51,0x70};
+constexpr unsigned char kCommitBytes[] = {0x4d,0x8b,0x44,0x24,0x08,0x49,0x8d,0x94,0x24,0xa4,0x04,0x00,0x00,0x48,0x8d,0x8d,
+    0xf8,0xf2,0x03,0x00,0xe8,0x9b,0x76,0xf7,0xff,0x48,0x8b,0x85,0xf8,0xf2,0x03,0x00};
+constexpr unsigned char kResultBytes[] = {0x48,0x8b,0x84,0x24,0x90,0x00,0x00,0x00,0x8d,0x48,0xff,0x80,0xf9,0x02,0x76,0x71,
+    0x84,0xc0,0x74,0x69,0x0f,0x10,0x05,0xa7,0x91,0xb5,0x00,0x88,0x84,0x24,0x90,0x00};
+constexpr unsigned char kResult26083076Bytes[] = {0x48,0x8b,0x84,0x24,0x90,0x00,0x00,0x00,0x8d,0x48,0xff,0x80,0xf9,0x02,0x76,0x71,
+    0x84,0xc0,0x74,0x69,0x0f,0x10,0x05,0xc7,0x8b,0xb5,0x00,0x88,0x84,0x24,0x90,0x00};
+constexpr Build kBuilds[] = {
+    {"4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba", 1792083984, 31256576,
+        0x7b33e0, 0x9f54d0, 0x79ba20, 0x7b3aaf, 0x7b489e, 0x7ada80, 0x7b916c, 0x7b73de, kResultBytes},
+    {"b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf", 1792148062, 31256576,
+        0x7b34c0, 0x9f5bc0, 0x79bb00, 0x7b3b8f, 0x7b497e, 0, 0, 0, kResultBytes},
+    {"d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee", 1792507668, 31264768,
+        0x7b5800, 0x9f7600, 0x79de40, 0x7b5ecf, 0x7b6cbe, 0x7afea0, 0x7bb58c, 0x7b97fe, kResult26083076Bytes},
+};
 const Build* IdentifyBuild(const wchar_t* path) {
     HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
@@ -71,22 +82,28 @@ std::wstring ModuleFile(HMODULE module) {
     const auto count = GetModuleFileNameW(module, path.data(), static_cast<DWORD>(path.size()));
     return count && count < path.size() ? std::wstring(path.data(), count) : std::wstring();
 }
-bool ValidateNativeProfile(NativeProfile& profile) {
-    const auto path = ModuleFile(nullptr);
-    const auto build = path.empty() ? nullptr : IdentifyBuild(path.c_str());
+bool ValidateNativeProfileImage(const wchar_t* path, std::uintptr_t main, NativeProfile& profile) {
+    const auto build = path && main ? IdentifyBuild(path) : nullptr;
     if (!build) return false;
-    const auto main = reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr));
     IMAGE_DOS_HEADER dos{}; IMAGE_NT_HEADERS64 nt{};
     if (!ReadCurrentMemory(nullptr, main, &dos, sizeof dos) || dos.e_magic != IMAGE_DOS_SIGNATURE
         || dos.e_lfanew < 0 || dos.e_lfanew > 1024 * 1024
         || !ReadCurrentMemory(nullptr, main + static_cast<std::uintptr_t>(dos.e_lfanew), &nt, sizeof nt)
         || nt.Signature != IMAGE_NT_SIGNATURE || nt.FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64
-        || nt.OptionalHeader.SizeOfImage != 31256576 || nt.FileHeader.TimeDateStamp != build->timestamp
+        || nt.OptionalHeader.SizeOfImage != build->imageSize || nt.FileHeader.TimeDateStamp != build->timestamp
         || !EntryMatches(main, build->update, kUpdateBytes) || !EntryMatches(main, build->copy, kCopyBytes)
         || !EntryMatches(main, build->action, kActionBytes)) return false;
     profile = {main, reinterpret_cast<void*>(main + build->update), reinterpret_cast<void*>(main + build->copy),
-        reinterpret_cast<void*>(main + build->action), build->callerA, build->callerB, build->sha256};
+        reinterpret_cast<void*>(main + build->action), build->callerA, build->callerB, build->sha256,
+        build->save && build->commit && build->result && EntryMatches(main, build->save, kSaveBytes)
+            && EntryMatches(main, build->commit, kCommitBytes) && EntryMatches(main, build->result, build->resultBytes)
+            ? reinterpret_cast<void*>(main + build->save) : nullptr};
     return true;
+}
+bool ValidateNativeProfile(NativeProfile& profile) {
+    const auto path = ModuleFile(nullptr);
+    return !path.empty() && ValidateNativeProfileImage(path.c_str(),
+        reinterpret_cast<std::uintptr_t>(GetModuleHandleW(nullptr)), profile);
 }
 bool CreateProcessIdentity(ProcessIdentity& identity) noexcept {
     FILETIME creation{}, exit{}, kernel{}, user{}; unsigned char random[16]{};

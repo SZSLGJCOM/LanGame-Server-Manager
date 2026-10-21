@@ -32,6 +32,7 @@ import { useTabStripOverflow } from "./use-tab-strip-overflow";
 import { enshroudedPlayerManagementUnavailableReason } from "./enshrouded-extension-status";
 
 interface OnlinePlayersViewProps {
+  history?: ReactNode;
   readOnly?: boolean;
   access?: PlayerAccessState;
   declaredActions: ModulePlayerActionDetails[];
@@ -74,6 +75,7 @@ function formatObservedAt(locale: LocaleCode, observedAt: number | null): string
 export function OnlinePlayersView(props: OnlinePlayersViewProps) {
   const tabId = useId();
   const [activeListKey, setActiveListKey] = useState("online");
+  const [historyVisible, setHistoryVisible] = useState(false);
   const [rosterSelection, setRosterSelection] = useState<{ fieldKey: string; entryKey: string } | null>(null);
   const [selectionVersion, setSelectionVersion] = useState(0);
   const [selectedBannedAccountId, setSelectedBannedAccountId] = useState<string | null>(null);
@@ -303,7 +305,22 @@ export function OnlinePlayersView(props: OnlinePlayersViewProps) {
             {bans.loading ? selectBanText("正在刷新", "Refreshing") : selectBanText("刷新", "Refresh")}
           </button> : null}
         </header>
-        <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${activeKey}`} className="player-center-list-content">
+        {props.history ? <div className="player-center-history-tabs" role="tablist" aria-label={selectBanText("玩家记录视图", "Player record view")}
+          onKeyDown={(event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+            event.preventDefault();
+            const next = event.key === "Home" ? false : event.key === "End" ? true : !historyVisible;
+            setHistoryVisible(next);
+            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[Number(next)]?.focus();
+          }}>
+          {[false, true].map((history) => <button key={String(history)} type="button" role="tab" className="player-center-list-tab"
+            id={`${tabId}-${history ? "history" : "current"}-tab`} aria-selected={historyVisible === history} tabIndex={historyVisible === history ? 0 : -1}
+            aria-controls={`${tabId}-${history ? "history" : "panel"}`} onClick={() => setHistoryVisible(history)}>
+            {history ? selectBanText("历史记录", "History") : selectBanText("玩家列表", "Player lists")}
+          </button>)}
+        </div> : null}
+        {historyVisible && props.history ? <div id={`${tabId}-history`} role="tabpanel" aria-labelledby={`${tabId}-history-tab`} className="player-center-list-content">{props.history}</div> : null}
+        <div id={`${tabId}-panel`} role="tabpanel" aria-labelledby={`${tabId}-${activeKey}`} className="player-center-list-content" style={historyVisible ? { display: "none" } : undefined}>
         {/* 手动查询: only the ID field and lookup; the looked-up ID becomes the target of the shared action stack. */}
         {manualTab ? <form className="settings-schema-grid player-center-manual-lookup" aria-label={props.t("servers.playerCenter.manual.tab", undefined, "Manual lookup")}
           onSubmit={(event) => { event.preventDefault(); if (manualDraftValue && !manualDraftError) setManualLookedUp(manualDraftValue); }}>

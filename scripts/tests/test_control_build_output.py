@@ -13,6 +13,10 @@ BUILDERS = {
     "build_enshrouded_control.ps1": "enshrouded-control",
     "build_valheim_control.ps1": "valheim-control",
     "build_dragonwilds_player_query.ps1": "dragonwilds-player-query",
+    "build_windrose_save_control.ps1": "windrose-save-control",
+    "build_unreal_save_control.ps1": "native-world-save",
+    "build_scum_save_control.ps1": "scum-save-control",
+    "build_unreal_loader_proxies.ps1": "unreal-loader-proxies",
 }
 
 
@@ -23,7 +27,8 @@ class ControlBuildOutputTests(unittest.TestCase):
                 source = (ROOT / "scripts" / name).read_text(encoding="utf-8")
                 self.assertIn(". (Join-Path $PSScriptRoot 'build_control_output.ps1')", source)
                 self.assertIn(f"-CargoLeaf '{leaf}'", source)
-                self.assertLess(source.index("Resolve-ControlBuildOutput"), source.index("CreateDirectory"))
+                effect = source.index("CreateDirectory") if "CreateDirectory" in source else source.index("& (Join-Path $projectRoot")
+                self.assertLess(source.index("Resolve-ControlBuildOutput"), effect)
         build = (ROOT / "apps/desktop/src-tauri/build.rs").read_text(encoding="utf-8")
         self.assertIn('root.join("scripts/build_control_output.ps1").display()', build)
 
@@ -38,7 +43,7 @@ class ControlBuildOutputTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         summary = json.loads(result.stdout)
-        self.assertEqual(summary["checks"], 75)
+        self.assertEqual(summary["checks"], 175)
         self.assertEqual(summary["failed"], 0)
 
 

@@ -193,6 +193,27 @@ public static class ReverificationFixture {
         .await
     }
 
+    async fn install(&self) -> Result<ModuleInstallResult, SteamCmdError> {
+        let module = self.module();
+        let target = Path::new(&self.settings.games_root).join("game");
+        let guard = acquire_game_install_lifecycle(
+            test_install_lock_context(),
+            &module.summary.id,
+            std::slice::from_ref(&target),
+        )
+        .await?;
+        install_or_update_module_at_with_progress_and_cancellation(
+            &self.settings,
+            &module,
+            &target,
+            &guard,
+            false,
+            &InstallCancellation::new(),
+            |_| {},
+        )
+        .await
+    }
+
     fn module(&self) -> ModuleDetails {
         ModuleDetails {
             summary: app_core::ModuleSummary {
@@ -284,14 +305,7 @@ async fn stale_managed_runtime_is_reverified_before_workshop_access_and_subseque
 async fn stale_managed_runtime_is_reverified_before_server_installation_preflight() {
     let fixture = Fixture::new().await;
     fixture.stale(b"native runtime self-update");
-    let result = install_or_update_module_with_progress(
-        test_install_lock_context(),
-        &fixture.settings,
-        &fixture.module(),
-        false,
-        |_| {},
-    )
-    .await;
+    let result = fixture.install().await;
     assert!(
         matches!(
             &result,
@@ -390,14 +404,7 @@ async fn invalid_or_foreign_records_do_not_start_implicit_dependency_preparation
     }
     fs::write(fixture.native().join(READY_RECORD), b"truncated record {").unwrap();
     assert!(matches!(
-        install_or_update_module_with_progress(
-            test_install_lock_context(),
-            &fixture.settings,
-            &fixture.module(),
-            false,
-            |_| {},
-        )
-        .await,
+        fixture.install().await,
         Err(SteamCmdError::SteamCmdNotReady { .. })
     ));
     fs::remove_file(fixture.native().join(READY_RECORD)).unwrap();

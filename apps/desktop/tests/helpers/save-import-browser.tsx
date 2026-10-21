@@ -49,6 +49,11 @@ async function wait(predicate: () => boolean) {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
   }
 }
+async function openImport() {
+  await wait(() => Boolean(fixture.querySelector(".save-import > .maintenance-chip__summary")));
+  const toggle = select<HTMLButtonElement>(".save-import > .maintenance-chip__summary");
+  if (toggle.getAttribute("aria-expanded") !== "true") await act(async () => toggle.click());
+}
 async function navigate(id: string) {
   const toggle = select<HTMLButtonElement>(".configuration-workspace__navigation-toggle");
   if (toggle.getClientRects().length && toggle.getAttribute("aria-expanded") !== "true") await act(async () => toggle.click());
@@ -103,33 +108,30 @@ async function run() {
   await wait(() => Boolean(fixture.querySelector('[data-configuration-section-id="save-import"]')));
   check(reads === 0, "Unvisited import must not read storage");
   await navigate("save-import");
+  check(reads === 0 && !fixture.querySelector('.save-import__source-row'), "A closed import popover must not read storage or render its form");
+  await openImport();
   await wait(() => Boolean(fixture.querySelector('.save-import__source-row input')));
-  check(Boolean(fixture.textContent?.includes("支持导入已有存档")), "Import availability is missing");
-  check(Boolean(fixture.textContent?.includes("单机存档")), "Private world limitation is missing");
-  check(!select<HTMLDetailsElement>('.save-import__format').open, "Format details must not expand into the initial workflow");
-  check(!select<HTMLElement>('.save-import__native-hint').checkVisibility(), "Native format prose is visible before it is requested");
-  check(!select<HTMLElement>('.save-import__references').checkVisibility(), "Reference links crowd the initial workflow");
-  await click('.save-import__format summary');
-  check(select<HTMLDetailsElement>('.save-import__format').open, "Format requirements cannot be opened");
-  check(select<HTMLElement>('.save-import__native-hint').checkVisibility(), "Native requirements are missing from format details");
-  await click('.save-import__format summary');
-  check(select<HTMLButtonElement>('.save-import__source-row button:last-child').disabled, "Empty source can be checked");
-  await click('.save-import__source-row button:first-of-type');
+  check(!fixture.querySelector('.save-import details, .save-import__format'), "Import guidance must not be an inline disclosure");
+  check(select('.save-import .maintenance-chip__heading').textContent?.includes("单机存档"), "Private world limitation is missing from the import help bubble");
+  check(select('.save-import__source-field [role="tooltip"]').textContent?.includes("world/level.dat"), "Native requirements are missing from the source help bubble");
+  check(![...select('.save-import__operation').querySelectorAll<HTMLElement>("p")].some(p => p.checkVisibility()), "Import popover shows explanatory prose");
+  check(select<HTMLButtonElement>('.save-import__check').disabled, "Empty source can be checked");
+  await click('.save-import__pick');
   check(select<HTMLInputElement>('.save-import__source-row input').value === source, "Directory picker lost the source");
   failCheck = true;
-  await click('.save-import__source-row button:last-child');
+  await click('.save-import__check');
   check(fixture.querySelector('[role="alert"]')?.textContent?.includes("no level.dat"), "Validation failure lost its cause");
   check(imports === 0, "Validation attempted to import");
   failCheck = false;
-  await click('.save-import__source-row button:last-child');
+  await click('.save-import__check');
   check(select('.save-import__preview').textContent?.includes("D:/LanGame/instances/server-a/world"), "Target is not reviewable");
   check(select('.save-import__changes').textContent?.includes("此存档目录"), "The inspected replacement scope is missing");
   check(select('.save-import__confirm').textContent?.includes("保留来源与服务器配置"), "Replacement confirmation lost the source and configuration boundary");
-  check(select<HTMLButtonElement>('.save-import__preview > button').disabled, "Replacement needs acknowledgement");
+  check(select<HTMLButtonElement>('.save-import__submit').disabled, "Replacement needs acknowledgement");
   await click('.save-import__confirm input');
   await input("D:/another-world");
   check(!fixture.querySelector('.save-import__preview'), "Editing the source retained an old preview");
-  await click('.save-import__source-row button:last-child');
+  await click('.save-import__check');
   check(!select<HTMLInputElement>('.save-import__confirm input').checked, "A new preview retained replacement acknowledgement");
   const readsBeforeSettingsChange = reads;
   sourceHint = "changed-world/level.dat + changed-world/region";
@@ -137,24 +139,25 @@ async function run() {
   await act(async () => render());
   check(!fixture.querySelector('.save-import__preview'), "Changed server configuration retained an old preview");
   await wait(() => Boolean(fixture.querySelector('.save-import__source-row input')));
-  check(reads > readsBeforeSettingsChange && fixture.querySelector('.save-import__native-hint')?.textContent?.includes("changed-world/level.dat"),
+  check(reads > readsBeforeSettingsChange && fixture.querySelector('.save-import__source-field [role="tooltip"]')?.textContent?.includes("changed-world/level.dat"),
     "Changed server configuration retained an old native source hint");
-  await click('.save-import__source-row button:last-child');
+  await click('.save-import__check');
   await click('.save-import__confirm input');
   details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 } };
   await act(async () => render());
-  check(select<HTMLButtonElement>('.save-import__preview > button').disabled, "A running server can import");
-  await click('.save-import__preview > button');
+  check(select<HTMLButtonElement>('.save-import__submit').disabled, "A running server can import");
+  await click('.save-import__submit');
   check(imports === 0, "Running import reached IPC");
   details = { ...details, summary: { ...details.summary, status: "Stopped", active_process_count: 0 } };
   await act(async () => render());
-  await click('.save-import__preview > button');
-  await click('.save-import__preview > button');
+  await click('.save-import__submit');
+  await click('.save-import__submit');
   check(imports === 1 && Boolean(resolveImport), "Pending import submitted more than once");
   check(select<HTMLInputElement>('.save-import__source-row input').disabled, "Source is editable during replacement");
   const originalDetails = details;
   details = { ...details, summary: { ...details.summary, id: "during-import" } };
   await act(async () => render());
+  await openImport();
   await wait(() => Boolean(fixture.querySelector('.save-import__source-row input')));
   check(!fixture.querySelector('.save-import__result'), "Another instance inherited a pending import");
   await navigate("backups");
@@ -168,6 +171,7 @@ async function run() {
   details = originalDetails;
   await act(async () => render());
   await navigate("save-import");
+  await openImport();
   check(fixture.textContent?.includes("等待启动验证"), "File copy was confused with successful game loading");
   check(select('.save-import__result').textContent?.includes("backups/pre-import"), "Recovery backup is missing");
   check(fixture.querySelectorAll('.save-import__backup-paths code').length === 2, "The result omitted a scope's safeguard backup");
@@ -182,6 +186,7 @@ async function run() {
   failSupport = true;
   details = { ...details, summary: { ...details.summary, id: "second-server" } };
   await act(async () => render());
+  await openImport();
   await wait(() => Boolean(fixture.querySelector('[role="alert"]')));
   check(!fixture.querySelector('.save-import__result'), "A new instance inherited the previous import result");
   check(fixture.querySelector('[role="alert"]')?.textContent?.includes("Cannot inspect"), "Capability errors are hidden");
@@ -192,17 +197,19 @@ async function run() {
   check(!fixture.querySelector('.save-import__source-row'), "Unavailable importer offers an active file picker");
   details = { ...details, summary: { ...details.summary, id: "squad-server", module_id: "squad" } };
   await act(async () => render());
+  await openImport();
   await wait(() => Boolean(fixture.textContent?.includes("没有可导入的持久世界存档")));
   check(!fixture.querySelector('.save-import__source-row'), "Squad offers a persistent-world import action");
   supported = true;
   details = originalDetails;
   await act(async () => render());
+  await openImport();
   await wait(() => Boolean(fixture.querySelector('.save-import__source-row input')));
   await input(source);
   await act(async () => select<HTMLInputElement>('.save-import__source-row input')
     .dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
   await wait(() => Boolean(fixture.querySelector('.save-import__preview')));
-  const importBox = select<HTMLButtonElement>('.save-import__preview > button').getBoundingClientRect();
+  const importBox = select<HTMLButtonElement>('.save-import__submit').getBoundingClientRect();
   const scrollBox = select<HTMLElement>('.configuration-workspace__main').getBoundingClientRect();
   check(importBox.bottom <= Math.min(innerHeight, scrollBox.bottom) - 12, "The compact preview clips its import action outside the maintenance workspace");
   check(document.documentElement.scrollWidth <= innerWidth + 1, "Import layout overflows the window");

@@ -23,6 +23,7 @@ internal sealed class ForestNativeControl : IEnumerator
 {
     private readonly object gate = new object();
     private readonly Queue<string> commands = new Queue<string>();
+    private readonly ForestSaveRequests saveRequests = new ForestSaveRequests();
     private volatile bool stopping;
     private string inputError;
     private bool reportedInputError;
@@ -133,7 +134,7 @@ internal sealed class ForestNativeControl : IEnumerator
     public void Reset() { throw new NotSupportedException(); }
     public bool MoveNext()
     {
-        string command = null, pendingError = null;
+        string command = null, pendingError = null, nonce = null;
         Monitor.Enter(gate);
         try
         {
@@ -143,6 +144,12 @@ internal sealed class ForestNativeControl : IEnumerator
         finally { Monitor.Exit(gate); }
         if (pendingError != null) Error(pendingError);
         if (stopping) return false;
+        nonce = ForestSaveRequests.Nonce(command);
+        if (nonce != null)
+        {
+            string rejection = saveRequests.Admit(nonce, ForestSaveRequests.NowMilliseconds());
+            if (rejection != null) { Error(ForestSaveRequests.Failed(nonce, rejection)); return true; }
+        }
         try
         {
             // The native Running banner precedes FinishGameLoad. Observe the
@@ -156,10 +163,14 @@ internal sealed class ForestNativeControl : IEnumerator
             commandStage = "command";
             if (command == "help") { Info("help status save shutdown"); return true; }
             if (command == "status") { Info("world_ready=" + ready + " serialization_suspended=" + suspended); return true; }
-            if (command != "save" && command != "shutdown") { Error("unsupported command"); return true; }
-            if (!ready || suspended) { Error("command refused: world is not ready for a synchronous save"); return true; }
+            if (nonce == null && command != "save" && command != "shutdown") { Error("unsupported command"); return true; }
+            if (!ready || suspended)
+            {
+                Error(nonce != null ? ForestSaveRequests.Failed(nonce, "world_not_ready") : "command refused: world is not ready for a synchronous save");
+                return true;
+            }
             long savedBytes = SaveNativeGame();
-            Info("native_save_completed bytes=" + savedBytes);
+            Info(nonce != null ? ForestSaveRequests.Completed(nonce, savedBytes) : "native_save_completed bytes=" + savedBytes);
             if (command == "shutdown")
             {
                 // Unity's Mono shutdown must not inherit a managed thread
@@ -182,13 +193,14 @@ internal sealed class ForestNativeControl : IEnumerator
         }
         catch (Exception error)
         {
+            if (nonce != null) Error(ForestSaveRequests.Failed(nonce, commandStage + "_" + Cause(error)));
             if (commandStage == "world_readiness")
             {
                 PublishWorldReadiness(false);
                 if (!reportedWorldError) Error("world readiness unavailable: " + Cause(error));
                 reportedWorldError = true;
             }
-            else Error("command failed: " + commandStage + " " + Cause(error));
+            else if (nonce == null) Error("command failed: " + commandStage + " " + Cause(error));
         }
         return !stopping;
     }

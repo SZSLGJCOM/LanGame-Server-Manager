@@ -573,8 +573,7 @@ function buildMockModuleSettings(moduleId: string, name: string, instanceId: str
   if (moduleId === "minecraft") {
     return {
       ...buildMockGenericSchemaSettings(moduleId, name, instanceId),
-      motd: name,
-      enable_rcon: false
+      motd: name
     };
   }
 

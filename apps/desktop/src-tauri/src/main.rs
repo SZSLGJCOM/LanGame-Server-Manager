@@ -5,6 +5,7 @@ mod archive_entry;
 mod assistant;
 mod assistant_sessions;
 mod astroneer_console;
+mod astroneer_public_ip;
 mod command_registry;
 mod commands;
 mod commands_assistant_connection;
@@ -22,6 +23,7 @@ mod lan_directory;
 mod lan_host;
 mod live_players;
 mod media_cache;
+mod native_control_publish;
 mod project_zomboid_mods;
 mod runtime_astroneer_health;
 mod runtime_log_stream;
@@ -36,6 +38,7 @@ mod steam_workshop;
 mod steam_workshop_account_sessions;
 mod steamcmd_preparation;
 mod text_decode;
+mod unreal_loader;
 mod webview_drop;
 mod webview_recovery;
 
@@ -132,6 +135,10 @@ fn main() {
         return;
     }
     if let Some(code) = app_runtime::native_player_console::run_native_player_console_helper() {
+        std::process::exit(code);
+    }
+    #[cfg(windows)]
+    if let Some(code) = app_runtime::run_moria_console_exit_helper_if_requested() {
         std::process::exit(code);
     }
     #[cfg(windows)]

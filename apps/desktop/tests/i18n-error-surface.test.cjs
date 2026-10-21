@@ -47,7 +47,7 @@ test("library completion notices localize every known install state", () => {
 
 test("broadcast history exhaustively localizes known structured labels", () => {
   const source = readSource("src", "views", "servers", "AiBroadcastWorkbench.tsx");
-  assert.deepEqual(objectKeys(source, "BROADCAST_STATUS_LABELS"), ["blocked", "failed", "generated", "sent"]);
+  assert.deepEqual(objectKeys(source, "BROADCAST_STATUS_LABELS"), ["blocked", "failed", "generated", "pending", "sent"]);
   assert.deepEqual(objectKeys(source, "BROADCAST_SOURCE_LABELS"), ["manual", "periodic", "runtime_health", "shutdown", "startup"]);
   assert.deepEqual(objectKeys(source, "BROADCAST_INITIATOR_LABELS"), ["auto", "lifecycle", "manual", "system"]);
   assert.doesNotMatch(source, />\{event\.(?:status|source|initiator)\}<\/span>/);
@@ -58,7 +58,7 @@ test("broadcast history exhaustively localizes known structured labels", () => {
   ];
   for (const catalog of catalogs) {
     for (const key of [
-      "status.generated", "status.sent", "status.failed", "status.blocked",
+      "status.generated", "status.sent", "status.failed", "status.blocked", "status.pending", "pendingNotice",
       "source.manual", "source.startup", "source.shutdown", "source.runtimeHealth", "source.periodic",
       "initiator.manual", "initiator.auto", "initiator.lifecycle", "initiator.system"
     ]) {

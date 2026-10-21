@@ -72,6 +72,36 @@ fn create_input() -> CreateSatisfactoryWorldInput {
 }
 
 #[tokio::test]
+async fn pending_native_save_blocks_a_world_change_without_resending() {
+    let mut steps = snapshot_steps(sessions(&[("Old", &["old_save"])]));
+    steps.push(Step {
+        function: "SaveGame",
+        status: 202,
+        body: json!({}),
+    });
+    let api = Fixture::api(steps);
+    let error = create(&api, create_input()).await.unwrap_err();
+    assert!(error.contains("No world change was requested"));
+    assert!(error.contains("outcome could not be confirmed"));
+    let fixture = api.fixture.as_ref().unwrap();
+    fixture.assert_finished();
+    let calls = fixture.calls.lock().unwrap();
+    assert_eq!(
+        calls
+            .iter()
+            .filter(|(function, _)| *function == "SaveGame")
+            .count(),
+        1
+    );
+    assert_eq!(calls.last().unwrap().0, "SaveGame");
+    assert!(
+        calls
+            .iter()
+            .all(|(function, _)| *function != "CreateNewGame")
+    );
+}
+
+#[tokio::test]
 async fn verification_sends_native_fingerprint_and_keeps_the_complete_application_token() {
     use base64::Engine;
     let payload = base64::engine::general_purpose::STANDARD.encode(br#"{"pl":"APIToken"}"#);

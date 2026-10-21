@@ -1,5 +1,20 @@
 use super::*;
 
+#[cfg(windows)]
+#[test]
+fn loopback_inventory_retains_foreign_listener_owners_before_authorized_requests() {
+    let listener = std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let owners = WindowsPlatform::loopback_tcp_listener_owners(port).unwrap();
+    assert_eq!(owners, BTreeSet::from([std::process::id()]));
+    let unrelated_target = std::process::id().checked_add(1).unwrap();
+    assert_ne!(
+        owners,
+        BTreeSet::from([unrelated_target]),
+        "An unrelated managed PID must not hide the actual listener's owner"
+    );
+}
+
 #[test]
 fn credential_namespace_survives_storage_moves_but_does_not_cross_instance_or_port() {
     let mut instance = InstanceDetails {

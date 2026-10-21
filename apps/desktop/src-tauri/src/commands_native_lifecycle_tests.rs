@@ -1,4 +1,5 @@
 use super::*;
+use crate::commands::commands_satisfactory_world::native_world::NativeWorld;
 use inventory::save_inventory;
 use runtime::print_native_failure;
 use std::sync::atomic::AtomicBool;
@@ -13,6 +14,8 @@ mod asa_curseforge_native_acceptance;
 mod astroneer_console;
 #[path = "commands_native_astroneer_readiness.rs"]
 mod astroneer_readiness;
+#[path = "commands_native_barotrauma_campaign.rs"]
+mod barotrauma_campaign;
 #[path = "commands_native_catalog.rs"]
 mod catalog;
 #[path = "commands_native_creation.rs"]
@@ -37,20 +40,44 @@ mod gm_tools;
 mod inventory;
 #[path = "commands_native_maintenance.rs"]
 mod maintenance;
+#[path = "commands_native_manual_save_probe.rs"]
+mod manual_save_probe;
+#[cfg(windows)]
+#[path = "commands_native_moria_shutdown_control.rs"]
+mod moria_shutdown_control;
 #[path = "commands_native_package.rs"]
 mod package;
 #[path = "commands_native_player_counts.rs"]
 mod player_counts;
+#[path = "commands_native_prestart_probe.rs"]
+mod prestart_probe;
 #[path = "commands_native_readiness.rs"]
 mod readiness;
 #[path = "commands_native_runtime.rs"]
 mod runtime;
+#[path = "commands_native_save_failure_probe.rs"]
+mod save_failure_probe;
+#[path = "commands_native_save_guard_probe.rs"]
+mod save_guard_probe;
 #[path = "commands_native_seed_probe.rs"]
 mod seed_probe;
+#[path = "commands_native_sons_backup_probe.rs"]
+mod sons_backup_probe;
+#[path = "commands_native_sons_world_fixture.rs"]
+mod sons_world_fixture;
 #[path = "commands_native_squad_probe.rs"]
 mod squad_probe;
 #[path = "commands_native_theforest_probe.rs"]
 mod theforest_probe;
+
+#[cfg(windows)]
+#[test]
+#[ignore = "private child entry for the owned Moria exit helper"]
+fn moria_console_exit_helper_entry() {
+    if std::env::var("LANGAME_MORIA_EXIT_HELPER_CHILD").as_deref() == Ok("1") {
+        std::process::exit(app_runtime::run_moria_console_exit_helper_worker());
+    }
+}
 
 struct NativeCleanup<'a> {
     state: &'a DesktopState,
@@ -130,6 +157,71 @@ async fn native_start_stop() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = command_smoke_lock().lock().await;
     let descriptors = discover_modules(workspace_root().join("modules"))?;
     for (module_id, source) in catalog::from_env(&descriptors)? {
+        Box::pin(run_native_package(module_id, source, true)).await?;
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "diagnostic only: fresh native Moria without loader preparation, fixed exit once and bounded owned-tree observation; no production-start/save acceptance"]
+async fn native_moria_no_loader_shutdown_control() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = command_smoke_lock().lock().await;
+    if std::env::var("LANGAME_NATIVE_MORIA_NO_LOADER_CONTROL").as_deref() != Ok("true") {
+        return Err("native Moria baseline requires its explicit diagnostic opt-in".into());
+    }
+    let descriptors = discover_modules(workspace_root().join("modules"))?;
+    let selected = catalog::from_env(&descriptors)?;
+    if selected.len() != 1 || selected[0].0 != "returntomoria" {
+        return Err(
+            "native no-loader baseline is limited to exactly one fresh Moria fixture".into(),
+        );
+    }
+    for (module_id, source) in selected {
+        Box::pin(run_native_package(module_id, source, true)).await?;
+    }
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "opt-in: isolated local package, production automatic startup and declared manual save action; no existing instance or world is used"]
+async fn native_manual_save() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = command_smoke_lock().lock().await;
+    if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true") {
+        return Err("native manual save requires LANGAME_NATIVE_MANUAL_SAVE=true".into());
+    }
+    if std::env::var("LANGAME_NATIVE_SAVE_NOT_READY").is_ok() {
+        return Err(
+            "Use the separate native_no_client_save_guard acceptance for expected rejections"
+                .into(),
+        );
+    }
+    let descriptors = discover_modules(workspace_root().join("modules"))?;
+    for (module_id, source) in catalog::from_env(&descriptors)? {
+        if module_id == "squad" {
+            return Err("Squad has no persistent-world manual save action".into());
+        }
+        Box::pin(run_native_package(module_id, source, true)).await?;
+    }
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "opt-in: RimWorld/Abiotic without clients; formal backend must reject before native save, then normal stop and a fresh two-cycle restart"]
+async fn native_no_client_save_guard() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = command_smoke_lock().lock().await;
+    if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true")
+        || std::env::var("LANGAME_NATIVE_MANUAL_SAVE_RESTART").as_deref() != Ok("true")
+    {
+        return Err("Native no-client acceptance requires formal dispatch and both cycles".into());
+    }
+    let descriptors = discover_modules(workspace_root().join("modules"))?;
+    for (module_id, source) in catalog::from_env(&descriptors)? {
+        if !save_guard_probe::expected(&module_id)? {
+            return Err(
+                "Native no-client acceptance requires its explicit closed-module opt-in".into(),
+            );
+        }
         Box::pin(run_native_package(module_id, source, true)).await?;
     }
     Ok(())
@@ -332,6 +424,13 @@ async fn run_native_package(
     }
     // Declared first so error unwinding stops the server before removing rules.
     let mut firewall_cleanup = None;
+    // Declared before cleanup: error unwinding stops the owned game before the
+    // guard considers deleting this fixture's newly allocated system accounts.
+    let mut satisfactory_world = NativeWorld::new(
+        &initial,
+        &package.root,
+        Arc::clone(&package.cleanup_allowed),
+    )?;
     let cleanup = NativeCleanup {
         state: &state,
         instance_id: id.clone(),
@@ -414,12 +513,52 @@ async fn run_native_package(
         effective_install_root: &effective_install_root,
         offline_dst,
         elevated_fixture,
+        satisfactory_world: satisfactory_world.as_ref(),
     };
+    #[cfg(windows)]
+    if std::env::var("LANGAME_NATIVE_MORIA_NO_LOADER_CONTROL").as_deref() == Ok("true") {
+        Box::pin(moria_shutdown_control::verify(&runtime, &details)).await?;
+        drop(cleanup);
+        drop(app);
+        drop(env_guard);
+        let disposable_root = package.root.clone();
+        drop(package);
+        if disposable_root.exists() {
+            return Err("native Moria control disposable-directory cleanup failed".into());
+        }
+        println!(
+            "NATIVE_MORIA_CONTROL phase=complete scope=diagnostic_native_baseline cleanup=passed production_startup=not_exercised formal_save=not_called"
+        );
+        return Ok(());
+    }
     if cycle_only {
         // This selector has its own explicit scope. It neither invokes nor
         // weakens the separate archive/restore/uninstall lifecycle acceptance.
-        Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
+        let first_run =
+            Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
+        if std::env::var("LANGAME_NATIVE_MANUAL_SAVE_RESTART").as_deref() == Ok("true") {
+            if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true") {
+                return Err("manual save restart requires the declared save probe".into());
+            }
+            let reloaded = read_instance_details(&storage.paths, &id).await?;
+            let second_run = Box::pin(runtime.run_cycle(&reloaded, "restart", 0)).await?;
+            if first_run == second_run {
+                return Err("manual save restart reused its previous managed run".into());
+            }
+            if save_guard_probe::expected(&module_id)? {
+                println!(
+                    "NATIVE_SAVE_GUARD module={module_id} phase=restarted fresh_managed_run=true native_readiness=passed formal_save=not_performed content_readback=not_claimed"
+                );
+            } else {
+                println!(
+                    "NATIVE_MANUAL_SAVE module={module_id} phase=restarted fresh_managed_run=true native_readiness=passed content_readback=not_claimed"
+                );
+            }
+        }
         drop(cleanup);
+        if let Some(world) = &mut satisfactory_world {
+            world.finish()?;
+        }
         if let Some(mut firewall) = firewall_cleanup {
             firewall.finish()?;
         }
@@ -445,7 +584,16 @@ async fn run_native_package(
     let first_run = Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
     let stopped_config = fs::read(&details.config_file_path)?;
     let reloaded = read_instance_details_from_storage(state.clone(), id.clone()).await?;
-    if reloaded.settings_json != details.settings_json
+    let settings_preserved = if module_id == "astroneer" {
+        crate::astroneer_public_ip::verify_startup_settings(
+            &details.settings_json,
+            &reloaded.settings_json,
+        )
+        .is_ok()
+    } else {
+        reloaded.settings_json == details.settings_json
+    };
+    if !settings_preserved
         || serde_json::to_value(&reloaded.ports)? != serde_json::to_value(&details.ports)?
         || reloaded.saves_path != details.saves_path
         || creation::program_root(&reloaded)? != effective_install_root
@@ -659,6 +807,21 @@ async fn run_native_package(
             "NATIVE_LIFECYCLE module={module_id} phase=first_instance_deleted library=preserved remaining_instances=0"
         );
     }
+    if !list_instances(&storage.paths).await?.is_empty() {
+        return Err("native final library removal still has active instance records".into());
+    }
+    let removed = uninstall_module_game(app.handle().clone(), module_id.clone()).await?;
+    if removed.module_id != module_id
+        || removed.install_state != InstallState::NotInstalled
+        || removed.executable_exists
+        || !removed.cleanup.retained_installs.is_empty()
+    {
+        return Err("native final library uninstall did not release every unused program".into());
+    }
+    println!(
+        "NATIVE_LIFECYCLE module={module_id} phase=library_final_uninstall unused_programs=removed retained_data_paths={}",
+        removed.cleanup.preserved_data_paths.len(),
+    );
     if std::env::var_os("LANGAME_NATIVE_STEAMCMD_ROOT").is_none()
         && package.root.join("steamcmd/steamcmd.exe").is_file()
     {
@@ -678,6 +841,9 @@ async fn run_native_package(
         );
     }
     drop(cleanup);
+    if let Some(world) = &mut satisfactory_world {
+        world.finish()?;
+    }
     if let Some(mut firewall) = firewall_cleanup {
         firewall.finish()?;
         println!("NATIVE_LIFECYCLE module={module_id} phase=firewall_cleaned exact_rules=verified");

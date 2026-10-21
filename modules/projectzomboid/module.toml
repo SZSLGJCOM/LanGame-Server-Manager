@@ -83,10 +83,9 @@ wait_after_ms = 6000
 id = "save_world"
 label = "Save world"
 label_zh_cn = "保存世界"
-transport = "source_rcon"
+transport = "stdin"
 command_template = "save"
-port_name = "rcon"
-password_setting_key = "rcon_password"
+process_key = "main"
 
 [[runtime.player_actions]]
 id = "broadcast"

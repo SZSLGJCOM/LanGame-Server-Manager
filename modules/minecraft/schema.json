@@ -513,8 +513,8 @@
     "enable_rcon": {
       "type": "boolean",
       "title": "Enable RCON",
-      "description": "server.properties enable-rcon opens the configured RCON TCP port for LanGame commands.",
-      "default": false,
+      "description": "Writes enable-rcon to server.properties. New instances enable RCON for saving and player actions with a unique generated password. Existing disabled settings stay disabled. Changes apply after restart.",
+      "default": true,
       "x-lsgm-section": "network",
       "x-lsgm-order": 410,
       "x-lsgm-source": "server_properties",

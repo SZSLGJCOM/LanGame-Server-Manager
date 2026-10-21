@@ -19,11 +19,11 @@ if (-not (Test-Path -LiteralPath $compiler -PathType Leaf)) {
 [IO.Directory]::CreateDirectory($output) | Out-Null
 $common = @('/nologo', '/noconfig', '/optimize+', '/warnaserror+', ('/reference:' + (Join-Path $framework 'System.dll')))
 & $compiler @common /target:library ('/out:' + (Join-Path $output 'LanGame.TheForest.Control.dll')) `
-    (Join-Path $source 'LanGameTheForestControl.cs') (Join-Path $source 'ControlProtocol.cs') (Join-Path $source 'NativeCheckpoint.cs') (Join-Path $source 'NativeInput.cs')
+    (Join-Path $source 'LanGameTheForestControl.cs') (Join-Path $source 'ControlProtocol.cs') (Join-Path $source 'SaveRequest.cs') (Join-Path $source 'NativeCheckpoint.cs') (Join-Path $source 'NativeInput.cs')
 if ($LASTEXITCODE -ne 0) { throw 'The Forest control bridge compilation failed.' }
 if ($RunTests) {
     $test = Join-Path $output 'TheForestControlTests.exe'
-    & $compiler @common /target:exe ('/out:' + $test) (Join-Path $source 'ControlProtocol.cs') (Join-Path $source 'NativeCheckpoint.cs') (Join-Path $source 'ControlProtocolTests.cs') (Join-Path $source 'BclContractTests.cs') (Join-Path $source 'NativeInput.cs') (Join-Path $source 'NativeInputTests.cs') (Join-Path $source 'LanGameTheForestControl.cs') (Join-Path $source 'WorldReadinessTests.cs')
+    & $compiler @common /target:exe ('/out:' + $test) (Join-Path $source 'ControlProtocol.cs') (Join-Path $source 'SaveRequest.cs') (Join-Path $source 'SaveRequestTests.cs') (Join-Path $source 'NativeCheckpoint.cs') (Join-Path $source 'ControlProtocolTests.cs') (Join-Path $source 'BclContractTests.cs') (Join-Path $source 'NativeInput.cs') (Join-Path $source 'NativeInputTests.cs') (Join-Path $source 'LanGameTheForestControl.cs') (Join-Path $source 'WorldReadinessTests.cs')
     if ($LASTEXITCODE -ne 0) { throw 'The Forest control protocol test compilation failed.' }
     & $test $output
     if ($LASTEXITCODE -ne 0) { throw 'The Forest control protocol tests failed.' }

@@ -19,10 +19,19 @@ pub(super) async fn acquire_prestart_program_guard(
     reservation: &RuntimeStartReservationLease,
 ) -> Result<app_steamcmd::GameInstallLifecycleGuard, String> {
     let roots = [root.to_owned()];
+    acquire_prestart_program_roots(state, module_id, &roots, reservation).await
+}
+
+pub(super) async fn acquire_prestart_program_roots(
+    state: &DesktopState,
+    module_id: &str,
+    roots: &[PathBuf],
+    reservation: &RuntimeStartReservationLease,
+) -> Result<app_steamcmd::GameInstallLifecycleGuard, String> {
     tokio::select! {
         biased;
         _ = reservation.cancelled() => Err("启动已取消，实例未启动。".into()),
-        guard = app_steamcmd::acquire_game_install_lifecycle(&state.install_locks, module_id, &roots) => {
+        guard = app_steamcmd::acquire_game_install_lifecycle(&state.install_locks, module_id, roots) => {
             guard.map_err(|error| steamcmd_error_message(&error))
         }
     }

@@ -21,6 +21,13 @@ export function readRuntimeStartWarnings(value: unknown): RuntimeStartWarning[] 
   return value.filter((entry): entry is RuntimeStartWarning => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
     const warning = entry as Record<string, unknown>;
+    if (warning.code === "world_initialization_incomplete") {
+      return warning.provider === null && warning.reason === null
+        && Array.isArray(warning.item_ids) && warning.item_ids.length === 0
+        && typeof warning.message === "string" && contextText(warning.log_path)
+        && (warning.log_path === null || !/^\w+:\/\//.test(warning.log_path))
+        && warning.map_key === null && warning.http_status === null;
+    }
     const maxItemId = warning.provider === "steam_workshop" ? 18_446_744_073_709_551_615n : 9_223_372_036_854_775_807n;
     return typeof warning.code === "string" && codes.has(warning.code)
       && typeof warning.provider === "string" && providers.has(warning.provider)
@@ -43,6 +50,11 @@ export function runtimeStartWarningKey(warning: RuntimeStartWarning): string {
 }
 
 export function formatRuntimeStartWarning(t: TranslateFn, warning: RuntimeStartWarning, label: string) {
+  if (warning.code === "world_initialization_incomplete") {
+    const details = [t("runtime.startWarning.worldInitializationAdvice")];
+    if (warning.log_path) details.push(t("runtime.startWarning.log", { value: warning.log_path }));
+    return { text: t("runtime.startWarning.worldInitializationIncomplete", { name: label }), details: details.join("\n") };
+  }
   const provider = t(`runtime.startWarning.provider.${warning.provider}`);
   const sourceRequired = warning.code === "mod_update_source_required";
   const text = t(sourceRequired ? "runtime.startWarning.sourceRequired" : "runtime.startWarning.startedUsingCache", { name: label, provider });

@@ -150,11 +150,29 @@ public static class Installer {
         &self,
         progress: impl FnMut(InstallProgressUpdate),
     ) -> Result<ModuleInstallResult, SteamCmdError> {
-        install_or_update_module_with_progress(
+        self.install_with_cancellation(&InstallCancellation::new(), progress)
+            .await
+    }
+
+    async fn install_with_cancellation(
+        &self,
+        cancellation: &InstallCancellation,
+        progress: impl FnMut(InstallProgressUpdate),
+    ) -> Result<ModuleInstallResult, SteamCmdError> {
+        let target = self.install_root();
+        let guard = acquire_game_install_lifecycle(
             crate::test_install_lock_context(),
+            &self.module.summary.id,
+            std::slice::from_ref(&target),
+        )
+        .await?;
+        install_or_update_module_at_with_progress_and_cancellation(
             &self.settings,
             &self.module,
+            &target,
+            &guard,
             false,
+            cancellation,
             progress,
         )
         .await
@@ -334,13 +352,8 @@ async fn retained_steam_cancel_after_publication_restores_original_data_and_mark
     let fixture = Fixture::new().await;
     let cancellation = InstallCancellation::new();
     let mut published_seen = false;
-    let result = install_or_update_module_with_progress_and_cancellation(
-        crate::test_install_lock_context(),
-        &fixture.settings,
-        &fixture.module,
-        false,
-        &cancellation,
-        |update| {
+    let result = fixture
+        .install_with_cancellation(&cancellation, |update| {
             if update
                 .install_progress
                 .as_ref()
@@ -351,9 +364,8 @@ async fn retained_steam_cancel_after_publication_restores_original_data_and_mark
                 assert!(!has_retained_install_data(&fixture.install_root()));
                 cancellation.cancel();
             }
-        },
-    )
-    .await;
+        })
+        .await;
     assert!(published_seen);
     assert!(matches!(
         result,

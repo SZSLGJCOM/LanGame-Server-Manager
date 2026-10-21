@@ -217,7 +217,16 @@ function assertResourceLayout() {
   const grid = element(".system-command-grid").getBoundingClientRect();
   const content = element(".shell-content-body").getBoundingClientRect();
   check(grid.bottom <= content.bottom + 1, "The original dashboard grid must remain inside the fixed shell");
-  return { panel_width: bounds.width, panel_height: bounds.height, footer_height: summaryBounds.height };
+  const stageStyle = getComputedStyle(stage);
+  const stageBox = stage.getBoundingClientRect();
+  const available = Math.min(stageBox.width - parseFloat(stageStyle.paddingLeft) - parseFloat(stageStyle.paddingRight),
+    stageBox.height - parseFloat(stageStyle.paddingTop) - parseFloat(stageStyle.paddingBottom));
+  const dial = element(".system-core-visual").getBoundingClientRect();
+  check(Math.abs(dial.width - available) <= 1 && Math.abs(dial.height - dial.width) <= 1,
+    `The core dial must fill the smaller stage dimension: ${JSON.stringify({ dial: dial.width, available })}`);
+  const labelFont = parseFloat(getComputedStyle(element(".system-core-metric-label")).fontSize);
+  return { panel_width: bounds.width, panel_height: bounds.height, footer_height: summaryBounds.height,
+    dial_size: dial.width, metric_label_font: labelFont };
 }
 function assertNoScoreClaims() {
   const copy = text(".system-core-panel");

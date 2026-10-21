@@ -10,6 +10,7 @@ pub(crate) const EXE_SHA256: &str =
 pub(crate) const BUNDLED_EXE_SHA256: &[&str] = &[
     EXE_SHA256,
     "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
+    "d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee",
 ];
 pub(crate) const DIRECTORY: &str = ".langame-enshrouded-control";
 pub(crate) const OWNER: &str = ".langame-enshrouded-control-owner.json";
@@ -46,17 +47,11 @@ pub(crate) fn extension_status(
     let executable = read_regular(&root.join("enshrouded_server.exe"), 32 * 1024 * 1024)
         .map(|bytes| digest(&bytes))
         .ok();
-    let manager: Option<ManagerState> = read_regular(&root.join(MANAGER_STATE), 4096)
-        .ok()
-        .and_then(|bytes| serde_json::from_slice(&bytes).ok());
-    if let Some(state) = manager
-        && Some(&state.executable_sha256) == executable.as_ref()
-        && matches!(
-            state.extension_status,
-            Status::UnsupportedGameBuild | Status::NotInstalled
-        )
+    if let Some(status) = executable
+        .as_deref()
+        .and_then(|executable| manager_status_for_executable(root, executable))
     {
-        return Some(state.extension_status);
+        return Some(status);
     }
     let native: Option<serde_json::Value> =
         read_regular(&root.join(DIRECTORY).join("status.json"), 4096)
@@ -85,6 +80,26 @@ pub(crate) fn extension_status(
     } else {
         Some(Status::LoadFailed)
     }
+}
+
+pub(super) fn manager_status_for_executable(
+    root: &Path,
+    executable: &str,
+) -> Option<app_core::RuntimePlayerExtensionStatus> {
+    use app_core::RuntimePlayerExtensionStatus as Status;
+    let manager: Option<ManagerState> = read_regular(&root.join(MANAGER_STATE), 4096)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok());
+    if let Some(state) = manager
+        && state.executable_sha256 == executable
+        && matches!(
+            state.extension_status,
+            Status::UnsupportedGameBuild | Status::NotInstalled
+        )
+    {
+        return Some(state.extension_status);
+    }
+    None
 }
 
 pub(crate) fn bundled_payload() -> &'static [u8] {
@@ -191,4 +206,44 @@ pub(crate) fn publish(path: &Path, bytes: &[u8]) -> Result<(), String> {
         let _ = fs::remove_file(&temporary);
     }
     result.map_err(|_| "Cannot atomically publish the native control file.".into())
+}
+
+pub(crate) fn publish_request(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    if path.file_name().and_then(|name| name.to_str()) != Some("request.txt") {
+        return Err("The native control request destination is invalid.".into());
+    }
+    let parent = path
+        .parent()
+        .ok_or("Native control destination has no parent.")?;
+    let _guard = pin_directory(parent)?;
+    let temporary = parent.join(format!(".{}.pending", uuid::Uuid::new_v4().simple()));
+    let mut pending = crate::native_control_publish::PendingFile::create(&temporary, bytes)
+        .map_err(|_| "Cannot create the native control temporary file.")?;
+    pending
+        .replace(path)
+        .map_err(|_| "Cannot atomically publish the native control file.".into())
+}
+
+#[cfg(all(test, windows))]
+#[test]
+fn live_request_replaces_an_open_peer_snapshot_without_changing_its_bytes() {
+    use std::os::windows::fs::OpenOptionsExt;
+    let root = std::env::temp_dir().join(format!("enshrouded-request-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&root).unwrap();
+    let path = root.join("request.txt");
+    fs::write(&path, b"old").unwrap();
+    let mut peer = OpenOptions::new()
+        .read(true)
+        .share_mode(7)
+        .open(&path)
+        .unwrap();
+    publish_request(&path, b"new").unwrap();
+    let mut old = Vec::new();
+    peer.read_to_end(&mut old).unwrap();
+    assert_eq!(old, b"old");
+    assert_eq!(read_regular(&path, 16).unwrap(), b"new");
+    assert!(publish_request(&root.join("enable"), b"forbidden").is_err());
+    drop(peer);
+    assert_eq!(root.parent(), Some(std::env::temp_dir().as_path()));
+    fs::remove_dir_all(root).unwrap();
 }

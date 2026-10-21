@@ -14,7 +14,88 @@ pub(crate) use conan::conan_rcon_exec;
 
 #[path = "runtime_transport_rcon_delivery.rs"]
 mod rcon_delivery;
-pub(crate) use rcon_delivery::{RconCommandFailure, source_rcon_shutdown_exec};
+pub(crate) use rcon_delivery::RconCommandFailure;
+#[cfg(not(test))]
+pub(crate) use rcon_delivery::source_rcon_shutdown_exec;
+
+#[cfg(test)]
+#[derive(Clone, Copy)]
+struct NativeArkShutdownTrace {
+    module: &'static str,
+    command: &'static str,
+    started: Instant,
+}
+
+#[cfg(test)]
+thread_local! {
+    static NATIVE_ARK_SHUTDOWN_TRACE: std::cell::Cell<Option<NativeArkShutdownTrace>> = const { std::cell::Cell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) fn source_rcon_shutdown_exec(
+    module_id: &str,
+    endpoint: &str,
+    password: &str,
+    command: &str,
+) -> Result<String, RconCommandFailure> {
+    struct Restore(Option<NativeArkShutdownTrace>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            NATIVE_ARK_SHUTDOWN_TRACE.with(|slot| slot.set(self.0));
+        }
+    }
+    let trace = native_ark_shutdown_trace(module_id, command).filter(|_| {
+        std::env::var("LANGAME_NATIVE_LOG_SUCCESS").as_deref() == Ok("true")
+            && std::env::var("LANGAME_NATIVE_MODULE_ID").as_deref() == Ok(module_id)
+    });
+    let _restore = Restore(NATIVE_ARK_SHUTDOWN_TRACE.with(|slot| slot.replace(trace)));
+    rcon_delivery::source_rcon_shutdown_exec(module_id, endpoint, password, command)
+}
+
+#[cfg(test)]
+fn native_ark_shutdown_trace(module: &str, command: &str) -> Option<NativeArkShutdownTrace> {
+    let module = match module {
+        "arksurvivalevolved" => "arksurvivalevolved",
+        "arksurvivalascended" => "arksurvivalascended",
+        _ => return None,
+    };
+    let command = if command.eq_ignore_ascii_case("DoExit") {
+        "DoExit"
+    } else if command.eq_ignore_ascii_case("saveworld") {
+        "saveworld"
+    } else {
+        return None;
+    };
+    Some(NativeArkShutdownTrace {
+        module,
+        command,
+        started: Instant::now(),
+    })
+}
+
+#[cfg(test)]
+fn native_ark_response_class(body: &[u8]) -> &'static str {
+    // Exact whole-body ASCII matches only. Never emit native body text or a
+    // guessed acceptance from a substring that can contain caller values.
+    if body.is_empty() {
+        return "empty";
+    }
+    if !body.is_ascii() || body.len() > 256 {
+        return "other";
+    }
+    let Ok(text) = std::str::from_utf8(body) else {
+        return "other";
+    };
+    match text.trim_matches(|c: char| c.is_ascii_whitespace()) {
+        "Exiting..." | "Exiting" | "Server is shutting down." | "Server shutting down." => {
+            "exit_ack"
+        }
+        "Unknown command" | "Unknown command." | "Unknown command!" | "Command not found"
+        | "Not authorized" => "rejected",
+        "World Saved" | "World Saved." | "World Saved!" => "save_ack",
+        _ => "other",
+    }
+}
 
 #[path = "runtime_transport_seven_days.rs"]
 mod seven_days;
@@ -69,6 +150,7 @@ enum SourceRconCompletion {
     ResponseValue,
     PlayerList,
     Rust,
+    ArkShutdownFirstResponse,
 }
 
 fn source_rcon_exchange<S: Read + Write>(
@@ -119,6 +201,9 @@ fn source_rcon_exchange_with_delivery<S: Read + Write>(
         // ARK and Squad ignore empty response-value requests. A separate
         // read-only command supplies their ordered response boundary.
         SourceRconCompletion::PlayerList => (2, "ListPlayers"),
+        // This mode is selected only by the exact native ARK DoExit shutdown
+        // adapter. The caller closes its socket after this first response.
+        SourceRconCompletion::ArkShutdownFirstResponse => (0, ""),
     };
     // Minecraft treats one socket read as one request. Wait for its first reply
     // before sending the marker so the two requests cannot be read together.
@@ -141,9 +226,34 @@ fn source_rcon_exchange_with_delivery<S: Read + Write>(
     }
     let response =
         response.ok_or_else(|| String::from("RCON command response was not received"))?;
+    #[cfg(test)]
+    NATIVE_ARK_SHUTDOWN_TRACE.with(|slot| {
+        if let Some(trace) = slot.get() {
+            eprintln!("NATIVE_ARK_RCON module={} command={} elapsed_ms={} first_response_id={EXEC_ID} first_response_type=0 response_bytes={} response_class={} body=omitted", trace.module, trace.command, trace.started.elapsed().as_millis(), response.len(), native_ark_response_class(&response));
+        }
+    });
+    if matches!(completion, SourceRconCompletion::ArkShutdownFirstResponse) {
+        return String::from_utf8(response)
+            .map_err(|_| String::from("RCON command response contains invalid UTF-8"));
+    }
     const TERMINATOR_ID: i32 = 14003;
     source_rcon_write_packet(stream, TERMINATOR_ID, marker_type, marker_command)?;
     source_rcon_read_command_response(stream, EXEC_ID, TERMINATOR_ID, response)
+}
+
+#[cfg(test)]
+#[test]
+fn native_ark_shutdown_diagnostics_are_closed_and_never_classify_embedded_text() {
+    assert!(native_ark_shutdown_trace("arksurvivalascended", "DoExit").is_some());
+    assert!(native_ark_shutdown_trace("arksurvivalevolved", "saveworld").is_some());
+    assert!(native_ark_shutdown_trace("minecraft", "DoExit").is_none());
+    assert!(native_ark_shutdown_trace("arksurvivalascended", "DoExit PRIVATE").is_none());
+    assert_eq!(native_ark_response_class(b"Exiting...\r\n"), "exit_ack");
+    assert_eq!(native_ark_response_class(b"Unknown command!"), "rejected");
+    assert_eq!(native_ark_response_class(b"PRIVATE Exiting..."), "other");
+    assert_eq!(native_ark_response_class(b"Exiting...\0PRIVATE"), "other");
+    assert_eq!(native_ark_response_class(&[255]), "other");
+    assert_eq!(native_ark_response_class(&vec![b'x'; 257]), "other");
 }
 
 pub(crate) struct SourceRconPacket {

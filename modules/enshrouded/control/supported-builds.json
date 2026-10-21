@@ -6,5 +6,9 @@
   {
     "game_build_id": "25988414",
     "executable_sha256": "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf"
+  },
+  {
+    "game_build_id": "26083076",
+    "executable_sha256": "d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee"
   }
 ]

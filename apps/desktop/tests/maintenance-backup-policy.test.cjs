@@ -668,3 +668,35 @@ test("discard acknowledges only the settled policy failure and leaves other pend
   assert.equal(state.calls.length, 1);
   state.unmount();
 });
+
+test("the native scope edits only game autosave fields and passes backup policy through", async () => {
+  const state = harness();
+  selectNativePolicy(state);
+  state.props.scope = "native";
+  const view = state.render();
+  assert.ok(view.native, "native fields stay in the saves entry");
+  assert.equal(view.toggle, undefined, "stop backup belongs to the backups entry");
+  assert.equal(view.retention, undefined, "retention belongs to the backups entry");
+  editNative(state, "save_interval_seconds", "1200");
+  await state.flush();
+  assert.equal(state.calls.length, 1);
+  assert.equal(JSON.parse(state.calls[0].input.settings_json).save_interval_seconds, 1200);
+  assert.equal(state.calls[0].input.auto_backup_on_stop, false);
+  assert.equal(state.calls[0].input.backup_retention_count, 3);
+  state.unmount();
+});
+
+test("the backup scope saves retention without native fields or their validation", async () => {
+  const state = harness();
+  selectNativePolicy(state, "valheim", { save_interval_seconds: -1 });
+  state.props.scope = "backup";
+  const view = state.render();
+  assert.equal(view.native, undefined, "native autosave fields belong to the saves entry");
+  assert.ok(view.toggle && view.retention);
+  state.change("9");
+  await state.flush();
+  assert.equal(state.calls.length, 1, "an invalid native value edited elsewhere must not block backup retention");
+  assert.equal(state.calls[0].input.backup_retention_count, 9);
+  assert.equal(state.calls[0].input.settings_json, state.props.details.settings_json, "native settings keep their exact text");
+  state.unmount();
+});

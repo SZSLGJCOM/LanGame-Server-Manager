@@ -69,6 +69,16 @@ startup_timeout_ms = 300000
 protocol = "none"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "source_rcon"
+command_template = "saveworld"
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
 id = "broadcast"
 kind = "broadcast"
 label = "Broadcast"
@@ -186,7 +196,10 @@ destructive = true
 [runtime.shutdown]
 # DoExit saves the world before engine and telemetry workers finish. Allow the
 # complete native process tree to exit after RCON closes its connection.
-grace_period_ms = 30000
+# A current-build isolated restart naturally exited about 43s after stop began,
+# just beyond the former 5s save + 6s exit + 30s final allowance. Keep verifying
+# full-tree exit; the extended allowance itself does not confirm stopping.
+grace_period_ms = 45000
 
 [[runtime.shutdown.commands]]
 transport = "source_rcon"

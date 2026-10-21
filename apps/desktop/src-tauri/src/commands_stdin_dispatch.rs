@@ -24,6 +24,7 @@ pub(super) struct RuntimeStdinDispatchBudget {
 #[derive(Debug, Clone, Default)]
 pub(super) struct RuntimeStdinWriteCompletion {
     result: Arc<StdMutex<Option<Result<(), String>>>>,
+    changed: Arc<tokio::sync::Notify>,
 }
 
 impl RuntimeStdinWriteCompletion {
@@ -34,6 +35,20 @@ impl RuntimeStdinWriteCompletion {
             .map_err(|_| String::from("runtime stdin completion lock poisoned"))
     }
 
+    pub(super) async fn wait(&self) -> Result<(), String> {
+        loop {
+            // Register before reading the retained result, so completion between
+            // the read and await cannot lose its wakeup.
+            let changed = self.changed.notified();
+            tokio::pin!(changed);
+            changed.as_mut().enable();
+            if let Some(result) = self.result()? {
+                return result;
+            }
+            changed.await;
+        }
+    }
+
     fn record(&self, result: &Result<RuntimeStdinDispatchReceipt, String>) {
         match self.result.lock() {
             Ok(mut completion) => {
@@ -41,6 +56,7 @@ impl RuntimeStdinWriteCompletion {
             }
             Err(_) => eprintln!("runtime stdin completion lock poisoned"),
         }
+        self.changed.notify_waiters();
     }
 }
 
@@ -365,6 +381,69 @@ pub(super) fn ensure_expected_supervisor_state(
 #[cfg(test)]
 mod completion_tests {
     use super::*;
+
+    #[tokio::test]
+    async fn broadcast_completion_wait_observes_late_success_and_failure_without_resubmission() {
+        for fail in [false, true] {
+            let completion = RuntimeStdinWriteCompletion::default();
+            let (release, ready) = tokio::sync::oneshot::channel();
+            let target = app_runtime::RuntimeCommandDispatchTarget {
+                process_key: "master".into(),
+                display_name: "fixture".into(),
+                pid: 42,
+            };
+            let writer_target = target.clone();
+            let writer = tauri::async_runtime::spawn(async move {
+                ready.await.unwrap();
+                if fail {
+                    Err(RuntimeStdinWriterFailure::Write)
+                } else {
+                    Ok(writer_target)
+                }
+            });
+            let receipt = await_runtime_stdin_writer_with_budget(
+                None,
+                "broadcast-fixture",
+                target,
+                writer,
+                RuntimeStdinDispatchBudget {
+                    confirmation_deadline: Instant::now(),
+                    submission_tracker: None,
+                    completion: Some(completion.clone()),
+                },
+            )
+            .await
+            .unwrap();
+            assert_eq!(
+                receipt.confirmation,
+                RuntimeStdinDispatchConfirmation::Pending
+            );
+            let waiter = tauri::async_runtime::spawn({
+                let completion = completion.clone();
+                async move { completion.wait().await }
+            });
+            release.send(()).unwrap();
+            let result = tokio::time::timeout(Duration::from_secs(1), waiter)
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                result,
+                if fail {
+                    Err("runtime stdin write failed".into())
+                } else {
+                    Ok(())
+                }
+            );
+            // A late subscriber sees the retained result even after notify fired.
+            assert_eq!(
+                tokio::time::timeout(Duration::from_secs(1), completion.wait())
+                    .await
+                    .unwrap(),
+                result
+            );
+        }
+    }
 
     #[tokio::test]
     async fn late_writer_failure_retains_its_log_context_after_the_waiter_is_dropped() {

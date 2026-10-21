@@ -60,6 +60,16 @@ identity_kind = "player_name"
 refresh_interval_ms = 30000
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "source_rcon"
+command_template = "save"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
 id = "list_online_players"
 label = "Online players"
 label_zh_cn = "在线玩家"

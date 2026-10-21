@@ -15,9 +15,80 @@ mod response;
 #[path = "dragonwilds_control_installation.rs"]
 pub(crate) mod installation;
 
+#[path = "dragonwilds_control_save.rs"]
+mod save;
+pub(crate) use save::save_world;
+
+#[cfg(test)]
+#[path = "dragonwilds_control_startup_tests.rs"]
+mod startup_tests;
+
+pub(crate) fn validate_save_environment<'a>(
+    values: impl IntoIterator<Item = (&'a String, &'a String)>,
+) -> Result<(), String> {
+    if std::env::vars_os().any(|(key, value)| {
+        key.to_str()
+            .is_some_and(|key| key.eq_ignore_ascii_case("LGSM_DRAGON_SAVE_RUN"))
+            && !value.is_empty()
+    }) || values
+        .into_iter()
+        .any(|(key, value)| key.eq_ignore_ascii_case("LGSM_DRAGON_SAVE_RUN") && !value.is_empty())
+    {
+        return Err("An existing Dragonwilds save launch override conflicts with the managed session. It was preserved.".into());
+    }
+    Ok(())
+}
+
+pub(crate) fn preparation_root(details: &InstanceDetails) -> Result<std::path::PathBuf, String> {
+    if details.summary.module_id != "runescapedragonwilds"
+        || !matches!(
+            details.summary.status,
+            app_core::InstanceStatus::Stopped | app_core::InstanceStatus::Error
+        )
+        || details.summary.active_process_count != 0
+        || details.active_run.as_ref().is_some_and(|run| {
+            run.process_count != 0
+                || run
+                    .processes
+                    .iter()
+                    .any(|process| process.status == "running")
+        })
+    {
+        return Err("Stop Dragonwilds before preparing its save launch identity.".into());
+    }
+    validate_save_environment(std::iter::empty())?;
+    // Dragonwilds owns a dedicated loader/control installation. The generic
+    // Unreal world-save profile intentionally does not declare this bridge.
+    let instance = Path::new(&details.config_file_path)
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("The Dragonwilds configuration has no independent runtime root.")?;
+    if app_storage::instance_program_mode(instance).map_err(|error| error.to_string())?
+        != app_storage::InstanceProgramMode::Independent
+    {
+        return Err("Dragonwilds saving requires its independent program directory.".into());
+    }
+    app_storage::resolve_instance_runtime_root(instance).map_err(|error| error.to_string())
+}
+
+pub(crate) fn startup_environment(details: &InstanceDetails) -> Result<(String, String), String> {
+    let root = preparation_root(details)?;
+    let (script, bridge) = bundled_payload();
+    if !installation::is_complete(&root, script, bridge)? {
+        return Err("The Dragonwilds native save control must be prepared before launch.".into());
+    }
+    installation::start_session(&root)
+}
+
 pub(crate) fn bundled_payload() -> (&'static [u8], &'static [u8]) {
-    let script = include_bytes!(
-        "../../../../../modules/runescapedragonwilds/control/LgsmPlayerControl/Scripts/main.lua"
+    let script = concat!(
+        include_str!(
+            "../../../../../modules/runescapedragonwilds/control/LgsmPlayerControl/Scripts/save.lua"
+        ),
+        "\n",
+        include_str!(
+            "../../../../../modules/runescapedragonwilds/control/LgsmPlayerControl/Scripts/main.lua"
+        )
     );
     #[cfg(windows)]
     let bridge = include_bytes!(concat!(
@@ -26,7 +97,7 @@ pub(crate) fn bundled_payload() -> (&'static [u8], &'static [u8]) {
     ));
     #[cfg(not(windows))]
     let bridge: &[u8] = &[];
-    (script, bridge)
+    (script.as_bytes(), bridge)
 }
 
 pub(crate) fn is_prepared(details: &InstanceDetails) -> Result<bool, String> {
@@ -310,6 +381,35 @@ pub(crate) fn execute_blocking(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn dragonwilds_control_save_session_requires_a_stopped_managed_instance() {
+        let mut details: InstanceDetails = serde_json::from_value(serde_json::json!({
+            "summary":{"id":"dragon-save","name":"Dragon save","module_id":"runescapedragonwilds",
+                "status":"Running","bind_ip":"127.0.0.1","port_count":0,"autostart":false},
+            "config_file_path":"D:/fixture/config/instance.json","saves_path":"D:/fixture/data/worlds",
+            "auto_backup_on_stop":false,"backup_retention_count":0,"settings_json":"{}","ports":[],"active_run":null
+        })).unwrap();
+        assert!(
+            startup_environment(&details)
+                .unwrap_err()
+                .contains("Stop Dragonwilds")
+        );
+        details.summary.status = app_core::InstanceStatus::Stopped;
+        details.summary.active_process_count = 1;
+        assert!(
+            startup_environment(&details)
+                .unwrap_err()
+                .contains("Stop Dragonwilds")
+        );
+        details.summary.active_process_count = 0;
+        details.summary.module_id = "scum".into();
+        assert!(
+            startup_environment(&details)
+                .unwrap_err()
+                .contains("Stop Dragonwilds")
+        );
+    }
 
     #[tokio::test]
     async fn dragonwilds_query_cancellation_retains_the_instance_permit_until_worker_exit() {

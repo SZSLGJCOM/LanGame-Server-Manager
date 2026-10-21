@@ -55,7 +55,7 @@ export const EN_US_MINECRAFT_MESSAGES: MessageCatalog = {
   "settings.schema.minecraft.enable_query.title": "Enable Query",
   "settings.schema.minecraft.enable_code_of_conduct.description": "Require players to accept the server's codeofconduct.json before joining.",
   "settings.schema.minecraft.enable_code_of_conduct.title": "Enable Code of Conduct",
-  "settings.schema.minecraft.enable_rcon.description": "Expose the remote console on the configured RCON TCP port.",
+  "settings.schema.minecraft.enable_rcon.description": "Writes enable-rcon to server.properties. New instances enable RCON for saving and player actions with a unique generated password. Existing disabled settings stay disabled. Changes apply after restart.",
   "settings.schema.minecraft.enable_rcon.title": "Enable RCON",
   "settings.schema.minecraft.enable_whitelist.description": "Minecraft will read whitelist.json and only admit listed players.",
   "settings.schema.minecraft.enable_whitelist.title": "Enable Whitelist",

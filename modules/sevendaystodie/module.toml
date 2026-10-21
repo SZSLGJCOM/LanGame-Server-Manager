@@ -45,6 +45,16 @@ port = 8081
 protocol = "none"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "telnet"
+command_template = "saveworld"
+port_name = "telnet"
+password_setting_key = "telnet_password"
+enabled_setting_key = "telnet_enabled"
+
+[[runtime.player_actions]]
 id = "broadcast"
 kind = "broadcast"
 label = "Broadcast"

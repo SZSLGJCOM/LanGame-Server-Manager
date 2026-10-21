@@ -6,6 +6,7 @@ use app_core::workshop_ids::normalize_reference as normalize_workshop_id_line;
 mod templates_materialize;
 pub(crate) use templates_materialize::ManagedConfigMergePlan;
 pub(crate) use templates_materialize::ManagedConfigMutation;
+pub use templates_materialize::is_managed_dst_map_observer;
 #[cfg(test)]
 pub(crate) use templates_materialize::materialize_module_support_files;
 pub(crate) use templates_materialize::validate_asa_mod_configurations;
@@ -304,7 +305,6 @@ const ASTRONEER_ENGINE_FILE: &str = "Engine.ini";
 const ASTRONEER_GAME_FILE: &str = "Game.ini";
 const RUNESCAPE_DRAGONWILDS_DEDICATED_SERVER_FILE: &str = "DedicatedServer.ini";
 const ROMESTEAD_CONFIG_FILE: &str = "config.json";
-const ROMESTEAD_START_SCRIPT_FILE: &str = "start-romestead.bat";
 fn parse_workshop_id_list(settings: &Map<String, Value>, key: &str) -> Vec<String> {
     let Some(raw) = lookup_setting_text(settings, key) else {
         return Vec::new();

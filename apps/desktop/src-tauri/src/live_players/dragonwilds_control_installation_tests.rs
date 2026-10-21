@@ -87,7 +87,7 @@ fn dragonwilds_control_install_recovers_an_owned_partial_publication_across_app_
     let completed: Ownership =
         serde_json::from_slice(&fs::read(root.0.join(OWNER)).unwrap()).unwrap();
     assert!(completed.pending_files.is_none());
-    assert_eq!(completed.files.len(), 3);
+    assert_eq!(completed.files.len(), 4);
     assert_eq!(
         fs::read(root.0.join(MOD).join("native/LgsmPlayerControl.dll")).unwrap(),
         b"MZ-different-app-build"
@@ -107,4 +107,51 @@ fn dragonwilds_control_install_refuses_nonfiles_and_unknown_intent_paths() {
         fs::read(root.0.join(MOD).join("Scripts/main.lua")).unwrap(),
         b"script"
     );
+}
+
+#[test]
+fn dragonwilds_control_session_is_fresh_pinned_and_invalid_existing_data_is_preserved() {
+    let root = Root::new();
+    install(&root.0, b"script", b"MZ-bridge").unwrap();
+    let (key, first) = start_session(&root.0).unwrap();
+    assert_eq!(key, "LGSM_DRAGON_SAVE_RUN");
+    assert!(super::super::nonce(&first));
+    let (observed, pins) = session(&root.0).unwrap();
+    assert_eq!(first, observed);
+    #[cfg(windows)]
+    assert!(start_session(&root.0).is_err());
+    drop(pins);
+    let (_, next) = start_session(&root.0).unwrap();
+    assert_ne!(first, next);
+    let path = root.0.join(DIRECTORY).join(SESSION);
+    fs::write(&path, b"operator data").unwrap();
+    assert!(start_session(&root.0).is_err());
+    assert_eq!(fs::read(path).unwrap(), b"operator data");
+}
+
+#[test]
+fn dragonwilds_control_upgrade_deploys_license_without_adopting_a_foreign_file() {
+    for foreign in [false, true] {
+        let root = Root::new();
+        install(&root.0, b"script", b"MZ-bridge").unwrap();
+        let mut owner: Ownership =
+            serde_json::from_slice(&fs::read(root.0.join(OWNER)).unwrap()).unwrap();
+        owner.files.remove("LICENSE-MinHook.txt");
+        fs::write(root.0.join(OWNER), serde_json::to_vec(&owner).unwrap()).unwrap();
+        let notice = root.0.join(MOD).join("LICENSE-MinHook.txt");
+        if foreign {
+            fs::write(&notice, b"external content").unwrap();
+        } else {
+            fs::remove_file(&notice).unwrap();
+        }
+        let result = install(&root.0, b"script-next", b"MZ-bridge-next");
+        if foreign {
+            assert!(result.is_err());
+            assert_eq!(fs::read(notice).unwrap(), b"external content");
+        } else {
+            result.unwrap();
+            assert_eq!(fs::read(notice).unwrap(), NOTICE);
+            assert!(is_complete(&root.0, b"script-next", b"MZ-bridge-next").unwrap());
+        }
+    }
 }

@@ -10,6 +10,9 @@ use sha2::{Digest, Sha256};
 const OWNER: &str = ".langame-dragonwilds-player-control.json";
 const MOD: &str = "RSDragonwilds/Binaries/Win64/ue4ss/Mods/LgsmPlayerControl";
 const DIRECTORY: &str = "langame_player_control";
+const SESSION: &str = "save-session.txt";
+const NOTICE: &[u8] =
+    include_bytes!("../../../../../modules/enshrouded/control/vendor/minhook/LICENSE.txt");
 const MAX_FILE: usize = 4 * 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -37,6 +40,26 @@ fn reparse(metadata: &fs::Metadata) -> bool {
         }
     }
     metadata.file_type().is_symlink()
+}
+
+fn single_link(file: &File) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::io::AsRawHandle;
+        use windows_sys::Win32::Storage::FileSystem::{
+            BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
+        };
+        let mut information: BY_HANDLE_FILE_INFORMATION = unsafe { std::mem::zeroed() };
+        return unsafe {
+            GetFileInformationByHandle(file.as_raw_handle().cast(), &mut information)
+        } != 0
+            && information.nNumberOfLinks == 1;
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = file;
+        true
+    }
 }
 
 fn exists(path: &Path) -> Result<bool, String> {
@@ -94,7 +117,11 @@ fn read(path: &Path, limit: usize) -> Result<Vec<u8>, String> {
     }
     let file = options.open(path).map_err(|error| error.to_string())?;
     let metadata = file.metadata().map_err(|error| error.to_string())?;
-    if !metadata.is_file() || reparse(&metadata) || metadata.len() > limit as u64 {
+    if !metadata.is_file()
+        || reparse(&metadata)
+        || metadata.len() > limit as u64
+        || !single_link(&file)
+    {
         return Err("The control file changed during preparation.".into());
     }
     let mut bytes = Vec::new();
@@ -125,7 +152,10 @@ fn validate_hashes(files: &BTreeMap<String, String>) -> bool {
     files.keys().all(|name| {
         matches!(
             name.as_str(),
-            "Scripts/main.lua" | "native/LgsmPlayerControl.dll" | "enabled.txt"
+            "Scripts/main.lua"
+                | "native/LgsmPlayerControl.dll"
+                | "enabled.txt"
+                | "LICENSE-MinHook.txt"
         )
     }) && files
         .values()
@@ -144,7 +174,7 @@ pub(crate) fn is_complete(root: &Path, script: &[u8], bridge: &[u8]) -> Result<b
         .map_err(|_| "The Dragonwilds control ownership record is invalid.")?;
     if owner.protocol != 1
         || owner.module_id != "runescapedragonwilds"
-        || owner.files.len() != 3
+        || owner.files.len() != 4
         || !validate_hashes(&owner.files)
         || owner.pending_files.is_some()
     {
@@ -154,6 +184,7 @@ pub(crate) fn is_complete(root: &Path, script: &[u8], bridge: &[u8]) -> Result<b
         ("Scripts/main.lua", script),
         ("native/LgsmPlayerControl.dll", bridge),
         ("enabled.txt", &[] as &[u8]),
+        ("LICENSE-MinHook.txt", NOTICE),
     ];
     for (name, bytes) in payload {
         let path = root.join(MOD).join(name);
@@ -196,6 +227,7 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
         ("Scripts/main.lua".to_owned(), script),
         ("native/LgsmPlayerControl.dll".to_owned(), bridge),
         ("enabled.txt".to_owned(), &[] as &[u8]),
+        ("LICENSE-MinHook.txt".to_owned(), NOTICE),
     ]);
     let expected = payload
         .iter()
@@ -207,11 +239,10 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
         if owner.protocol != 1
             || owner.module_id != "runescapedragonwilds"
             || !validate_hashes(&owner.files)
-            || owner
-                .pending_files
-                .as_ref()
-                .is_some_and(|pending| !validate_hashes(pending) || pending.len() != 3)
-            || (owner.pending_files.is_none() && owner.files.len() != 3)
+            || owner.pending_files.as_ref().is_some_and(|pending| {
+                !validate_hashes(pending) || !(3..=4).contains(&pending.len())
+            })
+            || (owner.pending_files.is_none() && !(3..=4).contains(&owner.files.len()))
         {
             return Err(
                 "The control ownership does not match this installation; files were preserved."
@@ -271,6 +302,7 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
     // Enable last. The ownership intent recognizes every partial publication,
     // while an unknown external modification can never authorize replacement.
     for name in [
+        "LICENSE-MinHook.txt",
         "native/LgsmPlayerControl.dll",
         "Scripts/main.lua",
         "enabled.txt",
@@ -289,6 +321,56 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
         &serde_json::to_vec(&owner).map_err(|error| error.to_string())?,
     )?;
     Ok(())
+}
+
+/// The launch caller owns the stopped instance and its independent runtime.
+/// An invalid existing session is preserved instead of silently replacing it.
+pub(crate) fn start_session(root: &Path) -> Result<(String, String), String> {
+    let _pins = pin(&root.join(DIRECTORY), false)?;
+    let path = root.join(DIRECTORY).join(SESSION);
+    let previous = if exists(&path)? {
+        let bytes = read(&path, 32)?;
+        if !std::str::from_utf8(&bytes).is_ok_and(super::nonce) {
+            return Err("The Dragonwilds save launch session is invalid; it was preserved.".into());
+        }
+        Some(bytes)
+    } else {
+        None
+    };
+    let run = uuid::Uuid::new_v4().simple().to_string();
+    publish(&path, previous.as_deref(), run.as_bytes())?;
+    Ok(("LGSM_DRAGON_SAVE_RUN".into(), run))
+}
+
+/// Hold the session leaf and every ancestor through Save and all read-only
+/// queries. A launch/session replacement cannot authenticate an old receipt.
+pub(crate) fn session(root: &Path) -> Result<(String, Vec<File>), String> {
+    let mut pins = pin(&root.join(DIRECTORY), false)?;
+    let path = root.join(DIRECTORY).join(SESSION);
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.share_mode(1).custom_flags(0x0020_0000);
+    }
+    let mut file = options.open(&path).map_err(|error| error.to_string())?;
+    let metadata = file.metadata().map_err(|error| error.to_string())?;
+    if !metadata.is_file() || reparse(&metadata) || metadata.len() != 32 || !single_link(&file) {
+        return Err("The Dragonwilds save launch session is invalid.".into());
+    }
+    let mut bytes = Vec::new();
+    (&mut file)
+        .take(33)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
+    let run = std::str::from_utf8(&bytes)
+        .ok()
+        .filter(|value| super::nonce(value))
+        .ok_or("The Dragonwilds save launch session is invalid.")?
+        .to_owned();
+    pins.push(file);
+    Ok((run, pins))
 }
 
 #[cfg(test)]

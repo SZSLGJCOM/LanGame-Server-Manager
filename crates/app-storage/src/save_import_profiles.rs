@@ -43,13 +43,7 @@ fn selected(
     source: &Path,
 ) -> Result<String, StorageError> {
     let name = text(settings, key);
-    if name.is_empty()
-        || name.contains(['/', '\\', ':'])
-        || name == "."
-        || name == ".."
-        || name.ends_with(['.', ' '])
-        || name.chars().any(char::is_control)
-    {
+    if !crate::backups::save_file_listing::slots::is_native_name(&name) {
         return Err(invalid(
             source,
             format!(

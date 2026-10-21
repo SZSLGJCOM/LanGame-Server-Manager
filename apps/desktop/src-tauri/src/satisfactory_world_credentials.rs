@@ -1,6 +1,6 @@
 use keyring::{Entry, Error};
 
-const SERVICE: &str = "LanGame.ServerManager.Satisfactory";
+pub(super) const SERVICE: &str = "LanGame.ServerManager.Satisfactory";
 
 pub(super) async fn read(identity: &str, kind: &str) -> Result<Option<String>, String> {
     let account = format!("{identity}/{kind}");

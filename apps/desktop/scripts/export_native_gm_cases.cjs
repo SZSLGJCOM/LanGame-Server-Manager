@@ -33,19 +33,22 @@ for (const moduleId of ["arksurvivalevolved", "arksurvivalascended"]) {
   add(moduleId, "ark_destroy_wild_dinos");
 }
 for (const shard of ["master", "caves"]) {
-  add("dontstarve", "dst_give_item_to_player", { shard, playerIndex: "2", prefab: "twigs", amount: "3" });
+  add("dontstarve", "dst_give_item_to_player", { shard, playerId: "KU_LGSM_NATIVE_2", prefab: "twigs", amount: "3" });
   add("dontstarve", "dst_give_item_to_player", { shard, allPlayers: "true", prefab: "log", amount: "2" });
-  add("dontstarve", "dst_give_item_to_player", { shard, playerIndex: "2", prefab: "flint", amount: "2", placeInInventory: "false" });
-  add("dontstarve", "dst_revive_player", { shard, playerIndex: "2" });
+  add("dontstarve", "dst_give_item_to_player", { shard, playerId: "KU_LGSM_NATIVE_2", prefab: "flint", amount: "2", placeInInventory: "false" });
+  add("dontstarve", "dst_revive_player", { shard, playerId: "KU_LGSM_NATIVE_2" });
 }
 add("dontstarve", "dst_set_season", { season: "winter" });
 add("dontstarve", "dst_set_season", { season: "spring" });
 add("dontstarve", "dst_set_rain", { enabled: "true" });
 add("dontstarve", "dst_set_rain", { enabled: "false" });
-add("dontstarve", "dst_give_item_to_player", { playerIndex: "2", prefab: "lgsm_missing_prefab", amount: "1", expectedError: "Unknown prefab" });
-add("dontstarve", "dst_give_item_to_player", { playerIndex: "999", prefab: "twigs", amount: "1", expectedError: "Player not on shard" });
-add("dontstarve", "dst_give_item_to_player", { playerIndex: "2", prefab: "evergreen", amount: "1", expectedError: "Entity needs ground spawn" });
-add("dontstarve", "dst_revive_player", { playerIndex: "1", expectedError: "Player is not a ghost" });
+add("dontstarve", "dst_set_phase", { phase: "dusk" });
+add("dontstarve", "dst_set_phase", { phase: "night" });
+add("dontstarve", "dst_set_phase", { phase: "next" });
+add("dontstarve", "dst_give_item_to_player", { playerId: "KU_LGSM_NATIVE_2", prefab: "lgsm_missing_prefab", amount: "1", expectedError: "Unknown prefab" });
+add("dontstarve", "dst_give_item_to_player", { playerId: "KU_LGSM_NATIVE_MISSING", prefab: "twigs", amount: "1", expectedError: "No player" });
+add("dontstarve", "dst_give_item_to_player", { playerId: "KU_LGSM_NATIVE_2", prefab: "evergreen", amount: "1", expectedError: "Not an item" });
+add("dontstarve", "dst_revive_player", { playerId: "KU_LGSM_NATIVE_1", expectedError: "Player is not a ghost" });
 // Maintenance now owns saves and broadcasts. Export the current module action
 // declarations; the backend independently rebuilds each command from that ID.
 function maintenance(moduleId, actionId, toolId, target) {
@@ -54,7 +57,7 @@ function maintenance(moduleId, actionId, toolId, target) {
     Object.fromEntries([...block.split(/\r?\n\[/)[0].matchAll(/^([a-z_]+) = "([^"\r\n]*)"\r?$/gm)].map(match => [match[1], match[2]])));
   const action = actions.find(candidate => candidate.id === actionId);
   if (!action?.command_template) throw new Error(`Missing maintenance action: ${moduleId}:${actionId}`);
-  cases.push({ moduleId, toolId, values: {}, commands: [action.command_template.replace("{{target}}", target ?? "")],
+  cases.push({ moduleId, toolId, values: target ? { message: target } : {}, commands: [action.command_template.replace("{{target}}", target ?? "")],
     processKey: action.process_key ?? null, dispatchOptions: { runtimeActionId: actionId, ...(target ? { runtimeActionTarget: target } : {}) } });
 }
 for (const moduleId of ["terraria", "projectzomboid", "minecraft", "palworld"]) {

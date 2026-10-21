@@ -93,13 +93,17 @@ function createAutosaveHarness({ editorPath, exportName, props, expand = [] }) {
   }
   const autosave = load("../../src/views/settings/useAutoSaveInstanceSettings.ts", { "./InstanceSettingsSaveContext": coordinatorModule });
   const footer = load("../../src/views/servers/MaintenanceAutoSaveFooter.tsx", {});
+  // Editors sit inside the shared settings chip; it runs on this hook runtime and is inlined like the footer.
+  const toolbar = load("../../src/views/servers/MaintenanceToolbar.tsx", { "../settings/ConfigurationFieldHelp": helpHarness });
   const editor = load(editorPath, {
     "../settings/InstanceSettingsSaveContext": coordinatorModule,
     "../settings/useAutoSaveInstanceSettings": autosave,
     "../settings/ConfigurationFieldHelp": helpHarness,
-    "./MaintenanceAutoSaveFooter": footer
+    "./MaintenanceAutoSaveFooter": footer,
+    "./MaintenanceToolbar": toolbar
   });
-  const inline = new Set([footer.MaintenanceAutoSaveFooter, helpHarness.ConfigurationHelp, helpHarness.ConfigurationActionHelp, ...expand]);
+  const inline = new Set([footer.MaintenanceAutoSaveFooter, toolbar.MaintenanceChip, toolbar.MaintenanceHelp, toolbar.MaintenanceAction,
+    helpHarness.ConfigurationHelp, helpHarness.ConfigurationActionHelp, ...expand]);
   function descendants(node) {
     if (React.isValidElement(node) && inline.has(node.type)) return descendants(node.type(node.props));
     if (Array.isArray(node)) return node.flatMap(descendants);

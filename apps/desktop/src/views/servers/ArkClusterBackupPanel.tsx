@@ -6,6 +6,7 @@ import { describeError } from "../../app-state";
 import { useI18n, selectLocaleText } from "../../i18n";
 import { ShellIcon } from "../../components/ShellIcon";
 import { ConfigurationHelp } from "../settings/ConfigurationFieldHelp";
+import { formatStorageSize } from "./format-storage-size";
 import "./ark-cluster-backups.css";
 
 interface ArkClusterBackupPanelProps {
@@ -125,7 +126,7 @@ export function ArkClusterBackupPanel({ report, busy, listBackups, createBackup,
       <button type="button" className="secondary-button" disabled={locked} onClick={() => void refreshList()}>{t("common.refresh")}</button>
     </div>
     {!allStopped ? <p className="ark-cluster-note">{text("请先停止集群全部成员。", "Stop every cluster member first.")}</p> : null}
-    {report.issues.length ? <p className="ark-cluster-error">{text("请先解决上方全部集群检查问题。", "Resolve all cluster inspection issues above first.")}</p> : null}
+    {report.issues.length ? <p className="ark-cluster-error">{text("请先在「ARK 集群」分类中解决全部集群检查问题。", "Resolve all cluster inspection issues in the ARK cluster category first.")}</p> : null}
     <label className="ark-cluster-exclusive"><input type="checkbox" checked={exclusive} disabled={locked || !safe} onChange={(event) => setExclusive(event.target.checked)} />
       <span>{text("我已确认此共享目录专用于当前集群，且没有其他程序向其中写入。", "I confirm this shared directory belongs exclusively to this cluster and no other program writes to it.")}
         <code>{displayLocalPath(report.cluster_directory) || "—"}</code></span>
@@ -140,7 +141,7 @@ export function ArkClusterBackupPanel({ report, busy, listBackups, createBackup,
     {backups.length === 0 ? !loading ? <p className="ark-cluster-note">{text("尚无完整集群快照。单实例备份不包含整个集群。", "No complete cluster snapshots yet. Individual instance backups do not cover the entire cluster.")}</p> : null
         : <ul className="ark-cluster-backup-list">{backups.map((backup) => <li key={backup.backup_id}>
           <div><strong>{date(backup.created_at_unix_ms)}</strong><span>{backup.backup_kind === "pre_restore" ? text("恢复前保护快照", "Pre-restore safeguard") : text("手动快照", "Manual snapshot")}</span>
-            <span>{backup.members.length} {text("个成员", "members")} · {backup.file_count} {text("个文件", "files")} · {(backup.total_bytes / 1048576).toFixed(1)} MiB</span></div>
+            <span>{backup.members.length} {text("个成员", "members")} · {backup.file_count} {text("个文件", "files")} · {formatStorageSize(backup.total_bytes)}</span></div>
           <button type="button" className="secondary-button" disabled={!canMutate} onClick={() => { setSelected(backup); setError(null); }}>{text("恢复…", "Restore…")}</button>
         </li>)}</ul>}
     {selected ? <div className="ark-cluster-restore-confirm" role="group" aria-label={text("确认恢复集群", "Confirm cluster restore")}>

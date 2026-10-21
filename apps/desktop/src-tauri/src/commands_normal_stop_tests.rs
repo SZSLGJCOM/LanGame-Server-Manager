@@ -553,9 +553,14 @@ async fn normal_stop_confirms_tree_exit_when_rcon_completion_connection_closes()
         "grace_period_ms": 1000, "commands": [{"transport": "source_rcon", "fallback_transport": "stdin",
             "command": "quit", "enabled_setting_key": "rcon_enabled", "wait_after_ms": 100}]
     })).unwrap();
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     let result = request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,
@@ -590,9 +595,14 @@ async fn normal_stop_preserves_declared_stdin_fallback_when_rcon_is_disabled() {
         "grace_period_ms": 1000, "commands": [{"transport": "source_rcon", "fallback_transport": "stdin",
             "command": "release", "enabled_setting_key": "rcon_enabled", "wait_after_ms": 25}]
     })).unwrap();
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,
@@ -621,9 +631,14 @@ async fn normal_stop_transport_failure_does_not_confirm_a_running_tree() {
             "command": "quit", "enabled_setting_key": "rcon_enabled", "wait_after_ms": 25}]
     }))
     .unwrap();
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     let error = request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,
@@ -704,9 +719,14 @@ async fn normal_stop_rcon_auth_failure_preserves_declared_fallback() {
     let mut fixture = Fixture::new().await;
     let (peer, _) = rcon_disconnect_peer(&mut fixture, true);
     let shutdown = rcon_disconnect_shutdown(1000);
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     let result = request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,
@@ -724,9 +744,14 @@ async fn normal_stop_rcon_response_failure_retains_live_tree_without_replaying()
     let mut fixture = Fixture::new().await;
     let (peer, _) = rcon_disconnect_peer(&mut fixture, false);
     let shutdown = rcon_disconnect_shutdown(50);
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     let result = request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,
@@ -751,9 +776,14 @@ async fn normal_stop_rcon_response_failure_waits_full_grace_for_cooperative_exit
     let mut fixture = Fixture::new().await;
     let (peer, closed) = rcon_disconnect_peer(&mut fixture, false);
     let shutdown = rcon_disconnect_shutdown(2000);
+    let storage_lease = fixture
+        .state
+        .begin_storage_context_operation("shutdown regression")
+        .unwrap();
     let stop = request_instance_graceful_shutdown(
         &fixture.state,
         &fixture.storage,
+        &storage_lease,
         &fixture.details,
         Some(&shutdown),
         InstanceShutdownSource::Manual,

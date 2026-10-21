@@ -1,6 +1,13 @@
 -- Pure Lua behavioral harness. Usage: lua-harness tests.lua Scripts/main.lua.
 -- All game, filesystem and native DLL boundaries below are deterministic mocks.
 local production = assert(arg[1], "production main.lua path required")
+local production_source = LGSM_CONTROL_TEST_SOURCE
+if not production_source then
+    local save = assert(io.open(assert(production:gsub("main%.lua$", "save.lua")), "rb"))
+    local main = assert(io.open(production, "rb"))
+    production_source = save:read("a") .. "\n" .. main:read("a")
+    save:close(); main:close()
+end
 local tests, failures = 0, {}
 local base = "D:/probe\\langame_player_control\\"
 local ini = "D:/probe\\RSDragonwilds\\Saved\\Config\\WindowsServer\\DedicatedServer.ini"
@@ -20,7 +27,8 @@ end
 local function harness(count)
     local state = { now = 1000, files = {}, queue = {}, rows = {}, connections = {}, known = {},
         kicks = 0, native_calls = 0, probes = 0, native_available = false, kick_result = true, remove_on_kick = true,
-        persist_native = true, apply_native = true, remove_on_ban = true, random_counter = 0 }
+        persist_native = true, apply_native = true, remove_on_ban = true, random_counter = 0,
+        save_calls = 0, save_busy = false }
     local driver = object(1, "/Script/RedpointEOSNetworking.RedpointEOSNetDriver")
     local world = object(2, "/Script/Engine.World")
     local gs, gm = object(3, "/Script/Dominion.DominionGameStateBase"), object(4, "/Script/Dominion.DominionGameMode")
@@ -49,6 +57,11 @@ local function harness(count)
     local matchmaker = object(11, "/Script/Dominion.DomMatchmakerSubsystem")
     matchmaker.GetOuter = function() return instance end
     state.settings, state.matchmaker = settings, matchmaker
+    local persistence = object(12, "/Script/Dominion.PersistenceSubsystem")
+    local spud = object(13, "/Script/SPUD.SpudSubsystem")
+    persistence.GetOuter = function() return instance end
+    spud.GetOuter = function() return instance end
+    state.persistence, state.spud = persistence, spud
     function state.sync_ini()
         local lines = { "[/Script/Dominion.DedicatedServerSettings]" }
         for _, row in ipairs(state.known) do
@@ -71,7 +84,15 @@ local function harness(count)
         assert(minimum == 0 and maximum == 0x7fffffff)
         state.random_counter = state.random_counter + 1; return state.random_counter
     end }, { __index = math })
-    environment.os = { time = function() return state.now end, remove = function(path)
+    environment.os = { getenv = function(key) assert(key == "LGSM_DRAGON_SAVE_RUN"); return string.rep("a", 32) end, time = function()
+        if state.final_validate_tick and state.save_time_reads then
+            state.save_time_reads = state.save_time_reads + 1
+            if state.save_time_reads == 6 then
+                state.final_validate_tick = false; state.now = state.now + 4; state.tick()
+            end
+        end
+        return state.now
+    end, remove = function(path)
         if state.remove_failure then return nil, "denied", 13 end
         if state.files[path] then state.files[path] = nil; return true end
         return nil, "missing", 2
@@ -100,6 +121,8 @@ local function harness(count)
     environment.FindAllOf = function(class)
         assert(state.in_game_thread, "no off-thread UObject reads")
         if class == "RedpointEOSNetDriver" then return { driver } end
+        if class == "PersistenceSubsystem" then return state.ambiguous_save and { persistence, persistence } or { persistence } end
+        if class == "SpudSubsystem" then return { spud } end
         assert(class == "DomMatchmakerSubsystem"); return { matchmaker }
     end
     environment.FText = function(value)
@@ -111,6 +134,21 @@ local function harness(count)
     local privileges = "/Script/Dominion.PrivilegeFunctionLibrary"
     local kick = "/Script/RedpointEOSFramework.RedpointFrameworkBlueprintLibrary"
     local functions = {
+        ["/Script/Dominion.PersistenceSubsystem:SaveGame"] = {
+            flags = 0x4020401, properties = {{ "bAdditionalLogging", "BoolProperty" }},
+            call = function(target, logging)
+                assert(target == persistence and logging == false)
+                state.save_calls = state.save_calls + 1
+                if state.save_delay then state.now = state.now + state.save_delay; state.tick() end
+                if state.save_throw then error("native invocation failed after entry") end
+            end },
+        ["/Script/SPUD.SpudSubsystem:IsSavingGame"] = {
+            flags = 0x54020401, properties = {{ "ReturnValue", "BoolProperty" }},
+            call = function(target)
+                assert(target == spud)
+                if state.final_validate_tick then state.save_time_reads = 0 end
+                return state.save_busy
+            end },
         ["/Script/Dominion.DominionPlayerController:IsPlayerReady"] = {
             flags = 0x54020401, properties = {{ "ReturnValue", "BoolProperty" }},
             call = function(pc) return pc.ready end },
@@ -153,8 +191,32 @@ local function harness(count)
     end
     environment.package = { loadlib = function(path, symbol)
         assert(state.in_game_thread and path == "D:/probe\\RSDragonwilds\\Binaries\\Win64\\ue4ss\\Mods\\LgsmPlayerControl\\native\\LgsmPlayerControl.dll")
-        assert(symbol == "luaopen_lgsm_dragonwilds_control")
         if not state.native_available then return nil, "not installed" end
+        if symbol == "luaopen_lgsm_dragonwilds_save" then
+            return function(...)
+                assert(select("#", ...) == 0 and state.in_game_thread)
+                local request = assert(state.files[base .. "native-save-request.txt"])
+                local run, id, action, persistence_address, spud_address, instance_address, world_address = request:match(
+                    "^schema=1\nrun=([0-9a-f]+)\nnonce=([0-9a-f]+)\nop=([a-z]+)\npersistence=(%d+)\nspud=(%d+)\ninstance=(%d+)\nworld=(%d+)\n$")
+                assert(run == string.rep("a", 32) and id and instance_address == "5" and world_address == "2")
+                assert(persistence_address and spud_address)
+                if action == "save" then
+                    state.save_calls = state.save_calls + 1
+                    state.saved_nonce = id
+                    if state.save_delay then state.now = state.now + state.save_delay; state.tick() end
+                    if state.save_throw then error("native invocation failed after entry") end
+                elseif action == "query" then assert(id == state.saved_nonce); state.save_queries = (state.save_queries or 0) + 1
+                else assert(action == "probe") end
+                if state.omit_save_receipt then return end
+                local status = action == "probe" and "ready" or state.save_status or (state.save_complete and "completed" or "dispatching")
+                local invoked = action ~= "probe"
+                state.files[base .. "native-save-response.txt"] = "schema=1\nrun=" .. (state.save_run or run)
+                    .. "\nnonce=" .. (state.save_receipt_nonce or id) .. "\nop=" .. action .. "\npid=123\ncreation_time=134054131932282181\nstatus=" .. status
+                    .. "\ninvoked=" .. tostring(invoked) .. "\nreturned=" .. tostring(invoked)
+                    .. "\nissue=" .. (state.save_issue or "none") .. "\n"
+            end
+        end
+        assert(symbol == "luaopen_lgsm_dragonwilds_control")
         return function(...)
             assert(select("#", ...) == 0 and state.in_game_thread)
             local request = assert(state.files[base .. "native-request.txt"])
@@ -184,7 +246,7 @@ local function harness(count)
         end
     end }
     state.environment = environment
-    assert(loadfile(production, "t", environment))()
+    assert(load(production_source, "@" .. production, "t", environment))()
     state.sequence = 0
     function state.request(action, target, id, timestamp)
         state.sequence = state.sequence + 1
@@ -204,6 +266,23 @@ local function harness(count)
     end
     function state.response() return state.files[base .. "response.json"] or "" end
     function state.query() state.request(); state.drain(); return state.response() end
+    function state.save_request(action, target, id, timestamp)
+        state.sequence = state.sequence + 1
+        id = id or string.format("%032x", state.sequence)
+        target = target or {}
+        state.last_nonce = id
+        state.files[base .. "request.json"] = '{"protocol":1,"request_id":"' .. id
+            .. '","requested_at":' .. (timestamp or state.now) .. ',"action":"' .. action
+            .. '","boot_id":"' .. (target.boot_id or "") .. '","world_token":"' .. (target.world_token or "") .. '"'
+            .. (target.save_id and ',"save_id":"' .. target.save_id .. '"' or '') .. '}'
+        state.tick(); return id
+    end
+    function state.save_target()
+        state.save_request("saveprobe"); state.drain()
+        local response = state.response()
+        return { boot_id = assert(response:match('"boot_id":"([0-9a-f]+)"')),
+            world_token = assert(response:match('"world_token":"([0-9a-f]+)"')) }
+    end
     function state.target(index)
         local account = state.rows[index].UniqueID.account
         local response = state.response()
@@ -223,6 +302,128 @@ local function failure(state, code)
     state.drain(); state.tick()
     has(state.response(), '"complete":false'); has(state.response(), '"error":"' .. code .. '"')
 end
+
+test("save uses native current-world invocation once without claiming disk completion", function()
+    local state = harness(0); state.native_available = true
+    local target = state.save_target(); assert(state.save_calls == 0)
+    local id = state.save_request("save", target); state.drain()
+    has(state.response(), '"invoked":true'); has(state.response(), '"call_returned":true')
+    has(state.response(), '"write_confirmed":false'); assert(state.save_calls == 1)
+    state.save_request("save", target, id); state.drain(); assert(state.save_calls == 1)
+    assert(state.native_calls == 0 and state.kicks == 0)
+end)
+test("save rejects busy state and does not reuse an earlier preflight", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    state.save_busy = true; state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"save_busy"'); has(state.response(), '"invoked":false')
+    assert(state.save_calls == 0)
+end)
+test("save rejects replaced worlds and foreign subsystem ownership", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    local replacement = {}; for key, value in pairs(state.world) do replacement[key] = value end
+    replacement.GetAddress = function() return 999 end; state.driver.World = replacement
+    state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"target_changed"'); assert(state.save_calls == 0)
+    state = harness(0); state.native_available = true; target = state.save_target()
+    state.persistence.GetOuter = function() return invalid end
+    state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"api_unavailable"'); assert(state.save_calls == 0)
+end)
+test("save requires native fingerprint and exact reflection signatures", function()
+    local state = harness(0)
+    state.save_request("saveprobe"); state.drain()
+    has(state.response(), '"error":"api_unavailable"'); assert(state.save_calls == 0)
+    state = harness(0); state.native_available = true
+    local target = state.save_target()
+    state.functions["/Script/Dominion.PersistenceSubsystem:SaveGame"].properties[1][2] = "IntProperty"
+    state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"api_unavailable"'); assert(state.save_calls == 0)
+end)
+test("save ambiguity and stale boot reject without native side effects", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    target.boot_id = string.rep("f", 32)
+    state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"target_changed"'); assert(state.save_calls == 0)
+    state = harness(0); state.native_available = true; target = state.save_target(); state.ambiguous_save = true
+    state.save_request("save", target); state.drain()
+    has(state.response(), '"error":"api_unavailable"'); assert(state.save_calls == 0)
+end)
+test("save exception after entry stays unknown and never causes a second call", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target(); state.save_throw = true
+    local id = state.save_request("save", target); state.drain()
+    has(state.response(), '"invoked":true'); has(state.response(), '"call_returned":false')
+    has(state.response(), '"error":"save_call_unknown"'); has(state.response(), '"write_confirmed":false')
+    state.save_request("save", target, id); state.drain(); assert(state.save_calls == 1)
+end)
+test("save watchdog during native execution cannot report a pre-invocation rejection", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target(); state.save_delay = 4
+    local id = state.save_request("save", target); state.drain()
+    has(state.response(), '"invoked":true'); has(state.response(), '"call_returned":false')
+    has(state.response(), '"error":"save_call_unknown"'); has(state.response(), '"write_confirmed":false')
+    assert(not state.response():find('"error":"dispatcher_timeout"', 1, true))
+    state.save_request("save", target, id); state.drain(); assert(state.save_calls == 1)
+end)
+test("save watchdog before final invocation validation blocks native entry", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    state.final_validate_tick = true
+    local id = state.save_request("save", target); state.drain()
+    has(state.response(), '"invoked":true'); has(state.response(), '"call_returned":false')
+    has(state.response(), '"error":"save_call_unknown"'); has(state.response(), '"write_confirmed":false')
+    assert(state.save_calls == 0 and not state.final_validate_tick)
+    state.save_request("save", target, id); state.drain(); assert(state.save_calls == 0)
+end)
+test("save queued timeout and request expiry cannot invoke later", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    state.save_request("save", target); state.now = state.now + 4; state.tick(); state.drain()
+    has(state.response(), '"error":"dispatcher_timeout"'); assert(state.save_calls == 0)
+    state = harness(0); state.native_available = true; target = state.save_target()
+    state.save_request("save", target, nil, state.now - 4); state.drain()
+    has(state.response(), '"error":"request_expired"'); assert(state.save_calls == 0)
+end)
+test("save grammar refuses injected targets and unknown fields", function()
+    local state = harness(0); state.native_available = true
+    state.files[base .. "request.json"] = '{"protocol":1,"request_id":"' .. string.rep("a", 32)
+        .. '","requested_at":1000,"action":"saveprobe","boot_id":"","world_token":"","target":"elsewhere"}'
+    state.tick(); state.drain(); assert(state.save_calls == 0 and state.response() == "")
+end)
+
+test("save Query polls the owned operation while native world is busy and never dispatches again", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    target.save_id = state.save_request("save", target); state.drain()
+    has(state.response(), '"native_status":"dispatching"'); has(state.response(), '"write_confirmed":false')
+    state.save_busy = true; state.save_complete = true
+    state.save_request("savequery", target); state.drain()
+    has(state.response(), '"native_status":"completed"'); has(state.response(), '"write_confirmed":true')
+    has(state.response(), '"native_creation_time":"134054131932282181"')
+    assert(state.save_calls == 1 and state.save_queries == 1)
+end)
+
+test("native close or copy failure is reported without claiming completion", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    state.save_status, state.save_issue = "failed", "native_write_failed"
+    local id = state.save_request("save", target); state.drain()
+    has(state.response(), '"native_status":"failed"'); has(state.response(), '"error":"native_write_failed"')
+    has(state.response(), '"write_confirmed":false')
+    state.save_request("save", target, id); state.drain(); assert(state.save_calls == 1)
+end)
+
+test("foreign native run or nonce cannot be used as a save receipt", function()
+    for _, field in ipairs({"save_run", "save_receipt_nonce"}) do
+        local state = harness(0); state.native_available = true; local target = state.save_target()
+        state[field] = string.rep("f", 32); state.save_complete = true
+        state.save_request("save", target); state.drain()
+        has(state.response(), '"write_confirmed":false'); has(state.response(), '"error":"save_call_unknown"')
+        assert(state.save_calls == 1)
+    end
+end)
+
+test("query requires a distinct fresh request and explicit original save identity", function()
+    local state = harness(0); state.native_available = true; local target = state.save_target()
+    state.save_request("savequery", target); state.drain()
+    assert(state.save_calls == 0 and state.response():find('"action":"saveprobe"', 1, true))
+    target.save_id = string.rep("f", 31); state.save_request("savequery", target); state.drain()
+    assert(state.save_calls == 0 and not state.save_queries)
+end)
 
 test("empty query waits for EngineTick and reports a complete roster", function()
     local state = harness(0); state.request(); assert(state.response() == "" and #state.queue == 1)

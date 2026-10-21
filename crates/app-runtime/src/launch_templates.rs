@@ -20,7 +20,7 @@ pub(super) fn can_prepare_launch_executable(
     context: &TemplateContext<'_>,
     executable_path: &Path,
 ) -> bool {
-    // These two entrypoints are materialized by storage before process launch.
+    // This entrypoint is materialized by storage before process launch.
     // Only recognize their exact managed path and an installed source program;
     // a missing custom executable must remain a blocking installation error.
     match module_id {
@@ -36,10 +36,6 @@ pub(super) fn can_prepare_launch_executable(
                     .is_some_and(|(source, target)| {
                         !source.starts_with(&target) && !target.starts_with(&source)
                     })
-        }
-        "romestead" => {
-            executable_path == context.install_root.join("start-romestead.bat")
-                && context.install_root.join("Server.exe").is_file()
         }
         _ => false,
     }

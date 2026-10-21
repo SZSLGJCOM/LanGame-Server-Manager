@@ -8,13 +8,13 @@ import type { ArkClusterReport } from "../../ark-clusters";
 import { describeError } from "../../app-state";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { ArkClusterBackupPanel } from "./ArkClusterBackupPanel";
+import { useArkClusterActivity } from "./ark-cluster-activity";
 
 interface Props {
   instanceId: string;
   report: ArkClusterReport | null;
   busy: boolean;
   onChanged: () => Promise<void>;
-  onBusyChange: (busy: boolean) => void;
 }
 
 /** Recovery remains reachable when an interrupted directory swap makes the
@@ -29,7 +29,7 @@ export function ArkClusterMaintenance(props: Props) {
   return <LocalArkClusterMaintenance {...props} />;
 }
 
-function LocalArkClusterMaintenance({ instanceId, report, busy, onChanged, onBusyChange }: Props) {
+function LocalArkClusterMaintenance({ instanceId, report, busy: readBusy, onChanged }: Props) {
   const { locale, t } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const [pending, setPending] = useState<PendingArkClusterRestore | null>(null);
@@ -50,6 +50,17 @@ function LocalArkClusterMaintenance({ instanceId, report, busy, onChanged, onBus
   const operation = useRef(false);
   const currentInstance = useRef(instanceId);
   currentInstance.current = instanceId;
+  // A pending or uninspectable restore keeps cluster start/stop locked, as do
+  // running snapshot actions; a running start/stop locks every snapshot control.
+  const snapshotBusy = loading || working || backupBusy || !!pending || !!inspectionError;
+  const clusterOperating = useArkClusterActivity(instanceId, "snapshot", snapshotBusy);
+  const busy = readBusy || clusterOperating;
+  const wasOperating = useRef(clusterOperating);
+  useEffect(() => {
+    // Start/stop changes member state; re-read the cluster so snapshot checks are current.
+    if (wasOperating.current && !clusterOperating) void onChanged();
+    wasOperating.current = clusterOperating;
+  }, [clusterOperating]);
 
   async function inspect() {
     const request = ++requestId.current;
@@ -87,12 +98,6 @@ function LocalArkClusterMaintenance({ instanceId, report, busy, onChanged, onBus
     lastReport.current = report;
     if (!operation.current && !backupBusy) void inspect();
   }, [report]);
-
-  const maintenanceBusy = loading || working || backupBusy || !!pending || !!inspectionError;
-  useEffect(() => {
-    onBusyChange(maintenanceBusy);
-  }, [maintenanceBusy, onBusyChange]);
-  useEffect(() => () => onBusyChange(false), [onBusyChange]);
 
   async function recover() {
     if (!pending || !confirm || !exclusive || busy || loading || inspectionError || working || operation.current) return;

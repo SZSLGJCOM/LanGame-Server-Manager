@@ -113,13 +113,13 @@ export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
   await selectTab("a", "maintenance");
   const maintenance = element(`${workspace("a")} .maintenance-workspace`);
   check([...maintenance.querySelectorAll<HTMLElement>("[data-maintenance-section]")]
-    .map((section) => section.dataset.maintenanceSection).join("|") === "backups|save-import|save-policy|runtime|storage|broadcast",
-    "Archived Maintenance reuses the normal saves, import, policy, runtime, storage and broadcast categories");
+    .map((section) => section.dataset.maintenanceSection).join("|") === "saves|backups|runtime|broadcast",
+    "Archived Maintenance reuses the normal saves, backups, runtime and broadcast categories");
   const backup = element(`${workspace("a")} .server-file-backup-row`);
   check(backup.querySelector(".server-file-backup-name")?.textContent === "ARCHIVE_BACKUP_a"
     && backup.querySelector(".server-file-backup-meta")?.textContent?.includes("4 KB")
-    && backup.querySelector(".server-file-backup-meta")?.textContent?.includes("3 files"),
-    "Shared backup history displays the archived name, formatted byte size and file count");
+    && backup.querySelector(":scope > [role=tooltip]")?.textContent?.includes("3 files"),
+    "Shared backup history displays the archived name and byte size, with the file count in its help bubble");
   check([...backup.querySelectorAll<HTMLButtonElement>("button")].every((button) => button.disabled),
     "Archived backup restore, rename and delete controls use normal labels and remain disabled");
   async function maintenanceSection(id: string) {
@@ -130,18 +130,19 @@ export async function runArchiveWorkspaceAssertions(hooks: Hooks) {
     await hooks.click(`${workspace("a")} .maintenance-workspace [data-configuration-section-id="${id}"] > button`);
     check(!element(`${workspace("a")} [data-maintenance-section="${id}"]`).hidden, `Shared archived maintenance selects its ${id} category`);
   }
-  await maintenanceSection("save-import");
+  await maintenanceSection("saves");
   check(element(`${workspace("a")} .save-import`).textContent?.includes("Restore this instance before importing")
     && !maintenance.querySelector(".save-import__source-row, .dst-world-import"),
     "Archived save import displays guidance without a file picker or mutation action");
   readOnly("a");
-  await maintenanceSection("save-policy");
+  await maintenanceSection("backups");
   check(!element<HTMLInputElement>(`${workspace("a")} .server-managed-backup-policy input[type="checkbox"]`).checked
     && element<HTMLInputElement>(`${workspace("a")} .server-managed-backup-policy input[type="number"]`).value === "7",
     "Normal save-policy controls preserve the archived stop-backup setting and retention count");
   readOnly("a");
   await maintenanceSection("runtime");
-  check(element<HTMLInputElement>(`${workspace("a")} .server-autostart-policy-editor input`).checked
+  check(element<HTMLInputElement>(`${workspace("a")} .server-autostart-chip input[type=checkbox]`).checked
+    && element<HTMLInputElement>(`${workspace("a")} .server-autostart-chip input[type=checkbox]`).disabled
     && !element<HTMLInputElement>(`${workspace("a")} .server-runtime-recovery-editor input[name="enabled"]`).checked
     && element<HTMLInputElement>(`${workspace("a")} .server-runtime-recovery-editor input[name="maxRestarts"]`).value === "2"
     && element<HTMLInputElement>(`${workspace("a")} .server-runtime-recovery-editor input[name="waitSeconds"]`).value === "0"

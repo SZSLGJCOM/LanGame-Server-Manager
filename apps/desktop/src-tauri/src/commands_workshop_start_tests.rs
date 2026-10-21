@@ -551,7 +551,7 @@ async fn exercise(fault: &str, cancel: bool) -> Result<(), Box<dyn std::error::E
         );
         assert_eq!(
             outcome.warnings[0].provider,
-            app_core::RuntimeModProvider::SteamWorkshop
+            Some(app_core::RuntimeModProvider::SteamWorkshop)
         );
         assert_eq!(outcome.warnings[0].item_ids, [ITEM]);
         assert_eq!(job.warnings, outcome.warnings);

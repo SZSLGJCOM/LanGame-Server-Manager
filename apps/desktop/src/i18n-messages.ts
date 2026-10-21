@@ -380,7 +380,6 @@ const baseEnUs: MessageCatalog = {
   "settings.details.ports": "Ports",
   "settings.details.module": "Module",
   "settings.details.bindIp": "Listen address",
-  "settings.details.autostart": "Start this server automatically when the app launches",
   "settings.network.playerPorts": "Player ports",
   "settings.network.joinAddress": "Player join address",
   "settings.network.servicePorts": "Management service ports",

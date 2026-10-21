@@ -1,63 +1,38 @@
-.save-import { min-width: 0; max-width: 1040px; }
-.maintenance-workspace .save-import { gap: 12px; }
-.save-import h3, .save-import h4, .save-import p, .save-import dl { margin: 0; }
-.save-import .save-import__title { font-size: var(--text-section-title); line-height: var(--leading-heading); }
-.save-import h4 { font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
+/* 「导入」 popover: one source row, a compact preview and confirm row; guidance lives in help bubbles. */
+.save-import { --maintenance-popover-width: 560px; }
+.save-import h4, .save-import p, .save-import dl { margin: 0; }
+.save-import h4 { display: inline; font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .save-import dd { margin: 0; color: var(--shell-muted); overflow-wrap: anywhere; }
-.save-import__limitation { color: var(--shell-muted); font-size: var(--text-secondary); line-height: var(--leading-body); }
-.save-import__limitation > span { margin-right: 10px; color: var(--shell-text); }
-.save-import__operation { display: grid; gap: 16px; min-width: 0; }
-.save-import__availability { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: var(--text-body); line-height: var(--leading-body); }
+.save-import__operation { display: grid; gap: 10px; min-width: 0; }
+.save-import__availability { display: flex; align-items: center; gap: 8px; font-size: var(--text-body); line-height: var(--leading-body); }
 .save-import__availability > svg, .save-import__result-heading > svg { width: 16px; height: 16px; color: var(--success); flex: 0 0 auto; }
-.save-import__safeguards { margin-left: auto; color: var(--shell-muted); font-size: var(--text-secondary); }
-.save-import__source-field { display: grid; gap: 8px; min-width: 0; }
-.save-import__source-label { font-size: var(--text-body); font-weight: var(--font-weight-medium); }
-.save-import__source-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.save-import__source-field { display: grid; gap: 6px; min-width: 0; }
+.save-import__source-label { font-size: var(--text-secondary); color: var(--shell-muted); }
+.save-import__source-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .save-import__source-row input {
-  flex: 1 1 240px; min-width: 0; width: 100%; height: var(--control-height);
-  border: 1px solid var(--shell-line); border-radius: var(--settings-control-radius); padding: 0 12px;
+  flex: 1 1 200px; min-width: 0; width: 100%; height: var(--control-height);
+  border: 1px solid var(--shell-line); border-radius: var(--settings-control-radius); padding: 0 10px;
   background: var(--shell-surface); color: var(--shell-text); font: inherit;
 }
-.save-import__source-row button { flex-shrink: 0; }
-.save-import__format { min-width: 0; font-size: var(--text-secondary); color: var(--shell-muted); }
-.save-import__format summary { width: fit-content; cursor: pointer; padding: 2px 0; color: var(--shell-muted); }
-.save-import__format[open] summary { color: var(--shell-text); }
-.save-import__format-body { display: grid; gap: 10px; padding-top: 12px; line-height: var(--leading-body); overflow-wrap: anywhere; }
-.save-import__format-body ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
-.save-import__native-hint { display: grid; gap: 4px; }
-.save-import__native-hint > span { color: var(--shell-text); }
-.save-import__references { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: var(--text-meta); }
+.save-import__source-row > * { flex-shrink: 0; }
+.save-import__source-row > input { flex-shrink: 1; }
+.save-import__references { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: var(--text-meta); }
 .save-import__references a { color: var(--shell-muted); text-underline-offset: 3px; }
-.save-import__preview, .save-import__result { display: grid; gap: 12px; min-width: 0; border-top: 1px solid var(--shell-line); padding-top: 16px; }
-.save-import__preview-heading, .save-import__result-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
-.save-import__preview-heading > span, .save-import__result-heading > span { color: var(--shell-muted); font-size: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.save-import__preview-heading > span { margin-left: auto; }
-.save-import__paths { display: grid; gap: 8px; font-size: var(--text-body); line-height: var(--leading-body); }
-.save-import__paths > div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; }
+.save-import__preview, .save-import__result { display: grid; gap: 8px; min-width: 0; border-top: 1px solid var(--shell-line); padding-top: 10px; }
+.save-import__preview-heading, .save-import__result-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.save-import__preview-heading > span, .save-import__result-heading > span { margin-left: auto; color: var(--shell-muted); font-size: var(--text-meta); font-variant-numeric: tabular-nums; }
+.save-import__paths { display: grid; gap: 4px; font-size: var(--text-secondary); line-height: var(--leading-compact); }
+.save-import__paths > div { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
 .save-import__paths dt { color: var(--shell-muted); }
 .save-import code { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; font-size: var(--text-code); }
-.save-import__changes { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; font-size: var(--text-secondary); }
-.save-import__changes li { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.save-import__changes li > span { color: var(--shell-muted); }
-.save-import__scope { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; min-width: 0; }
-.save-import__scope > span { color: var(--shell-muted); font-size: var(--text-secondary); }
-.save-import__backup-paths { display: grid; gap: 5px; }
-.save-import__confirm { display: flex; align-items: flex-start; gap: 9px; line-height: var(--leading-body); font-size: var(--text-secondary); }
-.save-import__confirm input { flex: 0 0 auto; margin: 3px 0 0; accent-color: var(--accent); }
-.save-import__preview > button { justify-self: start; }
-.save-import__result p { font-size: var(--text-secondary); line-height: var(--leading-body); color: var(--shell-muted); }
-.save-import__error, .save-import__result .save-import__error { color: var(--danger, #f07878); overflow-wrap: anywhere; font-size: var(--text-body); line-height: var(--leading-body); }
-.save-import .form-note { font-weight: var(--font-weight-regular); }
-.save-import :is(input, a, summary):focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 3px; }
-.save-import .dst-world-import-header { display: none; }
-@media (max-width: 1100px) {
-  .save-import__operation { gap: 10px; }
-  .save-import__source-field { gap: 6px; }
-  .save-import__preview, .save-import__result { gap: 10px; padding-top: 12px; }
-  .save-import__safeguards { margin-left: 0; }
-}
-@media (max-width: 640px) {
-  .save-import__source-row { flex-wrap: wrap; }
-  .save-import__source-row input { flex-basis: 100%; }
-  .save-import__paths > div { grid-template-columns: 58px minmax(0, 1fr); gap: 8px; }
-}
+.save-import__changes { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.save-import__changes li { display: flex; flex-wrap: wrap; gap: 2px 10px; }
+.save-import__backup-paths { display: grid; gap: 2px; }
+.save-import__confirm-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.save-import__confirm { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-secondary); }
+.save-import__confirm input { margin: 0; accent-color: var(--accent); }
+.save-import__error { color: var(--danger, #f07878); overflow-wrap: anywhere; font-size: var(--text-secondary); }
+.save-import .form-note { margin: 0; font-weight: var(--font-weight-regular); }
+.save-import :is(input, a):focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 3px; }
+/* The DST importer keeps its own form, without the card chrome it has elsewhere. */
+.save-import .dst-world-import { padding: 0; border: 0; background: transparent; }

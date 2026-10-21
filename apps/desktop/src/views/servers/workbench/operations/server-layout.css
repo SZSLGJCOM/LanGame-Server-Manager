@@ -557,7 +557,8 @@
   min-width: 0;
 }
 
-.server-list-card .server-list-card-copy-action {
+.server-list-card .server-list-card-copy-action,
+.server-list-card .server-list-card-save-action {
   flex: 0 0 28px;
   pointer-events: auto;
   color: var(--shell-muted);
@@ -565,19 +566,56 @@
   background: var(--theme-control-surface);
 }
 
-.server-list-card .server-list-card-copy-action:hover:not(:disabled) {
+.server-list-card .server-list-card-copy-action:hover:not(:disabled),
+.server-list-card .server-list-card-save-action:hover:not(:disabled) {
   color: var(--shell-text);
   border-color: var(--shell-focus);
   background: var(--theme-control-hover);
 }
 
-.server-list-card .server-list-card-copy-action.is-error {
+.server-list-card .server-list-card-copy-action.is-error,
+.server-list-card .server-list-card-save-action.is-error {
   color: var(--theme-danger-text);
 }
 
 @container (max-width: 250px) {
   .server-list-card-address {
     display: none;
+  }
+
+  .server-list-card-footer:has(.server-list-card-save-action) {
+    grid-template-columns: minmax(28px, 1fr) 28px var(--server-list-card-action-width);
+  }
+
+  .server-list-card-footer:has(.server-list-card-save-action) .server-list-card-copy {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .server-list-card-network:has(.server-list-card-save-action) {
+    display: contents;
+  }
+
+  .server-list-card-network:has(.server-list-card-save-action) .server-list-card-meta {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+  }
+
+  .server-list-card-network:has(.server-list-card-save-action) .server-list-card-copy-action {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .server-list-card-network:has(.server-list-card-save-action) .server-list-card-save-action {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .server-list-card-footer:has(.server-list-card-save-action) > .server-list-card-primary-action {
+    grid-column: 3;
+    grid-row: 2;
   }
 }
 

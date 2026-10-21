@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { readInstanceDetails } from "../../api";
 import { describeError } from "../../app-state";
 import { message, type UiMessage } from "../../app-ui";
@@ -16,6 +16,7 @@ interface Props {
   candidates: BindAddressCandidate[];
   onRead: (connection: InstanceConnectionInfo) => void;
   onActivity: (value: UiMessage) => void;
+  afterCopy?: ReactNode;
 }
 
 export function ServerCardConnection(props: Props) {
@@ -100,6 +101,7 @@ export function ServerCardConnection(props: Props) {
         <ShellIcon name={busy ? "loader" : copied ? "check" : failed ? "alert-circle" : "copy"} className="server-list-card-action-icon" />
       </button>
       <span className="sr-only" role="status">{status}</span>
+      {props.afterCopy}
     </div>
   );
 }

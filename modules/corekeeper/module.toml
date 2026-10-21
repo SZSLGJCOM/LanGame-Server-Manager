@@ -51,6 +51,13 @@ port_names = ["game"]
 required_setting_key = "direct_connection_enabled"
 startup_timeout_ms = 90000
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "corekeeper_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "a2s_info"
 port_names = ["query"]

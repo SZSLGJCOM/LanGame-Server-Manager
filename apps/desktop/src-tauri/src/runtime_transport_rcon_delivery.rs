@@ -23,8 +23,13 @@ impl RconCommandFailure {
     }
 }
 
-// Ordinary RCON requests still require a complete response. Only the shutdown
-// caller may replace a missing response with independently observed tree exit.
+fn ark_first_shutdown_response(module_id: &str, command: &str) -> bool {
+    matches!(module_id, "arksurvivalevolved" | "arksurvivalascended") && command == "DoExit"
+}
+
+// Ordinary RCON requests still require a complete response. ARK's exact DoExit
+// must release RCON after its first response: a follow-up query contends with
+// native shutdown. Only independently observed full-tree exit proves stopping.
 pub(crate) fn source_rcon_shutdown_exec(
     module_id: &str,
     endpoint: &str,
@@ -47,20 +52,34 @@ pub(crate) fn source_rcon_shutdown_exec(
             &mut attempted,
         )
     } else {
+        let first_shutdown_response = ark_first_shutdown_response(module_id, command);
         let completion = match module_id {
+            _ if first_shutdown_response => SourceRconCompletion::ArkShutdownFirstResponse,
             "arksurvivalevolved" | "arksurvivalascended" | "squad" => {
                 SourceRconCompletion::PlayerList
             }
             "rust" => SourceRconCompletion::Rust,
             _ => SourceRconCompletion::ResponseValue,
         };
-        source_rcon_exchange_with_delivery(
+        let response = source_rcon_exchange_with_delivery(
             &mut stream,
             password,
             command,
             completion,
             &mut attempted,
-        )
+        );
+        if first_shutdown_response {
+            // Explicitly close both directions before lifecycle waits on the
+            // retained launch owner. No marker, reconnect, or command replay.
+            response.and_then(|response| {
+                stream
+                    .shutdown()
+                    .map_err(|error| format!("RCON shutdown socket closure failed: {error}"))?;
+                Ok(response)
+            })
+        } else {
+            response
+        }
     };
     result.map_err(|message| RconCommandFailure {
         message,

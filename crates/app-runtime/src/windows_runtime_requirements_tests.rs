@@ -327,6 +327,52 @@ fn rva_mapping_accepts_header_data_and_rejects_ambiguous_or_unbacked_sections() 
 }
 
 #[test]
+fn zero_filled_virtual_import_descriptors_follow_pe_loader_semantics() {
+    for architecture in [
+        WindowsRuntimeArchitecture::X86,
+        WindowsRuntimeArchitecture::X64,
+    ] {
+        let mut bytes = fixture(architecture, &["vcruntime140.dll"], &[]);
+        let (optional_size, directories) = match architecture {
+            WindowsRuntimeArchitecture::X86 => (0xe0, 96),
+            WindowsRuntimeArchitecture::X64 => (0xf0, 112),
+        };
+        // A protected image may retain a delay directory in virtual-only data.
+        // The Windows loader initially supplies zeros there, including its null
+        // descriptor. Normal, file-backed imports must still be inspected.
+        put32(&mut bytes, OPTIONAL + optional_size + 8, 0x3000);
+        put32(&mut bytes, OPTIONAL + directories + 13 * 8, RVA + 0x2100);
+        put32(&mut bytes, OPTIONAL + directories + 13 * 8 + 4, 480);
+        assert_eq!(
+            inspect(bytes).unwrap().unwrap().names,
+            BTreeSet::from([String::from("vcruntime140.dll")])
+        );
+    }
+}
+
+#[test]
+fn virtual_directory_terminator_can_straddle_the_raw_boundary_but_not_the_image() {
+    let mut bytes = fixture(WindowsRuntimeArchitecture::X64, &["vcruntime140.dll"], &[]);
+    let descriptor = bytes[RAW..RAW + 20].to_vec();
+    bytes[RAW + 0x1fe0..RAW + 0x1ff4].copy_from_slice(&descriptor);
+    put32(&mut bytes, OPTIONAL + 0xf0 + 8, 0x3000);
+    put32(&mut bytes, OPTIONAL + 112 + 8, RVA + 0x1fe0);
+    put32(&mut bytes, OPTIONAL + 112 + 12, 40);
+    assert!(
+        inspect(bytes.clone())
+            .unwrap()
+            .unwrap()
+            .names
+            .contains("vcruntime140.dll")
+    );
+    put32(&mut bytes, OPTIONAL + 112 + 8, RVA + 0x2ff0);
+    assert!(
+        inspect(bytes).is_err(),
+        "unmapped data is never synthesized"
+    );
+}
+
+#[test]
 fn malformed_headers_directories_and_names_are_rejected_with_bounds() {
     let original = fixture(WindowsRuntimeArchitecture::X86, &["msvcr110.dll"], &[]);
     let mut cases = Vec::new();

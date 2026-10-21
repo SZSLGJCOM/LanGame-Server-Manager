@@ -1,0 +1,70 @@
+.save-file-browser {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.save-file-browser__hint {
+  display: inline-flex;
+  color: var(--theme-warning-text);
+}
+
+.save-file-browser__hint > svg { width: 14px; height: 14px; }
+.save-file-browser__empty { margin: 0; }
+
+.save-file-browser__scroll {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border-subtle, rgba(127, 127, 127, 0.25));
+  border-radius: 6px;
+}
+
+.save-file-browser__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-meta);
+}
+
+.save-file-browser__table th,
+.save-file-browser__table td {
+  padding: 3px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.save-file-browser__table th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-raised, Canvas);
+}
+
+.save-file-browser__table td:first-child {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.save-file-browser__table tr[data-directory] td {
+  color: var(--text-secondary, inherit);
+}
+
+.server-file-backup-files {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+}
+
+/* The slot in use: a small accent dot before its tag, no extra row height. */
+.server-file-backup-kind--current {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--shell-accent, var(--shell-text));
+}
+
+.server-file-backup-kind--current::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}

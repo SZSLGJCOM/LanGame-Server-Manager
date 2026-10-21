@@ -126,7 +126,7 @@ fn ensure_plain_entry(metadata: &fs::Metadata) -> Result<(), String> {
 }
 
 #[cfg(windows)]
-fn available_bytes(path: &Path) -> Result<u64, String> {
+pub(in crate::commands) fn available_bytes(path: &Path) -> Result<u64, String> {
     use std::os::windows::ffi::OsStrExt;
     let canonical = nearest_plain_directory(path)?;
     let mut path = canonical.as_os_str().encode_wide().collect::<Vec<_>>();
@@ -160,7 +160,7 @@ fn available_bytes(path: &Path) -> Result<u64, String> {
 }
 
 #[cfg(not(windows))]
-fn available_bytes(_path: &Path) -> Result<u64, String> {
+pub(in crate::commands) fn available_bytes(_path: &Path) -> Result<u64, String> {
     Err("Mod disk capacity verification requires the supported Windows host".into())
 }
 

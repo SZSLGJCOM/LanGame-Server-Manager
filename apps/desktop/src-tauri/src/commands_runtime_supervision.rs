@@ -911,18 +911,21 @@ pub(super) fn insert_background_job(
 ) -> Result<(), String> {
     let _storage_context_operation = state.begin_storage_context_operation("background job")?;
     ensure_storage_context_snapshot_current(state, storage, "background job")?;
-    mutate_app_state(state, |app_state| {
-        app_state.jobs.retain(|existing| existing.id != job.id);
-        app_state.jobs.insert(0, job);
-        let mut retained_results = 0;
-        app_state.jobs.retain(|job| {
-            if matches!(job.status, JobStatus::Pending | JobStatus::Running) {
-                return true;
-            }
-            retained_results += 1;
-            retained_results <= 24
-        });
-    })
+    mutate_app_state(state, |app_state| publish_background_job(app_state, job))
+}
+
+/// Replaces a job by id at the front, keeping every active job and the newest results.
+pub(super) fn publish_background_job(app_state: &mut AppState, job: BackgroundJob) {
+    app_state.jobs.retain(|existing| existing.id != job.id);
+    app_state.jobs.insert(0, job);
+    let mut retained_results = 0;
+    app_state.jobs.retain(|job| {
+        if matches!(job.status, JobStatus::Pending | JobStatus::Running) {
+            return true;
+        }
+        retained_results += 1;
+        retained_results <= 24
+    });
 }
 
 pub(super) fn update_background_job<F>(
@@ -2191,7 +2194,7 @@ pub(super) fn runtime_window_suppression_attempt_metadata_from_action(
     }
 }
 
-pub(super) fn append_desktop_app_log(
+pub(crate) fn append_desktop_app_log(
     storage: &StorageBootstrap,
     level: &str,
     action: &str,

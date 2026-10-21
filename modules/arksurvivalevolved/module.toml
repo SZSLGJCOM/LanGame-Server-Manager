@@ -74,6 +74,16 @@ protocol = "a2s_info"
 port_names = ["query"]
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "source_rcon"
+command_template = "saveworld"
+port_name = "rcon"
+password_setting_key = "admin_password"
+enabled_setting_key = "rcon_enabled"
+
+[[runtime.player_actions]]
 id = "broadcast"
 kind = "broadcast"
 label = "Broadcast"

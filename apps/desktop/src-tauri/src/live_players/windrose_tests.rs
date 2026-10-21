@@ -343,15 +343,47 @@ fn windows_busy_files_are_pending_and_failed_publication_cleans_only_its_tempora
     assert_eq!(request["request_id"], NONCE);
     assert!(!root.0.join(format!("request_{NONCE}.json")).exists());
 
+    // A legitimate share-delete reader may retain the old request object for
+    // the whole next publication. It must not force a timeout or an empty gap.
+    let mut peer = OpenOptions::new()
+        .read(true)
+        .share_mode(7)
+        .open(&request_path)
+        .unwrap();
+    let next_nonce = "abcdefabcdefabcdefabcdefabcdefab";
+    publish_request(
+        &root.0,
+        &root.0,
+        next_nonce,
+        100_000,
+        Instant::now() + TIMEOUT,
+    )
+    .unwrap();
+    let mut old = Vec::new();
+    std::io::Read::read_to_end(&mut peer, &mut old).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&old).unwrap()["request_id"],
+        NONCE
+    );
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&fs::read(&request_path).unwrap()).unwrap()["request_id"],
+        next_nonce
+    );
+    drop(peer);
+
     // A directory replacing the slot is a hard failure, even though Windows
     // also reports access denied for that rename.
     fs::remove_file(&request_path).unwrap();
     fs::create_dir(&request_path).unwrap();
     let source = root.0.join("request.pending");
-    fs::write(&source, "keep source").unwrap();
+    let mut pending =
+        crate::native_control_publish::PendingFile::create(&source, b"keep source").unwrap();
     assert_eq!(
-        replace_request(&source, &request_path),
+        replace_request(&mut pending, &request_path),
         Err(BridgeError::Io)
     );
-    assert_eq!(fs::read_to_string(&source).unwrap(), "keep source");
+    assert!(source.is_file());
+    assert!(request_path.is_dir());
+    drop(pending);
+    assert!(!source.exists());
 }

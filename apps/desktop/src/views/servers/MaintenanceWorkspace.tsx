@@ -13,6 +13,20 @@ interface MaintenanceSection {
   preserveAfterVisit?: boolean;
 }
 
+const DEFAULT_SECTION_ID = "saves";
+
+/** Section ids from before saves and backups were consolidated; any caller or
+ * retained selection that still names them lands on their new home. */
+const RETIRED_SECTION_IDS: Readonly<Record<string, string>> = {
+  "save-import": "saves",
+  "save-policy": "backups",
+  storage: "runtime"
+};
+
+export function resolveMaintenanceSectionId(id: string): string {
+  return RETIRED_SECTION_IDS[id] ?? id;
+}
+
 interface Props {
   active: boolean;
   sections: MaintenanceSection[];
@@ -25,12 +39,13 @@ export function MaintenanceWorkspace({ active, sections, broadcast }: Props) {
   const navigationToggle = useRef<HTMLButtonElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const [navigationOpen, setNavigationOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState("backups");
-  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(["backups"]));
+  const [selectedId, setSelectedId] = useState(DEFAULT_SECTION_ID);
+  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set([DEFAULT_SECTION_ID]));
   const allSections: MaintenanceSection[] = [...sections, {
     id: "broadcast", title: t("servers.maintenance.broadcast"), icon: "message-square", content: broadcast
   }];
-  const selectedSectionId = allSections.some((section) => section.id === selectedId) ? selectedId : "backups";
+  const fallbackSectionId = allSections.some((section) => section.id === DEFAULT_SECTION_ID) ? DEFAULT_SECTION_ID : allSections[0].id;
+  const selectedSectionId = allSections.some((section) => section.id === selectedId) ? selectedId : fallbackSectionId;
   const roots = useMemo<ConfigurationSectionNode[]>(() => [
     ...sections.map(({ id, title, icon }, order) => ({
       id, title, icon, order, breadcrumb: [title], items: [], actionable: true, children: []
@@ -58,7 +73,9 @@ export function MaintenanceWorkspace({ active, sections, broadcast }: Props) {
       <aside id={navigationId} className="configuration-workspace__sidebar">
         <ConfigurationSectionNavigation roots={roots} selectedSectionId={selectedSectionId}
           ariaLabel={t("servers.tabs.maintenance")}
-          onSelectSection={(id) => {
+          onSelectSection={(requested) => {
+            // Only an id this workspace no longer has is mapped to its consolidated entry.
+            const id = allSections.some((section) => section.id === requested) ? requested : resolveMaintenanceSectionId(requested);
             setSelectedId(id);
             setVisited(previous => previous.has(id) ? previous : new Set([...previous, id]));
             setNavigationOpen(false);

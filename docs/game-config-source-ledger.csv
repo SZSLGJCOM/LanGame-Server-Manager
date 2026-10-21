@@ -2,7 +2,7 @@ module,status,schema_fields,ledger_items,exclusions,sources
 abioticfactor,exhaustive_verified,59,59,12,14
 arksurvivalascended,best_effort_verified,276,288,315,36
 arksurvivalevolved,exhaustive_verified,375,414,137,35
-astroneer,best_effort_verified,19,19,6,16
+astroneer,best_effort_verified,19,19,6,18
 barotrauma,best_effort_verified,125,125,4,34
 conanexiles,best_effort_verified,305,305,47,33
 corekeeper,verified_with_direct_connection,15,24,19,24

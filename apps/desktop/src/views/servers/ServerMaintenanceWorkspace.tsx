@@ -13,20 +13,24 @@ import type {
   InstanceRuntimeOverview, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput
 } from "../../types";
 import { AiBroadcastWorkbench } from "./AiBroadcastWorkbench";
-import { ArkClusterMaintenance } from "./ArkClusterMaintenance";
 import { ArkClusterPanel } from "./ArkClusterPanel";
+import { ArkClusterSnapshotSection } from "./ArkClusterSnapshotSection";
 import { BackupTable } from "./BackupTable";
 import { ImmediateWorldSave } from "./ImmediateWorldSave";
+import { DailyMaintenanceEditor } from "./DailyMaintenanceEditor";
+import { nativeSavePolicyKeys } from "../settings/save-policy";
 import { InstanceAutostartEditor } from "./InstanceAutostartEditor";
 import { InstanceIsolationPanel } from "./InstanceIsolationPanel";
 import { InstancePanelReadStatus } from "./InstancePanelReadStatus";
 import { InstanceProgramMaintenance } from "./InstanceProgramMaintenance";
 import { MoriaNativeSettingsEditor } from "./MoriaNativeSettingsEditor";
 import { MaintenanceWorkspace } from "./MaintenanceWorkspace";
+import { MaintenanceAction, MaintenanceChip, MaintenanceGroup, MaintenanceHelp, MaintenanceToolbar } from "./MaintenanceToolbar";
 import { ProgramUpdatePolicyEditor } from "./ProgramUpdatePolicyEditor";
 import { RuntimePerformanceEditor } from "./RuntimePerformanceEditor";
 import { RuntimeRecoveryEditor } from "./RuntimeRecoveryEditor";
 import { SavePolicyEditor } from "./SavePolicyEditor";
+import { SaveSlotTable } from "./SaveSlotTable";
 import { SaveImportPanel } from "./SaveImportPanel";
 import { ScumWipeSettingsEditor } from "./ScumWipeSettingsEditor";
 
@@ -58,55 +62,89 @@ export interface ServerMaintenanceWorkspaceProps {
   onOpenLocalPath?: (path: string) => void;
 }
 
-function normalizePath(value: string): string {
-  return String(value ?? "").replace(/\\/g, "/").replace(/\/+$/g, "").replace(/\/+/g, "/");
-}
-function instanceRootFromConfigFilePath(value: string): string {
-  const configPath = normalizePath(value);
-  const configDirectory = configPath.slice(0, configPath.lastIndexOf("/"));
-  return configDirectory.slice(0, configDirectory.lastIndexOf("/"));
-}
-
 export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProps) {
   const { locale, t } = props;
   const readOnly = Boolean(props.archive);
+  const moduleId = props.details.summary.module_id;
+  // No native save setting in the capability table: the chip explains how the game saves instead of opening an empty editor.
+  const autoSaveUnavailable = nativeSavePolicyKeys(moduleId).length === 0 ? [
+    t(`servers.savePolicy.mechanism.${moduleId}`, undefined, t("servers.savePolicy.gameManaged")),
+    `${t("servers.savePolicy.frequency")}${locale === "zh-CN" ? "：" : ": "}${t(`servers.savePolicy.frequency.${moduleId}`, undefined, t("servers.savePolicy.frequency.gameManaged"))}`
+  ].join("\n") : null;
   const onChanged = props.onResumeAutoRefresh;
   const backups = props.archive?.backups.entries ?? props.selectedBackups ?? [];
   const panelLoadState = readOnly ? undefined : props.panelLoadState;
   const canRestoreBackup = !readOnly && !instanceHasRunningProcess(props.details.summary, props.details.active_run);
-  const selectedInstanceRoot = instanceRootFromConfigFilePath(props.details.config_file_path);
-  const selectedBackupDirectory = selectedInstanceRoot ? normalizePath(`${selectedInstanceRoot}/backups`) : "";
   const manualBackups = backups.filter((backup) => backup.backup_kind === "manual");
   const autoStopBackups = backups.filter((backup) => backup.backup_kind === "auto_stop");
   const safeguardBackups = backups.filter((backup) => backup.backup_kind === "pre_restore");
   const backupCountsUnknown = readOnly
     ? Boolean(props.archive?.backups.truncated || props.archive?.backups.issues.length)
     : backups.length === 0 && Boolean(panelLoadState?.pending.includes("backups") || panelLoadState?.errors.backups);
+  const status = props.details.summary.status.toLowerCase();
+  const statusTag = <span className={`runtime-status-tag is-${status}`}>{t(`status.instance.${status}`, undefined, props.details.summary.status)}</span>;
+  // Runtime policies: a balanced grid of settings chips; each popover holds only its controls.
+  const policies = <MaintenanceGroup className="runtime-policies" label={t("servers.maintenance.policiesGroup")}
+    help={t("servers.maintenance.policiesHelp")}>
+    <div className="runtime-policies__grid">
+      <RuntimePerformanceEditor details={props.details} t={t}
+        readOnly={readOnly} appliedLimits={readOnly ? undefined : props.runtime?.performance.applied_resource_limits}
+        onSaveSettings={props.onSaveSettings} />
+      <InstanceAutostartEditor details={props.details} t={t} readOnly={readOnly} jobs={readOnly ? undefined : props.jobs}
+        onSaveAutostart={props.onSaveAutostart} />
+      <RuntimeRecoveryEditor details={props.details} t={t} readOnly={readOnly}
+        savedCrashRestartLimit={props.archive?.maintenance.crash_restart_limit} onSaveSettings={props.onSaveSettings} />
+      <DailyMaintenanceEditor instanceId={props.details.summary.id} action="restart" chip readOnly={readOnly} t={t} />
+      <ProgramUpdatePolicyEditor details={props.details} moduleDetails={props.moduleDetails} t={t}
+        readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
+    </div>
+  </MaintenanceGroup>;
   const unavailable = <p className="form-note" role="status">{t("servers.archives.workspace.restoreForMaintenance", undefined,
     "Restore this instance to use maintenance actions.")}</p>;
   return (
     <MaintenanceWorkspace active={props.active} sections={[
-        { id: "backups", title: t("servers.maintenance.saves"), icon: "history",
-          persistentContent: <ImmediateWorldSave details={props.details} moduleDetails={props.moduleDetails} readOnly={readOnly} />,
+        { id: "saves", title: t("servers.maintenance.savesTitle"), icon: "folder", preserveAfterVisit: true,
+          persistentContent: <ImmediateWorldSave details={props.details} moduleDetails={props.moduleDetails} readOnly={readOnly}>
+            <MaintenanceChip icon="clock" label={t("servers.maintenance.autoSave")} className="server-save-policy-card"
+              disabledReason={autoSaveUnavailable} help={t(moduleId === "unturned" ? "servers.savePolicy.managedEffective" : "servers.savePolicy.nativeEffective")}>
+              <SavePolicyEditor scope="native" details={props.details} moduleDetails={props.moduleDetails}
+                locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
+            </MaintenanceChip>
+            <SaveImportPanel key={`import-${props.details.summary.id}`} details={props.details} readOnly={readOnly}
+              onPickDirectory={props.onPickDirectory} onImportDontStarveWorldData={props.onImportDontStarveWorldData}
+              onChanged={onChanged} />
+          </ImmediateWorldSave>,
           content: <>
-          <section aria-label={t("servers.maintenance.saves")} className="server-workbench-surface server-maintenance-card server-backup-history-card">
+          <section aria-label={t("servers.saveSlots.title")} className="server-workbench-surface server-maintenance-card server-save-files-card">
+            {readOnly ? unavailable : <SaveSlotTable instanceId={props.details.summary.id} locale={locale} t={t}
+              onOpenLocalPath={props.onOpenLocalPath} />}
+          </section>
+        </> },
+        { id: "backups", title: t("servers.maintenance.backupsTitle"), icon: "history",
+          content: <>
+          <section aria-label={t("servers.maintenance.backupHistory")} className="server-workbench-surface server-maintenance-card server-backup-history-card">
             <div className="server-workbench-section-label server-maintenance-card-label">
               <ShellIcon name="history" className="server-workbench-section-icon" />
-              <span>{t("servers.maintenance.saves")}</span>
-              <div className="server-file-backup-toolbar">
-                <button type="button" className="secondary-button"
-                  disabled={readOnly || !props.onCreateBackup}
-                  onClick={() => { if (!readOnly) props.onCreateBackup?.(props.details.summary.id); }}>
-                  {t("servers.details.backupNow")}
-                </button>
-              </div>
+              <ConfigurationHelp description={backupCountsUnknown ? null : [
+                `${t("servers.backups.manualTitle")} ${manualBackups.length}`,
+                `${t("servers.backups.autoTitle")} ${autoStopBackups.length}`,
+                `${t("servers.backups.safeguardTitle")} ${safeguardBackups.length}`].join(" · ")}>{(help) =>
+                <span ref={help.anchorRef} {...help.interactionProps} tabIndex={help.descriptionId ? 0 : undefined}
+                  aria-describedby={help.descriptionId}>{t("servers.maintenance.backupHistory")}
+                  <span className="server-backup-count">{backupCountsUnknown ? "—" : backups.length}</span></span>}</ConfigurationHelp>
+              <MaintenanceToolbar label={t("servers.maintenance.backupHistory")}>
+                <MaintenanceAction icon="plus" className="secondary-button" label={t("servers.details.backupNow")}
+                  disabledReason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : null}
+                  disabled={!props.onCreateBackup}
+                  onClick={() => { if (!readOnly) props.onCreateBackup?.(props.details.summary.id); }} />
+                <MaintenanceChip icon="clock" label={t("servers.maintenance.backupPolicy")} className="server-backup-policy-card">
+                  <SavePolicyEditor scope="backup" details={props.details} moduleDetails={props.moduleDetails}
+                    locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
+                  <DailyMaintenanceEditor instanceId={props.details.summary.id} action="backup" readOnly={readOnly} t={t} />
+                </MaintenanceChip>
+              </MaintenanceToolbar>
             </div>
-            <div className="server-file-backup-summary">
-              <div className="server-file-backup-stat"><span>{backupCountsUnknown ? "—" : manualBackups.length}</span><small>{t("servers.backups.manualTitle")}</small></div>
-              <div className="server-file-backup-stat"><span>{backupCountsUnknown ? "—" : autoStopBackups.length}</span><small>{t("servers.backups.autoTitle")}</small></div>
-              <div className="server-file-backup-stat"><span>{backupCountsUnknown ? "—" : safeguardBackups.length}</span><small>{t("servers.backups.safeguardTitle")}</small></div>
-            </div>
-            {readOnly ? unavailable : !canRestoreBackup ? <div className="server-backup-stop-note">{t("servers.backups.restoreRequiresStop")}</div> : null}
+            {readOnly ? unavailable : null}
             {!props.details.backup_uses_declared_saves_path ? (
               <ConfigurationHelp description={t("servers.backups.scopeWarningBody")}>{(help) =>
                 <p className="form-note server-backup-warning" role="note" ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>
@@ -120,52 +158,36 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
                 backups={backups} locale={locale} t={t} canRestoreBackup={canRestoreBackup} readOnly={readOnly}
                 instanceId={props.details.summary.id} onRestoreBackup={props.onRestoreBackup}
                 onRenameBackup={props.onRenameBackup} onDeleteBackup={props.onDeleteBackup}
+                onOpenLocalPath={props.onOpenLocalPath}
               /> : null}
             </div>
           </section>
-        </> },
-        { id: "save-import", title: locale === "zh-CN" ? "导入存档" : "Import save", icon: "folder", preserveAfterVisit: true,
-          content: <SaveImportPanel key={`import-${props.details.summary.id}`} details={props.details} readOnly={readOnly}
-            onPickDirectory={props.onPickDirectory} onImportDontStarveWorldData={props.onImportDontStarveWorldData}
-            onChanged={onChanged} /> },
-        { id: "save-policy", title: t("servers.maintenance.savePolicy"), icon: "database", content: <>
-          <section aria-label={t("servers.maintenance.savePolicy")} className="server-workbench-surface server-maintenance-card server-backup-policy-card">
+          {isArkModule(props.details.summary.module_id) ? <section aria-label={t("servers.maintenance.clusterBackupTitle")}
+            className="server-workbench-surface server-maintenance-card ark-cluster-backup-section">
             <div className="server-workbench-section-label server-maintenance-card-label">
-              <ShellIcon name="database" className="server-workbench-section-icon" />
-              <ConfigurationHelp description={t(props.details.summary.module_id === "unturned"
-                ? "servers.savePolicy.managedEffective" : "servers.savePolicy.nativeEffective")}>{(help) =>
-                <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{t("servers.maintenance.savePolicy")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
+              <ShellIcon name="server" className="server-workbench-section-icon" />
+              <MaintenanceHelp help={t("servers.maintenance.clusterBackupBody")}>{t("servers.maintenance.clusterBackupTitle")}</MaintenanceHelp>
             </div>
-            <SavePolicyEditor details={props.details} moduleDetails={props.moduleDetails}
-              locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
-          </section>
+            {readOnly ? unavailable : <ArkClusterSnapshotSection instanceId={props.details.summary.id} onChanged={onChanged} />}
+          </section> : null}
         </> },
-        { id: "runtime", title: t("servers.maintenance.runtimePolicy"), icon: "settings", content: <>
-          <RuntimePerformanceEditor details={props.details} t={t}
-            readOnly={readOnly} appliedLimits={readOnly ? undefined : props.runtime?.performance.applied_resource_limits}
-            onSaveSettings={props.onSaveSettings} />
-          <section className="server-workbench-surface server-maintenance-card server-runtime-policy-card"
-            aria-label={t("servers.maintenance.runtimePolicy")}>
+        { id: "runtime", title: t("servers.maintenance.run"), icon: "server", preserveAfterVisit: props.keepProgramMaintenance, content: <>
+          {readOnly || !props.onOpenLocalPath || !onChanged ? <section aria-label={t("servers.maintenance.run")}
+            className="server-workbench-surface server-maintenance-card instance-isolation-panel">
             <div className="server-workbench-section-label server-maintenance-card-label">
-              <ShellIcon name="settings" className="server-workbench-section-icon" />
-              <span>{t("servers.maintenance.runtimePolicy")}</span>
+              <ShellIcon name="server" className="server-workbench-section-icon" />
+              <span>{t("servers.maintenance.run")}</span>
+              {statusTag}
             </div>
-            <InstanceAutostartEditor details={props.details} t={t} readOnly={readOnly} jobs={readOnly ? undefined : props.jobs}
-              onSaveAutostart={props.onSaveAutostart} />
-            <RuntimeRecoveryEditor details={props.details} t={t} readOnly={readOnly}
-              savedCrashRestartLimit={props.archive?.maintenance.crash_restart_limit} onSaveSettings={props.onSaveSettings} />
-          </section>
-        </> },
-        { id: "storage", title: t("servers.isolation.title"), icon: "folder", preserveAfterVisit: props.keepProgramMaintenance, content: <>
-          <ProgramUpdatePolicyEditor details={props.details} moduleDetails={props.moduleDetails} t={t}
-            readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
-          {readOnly ? unavailable : props.onOpenLocalPath && onChanged ? <InstanceIsolationPanel key={`isolation-${props.details.summary.id}`}
-            instanceId={props.details.summary.id} backupPath={selectedBackupDirectory}
+            {readOnly ? unavailable : null}
+            {policies}
+          </section> : <InstanceIsolationPanel key={`isolation-${props.details.summary.id}`}
+            instanceId={props.details.summary.id} title={t("servers.maintenance.run")} status={statusTag} policies={policies}
             renderProgramMaintenance={(report) => <InstanceProgramMaintenance
               details={props.details!} report={report} jobs={props.jobs ?? []}
               account={props.account} accountBusy={props.accountBusy}
               onChanged={onChanged} />}
-            onOpenLocalPath={props.onOpenLocalPath} /> : null}
+            onOpenLocalPath={props.onOpenLocalPath} />}
         </> },
         ...(props.details.summary.module_id === "scum" ? [{
           id: "scum-wipe", title: t("scum.maintenance.title"), icon: "database" as const,
@@ -178,14 +200,11 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
             kind="world-upgrade" locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />
         }] : []),
         ...(isArkModule(props.details.summary.module_id) ? [{
-          id: "cluster", title: locale === "zh-CN" ? "ARK 集群" : "ARK cluster", icon: "server" as const,
+          id: "cluster", title: t("servers.maintenance.cluster"), icon: "server" as const,
           content: <>
             {readOnly ? unavailable : props.onResumeAutoRefresh ? <ArkClusterPanel instanceId={props.details.summary.id}
               readReport={readArkCluster} operate={operateArkCluster}
-              onChanged={props.onResumeAutoRefresh}
-              renderMaintenance={(report, refresh, busy, onBusyChange) =>
-                <ArkClusterMaintenance instanceId={props.details!.summary.id} report={report}
-                  busy={busy} onChanged={refresh} onBusyChange={onBusyChange} />} /> : null}
+              onChanged={props.onResumeAutoRefresh} /> : null}
           </>
         }] : [])
       ]} broadcast={

@@ -30,6 +30,7 @@ const pending = new Map<string, PendingArkClusterRestore>();
 let recoverFailure = false;
 let restoreFlight: ReturnType<typeof deferred<ArkClusterRestoreResult>> | null = null;
 let recoverFlight: ReturnType<typeof deferred<ArkClusterRecoveryResult>> | null = null;
+let operateFlight: ReturnType<typeof deferred<{ action: unknown; members: never[] }>> | null = null;
 let inspectFlight: { id: string; result: ReturnType<typeof deferred<PendingArkClusterRestore | null>> } | null = null;
 const noOperation = () => {};
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (error: Error) => void;
@@ -51,7 +52,8 @@ async function settleUntil(predicate: () => boolean, label: string) {
   while (!predicate()) { check(performance.now() < deadline, `Timed out: ${label}`);
     await act(async () => { await new Promise((resolve) => setTimeout(resolve, 10)); }); }
 }
-const panelText = () => select(".ark-cluster-panel").textContent ?? "";
+// Cluster snapshots, interrupted-restore recovery and the report error live in the Backups category.
+const panelText = () => select(".ark-cluster-backup-section").textContent ?? "";
 async function run() {
   await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
   const bootstrap = await bootstrapApp({ includeSystemSnapshot: false });
@@ -115,7 +117,7 @@ async function run() {
         if (recoverFailure) throw new Error("fixture recovery rejected; retry is possible");
         check(recoverFlight, "Recovery must have an owned pending request"); return recoverFlight.promise;
       }
-      return { action: input.action, members: [] };
+      return operateFlight ? operateFlight.promise : { action: input.action, members: [] };
     }
     if (command === "read_instance_isolation") return isolation;
     return invokeMock(command, args as Record<string, unknown>);
@@ -128,20 +130,28 @@ async function run() {
     await settleUntil(() => !!fixture.querySelector(".maintenance-workspace:not([hidden])"), "maintenance workspace");
     await click(button("ARK 集群"));
     check(!select<HTMLElement>('[data-maintenance-section="cluster"]').hidden, "Cluster maintenance category did not open");
+    await openBackups();
+  }
+  async function openBackups() {
+    await click(button("备份"));
+    check(!select<HTMLElement>('[data-maintenance-section="backups"]').hidden, "Backups maintenance category did not open");
   }
   async function changeInstance(id: string) {
     const next = { ...summary, id, name: `实例 ${id}` };
     props = { ...props, selectedInstanceId: id, instances: [{ ...next, module_id: "fixture-art" }], selectedDetails: { ...props.selectedDetails!, summary: next } };
     await act(async () => { render(); });
-    await click(button("ARK 集群"));
-    check(!select<HTMLElement>('[data-maintenance-section="cluster"]').hidden, "Instance switch did not open the cluster maintenance category");
+    await openBackups();
   }
-  function verifyFit() {
+  async function verifyFit() {
+    await click(button("ARK 集群"));
     const outer = select<HTMLElement>(".server-detail-scroll--maintenance");
     check(outer.scrollWidth <= outer.clientWidth + 1, "Maintenance has horizontal overflow");
     check(select<HTMLElement>(".ark-cluster-table-wrap").getBoundingClientRect().height >= 90,
       "Bounded maintenance card collapsed the cluster member table");
-    verifyControlsFit([".ark-cluster-panel", ".ark-cluster-backups"]);
+    verifyControlsFit([".ark-cluster-panel"]);
+    await openBackups();
+    check(outer.scrollWidth <= outer.clientWidth + 1, "Backups maintenance has horizontal overflow");
+    verifyControlsFit([".ark-cluster-backups"]);
   }
   function verifyControlsFit(selectors: string[]) {
     for (const selector of selectors) {
@@ -149,17 +159,18 @@ async function run() {
       check(section.clientWidth >= 240 && section.scrollWidth <= section.clientWidth + 1, `${selector} is clipped horizontally`);
       for (const element of section.querySelectorAll<HTMLElement>("button, input")) {
         const box = element.getBoundingClientRect(); const bounds = section.getBoundingClientRect();
+        if (!box.width && !box.height) continue; // controls of a closed popover cannot clip
         check(box.left >= bounds.left - 1 && box.right <= bounds.right + 1, `${selector} clips a control`);
       }
     }
   }
   await open();
   await settleUntil(() => !!fixture.querySelector(".ark-cluster-backup-list"), "initial cluster backup list");
-  await click(button("运行策略"));
+  await click(select<HTMLButtonElement>('[data-configuration-section-id="runtime"] > button'));
   check(!select<HTMLElement>('[data-maintenance-section="runtime"]').hidden, "Runtime maintenance category did not open");
-  verifyControlsFit([".server-resource-policy"]);
-  await click(button("ARK 集群"));
-  verifyFit(); check(writes.length === 0, "Reading reports or pending state performed a mutation"); checks++;
+  await click(select<HTMLButtonElement>(".server-resource-policy > .maintenance-chip__summary"));
+  verifyControlsFit([".instance-isolation-panel"]);
+  await verifyFit(); check(writes.length === 0, "Reading reports or pending state performed a mutation"); checks++;
 
   await click(select<HTMLInputElement>(".ark-cluster-backups input[type=checkbox]"));
   await click(button("恢复…"));
@@ -168,6 +179,8 @@ async function run() {
   const restore = button("恢复完整集群");
   await act(async () => { restore.click(); restore.click(); });
   check(writes.length === 1 && restore.disabled, "Restore was submitted twice or stayed enabled");
+  // The 备份 and ARK 集群 categories share one cluster: a running snapshot restore locks start/stop.
+  check(button("启动集群").disabled && button("停止集群").disabled, "Cluster start/stop stayed enabled during a snapshot restore");
   await act(async () => { restoreFlight!.resolve({ backup: backup(summary.id), safeguard_backup: pendingFor(summary.id).safeguard_backup,
     restored_at_unix_ms: 1800000000010, cleanup_warnings: ["fixture cleanup warning remains visible"] }); });
   await settleUntil(() => panelText().includes("fixture cleanup warning remains visible"), "cleanup warning");
@@ -178,7 +191,8 @@ async function run() {
     .filter((node) => node.textContent?.includes("fixture cleanup warning remains visible"));
   check(cleanupWarnings.length === 1, "Cleanup warning is missing or duplicated");
   check(cleanupWarnings[0].classList.contains("is-warning") && cleanupWarnings[0].getAttribute("role") === "status",
-    "Cleanup warning lost its warning presentation or accessible status"); checks++;
+    "Cleanup warning lost its warning presentation or accessible status");
+  await settleUntil(() => !button("启动集群").disabled && !button("停止集群").disabled, "cluster start/stop unlocked after restore"); checks++;
 
   const damaged = "damaged-group";
   pending.set(damaged, pendingFor(damaged)); reportFailures.add(damaged);
@@ -218,6 +232,7 @@ async function run() {
   pending.set("late-operation", pendingFor("late-operation"));
   await changeInstance("late-operation");
   await settleUntil(() => panelText().includes("查看处理范围"), "pending old operation");
+  check(button("启动集群").disabled && button("停止集群").disabled, "A pending cluster restore must lock cluster start/stop");
   await click(button("查看处理范围…")); await click(select<HTMLInputElement>(".ark-cluster-restore-confirm input[type=checkbox]"));
   recoverFlight = deferred(); await click(button("确认处理整个集群"));
   await changeInstance("replacement");
@@ -237,12 +252,28 @@ async function run() {
 
   await changeInstance("final-layout");
   await settleUntil(() => !!fixture.querySelector(".ark-cluster-backup-list"), "final healthy cluster");
-  verifyFit();
+  await verifyFit();
   await act(async () => { root.unmount(); });
   root = createRoot(fixture); await open();
   await settleUntil(() => !!fixture.querySelector(".ark-cluster-backup-list"), "final readback after remount");
   check(!panelText().includes("STALE RECOVERY RESULT"), "Remount retained stale operation UI");
-  verifyFit(); checks++;
+  await verifyFit(); checks++;
+
+  // A running cluster start locks every snapshot control in the 备份 category until it settles.
+  const flight = deferred<{ action: unknown; members: never[] }>();
+  operateFlight = flight;
+  await click(button("ARK 集群"));
+  await settleUntil(() => !button("启动集群").disabled, "cluster start available");
+  await click(button("启动集群"));
+  check(writes.at(-1)?.command === "operate_ark_cluster", "Cluster start was not submitted");
+  const snapshotControls = () => [...select(".ark-cluster-backups").querySelectorAll<HTMLButtonElement | HTMLInputElement>("button, input")];
+  check(snapshotControls().length > 0 && snapshotControls().every((control) => control.disabled),
+    "Snapshot backup/restore stayed enabled while the cluster was starting");
+  operateFlight = null;
+  await act(async () => { flight.resolve({ action: "start", members: [] }); });
+  await settleUntil(() => !button("刷新", select(".ark-cluster-backups")).disabled, "snapshot controls unlocked after cluster start");
+  await openBackups(); checks++;
+
   await act(async () => { root.unmount(); });
   root = createRoot(fixture);
   Object.assign(globalThis, { isTauri: false });
@@ -256,8 +287,7 @@ async function run() {
   try {
     for (const source of [report("lan-cluster"), null]) {
       await act(async () => { root.render(<StrictMode><I18nProvider><ArkClusterMaintenance instanceId="lan-cluster"
-        report={source} busy={false} onChanged={async () => { throw new Error("LAN maintenance cannot mutate"); }}
-        onBusyChange={noOperation} /></I18nProvider></StrictMode>); });
+        report={source} busy={false} onChanged={async () => { throw new Error("LAN maintenance cannot mutate"); }} /></I18nProvider></StrictMode>); });
       check(fixture.textContent?.includes("需要在本机 LanGame 桌面端操作"), "LAN view omitted the local desktop requirement");
       check(!fixture.querySelector("button, input"), "LAN view exposed a backup or recovery control");
     }

@@ -67,18 +67,26 @@ function Get-VerifiedArchive([string]$Name, [string]$Url, [string]$Sha256) {
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-function Expand-Selected([string]$Archive, [string]$Prefix, [string]$Destination, [string[]]$Allowed) {
+function Expand-Selected([string]$Archive, [string]$Prefix, [string]$Destination, [string[]]$Allowed, [string]$StripPrefix = '') {
     $zip = [IO.Compression.ZipFile]::OpenRead($Archive)
     try {
         foreach ($entry in $zip.Entries) {
             if (-not $entry.FullName.StartsWith($Prefix, [StringComparison]::Ordinal)) { continue }
             $relative = $entry.FullName.Substring($Prefix.Length)
             if ($relative.EndsWith('/') -or -not ($Allowed | Where-Object { $relative -eq $_ -or ($_.EndsWith('/') -and $relative.StartsWith($_, [StringComparison]::Ordinal)) })) { continue }
+            if ($StripPrefix -and $relative.StartsWith($StripPrefix, [StringComparison]::Ordinal)) {
+                $relative = $relative.Substring($StripPrefix.Length)
+            }
             $target = [IO.Path]::GetFullPath((Join-Path $Destination $relative))
             $boundary = [IO.Path]::GetFullPath($Destination) + [IO.Path]::DirectorySeparatorChar
             if (-not $target.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase)) { throw 'SDK archive path escaped output directory.' }
-            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target)) | Out-Null
-            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
+            # Keep canonical containment checks above; use the extended Windows
+            # namespace only for I/O so Windows PowerShell 5.1 accepts long paths.
+            $ioTarget = if ($target.StartsWith('\\?\', [StringComparison]::Ordinal)) { $target }
+                elseif ($target.StartsWith('\\', [StringComparison]::Ordinal)) { '\\?\UNC\' + $target.Substring(2) }
+                else { '\\?\' + $target }
+            [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($ioTarget)) | Out-Null
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $ioTarget, $true)
         }
     } finally { $zip.Dispose() }
 }
@@ -90,18 +98,21 @@ $asa = Get-VerifiedArchive 'AsaApi-sdk.zip' "https://codeload.github.com/ArkServ
 $ase = Get-VerifiedArchive 'AseApi-sdk.zip' "https://codeload.github.com/ArkServerApi/AseApi/zip/$aseCommit" '500cc0e0d46e75e3c67374a81914fe318ee1f88db8bca0c291f2e8a72ede3def'
 $asaRelease = Get-VerifiedArchive 'asa-runtime.zip' 'https://github.com/ArkServerApi/AsaApi/releases/download/2.03/AsaApi_2.03.zip' 'ac72fb29436198ac062cd273e1c496b1ef4e6ffddeec08243d11d9b35e8b8ae3'
 $loader = Get-VerifiedArchive 'AsaApiLoader-sdk.zip' "https://codeload.github.com/ArkServerApi/AsaApiLoader/zip/$loaderCommit" 'dd3c6ac17d2bdc9d072ca01c8e86f9451e6de909c2bf901bb5b2c63cb939e833'
-$asaRoot = Join-Path $outputRoot 'AsaApi'
-$aseRoot = Join-Path $outputRoot 'AseApi'
+# MSVC still applies MAX_PATH to relative includes containing ../, even when
+# the normalized file exists. Keep the SDK's Public/Private relationship while
+# dropping archive-only Core ancestors so managed snapshot builds stay in range.
+$asaRoot = Join-Path $outputRoot 'asa'
+$aseRoot = Join-Path $outputRoot 'ase'
 $loaderRoot = Join-Path $outputRoot 'AsaApiLoader'
-Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE')
-Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE')
+Expand-Selected $asa "AsaApi-$asaCommit/" $asaRoot @('AsaApi/Core/Public/', 'AsaApi/Core/Private/Ark/Globals.h', 'LICENSE') 'AsaApi/Core/'
+Expand-Selected $ase "AseApi-$aseCommit/" $aseRoot @('version/Core/Public/', 'version/Core/Private/Ark/Globals.h', 'out_lib/ArkApi.lib', 'LICENSE') 'version/Core/'
 Expand-Selected $asaRelease '' $asaRoot @('Lib/AsaApi.lib')
 Expand-Selected $loader "AsaApiLoader-$loaderCommit/" $loaderRoot @('Version/version.def', 'Version/version_asm.asm', 'LICENSE')
 # UnrealString includes fmt/format.h while Logger already includes this exact
 # bundled fmt version. Expose that same dependency under its public include path.
 $fmtRoot = Join-Path $outputRoot 'fmt-include'
 [IO.Directory]::CreateDirectory((Join-Path $fmtRoot 'fmt')) | Out-Null
-Copy-Item -Path (Join-Path $asaRoot 'AsaApi/Core/Public/Logger/spdlog/fmt/bundled/*') -Destination (Join-Path $fmtRoot 'fmt') -Force
+Copy-Item -Path (Join-Path $asaRoot 'Public/Logger/spdlog/fmt/bundled/*') -Destination (Join-Path $fmtRoot 'fmt') -Force
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere)) { throw 'Visual Studio C++ Build Tools are required to build ARK tools.' }
@@ -121,7 +132,7 @@ try {
     $env:LIB = $libPaths -join ';'
     $env:PATH = "$toolBin;$previousPath"
     foreach ($edition in @('ase', 'asa')) {
-        $headers = if ($edition -eq 'asa') { Join-Path $asaRoot 'AsaApi/Core/Public' } else { Join-Path $aseRoot 'version/Core/Public' }
+        $headers = if ($edition -eq 'asa') { Join-Path $asaRoot 'Public' } else { Join-Path $aseRoot 'Public' }
         $importLib = if ($edition -eq 'asa') { Join-Path $asaRoot 'Lib/AsaApi.lib' } else { Join-Path $aseRoot 'out_lib/ArkApi.lib' }
         $object = Join-Path $outputRoot "LgsmArkTools-$edition.obj"
         $dll = Join-Path $outputRoot "LgsmArkTools-$edition.dll"

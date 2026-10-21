@@ -1,5 +1,4 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { ShellIcon } from "../../components/ShellIcon";
 import { useEffect, useId, useRef, useState } from "react";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, RuntimeResourceLimits, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
@@ -9,6 +8,7 @@ import { parseSettingsObject, serializeSettingsObject } from "../settings/guided
 import { ConfigurationHelp, useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
 import { useAutoSaveInstanceSettings } from "../settings/useAutoSaveInstanceSettings";
 import { MAINTENANCE_TYPING_DELAY_MS, MaintenanceAutoSaveFooter } from "./MaintenanceAutoSaveFooter";
+import { MaintenanceChip } from "./MaintenanceToolbar";
 import "./runtime-resources.css";
 
 interface Props {
@@ -116,17 +116,14 @@ function ResourceForm(props: Props) {
   const failed = save.status.state === "failed" || save.status.state === "conflict";
   const effective = data && !props.readOnly ? readResourceLimits(data.settings) : null;
   const savedLimits = data && props.readOnly ? retainedLimits(data.settings) : {};
-  return <section className="server-resource-policy server-maintenance-card" aria-label={props.t("servers.resources.title")}>
-    <div className="server-resource-heading">
-      <h3 className="server-workbench-section-label server-maintenance-card-label">
-          <ShellIcon name="server" className="server-workbench-section-icon" />{props.t("servers.resources.title")}</h3>
-      {running && <p className="form-note">{props.t("servers.resources.stopFirst")}</p>}
-    </div>
+  const unlimited = props.t("servers.resources.unlimited");
+  const summary = data ? props.t("servers.maintenance.resourcesValue", {
+    cpu: data.draft.cpu ? `${data.draft.cpu}%` : unlimited, memory: data.draft.memory ? `${data.draft.memory} MiB` : unlimited }) : undefined;
+  return <MaintenanceChip icon="cpu" label={props.t("servers.resources.title")} value={summary} className="server-resource-policy"
+    help={[props.t(props.details.summary.module_id === "dontstarve" ? "servers.resources.scopeDontStarve" : "servers.resources.scope"),
+      props.t("servers.resources.description")].join("\n")}>
     <form className="server-save-policy-editor" onSubmit={(event) => event.preventDefault()} noValidate>
-      <ConfigurationHelp description={props.t("servers.resources.description")}>{(help) =>
-        <p className="form-note" ref={help.anchorRef} {...help.interactionProps}
-          tabIndex={0} aria-describedby={help.descriptionId}>{props.t(props.details.summary.module_id === "dontstarve"
-          ? "servers.resources.scopeDontStarve" : "servers.resources.scope")}</p>}</ConfigurationHelp>
+      {running && <p className="form-note" role="note">{props.t("servers.resources.stopFirst")}</p>}
       {editing && (blocked || failed) && effective && <p className="form-note">{props.t("servers.resources.savedValues", {
         cpu: effective.cpu_percent === null ? props.t("servers.resources.unlimited") : `${effective.cpu_percent}%`,
         memory: effective.memory_limit_mib === null ? props.t("servers.resources.unlimited") : `${effective.memory_limit_mib} MiB`
@@ -160,5 +157,5 @@ function ResourceForm(props: Props) {
         conflictMessage={conflict ? props.t("servers.resources.conflict") : null} edited={editing} t={props.t}
         onRetry={save.retry} onDiscard={() => { ownLimits.current.clear(); setEdits({ values: null, base: {} }); }} />}
     </form>
-  </section>;
+  </MaintenanceChip>;
 }

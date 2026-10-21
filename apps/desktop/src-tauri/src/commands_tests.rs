@@ -18,6 +18,9 @@ mod file_mods_integration_tests;
 #[path = "commands_mod_game_boundaries_integration_tests.rs"]
 mod mod_game_boundaries_integration_tests;
 
+#[path = "commands_astroneer_public_ip_tests.rs"]
+mod astroneer_public_ip_tests;
+
 #[path = "commands_ark_tools_tests.rs"]
 mod ark_tools_tests;
 

@@ -29,7 +29,7 @@ test("save migration guidance covers the current 32 game modules exactly once", 
 
 test("file import stays in maintenance and preserves the existing creation flow", () => {
   const maintenance = fs.readFileSync(path.join(__dirname, "../src/views/servers/ServerMaintenanceWorkspace.tsx"), "utf8");
-  assert.match(maintenance, /id: "save-import"[\s\S]*preserveAfterVisit: true/);
+  assert.match(maintenance, /id: "saves"[^\n]*preserveAfterVisit: true/);
   assert.equal((maintenance.match(/<SaveImportPanel\b/g) ?? []).length, 1);
   for (const file of fs.readdirSync(path.join(__dirname, "../src/views"))) {
     if (!/Create.*\.tsx$/.test(file)) continue;

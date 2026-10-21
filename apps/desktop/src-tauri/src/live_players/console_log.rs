@@ -13,6 +13,9 @@ use super::service::{
 };
 use crate::runtime_log_stream::RuntimeLogTailState;
 
+#[path = "rimworld_console.rs"]
+pub(crate) mod rimworld;
+
 #[cfg(test)]
 #[path = "console_log_tests.rs"]
 mod tests;

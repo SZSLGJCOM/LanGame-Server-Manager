@@ -14,22 +14,25 @@ interface Props {
   onPrepare?: (instanceId: string) => Promise<InstanceDetails>;
 }
 
-/** Native account collection is explicitly installed while this instance is stopped. */
+/** Startup prepares native control; stopped instances may prepare it ahead of time. */
 export function ValheimAccountControlSetup(props: Props) {
   const [preparing, setPreparing] = useState(false);
   const [prepared, setPrepared] = useState(false);
   if (props.connected) return null;
   const stopped = props.details.summary.status === "Stopped" && props.details.summary.active_process_count === 0;
   const reason = preparing ? selectLocaleText(props.locale, "正在准备账号管理扩展，请等待完成。", "The account management extension is being prepared. Wait for it to finish.")
-    : props.readOnly ? selectLocaleText(props.locale, "当前工作区只读，无法启用账号管理。", "This workspace is read-only; account management cannot be enabled.")
-      : !stopped ? selectLocaleText(props.locale, "请先正常停止服务器，再启用账号管理。", "Stop the server normally before enabling account management.")
+    : props.readOnly ? selectLocaleText(props.locale, "当前工作区只读，无法准备账号管理扩展。", "This workspace is read-only; the account management extension cannot be prepared.")
+      : !stopped ? selectLocaleText(props.locale, "启动时会自动准备账号管理扩展。若扩展未就绪，请查看启动日志；提前准备需要先正常停服。", "Startup automatically prepares the account management extension. Check the startup log if it is unavailable; early preparation requires stopping the server normally.")
         : prepared ? selectLocaleText(props.locale, "账号管理扩展已准备；启动服务器后可自动读取平台身份。", "The account management extension is prepared. Start the server to collect platform identities automatically.") : null;
   const disabled = Boolean(reason);
   // InlineConfirmAction owns its pending state. Changing its external disabled
   // prop for the same request would reset its error review before a retry.
   const unavailable = Boolean(props.readOnly || !stopped || prepared);
-  const label = selectLocaleText(props.locale, "启用账号管理", "Enable account management");
+  const label = selectLocaleText(props.locale, "提前准备账号管理", "Prepare account management early");
   return <section className="player-access-selected-actions" aria-label={label}>
+    <p className="form-note">{selectLocaleText(props.locale,
+      "启动时会自动检查、安装并配置 BepInEx 和管理扩展；也可停服后提前准备。",
+      "Startup automatically checks, installs and configures BepInEx and the management extension. You can also prepare them early while stopped.")}</p>
     <ConfigurationHelp description={reason}>{(help) => <div className="player-access-total-action" data-valheim-control-setup
       ref={help.anchorRef} {...help.interactionProps} tabIndex={disabled ? 0 : undefined}
       role={disabled ? "group" : undefined} aria-disabled={disabled || undefined}

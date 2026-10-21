@@ -5,7 +5,9 @@ import { readRuntimeStartWarnings } from "./runtime-start-warning";
 export function serverStartSuccessMessage(result: StartInstanceResult | undefined, instanceId: string): UiMessage {
   const warnings = readRuntimeStartWarnings(result?.warnings);
   if (!result || !warnings.length) return message("activity.serverStartSent", { id: instanceId });
-  const key = warnings.some((warning) => warning.code === "mod_update_source_required")
+  const key = warnings.some((warning) => warning.code === "world_initialization_incomplete")
+    ? "activity.serverStartWorldInitializationIncomplete"
+    : warnings.some((warning) => warning.code === "mod_update_source_required")
     ? "activity.serverStartModSourceRequired" : "activity.serverStartUsingCache";
   return message(key, { id: instanceId }, { tone: "warning",
     runtimeStartNotice: { id: `manual-start:${instanceId}:${result.run_id}`, instanceId,

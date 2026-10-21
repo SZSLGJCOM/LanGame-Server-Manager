@@ -1,0 +1,16 @@
+.player-center-history-tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--shell-line); }
+.player-center-history-tabs button { min-height: 30px; }
+.player-history { display: flex; flex: 1 1 auto; min-height: 0; min-width: 0; flex-direction: column; gap: 10px; padding: 12px; }
+.player-history-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+.player-history-filters label { display: flex; flex: 1 1 140px; min-width: 0; flex-direction: column; gap: 5px; font-size: var(--text-meta); }
+.player-history-filters input, .player-history-filters select { width: 100%; min-width: 0; }
+.player-history-note { margin: 0; color: var(--shell-muted); font-size: var(--text-meta); line-height: 1.6; }
+.player-history-results { min-height: 0; flex: 1 1 auto; overflow: auto; }
+.player-history-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--text-body); }
+.player-history-table th, .player-history-table td { padding: 9px 8px; border-bottom: 1px solid var(--shell-line); vertical-align: top; overflow-wrap: anywhere; }
+.player-history-table th { font-weight: var(--font-weight-medium); color: var(--shell-muted); white-space: nowrap; }
+.player-history-table td:first-child { min-width: 135px; }
+.player-history-table td:last-child { width: 35%; white-space: pre-wrap; }
+.player-history-table small { display: block; margin-top: 3px; color: var(--shell-muted); font-size: var(--text-meta); }
+.player-history-empty { padding: 24px 4px; color: var(--shell-muted); }
+.player-history-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 10px; font-size: var(--text-meta); }

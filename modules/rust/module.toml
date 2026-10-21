@@ -65,6 +65,16 @@ join_port_name = "game"
 query_port_name = "query"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "websocket_rcon"
+command_template = "server.save"
+port_name = "rcon"
+password_setting_key = "rcon_password"
+enabled_setting_key = "rcon_web"
+
+[[runtime.player_actions]]
 id = "broadcast"
 kind = "broadcast"
 label = "Broadcast"

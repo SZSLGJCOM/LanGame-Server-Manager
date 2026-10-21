@@ -35,6 +35,12 @@ use storage::{ModuleTomlStorage, storage_spec_from_toml, validate_program_sharin
 mod dst_configuration_icons;
 pub use dst_configuration_icons::{DstConfigurationIcons, load_dst_configuration_icons};
 
+mod dst_map_assets;
+pub use dst_map_assets::{
+    DstMapAssets, DstMapEntityInventoryIcon, DstMapIconFallback, DstMapIconFallbackKind,
+    DstMapIconSources, DstMapModSource, DstMapTerrainEdge, load_dst_map_assets,
+};
+
 #[derive(Debug, Clone)]
 pub struct ModuleDescriptor {
     pub root: PathBuf,

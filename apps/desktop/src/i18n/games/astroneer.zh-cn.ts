@@ -39,7 +39,7 @@ export const ZH_CN_ASTRONEER_MESSAGES: MessageCatalog = {
   "settings.schema.astroneer.console_password.title": "远程控制台密码",
   "settings.schema.astroneer.console_password.description": "用于读取在线玩家姓名和 ASTRONEER GUID；每个新实例生成独立密码。留空关闭 TCP 控制台，修改后需重启。",
   "settings.schema.astroneer.public_ip.title": "公网 IPv4 地址",
-  "settings.schema.astroneer.public_ip.description": "启动前必须填写服务器的公网 IPv4 地址，供游戏原生服务注册使用。配置草稿可以留空；启动时会检查地址格式。",
+  "settings.schema.astroneer.public_ip.description": "留空时，启动会自动发现并保存本机的公网单播 IPv4，供游戏原生服务注册使用；已填写的合法公网 IPv4 会保留。发现失败会停止启动，不会使用私网地址替代。",
   "settings.schema.astroneer.deny_unlisted_players.title": "仅允许名单内玩家",
   "settings.schema.astroneer.deny_unlisted_players.description": "仅允许 ASTRONEER 准入名单中获准的玩家加入。",
   "settings.schema.astroneer.server_owner_display_name.title": "服主显示名称",

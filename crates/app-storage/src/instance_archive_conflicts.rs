@@ -13,6 +13,7 @@ WHEN EXISTS(SELECT 1 FROM instance_ports current JOIN json_each(?1,'$.tables.ins
 WHEN EXISTS(SELECT 1 FROM instance_runs current JOIN json_each(?1,'$.tables.instance_runs') saved ON current.id=json_extract(saved.value,'$.id')) THEN 'An archived run record ID is already registered.'
 WHEN EXISTS(SELECT 1 FROM instance_broadcast_policies current JOIN json_each(?1,'$.tables.instance_broadcast_policies') saved ON current.instance_id=json_extract(saved.value,'$.instance_id')) THEN 'An archived broadcast policy is already registered.'
 WHEN EXISTS(SELECT 1 FROM instance_broadcast_events current JOIN json_each(?1,'$.tables.instance_broadcast_events') saved ON current.event_id=json_extract(saved.value,'$.event_id')) THEN 'An archived broadcast event ID is already registered.'
+WHEN EXISTS(SELECT 1 FROM player_history_events current JOIN json_each(?1,'$.tables.player_history_events') saved ON current.id=json_extract(saved.value,'$.id')) THEN 'An archived player history event ID is already registered.'
 WHEN EXISTS(SELECT 1 FROM json_each(?1,'$.tables.instance_runs') saved WHERE json_extract(saved.value,'$.status')='running') THEN 'Archive contains an active process record.'
 ELSE NULL END"#;
 

@@ -433,6 +433,14 @@ impl WindowsPlatform {
         loopback_tcp_listener_owners::inspect(port)
     }
 
+    /// All exact or wildcard listeners that can receive this IPv4 destination.
+    pub fn ipv4_tcp_listener_owners(
+        address: std::net::Ipv4Addr,
+        port: u16,
+    ) -> Result<std::collections::BTreeSet<u32>, String> {
+        loopback_tcp_listener_owners::inspect_address(address, port)
+    }
+
     pub fn inspect_visible_window_surfaces(
         targets: &[WindowInspectionTarget],
     ) -> Result<WindowInspectionResult, String> {

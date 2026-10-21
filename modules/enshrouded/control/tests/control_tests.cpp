@@ -1,5 +1,6 @@
 #include "../control_protocol.h"
 #include "../request_history.h"
+#include "world_save_tests.h"
 #include <vector>
 #include <cstdio>
 #include <string>
@@ -42,6 +43,7 @@ std::string RequestText() {
 }
 }
 int main() {
+    if (!WorldSaveTests()) return 100;
     Fixture empty;
     if (!empty.capture().complete || empty.capture().count) return 1;
     Fixture valid; valid.player();

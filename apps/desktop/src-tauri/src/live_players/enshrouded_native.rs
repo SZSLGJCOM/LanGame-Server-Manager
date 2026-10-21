@@ -12,6 +12,9 @@ pub(crate) mod io;
 mod response;
 #[path = "enshrouded_native_transport.rs"]
 mod transport;
+#[path = "enshrouded_native_save.rs"]
+mod world_save;
+pub(crate) use world_save::save_world;
 
 #[derive(Clone)]
 pub(super) struct Context {

@@ -12,3 +12,17 @@ kind = "process_endpoint"
 process_key = "main"
 port_name = "game"
 protocol = "udp"
+
+# The UDP socket exists while realm levels are still loading and native
+# persistence is disabled. Require both current-run owner/world transitions.
+[[probes]]
+id = "world-owner-ready"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["LogNWXGameMode: GameModeAwaiter became ready."]
+
+[[probes]]
+id = "world-persistence-enabled"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["LogWorldPersistenceSubsystem: Enabling world persistence saving."]

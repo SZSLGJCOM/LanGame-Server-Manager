@@ -6,6 +6,7 @@ const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs"
 
 const root = path.resolve(__dirname, "..", "..", "..");
 const desktopRoot = path.join(root, "apps", "desktop");
+const DST_PICKER_PATH = path.join(desktopRoot, "src", "views", "servers", "DstPrefabPicker.tsx");
 
 require.extensions[".ts"] = function compileTypeScript(module, filename) {
   const source = fs.readFileSync(filename, "utf8");
@@ -264,6 +265,8 @@ test("GM large catalog localization covers every built-in display name", () => {
 test("GM command definitions do not carry removed actions", () => {
   const sources = [
     path.join(desktopRoot, "src", "views", "servers", "gm-tools.ts"),
+    path.join(desktopRoot, "src", "views", "servers", "gm-tools-dst.ts"),
+    path.join(desktopRoot, "src", "views", "servers", "gm-tool-values.ts"),
     path.join(desktopRoot, "src", "i18n-messages-en-extra.ts"),
     path.join(desktopRoot, "src", "i18n-messages-zh-extra.ts")
   ].map((filePath) => [filePath, fs.readFileSync(filePath, "utf8")]);
@@ -343,34 +346,34 @@ test("DST GM tools render one shard-aware player item tool with inventory placem
 
   const spawn = buildGmToolCommand("dontstarve", "dst_give_item_to_player", {
     shard: "caves",
-    playerIndex: "2",
+    playerId: "KU_ab12",
     allPlayers: "false",
     placeInInventory: "false",
     prefab: "spider",
     amount: "3"
   });
-  assert.match(spawn.commands[0], /local p=AllPlayers\[2\]/);
-  assert.match(spawn.commands[0], /for i=1,3 do local e=assert\(SpawnPrefab\("spider"\)/);
+  assert.match(spawn.commands[0], /LookupPlayerInstByUserID\("KU_ab12"\)/);
+  assert.match(spawn.commands[0], /local f(?:,t)?="spider"/);
+  assert.match(spawn.commands[0], /for i=1,3 do local e=assert\(SpawnPrefab\(f\)/);
   assert.match(spawn.commands[0], /e.Transform:SetPosition\(x,y,z\)/);
   assert.equal(spawn.processKey, "caves");
   assert.equal(spawn.dispatchOptions.transport, "stdin");
 
   const singleReward = buildGmToolCommand("dontstarve", "dst_give_item_to_player", {
     shard: "master",
-    playerIndex: "2",
+    playerId: "KU_ab12",
     allPlayers: "false",
     placeInInventory: "true",
     prefab: "log",
     amount: "20"
   });
   assert.equal(singleReward.processKey, "master");
-  assert.match(singleReward.commands[0], /local p=AllPlayers\[2\]/);
+  assert.match(singleReward.commands[0], /LookupPlayerInstByUserID\("KU_ab12"\)/);
   assert.match(singleReward.commands[0], /p.components.inventory:GiveItem/);
   assert.doesNotMatch(singleReward.commands[0], /c_give/);
 
   const reward = buildGmToolCommand("dontstarve", "dst_give_item_to_player", {
     shard: "master",
-    playerIndex: "",
     allPlayers: "true",
     placeInInventory: "true",
     prefab: "log",
@@ -378,12 +381,12 @@ test("DST GM tools render one shard-aware player item tool with inventory placem
   });
   assert.equal(reward.processKey, "master");
   assert.match(reward.commands[0], /ipairs\(AllPlayers\)/);
-  assert.match(reward.commands[0], /for i=1,20 do local e=assert\(SpawnPrefab\("log"\)/);
+  assert.match(reward.commands[0], /local f(?:,t)?="log"/);
+  assert.match(reward.commands[0], /for i=1,20 do local e=assert\(SpawnPrefab\(f\)/);
   assert.match(reward.commands[0], /p.components.inventory:GiveItem/);
 
   const spawnForAllPlayers = buildGmToolCommand("dontstarve", "dst_give_item_to_player", {
     shard: "master",
-    playerIndex: "",
     allPlayers: "true",
     placeInInventory: "false",
     prefab: "spider",
@@ -391,7 +394,8 @@ test("DST GM tools render one shard-aware player item tool with inventory placem
   });
   assert.equal(spawnForAllPlayers.processKey, "master");
   assert.match(spawnForAllPlayers.commands[0], /ipairs\(AllPlayers\)/);
-  assert.match(spawnForAllPlayers.commands[0], /for i=1,2 do local e=assert\(SpawnPrefab\("spider"\)/);
+  assert.match(spawnForAllPlayers.commands[0], /local f(?:,t)?="spider"/);
+  assert.match(spawnForAllPlayers.commands[0], /for i=1,2 do local e=assert\(SpawnPrefab\(f\)/);
   assert.match(spawnForAllPlayers.commands[0], /e.Transform:SetPosition\(x,y,z\)/);
 });
 
@@ -410,8 +414,7 @@ test("DST GM item picker exposes a broad categorized prefab catalog", () => {
   assert.equal(giveItem?.fields.find((field) => field.key === "allPlayers")?.type, "checkbox");
   assert.equal(giveItem?.fields.find((field) => field.key === "placeInInventory")?.type, "checkbox");
   assert.equal(giveItem?.fields.find((field) => field.key === "placeInInventory")?.defaultValue, "true");
-  const prefabField = giveItem?.fields.find((field) => field.key === "prefab");
-  assert.ok((prefabField?.options?.length ?? 0) >= 500);
+  assert.equal(giveItem?.fields.find((field) => field.key === "prefab")?.defaultValue, "log");
 });
 
 test("DST GM item picker search matches Chinese names, categories, and prefab codes", () => {
@@ -425,46 +428,46 @@ test("DST GM item picker search matches Chinese names, categories, and prefab co
   }
 });
 
-test("GM workbench renders a dedicated DST prefab picker assist for the large catalog", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
+test("DST item spawning renders a dedicated prefab picker assist for the large catalog", () => {
+  const source = fs.readFileSync(DST_PICKER_PATH, "utf8");
   assert.match(source, /searchDstPrefabOptions/);
-  assert.match(source, /isDstPrefabField/);
+  assert.match(fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "DstItemSpawnPanel.tsx"), "utf8"), /<DstPrefabPicker /);
   assert.match(source, /gmt-dst-prefab-assist/);
 });
 
 test("DST GM prefab picker uses a compact custom chooser instead of a giant native dropdown", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
+  const source = fs.readFileSync(DST_PICKER_PATH, "utf8");
+  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "dst-prefab-picker.css"), "utf8");
 
-  assert.match(source, /function shouldUseFieldDatalist/);
-  assert.match(source, /!isDstPrefabField\(moduleId, field\)/);
-  assert.match(source, /DST_PREFAB_SEARCH_RESULT_LIMIT = 12/);
-  assert.match(source, /gmt-field--dst-prefab/);
-  assert.match(css, /\.gmt-field--dst-prefab/);
-  assert.match(css, /grid-template-columns:\s*repeat\(auto-fit, minmax\(180px, 1fr\)\)/);
-  assert.match(css, /max-height:\s*146px/);
+  // Six single-line rows keep the DST rail free of scrolling; the pager reaches the rest.
+  assert.match(source, /new ResizeObserver\(measure\)/);
+  assert.doesNotMatch(source, /DST_PREFAB_SEARCH_RESULT_LIMIT/);
+  assert.doesNotMatch(source, /<select|<datalist/);
+  assert.match(css, /\.gmt-dst-prefab-results\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(css, /overflow-y:\s*auto/);
   assert.doesNotMatch(css, /\.gmt-dst-prefab-option\s*\{[\s\S]*?min-height:\s*58px/);
 });
 
-test("DST GM item form keeps target and quantity on one compact row", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
-  const catalog = getGmToolCatalog("dontstarve");
-  const giveTool = catalog?.tools.find((tool) => tool.id === "dst_give_item_to_player");
-  const fieldKeys = giveTool?.fields.map((field) => field.key);
+test("DST item spawn panel pins its options in the GM tool grid", () => {
+  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "DstItemSpawnPanel.tsx"), "utf8");
+  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "dst-world-map.css"), "utf8");
+  const giveTool = getGmToolCatalog("dontstarve")?.tools.find((tool) => tool.id === "dst_give_item_to_player");
 
-  assert.deepEqual(fieldKeys?.slice(0, 3), ["shard", "playerIndex", "amount"]);
-  assert.match(source, /fieldGridClassName\(moduleId, activeTool\)/);
-  assert.match(css, /\.gmt-fields-grid--dst-item-action\s*\{[\s\S]*?grid-template-columns:\s*minmax\(180px, 1fr\) minmax\(130px, 160px\) minmax\(110px, 140px\)/);
+  assert.deepEqual(giveTool?.fields.map((field) => field.key).slice(0, 3), ["shard", "playerId", "amount"]);
+  assert.match(source, /getInitialGmToolValues\(tool\)/);
+  assert.match(source, /<DstPrefabCategories /);
+  assert.match(source, /className="primary-button dst-gm-tool dst-gm-send"/);
+  assert.match(css, /\.primary-button\.dst-gm-tool, \.dst-gm-amount \{[^}]*height: 46px/);
+  assert.doesNotMatch(css, /dst-gm-spawn-row|dst-gm-check/);
 });
 
 test("GM workbench keeps command generation internal and shows the full DST prefab catalog size", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
+  const source = fs.readFileSync(DST_PICKER_PATH, "utf8") + fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
   const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
 
   assert.match(source, /getDstPrefabOptions/);
   assert.match(source, /DST_PREFAB_TOTAL_COUNT/);
-  assert.match(source, /total:\s*DST_PREFAB_TOTAL_COUNT/);
+  assert.match(source, /title=\{`\$\{allResults\.length\} \/ \$\{DST_PREFAB_TOTAL_COUNT\}`\}/);
   assert.doesNotMatch(source, /className="gmt-preview"/);
   assert.doesNotMatch(source, /gmt-preview-code/);
   assert.doesNotMatch(source, /gmt-cmd-count-badge/);
@@ -473,13 +476,13 @@ test("GM workbench keeps command generation internal and shows the full DST pref
 });
 
 test("DST GM prefab picker paginates broad result sets with compact chevron controls", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
+  const source = fs.readFileSync(DST_PICKER_PATH, "utf8");
+  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "dst-prefab-picker.css"), "utf8");
 
   assert.match(source, /const \[pageIndex, setPageIndex\] = useState\(0\)/);
   assert.match(source, /const allResults = useMemo/);
-  assert.match(source, /Math\.ceil\(allResults\.length \/ DST_PREFAB_SEARCH_RESULT_LIMIT\)/);
-  assert.match(source, /allResults\.slice\(pageStart, pageStart \+ DST_PREFAB_SEARCH_RESULT_LIMIT\)/);
+  assert.match(source, /Math\.ceil\(allResults\.length \/ pageSize\)/);
+  assert.match(source, /allResults\.slice\(pageStart, pageStart \+ pageSize\)/);
   assert.match(source, /gmt-dst-prefab-pager/);
   assert.match(source, /chevron-left/);
   assert.match(source, /chevron-right/);
@@ -488,7 +491,7 @@ test("DST GM prefab picker paginates broad result sets with compact chevron cont
 });
 
 test("DST GM prefab selection keeps the browsed result list open", () => {
-  const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
+  const source = fs.readFileSync(DST_PICKER_PATH, "utf8");
 
   assert.match(source, /const activeQuery = props\.query\.trim\(\);/);
   assert.doesNotMatch(source, /props\.query\.trim\(\) \|\| props\.value\.trim\(\)/);
@@ -577,6 +580,9 @@ test("every generic tool builds a command and the dedicated spawn entry rejects 
     assert.ok(catalog, `${moduleId} catalog missing`);
     for (const tool of catalog.tools) {
       const values = getInitialGmToolValues(tool);
+      if (tool.fields.some(field => field.key === "playerId")) values.playerId = "KU_ab12";
+      if (tool.id === "dst_teleport_to_player") values.destinationId = "KU_zz9";
+      if (tool.id === "dst_teleport_to_point") Object.assign(values, { x: "0", z: "0" });
       if (tool.id === "ark_give_item_to_player") {
         values.playerId = "123456789";
         values.itemId = "9";

@@ -9,9 +9,17 @@
   container-name: system-core-stage;
 }
 
+/* The dial geometry was tuned at 380px; larger stages scale it proportionally. */
+@property --core-scale {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
 .system-core-visual {
+  --core-scale: max(1, tan(atan2(min(100cqw, 100cqh), 380px)));
   position: relative;
-  width: min(100%, 380px, 100cqh);
+  width: min(100cqw, 100cqh);
   min-width: 0;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -245,10 +253,10 @@
   z-index: 4;
   display: grid;
   width: 27%;
-  min-height: 88px;
+  min-height: calc(88px * var(--core-scale));
   container-type: inline-size;
-  gap: 4px;
-  padding: 9px 11px 10px;
+  gap: calc(4px * var(--core-scale));
+  padding: calc(9px * var(--core-scale)) calc(11px * var(--core-scale)) calc(10px * var(--core-scale));
   border: 1px solid var(--system-panel-border-soft);
   border-radius: 6px;
   background: var(--system-panel-bg);
@@ -322,7 +330,7 @@
   justify-content: var(--metric-align);
   gap: 4px;
   color: var(--system-panel-muted);
-  font-size: var(--text-meta);
+  font-size: var(--text-dial-meta);
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.02em;
 }
@@ -330,8 +338,8 @@
 .system-core-metric-live i {
   display: inline-block;
   flex: 0 0 auto;
-  width: 5px;
-  height: 5px;
+  width: calc(5px * var(--core-scale));
+  height: calc(5px * var(--core-scale));
   margin-right: 0;
   border-radius: 50%;
   background: var(--band-accent);
@@ -358,7 +366,7 @@
 .system-core-metric-label {
   overflow: hidden;
   color: color-mix(in srgb, var(--system-panel-text) 84%, var(--band-accent));
-  font-size: var(--text-secondary);
+  font-size: var(--text-dial-secondary);
   font-weight: var(--font-weight-medium);
   letter-spacing: 0;
   text-overflow: ellipsis;
@@ -366,7 +374,7 @@
 }
 
 .system-core-metric-value {
-  min-height: var(--text-display);
+  min-height: var(--text-dial-display);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -381,7 +389,7 @@
 
 .system-core-metric-value strong {
   flex: 0 0 auto;
-  font-size: min(var(--text-display), calc(140cqw / var(--core-value-length)));
+  font-size: min(var(--text-dial-display), calc(140cqw / var(--core-value-length)));
   font-weight: var(--font-weight-semibold);
   letter-spacing: -0.065em;
   white-space: nowrap;
@@ -389,7 +397,7 @@
 
 .system-core-metric-value em {
   color: var(--band-accent);
-  font-size: var(--text-meta);
+  font-size: var(--text-dial-meta);
   font-style: normal;
   font-weight: var(--font-weight-regular);
 }
@@ -405,8 +413,8 @@
   width: 37%;
   height: 37%;
   container-type: inline-size;
-  gap: 7px;
-  padding: 12px;
+  gap: calc(7px * var(--core-scale));
+  padding: calc(12px * var(--core-scale));
   color: var(--system-panel-text);
   text-align: center;
   pointer-events: none;
@@ -425,7 +433,7 @@
 
 .system-core-center-kicker {
   color: color-mix(in srgb, var(--system-panel-text) 78%, var(--system-cpu));
-  font-size: var(--text-meta);
+  font-size: var(--text-dial-meta);
   font-weight: var(--font-weight-medium);
   letter-spacing: 0.02em;
 }
@@ -457,7 +465,7 @@
 
 .system-core-center-value.is-resource-state strong {
   font-family: var(--font-sans);
-  font-size: min(var(--text-page-title), calc(105cqw / var(--core-value-length)));
+  font-size: min(var(--text-dial-page-title), calc(105cqw / var(--core-value-length)));
   letter-spacing: 0;
 }
 
@@ -467,7 +475,7 @@
 
 .system-core-center-value em {
   color: var(--system-cpu);
-  font-size: var(--text-body);
+  font-size: var(--text-dial-body);
   font-style: normal;
   font-weight: var(--font-weight-regular);
 }
@@ -478,13 +486,13 @@
   justify-content: center;
   gap: 6px;
   color: color-mix(in srgb, var(--system-panel-text) 84%, var(--system-panel-muted));
-  font-size: var(--text-meta);
+  font-size: var(--text-dial-meta);
   font-weight: var(--font-weight-semibold);
 }
 
 .system-core-center-state i {
-  width: 6px;
-  height: 6px;
+  width: calc(6px * var(--core-scale));
+  height: calc(6px * var(--core-scale));
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--system-memory);
@@ -492,11 +500,11 @@
 
 .system-core-metric-value[data-wide-unit="true"] {
   flex-wrap: nowrap;
-  font-size: var(--text-meta);
+  font-size: var(--text-dial-meta);
 }
 
 .system-core-metric-value[data-wide-unit="true"] strong {
-  font-size: min(var(--text-display), calc((100cqw - 5ch - 4px) * 1.8 / var(--core-value-length)));
+  font-size: min(var(--text-dial-display), calc((100cqw - 5ch - 4px) * 1.8 / var(--core-value-length)));
 }
 
 .system-core-metric-value[data-wide-unit="true"] em {
@@ -551,7 +559,7 @@
 
   .system-core-metric-live,
   .system-core-metric-label {
-    font-size: var(--text-meta);
+    font-size: var(--text-dial-meta);
   }
 
   .system-core-metric-live i {

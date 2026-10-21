@@ -74,7 +74,7 @@ test("DST import belongs only to Maintenance and configuration retains world-gen
   const maintenance = read("views/servers/ServerMaintenanceWorkspace.tsx");
   assert.match(maintenance, /<MaintenanceWorkspace active=\{props\.active\}/, "the shared Maintenance workspace must own the import panel");
   const panel = read("views/servers/SaveImportPanel.tsx");
-  assert.match(maintenance, /id: "save-import"[\s\S]*<SaveImportPanel/);
+  assert.match(maintenance, /id: "saves"[\s\S]*<SaveImportPanel/);
   assert.match(panel, /module_id === "dontstarve"/);
   assert.match(panel, /onImportWorldData=\{props\.onImportDontStarveWorldData\}/);
   assert.equal((panel.match(/<DstWorldImportPanel\b/g) ?? []).length, 1);
@@ -90,7 +90,7 @@ test("DST import belongs only to Maintenance and configuration retains world-gen
 test("save import keeps its source and actions visible without disclosure controls", async () => {
   const state = harness();
   assert.equal(state.render().nodes.some((node) => node.type === "details" || node.type === "summary"), false);
-  assert.match(state.render().html, /Import save/);
+  assert.match(state.render().html, /Choose folder/);
   assert.doesNotMatch(state.render().root.props.className, /server-maintenance-card/);
   const initial = state.render();
   assert.equal(initial.choose.props.title, undefined, "Import help must not duplicate the shared tooltip with a native title");
@@ -155,7 +155,7 @@ test("an in-flight import cannot submit twice and keeps progress and results vis
   submit();
   assert.equal(state.calls.length, 1);
   assert.equal(state.render().choose.props.disabled, true);
-  assert.match(state.render().html, /role="status">Importing/);
+  assert.match(state.render().html, /role="status"><span class="shell-activity-notice-copy"><span class="shell-activity-notice-text" title="Importing">/);
   resolve({ imported_master: true, imported_caves: true, copied_file_count: 3,
     copied_total_bytes: 4096, safeguard_path: "backups/safeguard" });
   await settle();

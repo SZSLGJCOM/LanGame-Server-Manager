@@ -50,6 +50,7 @@ bool ParseRequest(std::string_view text, Request& request) noexcept {
     if (value == "kick") request.action = Action::Kick;
     else if (value == "ban") request.action = Action::Ban;
     else if (value == "unban") request.action = Action::Unban;
+    else if (value == "save_world") request.action = Action::SaveWorld;
     else return false;
     std::uint64_t handle{};
     if (!Field(text, "snapshot_sequence=", value) || !Decimal(value, request.sequence)
@@ -66,12 +67,13 @@ bool SameRequest(const Request& a, const Request& b) noexcept {
         && a.accountId == b.accountId && a.expiresAt == b.expiresAt && a.sessionHandle == b.sessionHandle;
 }
 const char* ActionName(Action action) noexcept {
-    switch (action) { case Action::Kick: return "kick"; case Action::Ban: return "ban"; case Action::Unban: return "unban"; }
+    switch (action) { case Action::Kick: return "kick"; case Action::Ban: return "ban"; case Action::Unban: return "unban"; case Action::SaveWorld: return "save_world"; }
     return "invalid";
 }
 const char* ValidateRequest(const Request& request, const ProcessIdentity& identity,
     const Snapshot& current, std::uint64_t now) noexcept {
     if (std::strcmp(request.runId, identity.runId)) return "run_identity_mismatch";
+    if (request.action == Action::SaveWorld) return "world_save_requires_native_context";
     if (!request.accountId) return "invalid_account_identity";
     if (request.expiresAt < now || request.expiresAt - now > 15000) return "request_expired";
     if (!current.sequence || now < current.tickMs || now - current.tickMs > kFreshMs)
@@ -108,6 +110,7 @@ std::string SerializeResponse(const ProcessIdentity& identity, const Response& r
     return "{" + IdentityJson(identity) + ",\"request_id\":\"" + response.request.requestId
         + "\",\"action\":\"" + ActionName(response.request.action) + "\",\"account_id\":\""
         + std::to_string(response.request.accountId) + "\",\"status\":\""
-        + (response.dispatched ? "dispatched" : "rejected") + "\",\"issue\":\"" + response.issue + "\"}";
+        + (response.saveCompleted && response.request.action == Action::SaveWorld ? "completed"
+            : response.dispatched ? "dispatched" : "rejected") + "\",\"issue\":\"" + response.issue + "\"}";
 }
 } // namespace enshrouded_control

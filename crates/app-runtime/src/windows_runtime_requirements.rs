@@ -221,6 +221,14 @@ struct PeLayout {
 
 impl PeLayout {
     fn locate(&self, rva: u32, size: u64) -> Result<(u64, u64), String> {
+        let (offset, available) = self.locate_image(rva, size)?;
+        if available < size {
+            return Err(format!("RVA 0x{rva:x} points to unbacked section data"));
+        }
+        Ok((offset, available))
+    }
+
+    fn locate_image(&self, rva: u32, size: u64) -> Result<(u64, u64), String> {
         let rva = u64::from(rva);
         let mut located = None;
         let mut matches = 0;
@@ -234,10 +242,13 @@ impl PeLayout {
                 continue;
             }
             let delta = rva - section.rva;
-            if delta + size > section.raw_size {
-                return Err(format!("RVA 0x{rva:x} points to unbacked section data"));
+            if delta
+                .checked_add(size)
+                .is_none_or(|end| end > section.virtual_size.max(section.raw_size))
+            {
+                return Err(format!("RVA 0x{rva:x} exceeds its mapped section"));
             }
-            located = Some((section.raw + delta, section.raw_size - delta));
+            located = Some((section.raw + delta, section.raw_size.saturating_sub(delta)));
             matches += 1;
         }
         if matches != 1 {
@@ -372,7 +383,7 @@ fn read_import_directory<R: Read + Seek>(
     if rva == 0 || size < width {
         return Err(format!("invalid import directory {index}"));
     }
-    let (offset, _) = layout.locate(rva, u64::from(size))?;
+    layout.locate_image(rva, u64::from(size))?;
     for entry in 0..size / width {
         if *descriptors >= MAX_IMPORTS {
             return Err(format!(
@@ -380,9 +391,20 @@ fn read_import_directory<R: Read + Seek>(
             ));
         }
         *descriptors += 1;
-        let entry_offset = offset + u64::from(entry) * u64::from(width);
+        let entry_rva = rva
+            .checked_add(entry * width)
+            .ok_or("import descriptor overflows the RVA address space")?;
+        let (entry_offset, available) = layout.locate_image(entry_rva, u64::from(width))?;
         let mut bytes = [0; 32];
-        reader.read(entry_offset, &mut bytes[..width as usize])?;
+        // PE sections are zero-filled past SizeOfRawData up to VirtualSize.
+        // In protected executables a delay directory can initially contain only
+        // that null descriptor. Inspect the loader-visible bytes without loading
+        // or unpacking code; DLL names still require nonempty file-backed data.
+        // https://learn.microsoft.com/windows/win32/debug/pe-format#section-table-section-headers
+        let backed = available.min(u64::from(width)) as usize;
+        if backed != 0 {
+            reader.read(entry_offset, &mut bytes[..backed])?;
+        }
         if bytes.iter().all(|byte| *byte == 0) {
             return Ok(());
         }

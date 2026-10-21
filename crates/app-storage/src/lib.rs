@@ -25,6 +25,8 @@ use uuid::Uuid;
 
 mod a2s;
 mod archived_programs;
+pub mod maintenance_schedule;
+pub mod player_history;
 pub use archived_programs::{ArchivedProgramSource, read_archived_program_sources};
 mod assistant_session_archive;
 pub use assistant_session_archive::{AssistantSessionArchive, assistant_session_binding_digest};
@@ -196,6 +198,7 @@ mod storage_usage;
 mod storage_volumes;
 pub use storage_usage::{StorageUsageEntry, StorageUsageReport, scan_storage_usage};
 mod templates;
+pub use templates::is_managed_dst_map_observer;
 mod windrose_bootstrap;
 pub use windrose_bootstrap::{
     WindroseBootstrap, WindroseBootstrapObservation, prepare_windrose_bootstrap,
@@ -203,14 +206,16 @@ pub use windrose_bootstrap::{
 
 pub use a2s::{A2S_MAX_RESPONSE_BYTES, A2sClient, A2sQueryError};
 pub use backups::{
-    PreparedInstanceBackupRestore, create_instance_auto_stop_backup, create_instance_backup,
-    create_instance_pre_restore_backup, delete_instance_backup, list_instance_backups,
+    MAX_SAVE_FILE_LISTING_ENTRIES, PreparedInstanceBackupRestore, SaveFileEntry, SaveFileListing,
+    create_instance_auto_stop_backup, create_instance_backup, create_instance_pre_restore_backup,
+    delete_instance_backup, list_instance_backups, list_instance_save_files,
     prepare_instance_backup_restore, rename_instance_backup, restore_instance_backup,
     restore_prepared_instance_backup, revalidate_prepared_instance_backup_restore,
 };
 pub use broadcast::{
-    insert_instance_broadcast_event, list_instance_broadcast_events,
-    read_instance_broadcast_policy, upsert_instance_broadcast_policy,
+    complete_instance_broadcast_event, insert_instance_broadcast_event,
+    list_instance_broadcast_events, read_instance_broadcast_policy,
+    upsert_instance_broadcast_policy,
 };
 pub use install_save_paths::install_save_directory_prefix;
 pub use instance_autostart::update_instance_autostart;
@@ -739,6 +744,13 @@ pub enum StorageError {
     PortAllocationExhausted { protocol: String, start_port: u16 },
     #[error("module `{module_id}` resolved an invalid saves_path_template: {template}")]
     InvalidModuleSavePathTemplate { module_id: String, template: String },
+}
+
+fn current_unix_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as u64)
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

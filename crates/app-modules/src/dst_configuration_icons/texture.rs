@@ -17,7 +17,32 @@ struct Mipmap {
 /// Read the current PC KTEX container, without executing a game tool or Lua.
 /// Container layout: https://github.com/oblivioncth/Stexatlaser#klei-tex-format
 /// Format identifiers: https://github.com/nsimplex/ktools/blob/master/src/common/ktex/specs.cpp
-pub(super) fn decode_texture(bytes: &[u8]) -> Result<RgbaImage, String> {
+pub(crate) fn decode_texture(bytes: &[u8]) -> Result<RgbaImage, String> {
+    decode_texture_with_alpha(bytes, false)
+}
+
+/// Stex atlas keys may declare `StraightAlpha=true`: those stored RGB channels
+/// already use straight alpha and must not be divided by alpha again.
+/// https://github.com/oblivioncth/Stexatlaser/blob/master/app/src/command/untex-command.cpp
+pub(crate) fn decode_texture_with_alpha(
+    bytes: &[u8],
+    straight_alpha: bool,
+) -> Result<RgbaImage, String> {
+    decode_texture_channels(bytes, straight_alpha, false)
+}
+
+/// Native minimap.ksh samples stored noise RGB independently of noise alpha.
+/// Preserve even alpha-zero RGB and make the transport image opaque before
+/// PNG/resize operations can discard those shader-visible channels.
+pub(crate) fn decode_noise_texture(bytes: &[u8]) -> Result<RgbaImage, String> {
+    decode_texture_channels(bytes, true, true)
+}
+
+fn decode_texture_channels(
+    bytes: &[u8],
+    straight_alpha: bool,
+    noise_rgb: bool,
+) -> Result<RgbaImage, String> {
     if bytes.len() > MAX_TEXTURE_BYTES || bytes.get(..4) != Some(b"KTEX") {
         return Err(String::from("invalid or oversized DST KTEX texture"));
     }
@@ -54,7 +79,11 @@ pub(super) fn decode_texture(bytes: &[u8]) -> Result<RgbaImage, String> {
             }
         }
         let (expected_pitch, expected_size) = encoded_layout(format, width, height);
-        if pitch != expected_pitch || size != expected_size {
+        // Some game-compatible exporters omit pitch (zero), including their
+        // smaller mipmaps. The encoded dimensions still determine the exact
+        // tightly packed byte length; a nonzero pitch must agree with it.
+        // https://github.com/oblivioncth/Stexatlaser/blob/master/app/src/klei/k-tex-io.cpp
+        if (pitch != 0 && pitch != expected_pitch) || size != expected_size {
             return Err(String::from(
                 "DST KTEX mipmap length or pitch does not match its dimensions",
             ));
@@ -86,14 +115,18 @@ pub(super) fn decode_texture(bytes: &[u8]) -> Result<RgbaImage, String> {
         DynamicImage::ImageRgb8(rgb).into_rgba8()
     };
 
-    // Klei PC atlases use bottom-up rows and premultiplied alpha. PNG uses
-    // top-down rows and straight alpha; preserve translucent icon edges.
+    // Klei PC atlases use bottom-up rows and usually premultiplied alpha. PNG
+    // uses top-down rows and straight alpha; honor explicit atlas metadata.
     image::imageops::flip_vertical_in_place(&mut decoded);
     for pixel in decoded.pixels_mut() {
+        if noise_rgb {
+            pixel[3] = 255;
+            continue;
+        }
         let alpha = u32::from(pixel[3]);
         if alpha == 0 {
             pixel.0 = [0; 4];
-        } else if alpha < 255 {
+        } else if !straight_alpha && alpha < 255 {
             for channel in &mut pixel.0[..3] {
                 *channel = ((u32::from(*channel) * 255 + alpha / 2) / alpha).min(255) as u8;
             }

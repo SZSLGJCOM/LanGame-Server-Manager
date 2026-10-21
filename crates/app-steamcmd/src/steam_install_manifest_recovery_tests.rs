@@ -176,9 +176,10 @@ async fn native_manifest_recovery_validates_once_and_preserves_data_and_revision
             .any(|detail| detail.contains("recovery validation completed"))
     );
     assert_eq!(
-        read_game_install_revision(
+        read_program_install_revision(
             Path::new(&fixture.settings.servers_root),
-            &fixture.module.summary.id
+            &fixture.module.summary.id,
+            &fixture.install_root()
         )
         .unwrap(),
         1
@@ -306,8 +307,12 @@ async fn catalog_apps_require_a_prior_acf_and_recover_a_nonfirst_depot_once() {
         let destinations = fs::read_to_string(steamcmd.join("recovery-destinations")).unwrap();
         assert!(destinations.lines().all(|path| Path::new(path) == root));
         assert!(
-            read_game_install_revision(Path::new(&fixture.settings.servers_root), module_id)
-                .is_ok(),
+            read_program_install_revision(
+                Path::new(&fixture.settings.servers_root),
+                module_id,
+                &root
+            )
+            .is_ok(),
             "{module_id}: successful recovery must finish the pending revision"
         );
         fixture.assert_retained(false);
@@ -350,9 +355,10 @@ async fn failed_recovery_preserves_backups_and_pending_revision_without_third_at
     assert_eq!(calls(&fixture), 2);
     assert_eq!(backups(&fixture).len(), 1);
     assert!(
-        read_game_install_revision(
+        read_program_install_revision(
             Path::new(&fixture.settings.servers_root),
-            &fixture.module.summary.id
+            &fixture.module.summary.id,
+            &fixture.install_root()
         )
         .is_err()
     );
@@ -363,19 +369,13 @@ async fn failed_recovery_preserves_backups_and_pending_revision_without_third_at
 async fn cancelling_recovery_reaps_native_process_and_retains_original_manifest() {
     let fixture = recovery_fixture("cancel").await;
     let cancellation = InstallCancellation::new();
-    let result = install_or_update_module_with_progress_and_cancellation(
-        crate::test_install_lock_context(),
-        &fixture.settings,
-        &fixture.module,
-        false,
-        &cancellation,
-        |update| {
+    let result = fixture
+        .install_with_cancellation(&cancellation, |update| {
             if update.detail.contains("Waiting for client config") {
                 cancellation.cancel();
             }
-        },
-    )
-    .await;
+        })
+        .await;
     assert!(matches!(
         result,
         Err(SteamCmdError::InstallCancelled { .. })

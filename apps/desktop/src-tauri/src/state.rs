@@ -21,7 +21,9 @@ pub(crate) use install_operations::{InstallOperationLease, InstallOperationRegis
 pub(crate) use system_snapshot_refresh::SystemSnapshotRefresh;
 pub(crate) use timed_cache::{TimedCache, spawn_timed_cache_refresh};
 mod autostart;
+mod daily_maintenance;
 pub(crate) use autostart::{AutostartBatch, AutostartQueue};
+pub(crate) use daily_maintenance::{DailyMaintenanceCoordinator, DailyMaintenanceWorker};
 mod runtime_reconciliation;
 pub(crate) use runtime_reconciliation::RuntimeExitReconciliation;
 mod runtime_log_streams;
@@ -67,6 +69,7 @@ pub struct DesktopState {
     pub(crate) runtime_reconciliation: Arc<RuntimeExitReconciliation>,
     pub runtime_start_reservations: Arc<Mutex<RuntimeStartReservations>>,
     pub autostart: AutostartQueue,
+    pub(crate) daily_maintenance: DailyMaintenanceCoordinator,
     pub managed_save_policy_revision: AtomicU64,
     pub runtime_log_streams: Mutex<RuntimeLogStreams>,
     lan_directory_worker: Mutex<Option<LanDirectoryWorker>>,
@@ -178,6 +181,7 @@ impl Default for DesktopState {
             runtime_reconciliation: Arc::new(RuntimeExitReconciliation::default()),
             runtime_start_reservations: Arc::new(Mutex::new(RuntimeStartReservations::default())),
             autostart: AutostartQueue::default(),
+            daily_maintenance: DailyMaintenanceCoordinator::default(),
             managed_save_policy_revision: AtomicU64::new(0),
             runtime_log_streams: Mutex::new(RuntimeLogStreams::default()),
             lan_directory_worker: Mutex::new(None),

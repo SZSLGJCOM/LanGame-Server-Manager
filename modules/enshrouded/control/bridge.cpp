@@ -2,6 +2,7 @@
 #include "control_files.h"
 #include "trampoline_unwind.h"
 #include "request_history.h"
+#include "world_save.h"
 #include "vendor/minhook/include/MinHook.h"
 #include <cwchar>
 #include <cstring>
@@ -14,6 +15,10 @@ HANDLE g_stop{}, g_worker{}, g_realDbghelp{};
 SRWLOCK g_stateLock = SRWLOCK_INIT, g_stopLock = SRWLOCK_INIT;
 IdentityCache g_cache{};
 Snapshot g_latest{};
+WorldSaveCache g_worldSaveCache{};
+WorldSaveSnapshot g_worldSaveLatest{};
+WorldSaveCompletion g_worldSaveCompletion{};
+Request g_worldSaveRequest{};
 NativeProfile g_profile{};
 TrampolineUnwind g_updateUnwind{}, g_copyUnwind{};
 ProcessIdentity g_identity{};
@@ -40,7 +45,14 @@ void RejectPending(const char* issue) noexcept {
 }
 void StopSampling() noexcept {
     InterlockedExchange(&g_stopping, 1);
-    AcquireSRWLockExclusive(&g_stateLock); RejectPending("server_stopping"); ReleaseSRWLockExclusive(&g_stateLock);
+    AcquireSRWLockExclusive(&g_stateLock);
+    RejectPending("server_stopping");
+    if (g_worldSaveCompletion.active) {
+        g_worldSaveCompletion.active = false;
+        g_completed = {g_worldSaveRequest, true, "native_save_outcome_unknown"};
+        g_hasCompleted = true; g_dispatching = false;
+    }
+    ReleaseSRWLockExclusive(&g_stateLock);
     // Hooks, observer code and trampolines stay pinned until process exit. A
     // returned callback alone cannot establish that the assembly path has left.
 }
@@ -76,14 +88,15 @@ DWORD WINAPI Worker(void*) noexcept {
         auto writeResponse = [&](const Response& response) { return WriteAtomicFile(root + L"\\response.json", SerializeResponse(g_identity, response)); };
         while (WaitForSingleObject(g_stop, 100) == WAIT_TIMEOUT) {
             if (!PlainDirectory(root) || !ReadBoundedFile(root + L"\\enable", 64, enabled) || enabled != kHeader) break;
-            Snapshot current{}; Response completed{}; bool hasCompleted{};
+            Snapshot current{}; WorldSaveSnapshot saveCurrent{}; Response completed{}; bool hasCompleted{};
             AcquireSRWLockExclusive(&g_stateLock);
-            current = g_latest; hasCompleted = g_hasCompleted;
+            current = g_latest; saveCurrent = g_worldSaveLatest; hasCompleted = g_hasCompleted;
             if (hasCompleted) { completed = g_completed; g_hasCompleted = false; }
             ReleaseSRWLockExclusive(&g_stateLock);
             if (hasCompleted && (!history.Complete(completed) || !writeResponse(completed))) break;
             if (current.sequence && current.sequence != writtenSequence) {
                 if (!WriteAtomicFile(root + L"\\players.json", SerializeSnapshot(g_identity, current))) break;
+                if (!WriteAtomicFile(root + L"\\world-save.json", SerializeWorldSave(g_identity, saveCurrent))) break;
                 if (!publishStatus(current.complete ? "ready" : "incomplete", current.issue)) break;
                 writtenSequence = current.sequence;
             }
@@ -139,17 +152,49 @@ extern "C" void ControlCaptureUpdate(std::uintptr_t server) noexcept {
     g_latest = Capture(g_cache, server, GetTickCount64(), ReadCurrentMemory, nullptr);
     if (g_sequence == UINT64_MAX) { g_cache.degraded = true; g_latest.complete = false; g_latest.issue = "sequence_exhausted"; }
     else g_latest.sequence = ++g_sequence;
+    g_worldSaveLatest = CaptureWorldSave(g_worldSaveCache, server, g_profile.saveWorld != nullptr,
+        g_latest.sequence, g_latest.tickMs, ReadCurrentMemory, nullptr);
+    if (g_worldSaveCompletion.active) {
+        const auto result = g_cache.degraded ? WorldSaveResult::Unknown
+            : ObserveWorldSaveCompletion(g_worldSaveCompletion, server, g_worldSaveCache,
+                GetTickCount64(), ReadCurrentMemory, nullptr);
+        if (result != WorldSaveResult::Waiting) {
+            g_worldSaveCompletion.active = false;
+            g_completed = {g_worldSaveRequest, true,
+                result == WorldSaveResult::Completed ? "none" : result == WorldSaveResult::Failed
+                    ? "native_save_failed" : "native_save_outcome_unknown",
+                result == WorldSaveResult::Completed};
+            g_hasCompleted = true; g_dispatching = false;
+        }
+    }
     Request request{}; bool execute = false;
     if (g_hasPending && !g_hasCompleted) {
         request = g_pending; g_hasPending = false;
         const auto issue = g_cache.degraded ? "native_context_changed"
-            : ValidateRequest(request, g_identity, g_latest, GetTickCount64());
+            : request.action == Action::SaveWorld
+                ? ValidateWorldSave(request, g_identity, g_worldSaveLatest, GetTickCount64())
+                : ValidateRequest(request, g_identity, g_latest, GetTickCount64());
         g_completed = {request, false, issue};
         if (!std::strcmp(issue, "none")) { execute = true; g_dispatching = true; }
         else g_hasCompleted = true;
     }
     ReleaseSRWLockExclusive(&g_stateLock);
     if (!execute) return;
+    if (request.action == Action::SaveWorld) {
+        // The void return only admits the native operation. Keep the request
+        // single-flight until its exact context/sequence commits or is unknown.
+        using SaveWorld = void(*)(void*);
+        reinterpret_cast<SaveWorld>(g_profile.saveWorld)(reinterpret_cast<void*>(server));
+        AcquireSRWLockExclusive(&g_stateLock);
+        if (InterlockedCompareExchange(&g_stopping, 0, 0)
+            || !BeginWorldSaveCompletion(g_worldSaveCompletion, server, g_worldSaveLatest,
+                g_worldSaveCache, GetTickCount64(), ReadCurrentMemory, nullptr)) {
+            g_completed = {request, true, "native_save_outcome_unknown"};
+            g_hasCompleted = true; g_dispatching = false;
+        } else g_worldSaveRequest = request;
+        ReleaseSRWLockExclusive(&g_stateLock);
+        return;
+    }
     // Two native inputs, independently verified for this exact executable. Its
     // own hash/session/immunity checks are preserved. No native return is acks.
     NativeEvent event{}; event.accountHash = request.accountId; event.action = static_cast<std::uint8_t>(request.action);

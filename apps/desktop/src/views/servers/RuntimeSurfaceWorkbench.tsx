@@ -43,6 +43,7 @@ import {
 } from "../../runtime-action-state";
 
 interface RuntimeSurfaceWorkbenchProps {
+  active?: boolean;
   steamAccount?: SteamWorkshopAccountState;
   steamCmdSelected?: boolean;
   onSteamCmdSelected?: (selected: boolean) => void;
@@ -217,11 +218,17 @@ function buildRuntimeConsoleTabs(
 }
 
 export function RuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
-  return !props.archive && (props.moduleDetails?.workshop?.provider === "steam"
+  const showSteamCmd = !props.archive && (props.moduleDetails?.workshop?.provider === "steam"
     || moduleRequiresSteamCmd(props.moduleDetails?.summary ?? {}, props.moduleDetails?.install)) && props.steamAccount?.available
-    && props.steamCmdSelected && props.onSteamCmdSelected
-    ? <SteamWorkshopAccountConsole account={props.steamAccount} onShowServer={() => props.onSteamCmdSelected?.(false)} />
-    : <GameRuntimeSurfaceWorkbench {...props} />;
+    && props.steamCmdSelected && props.onSteamCmdSelected;
+  // Startup output belongs to the in-flight operation, including while its
+  // SteamCMD or another detail tab is visible. Keep its listener mounted.
+  return <>
+    {!showSteamCmd || props.startupPending ? <GameRuntimeSurfaceWorkbench {...props}
+      active={props.active !== false && !showSteamCmd} /> : null}
+    {showSteamCmd && props.steamAccount ? <SteamWorkshopAccountConsole account={props.steamAccount}
+      active={props.active} onShowServer={() => props.onSteamCmdSelected?.(false)} /> : null}
+  </>;
 }
 
 function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
@@ -628,6 +635,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   }, [props.details.summary.id, props.onRetryReads, readOnly]);
 
   useLayoutEffect(() => {
+    if (props.active === false) return;
     const follow = consoleFollowRef.current;
     const terminal = runtimeConsoleRef.current;
     if (follow.scope !== consoleScrollScope || (commandFeedback && commandFeedback !== follow.feedback)) {
@@ -646,7 +654,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       if (follow.following) terminal.scrollTop = terminal.scrollHeight;
       follow.scrollTop = terminal.scrollTop;
     }
-  }, [consoleScrollScope, runtimeLogText, commandFeedback]);
+  }, [consoleScrollScope, runtimeLogText, commandFeedback, props.active]);
 
   useEffect(() => {
     revealedReadErrorsRef.current.clear();
@@ -784,7 +792,8 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       : t("servers.details.runtimeDiagnosticsClear", undefined, "All clear");
 
   return (
-    <section className="detail-stack server-module-stack">
+    <section className="detail-stack server-module-stack" hidden={props.active === false}
+      style={props.active === false ? { display: "none" } : undefined}>
       <article className="runtime-box workbench-card workbench-card--wide server-runtime-surface-card server-runtime-console-card">
         <div className="server-runtime-console-frame">
           <div className="server-runtime-console-toolbar server-runtime-console-toolbar--primary">

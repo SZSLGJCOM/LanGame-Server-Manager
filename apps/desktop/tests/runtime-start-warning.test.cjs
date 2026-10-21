@@ -15,6 +15,26 @@ const warning = { code: "mod_update_using_cache", provider: "steam_workshop", re
   item_ids: ["1715971", "941450"], message: "https://service.invalid/?signature=DO_NOT_RENDER_SECRET",
   log_path: "C:/fixture/logs/start.log", map_key: "main", http_status: null };
 
+test("native first-world warnings survive manual and background receipts without Mod fallback claims", () => {
+  const entry = { code: "world_initialization_incomplete", provider: null, reason: null, item_ids: [],
+    message: "PRIVATE_RESPONSE", log_path: "C:/fixture/logs/start.log", map_key: null, http_status: null };
+  assert.deepEqual(warnings.readRuntimeStartWarnings([entry]), [entry]);
+  for (const fields of [{ provider: "steam_workshop" }, { reason: "network" }, { item_ids: ["42"] },
+    { map_key: "main" }, { http_status: 503 }, { log_path: "https://native.invalid" }]) {
+    assert.deepEqual(warnings.readRuntimeStartWarnings([{ ...entry, ...fields }]), []);
+  }
+  for (const locale of ["zh-CN", "en-US"]) {
+    const rendered = warnings.formatRuntimeStartWarning(t(locale), entry, "ASTRONEER");
+    assert.match(rendered.text, locale === "zh-CN" ? /正在运行.*初始化未完成/ : /running.*initialization did not complete/);
+    assert.doesNotMatch(JSON.stringify(rendered), /PRIVATE_RESPONSE|cache|Mod|runtime\.startWarning/);
+  }
+  const result = serverStartSuccessMessage({ summary: { name: "ASTRONEER" }, run_id: 3, warnings: [entry] }, "astro");
+  assert.equal(result.key, "activity.serverStartWorldInitializationIncomplete");
+  assert.equal(result.tone, "warning");
+  assert.deepEqual(result.runtimeStartNotice.warnings, [entry]);
+  assert.equal(warnings.runtimeStartJobNotices([{ kind: "StartInstance", status: "Completed", id: "auto", label: "Autostart ASTRONEER", warnings: [entry] }]).length, 1);
+});
+
 test("cache fallback warnings are bilingual, scoped, and never echo backend response bodies", () => {
   for (const provider of ["steam_workshop", "curse_forge"]) {
     for (const locale of ["zh-CN", "en-US"]) {

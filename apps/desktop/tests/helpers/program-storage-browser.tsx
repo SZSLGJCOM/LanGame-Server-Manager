@@ -180,7 +180,7 @@ async function run() {
   page = "maintenance";
   await act(async () => { draw(); });
   const maintenanceHeight = element(".operation-content").getBoundingClientRect().height;
-  await click(".button-row .inline-confirm-action > button");
+  await click(".instance-program-action");
   await click(".inline-confirm-submit");
   check(calls[2].command === "update_instance_program" && calls[2].args.instanceId === details.summary.id, "Shared maintenance targets this instance's actual program version");
   notice();
@@ -196,7 +196,7 @@ async function run() {
 
   report = { ...report, mode: "private", runtime_path: "fixture/instance/runtime" };
   await act(async () => { draw(); });
-  const buttons = fixture.querySelectorAll<HTMLButtonElement>(".button-row .inline-confirm-action > button");
+  const buttons = fixture.querySelectorAll<HTMLButtonElement>(".instance-program-action");
   await act(async () => { buttons[1].click(); });
   await click(".inline-confirm-submit");
   check(calls[4].command === "update_instance_program" && calls[4].args.instanceId === details.summary.id && calls[4].args.validate === true, "Independent verification targets only this instance");
@@ -204,21 +204,21 @@ async function run() {
   const automaticSettings = details.settings_json;
   details = { ...details, settings_json: JSON.stringify({ ...JSON.parse(automaticSettings), program_update: { policy: "pinned" } }) };
   await act(async () => { draw(); });
-  check([...fixture.querySelectorAll<HTMLButtonElement>(".button-row button")].every((button) => button.disabled),
+  check([...fixture.querySelectorAll<HTMLButtonElement>(".instance-program-action")].every((button) => button.disabled),
     "Pinned instance disables update and verification before either command can be dispatched");
-  const pinnedHelp = element(".button-row").getAttribute("aria-describedby");
+  const pinnedHelp = element(".configuration-action-help").getAttribute("aria-describedby");
   check(pinnedHelp && document.getElementById(pinnedHelp)?.textContent?.includes("keeps its current version"),
     "Pinned maintenance explains the required policy change accessibly");
-  await click(".button-row button");
+  await click(".instance-program-action");
   check(calls.length === 5, "Disabled pinned maintenance dispatched an update");
   details = { ...details, settings_json: automaticSettings };
   await act(async () => { draw(); });
-  check([...fixture.querySelectorAll<HTMLButtonElement>(".button-row button")].every((button) => !button.disabled),
+  check([...fixture.querySelectorAll<HTMLButtonElement>(".instance-program-action")].every((button) => !button.disabled),
     "Removing the pin restores stopped-instance program maintenance");
 
   details = { ...details, summary: { ...details.summary, status: "Running", active_process_count: 1 } };
   await act(async () => { draw(); });
-  check([...fixture.querySelectorAll<HTMLButtonElement>(".button-row button")].every((button) => button.disabled), "Running instance disables program maintenance");
+  check([...fixture.querySelectorAll<HTMLButtonElement>(".instance-program-action")].every((button) => button.disabled), "Running instance disables program maintenance");
   page = "create";
   module = await invokeMock<ModuleDetails>("read_module_details", { moduleId: "minecraft" });
   module = { ...module, summary: { ...module.summary, install_state: "Installed" } };

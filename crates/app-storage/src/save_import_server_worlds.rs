@@ -1,6 +1,8 @@
 //! Existing dedicated-server data only. Native identities remain unchanged;
 //! mappings isolate world payloads from each target's host configuration.
 use super::*;
+// Native slot paths and names are shared with the read-only save slot listing.
+use crate::backups::save_file_listing::slots;
 
 #[path = "save_import_server_worlds_bindings.rs"]
 mod bindings;
@@ -72,7 +74,7 @@ pub(super) fn plan(
         "sonsoftheforest" => {
             continuing(context, source, "save_mode")?;
             let slot = slot(context, source, None)?;
-            let relative = PathBuf::from(format!("DedicatedServer/Multiplayer/{slot:010}"));
+            let relative = PathBuf::from(slots::sons_slot_dir(slot));
             let directory = require_directory(tree, source, &relative)?;
             let zip = relative.join("SaveData.zip");
             if file(tree, &zip) {
@@ -97,10 +99,8 @@ pub(super) fn plan(
         }
         "theforest" => {
             continuing(context, source, "init_type")?;
-            let relative = PathBuf::from(format!(
-                "Multiplayer/Slot{}",
-                slot(context, source, Some(5))?
-            ));
+            let relative =
+                PathBuf::from(slots::theforest_slot_dir(slot(context, source, Some(5))?));
             let directory = require_directory(tree, source, &relative)?;
             if !tree.entries.keys().any(|path| {
                 path.parent() == Some(directory.as_path())
@@ -249,13 +249,7 @@ fn setting<'a>(context: &'a Context, source: &Path, key: &str) -> Result<&'a str
         .settings
         .get(key)
         .and_then(Value::as_str)
-        .filter(|name| {
-            !name.is_empty()
-                && !name.contains(['/', '\\', ':'])
-                && !matches!(*name, "." | "..")
-                && !name.ends_with(['.', ' '])
-                && !name.chars().any(char::is_control)
-        })
+        .filter(|name| slots::is_native_name(name))
         .ok_or_else(|| {
             invalid(
                 source,
@@ -285,17 +279,12 @@ fn continuing(context: &Context, source: &Path, key: &str) -> Result<(), Storage
 }
 
 fn slot(context: &Context, source: &Path, maximum: Option<u64>) -> Result<u64, StorageError> {
-    context
-        .settings
-        .get("save_slot")
-        .and_then(Value::as_u64)
-        .filter(|slot| *slot > 0 && maximum.is_none_or(|max| *slot <= max))
-        .ok_or_else(|| {
-            invalid(
-                source,
-                "Set a valid native Save Slot in Configuration first.",
-            )
-        })
+    slots::configured_save_slot(&context.settings, maximum).ok_or_else(|| {
+        invalid(
+            source,
+            "Set a valid native Save Slot in Configuration first.",
+        )
+    })
 }
 
 fn read_source_json(

@@ -89,6 +89,13 @@ mod windows_console_control;
 #[cfg(windows)]
 mod windows_exit_watchdog;
 #[cfg(windows)]
+mod windows_moria_console;
+#[cfg(windows)]
+pub use windows_moria_console::{
+    run_if_requested as run_moria_console_exit_helper_if_requested,
+    run_worker as run_moria_console_exit_helper_worker,
+};
+#[cfg(windows)]
 mod windows_unreal_console;
 #[cfg(windows)]
 mod windows_window_close;
@@ -2284,6 +2291,11 @@ unsafe extern "system" {
     ) -> *mut std::ffi::c_void;
     fn CloseDesktop(desktop: *mut std::ffi::c_void) -> i32;
 }
+
+/// Child console pipes buffer several commands, so a process that is still
+/// loading does not push a short console line into a partial non-blocking write.
+#[cfg(windows)]
+const CHILD_PIPE_BUFFER_BYTES: u32 = 64 * 1024;
 
 #[cfg(windows)]
 #[link(name = "kernel32")]

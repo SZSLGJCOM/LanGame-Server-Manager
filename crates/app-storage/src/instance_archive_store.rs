@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ pub(crate) const MAX_SNAPSHOT_BYTES: usize = 32 * 1024 * 1024;
 const MAX_SNAPSHOT_ROWS: i64 = 100_000;
 pub(crate) type SavedRow = BTreeMap<String, Value>;
 
-const TABLES: [(&str, &str); 6] = [
+const TABLES: [(&str, &str); 9] = [
     (
         "instances",
         "id,name,module_id,bind_ip,install_id,status,data_path,config_path,logs_path,saves_path,env_json,args_json,autostart,crash_restart_limit,auto_backup_on_stop,backup_retention_count,created_at,updated_at,runtime_mode",
@@ -38,7 +38,28 @@ const TABLES: [(&str, &str); 6] = [
         "instance_broadcast_events",
         "event_id,instance_id,module_id,source,rule_id,message,ai_provider,ai_model,action_id,transport,command_preview,status,response_text,error_message,created_at_unix_ms,initiator,policy_snapshot_json",
     ),
+    (
+        "instance_maintenance_schedules",
+        "instance_id,action,enabled,time_local,revision,last_local_date,run_token,owner_session,run_status,started_at_unix_ms,completed_at_unix_ms,detail",
+    ),
+    (
+        "player_history_cursors",
+        "run_id,byte_offset,generation,last_elapsed_ms,source_identity,completed,polled_at,issue",
+    ),
+    (
+        "player_history_events",
+        "id,instance_id,run_id,process_key,generation,byte_offset,kind,player_name,account_id,message,log_time,elapsed_ms,estimated_at_unix_ms,duration_ms,paired_event_id,session_ambiguous",
+    ),
 ];
+
+// Earlier archives predate these optional manager records. Their absence does
+// not invalidate the original six recovery tables or fabricate new history.
+fn optional_table(table: &str) -> bool {
+    matches!(
+        table,
+        "instance_maintenance_schedules" | "player_history_cursors" | "player_history_events"
+    )
+}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub(crate) struct Snapshot {
@@ -232,10 +253,13 @@ fn filter_instance_rows(query: &mut QueryBuilder<Sqlite>, table: &str, instance_
         .push(match table {
             "instances" => "id = ",
             "game_installs" => "id = (SELECT install_id FROM instances WHERE id = ",
+            "player_history_cursors" => {
+                "run_id IN (SELECT id FROM instance_runs WHERE instance_id = "
+            }
             _ => "instance_id = ",
         })
         .push_bind(instance_id.to_owned());
-    if table == "game_installs" {
+    if matches!(table, "game_installs" | "player_history_cursors") {
         query.push(")");
     }
 }
@@ -257,7 +281,10 @@ pub(crate) fn snapshot(archive: &Archive) -> Result<Snapshot, StorageError> {
     }
     let snapshot: Snapshot = serde_json::from_str(text)?;
     if !matches!(snapshot.version, 1..=3)
-        || snapshot.tables.len() != TABLES.len()
+        || snapshot
+            .tables
+            .keys()
+            .any(|name| !TABLES.iter().any(|(table, _)| table == name))
         || (snapshot.version == 1
             && (snapshot.program.is_some()
                 || snapshot.restored_config_sha256.is_some()
@@ -268,7 +295,24 @@ pub(crate) fn snapshot(archive: &Archive) -> Result<Snapshot, StorageError> {
             "Archive recovery metadata version or table set is unsupported.",
         ));
     }
+    let history_run_ids = snapshot
+        .tables
+        .get("instance_runs")
+        .into_iter()
+        .flatten()
+        .filter_map(|row| row.get("id").and_then(Value::as_i64))
+        .collect::<BTreeSet<_>>();
+    let history_event_ids = snapshot
+        .tables
+        .get("player_history_events")
+        .into_iter()
+        .flatten()
+        .filter_map(|row| row.get("id").and_then(Value::as_i64))
+        .collect::<BTreeSet<_>>();
     for (table, columns) in TABLES {
+        if optional_table(table) && !snapshot.tables.contains_key(table) {
+            continue;
+        }
         let rows = snapshot.tables.get(table).ok_or_else(|| {
             invalid(
                 Path::new(&archive.leaf),
@@ -305,6 +349,23 @@ pub(crate) fn snapshot(archive: &Archive) -> Result<Snapshot, StorageError> {
                     Path::new(&archive.leaf),
                     "Archive recovery row belongs to another instance.",
                 ));
+            }
+            if matches!(table, "player_history_cursors" | "player_history_events") {
+                let run_id = row.get("run_id").and_then(Value::as_i64);
+                if run_id.is_none_or(|id| !history_run_ids.contains(&id)) {
+                    return Err(invalid(
+                        Path::new(&archive.leaf),
+                        "Archived player history belongs to another server run.",
+                    ));
+                }
+                if let Some(paired) = row.get("paired_event_id").and_then(Value::as_i64)
+                    && !history_event_ids.contains(&paired)
+                {
+                    return Err(invalid(
+                        Path::new(&archive.leaf),
+                        "Archived player history session pair is missing.",
+                    ));
+                }
             }
         }
     }

@@ -1,3 +1,4 @@
+use super::super::commands_stdin_dispatch::dispatch_managed_stdin_command;
 use super::*;
 use app_runtime::StartupConsoleWriter;
 
@@ -7,17 +8,20 @@ mod protocol;
 #[path = "dst_startup_watchdog.rs"]
 mod startup_watchdog;
 
-const STOP_TIMEOUT: Duration = Duration::from_secs(90);
-const PROBE_INTERVAL: Duration = Duration::from_secs(2);
+#[path = "dst_startup_probe.rs"]
+mod startup_probe;
 
-type ConsoleWrite = tokio::task::JoinHandle<(StartupConsoleWriter, Result<(), String>)>;
+#[path = "commands_dst_save.rs"]
+pub(in crate::commands) mod immediate_save;
+
+const STOP_TIMEOUT: Duration = Duration::from_secs(90);
+type ConsoleWrite = tokio::task::JoinHandle<(StartupConsoleWriter, std::io::Result<()>)>;
 
 struct StartupProbe {
     writer: Option<StartupConsoleWriter>,
     pending: Option<ConsoleWrite>,
     log: ProbeLog,
-    ready: bool,
-    next_write: Instant,
+    schedule: startup_probe::ProbeSchedule,
 }
 
 struct ProbeLog {
@@ -97,8 +101,7 @@ pub(super) async fn wait_until_ready(
                 ),
                 pending: None,
                 log: ProbeLog::new(&plan.log_path),
-                ready: false,
-                next_write: Instant::now(),
+                schedule: startup_probe::ProbeSchedule::new(Instant::now()),
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -134,8 +137,14 @@ pub(super) async fn wait_until_ready(
                 let (writer, result) = pending
                     .await
                     .map_err(|error| format!("DST startup writer failed: {error}"))?;
+                let healthy = writer.is_healthy();
                 probe.writer = Some(writer);
-                result?;
+                probe
+                    .schedule
+                    .write_finished(result, healthy)
+                    .map_err(|error| {
+                        format!("DST {} startup console failed: {error}", plan.display_name)
+                    })?;
             }
             for line in probe.log.lines().await? {
                 // Download failure can be followed by a playable vanilla world.
@@ -146,12 +155,12 @@ pub(super) async fn wait_until_ready(
                         plan.display_name, plan.log_path
                     ));
                 }
-                probe.ready |= protocol::is_ack(&line, "READY", &nonce);
+                probe.schedule.observe(&line, &nonce);
                 if protocol::world_generation_progress(&line) {
                     watchdog.observe_progress(Instant::now());
                 }
             }
-            if !probe.ready && probe.pending.is_none() && Instant::now() >= probe.next_write {
+            if probe.pending.is_none() && probe.schedule.may_write(Instant::now()) {
                 let mut writer = probe
                     .writer
                     .take()
@@ -165,17 +174,15 @@ pub(super) async fn wait_until_ready(
                     },
                 );
                 probe.pending = Some(tokio::task::spawn_blocking(move || {
-                    let result = writer
-                        .write_line(&command)
-                        .map_err(|error| error.to_string());
+                    let result = writer.write_line(&command);
                     (writer, result)
                 }));
-                probe.next_write = Instant::now() + PROBE_INTERVAL;
+                probe.schedule.write_started(Instant::now());
             }
         }
         if probes
             .iter()
-            .all(|probe| probe.ready && probe.pending.is_none())
+            .all(|probe| probe.schedule.is_ready() && probe.pending.is_none())
         {
             return Ok(());
         }
@@ -183,7 +190,7 @@ pub(super) async fn wait_until_ready(
             let waiting = processes
                 .iter()
                 .zip(&probes)
-                .filter(|(_, probe)| !probe.ready)
+                .filter(|(_, probe)| !probe.schedule.is_ready())
                 .map(|((plan, _), _)| plan.display_name.as_str())
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -252,7 +259,7 @@ async fn save_and_shutdown_with_timeout(
     // Send once to each surviving shard. Each native save callback acknowledges
     // that shard; a dead Master must not prevent surviving secondaries saving.
     for process in &running {
-        super::dispatch_managed_stdin_command(
+        dispatch_managed_stdin_command(
             state, &details.summary.id, Some(&process.process_key), &command, None,
         ).await.map_err(|error| format!("DST {} save/stop command failed: {error}. The remaining server processes have not been forcibly stopped.", process.display_name))?;
     }

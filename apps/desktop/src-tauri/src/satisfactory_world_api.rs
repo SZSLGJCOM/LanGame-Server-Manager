@@ -189,7 +189,9 @@ impl Api {
         let request = request.build().map_err(|_| ApiError::InvalidResponse)?;
         #[cfg(test)]
         let result = if let Some(fixture) = &self.fixture {
-            fixture.reply(function, &data)
+            let result = fixture.reply(function, &data);
+            fixture.wait_for_reply(function).await;
+            result
         } else {
             execute(&self.client, request, mutation).await
         };

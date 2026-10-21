@@ -83,13 +83,16 @@ async function run() {
   details = { ...source, summary: { ...source.summary, status: "Stopped", active_process_count: 0 }, active_run: null,
     settings_json: '{"server_name":"Keep this world","mods":["123"]}' };
   await render(); await waitFor(() => Boolean(fixture.querySelector("select")));
+  // The editor is a settings chip; open its popover to reach the controls.
+  await act(async () => select<HTMLButtonElement>(".maintenance-chip__summary").click());
   check(select<HTMLSelectElement>("select").value === "automatic", "Existing instance did not default to automatic");
   check(select<HTMLButtonElement>("button[type=submit]").disabled, "Unchanged policy can be submitted");
   check(fixture.textContent?.includes("每次启动前检查官方版本"), "Automatic behavior is unclear"); checks++;
 
   await change("pinned");
   check(fixture.textContent?.includes("任一实例"), "Shared version protection is not explained");
-  check(select<HTMLSelectElement>("select").getAttribute("aria-describedby"), "Policy has no accessible explanation");
+  const hintId = select("label .maintenance-help").getAttribute("aria-describedby");
+  check(hintId && document.getElementById(hintId)?.textContent?.includes("启动时使用现有程序"), "Policy has no accessible explanation");
   await act(async () => select<HTMLSelectElement>("select").focus());
   await act(async () => {
     const response = await fetch(`/__reliability_key/${nonce}/Tab`, { method: "POST" });
@@ -120,6 +123,8 @@ async function run() {
   root = createRoot(fixture);
   details = { ...details, settings_json: localStorage.getItem(storageKey)! };
   await render(); await waitFor(() => Boolean(fixture.querySelector("select")));
+  // The editor is a settings chip; open its popover to reach the controls.
+  await act(async () => select<HTMLButtonElement>(".maintenance-chip__summary").click());
   check(select<HTMLSelectElement>("select").value === "pinned", "Remount did not read the saved pin"); checks++;
 
   await change("automatic");

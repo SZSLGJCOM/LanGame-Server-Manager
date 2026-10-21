@@ -22,6 +22,96 @@ fn fixture() -> Value {
     packet(vec![player(SESSION, STEAM, &format!("Steam_{STEAM}"))])
 }
 
+fn save_packet() -> Value {
+    let mut value = packet(Vec::new());
+    value["op"] = json!("save");
+    value["capabilities"] = json!(["query", "reload", "kick", "save"]);
+    value["world_save"] = json!({
+        "previous_save_number": 7,
+        "committed_save_number": 8,
+        "evidence": "native_commit"
+    });
+    value
+}
+
+fn decode_save(value: Value) -> Result<ControlSnapshot, ResponseError> {
+    parse(
+        &serde_json::to_vec(&value).unwrap(),
+        NONCE,
+        PID,
+        Operation::Save,
+    )
+}
+
+#[test]
+fn save_success_requires_a_correlated_native_commit_and_exact_counter_transition() {
+    let response = decode_save(save_packet()).expect("confirmed save");
+    let receipt = response.world_save.expect("native receipt");
+    assert_eq!(receipt.previous_save_number, 7);
+    assert_eq!(receipt.committed_save_number, 8);
+    for replacement in [
+        Value::Null,
+        json!({"previous_save_number":7,"committed_save_number":7,"evidence":"native_commit"}),
+        json!({"previous_save_number":7,"committed_save_number":9,"evidence":"native_commit"}),
+        json!({"previous_save_number":7,"committed_save_number":8,"evidence":"thread_finished"}),
+        json!({"previous_save_number":7,"committed_save_number":8,"evidence":"native_commit","path":"other"}),
+    ] {
+        let mut input = save_packet();
+        input["world_save"] = replacement;
+        assert!(decode_save(input).is_err());
+    }
+    let mut no_receipt = save_packet();
+    no_receipt.as_object_mut().unwrap().remove("world_save");
+    assert!(decode_save(no_receipt).is_err());
+    let mut wrapped = save_packet();
+    wrapped["world_save"]["previous_save_number"] = json!(u32::MAX);
+    wrapped["world_save"]["committed_save_number"] = json!(0);
+    assert!(decode_save(wrapped).is_ok());
+}
+
+#[test]
+fn save_receipts_cannot_upgrade_a_failure_or_an_unrelated_operation() {
+    let mut failure = save_packet();
+    failure["status"] = json!("error");
+    failure["error"] = json!("save_failed");
+    assert!(matches!(
+        decode_save(failure.clone()),
+        Err(ResponseError::Invalid(_))
+    ));
+    failure.as_object_mut().unwrap().remove("world_save");
+    assert_eq!(
+        decode_save(failure).unwrap_err(),
+        ResponseError::Rejected("save_failed".into())
+    );
+    let mut query = save_packet();
+    query["op"] = json!("query");
+    assert!(decode(query).is_err());
+}
+
+#[test]
+fn save_native_diagnostics_remain_bounded_failures_without_a_commit_receipt() {
+    let mut failure = save_packet();
+    failure["status"] = json!("error");
+    failure.as_object_mut().unwrap().remove("world_save");
+    let prefix = "native_error type=System.InvalidOperationException at=ZNet.HardSaveBlock ";
+    let detail = format!("{prefix}{}", "x".repeat(512 - prefix.len()));
+    failure["error"] = json!(&detail);
+    assert_eq!(
+        decode_save(failure.clone()).unwrap_err(),
+        ResponseError::Rejected(detail.clone())
+    );
+    for invalid in [format!("{detail}x"), format!("{prefix}\nprivate-detail")] {
+        let mut input = failure.clone();
+        input["error"] = json!(invalid);
+        assert!(matches!(decode_save(input), Err(ResponseError::Invalid(_))));
+    }
+    failure["world_save"] = save_packet()["world_save"].clone();
+    assert!(matches!(
+        decode_save(failure),
+        Err(ResponseError::Invalid(_))
+    ));
+}
+
 fn decode(value: Value) -> Result<ControlSnapshot, ResponseError> {
     parse(
         &serde_json::to_vec(&value).unwrap(),

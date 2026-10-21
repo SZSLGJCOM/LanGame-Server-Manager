@@ -1,7 +1,7 @@
 schema_version = 1
 module_id = "sonsoftheforest"
 primary_process_key = "main"
-readiness_timeout_ms = 180000
+readiness_timeout_ms = 600000
 poll_interval_ms = 1000
 stability_window_ms = 3000
 probe_mode = "all"
@@ -23,3 +23,11 @@ id = "world-loaded"
 kind = "log_marker"
 sources = [{ kind = "process", process_key = "main" }]
 any_of = ["#DSL Dedicated server loaded."]
+
+# World-loaded/A2S can precede the native autosave component's readiness.
+# This one-time marker validates the actual save preflight without saving.
+[[probes]]
+id = "world-save-ready"
+kind = "log_marker"
+sources = [{ kind = "install", path = "_Redloader/Latest.log" }]
+any_of = ["LGSM_SONS_SAVE_READY"]

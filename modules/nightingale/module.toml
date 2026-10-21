@@ -5,6 +5,13 @@ description = "Dedicated server module for Nightingale via SteamCMD."
 steam_app_id = 3796810
 supported_platforms = ["windows"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save current realm"
+label_zh_cn = "立即保存领域"
+transport = "nightingale_save"
+command_template = "save"
+
 [install]
 shared_game_dir = "nightingale"
 verification_path = "NWXServer.exe"

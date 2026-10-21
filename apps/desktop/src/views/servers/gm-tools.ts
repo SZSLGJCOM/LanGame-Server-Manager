@@ -2,11 +2,7 @@ import type { RuntimeCommandDispatchOptions } from "../../types";
 import type { TranslateFn } from "../../i18n";
 import { GM_TOOL_MODULES } from "./gm-tool-capability";
 export { moduleHasGmTools } from "./gm-tool-capability";
-import {
-  DST_GM_ITEM_OPTIONS,
-  searchDstGmItemOptions,
-  type DstGmItemOption
-} from "./dst-gm-item-catalog";
+export { getDstPrefabOptions, searchDstPrefabOptions } from "./gm-tools-dst";
 import {
   ARK_GM_CREATURE_OPTIONS,
   searchArkGmCreatureOptions as searchArkGmCreatureCatalogOptions,
@@ -79,18 +75,9 @@ export interface GmToolCatalog {
   tools: GmToolDefinition[];
 }
 
-export interface GmCommandBuildResult {
-  commands: string[];
-  processKey: string | null;
-  dispatchOptions: RuntimeCommandDispatchOptions;
-  preview: string;
-  error: string | null;
-}
-
-type GmCommandBuilder = (
-  values: Record<string, string>,
-  t?: TranslateFn
-) => GmCommandBuildResult;
+export type { GmCommandBuildResult } from "./gm-tool-values";
+import { commandResult, errorResult, readEnum, readInteger, readRequiredToken, type GmCommandBuildResult, type GmCommandBuilder } from "./gm-tool-values";
+import { DST_GM_BUILDERS, DST_GM_TOOLS } from "./gm-tools-dst";
 
 type TranslateParams = Record<string, string | number | boolean | null | undefined>;
 
@@ -122,15 +109,9 @@ const ARK_REMOTE_ADMIN_OPTIONS: RuntimeCommandDispatchOptions = {
   throwOnError: true
 };
 
-const DST_STDIN_OPTIONS: RuntimeCommandDispatchOptions = {
-  transport: "stdin",
-  throwOnError: true
-};
-
 const ARK_CREATURE_OPTIONS: GmToolFieldOption[] = ARK_GM_CREATURE_OPTIONS;
 const ARK_ITEM_BLUEPRINT_OPTIONS: GmToolFieldOption[] = ARK_GM_ITEM_OPTIONS;
 const ARK_ITEM_NUMERIC_OPTIONS: GmToolFieldOption[] = ARK_GM_NUMERIC_ITEM_OPTIONS;
-const DST_PREFAB_OPTIONS: GmToolFieldOption[] = DST_GM_ITEM_OPTIONS;
 const ARK_DEFAULT_ITEM_BLUEPRINT =
   "Blueprint'/Game/PrimalEarth/CoreBlueprints/Resources/PrimalItemResource_Stone.PrimalItemResource_Stone'";
 
@@ -235,98 +216,9 @@ const CATALOGS: GmToolCatalog[] = [
   {
     moduleIds: GM_TOOL_MODULES.dontstarve,
     title: "DST GM Tools",
+    // Rendered by the world map's tool panels (DstWorldMapWorkbench), not the generic form: fields only declare builder inputs and defaults.
     description: "Give items to inventory or spawn entities near players, revive players, and change season or weather.",
-    tools: [
-      {
-        id: "dst_give_item_to_player",
-        category: "Rewards",
-        title: "Give or spawn item",
-        description: "Use the selected shard's c_listallplayers() index to give inventory items or spawn entities nearby, for one player or everyone.",
-        submitLabel: "Run item action",
-        fields: [
-          {
-            key: "shard",
-            label: "Shard",
-            type: "select",
-            defaultValue: "master",
-            options: [
-              { value: "master", label: "Master / Surface", labelKey: "servers.gmTools.options.shard.master" },
-              { value: "caves", label: "Caves / Underground", labelKey: "servers.gmTools.options.shard.caves" }
-            ]
-          },
-          { key: "playerIndex", label: "Player index", type: "number", defaultValue: "1", min: 1, step: 1, required: true },
-          { key: "amount", label: "Amount", type: "number", defaultValue: "20", min: 1, max: 999, step: 1, required: true },
-          { key: "allPlayers", label: "All players", type: "checkbox", defaultValue: "false" },
-          { key: "placeInInventory", label: "Put in inventory", type: "checkbox", defaultValue: "true" },
-          {
-            key: "prefab",
-            label: "Item / Creature",
-            type: "text",
-            placeholder: "log",
-            defaultValue: "log",
-            required: true,
-            options: DST_PREFAB_OPTIONS
-          }
-        ]
-      },
-      {
-        id: "dst_revive_player",
-        category: "Players",
-        title: "Revive player",
-        description: "Revive a ghost on the selected shard using the player index from that shard's c_listallplayers().",
-        submitLabel: "Revive",
-        fields: [
-          {
-            key: "shard", label: "Shard", type: "select", defaultValue: "master",
-            options: [
-              { value: "master", label: "Master / Surface", labelKey: "servers.gmTools.options.shard.master" },
-              { value: "caves", label: "Caves / Underground", labelKey: "servers.gmTools.options.shard.caves" }
-            ]
-          },
-          { key: "playerIndex", label: "Player index", type: "number", defaultValue: "1", min: 1, step: 1, required: true }
-        ]
-      },
-      {
-        id: "dst_set_season",
-        category: "World",
-        title: "Set season",
-        description: "Force the current shard world into a chosen season.",
-        submitLabel: "Set season",
-        fields: [
-          {
-            key: "season",
-            label: "Season",
-            type: "select",
-            defaultValue: "autumn",
-            options: [
-              { value: "autumn", label: "Autumn", labelKey: "servers.gmTools.options.season.autumn" },
-              { value: "winter", label: "Winter", labelKey: "servers.gmTools.options.season.winter" },
-              { value: "spring", label: "Spring", labelKey: "servers.gmTools.options.season.spring" },
-              { value: "summer", label: "Summer", labelKey: "servers.gmTools.options.season.summer" }
-            ]
-          }
-        ]
-      },
-      {
-        id: "dst_set_rain",
-        category: "World",
-        title: "Set precipitation",
-        description: "Start or stop precipitation on the Master shard; winter precipitation can be snow.",
-        submitLabel: "Set precipitation",
-        fields: [
-          {
-            key: "enabled",
-            label: "Precipitation",
-            type: "select",
-            defaultValue: "true",
-            options: [
-              { value: "true", label: "Start precipitation", labelKey: "servers.gmTools.options.rain.start" },
-              { value: "false", label: "Stop precipitation", labelKey: "servers.gmTools.options.rain.stop" }
-            ]
-          }
-        ]
-      }
-    ]
+    tools: DST_GM_TOOLS
   }
 ];
 
@@ -391,54 +283,8 @@ const BUILDERS: Record<string, GmCommandBuilder> = {
       return errorResult("Time must be between 00:00 and 23:59 (HH:MM).", ARK_REMOTE_ADMIN_OPTIONS);
     }
     return commandResult([`SetTimeOfDay ${time.value}`], null, ARK_REMOTE_ADMIN_OPTIONS);
-  },
-  dst_give_item_to_player(values) {
-    const prefab = readRequiredLuaPrefab(values, "prefab", "Item / Creature");
-    if (prefab.error) {
-      return errorResult(prefab.error, DST_STDIN_OPTIONS);
-    }
-    const amount = readInteger(values, "amount", "Amount", 1, 999);
-    if (amount.error) {
-      return errorResult(amount.error, DST_STDIN_OPTIONS);
-    }
-    const shard = readEnum({ ...values, shard: values.shard ?? "master" }, "shard", "Shard", ["master", "caves"]);
-    if (shard.error) return errorResult(shard.error, DST_STDIN_OPTIONS);
-    const processKey = shard.value;
-    const allPlayers = values.allPlayers === "true";
-    const placeInInventory = values.placeInInventory !== "false";
-    const playerIndex = readInteger({ ...values, playerIndex: allPlayers ? "1" : values.playerIndex }, "playerIndex", "Player index", 1, 999);
-    if (playerIndex.error) {
-      return errorResult(playerIndex.error, DST_STDIN_OPTIONS);
-    }
-    return commandResult(
-      [buildDstItemScript(prefab.value, amount.value, playerIndex.value, allPlayers, placeInInventory)],
-      processKey,
-      DST_STDIN_OPTIONS
-    );
-  },
-  dst_revive_player(values) {
-    const shard = readEnum({ ...values, shard: values.shard ?? "master" }, "shard", "Shard", ["master", "caves"]);
-    if (shard.error) return errorResult(shard.error, DST_STDIN_OPTIONS);
-    const playerIndex = readInteger(values, "playerIndex", "Player index", 1, 999);
-    if (playerIndex.error) {
-      return errorResult(playerIndex.error, DST_STDIN_OPTIONS);
-    }
-    return commandResult([`local p=AllPlayers[${playerIndex.value}]; assert(p, "Player is not on this shard"); assert(p:HasTag("playerghost"), "Player is not a ghost"); p:PushEvent("respawnfromghost"); print("[LGSM] Revival requested")`], shard.value, DST_STDIN_OPTIONS);
-  },
-  dst_set_season(values) {
-    const season = readEnum(values, "season", "Season", ["autumn", "winter", "spring", "summer"]);
-    if (season.error) {
-      return errorResult(season.error, DST_STDIN_OPTIONS);
-    }
-    return commandResult([`TheWorld:PushEvent("ms_setseason", ${luaString(season.value)})`], "master", DST_STDIN_OPTIONS);
-  },
-  dst_set_rain(values) {
-    const enabled = readEnum(values, "enabled", "Rain", ["true", "false"]);
-    if (enabled.error) {
-      return errorResult(enabled.error, DST_STDIN_OPTIONS);
-    }
-    return commandResult([`TheWorld:PushEvent("ms_forceprecipitation", ${enabled.value})`], "master", DST_STDIN_OPTIONS);
   }
+  ,...DST_GM_BUILDERS
 };
 
 export function getArkGmCreatureOptions(): ArkGmCreatureOption[] {
@@ -463,14 +309,6 @@ export function searchArkGmItemOptions(query: string, limit = 80): ArkGmItemOpti
 
 export function searchArkGmNumericItemOptions(query: string, limit = 80): ArkGmItemOption[] {
   return searchArkGmNumericItemCatalogOptions(query, limit);
-}
-
-export function getDstPrefabOptions(): DstGmItemOption[] {
-  return DST_GM_ITEM_OPTIONS;
-}
-
-export function searchDstPrefabOptions(query: string, limit = 80): DstGmItemOption[] {
-  return searchDstGmItemOptions(query, limit);
 }
 
 export function getGmToolCatalog(moduleId?: string | null): GmToolCatalog | null {
@@ -614,30 +452,6 @@ function buildArkGiveItemBatchResult(playerId: string, values: Record<string, st
   return commandResult(commands, null, ARK_REMOTE_ADMIN_OPTIONS);
 }
 
-function commandResult(
-  commands: string[],
-  processKey: string | null,
-  dispatchOptions: RuntimeCommandDispatchOptions
-): GmCommandBuildResult {
-  return {
-    commands,
-    processKey,
-    dispatchOptions,
-    preview: commands.join("\n"),
-    error: null
-  };
-}
-
-function errorResult(error: string, dispatchOptions: RuntimeCommandDispatchOptions): GmCommandBuildResult {
-  return {
-    commands: [],
-    processKey: null,
-    dispatchOptions,
-    preview: "",
-    error
-  };
-}
-
 function normalizeModuleId(moduleId?: string | null): string {
   return String(moduleId ?? "").trim().toLowerCase();
 }
@@ -673,89 +487,6 @@ function readArkPlayerId(values: Record<string, string>): { value: string; error
     return { value: "", error: "Enter the numeric in-game Player ID (0–4294967295), not a Steam ID." };
   }
   return { value, error: null };
-}
-
-function buildDstItemScript(prefab: string, amount: number, playerIndex: number, allPlayers: boolean, inventory: boolean): string {
-  const target = allPlayers
-    // Spawning a player prefab can append to AllPlayers. Iterate a snapshot so
-    // an all-player action cannot extend its own target list while executing.
-    ? 'local t={};for i,p in ipairs(AllPlayers) do t[i]=p end;assert(#t>0,"No players");'
-    : `local p=AllPlayers[${playerIndex}];assert(p,"Player not on shard");local t={p};`;
-  const validateInventory = inventory
-    ? 'for _,p in ipairs(t) do assert(p.components.inventory and not p:HasTag("playerghost"),"No active inventory") end;'
-    : "";
-  const place = inventory
-    ? 'if not e.components.inventoryitem then e:Remove();error("Entity needs ground spawn") end;p.components.inventory:GiveItem(e,nil,p:GetPosition());'
-    : "local x,y,z=p.Transform:GetWorldPosition();e.Transform:SetPosition(x,y,z);";
-  return `${target}${validateInventory}for _,p in ipairs(t) do for i=1,${amount} do local e=assert(SpawnPrefab(${luaString(prefab)}),"Unknown prefab");${place}end end;print("[LGSM] Done")`;
-}
-
-function readRequiredToken(
-  values: Record<string, string>,
-  key: string,
-  label: string
-): { value: string; error: string | null } {
-  const value = String(values[key] ?? "").trim();
-  if (!value) {
-    return { value: "", error: `${label} is required.` };
-  }
-  if (/[\x00-\x1f\x7f]/.test(value)) {
-    return { value: "", error: `${label} must be a single-line value.` };
-  }
-  return { value, error: null };
-}
-
-function readRequiredLuaPrefab(
-  values: Record<string, string>,
-  key: string,
-  label: string
-): { value: string; error: string | null } {
-  const token = readRequiredToken(values, key, label);
-  if (token.error) {
-    return token;
-  }
-  if (!/^[A-Za-z0-9_./-]+$/.test(token.value)) {
-    return { value: "", error: `${label} can only contain letters, numbers, underscore, dash, slash, or dot.` };
-  }
-  return token;
-}
-
-function readInteger(
-  values: Record<string, string>,
-  key: string,
-  label: string,
-  min: number,
-  max: number
-): { value: number; error: string | null } {
-  const raw = String(values[key] ?? "").trim();
-  if (!raw) {
-    return { value: min, error: `${label} is required.` };
-  }
-  const value = Number(raw);
-  if (!Number.isInteger(value)) {
-    return { value: min, error: `${label} must be an integer.` };
-  }
-  if (value < min || value > max) {
-    return { value: min, error: `${label} must be between ${min} and ${max}.` };
-  }
-  return { value, error: null };
-}
-
-function readEnum(
-  values: Record<string, string>,
-  key: string,
-  label: string,
-  allowed: string[]
-): { value: string; error: string | null } {
-  const value = String(values[key] ?? "").trim();
-  if (!allowed.includes(value)) {
-    return { value: "", error: `${label} is not supported.` };
-  }
-  return { value, error: null };
-}
-
-function luaString(value: string): string {
-  return JSON.stringify(value);
 }
 
 function jsonString(value: string): string {

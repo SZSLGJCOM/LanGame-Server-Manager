@@ -232,6 +232,43 @@ pub(super) fn inspect(
     Ok(status(profile, None))
 }
 
+/// The save observer's closed plugin set includes this exact managed loader
+/// and creature plugin. Keep their actual bytes pinned through the exchange.
+pub(super) fn pin_framework(
+    root: &Path,
+    module: &str,
+    embedded: EmbeddedArkTools,
+) -> Result<Vec<File>, String> {
+    let profile = profile(module)?;
+    let wanted = expected(profile, embedded)?;
+    let (bin, mut pins) = files::runtime(root, profile.executable)?;
+    if !inspect(root, profile.module_id, embedded)?.ready {
+        return Err("The managed ARK framework is incomplete or changed.".into());
+    }
+    for (name, hash) in wanted.iter() {
+        let path = bin.join(name);
+        pins.extend(
+            super::super::commands_managed_save_control::io::pin_directories(
+                path.parent().ok_or("Invalid ARK framework path.")?,
+            )?,
+        );
+        let (pin, bytes) =
+            super::super::commands_managed_save_control::io::pin_regular(&path, MAX_FILE)?;
+        if digest(&bytes) != *hash {
+            return Err("The ARK framework changed during verification.".into());
+        }
+        pins.push(pin);
+    }
+    let (pin, bytes) =
+        super::super::commands_managed_save_control::io::pin_regular(&bin.join(OWNER), 16384)?;
+    let owner = files::decode_ownership(&bytes, profile, &wanted)?;
+    if owner.files != wanted {
+        return Err("The ARK framework ownership changed during verification.".into());
+    }
+    pins.push(pin);
+    Ok(pins)
+}
+
 pub(super) async fn install(
     root: PathBuf,
     module_id: String,

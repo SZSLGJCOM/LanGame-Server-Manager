@@ -89,18 +89,7 @@ async fn context(
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install = effective_instance_install_root(&record)?;
     let target = effective_instance_saves_dir(descriptor.as_ref(), &install, &record)?;
-    let settings_json =
-        crate::instances::read_instance_settings_json(&record.config_dir.join("instance.json"))?;
-    let mut settings = collect_schema_inspection_defaults(
-        descriptor
-            .as_ref()
-            .and_then(|module| module.schema_json.as_deref()),
-        SchemaDefaultContext {
-            instance_id: Some(instance_id),
-            instance_name: Some(&record.summary.name),
-        },
-    )?;
-    settings.extend(serde_json::from_str::<Map<String, Value>>(&settings_json)?);
+    let (settings, settings_json) = effective_instance_settings(descriptor.as_ref(), &record)?;
     let mut protected = vec![
         paths.app_data_root.clone(),
         paths.instances_root.clone(),
@@ -124,6 +113,25 @@ async fn context(
         settings_json,
         protected,
     })
+}
+
+/// Schema defaults overlaid with the instance's stored settings, plus the stored
+/// JSON. Shared by import planning and the read-only save slot listing.
+pub(crate) fn effective_instance_settings(
+    descriptor: Option<&app_modules::ModuleDescriptor>,
+    record: &StoredInstanceRecord,
+) -> Result<(Map<String, Value>, String), StorageError> {
+    let settings_json =
+        crate::instances::read_instance_settings_json(&record.config_dir.join("instance.json"))?;
+    let mut settings = collect_schema_inspection_defaults(
+        descriptor.and_then(|module| module.schema_json.as_deref()),
+        SchemaDefaultContext {
+            instance_id: Some(&record.summary.id),
+            instance_name: Some(&record.summary.name),
+        },
+    )?;
+    settings.extend(serde_json::from_str::<Map<String, Value>>(&settings_json)?);
+    Ok((settings, settings_json))
 }
 
 fn stopped(context: &Context) -> Result<(), StorageError> {

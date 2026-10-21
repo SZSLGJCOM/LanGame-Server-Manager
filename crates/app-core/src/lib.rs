@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 mod live_players;
+pub mod maintenance_schedule;
 pub use live_players::*;
 mod enshrouded_identity;
 pub use enshrouded_identity::enshrouded_steam_account_hash;
@@ -166,6 +167,7 @@ pub enum JobKind {
     UninstallGame,
     StartInstance,
     StopInstance,
+    RegenerateWorld,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

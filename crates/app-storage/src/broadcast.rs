@@ -125,6 +125,34 @@ pub async fn insert_instance_broadcast_event(
     })
 }
 
+/// Finalize only the matching pending event. A late or repeated completion
+/// cannot overwrite a terminal result or an event belonging to another instance.
+pub async fn complete_instance_broadcast_event(
+    paths: &StoragePaths,
+    instance_id: &str,
+    event_id: &str,
+    result: Result<(), &str>,
+) -> Result<bool, StorageError> {
+    let pool = connect_pool(paths).await?;
+    let (status, error_message) = match result {
+        Ok(()) => ("sent", None),
+        Err(error) => ("failed", Some(error)),
+    };
+    let changed = sqlx::query(
+        "UPDATE instance_broadcast_events SET status = ?1, error_message = ?2 \
+         WHERE instance_id = ?3 AND event_id = ?4 AND status = 'pending'",
+    )
+    .bind(status)
+    .bind(error_message)
+    .bind(instance_id)
+    .bind(event_id)
+    .execute(&pool)
+    .await?
+    .rows_affected();
+    pool.close().await;
+    Ok(changed == 1)
+}
+
 pub async fn list_instance_broadcast_events(
     paths: &StoragePaths,
     instance_id: &str,
@@ -187,13 +215,6 @@ fn broadcast_event_from_row(row: SqliteRow) -> Result<InstanceBroadcastEvent, St
         policy_snapshot_json: row.get("policy_snapshot_json"),
         created_at_unix_ms: row.get::<i64, _>("created_at_unix_ms") as u64,
     })
-}
-
-fn current_unix_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis() as u64)
-        .unwrap_or(0)
 }
 
 fn current_unix_nanos() -> u128 {

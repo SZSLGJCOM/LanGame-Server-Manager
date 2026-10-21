@@ -252,7 +252,11 @@ async fn verify_case<R: tauri::Runtime>(
         return Ok(());
     }
     let evidence = match case.tool_id.as_str() {
-        "dst_give_item_to_player" | "dst_set_season" | "dst_set_rain" | "dst_revive_player" => {
+        "dst_give_item_to_player"
+        | "dst_set_season"
+        | "dst_set_rain"
+        | "dst_set_phase"
+        | "dst_revive_player" => {
             dst::after(runtime, running, case, dst_before.as_deref().unwrap_or("")).await?;
             "native_world_state"
         }

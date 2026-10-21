@@ -2,6 +2,9 @@
 use super::*;
 use std::io::{Read, Seek, SeekFrom};
 
+#[path = "commands_native_theforest_stop_protocol.rs"]
+mod stop_protocol;
+
 pub(super) async fn verify<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     running: &InstanceDetails,
@@ -166,26 +169,15 @@ pub(super) fn verify_stopped(
         return Err("The Forest stopped log exceeded its bound".into());
     }
     let text = String::from_utf8_lossy(&bytes);
-    if text
-        .lines()
-        .filter(|line| line.starts_with("[LanGame native control] native_save_completed bytes="))
-        .count()
-        != 2
-        || text
-            .lines()
-            .filter(|line| *line == "[LanGame native control] native_shutdown_requested")
-            .count()
-            != 1
-        || text
-            .lines()
-            .filter(|line| *line == "[LanGame native control] input_reader_stopped")
-            .count()
-            != 1
-    {
-        return Err("The Forest stop did not retain both native save acknowledgements and one shutdown request".into());
-    }
+    let manual_save = std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() == Ok("true");
+    // The formal adapter already matches the request's exact nonce. This
+    // stopped-run check independently requires its single closed terminal,
+    // followed by the unchanged plain shutdown save and input/quit ordering.
+    stop_protocol::validate(&text, manual_save)?;
     println!(
-        "NATIVE_THEFOREST_CONTROL command=shutdown native_saves=2 native_shutdown_requests=1 exit_code=0 run_identity=matched elapsed_ms={}",
+        "NATIVE_THEFOREST_CONTROL command=shutdown native_saves=2 native_nonce_saves={} legacy_save_acks={} native_shutdown_requests=1 exit_code=0 run_identity=matched elapsed_ms={}",
+        usize::from(manual_save),
+        if manual_save { 1 } else { 2 },
         elapsed.as_millis()
     );
     Ok(())

@@ -49,7 +49,36 @@ pub(super) async fn verify(
         assert_eq!(actual, expected, "{} {scenario}", process.process_key);
         features.push(json!({"shard": process.process_key, "result": actual}));
     }
-    if scenario == "tropical" {
+    if scenario == "tropical_ocean" {
+        // This author-provided preset is distinct from TE's default mixed
+        // world. Verify the actual option and generated start, not its label.
+        let option = native_probe(
+            state,
+            id,
+            process,
+            run_id,
+            "",
+            "tostring(GetModConfigData('kindofworld','workshop-1505270912'))",
+        )
+        .await?;
+        assert_eq!(option, "20", "TE ocean-world option must be active");
+        features.push(json!({"shard": process.process_key, "kindofworld": option}));
+        if process.process_key == "master" {
+            let generated = native_probe(
+                state,
+                id,
+                process,
+                run_id,
+                "local n=0;for _,v in ipairs(TheWorld.topology.ids) do if string.find(v,'OceanWorldstart',1,true) then n=n+1 end end;",
+                "tostring(n)",
+            )
+            .await?;
+            assert!(generated.parse::<usize>()? > 0, "TE ocean start must exist");
+            features
+                .push(json!({"shard": process.process_key, "ocean_world_start_nodes": generated}));
+        }
+    }
+    if matches!(scenario, "tropical" | "tropical_cherry") {
         // These default Tropical Experience tasks become topology IDs only
         // when their regions actually enter the native generated map.
         let markers = if process.process_key == "master" {

@@ -48,8 +48,41 @@ const {
   readMockTomlTable
 } = require(path.join(desktopRoot, "src", "api-mock", "module-assets.ts"));
 
+const NATIVE_SAVE_CONTRACTS = {
+  arksurvivalevolved: { transport: "source_rcon", command: "saveworld", port_name: "rcon", password_setting_key: "admin_password", enabled_setting_key: "rcon_enabled" },
+  arksurvivalascended: { transport: "source_rcon", command: "saveworld", port_name: "rcon", password_setting_key: "admin_password", enabled_setting_key: "rcon_enabled" },
+  abioticfactor: { transport: "abioticfactor_save", command: "save" },
+  astroneer: { transport: "astroneer_save", command: "save", port_name: "console", password_setting_key: "console_password" },
+  barotrauma: { transport: "barotrauma_save", command: "save" },
+  conanexiles: { transport: "conanexiles_save", command: "save" },
+  humanitz: { transport: "source_rcon", command: "save", port_name: "rcon", password_setting_key: "rcon_password", enabled_setting_key: "rcon_enabled" },
+  corekeeper: { transport: "corekeeper_save", command: "save" },
+  unturned: { transport: "stdin", command: "Save", process_key: "main" },
+  minecraft: { transport: "stdin", command: "save-all flush", process_key: "main" },
+  romestead: { transport: "stdin", command: "save", process_key: "main" },
+  necesse: { transport: "stdin", command: "save", process_key: "main" },
+  projectzomboid: { transport: "stdin", command: "save", process_key: "main" },
+  terraria: { transport: "stdin", command: "save", process_key: "main" },
+  sevendaystodie: { transport: "telnet", command: "saveworld", port_name: "telnet", password_setting_key: "telnet_password", enabled_setting_key: "telnet_enabled" },
+  enshrouded: { transport: "enshrouded_save", command: "save" },
+  nightingale: { transport: "nightingale_save", command: "save" },
+  palworld: { transport: "palworld_rest", command: "save", port_name: "rest_api", password_setting_key: "admin_password", enabled_setting_key: "rest_api_enabled" },
+  returntomoria: { transport: "returntomoria_save", command: "save" },
+  rimworld: { transport: "rimworld_save", command: "save" },
+  runescapedragonwilds: { transport: "dragonwilds_save", command: "save" },
+  satisfactory: { transport: "satisfactory_https", command: "save" },
+  scum: { transport: "scum_save", command: "save_persistent_state" },
+  sonsoftheforest: { transport: "sonsoftheforest_save", command: "save" },
+  soulmask: { transport: "soulmask_save", command: "SaveWorld 1" },
+  valheim: { transport: "valheim_native", command: "save" },
+  vrising: { transport: "vrising_save", command: "save" },
+  windrose: { transport: "windrose_save", command: "save" },
+};
+const NATIVE_SAVE_TRANSPORTS = new Set(Object.values(NATIVE_SAVE_CONTRACTS).map(({ transport }) => transport)
+  .filter((transport) => !["stdin", "source_rcon", "telnet", "websocket_rcon", "palworld_rest"].includes(transport)));
 const ALLOWED_TRANSPORTS = new Set([
-  "battleye_rcon", "source_rcon", "stdin", "telnet", "websocket_rcon", "humanitz_rcon", "palworld_rest", "enshrouded_native", "dragonwilds_native"
+  "battleye_rcon", "source_rcon", "stdin", "telnet", "websocket_rcon", "humanitz_rcon", "palworld_rest", "enshrouded_native", "dragonwilds_native",
+  ...NATIVE_SAVE_TRANSPORTS,
 ]);
 const ACCESS_KINDS = ["admin", "allow", "block", "priority"];
 
@@ -200,6 +233,21 @@ test("all 32 module manifests project every declared runtime action into the moc
     const projected = detailsById.get(moduleId).runtime.player_actions ?? [];
     assert.deepEqual(projected, expected, `${moduleId} mock action projection drifted from module.toml`);
     projectedActionCount += projected.length;
+    const saveContract = NATIVE_SAVE_CONTRACTS[moduleId];
+    if (saveContract) {
+      const signature = ({ id, kind, transport, command_template, target_required, destructive,
+        role_values, process_key, port_name, password_setting_key, enabled_setting_key }) => ({
+        id, kind, transport, command_template, target_required, destructive,
+        role_values, process_key, port_name, password_setting_key, enabled_setting_key,
+      });
+      const { command, ...contract } = saveContract;
+      const base = { target_required: false, destructive: false,
+        role_values: [], process_key: null, port_name: null,
+        password_setting_key: null, enabled_setting_key: null, ...contract };
+      const declared = [{ ...base, id: "save_world", kind: null, command_template: command }];
+      assert.deepEqual(projected.filter(({ id }) => id === "save_world").map(signature),
+        declared, `${moduleId} native save contract is not the fixed backend contract`);
+    }
 
     const seen = new Set();
     for (const action of projected) {
@@ -221,6 +269,11 @@ test("all 32 module manifests project every declared runtime action into the moc
       }
       assert.ok(action.command_template.trim(), `${moduleId}.${action.id} has no backend template`);
       assert.ok(ALLOWED_TRANSPORTS.has(action.transport), `${moduleId}.${action.id} has an unknown transport`);
+      if (NATIVE_SAVE_TRANSPORTS.has(action.transport)) {
+        assert.equal(action.transport, saveContract?.transport, `${moduleId}.${action.id} borrows another game's save transport`);
+        assert.equal(action.id, "save_world",
+          `${moduleId}.${action.id} exposes a native save transport outside its closed save action`);
+      }
       assert.equal(
         action.command_template.includes("{{target}}"),
         action.target_required,
@@ -321,6 +374,22 @@ test("all declared actions have a deliberate Player Center or sibling surface ow
     [...detailsById.values()].reduce((sum, details) => sum + (details.runtime.player_actions ?? []).length, 0));
   assert.equal(ownerCounts.manual, [...detailsById].reduce((sum, [id, details]) => sum + manualActionIds(id, details).length, 0));
 
+});
+
+test("mock native saves report requested without inventing disk completion", async () => {
+  for (const moduleId of ["minecraft", "palworld"]) {
+    await invokeMock("install_module_game", { moduleId });
+    const instance = await invokeMock("create_instance_record", {
+      input: { name: `Native save request ${moduleId}`, module_id: moduleId }
+    });
+    await invokeMock("start_instance_process", { instanceId: instance.summary.id });
+    const result = await invokeMock("send_instance_runtime_command", {
+      input: { instanceId: instance.summary.id, runtimeActionId: "save_world" }
+    });
+    assert.equal(result.save_completion, "requested", moduleId);
+    assert.equal(result.write_confirmation_pending, false, moduleId);
+    assert.equal(result.command, moduleId === "minecraft" ? "save-all flush" : '{"operation":"save"}');
+  }
 });
 
 test("all remaining target-bound manual actions dispatch through mock module authority", async () => {

@@ -1,5 +1,11 @@
 use super::*;
 
+#[path = "commands_native_ark_shutdown_observation.rs"]
+mod ark_shutdown_observation;
+
+#[path = "commands_native_astroneer_public_ip.rs"]
+pub(super) mod astroneer_public_ip;
+
 pub(super) struct NativeRuntime<'a, 's, R: tauri::Runtime> {
     pub app: &'a tauri::AppHandle<R>,
     pub state: &'a tauri::State<'s, DesktopState>,
@@ -11,6 +17,7 @@ pub(super) struct NativeRuntime<'a, 's, R: tauri::Runtime> {
     pub effective_install_root: &'a Path,
     pub offline_dst: bool,
     pub elevated_fixture: bool,
+    pub satisfactory_world: Option<&'a NativeWorld>,
 }
 
 impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
@@ -39,6 +46,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
         let module_id = &details.summary.module_id;
         if cycle == "initial" {
             smoke.require_fresh_world(effective_install_root, &package.root)?;
+            Box::pin(sons_world_fixture::prepare(self, details)).await?;
             if std::env::var("LANGAME_NATIVE_ARK_CREATURES").as_deref() == Ok("true")
                 && matches!(
                     module_id.as_str(),
@@ -73,6 +81,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
         } else {
             None
         };
+        let prestart_probe = prestart_probe::PrestartProbe::begin(storage, details, descriptor)?;
         package.cleanup_allowed.store(false, Ordering::SeqCst);
         let start_requested = Instant::now();
         let started = match start_instance_process_after_reconcile(
@@ -104,6 +113,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 );
             }
         };
+        prestart_probe.verify(storage, details, cycle)?;
         println!(
             "NATIVE_LIFECYCLE module={module_id} phase=started cycle={cycle} processes={} bind=default firewall={} elapsed_ms={}",
             started.process_count,
@@ -114,7 +124,16 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             },
             start_requested.elapsed().as_millis(),
         );
+        for warning in &started.warnings {
+            if warning.code == app_core::RuntimeStartWarningCode::WorldInitializationIncomplete {
+                println!(
+                    "NATIVE_LIFECYCLE module={module_id} phase=world_initialization_warning message={}",
+                    warning.message
+                );
+            }
+        }
         let running = read_instance_details(&storage.paths, id).await?;
+        astroneer_public_ip::verify(details, &running, cycle, effective_install_root)?;
         let readiness_started = Instant::now();
         if let Err(error) = smoke
             .wait_ready(
@@ -160,9 +179,50 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 "isolated"
             }
         );
-        Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;
-        Box::pin(gm_tools::verify(self, &running, cycle)).await?;
-        Box::pin(theforest_probe::verify(self, &running)).await?;
+        let sons_backup_snapshot;
+        if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() == Ok("true") {
+            let prepared: Result<(), Box<dyn std::error::Error>> = async {
+                Box::pin(barotrauma_campaign::prepare(self, &running, cycle)).await?;
+                if let Some(world) = self.satisfactory_world {
+                    Box::pin(world.prepare(state, &running, cycle)).await?;
+                }
+                Ok(())
+            }
+            .await;
+            if let Err(error) = prepared {
+                let mut logs = started
+                    .processes
+                    .iter()
+                    .take(8)
+                    .map(|process| {
+                        app_storage::read_log_path_snapshot(process.log_path.clone(), 80)
+                    })
+                    .collect::<Vec<_>>();
+                match diagnostics::failed_run_logs(&running, effective_install_root, &package.root)
+                {
+                    Ok(recorded) => logs.extend(recorded),
+                    Err(detail) => {
+                        eprintln!("NATIVE_DIAGNOSTIC phase=manual_save_prepare log_read={detail}")
+                    }
+                }
+                print_native_failure(
+                    "manual_save_prepare",
+                    &error.to_string(),
+                    &logs,
+                    settings,
+                    &package.root,
+                );
+                return Err(error);
+            }
+            Box::pin(save_failure_probe::verify(self, &running, cycle)).await?;
+            sons_backup_snapshot = sons_backup_probe::capture(self, &running).await?;
+            Box::pin(manual_save_probe::verify(self, &running, cycle)).await?;
+        } else {
+            sons_backup_snapshot = sons_backup_probe::capture(self, &running).await?;
+            Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;
+            Box::pin(gm_tools::verify(self, &running, cycle)).await?;
+            Box::pin(theforest_probe::verify(self, &running)).await?;
+        }
         diagnostics::report_success(
             "ready",
             details,
@@ -190,6 +250,13 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             Ok(stopped) => stopped,
             Err(error) => {
                 theforest_probe::report_stop_failure(state, &running);
+                if let Err(category) =
+                    ark_shutdown_observation::observe(self, &running, stop_started.elapsed()).await
+                {
+                    eprintln!(
+                        "NATIVE_ASA_STOP_OBSERVATION outcome=diagnostic_failed category={category} original_stop_error=retained"
+                    );
+                }
                 let logs =
                     diagnostics::failed_run_logs(&running, effective_install_root, &package.root)
                         .unwrap_or_else(|detail| {
@@ -201,6 +268,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             }
         };
         theforest_probe::verify_stopped(&running, &stopped, stop_started.elapsed())?;
+        sons_backup_probe::verify_stopped(sons_backup_snapshot, cycle).await?;
         diagnostics::report_success(
             "stopped",
             details,
@@ -233,6 +301,27 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             .as_ref()
             .ok_or("native ready run has no persisted identity")?
             .run_id;
+        let overview = app_storage::read_instance_runtime_overview(&storage.paths, id).await?;
+        let completed = overview
+            .recent_runs
+            .iter()
+            .find(|record| record.run_id == run_id)
+            .ok_or("Native stopped run was not preserved in runtime history")?;
+        for process in &completed.processes {
+            println!(
+                "NATIVE_STOP_RESULT module={module_id} cycle={cycle} run_id={} process={} exit_code={:?} crash_flag={} status={}",
+                process.run_id,
+                process.process_key,
+                process.exit_code,
+                process.crash_flag,
+                process.status,
+            );
+        }
+        if completed.crash_flag || completed.processes.iter().any(|process| process.crash_flag) {
+            return Err(
+                "Native stop recorded a process crash instead of a clean managed stop".into(),
+            );
+        }
         println!(
             "NATIVE_LIFECYCLE module={module_id} phase=cycle_stopped cycle={cycle} run_id={run_id} active_run=none"
         );

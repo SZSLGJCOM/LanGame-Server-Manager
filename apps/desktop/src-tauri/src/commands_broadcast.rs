@@ -1,7 +1,12 @@
+use super::commands_runtime_lifecycle::RuntimeTransportDispatch;
 use super::*;
 
 #[path = "commands_broadcast_startup.rs"]
 mod startup;
+
+#[cfg(test)]
+#[path = "commands_broadcast_tests.rs"]
+mod tests;
 
 pub(super) fn normalize_broadcast_source(source: Option<&str>) -> String {
     let normalized = source
@@ -436,6 +441,31 @@ pub async fn send_instance_broadcast(
         normalize_broadcast_policy_snapshot(input.policy_snapshot_json.as_deref());
     let transport = action.transport.clone();
 
+    // Persist before submission. An interrupted application leaves an honest
+    // pending record and never retries a potentially delivered broadcast.
+    let mut event = insert_instance_broadcast_event(
+        &storage.paths,
+        InsertInstanceBroadcastEventInput {
+            instance_id: details.summary.id.clone(),
+            module_id: details.summary.module_id.clone(),
+            source,
+            rule_id: input.rule_id,
+            message,
+            ai_provider: input.ai_provider,
+            ai_model: input.ai_model,
+            action_id: Some(action.id.clone()),
+            transport: Some(transport.clone()),
+            command_preview: Some(command.clone()),
+            status: String::from("pending"),
+            response_text: None,
+            error_message: None,
+            initiator: Some(initiator),
+            policy_snapshot_json,
+        },
+    )
+    .await
+    .map_err(|error| error.to_string())?;
+
     let request = RuntimeTransportRequest {
         command: &command,
         transport: &transport,
@@ -451,77 +481,123 @@ pub async fn send_instance_broadcast(
     };
 
     match dispatch_result {
-        Ok(()) => {
-            let event = insert_instance_broadcast_event(
-                &storage.paths,
-                InsertInstanceBroadcastEventInput {
-                    instance_id: details.summary.id.clone(),
-                    module_id: details.summary.module_id.clone(),
-                    source,
-                    rule_id: input.rule_id,
-                    message,
-                    ai_provider: input.ai_provider,
-                    ai_model: input.ai_model,
-                    action_id: Some(action.id.clone()),
-                    transport: Some(transport.clone()),
-                    command_preview: Some(command.clone()),
-                    status: String::from("sent"),
-                    response_text: None,
-                    error_message: None,
-                    initiator: Some(initiator),
-                    policy_snapshot_json,
-                },
-            )
-            .await
-            .map_err(|error| error.to_string())?;
-
+        Ok(RuntimeTransportDispatch::Confirmed) => {
+            complete_broadcast_event(&storage, &mut event, Ok(())).await?;
+        }
+        Ok(RuntimeTransportDispatch::Pending(completion)) => {
+            let pending_storage = storage.clone();
+            let mut pending_event = event.clone();
+            // Keep this storage context alive until the original writer finishes.
+            // The retained completion also covers a writer finishing before spawn.
+            tauri::async_runtime::spawn(async move {
+                let _storage_context_operation = _storage_context_operation;
+                let result = completion.wait().await;
+                // This function logs persistence failures; no command is resent.
+                let _ =
+                    complete_broadcast_event(&pending_storage, &mut pending_event, result).await;
+            });
             append_desktop_app_log(
                 &storage,
                 "info",
-                "instance.broadcast.sent",
-                "Instance broadcast sent",
-                json!({
-                    "instance_id": details.summary.id.as_str(),
-                    "module_id": details.summary.module_id.as_str(),
-                    "source": event.source.as_str(),
-                    "action_id": action.id.as_str(),
-                    "transport": transport.as_str(),
-                    "message_excerpt": summarize_text(&event.message, 160),
-                }),
+                "instance.broadcast.pending",
+                "Broadcast submitted; stdin write confirmation is pending",
+                json!({ "instance_id": event.instance_id, "event_id": event.event_id }),
             );
-
-            Ok(SendInstanceBroadcastOutput {
-                event,
-                action_id: action.id.clone(),
-                transport,
-                command_preview: command,
-            })
         }
         Err(error) => {
-            let _ = insert_instance_broadcast_event(
-                &storage.paths,
-                InsertInstanceBroadcastEventInput {
-                    instance_id: details.summary.id.clone(),
-                    module_id: details.summary.module_id.clone(),
-                    source,
-                    rule_id: input.rule_id,
-                    message,
-                    ai_provider: input.ai_provider,
-                    ai_model: input.ai_model,
-                    action_id: Some(action.id.clone()),
-                    transport: Some(transport),
-                    command_preview: Some(command),
-                    status: String::from("failed"),
-                    response_text: None,
-                    error_message: Some(error.clone()),
-                    initiator: Some(initiator),
-                    policy_snapshot_json,
-                },
-            )
-            .await;
-            Err(logged_error_message(&storage, error))
+            complete_broadcast_event(&storage, &mut event, Err(error.clone())).await?;
+            return Err(logged_error_message(&storage, error));
         }
     }
+
+    Ok(SendInstanceBroadcastOutput {
+        event,
+        action_id: action.id.clone(),
+        transport,
+        command_preview: command,
+    })
+}
+
+pub(super) fn broadcast_dispatch_message(output: &SendInstanceBroadcastOutput) -> String {
+    if output.event.status == "pending" {
+        format!(
+            "Broadcast submitted via {}; process input confirmation is pending. Check broadcast history and game logs before resending.",
+            output.transport,
+        )
+    } else {
+        format!(
+            "Broadcast sent via {}. Game delivery is not independently confirmed.",
+            output.transport
+        )
+    }
+}
+
+async fn complete_broadcast_event(
+    storage: &StorageBootstrap,
+    event: &mut InstanceBroadcastEvent,
+    result: Result<(), String>,
+) -> Result<(), String> {
+    let updated = app_storage::complete_instance_broadcast_event(
+        &storage.paths,
+        &event.instance_id,
+        &event.event_id,
+        result.as_ref().map(|_| ()).map_err(String::as_str),
+    )
+    .await;
+    match updated {
+        Ok(true) => {}
+        Ok(false) => {
+            return Err(logged_error_message(
+                storage,
+                format!(
+                    "Broadcast {} was submitted but its pending history record could not be finalized. Check game logs before resending.",
+                    event.event_id,
+                ),
+            ));
+        }
+        Err(error) => {
+            append_desktop_app_log(
+                storage,
+                "error",
+                "instance.broadcast.history_update_failed",
+                "Could not persist broadcast completion; the command will not be resent",
+                json!({
+                    "instance_id": event.instance_id,
+                    "event_id": event.event_id,
+                    "transport_confirmed": result.is_ok(),
+                    "dispatch_error": result.as_ref().err(),
+                    "storage_error": error.to_string(),
+                }),
+            );
+            return Err(format!(
+                "Broadcast submitted, but its history update failed: {error}. Check game logs before resending."
+            ));
+        }
+    }
+    event.status = if result.is_ok() { "sent" } else { "failed" }.into();
+    event.error_message = result.err();
+    append_desktop_app_log(
+        storage,
+        if event.error_message.is_some() {
+            "error"
+        } else {
+            "info"
+        },
+        if event.error_message.is_some() {
+            "instance.broadcast.failed"
+        } else {
+            "instance.broadcast.sent"
+        },
+        "Broadcast transport completed; game delivery is not independently confirmed",
+        json!({
+            "instance_id": event.instance_id,
+            "event_id": event.event_id,
+            "transport": event.transport,
+            "status": event.status,
+            "error": event.error_message,
+        }),
+    );
+    Ok(())
 }
 
 #[tauri::command]

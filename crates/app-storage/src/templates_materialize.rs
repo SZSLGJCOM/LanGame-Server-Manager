@@ -20,6 +20,7 @@ pub(crate) use prepared_workshop::{
 
 #[path = "templates_materialize/dontstarve.rs"]
 mod dontstarve;
+pub use dontstarve::is_managed_dst_map_observer;
 #[path = "templates_materialize/managed_config_merge.rs"]
 mod managed_config_merge;
 #[path = "templates_materialize/package_staging.rs"]
@@ -800,13 +801,6 @@ fn materialize_romestead_support_files(
         "romestead",
         files,
     )?;
-    copy_required_module_support_file(
-        &context.config_dir.join(ROMESTEAD_START_SCRIPT_FILE),
-        &context.install_root.join(ROMESTEAD_START_SCRIPT_FILE),
-        "romestead",
-        files,
-    )?;
-
     Ok(())
 }
 

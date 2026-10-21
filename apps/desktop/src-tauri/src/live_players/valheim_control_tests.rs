@@ -204,6 +204,74 @@ fn query_and_reload_use_distinct_correlated_requests_and_exact_native_lists() {
 }
 
 #[test]
+fn save_transport_accepts_only_the_exact_committed_native_response() {
+    let fixture = Fixture::new();
+    let packet = transport::exchange_with(
+        &fixture.context,
+        Operation::Save,
+        PAYLOAD,
+        Duration::from_secs(1),
+        || {
+            if let Some(request) = fixture.request() {
+                assert_eq!(request["op"], "save");
+                assert_eq!(request.as_object().unwrap().len(), 4);
+                let mut reply = fixture.reply(&request);
+                reply["capabilities"] = json!(["query", "reload", "kick", "save"]);
+                reply["world_save"] = json!({"previous_save_number":4,"committed_save_number":5,
+                    "evidence":"native_commit"});
+                fixture.publish_reply(&reply);
+            }
+            Ok(())
+        },
+    )
+    .expect("native save receipt");
+    assert_eq!(packet.world_save.unwrap().committed_save_number, 5);
+}
+
+#[derive(Clone)]
+struct SaveTestLease(std::sync::Arc<()>);
+impl crate::state::StorageContextTaskLease for SaveTestLease {}
+
+#[tokio::test]
+async fn cancelled_save_caller_retains_storage_and_mutation_until_its_worker_finishes() {
+    use std::sync::{Arc, mpsc};
+    let lock = Arc::new(tokio::sync::Mutex::new(()));
+    let mutation = lock.clone().lock_owned().await;
+    let lease = SaveTestLease(Arc::new(()));
+    let lease_alive = Arc::downgrade(&lease.0);
+    let (entered, started) = tokio::sync::oneshot::channel();
+    let (release, wait) = mpsc::channel();
+    let task = tokio::spawn(async move {
+        spawn_save_worker(&lease, Some(mutation), move || {
+            let _ = entered.send(());
+            wait.recv_timeout(Duration::from_secs(3))
+                .expect("release test worker");
+            Err("synthetic save worker completed".into())
+        })
+        .await
+    });
+    started.await.expect("save worker started");
+    task.abort();
+    assert!(task.await.unwrap_err().is_cancelled());
+    assert!(
+        lock.try_lock().is_err(),
+        "cancelled caller released the mutation guard"
+    );
+    assert!(
+        lease_alive.upgrade().is_some(),
+        "cancelled caller released the storage lease"
+    );
+    release.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(3), async {
+        while lock.try_lock().is_err() || lease_alive.upgrade().is_some() {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .expect("worker releases both guards after completion");
+}
+
+#[test]
 fn owner_session_and_plugin_mismatch_fail_before_any_request_is_published() {
     for kind in ["owner", "plugin", "session"] {
         let fixture = Fixture::new();

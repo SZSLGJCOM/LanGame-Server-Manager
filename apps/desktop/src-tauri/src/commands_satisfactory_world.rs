@@ -16,6 +16,10 @@ mod service;
 #[path = "satisfactory_world_native_tests.rs"]
 mod native_tests;
 
+#[cfg(test)]
+#[path = "commands_native_satisfactory_world.rs"]
+pub(crate) mod native_world;
+
 struct Prepared {
     instance: InstanceDetails,
     api: Option<api::Api>,
@@ -50,6 +54,36 @@ fn running_api(prepared: &Prepared) -> Result<&api::Api, String> {
         .api
         .as_ref()
         .ok_or_else(|| "Start the Satisfactory server before using its world controls.".into())
+}
+
+// The runtime dispatcher already owns the instance mutation lock. Resolve the
+// supplied run directly rather than entering prepare and acquiring it again.
+pub(super) async fn save_current_world(
+    state: &tauri::State<'_, DesktopState>,
+    details: &InstanceDetails,
+    mutation: Option<tokio::sync::OwnedMutexGuard<()>>,
+) -> Result<String, String> {
+    let operation = state.begin_storage_context_operation("Satisfactory immediate world save")?;
+    let endpoint = context::resolve(state, details)?.ok_or_else(|| {
+        "Start the Satisfactory server before saving its current world.".to_string()
+    })?;
+    let api = api::Api::new(endpoint)?;
+    spawn_current_save(&operation, mutation, api)
+        .await
+        .map_err(|error| format!("Satisfactory world save task did not complete: {error}"))?
+}
+
+fn spawn_current_save(
+    operation: &StorageContextOperationGuard,
+    mutation: Option<tokio::sync::OwnedMutexGuard<()>>,
+    api: api::Api,
+) -> tokio::task::JoinHandle<Result<String, String>> {
+    // API endpoints own the resolved run/identity. Retain both leases through
+    // native completion even when the bounded command's caller is cancelled.
+    spawn_storage_context_task(operation, async move {
+        let _instance_mutation = mutation;
+        service::save_current(&api).await
+    })
 }
 
 #[tauri::command]

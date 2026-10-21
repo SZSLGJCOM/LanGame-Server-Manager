@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-mod atlas;
+pub(crate) mod atlas;
 mod cache;
 mod mapping;
-mod resources;
-mod texture;
+pub(crate) mod resources;
+pub(crate) mod texture;
 
 const MAX_SCHEMA_BYTES: usize = 1024 * 1024;
 const MAX_FIELDS: usize = 280;

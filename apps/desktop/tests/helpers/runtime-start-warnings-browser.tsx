@@ -43,6 +43,7 @@ function Shell() {
   return <ActivityNoticeTarget.Provider value={{ element: null, store, dismissLabel: t("servers.mods.closeToast") }}>
     <RuntimeStartWarnings jobs={jobs} manual={manual} />
     <div className="shell-frame"><div className="shell-main shell-main--console">
+      <header />
       <main className="shell-content-scroll"><button type="button" id="locale-en" onClick={() => setLocale("en-US")}>English</button></main>
       <footer className="shell-activity-bar" role="status" aria-live="polite">
         <span className="shell-activity-label">{t("shell.activity")}</span><ActivityBar store={store} entries={[]} />
@@ -113,6 +114,16 @@ async function run() {
   await settleUntil(() => store.getSnapshot().length === 1, "Manual start result did not publish its warning");
   await pressEnter(element<HTMLButtonElement>(".shell-activity-expand"));
   check(element(".shell-activity-panel").textContent?.includes("Manual Fixture Server"), "Manual result label missing"); scenarios++;
+  manual = { id: "manual-start:astro:4", instanceId: "astro", label: "ASTRONEER", warnings: [{
+    code: "world_initialization_incomplete", provider: null, reason: null, item_ids: [],
+    message: "PRIVATE_RESPONSE", map_key: null, http_status: null, log_path: "C:/fixture/logs/astro.log",
+  }] };
+  await rerender([]);
+  await settleUntil(() => store.getSnapshot().some((entry) => entry.text.includes("first-world initialization did not complete")), "Native world warning missing");
+  check(element(".shell-activity-panel").textContent?.includes("ASTRONEER"), "Native world warning label missing");
+  check(!element(".shell-activity-panel").textContent?.includes("PRIVATE_RESPONSE"), "Native initialization diagnostic body leaked"); scenarios++;
+  const bounds = element(".shell-activity-panel").getBoundingClientRect();
+  check(bounds.top >= 0 && bounds.bottom <= innerHeight, "Startup warning details escaped the viewport");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   return { status: "passed", scenarios, dismissals, browser_errors: errors };
 }

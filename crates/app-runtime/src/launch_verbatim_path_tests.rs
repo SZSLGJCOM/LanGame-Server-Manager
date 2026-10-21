@@ -299,10 +299,14 @@ fn namespace_sensitive_and_long_java_paths_remain_explicitly_blocked() {
 
 #[cfg(windows)]
 #[test]
-fn romestead_batch_launch_blocks_long_and_namespace_sensitive_working_directories() {
+fn explicit_batch_launch_blocks_long_and_namespace_sensitive_working_directories() {
     let fixture = Fixture::new();
     let root = fs::canonicalize(&fixture.0).unwrap();
-    let (module, defaults) = module_fixture("romestead");
+    let (mut module, defaults) = module_fixture("romestead");
+    // Romestead now starts Server.exe directly so its owned save observer and
+    // supervisor share a PID. Keep generic cmd.exe path protection covered for
+    // an explicitly configured batch entrypoint.
+    module.process.as_mut().unwrap().executable = "start-romestead.bat".into();
     for (index, install_root) in [
         root.join("x".repeat(240)),
         root.join("directory."),

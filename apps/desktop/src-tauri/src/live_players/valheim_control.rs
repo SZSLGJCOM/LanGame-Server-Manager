@@ -125,6 +125,55 @@ pub(crate) async fn reload(details: &InstanceDetails) -> Result<ControlSnapshot,
         .map(|(_, packet)| packet)
 }
 
+/// Publishes exactly once and succeeds only with the native worker's committed
+/// save generation. Publication, a finished thread or a timeout are not success.
+pub(crate) async fn save_world(
+    state: &crate::state::DesktopState,
+    details: &InstanceDetails,
+    mutation: Option<tokio::sync::OwnedMutexGuard<()>>,
+) -> Result<String, String> {
+    let operation = state.begin_storage_context_operation("Valheim immediate save")?;
+    let details = details.clone();
+    let packet = spawn_save_worker(&operation, mutation, move || {
+        let context = context(&details)?;
+        transport::exchange(&context, Operation::Save)
+    })
+    .await
+    .map_err(|_| "The Valheim save worker failed; its outcome is unknown. Verify the server before retrying.")?
+    .map_err(|error| {
+        if error.contains("save_outcome_unknown") {
+            "The Valheim world save outcome is unknown. It may already have executed; verify the current server before retrying.".to_owned()
+        } else {
+            error
+        }
+    })?;
+    let receipt = packet
+        .world_save
+        .ok_or("The Valheim world save has no confirmed native commit; its outcome is unknown.")?;
+    Ok(format!(
+        "Valheim world save completed (native commit {} to {}).",
+        receipt.previous_save_number, receipt.committed_save_number
+    ))
+}
+
+fn spawn_save_worker<L, F>(
+    operation: &L,
+    mutation: Option<tokio::sync::OwnedMutexGuard<()>>,
+    work: F,
+) -> tokio::task::JoinHandle<Result<ControlSnapshot, String>>
+where
+    L: crate::state::StorageContextTaskLease,
+    F: FnOnce() -> Result<ControlSnapshot, String> + Send + 'static,
+{
+    crate::state::spawn_blocking_storage_context_task(operation, move || {
+        // A cancelled caller must not permit restart, configuration replacement,
+        // data-root switching or app shutdown while this worker still owns the
+        // native request. A published mutation is never automatically repeated.
+        let _mutation = mutation;
+        work()
+    })
+}
+
 pub(crate) async fn collect(
     details: &InstanceDetails,
     request_id: &str,

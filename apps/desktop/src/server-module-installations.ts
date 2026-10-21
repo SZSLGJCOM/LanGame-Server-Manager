@@ -1,5 +1,6 @@
 import type { ServerModuleInstallation } from "./server-primary-action";
 import type { InstanceSummary, LaunchPlan, ModuleDetails, ModuleSummary } from "./types";
+import { immediateWorldSaveAction } from "./runtime-save-capability";
 
 export interface ServerModuleInstallationInput {
   enabled: boolean;
@@ -175,7 +176,8 @@ export class ServerModuleInstallationReader {
       if (task.kind === "module") {
         next.moduleInstallations[task.id] = {
           installState: this.modules.get(task.id)?.install_state ?? task.details?.summary.install_state ?? "Unknown",
-          hasManagedInstallSource: task.status === "failed" ? false : task.details ? hasManagedInstallSource(task.details) : null
+          hasManagedInstallSource: task.status === "failed" ? false : task.details ? hasManagedInstallSource(task.details) : null,
+          hasImmediateWorldSave: task.status === "failed" ? null : task.details ? Boolean(immediateWorldSaveAction(task.details)) : null
         };
       } else {
         if (task.plan && (task.status === "ready" || task.plan.uses_private_runtime)) {
@@ -185,7 +187,8 @@ export class ServerModuleInstallationReader {
       }
     }
     const previous = this.snapshot;
-    if (sameMap(previous.moduleInstallations, next.moduleInstallations, (a, b) => a?.installState === b?.installState && a?.hasManagedInstallSource === b?.hasManagedInstallSource)
+    if (sameMap(previous.moduleInstallations, next.moduleInstallations, (a, b) => a?.installState === b?.installState
+      && a?.hasManagedInstallSource === b?.hasManagedInstallSource && a?.hasImmediateWorldSave === b?.hasImmediateWorldSave)
       && sameMap(previous.instanceLaunchPlans, next.instanceLaunchPlans, (a, b) => a === b)
       && sameMap(previous.instanceLaunchFailures, next.instanceLaunchFailures, (a, b) => a === b)) return;
     this.snapshot = next;

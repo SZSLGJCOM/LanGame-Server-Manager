@@ -108,8 +108,6 @@ pub use module_install::{
     ModuleInstallCallbacks, SteamModuleInstallRequest, install_or_update_module_at_with_callbacks,
     install_or_update_module_at_with_login_and_callbacks,
     install_or_update_module_at_with_progress_and_cancellation,
-    install_or_update_module_with_progress,
-    install_or_update_module_with_progress_and_cancellation,
 };
 pub use ownership::SteamCmdOwnership;
 use ownership::{prepare_configured_steamcmd_root, validate_steamcmd_ownership};
@@ -1199,15 +1197,6 @@ fn parse_quoted_key_value_line(line: &str) -> Option<(String, String)> {
     } else {
         None
     }
-}
-
-pub async fn install_or_update_module(
-    lock_context: &InstallLockContext,
-    settings: &AppSettings,
-    module: &ModuleDetails,
-    validate: bool,
-) -> Result<ModuleInstallResult, SteamCmdError> {
-    install_or_update_module_with_progress(lock_context, settings, module, validate, |_| {}).await
 }
 
 /// The caller retains the lifecycle lease across dependency checks, downloading

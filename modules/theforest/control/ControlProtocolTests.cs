@@ -14,6 +14,7 @@ internal static class ForestControlProtocolTests
         ForestBclContractTests.Verify(Path.Combine(Path.GetFullPath(args[0]), "LanGame.TheForest.Control.dll"));
         ForestNativeInputTests.Verify();
         ForestWorldReadinessTests.Verify();
+        ForestSaveRequestTests.Verify();
         using (MemoryStream input = new MemoryStream(Encoding.ASCII.GetBytes(" HELP \r\nstatus\nsave\nshutdown\n")))
         {
             foreach (string command in new string[] { "help", "status", "save", "shutdown" })
@@ -37,6 +38,9 @@ internal static class ForestControlProtocolTests
             Equal(null, ForestControlProtocol.Read(input));
         using (MemoryStream input = new MemoryStream(Encoding.ASCII.GetBytes(new string('x', 128) + "\n")))
             Equal(new string('x', 128), ForestControlProtocol.Read(input));
+        foreach (string frame in new string[] { "save 0000019a01234567abcdef0123456789", " SAVE 0000019A01234567ABCDEF0123456789 ", "save  0000019a01234567abcdef0123456789" })
+            using (MemoryStream input = new MemoryStream(Encoding.ASCII.GetBytes(frame + "\n")))
+                Equal(frame, ForestControlProtocol.Read(input));
         Console.WriteLine("The Forest control protocol: 10 framing cases passed");
         string root = Path.Combine(Path.GetFullPath(args[0]), "checkpoint-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);

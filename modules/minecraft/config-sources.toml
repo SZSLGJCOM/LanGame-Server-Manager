@@ -342,6 +342,7 @@ source = "server_properties"
 key = "enable-rcon"
 schema_key = "enable_rcon"
 surface = "config_file"
+description = "LanGame new-instance default is true, unlike the upstream false default, so declared immediate-save and player actions work with the instance's independently generated RCON secret. Existing explicit false is preserved; startup does not force-enable it. This is an application default, not new native package evidence."
 
 [[items]]
 source = "server_properties"

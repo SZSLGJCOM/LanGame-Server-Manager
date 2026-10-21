@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { ShellIcon } from "../../components/ShellIcon";
-import { ConfigurationHelp, ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
+import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import type { TranslateFn } from "../../i18n";
 import type { InstanceDetails, ModuleDetails, SaveInstanceSettingsOptions, UpdateInstanceInput } from "../../types";
 import { useInstanceSettingsSaveCoordinator } from "../settings/InstanceSettingsSaveContext";
 import { normalizeConfigurationSaveError } from "../settings/configuration-save-error";
 import { parseSettingsObject, serializeSettingsObject } from "../settings/guided-settings";
+import { MaintenanceChip, MaintenanceHelp } from "./MaintenanceToolbar";
 import { mergeProgramUpdatePolicy, readProgramUpdatePolicy, supportsProgramUpdates, type ProgramUpdatePolicy } from "./program-update-policy";
 
 interface Props {
@@ -31,8 +31,6 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
   const [confirmed, setConfirmed] = useState<{ observed: string; saved: string } | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
-  const titleId = useId();
-  const helpId = useId();
   const controlId = useId();
   const latestJson = confirmed?.observed === details.settings_json ? confirmed.saved : details.settings_json;
   const parsed = parseSettingsObject(latestJson, t);
@@ -91,19 +89,20 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
     } finally { pending.current = false; }
   }
 
-  return <section className="server-workbench-surface server-maintenance-card" aria-labelledby={titleId}>
+  const summary = !ready ? undefined : !supported ? t("servers.maintenance.programManual")
+    : policy ? t(`servers.programPolicy.${policy}`) : undefined;
+  return <MaintenanceChip icon="settings" label={t("servers.programPolicy.title")} value={summary}
+    className="server-program-policy" help={t("servers.programPolicy.sharedHint")}>
     <form className="server-save-policy-editor" onSubmit={(event) => void save(event)} aria-busy={saving}>
-      <ConfigurationHelp description={t("servers.programPolicy.sharedHint")}>{(help) =>
-        <h3 className="server-workbench-section-label server-maintenance-card-label" id={titleId} ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>
-          <ShellIcon name="settings" className="server-workbench-section-icon" />{t("servers.programPolicy.title")}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></h3>}</ConfigurationHelp>
       {readError && <ActivityNotice tone="error">{readError}</ActivityNotice>}
       {!ready ? <p className="form-note" role="status">{t("servers.programPolicy.loading")}</p>
         : !supported ? <p className="form-note">{t("servers.programPolicy.unsupported")}</p>
           : <>
             <label className="server-backup-policy-field" htmlFor={controlId}>
-              <span className="detail-label">{t("servers.programPolicy.label")}</span>
+              <MaintenanceHelp className="detail-label" help={t(value === "pinned" ? "servers.programPolicy.pinnedHint" : "servers.programPolicy.automaticHint")}>
+                {t("servers.programPolicy.label")}</MaintenanceHelp>
               <select id={controlId} name="programUpdatePolicy" className="settings-schema-input" value={value}
-                disabled={disabled} aria-describedby={helpId} aria-invalid={Boolean(readError)}
+                disabled={disabled} aria-invalid={Boolean(readError)}
                 onChange={(event) => {
                   if (disabled || pending.current) return;
                   const next = event.target.value;
@@ -116,8 +115,7 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
                 <option value="pinned">{t("servers.programPolicy.pinned")}</option>
               </select>
             </label>
-            <p className="form-note server-save-policy-note" id={helpId}>{t(value === "pinned" ? "servers.programPolicy.pinnedHint" : "servers.programPolicy.automaticHint")}</p>
-            {!idle && !readOnly && <p className="form-note">{t("servers.programPolicy.stopFirst")}</p>}
+            {!idle && !readOnly && <p className="form-note" role="note">{t("servers.programPolicy.stopFirst")}</p>}
           </>}
       {error && <ActivityNotice tone="error">{error}</ActivityNotice>}
       {!readOnly && supported && <div className="server-backup-policy-footer">
@@ -133,5 +131,5 @@ function PolicyForm({ details, moduleDetails, t, readOnly, onSaveSettings }: Pro
         <ConfigurationActionHelp reason={!idle ? t("servers.programPolicy.stopFirst") : readError ? readError : !dirty ? t("servers.maintenance.noChanges") : null}><button type="submit" className="secondary-button" disabled={disabled || !dirty}>{t("servers.backups.policySave")}</button></ConfigurationActionHelp>
       </div>}
     </form>
-  </section>;
+  </MaintenanceChip>;
 }

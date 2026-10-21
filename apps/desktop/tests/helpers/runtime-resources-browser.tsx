@@ -70,6 +70,8 @@ async function run() {
   details = { ...source, summary: { ...source.summary, status: "Stopped", active_process_count: 0 }, active_run: null,
     settings_json: '{"server_name":"Keep this world"}' };
   await render(); await waitFor(() => Boolean(fixture.querySelector("input[name=cpu]")));
+  // The editor is a settings chip; open its popover to reach the fields.
+  await act(async () => select<HTMLButtonElement>(".server-resource-policy > .maintenance-chip__summary").click());
   check(select<HTMLInputElement>("input[name=cpu]").value === "", "Default unexpectedly limits CPU");
   check(fixture.textContent?.includes("地表和洞穴共用一份预算"), "Shared-world budget explanation missing"); checks++;
 
@@ -95,6 +97,8 @@ async function run() {
   root = createRoot(fixture);
   details = { ...details, settings_json: localStorage.getItem(storageKey)! };
   await render(); await waitFor(() => Boolean(fixture.querySelector("input[name=cpu]")));
+  // The editor is a settings chip; open its popover to reach the fields.
+  await act(async () => select<HTMLButtonElement>(".server-resource-policy > .maintenance-chip__summary").click());
   check(select<HTMLInputElement>("input[name=cpu]").value === "25" && select<HTMLInputElement>("input[name=memory]").value === "8192", "Remount did not read saved caps"); checks++;
 
   await act(async () => select<HTMLInputElement>("input[name=cpu]").focus());

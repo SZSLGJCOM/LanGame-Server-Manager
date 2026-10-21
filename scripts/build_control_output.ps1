@@ -39,7 +39,7 @@ function Resolve-ControlBuildOutput {
         [Parameter(Mandatory = $true)][string]$OutDir,
         [Parameter(Mandatory = $true)][string]$ProjectRoot,
         [Parameter(Mandatory = $true)]
-        [ValidateSet('enshrouded-control', 'valheim-control', 'dragonwilds-player-query')][string]$CargoLeaf,
+        [ValidateSet('enshrouded-control', 'valheim-control', 'dragonwilds-player-query', 'windrose-save-control', 'native-world-save', 'scum-save-control', 'unreal-loader-proxies', 'vrising-save-control')][string]$CargoLeaf,
         [switch]$LocalOnly
     )
     $output = ConvertTo-ControlBuildPath $OutDir $LocalOnly.IsPresent

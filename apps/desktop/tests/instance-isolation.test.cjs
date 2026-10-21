@@ -24,12 +24,14 @@ function report(id = "server-a", overrides = {}) {
     data_path: "D:/managed-data/" + id,
     config_path: "D:/instances/" + id + "/config",
     saves_path: "D:/instances/" + id + "/config/clusters/main",
+    backups_path: "D:/backups/" + id,
     conflicts: [], issues: [], ...overrides
   };
 }
+const inlined = new Set([helpHarness.ConfigurationHelp]);
 function descendants(node) {
   if (!React.isValidElement(node)) return [];
-  if (node.type === helpHarness.ConfigurationHelp) return descendants(node.type(node.props));
+  if (inlined.has(node.type)) return descendants(node.type(node.props));
   return [node, ...React.Children.toArray([node.props.children, node.props.action]).flatMap(descendants)];
 }
 function harness(read = async (id) => report(id)) {
@@ -61,25 +63,37 @@ function harness(read = async (id) => report(id)) {
       effects.push(() => { previous?.cleanup?.(); hooks[slot].cleanup = create(); });
     }
   };
-  const filename = path.resolve(__dirname, "../src/views/servers/InstanceIsolationPanel.tsx");
-  const loaded = new Module(filename, module);
-  loaded.filename = filename;
-  const requireFromFile = Module.createRequire(filename);
   const t = (key, params) => key + (params?.message ? ": " + params.message : params?.path ? ": " + params.path : "");
-  loaded.require = (id) => {
-    if (id === "react") return react;
-    if (id === "../settings/ConfigurationFieldHelp") return helpHarness;
-    if (id === "../../i18n") return { useI18n: () => ({ t }) };
-    if (id === "../../app-state") return { describeError: (error) => error.message ?? String(error) };
-    if (id === "../../components/ShellIcon") return { ShellIcon: () => React.createElement("svg") };
-    if (id === "../../instance-panel-loader") return {
-      instancePanelReader: { readIsolation(instanceId, signal) { calls.push({ instanceId, signal }); return read(instanceId, signal); } },
-      formatInstancePanelError: (error) => error
+  function load(relative) {
+    const filename = path.resolve(__dirname, "../src/views/servers", relative);
+    const loaded = new Module(filename, module);
+    loaded.filename = filename;
+    const requireFromFile = Module.createRequire(filename);
+    loaded.require = (id) => {
+      if (id === "react") return react;
+      if (id === "../settings/ConfigurationFieldHelp") return helpHarness;
+      if (id === "../../i18n") return { useI18n: () => ({ t }) };
+      if (id === "../../app-state") return { describeError: (error) => error.message ?? String(error) };
+      if (id === "../../components/ShellIcon") return { ShellIcon: () => React.createElement("svg") };
+      if (id === "../../instance-panel-loader") return {
+        instancePanelReader: { readIsolation(instanceId, signal) { calls.push({ instanceId, signal }); return read(instanceId, signal); } },
+        formatInstancePanelError: (error) => error
+      };
+      // The shared toolbar and record rows are hook-free here; they are inlined so their buttons can be driven.
+      if (id === "./MaintenanceToolbar" || id === "./StorageRecordList") {
+        const shared = load(id.slice(2) + ".tsx");
+        for (const name of ["MaintenanceToolbar", "MaintenanceAction", "MaintenanceHelp", "StorageRecordList", "StorageRecordRow"]) {
+          if (shared[name]) inlined.add(shared[name]);
+        }
+        return shared;
+      }
+      if (id.endsWith(".css")) return {};
+      return requireFromFile(id);
     };
-    if (id.endsWith(".css")) return {};
-    return requireFromFile(id);
-  };
-  loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+    loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+    return loaded.exports;
+  }
+  const loaded = { exports: load("InstanceIsolationPanel.tsx") };
   const props = { instanceId: "server-a", onOpenLocalPath: (value) => opened.push(value) };
   function render() {
     let root;
@@ -96,7 +110,8 @@ function harness(read = async (id) => report(id)) {
       html: renderToStaticMarkup(root),
       nodes,
       refresh: nodes.find((node) => node.type === "button" && node.props.className.includes("instance-isolation-refresh")),
-      open: nodes.filter((node) => node.type === "button" && node.props["aria-label"])
+      open: nodes.filter((node) => node.type === "button" && node.props.className.includes("instance-isolation-open")),
+      copy: nodes.filter((node) => node.type === "button" && node.props["aria-label"] === "servers.isolation.copyPath")
     };
   }
   return { props, calls, opened, render, get writes() { return writes; }, unmount() { for (const hook of hooks) hook?.cleanup?.(); } };
@@ -115,7 +130,9 @@ test("independent-instance diagnostics show actual paths without conversion cont
   assert.match(rendered.html, /D:\/instances\/server-a\/runtime/);
   assert.match(rendered.html, /D:\/instances\/server-a\/config\/clusters\/main/);
   assert.equal(rendered.nodes.filter((node) => node.type === "input").length, 0);
-  assert.equal(rendered.nodes.filter((node) => node.type === "button").length, 5);
+  // Five reported directories (including the backend backup root), each with open and copy, plus refresh.
+  assert.equal(rendered.nodes.filter((node) => node.type === "button").length, 11);
+  assert.equal(rendered.copy.length, 5);
   rendered.open[0].props.onClick();
   assert.deepEqual(state.opened, ["D:/instances/server-a/runtime"]);
   rendered.open[1].props.onClick();
@@ -138,7 +155,7 @@ test("read failure exposes the cause and retries without claiming private isolat
   assert.match(state.render().html, /servers.isolation.readFailed/);
   assert.doesNotMatch(state.render().html, /instance-isolation-content/);
   assert.doesNotMatch(state.render().html, /servers.isolation.mode.private/);
-  assert.equal(state.render().refresh.props.children, "common.refresh");
+  assert.equal(state.render().refresh.props["aria-label"], "common.refresh");
   const retry = state.render().nodes.find((node) => node.type === "button" && node.props.children === "common.retry");
   assert.ok(retry, "the failure retains its activity-bar retry action");
   fail = false;
@@ -227,20 +244,19 @@ test("a healthy runtime with conflicts or issues still exposes diagnostics", asy
 
 test("all directory shortcuts stay visible with full paths and retain the diagnostic lifecycle", async () => {
   const state = harness();
-  state.props.backupPath = "D:/backups/server-a";
   state.render();
   await settle();
   const rendered = state.render();
   assert.equal(rendered.open.length, 5);
-  for (const button of rendered.open) {
-    assert.equal(button.props.disabled, false);
+  const fullPaths = rendered.nodes.filter((node) => node.props.className === "configuration-field-help-description"
+    && /\nD:\//.test(node.props.children)).map((node) => node.props.children.split("\n")[1]);
+  assert.equal(fullPaths.length, 5, "each truncated row carries its full path in the shared bubble");
+  rendered.open.forEach((button, index) => {
+    assert.ok(!button.props.disabled);
     assert.equal(button.props.title, undefined, "Directory help must use the shared tooltip only");
-    const descriptionId = button.props["aria-describedby"];
-    assert.ok(descriptionId);
-    const description = rendered.nodes.find((node) => node.props.id === descriptionId);
-    assert.match(description.props.children, /^D:\//);
-    assert.ok(button.props["aria-label"].includes(description.props.children));
-  }
+    assert.ok(button.props["aria-describedby"]);
+    assert.ok(button.props["aria-label"].includes(fullPaths[index]));
+  });
   rendered.open[4].props.onClick();
   assert.deepEqual(state.opened, ["D:/backups/server-a"]);
   const refreshedView = state.render();
@@ -269,8 +285,9 @@ test("same-game mock instances always have separate runtimes and the current rep
   assert.equal(second.runtime_path, "D:/instances/b/runtime");
   assert.deepEqual(first.conflicts, []);
   assert.deepEqual(Object.keys(first).sort(), [
-    "instance_id", "mode", "runtime_path", "data_path", "config_path", "saves_path", "conflicts", "issues"
+    "instance_id", "mode", "runtime_path", "data_path", "config_path", "saves_path", "backups_path", "conflicts", "issues"
   ].sort());
+  assert.equal(first.backups_path, "D:/instances/a/backups");
 });
 test("independent mock runtimes retain real save-overlap diagnostics", () => {
   const a = details("a", "D:/shared-world");

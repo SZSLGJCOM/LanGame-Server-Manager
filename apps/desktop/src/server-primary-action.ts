@@ -4,6 +4,7 @@ import type { BackgroundJob, LaunchPlan } from "./types";
 export interface ServerModuleInstallation {
   installState: string;
   hasManagedInstallSource: boolean | null;
+  hasImmediateWorldSave?: boolean | null;
 }
 
 export type ServerInstallationIntent = "install" | "repair";

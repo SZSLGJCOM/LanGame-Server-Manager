@@ -1,6 +1,6 @@
 import { measureControl, type ControlMeasurement } from "./measure-control-contracts";
 
-type Section = "backups" | "save-policy" | "runtime" | "storage" | "broadcast";
+type Section = "saves" | "backups" | "runtime" | "broadcast";
 
 export async function measureMaintenanceControls(
   fixture: HTMLElement,
@@ -14,20 +14,26 @@ export async function measureMaintenanceControls(
     measurements.push(measureControl(name, element, height, role));
   }
   await navigate("backups");
-  measure("backup action", ".server-file-backup-toolbar button", 30, "action");
-  await click(".server-file-backup-actions > button:nth-of-type(2)");
+  measure("backup action", ".server-backup-history-card .maintenance-toolbar > button.secondary-button", 30, "action");
+  await click('[data-maintenance-section="backups"] .server-file-backup-actions > button:nth-of-type(2)');
   measure("backup rename input", ".backup-rename-action > input", 38);
   measure("backup rename save", ".backup-rename-action > button[type=submit]", 38, "action");
   measure("backup rename cancel", ".backup-rename-action > button[type=button]", 38, "action");
   await click(".backup-rename-action > button[type=button]");
-  await navigate("save-policy");
+  await navigate("backups");
   measure("save retention", ".server-managed-backup-policy input[type=number]", 38);
   measure("save policy toggle", ".server-backup-policy-toggle", 38);
   await navigate("runtime");
-  measure("runtime CPU limit", ".server-resource-fields input[name=cpu]", 38);
-  measure("runtime autostart toggle", ".server-autostart-policy-editor > .settings-toggle-card", 38);
-  measure("runtime recovery attempts", ".server-runtime-recovery-editor input[name=maxRestarts]", 38);
-  await navigate("storage");
+  // Runtime policies live in chip popovers; open one at a time, as a user would.
+  for (const [chip, name, selector] of [
+    ["server-resource-policy", "runtime CPU limit", ".server-resource-fields input[name=cpu]"],
+    ["server-runtime-recovery-chip", "runtime recovery attempts", ".server-runtime-recovery-editor input[name=maxRestarts]"]
+  ] as const) {
+    const summary = `.${chip} > .maintenance-chip__summary`;
+    if (fixture.querySelector(summary)?.getAttribute("aria-expanded") !== "true") await click(summary);
+    measure(name, selector, 38);
+    await click(`.${chip} > .maintenance-chip__summary`);
+  }
   measure("storage refresh action", ".instance-isolation-refresh", 30, "action");
   await navigate("broadcast");
   measure("broadcast tone", "select[name=broadcast-tone]", 38);

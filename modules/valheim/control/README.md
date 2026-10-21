@@ -2,22 +2,24 @@
 
 This Windows server plugin runs a closed local file protocol on Unity's main
 thread. It requires the reviewed BepInEx loader. Loading the plugin changes the
-server runtime and must be enabled explicitly; it is not a vanilla server
+server runtime; startup automatically prepares the loader and control before
+creating the game process. It is not a vanilla server
 console or RCON endpoint. It adds no network RPC or client plugin requirement.
 Client compatibility must still be verified with the target server build.
 
 ## Enabling and updates
 
-First-time account management remains an explicit, stopped-instance operation
-that prepares an independent server program and the reviewed loader. On normal
-startup of an already enabled instance, the manager holds the existing instance
-and program locks, verifies the installed loader and known native assembly
-profile, then refreshes the owned management DLL to the current bundled payload.
+Starting the instance prepares an independent server program and automatically
+installs/configures the reviewed loader when it is missing. Complete compatible
+installations are reused without a download. The optional stopped-instance
+account-management preparation performs the same setup ahead of startup. On
+normal startup, the manager holds the existing instance and program locks,
+verifies the installed loader and known native assembly profile, then installs
+or refreshes the owned management DLL to the current bundled payload.
 The installed DLL hash must match its ownership record's previous payload or a
 recognized pending update; recognized interrupted updates can be recovered.
 Updating LanGame therefore does not require manually enabling account management
-again. Startup does not install a loader for the first time or detach a shared
-program. This DLL refresh does not write world rules or saves. Externally changed
+again. Setup does not write world rules or saves. Externally changed
 and unknown files are preserved and reported instead of being overwritten.
 
 ## Build
@@ -135,13 +137,13 @@ logs it.
 
 `request.json` is one UTF-8 object of at most 16 KiB with required `protocol:1`,
 `nonce` (32 lowercase hexadecimal GUID characters), `token`, and `op`.
-Operations are `query`, `reload`, and `kick`; only kick accepts the required
+Operations are `query`, `reload`, `kick`, and `save`; only kick accepts the required
 `session_key` and `host_id`. Unknown/duplicate fields, trailing JSON, invalid
 targets and unauthorized requests cannot reach native operations.
 
 `response.json` is atomically published with the same nonce, process id and
 operation, status `ok` or `error`, optional nonempty error code, `players`,
-`access`, and fixed capabilities `query/reload/kick`. Players carry
+`access`, and fixed capabilities `query/reload/kick/save`. Players carry
 `session_key/name/host_id/platform_id/admin`; access contains
 `admin/banned/permitted` arrays. Host ids are private execution bindings and must
 not be exposed as guessed account identifiers. Responses are at most 64 KiB;
@@ -149,20 +151,86 @@ players are bounded to 255 and access lists to 4096 entries of at most 1024
 Unicode characters each. These are native read facts, preserved without applying
 future-write normalization. The total response limit remains 64 KiB.
 
-Polling is at most five times per second with one pending kick. The last 64
+Polling is at most five times per second with one pending mutation. The last 64
 completed nonces cache their exact request byte fingerprint and result; a changed
 payload reusing a nonce is rejected. The caller must preserve its original nonce
 when recovering an uncertain operation within that window. Publication retries
-last at most five seconds while native kick completion continues to advance.
+last at most five seconds while native operation completion continues to advance.
 Permission errors or an unsafe response path deactivate only the controller and
 emit one generic diagnostic, leaving the server running.
 Atomic replacement of an otherwise identical request is detected from its file
 identity/write time and republishes the cached result without native reexecution.
 
-The BCL harness uses synthetic peers and access files only. It covers malformed
+The BCL harness uses synthetic peers, access files and gated save workers. It covers malformed
 and unauthorized requests, nonce replay/conflicts, pending kick success/timeout,
 current peer identity, exact overload/host binding, native reload authority,
 file/response limits, read pins, and directory-junction rejection.
+
+## Immediate world save
+
+`save` has no target, path or command argument. It requires the extension prepared
+automatically by startup; submitting it does not install a loader or alter the instance
+program. The owner verifies a dedicated, enabled server, an active world, native
+ZoneSystem/DungeonDB save readiness, an existing native `Game.instance`, no native
+load error and no active save. It calls the same native disk-space check used by
+autosaving: `EnoughDiskSpaceAvailable(out exitGamePopupShown, false, null)`.
+A false result or an unexpected exit-prompt result rejects the operation before
+native saving starts. It then calls `ZNet.Save(false, true, false)` on Unity's
+owner thread: `sync=false` keeps the save asynchronous,
+`saveOtherPlayerProfiles=true` notifies connected clients to save their profiles,
+and `waitForNextFrame=false` creates the worker before the call returns.
+The native `Save` retains its session, load-error, zone and dungeon guards.
+The asynchronous
+native save worker is polled with zero-time `Join(0)`; the controller never waits
+for that thread on Unity's owner.
+
+The client-facing `SaveWorldAndPlayerProfiles` / `RPC_Save` entry is unsuitable
+for the dedicated process. Its `HardSaveBlock` implements the Nintendo client save
+interval by dereferencing `PlatformManager.DistributionPlatform` during the
+first 60 seconds. In the isolated Windows dedicated build 25730807, that call
+raised a native `NullReferenceException` after the server had opened its Steam
+endpoint. The server/autosave path above preserves the real disk and save-state
+checks without invoking client-platform UI or manufacturing a native singleton.
+This dedicated save route is currently admitted only for the complete pinned
+25730807 tuple. Build 25909431 keeps its previously verified query/access
+operations, but `save` returns `unsupported_native_save_contract` until its
+dedicated disk/save path has been inspected and tested independently. A matching
+reflection signature alone does not establish matching native save semantics.
+
+Read-only IL inspection of both pinned builds 25730807 and 25909431 confirms that
+`SaveSystem.EndSave(source, success)` updates private `s_saveNumber` only when
+`success` is true, after the chunk/DB2/FWL/OK native commit path. In contrast,
+`GetSaveNumber()` returns the proposed generation while saving and cannot confirm
+success. The controller binds the request to the actual `m_saveThread`, the
+current world and exactly one `WorldSaveStarted` observation, then checks worker
+completion and a committed generation increment of exactly one. Another save,
+world/server replacement or removed observer makes the outcome unknown.
+`WorldSaveFinished`, a stopped thread or a log message alone never proves success.
+
+Only a confirmed save returns `status: "ok"` with the additional closed field
+`"world_save":{"previous_save_number":7,"committed_save_number":8,"evidence":"native_commit"}`.
+The receipt contains no file path or world name. The Rust consumer verifies the
+generation transition, evidence, nonce, process identity and operation. Failed
+native commits return `save_failed`; a request that does not start returns an
+explicit rejection. Observation loss or the 120-second native observation limit
+returns `save_outcome_unknown`, with no receipt. The Rust worker waits at most
+125 seconds, never republishes the mutation, and retains the instance mutation
+guard and storage-context lease even when its awaiting caller is cancelled.
+Unknown outcomes must be checked before another manual attempt.
+
+Unknown native failures include bounded exception type/method metadata in the
+existing error field and local plugin log. No exception message, file path,
+request content or token is included. A failed logging target cannot replace
+the original failure or cause the request to execute again.
+
+The synthetic harness covers successful/failed workers, native disk-space
+refusal, missing game readiness, the absent dedicated client-platform dependency,
+rejection/readiness,
+unrelated saves, world/observer replacement, counter wrap, authentication,
+serialization, nonce replay and bounded unknown outcomes. Both pinned native
+assemblies also pass a binding-only reflection probe; the plugin builds against
+the actual reviewed loader/Unity references. These checks do not claim a real
+world save, client integration or filesystem-failure acceptance under a live game.
 
 ## Isolated smoke test
 

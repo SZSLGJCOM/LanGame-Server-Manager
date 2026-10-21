@@ -107,7 +107,7 @@ wait_after_ms = 10000
 [player_management]
 status = "runtime_actions"
 planned_surface = "palworld_rest"
-reason = "Palworld uses the authenticated REST API for online players, broadcasts, moderation, saving, and shutdown. Player actions bind the platform userId returned by the current server run."
+reason = "Palworld uses the authenticated REST API for online players, broadcasts, moderation, manual saving, and shutdown. Player actions bind the platform userId returned by the current server run. Manual world saving sends the official REST save request without an in-process save extension."
 verification = "Enable RESTAPIEnabled with AdminPassword and the instance RESTAPIPort. Refresh online players, compare their userId with connected clients, then verify a kick and rejoin. The official 1.0.4 REST endpoints must return HTTP 200; synthetic HTTP fixtures validate request and failure handling."
 
 [[runtime.player_actions]]

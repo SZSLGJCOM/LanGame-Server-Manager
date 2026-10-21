@@ -31,6 +31,7 @@ fn current_user_maintenance_cannot_be_exposed_through_lan() {
     for name in [
         "uninstall_steamcmd",
         "preview_dontstarve_world_start",
+        "regenerate_dontstarve_world",
         "read_ark_tools_status",
         "prepare_ark_tools",
         "spawn_ark_creature",
@@ -58,6 +59,7 @@ fn current_user_maintenance_cannot_be_exposed_through_lan() {
     for name in [
         "start_instance_process",
         "read_instance_details_from_storage",
+        "read_dontstarve_world_map",
     ] {
         let command = find(name).unwrap();
         assert_eq!(command.execution, Execution::Runtime, "{name}");
@@ -75,7 +77,17 @@ fn service_control_and_unknown_names_are_not_product_commands() {
         "runtime_service_tray_exit",
         "unknown_command",
         "START_INSTANCE_PROCESS",
+        "import_dontstarve_world_map_artwork",
+        "read_dontstarve_map_client_package",
     ] {
         assert_eq!(find(name), None, "{name}");
     }
+}
+
+#[test]
+fn dst_world_regeneration_completes_under_runtime_ownership() {
+    assert_eq!(
+        find("regenerate_dontstarve_world").unwrap().completion,
+        Completion::Owned
+    );
 }

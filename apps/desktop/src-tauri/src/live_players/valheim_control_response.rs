@@ -15,6 +15,7 @@ pub(crate) enum Operation {
     Query,
     Reload,
     Kick,
+    Save,
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -51,6 +52,15 @@ pub(crate) struct ControlSnapshot {
     pub players: Vec<ValidatedPeer>,
     pub access: AccessLists,
     pub capabilities: HashSet<Operation>,
+    pub world_save: Option<WorldSaveReceipt>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WorldSaveReceipt {
+    pub previous_save_number: u32,
+    pub committed_save_number: u32,
+    evidence: String,
 }
 
 #[derive(Deserialize)]
@@ -65,6 +75,7 @@ struct Packet {
     capabilities: Vec<Operation>,
     players: Vec<Player>,
     access: AccessLists,
+    world_save: Option<WorldSaveReceipt>,
 }
 
 #[derive(Deserialize, PartialEq, Eq)]
@@ -129,6 +140,9 @@ pub(super) fn parse(
     }
     let players = validate_players(packet.players)?;
     if packet.status == Status::Error {
+        if packet.world_save.is_some() {
+            return Err(ResponseError::Invalid("failure includes a save receipt"));
+        }
         let error = packet
             .error
             .filter(|error| !error.is_empty())
@@ -138,10 +152,20 @@ pub(super) fn parse(
     if packet.error.is_some_and(|error| !error.is_empty()) {
         return Err(ResponseError::Invalid("success includes failure detail"));
     }
+    match (expected_op, &packet.world_save) {
+        (Operation::Save, Some(receipt))
+            if receipt.evidence == "native_commit"
+                && receipt.committed_save_number
+                    == receipt.previous_save_number.wrapping_add(1) => {}
+        (Operation::Save, _) => return Err(ResponseError::Invalid("missing native save commit")),
+        (_, Some(_)) => return Err(ResponseError::Invalid("unexpected save receipt")),
+        (_, None) => {}
+    }
     Ok(ControlSnapshot {
         players,
         access: packet.access,
         capabilities,
+        world_save: packet.world_save,
     })
 }
 

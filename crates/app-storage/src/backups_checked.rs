@@ -186,7 +186,7 @@ fn backup_confirmation_error(path: &Path, message: &str) -> StorageError {
 
 // Streaming content hashes include relative names and empty directories. The
 // fixed limits bound memory/work, and unsafe entries fail instead of disappearing.
-fn backup_tree_sha256(root: &Path) -> Result<String, StorageError> {
+pub fn backup_tree_sha256(root: &Path) -> Result<String, StorageError> {
     use sha2::{Digest, Sha256};
     use std::io::Read;
     let canonical_root = canonical_plain_directory(root, root)?;

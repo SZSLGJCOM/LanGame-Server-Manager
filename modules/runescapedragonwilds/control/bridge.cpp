@@ -167,6 +167,16 @@ struct Image {
         require(game_thread != nullptr, "thread_api");
     }
 };
+struct Initialization {
+    std::unique_ptr<Image> image;
+    std::string error;
+    Initialization() {
+        try { image = std::make_unique<Image>(); }
+        catch (const std::exception& failure) { error = failure.what(); OutputDebugStringA("[LgsmPlayerControl] Initialization failed.\n"); }
+        catch (...) { error = "initialization_exception"; OutputDebugStringA("[LgsmPlayerControl] Initialization exception.\n"); }
+    }
+};
+Initialization& initialization() { static Initialization result; return result; }
 struct Request {
     std::string nonce, operation;
     uintptr_t matchmaker{}, settings{};
@@ -304,16 +314,7 @@ void invoke() {
     }
     // A failed initialization is cached for this process; query probes cannot
     // trigger repeated module hashing. Restart after repairing installation.
-    struct Initialization {
-        std::unique_ptr<Image> image;
-        std::string error;
-        Initialization() {
-            try { image = std::make_unique<Image>(); }
-            catch (const std::exception& failure) { error = failure.what(); OutputDebugStringA("[LgsmPlayerControl] Initialization failed.\n"); OutputDebugStringA(error.c_str()); }
-            catch (...) { error = "initialization_exception"; OutputDebugStringA("[LgsmPlayerControl] Initialization exception.\n"); }
-        }
-    };
-    static Initialization initialized;
+    auto& initialized = initialization();
     const char* error{};
     try { error = initialized.image ? guarded_dispatch(*initialized.image, request) : initialized.error.c_str(); }
     catch (const std::exception& failure) { error = failure.what();
@@ -327,6 +328,15 @@ void invoke() {
     write_receipt(response.value, text);
 }
 } // namespace
+
+// Shared by the save observer and moderation entry. The process image, loader,
+// physical plugin path and full hashes have one cached initialization owner.
+bool lgsm_dragon_control_image(std::uintptr_t& base, std::filesystem::path& directory, bool (*&thread)()) noexcept {
+    const auto& state = initialization();
+    if (!state.image) return false;
+    base=state.image->base; directory=state.image->directory; thread=state.image->game_thread;
+    return thread && thread();
+}
 
 // Lua's package.loadlib passes lua_State*. No Lua symbol is imported or called;
 // return 0 means no Lua results. The synchronous bounded receipt is the API.

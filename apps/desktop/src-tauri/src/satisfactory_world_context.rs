@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
 
 use app_core::{InstanceDetails, InstanceStatus, ProcessIdentity};
-use app_platform_win::{WindowInspectionTarget, WindowsPlatform};
+use app_platform_win::WindowsPlatform;
 use app_runtime::RuntimeSupervisor;
 
 use crate::state::DesktopState;
@@ -137,28 +137,14 @@ impl Endpoint {
     fn check_blocking(&self) -> Result<(), String> {
         const ERROR: &str = "The Satisfactory API listener is no longer owned by this instance. Refresh the server state.";
         self.check_process_blocking()?;
-        let target = WindowInspectionTarget {
-            pid: self.pid,
-            process_key: self.process_key.clone(),
-            display_name: "Satisfactory".into(),
-            process_identity: self.identity.clone(),
-        };
-        let endpoints = WindowsPlatform::inspect_process_network_endpoints(&[target], &[self.port])
+        // A process-filtered inventory hides competing listeners. Inspect all
+        // loopback/wildcard owners before sending the administrator credential.
+        let owners = WindowsPlatform::loopback_tcp_listener_owners(self.port)
             .map_err(|_| ERROR.to_string())?;
-        let pids = endpoints
-            .endpoints
-            .iter()
-            .filter(|endpoint| {
-                endpoint.protocol == "tcp"
-                    && endpoint.local_port == self.port
-                    && matches!(endpoint.local_address.as_str(), "127.0.0.1" | "0.0.0.0")
-            })
-            .map(|endpoint| endpoint.owning_pid)
-            .collect::<BTreeSet<_>>();
-        if pids != BTreeSet::from([self.pid]) {
+        if owners != BTreeSet::from([self.pid]) {
             return Err(ERROR.into());
         }
-        Ok(())
+        self.check_process_blocking()
     }
 
     pub(super) async fn check_process(&self) -> Result<(), String> {

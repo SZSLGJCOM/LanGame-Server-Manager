@@ -122,6 +122,15 @@ test("an inactive live-player hook has no reads, refresh controller, or visibili
   for (const cleanup of cleanups) cleanup?.();
 });
 
+/** The backup total sits beside the card title; its per-kind breakdown is the title's help bubble. */
+function backupCount(content) {
+  const [help] = findElement(content, (element) => typeof element.props.children === "function"
+    && element.props.description !== undefined);
+  const rendered = help.props.children({ anchorRef() {}, interactionProps: {}, descriptionId: undefined });
+  const [count] = findElement(rendered, (element) => element.props.className === "server-backup-count");
+  return { total: count.props.children, breakdown: help.props.description };
+}
+
 function maintenanceView(backups, archive) {
   const mocks = { "../../api": {}, "../../ark-clusters": { isArkModule: () => false } };
   // The shared parent owns the backup loading/empty-state decision. Native and
@@ -143,8 +152,8 @@ test("unreadable or truncated archive backup metadata cannot be reported as an e
   for (const retained of [{ entries: [], truncated: false, issues: ["Retained metadata is unreadable"] },
     { entries: [], truncated: true, issues: [] }]) {
     const content = maintenanceView([], { backups: retained, maintenance: { crash_restart_limit: 3 } });
-    const counts = findElement(content, (element) => element.props.className === "server-file-backup-stat");
-    assert.deepEqual(counts.map((element) => element.props.children[0].props.children), ["—", "—", "—"]);
+    const counts = backupCount(content);
+    assert.deepEqual(counts, { total: "—", breakdown: null }, "unknown counts never read as an empty history");
     assert.deepEqual(findElement(content, (element) => element.type.name === "BackupTable"), []);
     assert.ok(findElement(content, (element) => element.type === "p" && element.props.role === "status").length > 0);
   }
@@ -154,8 +163,9 @@ test("a readable empty archive and a normal empty instance retain the shared emp
   for (const archive of [undefined, { backups: { entries: [], truncated: false, issues: [] },
     maintenance: { crash_restart_limit: 3 } }]) {
     const content = maintenanceView([], archive);
-    const counts = findElement(content, (element) => element.props.className === "server-file-backup-stat");
-    assert.deepEqual(counts.map((element) => element.props.children[0].props.children), [0, 0, 0]);
+    const counts = backupCount(content);
+    assert.deepEqual(counts, { total: 0,
+      breakdown: "servers.backups.manualTitle 0 · servers.backups.autoTitle 0 · servers.backups.safeguardTitle 0" });
     const [table] = findElement(content, (element) => element.type.name === "BackupTable");
     assert.deepEqual(table.props.backups, []);
   }

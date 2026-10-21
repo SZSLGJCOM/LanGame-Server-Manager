@@ -1,6 +1,6 @@
 use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::io::Read;
+use std::path::Path;
 use std::time::{Duration, Instant};
 
 use app_core::ProcessIdentity;
@@ -156,15 +156,11 @@ fn response_for_request_with_limit(
     .then_some(body))
 }
 
-struct RequestFile(PathBuf);
-impl Drop for RequestFile {
-    fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
-    }
-}
-
-pub(super) fn replace_request(source: &Path, destination: &Path) -> Result<(), BridgeError> {
-    let error = match fs::rename(source, destination) {
+pub(super) fn replace_request(
+    source: &mut crate::native_control_publish::PendingFile,
+    destination: &Path,
+) -> Result<(), BridgeError> {
+    let error = match source.replace(destination) {
         Ok(()) => return Ok(()),
         Err(error) => error,
     };
@@ -172,10 +168,10 @@ pub(super) fn replace_request(source: &Path, destination: &Path) -> Result<(), B
     if error.raw_os_error() == Some(5) {
         use std::os::windows::fs::OpenOptionsExt;
         use windows_sys::Win32::Storage::FileSystem::{DELETE, FILE_FLAG_OPEN_REPARSE_POINT};
-        // MoveFileExW reports access denied for a destination opened without
-        // delete sharing; Rust's fallback preserves that error. Probe DELETE
-        // access without deleting anything to distinguish a reader from an ACL
-        // denial. A successful/missing probe means the reader already moved on.
+        // Windows may reject namespace replacement with access denied while a
+        // peer withholds DELETE sharing. Probe DELETE access without deleting
+        // anything to retain the existing busy-vs-ACL classification. A
+        // successful/missing probe means the peer may already have moved on.
         return match OpenOptions::new()
             .access_mode(DELETE)
             .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
@@ -208,7 +204,7 @@ pub(super) fn publish_request(
     )
 }
 
-fn publish_body(
+pub(super) fn publish_body(
     root: &Path,
     directory: &Path,
     nonce: &str,
@@ -226,20 +222,12 @@ fn publish_body(
         Err(error) => return Err(error),
     }
     let temporary_path = directory.join(format!("request_{nonce}.json"));
-    let mut file = OpenOptions::new()
-        .create_new(true)
-        .write(true)
-        .open(&temporary_path)
+    let mut temporary = crate::native_control_publish::PendingFile::create(&temporary_path, body)
         .map_err(file_error)?;
-    // Ownership starts only after create_new succeeds; a pre-existing path
-    // must never be removed by this request's cleanup.
-    let temporary = RequestFile(temporary_path);
-    file.write_all(body).map_err(file_error)?;
-    drop(file);
-    // Rust rename replaces an existing file on Windows too. Removing the
-    // destination first would introduce an unnecessary request-file gap.
+    // The same fully written handle survives every pre-publication busy check.
+    // A successful replace returns immediately and can never be submitted again.
     loop {
-        match replace_request(&temporary.0, &request_path) {
+        match replace_request(&mut temporary, &request_path) {
             Ok(()) => return Ok(()),
             Err(BridgeError::Busy) if Instant::now() < deadline => {
                 std::thread::sleep(Duration::from_millis(50));

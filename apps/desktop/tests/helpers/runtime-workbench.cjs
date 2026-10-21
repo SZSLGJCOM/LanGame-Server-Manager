@@ -81,7 +81,13 @@ function mountWorkbench(registration, options = {}) {
     onSendRuntimeCommand: options.onSendRuntimeCommand ?? (async () => null), onSuppressRuntimeWindows: async () => {},
     onRetryReads: options.onRetryReads
   });
-  while (typeof tree?.type === "function") tree = tree.type(tree.props);
+  while (tree) {
+    if (typeof tree.type === "function") tree = tree.type(tree.props);
+    else if (tree.type === Symbol.for("react.fragment")) {
+      const children = Array.isArray(tree.props.children) ? tree.props.children : [tree.props.children];
+      tree = children.find((child) => typeof child?.type === "function");
+    } else break;
+  }
   const cleanups = effects.map((effect) => effect());
   let disposed = false;
   let emittedByteOffset = 0;

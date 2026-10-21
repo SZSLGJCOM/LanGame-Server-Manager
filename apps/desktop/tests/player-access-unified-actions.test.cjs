@@ -449,7 +449,7 @@ test("ARK Survival Evolved priority roster folds exact no-check join actions", (
   assert.equal(entries[0].key, "76561198000000005");
   assert.deepEqual(
     Array.from(api.filterConsumedPlayerAccessActions(runtimeActions, [binding]), (action) => action.id),
-    ["broadcast", "list_players", "kick_player", "ban_player", "unban_player"]
+    ["save_world", "broadcast", "list_players", "kick_player", "ban_player", "unban_player"]
   );
 
   const descriptor = moduleToml("arksurvivalevolved");
@@ -487,6 +487,7 @@ test("RimWorld retired whitelist has no binding or obsolete native actions", () 
   const runtimeActions = realModuleActions("rimworld");
   assert.deepEqual(Array.from(api.buildPlayerAccessBindings(fields, runtimeActions)), []);
   assert.deepEqual(runtimeActions.map((action) => action.id), [
+    "save_world",
     "list_players", "list_bans", "kick_user", "ban_user", "unban_user", "op_player", "deop_player",
     "list_mods", "toggle_mod_bypass"
   ]);

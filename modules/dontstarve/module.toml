@@ -109,6 +109,30 @@ startup_timeout_ms = 90000
 protocol = "none"
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "c_save()"
+process_key = "master"
+
+[[runtime.player_actions]]
+id = "broadcast"
+kind = "broadcast"
+label = "Broadcast"
+label_zh_cn = "广播"
+transport = "stdin"
+command_template = 'c_announce({{target}})'
+target_label = "Message"
+target_label_zh_cn = "广播内容"
+target_placeholder = "Single-line broadcast message"
+target_placeholder_zh_cn = "单行广播内容"
+target_required = true
+# Route through the master console and quote message data before it enters Lua.
+target_encoding = "quoted_string"
+process_key = "master"
+
+[[runtime.player_actions]]
 id = "list_online_players"
 label = "Refresh live players"
 label_zh_cn = "刷新在线玩家"
@@ -160,7 +184,7 @@ consumer_app_id = 322330
 supports_collections = true
 [storage]
 # modsettings.lua can force-enable developer mods; never inherit edits from another server.
-runtime_copy_exclusions = ["mods/dedicated_server_mods_setup.lua", "mods/modsettings.lua"]
+runtime_copy_exclusions = ["mods/dedicated_server_mods_setup.lua", "mods/modsettings.lua", "mods/lgsm_world_map_observer"]
 saves_path_template = "{{paths.config_dir}}/clusters/main"
 
 [player_management]

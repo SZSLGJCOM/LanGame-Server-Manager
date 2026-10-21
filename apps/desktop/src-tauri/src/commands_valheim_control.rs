@@ -1,4 +1,4 @@
-//! Explicit, stopped-instance preparation. Ordinary startup never installs a loader.
+//! Shared automatic and explicit stopped-instance Valheim extension preparation.
 use super::*;
 use crate::live_players::valheim_control::io;
 use serde::{Deserialize, Serialize};
@@ -55,54 +55,75 @@ pub async fn prepare_valheim_player_control(
         let instance = read_instance_details(&storage.paths, &instance_id)
             .await
             .map_err(|error| error.to_string())?;
-        let root = independent_root(&instance)?;
-        let probe_root = root.clone();
-        tokio::task::spawn_blocking(move || verify_supported_game(&probe_root))
-            .await
-            .map_err(|_| "Valheim build inspection worker failed.")??;
-        let inspection_root = root.clone();
-        tokio::task::spawn_blocking(move || inspect_plugin_destination(&inspection_root))
-            .await
-            .map_err(|_| "Valheim plugin ownership inspection worker failed.")??;
-        let target =
-            super::commands_mods::resolve_manual_mod_target(&storage, instance_id.clone(), true)
-                .await?;
-        let descriptors =
-            discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
-        let descriptor = find_descriptor(&descriptors, "valheim")?;
-        let mods = module_mods_spec_from_manifest(&descriptor.manifest_toml)
-            .ok_or("Valheim Mod installation contract is missing.")?;
-        let source = mods
-            .source
-            .as_ref()
-            .ok_or("Valheim loader source is missing.")?;
-        let prepared = tokio::time::timeout(
-            Duration::from_secs(180),
-            super::commands_mods::mod_online::prepare_thunderstore_install(
-                "valheim",
-                source,
-                &["https://thunderstore.io/package/denikson/BepInExPack_Valheim/5.4.2351/".into()],
-                &root,
-            ),
-        )
-        .await
-        .map_err(|_| "Valheim loader preparation exceeded 180 seconds.")??;
-        spawn_blocking_storage_context_task(&worker_operation, move || {
-            super::commands_mod_staging::stage_thunderstore_online_mod_sources(
-                target,
-                prepared.sources(),
-                prepared.loader_archive(),
-            )?;
-            install_owned_plugin(&root, io::bundled_payload())
-        })
-        .await
-        .map_err(|error| format!("Valheim account control preparation failed: {error}"))??;
+        ensure_installed(&storage, &instance, &worker_operation).await?;
         read_instance_details(&storage.paths, &instance_id)
             .await
             .map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| format!("Valheim account control worker failed: {error}"))?
+}
+
+/// The startup caller already holds the exclusive runtime and instance leases.
+/// Keep them until this future settles; this path never reacquires those locks.
+pub(super) async fn ensure_for_start<L: crate::state::StorageContextTaskLease>(
+    storage: &StorageBootstrap,
+    instance: &InstanceDetails,
+    operation: &L,
+) -> Result<Option<(String, String)>, String> {
+    if instance.summary.module_id != "valheim" {
+        return Ok(None);
+    }
+    ensure_installed(storage, instance, operation).await?;
+    let instance = instance.clone();
+    spawn_blocking_storage_context_task(operation, move || startup_environment(&instance))
+        .await
+        .map_err(|_| "Valheim control startup session worker failed.")?
+}
+
+async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
+    storage: &StorageBootstrap,
+    instance: &InstanceDetails,
+    operation: &L,
+) -> Result<(), String> {
+    ensure_stopped(instance)?;
+    let root = independent_root(instance)?;
+    let probe_root = root.clone();
+    spawn_blocking_storage_context_task(operation, move || {
+        super::commands_managed_save_control::ensure_stopped_program(&probe_root, "valheim")?;
+        verify_supported_game(&probe_root)?;
+        inspect_plugin_destination(&probe_root).map(|_| ())
+    })
+    .await
+    .map_err(|_| "Valheim extension inspection worker failed.")??;
+    super::commands_managed_save_control::ensure_bepinex_loader(
+        storage,
+        instance,
+        operation,
+        "https://thunderstore.io/package/denikson/BepInExPack_Valheim/5.4.2351/",
+    )
+    .await?;
+    spawn_blocking_storage_context_task(operation, move || {
+        super::commands_managed_save_control::ensure_stopped_program(&root, "valheim")?;
+        install_owned_plugin(&root, io::bundled_payload())
+    })
+    .await
+    .map_err(|_| "Valheim extension installation worker failed.")?
+}
+
+fn ensure_stopped(instance: &InstanceDetails) -> Result<(), String> {
+    if !matches!(
+        instance.summary.status,
+        InstanceStatus::Stopped | InstanceStatus::Error
+    ) || instance.summary.active_process_count != 0
+        || instance
+            .active_run
+            .as_ref()
+            .is_some_and(|run| run.process_count != 0)
+    {
+        return Err("Valheim control may only be prepared before the server starts.".into());
+    }
+    Ok(())
 }
 
 fn independent_root(instance: &InstanceDetails) -> Result<PathBuf, String> {
@@ -117,20 +138,26 @@ fn independent_root(instance: &InstanceDetails) -> Result<PathBuf, String> {
     app_storage::resolve_instance_runtime_root(instance_root).map_err(|error| error.to_string())
 }
 
+pub(super) const NATIVE_PREPARATION_FILES: [&str; 3] = [
+    "valheim_server_Data/Managed/assembly_valheim.dll",
+    "valheim_server_Data/Managed/assembly_utils.dll",
+    "valheim_server_Data/Managed/Splatform.dll",
+];
+
 fn verify_supported_game(root: &Path) -> Result<(), String> {
     let _root = io::pin_directories(root)?;
     let managed = root.join("valheim_server_Data/Managed");
     let _managed = io::pin_directory(&managed)?;
     let main = io::digest(&io::read_regular(
-        &managed.join("assembly_valheim.dll"),
+        &root.join(NATIVE_PREPARATION_FILES[0]),
         64 * 1024 * 1024,
     )?);
     let utils = io::digest(&io::read_regular(
-        &managed.join("assembly_utils.dll"),
+        &root.join(NATIVE_PREPARATION_FILES[1]),
         16 * 1024 * 1024,
     )?);
     let platform = io::digest(&io::read_regular(
-        &managed.join("Splatform.dll"),
+        &root.join(NATIVE_PREPARATION_FILES[2]),
         16 * 1024 * 1024,
     )?);
     let known = [
@@ -340,8 +367,7 @@ fn replace_prepared_file(path: &Path, expected: &[u8], replacement: &[u8]) -> Re
     Ok(())
 }
 
-/// Called under the stopped-instance and program startup guards. Already enabled
-/// plugins follow application updates; this never installs a loader or detaches.
+/// Publishes the launch session after stopped-instance automatic preparation.
 pub(super) fn startup_environment(
     instance: &InstanceDetails,
 ) -> Result<Option<(String, String)>, String> {
@@ -355,21 +381,10 @@ pub(super) fn startup_environment(
     if read_owner(&root)?.is_none() {
         return Ok(None);
     }
-    if !matches!(
-        instance.summary.status,
-        InstanceStatus::Stopped | InstanceStatus::Error
-    ) || instance.summary.active_process_count != 0
-        || instance
-            .active_run
-            .as_ref()
-            .is_some_and(|run| run.process_count != 0)
-    {
-        return Err(
-            "Valheim account control may only be refreshed before the server starts.".into(),
-        );
-    }
+    ensure_stopped(instance)?;
     let root = independent_root(instance)?;
     let _root = io::pin_directories(&root)?;
+    super::commands_managed_save_control::ensure_stopped_program(&root, "valheim")?;
     if super::commands_mod_staging::runtime_loader_requires_archive("valheim", &root)? {
         return Err("The prepared Valheim account control loader was changed or disabled. Prepare it again while the server is stopped.".into());
     }

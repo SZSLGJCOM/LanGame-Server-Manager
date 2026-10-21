@@ -114,6 +114,16 @@ pub(super) fn dispatch<'a>(
             ).await?)
             }))
         }
+        "list_instance_save_files" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_save_files::list_instance_save_files(
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "instanceId")?,
+                    optional_string_argument(&args, "backupId")?,
+                )
+                .await?,
+            )
+        })),
         "read_instance_save_import_support" => Some(Box::pin(async move {
             to_json(
                 crate::commands::commands_save_import::read_instance_save_import_support(
@@ -146,6 +156,16 @@ pub(super) fn dispatch<'a>(
         })),
         "uninstall_steamcmd" => Some(Box::pin(async move {
             to_json(crate::commands::uninstall_steamcmd(app.state::<DesktopState>()).await?)
+        })),
+        "regenerate_dontstarve_world" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_dst_regeneration::regenerate_dontstarve_world(
+                    app.clone(),
+                    app.state::<DesktopState>(),
+                    string_argument(&args, "instanceId")?,
+                )
+                .await?,
+            )
         })),
         "preview_dontstarve_world_start" => Some(Box::pin(async move {
             let id = args
@@ -295,6 +315,14 @@ fn string_argument(args: &Value, name: &str) -> Result<String, String> {
         .and_then(Value::as_str)
         .map(str::to_owned)
         .ok_or_else(|| format!("Missing or invalid {name}"))
+}
+
+fn optional_string_argument(args: &Value, name: &str) -> Result<Option<String>, String> {
+    match args.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(value)) => Ok(Some(value.clone())),
+        Some(_) => Err(format!("Invalid {name}")),
+    }
 }
 
 fn steam_login_target_argument(

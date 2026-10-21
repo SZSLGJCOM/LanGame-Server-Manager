@@ -10,8 +10,15 @@ use tokio::net::{TcpSocket, TcpStream};
 use super::cache::LivePlayerCollectionResult;
 use super::service::{failed_snapshot, misconfigured_snapshot};
 
+#[path = "soulmask_console.rs"]
+mod native_console;
 #[path = "soulmask_response.rs"]
 mod response;
+pub(crate) use native_console::validate_shutdown_spec;
+
+#[path = "soulmask_save.rs"]
+mod world_save;
+pub(crate) use world_save::{save_and_exit, save_world};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 const MAX_RESPONSE_BYTES: usize = 512 * 1024;

@@ -1,5 +1,6 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { useArkClusterActivity } from "./ark-cluster-activity";
 import { describeError } from "../../app-state";
 import { clusterOperationCounts, displayLocalPath, type ArkClusterAction, type ArkClusterIssue, type ArkClusterOperationResult, type ArkClusterReport, type OperateArkClusterInput } from "../../ark-clusters";
 import { useI18n, selectLocaleText } from "../../i18n";
@@ -11,7 +12,6 @@ interface ArkClusterPanelProps {
   readReport: (instanceId: string) => Promise<ArkClusterReport>;
   operate: (input: OperateArkClusterInput) => Promise<ArkClusterOperationResult>;
   onChanged: () => void | Promise<void>;
-  renderMaintenance?: (report: ArkClusterReport | null, refresh: () => Promise<void>, busy: boolean, onBusyChange: (busy: boolean) => void) => ReactNode;
 }
 
 const issueLabels: Record<string, [string, string]> = {
@@ -52,14 +52,15 @@ function groupPorts(ports: { name: string; port: number; protocol: string }[]) {
   return [...groups.entries()];
 }
 
-export function ArkClusterPanel({ instanceId, readReport, operate, onChanged, renderMaintenance }: ArkClusterPanelProps) {
+export function ArkClusterPanel({ instanceId, readReport, operate, onChanged }: ArkClusterPanelProps) {
   const { locale, t } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   const titleId = useId();
   const [report, setReport] = useState<ArkClusterReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<ArkClusterAction | null>(null);
-  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  // Snapshot backup/restore/recovery in the 备份 category locks start/stop.
+  const snapshotBusy = useArkClusterActivity(instanceId, "operation", !!busy);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ArkClusterOperationResult | null>(null);
   const generation = useRef(0);
@@ -90,13 +91,12 @@ export function ArkClusterPanel({ instanceId, readReport, operate, onChanged, re
     setResult(null);
     setBusy(null);
     operationPending.current = false;
-    setMaintenanceBusy(false);
     void refresh();
     return () => { generation.current += 1; operationGeneration.current += 1; };
   }, [instanceId, readReport]);
 
   async function run(action: ArkClusterAction) {
-    if (!report?.identity || loading || busy || maintenanceBusy || operationPending.current) return;
+    if (!report?.identity || loading || busy || snapshotBusy || operationPending.current) return;
     operationPending.current = true;
     const request = generation.current;
     const operation = ++operationGeneration.current;
@@ -125,11 +125,11 @@ export function ArkClusterPanel({ instanceId, readReport, operate, onChanged, re
     return label ? text(...label) : issue.message;
   };
 
-  return <section className="server-workbench-surface server-maintenance-card ark-cluster-panel" aria-labelledby={titleId} aria-busy={loading || !!busy || maintenanceBusy}>
+  return <section className="server-workbench-surface server-maintenance-card ark-cluster-panel" aria-labelledby={titleId} aria-busy={loading || !!busy || snapshotBusy}>
     <div className="ark-cluster-heading server-workbench-section-label server-maintenance-card-label">
       <ShellIcon name="server" className="server-workbench-section-icon" />
       <h3 id={titleId}>{text("ARK 集群", "ARK cluster")}</h3>
-      <button type="button" className="secondary-button" disabled={loading || !!busy || maintenanceBusy} onClick={() => void refresh()}>{t("common.refresh")}</button>
+      <button type="button" className="secondary-button" disabled={loading || !!busy || snapshotBusy} onClick={() => void refresh()}>{t("common.refresh")}</button>
     </div>
     {loading ? <ActivityNotice>{text("正在检查集群成员…", "Inspecting cluster members…")}</ActivityNotice> : null}
     {error ? <ActivityNotice tone="error">{error}</ActivityNotice> : null}
@@ -153,10 +153,10 @@ export function ArkClusterPanel({ instanceId, readReport, operate, onChanged, re
           </tr>)}</tbody>
         </table></div>
         <div className="ark-cluster-actions">
-          <button type="button" className="primary-button" disabled={loading || !!busy || maintenanceBusy || report.start_blocked} onClick={() => void run("start")}>
+          <button type="button" className="primary-button" disabled={loading || !!busy || snapshotBusy || report.start_blocked} onClick={() => void run("start")}>
             {busy === "start" ? text("正在逐个启动…", "Starting members…") : text("启动集群", "Start cluster")}
           </button>
-          <button type="button" className="secondary-button" disabled={loading || !!busy || maintenanceBusy} onClick={() => void run("stop")}>
+          <button type="button" className="secondary-button" disabled={loading || !!busy || snapshotBusy} onClick={() => void run("stop")}>
             {busy === "stop" ? text("正在逐个停止…", "Stopping members…") : text("停止集群", "Stop cluster")}
           </button>
         </div>
@@ -166,7 +166,6 @@ export function ArkClusterPanel({ instanceId, readReport, operate, onChanged, re
       </li>)}</ul> : null}
       {report.related_instances.length > 0 ? <p className="ark-cluster-note">{text("上述配置不一致的实例不会被本集群的批量操作包含。", "Instances with different cluster identities are excluded from this group's operations.")}</p> : null}
     </> : null}
-    {renderMaintenance?.(report, refresh, !!busy || loading, setMaintenanceBusy)}
     {result && counts ? <div className="ark-cluster-results" role="status">
       <p>{text(`已完成 ${counts.succeeded}，跳过 ${counts.skipped}，失败 ${counts.failed}。`, `${counts.succeeded} completed, ${counts.skipped} skipped, ${counts.failed} failed.`)}</p>
       <ul>{result.members.map((member) => <li key={member.instance_id} className={member.outcome === "failed" ? "ark-cluster-error" : ""}>

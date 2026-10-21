@@ -83,7 +83,7 @@ fn spawn_native_process(
             &mut stdin_read_raw,
             &mut stdin_write_raw,
             &mut pipe_security,
-            0,
+            CHILD_PIPE_BUFFER_BYTES,
         )
     } == 0
     {

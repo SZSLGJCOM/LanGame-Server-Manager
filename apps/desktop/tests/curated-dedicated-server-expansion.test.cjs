@@ -62,7 +62,7 @@ const curatedDedicatedServers = [
   {
     id: "romestead",
     steamAppId: 4763510,
-    executable: "start-romestead.bat",
+    executable: "Server.exe",
     requiredSchemaKeys: [
       "auto_start_world_name",
       "auto_create_and_load_world",
@@ -73,10 +73,9 @@ const curatedDedicatedServers = [
       "extra_launch_args"
     ],
     requiredPorts: ["game"],
-    requiredTemplates: ["config.json.hbs", "start-romestead.bat.hbs"],
+    requiredTemplates: ["config.json.hbs"],
     requiredTemplateMarkers: {
-      "config.json.hbs": ["AutoStartWorldName", "AutoCreateAndLoadWorld", "MaxPlayers"],
-      "start-romestead.bat.hbs": ["DOTNET_ROOT", "Server.exe"]
+      "config.json.hbs": ["AutoStartWorldName", "AutoCreateAndLoadWorld", "MaxPlayers"]
     },
     requiredLedgerMarkers: [
       "steamcmd_appinfo_4763510_2026_07_01",
@@ -319,7 +318,19 @@ test("curated dedicated-server candidates are wired without exposing unverified 
     const hasRuntimeActions = moduleSpec.id === "romestead" || moduleSpec.id === "runescapedragonwilds";
     assert.match(moduleToml, new RegExp(`\\[player_management\\][\\s\\S]*status = "${hasRuntimeActions ? "runtime_actions" : "pending_adapter"}"`));
     assert.match(moduleToml, /\[runtime\.player_query\][\s\S]*protocol = "none"/);
+    const actions = moduleToml.split("[[runtime.player_actions]]").slice(1)
+      .map((block) => block.split(/\r?\n\[/)[0]);
     if (moduleSpec.id === "romestead") {
+      assert.deepEqual(actions.map((action) => action.match(/^id = "([^"]+)"$/m)?.[1]),
+        ["save_world", "list_online_players"]);
+      assert.deepEqual(actions[0].trim().split(/\r?\n/), [
+        'id = "save_world"',
+        'label = "Save world"',
+        'label_zh_cn = "保存世界"',
+        'transport = "stdin"',
+        'command_template = "save"',
+        'process_key = "main"',
+      ]);
       assert.match(moduleToml, /response_codec = "romestead_players"/);
       assert.match(moduleToml, /player_action_ids = \[\]/);
       assert.match(moduleToml, /command_template = "list"/);
@@ -331,13 +342,19 @@ test("curated dedicated-server candidates are wired without exposing unverified 
       assert.match(playerList, /^response_codec = "dragonwilds_players"$/m);
       assert.match(playerList, /^identity_kind = "eos_id"$/m);
       assert.match(playerList, /^player_action_ids = \["kick_player", "ban_player"\]$/m);
-      const actions = moduleToml.split("[[runtime.player_actions]]").slice(1);
       assert.deepEqual(actions.map((action) => action.match(/^id = "([^"]+)"$/m)?.[1]),
-        ["kick_player", "ban_player", "unban_player"]);
+        ["save_world", "kick_player", "ban_player", "unban_player"]);
+      assert.deepEqual(actions[0].trim().split(/\r?\n/), [
+        'id = "save_world"',
+        'label = "Save world"',
+        'label_zh_cn = "保存世界"',
+        'transport = "dragonwilds_save"',
+        'command_template = "save"',
+      ]);
       for (const [index, command] of ["kick", "ban", "unban"].entries()) {
-        assert.match(actions[index], /^transport = "dragonwilds_native"$/m);
-        assert.match(actions[index], new RegExp(`^command_template = "${command} \\{\\{target\\}\\}"$`, "m"));
-        assert.match(actions[index], /^target_required = true$/m);
+        assert.match(actions[index + 1], /^transport = "dragonwilds_native"$/m);
+        assert.match(actions[index + 1], new RegExp(`^command_template = "${command} \\{\\{target\\}\\}"$`, "m"));
+        assert.match(actions[index + 1], /^target_required = true$/m);
       }
     } else {
       assert.doesNotMatch(moduleToml, /\[\[runtime\.player_actions\]\]/);

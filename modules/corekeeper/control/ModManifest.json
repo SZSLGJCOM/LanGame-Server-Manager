@@ -1,0 +1,11 @@
+{
+  "guid": "4bedb1eaf83148e1bca1e6feb946f0d1",
+  "name": "LanGameSaveControl",
+  "displayName": "LanGame Save Control",
+  "requiredOn": 2,
+  "skipSafetyChecks": true,
+  "accessesExtraAssemblies": true,
+  "disableHarmonyPatching": false,
+  "files": [{ "path": "LanGame.CoreKeeper.Save.dll" }],
+  "dependencies": []
+}

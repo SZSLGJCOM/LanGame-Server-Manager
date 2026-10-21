@@ -144,7 +144,7 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertIn(str(Path("tests/runtime-browser-navigation.test.cjs")), browser)
         self.assertIn(str(Path("tests/runtime-browser-process.test.cjs")), quick)
         self.assertIn(str(Path("tests/browser-fixture-preparation.test.cjs")), quick)
-        self.assertIn(str(Path("tests/lan-runtime-token.test.cjs")), quick)
+        self.assertIn(str(Path("tests/api-transport.test.cjs")), quick)
         shards = [set(frontend_tests(True)[index::2]) for index in range(2)]
         self.assertEqual(shards[0] | shards[1], browser)
         self.assertFalse(shards[0] & shards[1])

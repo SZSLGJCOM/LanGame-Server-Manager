@@ -16,8 +16,10 @@ pub(super) fn ready_command(nonce: &str, required_peers: &[&str]) -> String {
     // Native ModManager retains environments after a modmain failure. Inspect
     // its errors, not just the presence of a world or a mod environment. This
     // uses the engine's actual loaded set, including raw modoverrides.lua.
+    // The PROBE marker acknowledges that the console consumed this probe, whether
+    // or not the world is ready, so the caller never queues another behind it.
     format!(
-        "if InGamePlay() and TheWorld and TheWorld.ismastersim and ModManager then local failure=nil;for _,m in ipairs(ModManager.failedmods) do failure=tostring(m.name)..': '..tostring(m.error);break end;if not failure then for _,m in ipairs(ModManager.mods) do if m.modinfo and m.modinfo.failed then failure=tostring(m.modname)..': native Mod metadata reports a load failure';break end end end;if failure then print('[LGSM-DST-FAILED:{nonce}] '..string.sub(string.gsub(failure,'%c',' '),1,768)) else {peer_check}if peer then print('[LGSM-DST-READY:{nonce}]') end end end"
+        "print('[LGSM-DST-PROBE:{nonce}]');if InGamePlay() and TheWorld and TheWorld.ismastersim and ModManager then local failure=nil;for _,m in ipairs(ModManager.failedmods) do failure=tostring(m.name)..': '..tostring(m.error);break end;if not failure then for _,m in ipairs(ModManager.mods) do if m.modinfo and m.modinfo.failed then failure=tostring(m.modname)..': native Mod metadata reports a load failure';break end end end;if failure then print('[LGSM-DST-FAILED:{nonce}] '..string.sub(string.gsub(failure,'%c',' '),1,768)) else {peer_check}if peer then print('[LGSM-DST-READY:{nonce}]') end end end"
     )
 }
 

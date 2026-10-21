@@ -4,6 +4,7 @@ import { describeError, type RuntimeRefreshIssue } from "../app-state";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { AiSettings } from "../ai-settings";
 import { ServerCardFrame } from "./servers/ServerCardFrame";
+import { ServerCardWorldSave } from "./servers/ServerCardWorldSave";
 import { SaveImportOperationsProvider } from "./servers/SaveImportOperations";
 import { ShellIcon } from "../components/ShellIcon";
 import { ActivityNotice } from "../components/ActivityNotice";
@@ -249,7 +250,11 @@ function ServerListCard(props: ServerListCardProps) {
             </div>}
     metadata={props.retirement ? null : <ServerCardConnection instance={props.instance} connection={props.connection}
               failed={props.connectionFailed} candidates={props.bindAddressCandidates}
-              onRead={props.onConnectionRead} onActivity={props.onActivity} />}
+              onRead={props.onConnectionRead} onActivity={props.onActivity}
+              afterCopy={<ServerCardWorldSave instance={props.instance}
+                supported={props.installation?.hasImmediateWorldSave === true}
+                disabled={Boolean(props.pendingAction || props.storageBusy || props.retirement)}
+                onActivity={props.onActivity} />} />}
     primary={<button
               type="button"
               className={actionModel.className}
@@ -744,8 +749,9 @@ export function ServersView(props: ServersViewProps) {
                 </div>
               ) : null}
 
-              {activeDetailTab === "runtime" ? (
+              {activeDetailTab === "runtime" || runtimeActionsByInstanceId[props.selectedDetails.summary.id] === "starting" ? (
                 <RuntimeSurfaceWorkbench
+                  active={activeDetailTab === "runtime"}
                   steamAccount={steamAccount}
                   steamCmdSelected={steamCmdSelected}
                   onSteamCmdSelected={setSteamCmdSelected}

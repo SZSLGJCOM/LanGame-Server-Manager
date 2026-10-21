@@ -74,17 +74,7 @@ async fn snapshot(
     token: Option<&str>,
     server_name: Option<String>,
 ) -> Result<SatisfactoryWorldSnapshot, ApiError> {
-    let state = api
-        .call("QueryServerState", json!({}), token, false)
-        .await?
-        .data;
-    let state: protocol::ServerState = serde_json::from_value(
-        state
-            .get("serverGameState")
-            .cloned()
-            .ok_or(ApiError::InvalidResponse)?,
-    )
-    .map_err(|_| ApiError::InvalidResponse)?;
+    let state = game_state(api, token).await?;
     let options: protocol::ServerOptions = serde_json::from_value(
         api.call("GetServerOptions", json!({}), token, false)
             .await?
@@ -120,6 +110,19 @@ async fn snapshot(
     snapshot.sessions = sessions;
     snapshot.revision = protocol::revision(&snapshot).map_err(|_| ApiError::InvalidResponse)?;
     Ok(snapshot)
+}
+
+async fn game_state(api: &Api, token: Option<&str>) -> Result<protocol::ServerState, ApiError> {
+    let data = api
+        .call("QueryServerState", json!({}), token, false)
+        .await?
+        .data;
+    serde_json::from_value(
+        data.get("serverGameState")
+            .cloned()
+            .ok_or(ApiError::InvalidResponse)?,
+    )
+    .map_err(|_| ApiError::InvalidResponse)
 }
 
 async fn current(
@@ -298,22 +301,97 @@ async fn save_world_snapshot(
     prefix: &str,
 ) -> Result<(), String> {
     let name = format!("{prefix}_{}", uuid::Uuid::new_v4().simple());
-    api.call("SaveGame", json!({"SaveName": name}), token, true)
+    save_named_world_snapshot(api, token, session_name, &name).await
+}
+
+async fn save_named_world_snapshot(
+    api: &Api,
+    token: Option<&str>,
+    session_name: &str,
+    name: &str,
+) -> Result<(), String> {
+    let reply = api
+        .call("SaveGame", json!({"SaveName": name}), token, true)
         .await
         .map_err(|error| error.to_string())?;
+    // A 202 response means processing is still in progress. A new catalog
+    // header cannot replace this request's terminal native save result.
+    if !matches!(reply.status, 200 | 204) {
+        return Err(ApiError::OutcomeUnknown.to_string());
+    }
     let sessions = protocol::sessions(
         api.call("EnumerateSessions", json!({}), token, false)
             .await
-            .map_err(|error| error.to_string())?
+            .map_err(|_| ApiError::OutcomeUnknown.to_string())?
             .data,
-    )?;
+    )
+    .map_err(|_| ApiError::OutcomeUnknown.to_string())?;
     if !sessions.iter().any(|session| {
         session.session_name == session_name
             && session.saves.iter().any(|save| save.save_name == name)
     }) {
-        return Err("The Satisfactory world snapshot could not be verified.".into());
+        return Err(format!(
+            "The Satisfactory world snapshot could not be verified. {}",
+            ApiError::OutcomeUnknown
+        ));
     }
     Ok(())
+}
+
+fn require_unused_save_name(sessions: &[SatisfactorySession], name: &str) -> Result<(), String> {
+    if sessions
+        .iter()
+        .flat_map(|session| &session.saves)
+        .any(|save| save.save_name.eq_ignore_ascii_case(name))
+    {
+        return Err(
+            "The generated Satisfactory save name is already in use. No save was requested.".into(),
+        );
+    }
+    Ok(())
+}
+
+pub(super) async fn save_current(api: &Api) -> Result<String, String> {
+    let token = stored_authorization(api).await?;
+    let before = game_state(api, token.as_deref())
+        .await
+        .map_err(|error| error.to_string())?;
+    if !before.is_game_running || before.active_session_name.trim().is_empty() {
+        return Err("Load a Satisfactory world before saving it.".into());
+    }
+    protocol::validate_text(&before.active_session_name, false)
+        .map_err(|_| "The Satisfactory running session name is invalid.".to_string())?;
+    let sessions = protocol::sessions(
+        api.call("EnumerateSessions", json!({}), token.as_deref(), false)
+            .await
+            .map_err(|error| error.to_string())?
+            .data,
+    )?;
+    // Never overwrite a user-named save. The random native name is checked
+    // across all sessions, including case variants on Windows.
+    let name = format!("LGSM_manual_save_{}", uuid::Uuid::new_v4().simple());
+    require_unused_save_name(&sessions, &name)?;
+    let fresh = game_state(api, token.as_deref())
+        .await
+        .map_err(|error| error.to_string())?;
+    if !fresh.is_game_running || fresh.active_session_name != before.active_session_name {
+        return Err("The running Satisfactory session changed. No save was requested. Refresh before retrying.".into());
+    }
+    save_named_world_snapshot(api, token.as_deref(), &before.active_session_name, &name)
+        .await
+        .map_err(|error| {
+            format!("Saving the current Satisfactory world could not be confirmed. {error}")
+        })?;
+    let after = game_state(api, token.as_deref())
+        .await
+        .map_err(|_| ApiError::OutcomeUnknown.to_string())?;
+    if !after.is_game_running || after.active_session_name != before.active_session_name {
+        return Err(ApiError::OutcomeUnknown.to_string());
+    }
+    Ok(format!(
+        "Satisfactory confirmed save {name} for the running session {}.",
+        before.active_session_name
+    ))
 }
 
 pub(super) async fn write_rules(
@@ -376,6 +454,10 @@ pub(super) async fn write_rules(
 #[cfg(test)]
 #[path = "satisfactory_world_service_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "satisfactory_world_immediate_save_tests.rs"]
+mod immediate_save_tests;
 
 fn no_players(snapshot: &SatisfactoryWorldSnapshot) -> Result<(), String> {
     if snapshot.connected_players > 0 {

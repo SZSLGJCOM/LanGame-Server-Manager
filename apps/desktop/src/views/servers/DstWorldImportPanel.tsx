@@ -1,7 +1,6 @@
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { useId, useRef, useState } from "react";
 import { describeError } from "../../app-state";
-import { ShellIcon } from "../../components/ShellIcon";
 import { useI18n } from "../../i18n";
 import type { DstWorldImportResult, InstanceDetails } from "../../types";
 import { useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
@@ -28,7 +27,6 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
   const copy = {
     importBlockedChip: t("dst.settings.bootstrap.importBlockedChip", undefined, "Stop the server first"),
     importBusyChip: t("dst.settings.bootstrap.importBusyChip", undefined, "Importing"),
-    importTitle: t("dst.settings.bootstrap.importTitle", undefined, "Import save"),
     importBody: t("dst.settings.bootstrap.importBody", undefined, "Choose the cluster folder with an overworld (Master) save and the other shards required by its layout: Caves, or Caves, Islands and Volcano."),
     sourceLabel: t("dst.settings.bootstrap.sourceLabel", undefined, "Source folder"),
     sourcePlaceholder: t("dst.settings.bootstrap.sourcePlaceholder", undefined, "No folder selected yet"),
@@ -37,7 +35,6 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
     importButton: t("dst.settings.bootstrap.importButton", undefined, "Import into this instance"),
     importingButton: t("dst.settings.bootstrap.importingButton", undefined, "Importing..."),
     hint: t("dst.settings.bootstrap.hint", undefined, "Replaces the current save after creating a backup. Restores the source world's Mod enablement and options, then downloads missing Mod files before starting."),
-    importSummaryTitle: t("dst.settings.bootstrap.importSummaryTitle", undefined, "Latest import"),
     importedMaster: t("dst.settings.bootstrap.importedMaster", undefined, "Overworld imported"),
     importedCaves: t("dst.settings.bootstrap.importedCaves", undefined, "Caves imported"),
     importedIslands: t("dst.settings.bootstrap.importedIslands", undefined, "Islands imported"),
@@ -49,7 +46,7 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
   };
   const sourceHelp = useConfigurationFieldHelp(useId(), selectedSourcePath,
     undefined, undefined, "instructions");
-  const importHelp = useConfigurationFieldHelp(sourceHelpId, copy.importBody,
+  const importHelp = useConfigurationFieldHelp(sourceHelpId, `${copy.importBody}\n${copy.hint}`,
     undefined, undefined, "instructions");
 
   async function handlePickFolder() {
@@ -109,13 +106,6 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
 
   return (
     <div className="dst-world-import">
-      <div className="server-workbench-section-label dst-world-import-header">
-        <ShellIcon name="folder" className="server-workbench-section-icon" />
-        <span>{copy.importTitle}</span>
-        {importBusy || running ? <span className="status-chip is-busy" role={importBusy ? "status" : undefined}>
-          {importBusy ? copy.importBusyChip : copy.importBlockedChip}
-        </span> : null}
-      </div>
       <div className="dst-world-import-form" aria-busy={importBusy || pickBusy}>
         {importHelp.helpNode}
         <div className="dst-world-import-source-row">
@@ -132,7 +122,7 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
           </button>
         </div>
         <div className="dst-world-import-actions">
-          <p className="form-note">{copy.hint}</p>
+          {running && !importBusy ? <span className="status-chip is-busy">{copy.importBlockedChip}</span> : null}
           <button
             type="button"
             className="primary-button"
@@ -144,18 +134,14 @@ export function DstWorldImportPanel(props: DstWorldImportPanelProps) {
         </div>
       </div>
 
+      <ActivityNotice tone="info">{importBusy ? copy.importBusyChip : ""}</ActivityNotice>
       {importError ? <ActivityNotice tone="error">{importError}</ActivityNotice> : null}
 
       {importResult ? (
         <div className="dst-world-import-feedback is-success" role="status">
-          <div>{copy.importSummaryTitle}</div>
-          <div>{shardSummary || copy.noShards}</div>
-          <div>{copy.importedMods(importResult.imported_workshop_mod_ids?.length ?? 0)}</div>
-          <div>
-            {copy.importedFilesLabel}: {importResult.copied_file_count} · {formatBytes(languageTag, importResult.copied_total_bytes)}
-          </div>
-          <div className="detail-label">{copy.safeguardLabel}</div>
-          <div className="detail-value detail-value--code">{importResult.safeguard_path}</div>
+          <div>{[shardSummary || copy.noShards, copy.importedMods(importResult.imported_workshop_mod_ids?.length ?? 0),
+            `${copy.importedFilesLabel}: ${importResult.copied_file_count} · ${formatBytes(languageTag, importResult.copied_total_bytes)}`].join(" · ")}</div>
+          <div><span className="detail-label">{copy.safeguardLabel}</span> <span className="detail-value--code">{importResult.safeguard_path}</span></div>
         </div>
       ) : null}
     </div>

@@ -9,10 +9,19 @@ $fixtureScripts = Join-Path $fixtureRepository 'scripts'
 $builders = @(
     @{ Name = 'enshrouded'; Script = 'build_enshrouded_control.ps1'; Leaf = 'enshrouded-control'; Stop = 'MSVC C++ Build Tools are required.' },
     @{ Name = 'valheim'; Script = 'build_valheim_control.ps1'; Leaf = 'valheim-control'; Stop = 'Valheim control requires the Windows .NET Framework C# compiler.' },
-    @{ Name = 'dragonwilds'; Script = 'build_dragonwilds_player_query.ps1'; Leaf = 'dragonwilds-player-query'; Stop = 'MSVC C++ Build Tools are required.' }
+    @{ Name = 'dragonwilds'; Script = 'build_dragonwilds_player_query.ps1'; Leaf = 'dragonwilds-player-query'; Stop = 'MSVC C++ Build Tools are required.' },
+    @{ Name = 'windrose'; Script = 'build_windrose_save_control.ps1'; Leaf = 'windrose-save-control'; Stop = 'MSVC C++ Build Tools are required to build the bundled Windrose control.' },
+    @{ Name = 'native-save'; Script = 'build_unreal_save_control.ps1'; Leaf = 'native-world-save'; Stop = 'MSVC C++ Build Tools are required for native world-save adapters.' },
+    @{ Name = 'scum-save'; Script = 'build_scum_save_control.ps1'; Leaf = 'scum-save-control'; Stop = 'MSVC C++ Build Tools are required to build the bundled SCUM control.' },
+    @{ Name = 'unreal-loader'; Script = 'build_unreal_loader_proxies.ps1'; Leaf = 'unreal-loader-proxies'; Stop = 'MSVC C++ Build Tools are required for the bundled Unreal loader proxies.' }
 )
 foreach ($builder in $builders) {
     Copy-Item -LiteralPath (Join-Path $repository ('scripts/' + $builder.Script)) -Destination $fixtureScripts
+}
+foreach ($moduleId in @('scum')) {
+    $control = Join-Path $fixtureRepository ('modules/' + $moduleId + '/control')
+    [IO.Directory]::CreateDirectory($control) | Out-Null
+    Copy-Item -LiteralPath (Join-Path $repository ('modules/' + $moduleId + '/control/Build.ps1')) -Destination $control
 }
 $helper = Join-Path $repository 'scripts/build_control_output.ps1'
 if (Test-Path -LiteralPath $helper) { Copy-Item -LiteralPath $helper -Destination $fixtureScripts }
@@ -23,6 +32,7 @@ $savedCargoOut = $env:OUT_DIR
 $savedWindows = $env:WINDIR
 $savedProgramFiles = ${env:ProgramFiles(x86)}
 $checks = [Collections.Generic.List[object]]::new()
+$createdJunctions = [Collections.Generic.List[string]]::new()
 
 function Test-BuilderPath($Builder, [string]$Name, [string]$Path, [bool]$Allowed) {
     $message = ''
@@ -70,8 +80,18 @@ try {
         Test-BuilderPath $builder 'cargo-dot-component' (Join-Path $env:OUT_DIR ('./' + $builder.Leaf)) $true
         Test-BuilderPath $builder 'cargo-parent-component' (Join-Path $env:OUT_DIR ('child/../' + $builder.Leaf)) $true
     }
+    # Accepted delegated builders may create their owned output before detecting
+    # the missing toolchain. Preserve those artifacts before testing a junction
+    # at the same exact Cargo path; do not delete a nonempty directory as a link.
+    if ([IO.Directory]::Exists($cargoJunction)) {
+        $preserved = Join-Path $fixture 'accepted-cargo-output'
+        if (-not ([IO.Path]::GetFullPath($cargoJunction)).StartsWith($fixture + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Fixture Cargo output escaped its root.' }
+        [IO.Directory]::Move($cargoJunction, $preserved)
+    }
     New-Item -ItemType Junction -Path $junction -Target $junctionTarget | Out-Null
+    $createdJunctions.Add($junction)
     New-Item -ItemType Junction -Path $cargoJunction -Target $junctionTarget | Out-Null
+    $createdJunctions.Add($cargoJunction)
     $fileAncestor = Join-Path $fixture 'ordinary-file'
     [IO.File]::WriteAllText($fileAncestor, 'fixture')
     foreach ($builder in $builders) {
@@ -85,7 +105,7 @@ try {
     $env:WINDIR = $savedWindows
     ${env:ProgramFiles(x86)} = $savedProgramFiles
     # Remove only the two fixture links, never their targets.
-    foreach ($link in @($junction, $cargoJunction)) {
+    foreach ($link in $createdJunctions) {
         if ([IO.Directory]::Exists($link)) { [IO.Directory]::Delete($link) }
     }
 }

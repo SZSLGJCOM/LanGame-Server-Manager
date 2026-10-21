@@ -1546,7 +1546,10 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
       }
 
       const events = await listInstanceBroadcastEvents(instanceId, 20);
-      const lastSent = events.find((event) => (event.rule_id === source || event.source === source) && event.status === "sent");
+      // A pending submission may already have reached the game, so it counts
+      // toward the existing cooldown just like a confirmed transport write.
+      const lastSent = events.find((event) => (event.rule_id === source || event.source === source)
+        && (event.status === "sent" || event.status === "pending"));
       const cooldownMs = Math.max(0, policy.rules.cooldown_minutes) * 60_000;
       if (lastSent && cooldownMs > 0 && Date.now() - lastSent.created_at_unix_ms < cooldownMs) {
         return;

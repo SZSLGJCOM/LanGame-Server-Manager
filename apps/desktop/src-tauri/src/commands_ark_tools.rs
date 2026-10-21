@@ -66,7 +66,7 @@ async fn instance(storage: &StorageBootstrap, id: &str) -> Result<InstanceDetail
     Ok(details)
 }
 
-async fn owned_root(
+pub(super) async fn owned_root(
     storage: &StorageBootstrap,
     details: &InstanceDetails,
 ) -> Result<PathBuf, String> {
@@ -122,6 +122,21 @@ pub(super) async fn ensure_can_start_instance(details: &InstanceDetails) -> Resu
 
 pub(super) fn has_owned_asa_framework_for_start(root: &Path) -> Result<bool, String> {
     install::has_owned_asa_framework(root, embedded("arksurvivalascended")?)
+}
+
+/// Startup already owns the stopped private instance and program leases.
+pub(super) async fn ensure_save_framework(root: &Path, module: &str) -> Result<(), String> {
+    let status = install::install(root.to_owned(), module.into(), embedded(module)?).await?;
+    if !status.ready {
+        return Err(status
+            .issue
+            .unwrap_or_else(|| "ARK framework preparation failed.".into()));
+    }
+    Ok(())
+}
+
+pub(super) fn pin_save_framework(root: &Path, module: &str) -> Result<Vec<std::fs::File>, String> {
+    install::pin_framework(root, module, embedded(module)?)
 }
 
 async fn ensure_endpoint(details: &InstanceDetails) -> Result<(), String> {

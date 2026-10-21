@@ -198,7 +198,7 @@ test("archive tabs preserve module capabilities and require restoration for tool
 test("mounts the existing broadcast workbench at the bottom of Maintenance", () => {
   assert.match(serversViewSource, /<ServerMaintenanceWorkspace active=\{activeDetailTab === "maintenance"\}/);
   assert.match(serverMaintenanceSource, /<MaintenanceWorkspace active=\{props\.active\}/);
-  assert.match(serverMaintenanceSource, /id: "storage"[\s\S]*broadcast=\{[\s\S]*<AiBroadcastWorkbench[\s\S]*active=\{props\.active\}/,
+  assert.match(serverMaintenanceSource, /id: "runtime"[\s\S]*broadcast=\{[\s\S]*<AiBroadcastWorkbench[\s\S]*active=\{props\.active\}/,
     "the shared broadcast workbench must follow Maintenance sections and share their activation");
   assert.equal((serverMaintenanceSource.match(/<AiBroadcastWorkbench/g) ?? []).length, 1);
   assert.doesNotMatch(serversViewSource, /id:\s*"(?:broadcast|map)"/);

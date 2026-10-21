@@ -7,6 +7,12 @@ import tomllib
 from pathlib import Path
 
 from verify_module_setting_coverage_constants import *
+from verify_module_setting_coverage_world_save import (
+    NATIVE_WORLD_SAVE_TRANSPORTS,
+    is_verified_world_operation,
+    is_world_operation,
+    validate_world_operation,
+)
 from verify_module_setting_coverage_dst import (
     dst_aggregate_token_settings,
     dst_override_inventory_settings,
@@ -789,6 +795,14 @@ def validate_runtime_player_actions(module_id: str, module_toml: dict, surface_t
 
         if not str(action.get("label") or "").strip():
             failures.append(f"{module_id}: runtime.player_actions[{action_id or index}] is missing label")
+        if is_world_operation(action):
+            failures.extend(validate_world_operation(
+                module_id, module_toml, action, property_defs, referenced_port_names
+            ))
+            # Native saves have a closed world-operation boundary; standard
+            # RCON/stdin saves retain their general checks too.
+            if str(action.get("transport") or "") in NATIVE_WORLD_SAVE_TRANSPORTS:
+                continue
         if runtime_player_action_requires_destructive(action_id) and action.get("destructive") is not True:
             failures.append(
                 f"{module_id}: runtime.player_actions[{action_id or index}] changes player access state and must set destructive = true"
@@ -1179,7 +1193,9 @@ def module_has_runtime_player_actions(module_toml: dict) -> bool:
         return False
     actions = runtime.get("player_actions", [])
     return isinstance(actions, list) and any(
-        isinstance(action, dict) and str(action.get("kind") or "").strip().lower() != "broadcast"
+        isinstance(action, dict)
+        and str(action.get("kind") or "").strip().lower() != "broadcast"
+        and not is_verified_world_operation(module_toml, action)
         for action in actions
     )
 
@@ -1212,7 +1228,7 @@ def runtime_player_action_transports(module_toml: dict) -> set[str]:
     return {
         str(action.get("transport") or "stdin")
         for action in actions
-        if isinstance(action, dict)
+        if isinstance(action, dict) and not is_verified_world_operation(module_toml, action)
     }
 
 

@@ -40,6 +40,31 @@ not readiness evidence. A `status` reply with additional fields is not a marker.
 The native save call must create a nonempty checkpoint with a new Windows file
 identity while the previous checkpoint remains pinned against identity reuse.
 Timestamps and an existing recent save are not accepted as proof.
+The maintenance/card save uses a separate `save <nonce>` frame. The nonce is
+exactly 32 lowercase ASCII hexadecimal characters: a 16-character Windows
+`GetTickCount64` uptime in milliseconds followed by 16 random hexadecimal characters. Native
+admission permits at most 10 seconds of queue age and 2 seconds of future clock
+skew. The desktop and native bridge share this monotonic OS clock, so wall-clock
+correction cannot revive expired requests. It consumes the nonce before checking world readiness or saving, retains
+unexpired identities in a bounded replay set, and rejects expired/repeated
+requests without invoking the save. The host never retries a sent request.
+
+Only this frame emits `native_save_completed nonce=<nonce> bytes=<positive>`
+after the synchronous native save returns and its new nonempty checkpoint
+identity is verified. Readiness, native exceptions and checkpoint failures emit
+`native_save_failed nonce=<nonce> code=<reason>` instead. These results describe
+this checkpoint write; they do not assert physical-device flush guarantees.
+The ordinary `save` and `shutdown` commands retain their original contract.
+
+`commands_theforest_world_save.rs` pins the supported game assembly and the
+exact embedded control DLL against replacement. Its owned blocking worker
+holds the storage/mutation leases across the one stdin write and observation.
+It requires the current run, session, primary PID and creation identity, an
+instance-owned program path and a contiguous managed console ledger. It starts
+at that ledger's current end and accepts only this request's exact terminal
+line within one 60-second budget, rejecting gaps, malformed/duplicate results,
+native failure and process changes. Command delivery alone never confirms a
+save; an unknown outcome is reported without sending again.
 Metadata handles have one Win32 owner. The bundled Mono's
 `FileStream.SafeFileHandle` getter creates a second owning wrapper without
 transferring ownership; the bridge must not use it across the native save's

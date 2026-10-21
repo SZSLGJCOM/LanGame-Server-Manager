@@ -47,6 +47,13 @@ refresh_interval_ms = 30000
 player_action_ids = ["kick_player", "ban_player"]
 
 [[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "dragonwilds_save"
+command_template = "save"
+
+[[runtime.player_actions]]
 id = "kick_player"
 label = "Kick player"
 label_zh_cn = "踢出玩家"

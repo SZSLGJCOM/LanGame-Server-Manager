@@ -1,12 +1,13 @@
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { updateInstanceProgram, updateAuthenticatedInstanceProgram } from "../../api";
 import { formatDesktopError } from "../../desktop-error-message";
 import { runSteamInstallationWithAccount, type SteamInstallationAccountContext } from "../../steam-installation-account";
 import { ActivityNotice } from "../../components/ActivityNotice";
 import { InlineConfirmAction } from "../../components/InlineConfirmAction";
+import { ShellIcon } from "../../components/ShellIcon";
 import { useI18n } from "../../i18n";
 import type { BackgroundJob, InstanceDetails, InstanceIsolationReport } from "../../types";
-import { useConfigurationFieldHelp } from "../settings/ConfigurationFieldHelp";
+import { ConfigurationActionHelp } from "../settings/ConfigurationFieldHelp";
 import { parseSettingsObject } from "../settings/guided-settings";
 import { readProgramUpdatePolicy } from "./program-update-policy";
 
@@ -37,8 +38,7 @@ export function InstanceProgramMaintenance({ details, report, jobs, onChanged, a
     catch { policyIssue = t("servers.programPolicy.invalid"); }
   }
   const disabled = busy || accountBusy || !stopped || report.mode === "damaged" || Boolean(policyIssue);
-  const help = useConfigurationFieldHelp(useId(), policyIssue ?? (!stopped ? t("servers.program.stopFirst") : undefined),
-    undefined, undefined, "instructions");
+  const reason = policyIssue ?? (!stopped ? t("servers.program.stopFirst") : null);
 
   async function run(validate: boolean) {
     if (inFlight.current || disabled) return;
@@ -60,18 +60,17 @@ export function InstanceProgramMaintenance({ details, report, jobs, onChanged, a
   }
 
   return <>
-    <div className="button-row" aria-busy={busy} ref={help.anchorRef} {...help.interactionProps}
-      role={help.descriptionId ? "group" : undefined} tabIndex={help.descriptionId ? 0 : undefined}
-      aria-describedby={help.descriptionId}>
-      {help.helpNode}
-      {[false, true].map((validate) => <InlineConfirmAction key={String(validate)}
-        className="secondary-button" scopeKey={details.summary.id} disabled={disabled}
-        aria-describedby={help.descriptionId}
-        confirmation={t(shared ? "servers.program.confirmShared" : "servers.program.confirmIndependent")}
-        onConfirm={() => run(validate)}>
-        {t(validate ? "servers.program.validate" : "servers.program.update")}
-      </InlineConfirmAction>)}
-    </div>
+    {[false, true].map((validate) => {
+      const label = t(validate ? "servers.program.validate" : "servers.program.update");
+      return <ConfigurationActionHelp key={String(validate)} reason={disabled ? reason : null}>
+        <InlineConfirmAction className="ghost-button maintenance-action maintenance-action--icon instance-program-action"
+          aria-label={label} title={label} aria-busy={busy || undefined} scopeKey={details.summary.id} disabled={disabled}
+          confirmation={t(shared ? "servers.program.confirmShared" : "servers.program.confirmIndependent")} confirmLabel={label}
+          onConfirm={() => run(validate)}>
+          <ShellIcon name={validate ? "check-circle" : "download"} className="maintenance-action__icon" aria-hidden="true" />
+        </InlineConfirmAction>
+      </ConfigurationActionHelp>;
+    })}
     {pending ? <ActivityNotice>{t("servers.program.pending")}</ActivityNotice> : null}
     {message ? <ActivityNotice tone="success">{message}</ActivityNotice> : null}
     {failure ? <ActivityNotice tone="error" onDismiss={() => setFailure(null)} action={

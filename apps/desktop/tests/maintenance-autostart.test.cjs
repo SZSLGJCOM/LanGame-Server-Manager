@@ -96,7 +96,9 @@ function harness(save = async () => {}) {
     const nodes = descendants(root);
     return {
       root, html: () => renderToStaticMarkup(root),
-      toggle: nodes.find((node) => node.type === "input" && node.props.type === "checkbox"),
+      // The chip itself is the toggle (settings-toggle-card checkbox); expose it with checkbox-like props for the scenarios below.
+      toggle: { props: { checked: root.props.checked, disabled: Boolean(root.props.disabled || root.props.busy),
+        onChange: (event) => root.props.onCheckedChange(event.target.checked) } },
       retry: nodes.find((node) => node.type === "button")
     };
   }
@@ -261,5 +263,12 @@ test("archived autostart uses the same control and refuses writes even when call
   assert.deepEqual(state.calls, []);
   assert.deepEqual(state.props.details, before);
   assert.equal(state.render().toggle.props.checked, true);
+  state.unmount();
+});
+test("autostart is a checkbox chip, not a popover", () => {
+  const state = harness();
+  const html = state.render().html();
+  assert.match(html, /settings-toggle-card[^>]*>[\s\S]*type="checkbox"[^>]*checked=""/);
+  assert.doesNotMatch(html, /maintenance-chip__panel|aria-expanded/);
   state.unmount();
 });

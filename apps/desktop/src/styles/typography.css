@@ -31,8 +31,6 @@
   --text-display: 1.75rem;
   --text-hero: 2.5rem;
   --text-artwork: 7.5rem;
-  --text-dial-primary: 3.375rem;
-  --text-dial-focused: 2.5rem;
 
   /* Button density is independent of the surrounding panel geometry. */
   --control-height: 30px;
@@ -55,6 +53,19 @@
   font-size: 16px;
   font-family: var(--font-sans);
   font-optical-sizing: auto;
+}
+
+/* The resource dial grows with its instrument, with text capped at 115%.
+   These presentation roles do not scale the surrounding interface. */
+.system-core-visual {
+  --core-text-scale: min(1.15, calc(1 + (var(--core-scale) - 1) * 0.35));
+  --text-dial-meta: calc(var(--text-meta) * var(--core-text-scale));
+  --text-dial-secondary: calc(var(--text-secondary) * var(--core-text-scale));
+  --text-dial-body: calc(var(--text-body) * var(--core-text-scale));
+  --text-dial-display: calc(var(--text-display) * var(--core-text-scale));
+  --text-dial-page-title: calc(var(--text-page-title) * var(--core-text-scale));
+  --text-dial-primary: calc(3.375rem * var(--core-text-scale));
+  --text-dial-focused: calc(2.5rem * var(--core-text-scale));
 }
 
 body {

@@ -34,17 +34,26 @@ pub(super) fn configure_mod_options(
     let mut probes = Vec::new();
     for spec in specs {
         for option in &spec.options {
+            // Mod authors also encode localized section headings as options.
+            // Only actual choices with distinct values can test configuration.
+            let Some(first) = option.options.first() else {
+                continue;
+            };
+            if !option
+                .options
+                .iter()
+                .any(|choice| choice.value != first.value)
+            {
+                continue;
+            }
             // Keep the author's world layout and experimental dev mode intact.
             // Explicit native defaults still verify serialization and runtime
             // scalar types on every shard without inventing a mod option.
             if option.name == "devmode" {
                 continue;
             }
-            let primitive = option
-                .default_value
-                .as_ref()
-                .or_else(|| option.options.first().map(|choice| &choice.value));
-            let (kind, value) = match primitive {
+            // A missing default is not permission to enable the first choice.
+            let (kind, value) = match option.default_value.as_ref() {
                 Some(DstModPrimitiveValue::Boolean(value)) => ("boolean", json!(value)),
                 Some(DstModPrimitiveValue::String(value)) => ("string", json!(value)),
                 Some(DstModPrimitiveValue::Number(value)) if value.is_finite() => {
@@ -163,9 +172,11 @@ pub(super) async fn verify_world(
         "volcano" => (4, "volcanoworld", "volcano"),
         key => return Err(format!("Unexpected IA native shard {key}").into()),
     };
+    // MakeWorld uses prefab="world" for postinit callbacks; gamelogic records
+    // the saved native role in worldprefab and saves that role on reload.
     let identity = native_probe(
         state, id, process, run_id, "",
-        "tostring(GetWorldType())..' '..tostring(TheWorld.prefab)..' '..tostring(TheWorld.topology.overrides.task_set)",
+        "tostring(GetWorldType())..' '..tostring(TheWorld.worldprefab)..' '..tostring(TheWorld.topology.overrides.task_set)",
     ).await?;
     assert_eq!(identity, format!("{dimension} {prefab} {task_set}"));
     let connected = native_probe(
@@ -191,11 +202,11 @@ pub(super) async fn verify_world(
             Value::String(_) => "string",
             _ => unreachable!("selected native scalar option"),
         };
+        let name = serde_json::to_string(&probe.name)?;
+        let mod_id = serde_json::to_string(&format!("workshop-{}", probe.mod_id))?;
+        let expected = serde_json::to_string(&probe.value)?;
         checks.push(format!(
-            "do local v=GetModConfigData({},{});r[#r+1]=tostring(type(v)=='{kind}' and v=={}) end;",
-            serde_json::to_string(&probe.name)?,
-            serde_json::to_string(&format!("workshop-{}", probe.mod_id))?,
-            serde_json::to_string(&probe.value)?,
+            "do local v=GetModConfigData({name},{mod_id});r[#r+1]={{mod_id={mod_id},name={name},expected_type='{kind}',expected={expected},actual_type=type(v),actual=tostring(v),matches=type(v)=='{kind}' and v=={expected}}} end;"
         ));
     }
     let configuration = native_probe(
@@ -204,13 +215,96 @@ pub(super) async fn verify_world(
         process,
         run_id,
         &format!("local r={{}};{}", checks.join("")),
-        "table.concat(r,',')",
+        "require('json').encode_compliant(r)",
     )
     .await?;
-    assert_eq!(configuration, vec!["true"; probes.len()].join(","));
+    // native_probe records the complete observations in native and test logs
+    // before this assertion, including the name/type/value on a failed match.
+    let observations: Vec<Value> = serde_json::from_str(&configuration)?;
+    assert_eq!(observations.len(), probes.len(), "{configuration}");
+    for observed in &observations {
+        assert_eq!(observed["matches"], json!(true), "{configuration}");
+    }
     Ok(json!({
         "shard": process.process_key, "world_identity": identity,
         "connected_dimensions": connected, "configured_options": probes,
         "configuration_verified": configuration,
     }))
+}
+
+#[test]
+fn native_mod_probe_uses_distinct_choices_and_declared_scalar_defaults() {
+    use crate::dst_mods::{DstModConfigChoice, DstModConfigOptionSpec};
+    use DstModPrimitiveValue::{Boolean, Default, Number, String as Text};
+
+    let option =
+        |name: &str, default_value, choices: Vec<DstModPrimitiveValue>| DstModConfigOptionSpec {
+            name: name.into(),
+            label: name.into(),
+            hover: None,
+            default_value,
+            options: choices
+                .into_iter()
+                .map(|value| DstModConfigChoice {
+                    label: "choice".into(),
+                    hover: None,
+                    value,
+                })
+                .collect(),
+        };
+    let spec = DstModConfigurationSpec {
+        mod_id: "1234567890".into(),
+        mod_dir: String::new(),
+        modinfo_path: String::new(),
+        mod_name: None,
+        description: None,
+        client_only: false,
+        status: "loaded".into(),
+        message: None,
+        options: vec![
+            option("游戏功能", Some(Boolean(false)), vec![Boolean(false)]),
+            option(
+                "重复标题",
+                Some(Boolean(false)),
+                vec![Boolean(false), Boolean(false)],
+            ),
+            option("missing_default", None, vec![Boolean(true), Boolean(false)]),
+            option(
+                "default_sentinel",
+                Some(Default),
+                vec![Default, Boolean(true)],
+            ),
+            option(
+                "real_toggle",
+                Some(Boolean(false)),
+                vec![Boolean(true), Boolean(false)],
+            ),
+            option(
+                "real_number",
+                Some(Number(2.0)),
+                vec![Number(0.0), Number(2.0)],
+            ),
+            option(
+                "real_string",
+                Some(Text("all".into())),
+                vec![Text("none".into()), Text("all".into())],
+            ),
+        ],
+    };
+    let mut settings = serde_json::Map::new();
+    let probes = configure_mod_options(&mut settings, &[spec]);
+    assert_eq!(
+        serde_json::to_value(&probes).unwrap(),
+        json!([
+            {"mod_id":"1234567890", "name":"real_toggle", "value":false},
+            {"mod_id":"1234567890", "name":"real_number", "value":2.0},
+            {"mod_id":"1234567890", "name":"real_string", "value":"all"},
+        ])
+    );
+    for shard in app_core::dst_shards::DST_SHARDS {
+        assert_eq!(
+            settings[&format!("{}_mod_configuration_options", shard.process_key)],
+            json!({"1234567890": {"real_toggle":false, "real_number":2.0, "real_string":"all"}})
+        );
+    }
 }

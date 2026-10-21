@@ -339,31 +339,35 @@ pub async fn create_instance_backup(
         state.inner(),
         &storage_context_operation,
         &instance_id,
-        move || {
-            let storage = storage;
-            async move {
-                let result = create_instance_backup_snapshot(&storage.paths, &task_instance_id)
-                    .await
-                    .map_err(|error| error.to_string())?;
-                append_desktop_app_log(
-                    &storage,
-                    "info",
-                    "instance.backup.created",
-                    "Instance backup created",
-                    json!({
-                        "instance_id": result.instance_id.as_str(),
-                        "backup_id": result.backup_id,
-                        "backup_path": result.backup_path,
-                        "file_count": result.file_count,
-                        "total_bytes": result.total_bytes,
-                    }),
-                );
-                Ok(result)
-            }
-        },
+        move || async move { create_instance_backup_locked(&storage, &task_instance_id).await },
     )
     .await?;
 
+    Ok(result)
+}
+
+/// The caller retains the instance mutation lock and storage operation through
+/// backup publication. Scheduled and manual backups use the same storage path.
+pub(super) async fn create_instance_backup_locked(
+    storage: &StorageBootstrap,
+    instance_id: &str,
+) -> Result<InstanceBackupResult, String> {
+    let result = create_instance_backup_snapshot(&storage.paths, instance_id)
+        .await
+        .map_err(|error| error.to_string())?;
+    append_desktop_app_log(
+        storage,
+        "info",
+        "instance.backup.created",
+        "Instance backup created",
+        json!({
+            "instance_id": result.instance_id.as_str(),
+            "backup_id": result.backup_id,
+            "backup_path": result.backup_path,
+            "file_count": result.file_count,
+            "total_bytes": result.total_bytes,
+        }),
+    );
     Ok(result)
 }
 

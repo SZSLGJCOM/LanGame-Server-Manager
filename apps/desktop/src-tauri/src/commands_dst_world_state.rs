@@ -28,7 +28,7 @@ const CLUSTER_CONFIGURATION_FILES: &[&str] = &[
     "whitelist.txt",
 ];
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DstWorldState {
     New,
@@ -36,14 +36,14 @@ pub enum DstWorldState {
     Unrecognized,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct DstShardWorldState {
     pub shard: String,
     pub state: DstWorldState,
     pub enabled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub struct DstWorldStartPreview {
     pub instance_id: String,
     pub settings_json: String,
@@ -64,7 +64,7 @@ pub(super) fn validate_dst_world_start_confirmation(
     Ok(())
 }
 
-fn build_dst_world_start_preview(
+pub(super) fn build_dst_world_start_preview(
     instance: &app_core::InstanceDetails,
 ) -> Result<DstWorldStartPreview, String> {
     if instance.summary.module_id != "dontstarve" {

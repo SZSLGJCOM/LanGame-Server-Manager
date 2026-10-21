@@ -47,6 +47,13 @@ mode = "strict"
 port_names = ["game"]
 startup_timeout_ms = 180000
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "sonsoftheforest_save"
+command_template = "save"
+
 [runtime.player_query]
 protocol = "a2s_info"
 port_names = ["query"]
@@ -73,7 +80,7 @@ saves_path_template = "{{paths.data_dir}}/Saves"
 provider = "manual"
 label = "RedLoader / SOTF Mods"
 url = "https://sotf-mods.com/mods"
-install_note = "Sons Of The Forest dedicated-server mods require RedLoader to be installed in the server root first. LanGame stages mod folders and DLL payloads into the RedLoader-created Mods directory; all players usually need matching client mods."
+install_note = "Clicking Start automatically installs and configures the reviewed RedLoader and save extension in this instance's private server directory. LanGame stages mod folders and DLL payloads into the Mods directory; players usually need matching client mods. Existing conflicting loader files are preserved and reported."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/Mods"

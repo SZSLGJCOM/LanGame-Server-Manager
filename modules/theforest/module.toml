@@ -58,6 +58,14 @@ response_codec = "a2s_players"
 identity_kind = "player_name"
 refresh_interval_ms = 30000
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save world"
+label_zh_cn = "保存世界"
+transport = "stdin"
+command_template = "save"
+process_key = "main"
+
 [runtime.shutdown]
 grace_period_ms = 30000
 

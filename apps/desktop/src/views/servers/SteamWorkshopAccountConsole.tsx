@@ -5,8 +5,8 @@ import { useI18n } from "../../i18n";
 import type { SteamWorkshopAccountState } from "./useSteamWorkshopAccount";
 import "./steam-workshop-account.css";
 
-export function SteamWorkshopAccountConsole({ account, onShowServer, targetLabel }: {
-  account: SteamWorkshopAccountState; onShowServer?: () => void; targetLabel?: string
+export function SteamWorkshopAccountConsole({ account, onShowServer, targetLabel, active = true }: {
+  account: SteamWorkshopAccountState; onShowServer?: () => void; targetLabel?: string; active?: boolean
 }) {
   const { t } = useI18n();
   const [inputDraft, setInputDraft] = useState({ scope: "", value: "" });
@@ -29,10 +29,11 @@ export function SteamWorkshopAccountConsole({ account, onShowServer, targetLabel
     : account.starting ? "servers.mods.steamAccount.phase.starting_session" : "servers.mods.steamAccount.anonymousPrompt");
   // A prompt transition must never render a previous secret in a text input.
   useLayoutEffect(() => { setInputDraft({ scope: inputScope, value: "" }); }, [inputScope]);
-  useLayoutEffect(() => { if (terminal.current) terminal.current.scrollTop = terminal.current.scrollHeight; }, [transcript]);
-  useEffect(() => { if (canInput) input.current?.focus(); }, [canInput, snapshot?.input_mode]);
+  useLayoutEffect(() => { if (active && terminal.current) terminal.current.scrollTop = terminal.current.scrollHeight; }, [transcript, active]);
+  useEffect(() => { if (active && canInput) input.current?.focus(); }, [canInput, snapshot?.input_mode, active]);
 
-  return <section className="detail-stack server-module-stack">
+  return <section className="detail-stack server-module-stack" hidden={!active}
+    style={!active ? { display: "none" } : undefined}>
     <article className="runtime-box workbench-card workbench-card--wide server-runtime-surface-card server-runtime-console-card server-steamcmd-console">
       <div className="server-runtime-console-frame">
         <div className="server-runtime-console-toolbar server-runtime-console-toolbar--primary">

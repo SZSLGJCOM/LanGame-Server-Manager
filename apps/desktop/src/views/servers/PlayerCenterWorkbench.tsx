@@ -26,6 +26,7 @@ import { actionNeedsManualTarget, manualPlayerActionTargetError, readManualPlaye
 import { readPlayerAccessRosterCapabilities } from "./player-center/player-access-roster-model";
 import { OnlinePlayersView } from "./player-center/OnlinePlayersView";
 import { useLivePlayers } from "./player-center/use-live-players";
+import { PlayerHistoryView } from "./player-center/PlayerHistoryView";
 
 import { MoriaNativeSettingsEditor } from "./MoriaNativeSettingsEditor";
 
@@ -114,6 +115,7 @@ function PlayerCenterInstance(props: PlayerCenterWorkbenchProps) {
   }, [manualActions, props.details.summary.module_id, locale]);  return (
     <section className="player-access-workbench" aria-label={t("servers.playerCenter.workspaceLabel", undefined, "Player workspace")}>
       <OnlinePlayersView
+        history={!props.readOnly && props.details.summary.module_id === "dontstarve" ? <PlayerHistoryView instanceId={props.details.summary.id} locale={locale} /> : undefined}
         instanceDetails={props.details}
         onPrepareValheimControl={props.onPrepareValheimControl}
         readOnly={props.readOnly}

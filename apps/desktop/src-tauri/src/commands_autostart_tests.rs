@@ -194,8 +194,8 @@ async fn autostart_preserves_successful_cached_mod_start_warnings() {
     );
     let warning = app_core::RuntimeStartWarning {
         code: app_core::RuntimeStartWarningCode::ModUpdateUsingCache,
-        provider: app_core::RuntimeModProvider::SteamWorkshop,
-        reason: app_core::RuntimeModUpdateReason::Network,
+        provider: Some(app_core::RuntimeModProvider::SteamWorkshop),
+        reason: Some(app_core::RuntimeModUpdateReason::Network),
         item_ids: vec!["42".into()],
         message: "Using verified cached content; latest revision unconfirmed.".into(),
         log_path: None,

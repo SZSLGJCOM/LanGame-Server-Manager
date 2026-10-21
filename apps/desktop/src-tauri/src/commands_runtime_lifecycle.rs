@@ -1,7 +1,10 @@
 use super::commands_dst_world_state::{
     DstWorldStartPreview, acquire_dst_world_preview_permit, validate_dst_world_start_confirmation,
 };
-use super::commands_stdin_dispatch::dispatch_managed_stdin_command;
+use super::commands_stdin_dispatch::{
+    RuntimeStdinDispatchBudget, RuntimeStdinDispatchConfirmation, RuntimeStdinWriteCompletion,
+    dispatch_managed_stdin_command_with_budget,
+};
 use super::*;
 use app_storage::{materialize_instance_configuration_for_start, update_instance_ports};
 
@@ -312,11 +315,12 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         super::commands_program_storage::instance_root(&instance)?,
     )
     .map_err(|error| error.to_string())?;
+    let program_roots = super::commands_save_startup::program_roots(&instance, &program_root)?;
     let shared_install_guard = Some(
-        super::commands_runtime_prestart_update::acquire_prestart_program_guard(
+        super::commands_runtime_prestart_update::acquire_prestart_program_roots(
             state,
             &instance.summary.module_id,
-            &program_root,
+            &program_roots,
             runtime_start_reservation,
         )
         .await?,
@@ -397,6 +401,15 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         (instance_lock, shared_install_guard),
     )
     .await?;
+    let ((instance_lock, shared_install_guard), instance) =
+        super::commands_save_startup::ensure_private_program(
+            storage,
+            descriptor,
+            instance,
+            runtime_start_reservation,
+            (instance_lock, shared_install_guard),
+        )
+        .await?;
     let port_groups =
         super::commands_runtime_ark::port_groups(&instance, &descriptor.runtime.port_groups)?;
     let remapped_ports = app_runtime::remap_taken_port_bindings_for_module(
@@ -520,6 +533,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     let mut start_warnings = workshop_update.warnings;
     start_warnings.extend(thunderstore_update.warnings);
     let materialization_paths = storage.paths.clone();
+    let public_ip_storage = storage.clone();
     let materialization_instance_id = instance_id.clone();
     let query_reservation = runtime_start_reservation.clone();
     let query_log_path = prestart_update_log_path.clone();
@@ -528,6 +542,12 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             // Keep both guards inside the worker through loader publication and
             // configuration rendering, including caller cancellation.
             let result = async {
+                let instance = crate::astroneer_public_ip::prepare_for_start(
+                    &public_ip_storage,
+                    &query_reservation,
+                    instance,
+                )
+                .await?;
                 Box::pin(super::commands_dragonwilds_player_query::prepare(
                     &instance,
                     &query_reservation,
@@ -572,7 +592,6 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         Some(private_root.as_str()),
     );
     crate::astroneer_console::validate_start_settings(&instance)?;
-    super::commands_theforest_control::prepare(storage, &instance).await?;
     let extension_storage = storage.clone();
     let extension_instance = instance.clone();
     let extension_log_path = prestart_update_log_path.clone();
@@ -580,11 +599,16 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         spawn_storage_context_task(runtime_start_reservation, async move {
             // Native file preparation can outlive a cancelled start request.
             // Retain both program locks until that worker has actually finished.
-            let result = super::commands_enshrouded_control::prepare(
-                &extension_storage,
-                &extension_instance,
-                extension_log_path.as_deref(),
-            )
+            let result = async {
+                super::commands_theforest_control::prepare(&extension_storage, &extension_instance)
+                    .await?;
+                super::commands_enshrouded_control::prepare(
+                    &extension_storage,
+                    &extension_instance,
+                    extension_log_path.as_deref(),
+                )
+                .await
+            }
             .await;
             (program_guards, result)
         })
@@ -601,14 +625,81 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         prestart_update_log_path.as_deref(),
     ))
     .await?;
-    // Only a stopped-instance, explicit account-control preparation creates
-    // this ownership marker. Ordinary starts only refresh an intact owned
-    // plugin; they never install a loader or detach programs.
-    if let Some((key, value)) = super::commands_valheim_control::startup_environment(&instance)? {
+    if instance.summary.module_id == "runescapedragonwilds" {
+        crate::live_players::dragonwilds_control::validate_save_environment(
+            launch_plans
+                .iter()
+                .flat_map(|plan| plan.launch_plan.environment.iter()),
+        )?;
+    }
+    if instance.summary.module_id == "barotrauma" {
+        super::commands_managed_save_control::validate_startup_hook_environment(
+            launch_plans
+                .iter()
+                .flat_map(|plan| plan.launch_plan.environment.iter()),
+        )?;
+    }
+    if crate::unreal_loader::supported(&instance.summary.module_id) {
+        super::commands_save_startup::validate_unreal_environment(
+            launch_plans
+                .iter()
+                .flat_map(|plan| plan.launch_plan.environment.iter()),
+        )?;
+    }
+    let save_storage = storage.clone();
+    let save_instance = instance.clone();
+    let save_operation = runtime_start_reservation.clone();
+    let save_log = prestart_update_log_path.clone();
+    let (guards, save_environment) =
+        spawn_storage_context_task(runtime_start_reservation, async move {
+            // This owned worker retains all permits through downloads and blocking
+            // publication even when the UI request waiting on it is cancelled.
+            let result = super::commands_save_startup::ensure_for_start(
+                &save_storage,
+                &save_instance,
+                &save_operation,
+                save_log.as_deref(),
+            )
+            .await;
+            (program_guards, result)
+        })
+        .await
+        .map_err(|error| format!("Automatic save extension preparation failed: {error}"))?;
+    program_guards = guards;
+    let save_environment = save_environment?;
+    let first_world_instance = instance.clone();
+    let (guards, first_world_plan) =
+        spawn_blocking_storage_context_task(runtime_start_reservation, move || {
+            let result = super::commands_astroneer_startup::prepare(&first_world_instance);
+            (program_guards, result)
+        })
+        .await
+        .map_err(|error| format!("First-world preparation task failed: {error}"))?;
+    program_guards = guards;
+    let first_world_plan = match first_world_plan {
+        Ok(plan) => plan,
+        Err(error) => {
+            start_warnings.push(app_core::RuntimeStartWarning::world_initialization(
+                error,
+                prestart_update_log_path.clone(),
+            ));
+            None
+        }
+    };
+    for (key, value) in save_environment {
+        if key == "DOTNET_STARTUP_HOOKS" {
+            super::commands_managed_save_control::validate_startup_hook_environment(
+                launch_plans
+                    .iter()
+                    .flat_map(|plan| plan.launch_plan.environment.iter()),
+            )?;
+        }
         for plan in &mut launch_plans {
+            let value = value.clone();
             plan.launch_plan
                 .environment
-                .insert(key.clone(), value.clone());
+                .retain(|existing, _| !existing.eq_ignore_ascii_case(&key));
+            plan.launch_plan.environment.insert(key.clone(), value);
         }
     }
     assign_process_log_paths_with_stamp(&instance, &mut launch_plans, startup_log_stamp);
@@ -1209,6 +1300,32 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     if source == "manual" {
         cancel_pending_runtime_restart(state, storage, &instance_id, &instance.summary.name);
     }
+    if let Some(plan) = first_world_plan {
+        // Registration already owns the live process. A first-world warning
+        // cannot undo that start or discard its native data. Keep both program
+        // guards through the one-shot command and its actual selection checks.
+        if let Err(error) = super::commands_astroneer_startup::initialize(
+            state,
+            storage,
+            &instance,
+            plan,
+            runtime_start_reservation,
+        )
+        .await
+        {
+            append_desktop_app_log(
+                storage,
+                "warn",
+                "astroneer.first_world.start_warning",
+                &error,
+                json!({"instance_id":instance_id,"run_id":primary_process.run_id}),
+            );
+            start_warnings.push(app_core::RuntimeStartWarning::world_initialization(
+                error,
+                Some(primary_process.log_path.clone()),
+            ));
+        }
+    }
     drop(program_guards);
     if source == "auto_restart" && !start_warnings.is_empty() {
         let warning_job = BackgroundJob {
@@ -1222,7 +1339,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             cancellable: false,
             cancel_requested: false,
             target_id: Some(instance_id.clone()),
-            detail: Some("Restarted using verified Mod caches after an update failure.".into()),
+            detail: Some("Server restarted; review the startup preparation warnings.".into()),
             output_excerpt: None,
         };
         if let Err(error) = insert_background_job(state, storage, warning_job) {
@@ -2250,13 +2367,15 @@ pub(super) async fn shutdown_one_running_instance_for_app_exit<L: StorageContext
     Ok(Some(details))
 }
 
-pub(super) async fn request_instance_graceful_shutdown(
+pub(super) async fn request_instance_graceful_shutdown<L: StorageContextTaskLease>(
     state: &DesktopState,
     storage: &StorageBootstrap,
+    storage_lease: &L,
     details: &InstanceDetails,
     shutdown: Option<&ModuleShutdownSpec>,
     source: InstanceShutdownSource,
 ) -> Result<(), String> {
+    let started = Instant::now();
     if shutdown_wait::wait_for_instance_exit(state, &details.summary.id, Duration::ZERO).await? {
         return Ok(());
     }
@@ -2288,6 +2407,58 @@ pub(super) async fn request_instance_graceful_shutdown(
         return Err("Module has no declared shutdown strategy; managed process ownership is retained and no forced stop was attempted.".into());
     };
 
+    if details.summary.module_id == "soulmask" {
+        crate::live_players::soulmask::validate_shutdown_spec(details, shutdown)?;
+        let command = &shutdown.commands[0];
+        let result = tokio::time::timeout(
+            shutdown_observation_budget(
+                "soulmask", shutdown.grace_period_ms, shutdown.grace_period_ms, started.elapsed(),
+            ),
+            crate::live_players::soulmask::save_and_exit(
+                storage_lease, details, command.process_key.as_deref(),
+            ),
+        )
+        .await
+        .unwrap_or_else(|_| Err("Soulmask native shutdown reached its total deadline; the command may have been sent and was not resent.".into()));
+        append_desktop_app_log(
+            storage,
+            if result.is_ok() { "info" } else { "error" },
+            if result.is_ok() {
+                "instance.shutdown.command_sent"
+            } else {
+                "instance.shutdown.command_failed"
+            },
+            result
+                .as_ref()
+                .err()
+                .map(String::as_str)
+                .unwrap_or("Native shutdown sent; awaiting the complete managed process tree."),
+            json!({"source": source.as_str(), "instance_id": details.summary.id,
+                "module_id": "soulmask", "transport": command.transport,
+                "command": command.command, "process_key": command.process_key}),
+        );
+        if shutdown_wait::wait_for_instance_exit(
+            state,
+            &details.summary.id,
+            shutdown_observation_budget(
+                "soulmask",
+                shutdown.grace_period_ms,
+                shutdown.grace_period_ms,
+                started.elapsed(),
+            ),
+        )
+        .await?
+        {
+            return Ok(());
+        }
+        return Err(format!(
+            "Soulmask's complete managed process tree did not exit: {}. Managed process ownership is retained; no fallback or forced stop was attempted.",
+            result
+                .err()
+                .unwrap_or_else(|| "native shutdown was delivered".into()),
+        ));
+    }
+
     let mapped_shutdown = if app_core::ark_maps::is_ark(&details.summary.module_id) {
         Some(super::commands_runtime_ark::shutdown_for_running_maps(
             details, shutdown,
@@ -2306,13 +2477,35 @@ pub(super) async fn request_instance_graceful_shutdown(
     if !shutdown_wait::wait_for_instance_exit(
         state,
         &details.summary.id,
-        Duration::from_millis(shutdown.grace_period_ms),
+        shutdown_observation_budget(
+            &details.summary.module_id,
+            shutdown.grace_period_ms,
+            shutdown.grace_period_ms,
+            started.elapsed(),
+        ),
     )
     .await?
     {
         return Err("The complete managed process tree did not exit after the shutdown commands; managed process ownership is retained and no forced stop was attempted.".into());
     }
     Ok(())
+}
+
+fn shutdown_observation_budget(
+    module_id: &str,
+    requested_ms: u64,
+    configured_ms: u64,
+    elapsed: Duration,
+) -> Duration {
+    let requested = Duration::from_millis(requested_ms);
+    if module_id == "soulmask" {
+        // Cold-world help and native exit share one allowance. Do not add
+        // 60 seconds of help to 90 seconds of exit behind the application's
+        // existing 120-second final-exit watchdog.
+        requested.min(Duration::from_millis(configured_ms).saturating_sub(elapsed))
+    } else {
+        requested
+    }
 }
 
 pub(super) async fn dispatch_instance_shutdown_commands(
@@ -2322,6 +2515,8 @@ pub(super) async fn dispatch_instance_shutdown_commands(
     shutdown: &ModuleShutdownSpec,
     source: InstanceShutdownSource,
 ) -> Result<(), String> {
+    let started = Instant::now();
+    crate::live_players::soulmask::validate_shutdown_spec(details, shutdown)?;
     let shutdown = rust_shutdown::resolve(details, shutdown).inspect_err(|error| {
         append_desktop_app_log(
             storage,
@@ -2392,6 +2587,7 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                 },
             )
             .await
+            .map(|_| ())
         };
         let result = match primary_result {
             Ok(()) => Ok(()),
@@ -2407,7 +2603,12 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                     state,
                     details,
                     command.process_key.as_deref(),
-                    Duration::from_millis(observation_ms),
+                    shutdown_observation_budget(
+                        &details.summary.module_id,
+                        observation_ms,
+                        shutdown.grace_period_ms,
+                        started.elapsed(),
+                    ),
                 )
                 .await?;
                 if exited {
@@ -2488,6 +2689,7 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                         },
                     )
                     .await
+                    .map(|_| ())
                 } else {
                     Err(error)
                 }
@@ -2532,7 +2734,12 @@ pub(super) async fn dispatch_instance_shutdown_commands(
                     state,
                     details,
                     command.process_key.as_deref(),
-                    Duration::from_millis(shutdown.grace_period_ms),
+                    shutdown_observation_budget(
+                        &details.summary.module_id,
+                        shutdown.grace_period_ms,
+                        shutdown.grace_period_ms,
+                        started.elapsed(),
+                    ),
                 )
                 .await?
                 {
@@ -2565,7 +2772,12 @@ pub(super) async fn dispatch_instance_shutdown_commands(
         if shutdown_wait::wait_for_instance_exit(
             state,
             &details.summary.id,
-            Duration::from_millis(command.wait_after_ms),
+            shutdown_observation_budget(
+                &details.summary.module_id,
+                command.wait_after_ms,
+                shutdown.grace_period_ms,
+                started.elapsed(),
+            ),
         )
         .await?
         {
@@ -2585,11 +2797,17 @@ pub(super) struct RuntimeTransportRequest<'a> {
     pub enabled_setting_key: Option<&'a str>,
 }
 
+#[derive(Debug, Clone)]
+pub(super) enum RuntimeTransportDispatch {
+    Confirmed,
+    Pending(RuntimeStdinWriteCompletion),
+}
+
 pub(super) async fn dispatch_instance_runtime_transport(
     state: &DesktopState,
     details: &InstanceDetails,
     request: &RuntimeTransportRequest<'_>,
-) -> Result<(), String> {
+) -> Result<RuntimeTransportDispatch, String> {
     let RuntimeTransportRequest {
         command,
         transport,
@@ -2601,18 +2819,25 @@ pub(super) async fn dispatch_instance_runtime_transport(
     if transport.eq_ignore_ascii_case("palworld_rest") {
         return crate::live_players::palworld_rest::execute(details, command)
             .await
-            .map(|_| ());
+            .map(|_| RuntimeTransportDispatch::Confirmed);
     }
     if transport.eq_ignore_ascii_case("stdin") {
-        return dispatch_managed_stdin_command(
+        let completion = RuntimeStdinWriteCompletion::default();
+        return dispatch_managed_stdin_command_with_budget(
             state,
             &details.summary.id,
             process_key,
             command,
             details.active_run.as_ref().map(|run| run.run_id),
+            RuntimeStdinDispatchBudget::observed(completion.clone()),
         )
         .await
-        .map(|_| ());
+        .map(|receipt| match receipt.confirmation {
+            RuntimeStdinDispatchConfirmation::Confirmed => RuntimeTransportDispatch::Confirmed,
+            RuntimeStdinDispatchConfirmation::Pending => {
+                RuntimeTransportDispatch::Pending(completion)
+            }
+        });
     }
 
     if transport.eq_ignore_ascii_case("console_ctrl_c") || transport.eq_ignore_ascii_case("ctrl_c")
@@ -2624,9 +2849,31 @@ pub(super) async fn dispatch_instance_runtime_transport(
             .and_then(|mut runtime| {
                 runtime
                     .request_console_interrupt(&details.summary.id, process_key)
-                    .map(|_| ())
+                    .map(|_| RuntimeTransportDispatch::Confirmed)
                     .map_err(|error| error.to_string())
             });
+    }
+
+    if transport.eq_ignore_ascii_case("moria_console") {
+        if details.summary.module_id != "returntomoria" {
+            return Err("Moria console exit is not declared for this module".into());
+        }
+        if command != "exit" {
+            return Err("Moria console transport only accepts exit".into());
+        }
+        let runtime = state.runtime_supervisor.clone();
+        let instance_id = details.summary.id.clone();
+        let process_key = process_key.map(str::to_owned);
+        return tokio::task::spawn_blocking(move || {
+            runtime
+                .lock()
+                .map_err(|_| String::from("runtime supervisor lock poisoned"))?
+                .request_moria_console_exit(&instance_id, process_key.as_deref())
+                .map(|_| RuntimeTransportDispatch::Confirmed)
+                .map_err(|error| error.to_string())
+        })
+        .await
+        .map_err(|error| format!("Moria console exit worker failed: {error}"))?;
     }
 
     if transport.eq_ignore_ascii_case("unreal_console") {
@@ -2645,7 +2892,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
                 .lock()
                 .map_err(|_| String::from("runtime supervisor lock poisoned"))?
                 .request_unreal_console_command(&instance_id, process_key.as_deref(), &command)
-                .map(|_| ())
+                .map(|_| RuntimeTransportDispatch::Confirmed)
                 .map_err(|error| error.to_string())
         })
         .await
@@ -2663,7 +2910,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
             .and_then(|mut runtime| {
                 runtime
                     .request_window_close(&details.summary.id, process_key)
-                    .map(|_| ())
+                    .map(|_| RuntimeTransportDispatch::Confirmed)
                     .map_err(|error| error.to_string())
             });
     }
@@ -2678,7 +2925,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
             enabled_setting_key,
         )
         .await
-        .map(|_| ());
+        .map(|_| RuntimeTransportDispatch::Confirmed);
     }
 
     if transport.eq_ignore_ascii_case("websocket_rcon") {
@@ -2690,7 +2937,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
             enabled_setting_key,
         )
         .await
-        .map(|_| ());
+        .map(|_| RuntimeTransportDispatch::Confirmed);
     }
 
     if transport.eq_ignore_ascii_case("battleye_rcon") {
@@ -2702,7 +2949,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
             enabled_setting_key,
         )
         .await
-        .map(|_| ());
+        .map(|_| RuntimeTransportDispatch::Confirmed);
     }
 
     if transport.eq_ignore_ascii_case("telnet") {
@@ -2714,7 +2961,7 @@ pub(super) async fn dispatch_instance_runtime_transport(
             enabled_setting_key,
         )
         .await
-        .map(|_| ());
+        .map(|_| RuntimeTransportDispatch::Confirmed);
     }
 
     Err(format!(

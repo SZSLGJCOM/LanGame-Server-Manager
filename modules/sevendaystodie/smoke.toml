@@ -15,6 +15,14 @@ kind = "log_marker"
 sources = [{ kind = "process", process_key = "main" }]
 any_of = ["StartAsServer", "LiteNetLib"]
 
+# Steam build 24994542: Telnet opens during world creation; StartAsServer is earlier.
+# Require the native world-start completion observed in the 2026-10-19 isolated run.
+[[probes]]
+id = "world-started"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["INF StartGame done"]
+
 [[probes]]
 id = "telnet-connect"
 kind = "tcp_connect"

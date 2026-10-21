@@ -5,8 +5,9 @@ const test = require("node:test");
 const { runBrowserFixture } = require("./helpers/runtime-browser-process.cjs");
 
 const preview = process.env.LANGAME_MAINTENANCE_PREVIEW;
-assert.ok(!preview || ["backups", "save-import", "save-policy", "runtime", "storage", "broadcast"].includes(preview),
-  "LANGAME_MAINTENANCE_PREVIEW must name an existing maintenance category");
+assert.ok(!preview || ["saves", "saves:autosave", "saves:import", "backups", "backups:policy",
+  "runtime", "runtime:resources", "runtime:recovery", "runtime:daily", "runtime:program", "broadcast"].includes(preview),
+  "LANGAME_MAINTENANCE_PREVIEW must name an existing maintenance category, optionally with one of its popovers");
 
 function previewMiddleware() {
   if (!preview) return undefined;
@@ -39,9 +40,12 @@ for (const viewport of [{ width: 1560, height: 900 }, { width: 960, height: 600 
       viewport, screenshotPath, fixtureMiddleware: previewMiddleware() });
     console.log(`MAINTENANCE_LAYOUT_BROWSER ${JSON.stringify(report)}`);
     assert.equal(report.status, "passed");
-    assert.equal(report.control_measurements.length, 15);
+    assert.equal(report.control_measurements.length, 14);
     assert.deepEqual(report.control_violations, []);
-    assert.equal(report.checks, 19);
+    assert.equal(report.checks, 24);
+    assert.equal(report.broadcast_send_count, 3, "Pending confirmation must never automatically resend a broadcast");
+    assert.deepEqual(report.broadcast_history_statuses, ["待确认", "已发送", "待确认", "失败"]);
+    assert.equal(report.broadcast_history_instance_isolated, true);
     // The stop-backup toggle and retention input share one control row (or one column when stacked).
     const row = report.policy_alignment;
     assert.ok(row, "maintenance fixture must measure the backup policy row");

@@ -12,10 +12,11 @@ has process code execution authority.
 
 The compiled profiles cover these exact official executable SHA256 digests:
 
-| Steam public build | Executable SHA256 |
-| --- | --- |
-| 25967645 | `4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba` |
-| 25988414 | `b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf` |
+| Steam public build | Executable SHA256 | Admitted scope |
+| --- | --- | --- |
+| 25967645 | `4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba` | Player control and world saving; earlier acceptance below |
+| 25988414 | `b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf` | Player control; immediate world saving remains unsupported |
+| 26083076 | `d7baa768eb00aa895d9f5a1cd8747ccf66858c7b542f50983092b2e3261588ee` | Player-control ABI rechecked statically; current world-save profile below |
 
 The release profile inventory is [supported-builds.json](supported-builds.json).
 Adding a compiled profile is not publication or real-client acceptance: the
@@ -43,8 +44,12 @@ starts do not queue extra checks; after an attempt ends, a later normal start ma
 check again. Downloads only update the application cache. They cannot replace a
 live runtime DLL, restart a server, change game configuration or update the game.
 A downloaded compatible extension is prepared at the next normal stop/start.
-An unknown executable disables only native player-management actions and shows
+An unknown executable disables native player-management actions and shows
 the reason beside the buttons; the server remains available for normal gameplay.
+Immediate saving also requires an admitted save profile. When preparation has
+already identified an unsupported executable, saving reports the incompatible
+game version before opening absent control files, and sends no request. A
+player-control-only profile reports that saving is unsupported separately.
 
 The independent trust root is [update-public-key.pub](update-public-key.pub),
 separate from the desktop updater's key. Both the manifest and the DLL use standard
@@ -312,7 +317,9 @@ Stopping retires pending requests. Only the native owner callback dispatches.
 {"protocol":1,"pid":123,"creation_time":"456","run_id":"0123456789abcdef0123456789abcdef","request_id":"fedcba9876543210fedcba9876543210","action":"ban","account_id":"7105925790711809417","status":"dispatched","issue":"none"}
 ```
 
-Status is `dispatched` or `rejected`; rejection includes a bounded ASCII `issue`.
+Moderation status is `dispatched` or `rejected`; immediate world saves may also
+return `completed` after the exact native persistence operation succeeds. Rejection
+includes a bounded ASCII `issue`.
 `status.json` is separate diagnostic metadata and includes the pinned executable
 digest. It carries no player names, platform IDs or account hashes. Players and
 responses are private protocol data, not audit/log records.
@@ -358,3 +365,123 @@ is vendored, at commit `c3fcafdc10146beb5919319d0683e44e3c30d537`. Its original
 blob IDs and SHA256 hashes. It contains no downloaded precompiled DLL. The bridge
 and native layout handling were independently implemented from verified binary
 facts; no unlicensed third-party connector implementation was incorporated.
+
+## Immediate world saving (2026-10-20)
+
+Read-only inspection of the pinned build `25967645` executable
+(`4de2acdd3b18e562f129bc488a2daea2da16b00341497304423e1e18c49a83ba`)
+identifies `ForceSave`, `keen::ecs::ForceSave` and
+`keen::ds::ecs::ForceSave` as ECS type metadata. These strings do not establish a
+callable force-save function or a server command.
+
+Further inspection identified the engine's actual save-request entry at RVA
+`0x7ada80`, with ABI `void(Server*)`. Its ordinary autosave caller is `0x7b14df`;
+the same entry is used on a player's departure (`0x7b294a`). The separate shutdown
+path also calls this helper, but the helper itself neither disconnects players
+nor stops a world. It preserves native save admission and queues native
+serialization; the bridge never writes native save flags or copies live files.
+The existing verified `updatePlayers` observer supplies its owning `Server*` and
+owner thread. The exact executable hash and all 32 entry bytes must match before
+this save entry becomes available. Build `25988414` retains its separately
+verified moderation support but has no admitted save profile yet.
+
+### Build 26083076 compatibility (2026-10-21)
+
+The current executable is not admitted by adding its hash alone. Its PE timestamp
+is `1792507668` and image size is `31264768`, rather than the earlier `31256576`.
+The inspected entry RVAs are `updatePlayers=0x7b5800`, `localCopy=0x9f7600`,
+`accountAction=0x79de40`, and `saveWorld=0x7afea0`; the two copied-identity return
+sites are `0x7b5ecf` and `0x7b6cbe`. The save completion windows moved to
+`0x7bb58c` and `0x7b97fe`. The latter has a changed RIP-relative displacement;
+its complete new 32-byte signature is pinned separately, not masked at runtime.
+
+An offline Capstone 5.0.7 comparison checked all 1,261 update instructions,
+400 account-action instructions, 36 copy instructions, 21 save-entry instructions,
+1,057 persistence-state-machine instructions and 129 result instructions against
+build 25967645. Only direct-call/RIP relocation and the explicitly compared switch
+table RVAs were normalized; internal branches and both switch target offsets
+also match. The bridge's Server/save-context/World bindings and flags/phase/
+request-sequence offsets remain unchanged. A deeper engine persistence callee
+does have shifted internal fields; the bridge never reads that opaque object and
+continues to call the game's own implementation.
+The copied-identity record, full-handle enumeration and native identity-hash
+assignment were also compared and retain their existing layouts.
+
+`native_profile_tests.exe <official-executable-path>` constructs an inert virtual
+PE image without executing game code. Both 25967645 and 26083076 pass their exact
+identity and native-entry checks. Altering the PE size or a moderation entry
+rejects the profile; altering the save, commit or result window disables saving.
+The ordinary unknown test executable is rejected. The MSVC `-RunTests` suite also
+retains the observer ABI, trampoline unwind, protocol, generation and request
+history tests. These checks do not constitute real-client moderation acceptance
+on the new build or publication of a signed extension release.
+
+The current production DLL also passed two isolated native save cycles on this
+build. Each current `save_world` request was published once, returned a matching
+`completed/none` receipt and changed the native `world0.ksd` digest while the game
+kept running. Both native Ctrl+C shutdowns exited with code 0. A third fresh
+process loaded the exact 42,833-byte snapshot produced by the second manual save
+from a separate task-only save directory, reached native `Run`, and retained the
+same digest through loading without receiving a save request; it also exited
+normally with code 0. No user configuration, existing instance or user save was
+used or changed. This checks native persistence and exact-byte recovery for the
+newly generated zero-player world; it does not establish player-content recovery,
+power-loss durability, real-client moderation or deployment to an existing host.
+
+`world-save.json` is a separate protocol-1 snapshot containing `pid`, decimal
+string `creation_time`, `run_id`, decimal strings `sequence`, `tick_ms` and
+`generation`, boolean `ready`, and ASCII `issue`. The opaque generation retires
+whenever the native Server/save context/World binding changes or unloads.
+Readiness requires a current World, native saving enabled and initialized, no
+pending save and no shutdown. A save request uses the existing bounded request
+envelope with `action=save_world`, `snapshot_sequence` and `generation` from this
+fresh snapshot, and `session_handle=0`/`account_id=0`. Moderation validation cannot
+authorize this action. Native owner-thread validation binds it to the same run,
+current world generation and readiness before invoking the native helper once.
+The shared bounded history makes identical request IDs replay their original
+receipt; a timeout must never automatically resend.
+
+The native helper's void return establishes admission only. A save now retains
+its single-flight request and exact Server/context/World generation plus the
+native context's request sequence (`+0x80`) until native completion. Immediately
+after the one call, the admitted state must be phase 1 / flags 7. Native
+serialization and persistence remain in the engine (`0x7b7330` leading to
+`0x7b80d0`); phase 5 calls the native persistence completion check (`0x730820`)
+at `0x7b9180`, and only its successful result advances to phase 6 and then idle.
+The success branch at `0x7b745b` clears pending to phase 0 / flags 6. Native
+terminal failure clears pending while retaining error bit 8, so it cannot
+produce a completed receipt. The executable hash and loaded 32-byte windows at
+the request, commit-check and result branches must all match.
+
+The observer must actually see that same operation at phase 6 / flags 7 before
+accepting its return to phase 0 / flags 6. Merely observing idle after admission
+could also represent an unseen reset and stays unconfirmed. A skipped phase-6
+sample is not inferred from timing or file changes. Only this full sequence yields
+`status=completed, issue=none` and a confirmed desktop result. Native error bit 8
+is an error; a changed context, generation, sequence, shutdown, invalid state or
+120-second observation timeout remains unconfirmed. The bridge never repeats
+the save. A dispatched receipt, a void return, a newer file timestamp or an
+adjacent log line never establishes completion. This follows the native
+persistence contract; it makes no extra power-loss durability guarantee.
+
+Historical isolated acceptance on 2026-10-19 (before the completion-receipt observer)
+used ordinary copied program files and a newly generated
+private `world0.ksd`, without copying user configuration or saves. The production
+DLL received one `save_world` IPC request on build `25967645`; native flags moved
+from 6 to 7 and native save phase from 0 to 1, then returned to idle phase 0/flags
+6. The current 42,750-byte world changed SHA256 and modification time while the
+server remained running. A subsequent fresh process deserialized that exact
+saved file and reached `Run` without another save request. This is actual native
+save/restart evidence, distinct from the synthetic protocol and generation tests.
+
+The 2026-10-20 completion observer passed the MSVC control test suite, including
+admission versus completion, phases 1-6, terminal error, changed request sequence,
+changed generation, a missed phase-6 observation, reset after commit and deadline
+cases. A newly built production acceptance executable then ran two isolated
+native cycles against the read-only local package: ordinary Start installed the
+extension automatically, each formal `save_world` action returned confirmed only
+after the native phase-6 boundary, and both normal Stops exited with code 0.
+The second cycle used a fresh managed process and passed native readiness again.
+Independent process and port checks found both native processes, the fixture,
+the test process and its console host gone after cleanup. This verifies the new
+native completion path; it does not add player-content or power-loss claims.

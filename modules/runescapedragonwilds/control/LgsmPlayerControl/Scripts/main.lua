@@ -62,6 +62,8 @@ local function cdo(path)
     require_condition(valid(object) and object:IsA(path), "api_unavailable")
     return object
 end
+local world_save = build_world_save({ boot_id = boot_id, random_token = random_token,
+    valid = valid, same = same, require_condition = require_condition, signature = signature, root = root, directory = directory })
 local READY = "/Script/Dominion.DominionPlayerController:IsPlayerReady"
 local IDS = "/Script/OnlineSubsystemBlueprints.OnlineHelpers"
 local PRIVILEGES = "/Script/Dominion.PrivilegeFunctionLibrary"
@@ -271,6 +273,7 @@ local function quoted(value)
 end
 local function encode(response)
     local request = response.request
+    if world_save.is_request(request) then return world_save.encode(response, quoted) end
     local value = '{"protocol":1,"request_id":' .. quoted(request.request_id) .. ',"timestamp":' .. os.time()
     if request.action == "query" then
         local rows = {}
@@ -291,13 +294,16 @@ local function encode(response)
     end
     return value .. ',"error":' .. (response.error and quoted(response.error) or 'null') .. '}\n'
 end
-local function failure(request, code)
-    outgoing = { request = request, complete = false, applied = false, error = code }
+local function failure(request, code, invoked)
+    outgoing = { request = request, complete = false, applied = false, invoked = invoked == true,
+        ready = invoked == true, call_returned = false, error = invoked and "save_call_unknown" or code }
 end
 local function read_request()
     local file = io.open(request_path, "rb"); if not file then return nil end
     local content = file:read(REQUEST_LIMIT + 1); file:close()
     if not content or #content > REQUEST_LIMIT then return nil end
+    local save_request = world_save.request(content)
+    if save_request then return save_request end
     -- This deliberately closed grammar accepts only the owning Rust writer's
     -- exact key order, without escapes, duplicate fields, extra fields or eval.
     local id, timestamp, action, boot, session, token, account = content:match(
@@ -335,7 +341,7 @@ end
 local known = { dispatcher_unavailable = true, dispatcher_timeout = true, api_unavailable = true, world_unavailable = true,
     world_ambiguous = true, roster_limit = true, roster_incomplete = true, identity_unavailable = true,
     request_expired = true, target_changed = true, native_rejected = true, effect_unconfirmed = true,
-    persistence_unavailable = true }
+    persistence_unavailable = true, save_busy = true }
 local function error_code(value) return known[value] and value or "collection_failed" end
 local function schedule()
     if dispatch_pending or not pending then return end
@@ -356,6 +362,9 @@ local function schedule()
                 validate_current()
                 local players, api, native = collect()
                 validate_current()
+                if world_save.is_request(request) then
+                    return world_save.execute(request, validate_current, native, function() operation.invoked = true end)
+                end
                 if request.action == "query" then return players end
                 require_condition(request.boot_id == boot_id, "target_changed")
                 local target = target_row(players, request)
@@ -389,9 +398,11 @@ local function schedule()
             if token ~= generation or pending ~= operation then return end
             if not success then
                 if operation.confirming and fresh(request) and (result == "roster_incomplete" or result == "identity_unavailable") then return end
-                failure(request, operation.confirming and "effect_unconfirmed" or error_code(result)); pending = nil; return
+                failure(request, operation.confirming and "effect_unconfirmed" or error_code(result), operation.invoked); pending = nil; return
             end
-            if request.action == "query" then
+            if world_save.is_request(request) then
+                outgoing = result; pending = nil
+            elseif request.action == "query" then
                 outgoing = { request = request, complete = true, players = result }; pending = nil
             elseif result == true then
                 outgoing = { request = request, complete = true, applied = true }; pending = nil
@@ -402,7 +413,7 @@ local function schedule()
     end)
     if not ok then
         dispatch_pending = false; pending = nil; generation = generation + 1
-        failure(operation.request, operation.confirming and "effect_unconfirmed" or "dispatcher_unavailable")
+        failure(operation.request, operation.confirming and "effect_unconfirmed" or "dispatcher_unavailable", operation.invoked)
     end
 end
 local function flush()
@@ -421,7 +432,7 @@ LoopAsync(250, function()
     flush()
     local now = os.time()
     if pending and (not fresh(pending.request) or (dispatch_pending and now - pending.queued_at >= DISPATCH_TIMEOUT)) then
-        failure(pending.request, pending.confirming and "effect_unconfirmed" or "dispatcher_timeout")
+        failure(pending.request, pending.confirming and "effect_unconfirmed" or "dispatcher_timeout", pending.invoked)
         pending = nil; generation = generation + 1
         -- A timed-out queued closure remains owned until it drains. No second
         -- effect can be queued behind it, and its generation cannot execute.

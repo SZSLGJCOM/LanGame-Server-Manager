@@ -10,7 +10,7 @@ namespace Lgsm.Valheim.Control
 {
     // All methods are called by the Unity owner, never a worker or file callback.
     // No request can select a reflection target, file path or arbitrary command.
-    internal sealed class ValheimNativeControl : IValheimControl
+    internal sealed class ValheimNativeControl : IValheimControl, IValheimWorldSave, IDisposable
     {
         internal const string GameSha256 = "ef8c8d3a1f45694ef7a701e8e2a25bf8a3874c951a2639c81dfe614ce3aa5fa3";
         internal const string LocalProofGameSha256 = "0dfc7e81436f822121148efed859ba1e661d58b9484bd45e3b6f33b6dd86bfad";
@@ -39,6 +39,8 @@ namespace Lgsm.Valheim.Control
         private ConstructorInfo steamId, platformId;
         private PropertyInfo validPlatformId;
         private object currentServer;
+        private ValheimWorldSave worldSave;
+        private bool worldSaveProfileSupported;
 
         private static MethodInfo Method(Type type, string name, BindingFlags flags, Type result, params Type[] arguments)
         {
@@ -67,6 +69,14 @@ namespace Lgsm.Valheim.Control
                 (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256));
         }
 
+        internal static bool SupportedWorldSaveProfile(string game, string utilities, string platform)
+        {
+            // The dedicated Save/disk-space worker path is independently
+            // inspected for this build. Other admitted player-control builds
+            // retain query/access operations without guessing save semantics.
+            return game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256 && platform == PlatformSha256;
+        }
+
         private static string Digest(Assembly assembly)
         {
             using (FileStream stream = File.OpenRead(assembly.Location))
@@ -82,8 +92,10 @@ namespace Lgsm.Valheim.Control
             if (instance != null) return;
             Assembly game = Loaded("assembly_valheim");
             Assembly platform = Loaded("Splatform");
-            if (!SupportedProfile(Digest(game), Digest(Loaded("assembly_utils")), Digest(platform)))
+            string gameHash = Digest(game), utilitiesHash = Digest(Loaded("assembly_utils")), platformHash = Digest(platform);
+            if (!SupportedProfile(gameHash, utilitiesHash, platformHash))
                 throw new ControlFailure("unsupported_game_build");
+            worldSaveProfileSupported = SupportedWorldSaveProfile(gameHash, utilitiesHash, platformHash);
             BindTypes(game.GetType("ZNet", true), game.GetType("ZNetPeer", true),
                 platform.GetType("Splatform.PlatformUserID", true));
         }
@@ -294,5 +306,22 @@ namespace Lgsm.Valheim.Control
                 kick.Invoke(server, new[] { target });
             }
         }
+
+        public void BeginSave()
+        {
+            object server = Server();
+            if (!worldSaveProfileSupported) throw new ControlFailure("unsupported_native_save_contract");
+            if (worldSave == null)
+            {
+                Assembly game = instance.PropertyType.Assembly;
+                worldSave = new ValheimWorldSave(instance.PropertyType, game.GetType("SaveSystem", true),
+                    game.GetType("ZoneSystem", true), game.GetType("DungeonDB", true), game.GetType("Game", true));
+            }
+            worldSave.Begin(server);
+        }
+
+        public WorldSaveReceipt PollSave() { return worldSave.Poll(Server()); }
+        public void EndSaveObservation() { if (worldSave != null) worldSave.Dispose(); }
+        public void Dispose() { EndSaveObservation(); }
     }
 }

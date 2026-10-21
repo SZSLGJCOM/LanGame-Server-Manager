@@ -2286,10 +2286,7 @@ async fn assistant_operation_inner(
             .await?;
             output.instance_id = Some(instance.id.clone());
             output.module_id = Some(instance.module_id.clone());
-            output.message = format!(
-                "Sent AI generated broadcast `{}` via {}.",
-                message, sent.transport
-            );
+            output.message = super::commands_broadcast::broadcast_dispatch_message(&sent);
             Ok(output)
         }
     }

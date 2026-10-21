@@ -178,11 +178,16 @@ impl ManagedSaveWorker {
             let descriptor = find_descriptor(&descriptors, "unturned")?;
             let action =
                 resolve_declared_runtime_action(descriptor, "save_world", None, None, None, false)?;
-            if action.transport != "stdin" || action.process_key.as_deref() != Some("main") {
+            if action.transport != "stdin"
+                || action.command != "Save"
+                || action.process_key.as_deref() != Some("main")
+            {
                 return Err(String::from(
-                    "Unturned periodic save requires its declared main-process stdin save action",
+                    "Unturned periodic save requires the declared native Save action",
                 ));
             }
+            // Manual and scheduled saves use the same native console command.
+            // This timer reports command delivery to the owned main process.
             self.action = Some(action);
         }
         let Some(action) = self.action.as_ref() else {
@@ -291,7 +296,7 @@ async fn refresh_and_save(
     let receipt = dispatch_managed_stdin_command_with_budget(
         state,
         &instance.summary.id,
-        action.process_key.as_deref(),
+        Some("main"),
         &action.command,
         Some(instance.run_id),
         RuntimeStdinDispatchBudget::observed(completion.clone()),

@@ -47,9 +47,10 @@ function deferred<T>() {
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
   return { promise, resolve, reject };
 }
-function checkBounds(selector: string, before: DOMRect, description: string) {
+function checkBounds(selector: string, before: DOMRect, description: string,
+  properties: readonly ("x" | "y" | "width" | "height")[] = ["x", "y", "width", "height"]) {
   const after = element(selector).getBoundingClientRect();
-  check((["x", "y", "width", "height"] as const).every((property) => Math.abs(before[property] - after[property]) < 1), description);
+  check(properties.every((property) => Math.abs(before[property] - after[property]) < 1), description);
 }
 function bottomNotice() {
   const notice = element(".shell-activity-notice");
@@ -113,22 +114,22 @@ async function run() {
     storyCalls++; return story.promise;
   } } });
   await act(async () => { await prepareBrowserLocaleCatalogs(); draw(); });
-  await waitFor(".server-autostart-policy-editor");
-  const policyBefore = element(".server-autostart-policy-editor").getBoundingClientRect();
-  await act(async () => { element<HTMLInputElement>('input[type="checkbox"]').click(); });
+  await waitFor(".server-autostart-chip input[type=checkbox]");
+  const policyBefore = element(".server-autostart-chip").getBoundingClientRect();
+  await act(async () => { element<HTMLInputElement>(".server-autostart-chip input[type=checkbox]").click(); });
   bottomNotice();
-  check(element<HTMLInputElement>('input[type="checkbox"]').disabled && saveCalls === 1, "Pending policy save disables duplicate writes");
-  checkBounds(".server-autostart-policy-editor", policyBefore, "Saving adds no space beneath the policy control");
+  check(element<HTMLInputElement>(".server-autostart-chip input[type=checkbox]").disabled && saveCalls === 1, "Pending policy save disables duplicate writes");
+  checkBounds(".server-autostart-chip", policyBefore, "Saving adds no space beneath the policy control", ["y", "height"]);
   await act(async () => { saving.reject(new Error("Policy write denied SAVE_ERROR_END")); });
   check(bottomNotice().textContent?.includes("SAVE_ERROR_END"), "Save failure retains its cause in the activity bar");
-  checkBounds(".server-autostart-policy-editor", policyBefore, "Failed policy save does not add height");
+  checkBounds(".server-autostart-chip", policyBefore, "Failed policy save does not add height", ["y", "height"]);
   saving = deferred<void>();
   await pressEnter(element<HTMLButtonElement>(".shell-activity-notice-actions button"));
   check(saveCalls === 2, "Retry resubmits the intended policy save exactly once");
   await act(async () => { saving.resolve(); });
-  check(bottomNotice().classList.contains("is-success") && !element<HTMLInputElement>('input[type="checkbox"]').checked,
+  check(bottomNotice().classList.contains("is-success") && !element<HTMLInputElement>(".server-autostart-chip input[type=checkbox]").checked,
     "Successful retry applies the requested value and reports success below");
-  checkBounds(".server-autostart-policy-editor", policyBefore, "Save success does not add height");
+  checkBounds(".server-autostart-chip", policyBefore, "Save success does not add height", ["y", "height"]);
 
   mode = "read";
   await act(async () => { draw(); });

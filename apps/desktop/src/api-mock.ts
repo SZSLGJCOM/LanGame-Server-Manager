@@ -1,4 +1,8 @@
 import { version as desktopVersion } from "../package.json";
+import { mockPlayerHistory } from "./api-mock/player-history";
+import type { PlayerHistoryQuery } from "./player-history";
+import { readMockDailyMaintenance, updateMockDailyMaintenance } from "./maintenance-schedule-mock";
+import type { DailyMaintenanceAction, UpdateDailyMaintenanceScheduleInput } from "./maintenance-schedule";
 import { MockDragonwildsWorldSettings } from "./api-mock/dragonwilds-world-settings";
 import { MockNativeBanStore } from "./api-mock/native-bans";
 import { buildMockAstroneerSaveCatalog } from "./api-mock/astroneer-saves";
@@ -20,6 +24,7 @@ import type {
   GenerateInstanceBroadcastInput,
   GenerateInstanceBroadcastOutput,
   InstanceBackupResult,
+  SaveFileListing,
   InstanceBroadcastEvent,
   InstanceBroadcastPolicy,
   InstanceDeletionResult,
@@ -1283,6 +1288,10 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       return readMockProjectZomboidWorkshopModsSnapshot(Array.isArray(args?.ids) ? args.ids as string[] : []) as T;
     case "read_instance_runtime_overview_from_storage":
       return buildMockRuntime(String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1")) as T;
+    case "read_instance_player_history":
+      return mockPlayerHistory(args?.input as PlayerHistoryQuery) as T;
+    case "read_dontstarve_world_map":
+      throw new Error("World maps require a running server. Preview data does not contain a real world.");
     case "read_instance_live_players": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
       return mockLivePlayerStore.read(buildMockLivePlayerContext(instanceId)) as T;
@@ -1566,6 +1575,34 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       };
       upsertMockBackup(instanceId, backup);
       return backup as T;
+    }
+    case "list_instance_save_files": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
+      const backupId = typeof args?.backupId === "string" ? args.backupId : null;
+      const backup = backupId ? ensureMockInstanceBackups(instanceId).find((entry) => entry.backup_id === backupId) : undefined;
+      if (backupId && !backup) throw new Error(`Backup ${backupId} was not found for ${instanceId}.`);
+      const modified = Date.now() - 30 * 60 * 1000;
+      const listing: SaveFileListing = {
+        instance_id: instanceId,
+        backup_id: backupId,
+        root_path: backup?.backup_path ?? ensureMockInstanceDetails(instanceId).saves_path,
+        exists: true,
+        entries: [
+          ...(backup ? [{ relative_path: "manifest.json", is_directory: false, size_bytes: 412, modified_at_unix_ms: modified }] : []),
+          { relative_path: backup ? "saves" : "Master", is_directory: true, size_bytes: 0, modified_at_unix_ms: modified },
+          { relative_path: backup ? "saves/world.dat" : "Master/world.dat", is_directory: false, size_bytes: 1048576, modified_at_unix_ms: modified }
+        ],
+        truncated: false,
+        skipped_links: [],
+        slot_model: backup ? "fallback" : "native",
+        slots: backup ? [
+          { id: "t:", name: "", label: null, kind: "files", paths: ["manifest.json"], size_bytes: 412, file_count: 1, modified_at_unix_ms: modified, current: false },
+          { id: "t:saves", name: "saves", label: null, kind: "directory", paths: ["saves"], size_bytes: 1048576, file_count: 1, modified_at_unix_ms: modified, current: false }
+        ] : [
+          { id: "d:Master", name: "Master", label: { kind: "world", value: "Master" }, kind: "native", paths: ["Master"], size_bytes: 1048576, file_count: 1, modified_at_unix_ms: modified, current: true }
+        ]
+      };
+      return listing as T;
     }
     case "list_instance_backups": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1");
@@ -2416,6 +2453,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       }
       const result: InstanceRuntimeCommandResult = {
         write_confirmation_pending: false,
+        save_completion: runtimeActionId === "save_world" ? "requested" : null,
         instance_id: instanceId,
         process_key: arkTarget ? processKey : remoteTransport ? transport : processKey,
         display_name: arkTarget?.display_name ?? mockRuntimeDisplayName(transport, processKey),
@@ -2614,6 +2652,10 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
     }
     case "log_frontend_event":
       return undefined as T;
+    case "read_instance_maintenance_schedule":
+      return readMockDailyMaintenance(String(args?.instanceId), args?.action as DailyMaintenanceAction) as T;
+    case "update_instance_maintenance_schedule":
+      return updateMockDailyMaintenance(args?.input as UpdateDailyMaintenanceScheduleInput) as T;
     default:
       throw new Error(`Mock command ${command} is unsupported.`);
   }

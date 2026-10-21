@@ -1,4 +1,5 @@
 @import "./maintenance-broadcast.css";
+@import "./maintenance-toolbar.css";
 
 .server-maintenance-card,
 .dst-world-import {
@@ -39,34 +40,27 @@
 .server-backup-list-scroll:focus-visible,
 .dst-world-import button:focus-visible { outline: 2px solid var(--shell-focus); outline-offset: 2px; }
 
-.server-file-backup-toolbar { display: flex; margin-left: auto; }
-.server-file-backup-summary { display: flex; flex-wrap: wrap; gap: 6px 12px; }
-.server-file-backup-stat { display: flex; align-items: baseline; gap: 5px; }
-.server-file-backup-stat span { font-size: var(--text-meta); font-weight: var(--font-weight-regular); font-variant-numeric: tabular-nums; }
-.server-file-backup-stat small { font-size: var(--text-meta); font-weight: var(--font-weight-regular); color: var(--shell-muted); }
-.server-backup-stop-note { font-size: var(--text-secondary); color: var(--shell-muted); }
 .server-backup-warning { display: grid; gap: 4px; padding: 8px 10px; border-radius: 8px; background: var(--theme-warning-bg); color: var(--theme-warning-text); }
 .server-backup-warning .form-note { color: inherit; }
 .server-backup-list-scroll { min-width: 0; }
 .server-file-backup-table { display: grid; min-width: 0; }
-.server-file-backup-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--shell-line); }
+.server-file-backup-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 5px 0; border-bottom: 1px solid var(--shell-line); }
 .server-file-backup-row:last-child { border-bottom: 0; }
 .server-file-backup-row:hover { background: var(--theme-control-hover); }
-.server-file-backup-main { display: grid; min-width: 0; gap: 4px; }
-.server-file-backup-name { font-size: var(--text-secondary); font-weight: var(--font-weight-semibold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.server-file-backup-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; color: var(--shell-muted); font-size: var(--text-meta); line-height: var(--leading-compact); font-variant-numeric: tabular-nums; }
-.server-file-backup-kind { color: var(--shell-text); }
-.server-file-backup-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+/* One line: name, tag, then size and relative time; everything else is in the row's help bubble. */
+.server-file-backup-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; border-radius: 4px; }
+.server-file-backup-name { flex: 0 1 auto; min-width: 0; font-size: var(--text-secondary); font-weight: var(--font-weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.server-file-backup-meta { display: flex; flex: none; gap: 8px; margin-left: auto; color: var(--shell-muted); font-size: var(--text-meta); line-height: var(--leading-compact); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.server-file-backup-kind { flex: none; font-size: var(--text-meta); color: var(--shell-text); white-space: nowrap; }
+.server-file-backup-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px; }
 .server-file-backup-empty { padding: 14px 0; color: var(--shell-muted); font-size: var(--text-secondary); text-align: center; }
 
-.dst-world-import-header { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-height: 24px; padding: 0; border: 0; font-size: var(--text-body); font-weight: var(--font-weight-semibold); }
 .dst-world-import-form { display: grid; gap: 8px; }
-.dst-world-import-header .status-chip { margin-left: auto; min-height: 22px; font-size: var(--text-meta); padding: 2px 6px; }
 .dst-world-import-source-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .dst-world-import-source-path { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-meta); color: var(--shell-muted); }
 .dst-world-import-source-row button { flex-shrink: 0; }
-.dst-world-import-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.dst-world-import-actions .form-note { min-width: 0; flex: 1; font-size: var(--text-secondary); }
+.dst-world-import-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.dst-world-import-actions .status-chip { min-height: 22px; font-size: var(--text-meta); padding: 2px 6px; }
 .dst-world-import-actions button { flex-shrink: 0; }
 .dst-world-import-feedback { padding-top: 4px; font-size: var(--text-secondary); overflow-wrap: anywhere; }
 .dst-world-import-feedback.is-error { color: var(--theme-danger-text); }
@@ -100,9 +94,7 @@
 .server-backup-policy-footer .server-backup-policy-status { margin-right: auto; }
 .server-backup-policy-status.is-failed { color: var(--theme-danger-text); }
 .server-backup-policy-validation { grid-column: 1 / -1; color: var(--theme-danger-text); font-size: var(--text-secondary); }
-.server-autostart-policy-editor { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
-.server-autostart-job { flex-basis: 100%; }
+.server-daily-maintenance-editor { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; }
 .server-recovery-options { display: grid; gap: 6px; }
-.server-recovery-options .form-note { font-size: var(--text-secondary); }
 .server-recovery-options > .server-backup-policy-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .server-runtime-recovery-editor .server-backup-policy-footer .ghost-button { padding-inline: 0; background: transparent; border-color: transparent; font-weight: var(--font-weight-regular); }

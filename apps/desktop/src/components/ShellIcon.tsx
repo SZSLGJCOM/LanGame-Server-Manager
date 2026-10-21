@@ -26,6 +26,7 @@ interface IconProps extends SVGProps<SVGSVGElement> {
     | "minus"
     | "square"
     | "restore"
+    | "fit"
     | "sun"
     | "moon"
     | "x"
@@ -86,6 +87,7 @@ const ICON_PATHS: Record<IconProps["name"], string[]> = {
   minus: ["M5 12h14"],
   square: ["M6 6h12v12H6z"],
   restore: ["M8 8h12v12H8z", "M4 16V4h12"],
+  fit: ["M4 9V4h5", "M15 4h5v5", "M20 15v5h-5", "M9 20H4v-5"],
   sun: ["M12 3v2", "M12 19v2", "M4.93 4.93l1.41 1.41", "M17.66 17.66l1.41 1.41", "M3 12h2", "M19 12h2", "M4.93 19.07l1.41-1.41", "M17.66 6.34l1.41-1.41", "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"],
   moon: ["M21 12.79A9 9 0 1 1 11.21 3c0 5 4 9 9 9Z"],
   x: ["M6 6l12 12", "M18 6 6 18"],

@@ -231,6 +231,26 @@ fn ordinary_stdin_startup_clone_cannot_interleave_an_active_command() {
 }
 
 #[test]
+fn ordinary_stdin_full_unread_pipe_accepts_nothing_and_stays_usable_once_read() {
+    let (mut read, write) = test_pipe();
+    let mut writer = WindowsPipeWriter::new(write);
+    let cancellation = RuntimeStdinCancellation::default();
+    let line = "x".repeat(1023);
+    for _ in 0..4 {
+        writer.write_line(&line, &cancellation).unwrap();
+    }
+    let full = writer.write_line(&line, &cancellation).unwrap_err();
+    assert_eq!(full.kind(), std::io::ErrorKind::TimedOut);
+    assert!(
+        writer.is_healthy(),
+        "a write that accepted nothing must not close the stream"
+    );
+    assert_eq!(read_available(&mut read).len(), 4096);
+    writer.write_line("Save", &cancellation).unwrap();
+    assert_eq!(read_available(&mut read), b"Save\n");
+}
+
+#[test]
 fn ordinary_stdin_peer_close_is_an_error_and_prevents_reuse() {
     let (read, write) = test_pipe();
     let mut stdin = RuntimeStdin::Windows(WindowsPipeWriter::new(write));

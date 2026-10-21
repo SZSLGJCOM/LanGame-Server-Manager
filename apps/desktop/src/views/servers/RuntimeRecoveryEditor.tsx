@@ -7,6 +7,7 @@ import { parseSettingsObject, serializeSettingsObject } from "../settings/guided
 import type { SettingsObject } from "../settings/settings-schema";
 import { useAutoSaveInstanceSettings } from "../settings/useAutoSaveInstanceSettings";
 import { MAINTENANCE_TYPING_DELAY_MS, MaintenanceAutoSaveFooter } from "./MaintenanceAutoSaveFooter";
+import { MaintenanceChip } from "./MaintenanceToolbar";
 import { mergeRecoveryPolicy, parseRecoveryDraft, readRecoveryPolicy, recoveryDraft,
   type RecoveryDraft, type RecoveryPolicy } from "./runtime-recovery-model";
 
@@ -145,7 +146,12 @@ export function RuntimeRecoveryEditor(props: Props) {
 
   const blocked = !props.readOnly && !latest.error && !valid;
   const typing = MAINTENANCE_TYPING_DELAY_MS;
-  return <form className="server-save-policy-editor server-runtime-recovery-editor" onSubmit={(event) => event.preventDefault()} noValidate>
+  const shown = props.readOnly ? values : recoveryDraft(persistedPolicy);
+  const summary = props.t(shown.enabled ? "servers.maintenance.recoveryValue" : "servers.maintenance.off",
+    { count: shown.maxRestarts || "—", seconds: shown.waitSeconds || "—" });
+  return <MaintenanceChip icon="restore" label={props.t("servers.recovery.title")} value={summary} className="server-runtime-recovery-chip"
+    help={props.t("servers.recovery.description")}>
+  <form className="server-save-policy-editor server-runtime-recovery-editor" onSubmit={(event) => event.preventDefault()} noValidate>
     {latest.error && <ActivityNotice tone="error">{latest.error}</ActivityNotice>}
     <label className="settings-toggle-card server-backup-policy-toggle">
       <span className="settings-toggle-copy"><span className="settings-field-title">{props.t("servers.recovery.enabled")}</span>
@@ -157,7 +163,6 @@ export function RuntimeRecoveryEditor(props: Props) {
         onChange={(event) => edit({ enabled: event.target.checked }, 0)} />
     </label>
     <div className="server-recovery-options">
-    <p className="form-note">{props.t("servers.recovery.description")}</p>
     <div className="server-backup-policy-editor">
       <label className="server-backup-policy-field"><span className="detail-label">{props.t("servers.recovery.maxRestarts")}</span>
         <input className="settings-schema-input" name="maxRestarts" type={props.readOnly ? "text" : "number"} min={1} max={10} step={1}
@@ -192,5 +197,6 @@ export function RuntimeRecoveryEditor(props: Props) {
     {!props.readOnly && <MaintenanceAutoSaveFooter status={save.status} blocked={blocked}
       conflictMessage={conflict ? props.t("servers.recovery.conflict") : null} edited={editing} t={props.t}
       onRetry={save.retry} onDiscard={() => { ownPolicies.current.clear(); setEdits(noEdits(instanceId)); }} />}
-  </form>;
+  </form>
+  </MaintenanceChip>;
 }

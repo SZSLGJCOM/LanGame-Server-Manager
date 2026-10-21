@@ -30,8 +30,8 @@
   border-top: 1px solid var(--shell-line);
 }
 
-.maintenance-workspace :is(.server-maintenance-card-label, .server-resource-heading .server-workbench-section-label,
-  .instance-isolation-title, .dst-world-import-header, .server-broadcast-heading h3) {
+.maintenance-workspace :is(.server-maintenance-card-label,
+  .server-broadcast-heading h3) {
   font-size: var(--text-section-title);
   line-height: var(--leading-heading);
 }
@@ -55,9 +55,9 @@
   line-height: var(--leading-control);
 }
 
-.maintenance-workspace :is(.server-save-policy-editor, .server-resource-policy .server-save-policy-editor,
+.maintenance-workspace :is(.server-save-policy-editor,
   .server-save-policy-fields, .server-recovery-options, .dst-world-import-form) { gap: 12px; }
-.maintenance-workspace :is(.server-native-save-policies, .server-backup-policy-editor, .server-resource-fields) {
+.maintenance-workspace :is(.server-native-save-policies, .server-backup-policy-editor) {
   gap: 12px;
 }
 /* Save policy: groups stack; each group lays its fields on the standard two-column grid. */
@@ -73,22 +73,16 @@
 .maintenance-workspace .server-backup-policy-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
 .maintenance-workspace .server-save-policy-group legend { padding-bottom: 12px; }
 .maintenance-workspace :is(.server-backup-policy-field, .server-save-policy-fields .configuration-field) { gap: 6px; }
-.maintenance-workspace .server-autostart-policy-editor > .settings-toggle-card { width: 100%; }
 
 .maintenance-workspace .server-backup-policy-footer { padding-top: 12px; border-top: 1px solid var(--shell-line); }
-.maintenance-workspace .server-autostart-policy-editor {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--shell-line);
-}
 
 .maintenance-workspace .server-file-backup-row {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 14px 10px;
-  border-radius: 8px;
+  gap: 4px 10px;
+  padding: 5px 8px;
+  border-radius: 6px;
 }
-.maintenance-workspace .server-file-backup-main { gap: 6px; }
 .maintenance-workspace .server-file-backup-row:has(.backup-rename-action) { grid-template-columns: minmax(0, 1fr); }
 .maintenance-workspace .backup-rename-action { gap: 8px; }
 .maintenance-workspace .backup-rename-action > input {
@@ -100,32 +94,12 @@
   line-height: var(--leading-compact);
 }
 .maintenance-workspace .backup-rename-action > button { min-height: var(--settings-control-height); }
-.maintenance-workspace .server-file-backup-name { font-size: var(--text-body); }
-.maintenance-workspace .server-file-backup-summary { gap: 8px 20px; }
-.maintenance-workspace .server-file-backup-stat span { color: var(--shell-text); font-size: var(--text-body); }
 .maintenance-workspace .server-file-backup-empty {
   padding: 24px 12px;
   border: 1px dashed var(--shell-line-strong, var(--shell-line));
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-card-muted) 72%, transparent);
 }
-.maintenance-workspace :is(.instance-isolation-content, .instance-isolation-paths) { gap: 12px; }
-/* Directory entries: label above a wrapping monospace path, like a read-only settings field. */
-.maintenance-workspace .instance-isolation-paths { gap: 12px; }
-.maintenance-workspace .instance-isolation-path {
-  display: grid;
-  align-content: center;
-  gap: 4px;
-  height: 100%;
-  min-height: var(--settings-control-height);
-  padding: 8px 10px;
-  border-radius: var(--settings-control-radius);
-  border-color: var(--settings-control-border);
-  background: var(--settings-control-bg);
-}
-.maintenance-workspace .instance-isolation-path > span { font-size: var(--text-body); color: color-mix(in srgb, var(--text) 88%, var(--text-muted)); }
-.maintenance-workspace .instance-isolation-path > code { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
-.maintenance-workspace .instance-isolation-content > .button-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .maintenance-workspace :is(.server-workbench-section-label.server-maintenance-card-label) { display: flex; align-items: center; gap: 7px; margin: 0; }
 
 .maintenance-workspace :is(.server-broadcast-compose, .server-broadcast-fields, .server-broadcast-rules) { gap: 12px; }
@@ -155,7 +129,7 @@
 .maintenance-workspace .server-maintenance-card > .shell-activity-notice { flex: 0 0 auto; }
 
 @container configuration-fields (max-width: 560px) {
-  .maintenance-workspace :is(.server-native-save-policies, .server-save-policy-fields, .server-backup-policy-editor, .instance-isolation-paths, .server-broadcast-fields,
+  .maintenance-workspace :is(.server-native-save-policies, .server-save-policy-fields, .server-backup-policy-editor, .server-broadcast-fields,
     .server-broadcast-options, .server-broadcast-policy-row, .server-broadcast-rule-grid,
     .server-file-backup-row) { grid-template-columns: minmax(0, 1fr); }
   .maintenance-workspace .server-file-backup-actions { justify-content: flex-start; }
@@ -186,3 +160,5 @@
   color: var(--theme-warning-text);
 }
 .maintenance-workspace .server-backup-warning .maintenance-help-icon { margin-left: 0; color: currentColor; }
+.maintenance-workspace .instance-isolation-panel { gap: 20px; }
+.maintenance-workspace .instance-isolation-panel > .maintenance-group + .maintenance-group { padding-top: 16px; border-top: 1px solid var(--shell-line); }

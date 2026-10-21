@@ -36,6 +36,14 @@ foreach ($assembly in @('update_observer', 'copy_observer')) {
 }
 $cpp = 'cl /nologo /std:c++20 /O2 /W4 /WX /MT /EHsc /utf-8'
 if ($RunTests) {
+    $commands.Add(('{0} "{1}/tests/native_profile_tests.cpp" "{1}/native_profile.cpp" /Fenative_profile_tests.exe /link bcrypt.lib' -f $cpp, $source))
+    $commands.Add('if errorlevel 1 exit /b 1')
+    $commands.Add('native_profile_tests.exe')
+    $commands.Add('if errorlevel 1 exit /b 1')
+    $commands.Add(('{0} "{1}/tests/reply_tests.cpp" "{1}/control_files.cpp" /Fereply_tests.exe' -f $cpp, $source))
+    $commands.Add('if errorlevel 1 exit /b 1')
+    $commands.Add('reply_tests.exe')
+    $commands.Add('if errorlevel 1 exit /b 1')
     $commands.Add(('ml64 /nologo /c /Foupdate_probe.obj "{0}/tests/update_probe.asm"' -f $source))
     $commands.Add('if errorlevel 1 exit /b 1')
     $commands.Add(('{0} "{1}/tests/update_abi_tests.cpp" update_observer.obj update_probe.obj buffer.obj hook.obj trampoline.obj hde64.obj /Feupdate_abi_tests.exe' -f $cpp, $source))

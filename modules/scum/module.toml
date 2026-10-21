@@ -5,6 +5,13 @@ description = "Dedicated server module for SCUM via SteamCMD."
 steam_app_id = 3792580
 supported_platforms = ["windows"]
 
+[[runtime.player_actions]]
+id = "save_world"
+label = "Save persistent state"
+label_zh_cn = "保存服务器状态"
+transport = "scum_save"
+command_template = "save_persistent_state"
+
 [install]
 shared_game_dir = "scum"
 verification_path = "SCUM/Binaries/Win64/SCUMServer.exe"
@@ -21,7 +28,10 @@ args_template = [
 working_directory_template = "{{paths.install_root}}/SCUM/Binaries/Win64"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "SCUM reads ServerSettings.ini, EconomyOverride.json, RaidTimes.json, Notifications.json, and identity rosters from SCUM/Saved/Config/WindowsServer. LanGame renders the exact generated v7 ServerSettings inventory and structured JSON surfaces, then prevalidates and atomically materializes them before launch. The Windows server executable requires elevation in a non-admin desktop session, so this module is not suitable for no-UAC hosting."
+host_notes = "SCUM reads ServerSettings.ini, EconomyOverride.json, RaidTimes.json, Notifications.json, and identity rosters from SCUM/Saved/Config/WindowsServer. LanGame renders the exact generated v7 ServerSettings inventory and structured JSON surfaces, then prevalidates and atomically materializes them before launch. Its highestAvailable manifest requests elevation for a filtered administrator account even though the verified dedicated server runs with the current token. This launch alone uses RunAsInvoker, preserving operating-system file and process permissions and allowing its instance-bound extension environment."
+
+[process.environment_template]
+__COMPAT_LAYER = "RunAsInvoker"
 
 [[default_ports]]
 name = "game"
@@ -37,7 +47,7 @@ port = 27015
 protocol = "none"
 
 [runtime]
-requires_admin = true
+requires_admin = false
 
 [runtime.bind_address]
 mode = "strict"

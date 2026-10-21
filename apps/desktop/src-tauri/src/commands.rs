@@ -124,8 +124,22 @@ mod commands_dst_import;
 mod commands_dst_import_operation;
 #[path = "commands_dst_import_validation.rs"]
 mod commands_dst_import_validation;
+#[path = "commands_dst_map.rs"]
+pub(crate) mod commands_dst_map;
+#[path = "commands_dst_regeneration.rs"]
+pub(crate) mod commands_dst_regeneration;
 #[path = "commands_dst_world_state.rs"]
 pub(crate) mod commands_dst_world_state;
+#[path = "commands_maintenance_schedule.rs"]
+pub(crate) mod commands_maintenance_schedule;
+#[path = "commands_native_save.rs"]
+mod commands_native_save;
+pub use commands_maintenance_schedule::{
+    read_instance_maintenance_schedule, update_instance_maintenance_schedule,
+};
+#[path = "commands_player_history.rs"]
+pub(crate) mod commands_player_history;
+pub use commands_player_history::read_instance_player_history;
 #[path = "commands_external_url.rs"]
 mod commands_external_url;
 #[path = "commands_file_mods.rs"]
@@ -172,6 +186,8 @@ pub(super) mod commands_module_mutation_locks;
 #[path = "commands_program_storage.rs"]
 pub(crate) mod commands_program_storage;
 pub use commands_program_storage::update_instance_program;
+#[path = "commands_astroneer_startup.rs"]
+mod commands_astroneer_startup;
 #[path = "commands_dragonwilds_bans.rs"]
 pub(crate) mod commands_dragonwilds_bans;
 #[path = "commands_dragonwilds_player_control.rs"]
@@ -184,6 +200,8 @@ mod commands_enshrouded_control;
 mod commands_instance_reconciliation;
 #[path = "commands_instance_retirement.rs"]
 pub(crate) mod commands_instance_retirement;
+#[path = "commands_managed_save_control.rs"]
+pub(crate) mod commands_managed_save_control;
 #[path = "commands_native_bans.rs"]
 pub(crate) mod commands_native_bans;
 #[path = "commands_player_access.rs"]
@@ -204,10 +222,14 @@ pub(crate) mod commands_runtime_lifecycle;
 mod commands_runtime_observability;
 #[path = "commands_runtime_prestart_update.rs"]
 mod commands_runtime_prestart_update;
+#[path = "commands_save_startup.rs"]
+mod commands_save_startup;
 #[path = "commands_theforest_control.rs"]
 mod commands_theforest_control;
 #[path = "commands_valheim_control.rs"]
 pub(crate) mod commands_valheim_control;
+#[path = "commands_world_save.rs"]
+pub(crate) mod commands_world_save;
 #[cfg(test)]
 pub(crate) use commands_dragonwilds_player_query::{
     prepare_dragonwilds_player_query_probe, verify_dragonwilds_player_query_probe,
@@ -218,6 +240,8 @@ use commands_runtime_prestart_update::*;
 
 #[path = "commands_runtime_supervision.rs"]
 pub(crate) mod commands_runtime_supervision;
+#[path = "commands_save_files.rs"]
+pub(crate) mod commands_save_files;
 #[path = "commands_save_import.rs"]
 pub(crate) mod commands_save_import;
 #[path = "commands_stdin_dispatch.rs"]
@@ -315,6 +339,7 @@ use commands_runtime_observability::{
     runtime_performance_state_diagnostic_signal, runtime_restart_policy_from_settings,
     summarize_active_runtime_entries,
 };
+pub(crate) use commands_runtime_supervision::append_desktop_app_log;
 use commands_runtime_supervision::*;
 pub use commands_runtime_supervision::{
     bind_address_candidates, log_frontend_event, overlay_families,
@@ -699,6 +724,28 @@ pub fn spawn_runtime_heartbeat(app_handle: tauri::AppHandle) {
                     json!({}),
                 );
             }
+            if let Err(error) = commands_maintenance_schedule::spawn_due_maintenance(&app_handle)
+                && let Ok(storage) = state.bootstrap_storage()
+            {
+                append_desktop_app_log(
+                    &storage,
+                    "error",
+                    "instance.maintenance.dispatch_failed",
+                    &error,
+                    json!({}),
+                );
+            }
+            if let Err(error) = commands_player_history::collect_player_history(&state).await
+                && let Ok(storage) = state.bootstrap_storage()
+            {
+                append_desktop_app_log(
+                    &storage,
+                    "error",
+                    "instance.player_history.collection_failed",
+                    &error,
+                    json!({}),
+                );
+            }
         }
     });
 }
@@ -980,6 +1027,15 @@ struct ResolvedManualModTarget {
     id_strategy: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldSaveCompletion {
+    /// The game received a native save request; disk completion is not observed.
+    Requested,
+    Confirmed,
+    Unconfirmed,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct InstanceRuntimeCommandResult {
     pub instance_id: String,
@@ -989,6 +1045,10 @@ pub struct InstanceRuntimeCommandResult {
     pub command: String,
     pub response_text: Option<String>,
     pub write_confirmation_pending: bool,
+    /// Native command delivery or completion of the declared save scope.
+    /// Requested is an acknowledged request, not a disk-completion claim.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub save_completion: Option<WorldSaveCompletion>,
     pub submitted_at_unix_ms: u128,
 }
 

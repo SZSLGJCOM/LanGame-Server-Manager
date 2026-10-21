@@ -56,7 +56,10 @@ fn cache_and_unknown_source_warnings_are_distinct_and_never_echo_provider_detail
         cached.code,
         app_core::RuntimeStartWarningCode::ModUpdateUsingCache
     );
-    assert_eq!(cached.provider, app_core::RuntimeModProvider::Thunderstore);
+    assert_eq!(
+        cached.provider,
+        Some(app_core::RuntimeModProvider::Thunderstore)
+    );
     assert_eq!(cached.item_ids, ["Author-Plugin"]);
     assert!(!cached.message.contains("http"));
     assert!(!cached.message.contains("token"));
