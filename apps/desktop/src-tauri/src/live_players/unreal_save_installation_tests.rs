@@ -33,16 +33,7 @@ fn native_dll_installations_keep_game_specific_ownership_and_preserve_external_e
             assert_eq!(fs::read(&native).unwrap(), expected);
             let mut record: Ownership =
                 serde_json::from_slice(&read(&root.join(OWNER), 8192)?).unwrap();
-            assert_eq!(
-                record.files.len(),
-                if matches!(game, Game::Scum) { 4 } else { 3 }
-            );
-            if let Some((relative, expected)) = game.startup_payload() {
-                assert_eq!(
-                    fs::read(root.join(mod_dir(game)).join(relative)).unwrap(),
-                    expected
-                );
-            }
+            assert_eq!(record.files.len(), 3);
             assert!(validate_hashes(game, &record.files));
             record
                 .files
@@ -118,17 +109,22 @@ fn unreal_world_save_installation_cas_never_replaces_an_external_edit() {
 
 #[test]
 #[cfg(windows)]
-fn scum_early_bootstrap_upgrade_recovers_and_preserves_external_code() {
-    early_bootstrap_upgrade(Game::Scum);
+fn scum_bootstrap_retirement_recovers_and_preserves_external_code() {
+    for pending_bootstrap in [false, true] {
+        retire_scum_bootstrap(pending_bootstrap);
+    }
 }
+
 #[cfg(windows)]
-fn early_bootstrap_upgrade(game: Game) {
+fn retire_scum_bootstrap(pending_bootstrap: bool) {
+    let game = Game::Scum;
     let root =
         std::env::temp_dir().join(format!("langame-scum-early-save-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();
     let directory = root.join(mod_dir(game));
     fs::create_dir_all(directory.join("Scripts")).unwrap();
     fs::create_dir_all(directory.join("native")).unwrap();
+    fs::create_dir_all(directory.join("dlls")).unwrap();
     let old = [
         ("Scripts/main.lua", &b"previous policy"[..]),
         ("enabled.txt", &b""[..]),
@@ -136,44 +132,50 @@ fn early_bootstrap_upgrade(game: Game) {
             game.native_payload().unwrap().0,
             &b"previous native payload"[..],
         ),
+        (RETIRED_SCUM_BOOTSTRAP, &b"previous owned bootstrap"[..]),
     ];
     for (name, bytes) in old {
         fs::write(directory.join(name), bytes).unwrap();
     }
+    let mut files: BTreeMap<String, String> = old
+        .into_iter()
+        .map(|(name, bytes)| (name.into(), hash(bytes)))
+        .collect();
+    let pending_files = pending_bootstrap.then(|| files.clone());
+    if pending_bootstrap {
+        files.remove(RETIRED_SCUM_BOOTSTRAP);
+    }
     let owner = Ownership {
         protocol: 1,
         module_id: game.id().into(),
-        files: old
-            .into_iter()
-            .map(|(name, bytes)| (name.into(), hash(bytes)))
-            .collect(),
-        pending_files: None,
+        files,
+        pending_files,
     };
     fs::write(root.join(OWNER), serde_json::to_vec(&owner).unwrap()).unwrap();
     assert!(owned(game, &root).unwrap());
-    let (startup, expected) = game.startup_payload().unwrap();
-    let bootstrap = directory.join(startup);
-    fs::create_dir_all(bootstrap.parent().unwrap()).unwrap();
+    let bootstrap = directory.join(RETIRED_SCUM_BOOTSTRAP);
     fs::write(&bootstrap, b"operator bootstrap").unwrap();
     assert!(publish_payload(game, &root, b"current policy").is_err());
     assert_eq!(fs::read(&bootstrap).unwrap(), b"operator bootstrap");
-    fs::remove_file(&bootstrap).unwrap();
+    fs::write(&bootstrap, b"previous owned bootstrap").unwrap();
     let mut interrupted = false;
     assert!(
         publish_payload_with(game, &root, b"current policy", |path, before, after| {
-            if path == bootstrap && !interrupted {
+            if path == root.join(OWNER) && !interrupted {
                 interrupted = true;
-                return Err("injected interruption before early bootstrap publication".into());
+                return Err("injected interruption after bootstrap retirement".into());
             }
             publish(path, before, after)
         })
         .is_err()
     );
     assert!(interrupted);
+    assert!(!bootstrap.exists());
+    assert!(owned(game, &root).unwrap());
     publish_payload(game, &root, b"current policy").unwrap();
-    assert_eq!(fs::read(&bootstrap).unwrap(), expected);
+    assert!(!bootstrap.exists());
     let record: Ownership = serde_json::from_slice(&fs::read(root.join(OWNER)).unwrap()).unwrap();
-    assert_eq!(record.files.len(), 4);
+    assert_eq!(record.files.len(), 3);
     assert!(record.pending_files.is_none());
     fs::write(&bootstrap, b"external change").unwrap();
     assert!(publish_payload(game, &root, b"next policy").is_err());

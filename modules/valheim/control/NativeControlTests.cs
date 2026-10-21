@@ -127,9 +127,16 @@ namespace Lgsm.Valheim.Control
                 ControlTests.Assert(ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.LocalProofGameSha256,
                     ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256),
                     "Inspected dedicated save profile rejected");
-                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
+                ControlTests.Assert(ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
                     ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256),
-                    "Player-control verification was promoted to dedicated save-path verification");
+                    "Current dedicated save profile rejected");
+                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
+                    ValheimNativeControl.LocalProofUtilitiesSha256, ValheimNativeControl.PlatformSha256),
+                    "Mixed dedicated save profile accepted");
+                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(ValheimNativeControl.GameSha256,
+                    ValheimNativeControl.UtilitiesSha256, new string('0', 64)), "Unknown save platform ABI accepted");
+                ControlTests.Assert(!ValheimNativeControl.SupportedWorldSaveProfile(new string('f', 64),
+                    ValheimNativeControl.UtilitiesSha256, ValheimNativeControl.PlatformSha256), "Unknown save game ABI accepted");
             });
             ControlTests.Test("same-object session and current native platform identity", delegate {
                 FakePeer peer = Peer("76561198000000001");

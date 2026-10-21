@@ -147,22 +147,6 @@ impl Game {
             None
         }
     }
-    fn notices_payload(self) -> Option<(&'static str, &'static [u8])> {
-        None
-    }
-    fn startup_payload(self) -> Option<(&'static str, &'static [u8])> {
-        #[cfg(windows)]
-        if self == Self::Scum {
-            return Some((
-                "dlls/main.dll",
-                include_bytes!(concat!(
-                    env!("OUT_DIR"),
-                    "/scum-save-control/LgsmScumSaveBootstrap.dll"
-                )),
-            ));
-        }
-        None
-    }
     fn process_profile(self) -> process::GameProfile {
         match self {
             Self::Abiotic => process::GameProfile::Abiotic,
@@ -360,10 +344,7 @@ fn parse_context(context: &Context, body: &[u8], request: &Request<'_>) -> Resul
         parse(body, request)?
     };
     if reply.write_confirmed
-        && !matches!(
-            context.game,
-            Game::Moria | Game::Conan | Game::Nightingale | Game::Scum
-        )
+        && !matches!(context.game, Game::Moria | Game::Conan | Game::Nightingale)
     {
         return Err("This native adapter has no request-bound completion contract.".into());
     }
@@ -475,10 +456,9 @@ fn classify_completion(
     game: Game,
     reply: Result<Reply, String>,
 ) -> Result<(&'static str, WorldSaveCompletion), String> {
-    // Abiotic's standard native path discards the underlying storage bools.
-    // Its own completed action proves a save request ran, not a disk result.
+    // These native paths acknowledge invocation without a storage result.
     // Callers must still parse the correlated receipt before this classification.
-    if game == Game::Abiotic
+    if matches!(game, Game::Abiotic | Game::Scum)
         && reply.as_ref().is_ok_and(|reply| {
             reply.action == "save"
                 && reply.ready

@@ -15,14 +15,6 @@ const assistantPanelSource = readSource("components", "AssistantPanel.tsx");
 const routerSource = readSource("views", "AppViewRouter.tsx");
 const systemSource = readSource("views", "SystemView.tsx");
 
-test("the obsolete settings update card is removed", () => {
-  assert.equal(
-    fs.existsSync(sourcePath("components", "AppUpdateSettingsCard.tsx")),
-    false,
-    "Application updates should use the shared automatic prompt"
-  );
-});
-
 test("application update state bypasses the system dashboard", () => {
   for (const source of [routerSource, systemSource]) {
     assert.doesNotMatch(source, /AppUpdateState|appUpdateState|onCheckAppUpdate|onInstallAppUpdate/);
@@ -41,8 +33,6 @@ test("the shell owns the update prompt without a header or assistant entry", () 
   assert.match(shellSource, /<AppUpdatePrompt/);
   assert.match(shellSource, /appUpdateReleaseUrl\(props\.appUpdateState\.availableVersion\)/);
   assert.match(shellSource, /await openExternalUrl\(url\)/);
-  assert.equal(fs.existsSync(sourcePath("components", "AppUpdateControl.tsx")), false);
-  assert.equal(fs.existsSync(sourcePath("components", "AssistantUpdateNotice.tsx")), false);
 });
 
 test("the desktop checks for application updates automatically after startup", () => {

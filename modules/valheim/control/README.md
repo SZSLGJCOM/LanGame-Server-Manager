@@ -191,11 +191,14 @@ first 60 seconds. In the isolated Windows dedicated build 25730807, that call
 raised a native `NullReferenceException` after the server had opened its Steam
 endpoint. The server/autosave path above preserves the real disk and save-state
 checks without invoking client-platform UI or manufacturing a native singleton.
-This dedicated save route is currently admitted only for the complete pinned
-25730807 tuple. Build 25909431 keeps its previously verified query/access
-operations, but `save` returns `unsupported_native_save_contract` until its
-dedicated disk/save path has been inspected and tested independently. A matching
-reflection signature alone does not establish matching native save semantics.
+Both complete pinned tuples are admitted for this dedicated save route. Read-only
+IL comparison on 2026-10-21 confirmed identical disk checks, save dispatch, worker
+completion and committed-generation logic, including exception handlers and local
+types. The native world worker's only instruction changes in build 25909431 write
+world format 42 instead of 41; the game owns that serialization. Save admission
+remains separate from player-control admission so another build requires its own
+save-path review. Reflection binding and static comparison do not replace a real
+dedicated-server save test.
 
 Read-only IL inspection of both pinned builds 25730807 and 25909431 confirms that
 `SaveSystem.EndSave(source, success)` updates private `s_saveNumber` only when

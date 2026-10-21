@@ -71,10 +71,11 @@ namespace Lgsm.Valheim.Control
 
         internal static bool SupportedWorldSaveProfile(string game, string utilities, string platform)
         {
-            // The dedicated Save/disk-space worker path is independently
-            // inspected for this build. Other admitted player-control builds
-            // retain query/access operations without guessing save semantics.
-            return game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256 && platform == PlatformSha256;
+            // Save admission is reviewed separately from player control. Both
+            // pinned builds retain the dedicated disk check and commit counter;
+            // build 25909431 writes the native version-42 world format.
+            return platform == PlatformSha256 && ((game == GameSha256 && utilities == UtilitiesSha256) ||
+                (game == LocalProofGameSha256 && utilities == LocalProofUtilitiesSha256));
         }
 
         private static string Digest(Assembly assembly)

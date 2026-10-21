@@ -2,12 +2,11 @@
 -- and file boundaries. This fixture never loads a DLL or touches game data.
 local source, game = assert(LGSM_TEST_SOURCE), assert(LGSM_TEST_GAME)
 assert(game == "scum")
-local conan = false
 local project = "SCUM"
-local dll = conan and "LgsmConanSaveControl.dll" or "LgsmScumSaveControl.dll"
-local export = conan and "luaopen_lgsm_conan_save" or "luaopen_lgsm_scum_save"
-local native_class = conan and "WorldPersistenceComponent" or "EntitySystem"
-local native_path = conan and "Class /Script/UE4Dreamworld.WorldPersistenceComponent" or "Class /Script/SCUM.EntitySystem"
+local dll = "LgsmScumSaveControl.dll"
+local export = "luaopen_lgsm_scum_save"
+local native_class = "EntitySystem"
+local native_path = "Class /Script/SCUM.EntitySystem"
 local base = "D:/fixture\\langame_world_save\\"
 local function object(id, class)
     return { IsValid=function(self) return self.valid ~= false end, GetAddress=function() return id end,
@@ -16,7 +15,7 @@ end
 local function text(value) return {ToString=function() return value end} end
 local invalid = {IsValid=function() return false end}
 local function harness(missing_launch)
-    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0, polls=0}
+    local s={now=1000, files={}, queue={}, serial=0, calls=0, probes=0, random=0}
     s.instance=object(1,"/Script/SCUM.ConZGameInstance")
     s.gs=object(3,"/Script/SCUM.ConZGameState");s.gs.bReplicatedHasBegunPlay=true
     s.gm=object(5,"/Script/SCUM.ConZGameMode")
@@ -30,7 +29,7 @@ local function harness(missing_launch)
     s.replace_world()
     s.proxy=object(6,"proxy")
     s.proxy.GetClass=function() return {GetFullName=function() return s.wrong_class and "Class Foreign" or native_path end} end
-    s.proxy.GetOuter=function() return s.foreign and object(99,"foreign") or (conan and s.gm or s.instance) end
+    s.proxy.GetOuter=function() return s.foreign and object(99,"foreign") or s.instance end
     s.proxy.IsA=function(_,expected) return not s.wrong_super and expected=="/Script/Pal.PalSaveGameManager" end
     s.proxy.GetWorld=function() return s.foreign_world and object(98,"foreign") or s.world end
     local env=setmetatable({}, {__index=_G})
@@ -53,28 +52,22 @@ local function harness(missing_launch)
     end}
     env.package={loadlib=function(path,entry)
         assert(path=="D:/fixture\\"..project.."\\Binaries\\Win64\\ue4ss\\Mods\\LgsmWorldSave\\native\\"..dll)
-        if entry == "luaopen_lgsm_scum_arm" then return function() s.armed = true end end
         assert(entry==export)
         if s.no_native then return nil end
         return function()
             assert(s.in_game,"native entry outside EngineTick")
             local req=assert(s.files[base.."native-request.txt"])
             local id,op,time,proxy,instance,world=req:match("^schema=1\nnonce=([0-9a-f]+)\nop=([a-z]+)\nrequested_at=(%d+)\nproxy_address=(%d+)\ninstance_address=(%d+)\nworld_address=(%d+)\n$")
-            assert(id and proxy=="6" and instance==(conan and "5" or "1") and world==tostring(s.world:GetAddress()))
+            assert(id and proxy=="6" and instance=="1" and world==tostring(s.world:GetAddress()))
             local status="ready"
             if op=="probe" then s.probes=s.probes+1;if s.bad_native then status="rejected" end
             else
                 assert(op=="save")
-                if s.save_frame then
-                    assert(req == s.save_frame, "poll changed original native frame/nonce/timestamp")
-                    s.polls=s.polls+1
-                    if s.on_poll then s.on_poll() end
-                    status=s.poll_status or "confirmed"
-                elseif s.now-tonumber(time)>3 then status="rejected" else
-                    s.calls=s.calls+1;s.save_frame=req
+                if s.now-tonumber(time)>3 then status="rejected" else
+                    s.calls=s.calls+1
                     if s.on_call then s.on_call() end
                     if s.throw then error("native failure") end
-                    status=s.native_false and "unknown" or (s.false_confirmation and "returned" or s.initial_status or "pending")
+                    status=s.native_false and "unknown" or s.native_status or "returned"
                 end
             end
             s.files[base.."native-response.txt"]="schema=1\nnonce="..(s.wrong_nonce and string.rep("f",32) or id).."\nop="..op.."\nstatus="..status.."\npid="..(s.replaced_pid and "12" or "11").."\ncreation_time=123456789012345678\n"
@@ -120,7 +113,7 @@ end
 local count=0
 local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));count=count+1 end
 test("probe returns native identity without saving",function() local s=harness();local r=s.probe();assert(s.calls==0 and s.probes==1 and r.pid=="11" and r.creation=="123456789012345678") end)
-test("owned disk snapshot completion is confirmed exactly once",function() local s=harness();local r=s.save(s.probe());assert(r.confirmed and r.invoked and r.returned and not r.error and s.calls==1 and s.polls==1 and s.probes==1);s.tick();s.dispatch();assert(s.calls==1) end)
+test("native request returns once without disk confirmation",function() local s=harness();local r=s.save(s.probe());assert(not r.confirmed and r.invoked and r.returned and not r.error and s.calls==1 and s.probes==1);s.tick();s.dispatch();assert(s.calls==1) end)
 test("false remains unknown",function() local s=harness();local p=s.probe();s.native_false=true;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1) end)
 test("native exception remains unknown",function() local s=harness();local p=s.probe();s.throw=true;local r=s.save(p);assert(r.invoked and not r.confirmed and s.calls==1) end)
 test("wrong native nonce remains unknown",function() local s=harness();local p=s.probe();s.wrong_nonce=true;assert(not s.save(p).confirmed and s.calls==1) end)
@@ -135,7 +128,7 @@ test("ambiguous worlds cannot save",function() local s=harness();s.ambiguous=tru
 test("native contract rejects unsupported image",function() local s=harness();s.bad_native=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("timeout while queued cannot invoke later",function() local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.now=s.now+4;s.tick();s.dispatch();s.tick();assert(not s.receipt().invoked and s.calls==0) end)
 test("timeout after publication blocks native entry",function() local s=harness();local p=s.probe();s.on_publish=function() s.on_publish=nil;s.now=s.now+4;s.tick() end;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==0) end)
-test("watchdog within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+(conan and 4 or 31);s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
+test("watchdog within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+31;s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
 test("world changes within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=s.replace_world;local r=s.save(p);assert(r.invoked and not r.confirmed and s.calls==1) end)
 test("old boot blocks native entry",function() local s=harness();local p=s.probe();p.boot=string.rep("f",32);assert(not s.save(p).invoked and s.calls==0) end)
 test("extra fields and moderation cannot invoke",function() local s=harness();s.write("kick");s.tick();s.dispatch();s.tick();assert(s.calls==0 and not s.files[base.."response.json"]);s.write("saveprobe");s.files[base.."request.json"]=s.files[base.."request.json"]:gsub('}$',',"extra":true}');s.tick();s.dispatch();s.tick();assert(s.calls==0 and not s.files[base.."response.json"]) end)
@@ -144,50 +137,17 @@ test("client net driver cannot save",function() local s=harness();s.driver.Serve
 test("ambiguous native owner cannot save",function() local s=harness();s.duplicate_target=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("missing loader cannot save",function() local s=harness();s.no_native=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("missing launch identity cannot save",function() local s=harness(true);assert(not s.exchange("saveprobe").ready and s.calls==0) end)
-test("bare returned receipt cannot assert disk completion",function() local s=harness();local p=s.probe();s.false_confirmation=true;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1) end)
-test("all repeated pending polls retain the original native frame",function()
-    local s=harness();local p=s.probe();s.on_poll=function() if s.polls<3 then s.poll_status="pending" else s.poll_status="confirmed" end end
-    local r=s.save(p);assert(r.confirmed and s.calls==1 and s.polls==3)
-end)
-test("delayed native disk snapshot completion uses original timestamp",function()
-    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.dispatch()
-    s.now=1010;s.tick();s.dispatch();s.tick();local r=s.receipt()
-    assert(r.confirmed and s.calls==1 and s.polls==1 and s.save_frame:find("requested_at=1000",1,true))
+test("fabricated native confirmation is rejected",function()
+    local s=harness();local p=s.probe();s.native_status="confirmed";local r=s.save(p)
+    assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1)
 end)
 test("unknown native status is never confirmation",function()
-    local s=harness();local p=s.probe();s.poll_status="mystery";local r=s.save(p)
+    local s=harness();local p=s.probe();s.native_status="mystery";local r=s.save(p)
     assert(not r.confirmed and r.invoked and r.error=="save_call_unknown" and s.calls==1)
 end)
-test("native write failure is terminal and never confirmed",function()
-    local s=harness();local p=s.probe();s.poll_status="failed";local r=s.save(p)
-    assert(not r.confirmed and r.invoked and r.returned and r.error=="save_failed" and s.calls==1 and s.polls==1)
-end)
-test("observer is armed before the first request",function()
-    local s=harness();assert(s.armed and s.calls==0 and s.probes==0)
-end)
-test("world changed during poll stays unknown",function()
-    local s=harness();local p=s.probe();s.on_poll=s.replace_world;local r=s.save(p)
-    assert(not r.confirmed and r.error=="save_call_unknown" and s.calls==1)
-end)
-test("changed process while pending cannot confirm",function()
-    local s=harness();local p=s.probe();s.on_poll=function() s.replaced_pid=true end;local r=s.save(p)
-    assert(not r.confirmed and r.error=="save_call_unknown" and s.calls==1)
-end)
-test("late pending completion never resends",function()
-    local s=harness();local p=s.probe();s.on_poll=function() s.now=1031 end;local r=s.save(p)
-    assert(not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1)
-end)
-test("entered snapshot crosses queue deadline without losing its owned completion",function()
-    local s=harness();local p=s.probe()
-    s.on_call=function() s.now=s.now+3;s.tick() end
-    local r=s.save(p)
-    assert(r.confirmed and r.returned and not r.error and s.calls==1 and s.polls==1)
-end)
-test("observation execution crosses queue deadline within the original completion budget",function()
-    local s=harness();local p=s.probe()
-    s.on_poll=function() s.now=s.now+3;s.tick() end
-    local r=s.save(p)
-    assert(r.confirmed and r.returned and not r.error and s.calls==1 and s.polls==1)
+test("native failure remains a failure",function()
+    local s=harness();local p=s.probe();s.native_status="failed";local r=s.save(p)
+    assert(not r.confirmed and r.invoked and r.returned and r.error=="save_failed" and s.calls==1)
 end)
 test("expired queued callback cannot clear a later operation dispatch",function()
     local s=harness();local p=s.probe()
@@ -206,11 +166,6 @@ test("late entered return cannot overwrite a newer queued operation",function()
     s.tick();assert(#s.queue==1,"late native return released a newer dispatch")
     s.dispatch();s.tick();local r=s.receipt();assert(r.ready and not r.invoked and s.calls==1)
 end)
-test("completion poll still rejects expired EngineTick queue admission",function()
-    local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.dispatch()
-    s.tick();s.now=s.now+3;s.tick();s.dispatch();s.tick();local r=s.receipt()
-    assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1 and s.polls==0)
-end)
 -- Feed actual production-encoder output back through the Rust host parser.
 test("transition map cannot save",function() local s=harness();s.foreign_map=true;assert(not s.exchange("saveprobe").ready and s.probes==0) end)
 test("foreign native world cannot save",function() local s=harness();s.foreign_world=true;assert(not s.exchange("saveprobe").ready and s.probes==0) end)
@@ -218,10 +173,10 @@ local contract = harness()
 local ready = contract.probe()
 LGSM_TEST_PROBE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_PROBE_REPLY = contract.files[base.."response.json"]
--- The host's positive sample follows the native pending -> confirmed boundary.
+-- The host receives a returned request without claiming storage completion.
 -- Unknown/error receipts are exercised separately above and remain failures.
 local saved = contract.save(ready)
-assert(saved.confirmed and saved.returned and not saved.error and contract.calls==1 and contract.polls==1)
+assert(not saved.confirmed and saved.returned and not saved.error and contract.calls==1)
 LGSM_TEST_SAVE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_SAVE_REPLY = contract.files[base.."response.json"]
 return count

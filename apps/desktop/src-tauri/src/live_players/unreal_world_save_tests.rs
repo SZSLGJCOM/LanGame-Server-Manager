@@ -135,7 +135,7 @@ fn native_world_save_policies_run_real_nightingale_and_conan_payloads() {
 }
 
 #[test]
-fn native_scum_policy_runs_the_real_scoped_entity_flush_payload() {
+fn native_scum_policy_requests_one_save_without_claiming_completion() {
     let lua = mlua::Lua::new();
     lua.globals()
         .set(
@@ -150,9 +150,9 @@ fn native_scum_policy_runs_the_real_scoped_entity_flush_payload() {
         ))
         .eval()
         .unwrap();
-    check_lua_host_receipt_contract(&lua, true);
+    check_lua_host_receipt_contract(&lua, false);
     assert_eq!(
-        cases, 40,
+        cases, 31,
         "every actual persistent-state policy case must run"
     );
 }
@@ -214,69 +214,75 @@ fn unreal_world_save_confirmation_requires_own_completed_success() {
 }
 
 #[test]
-fn abiotic_completed_native_action_reports_requested_without_claiming_disk_completion() {
-    let identity = ProcessIdentity {
-        creation_time: 123,
-        image_path: "D:/fixture/AbioticFactorServer.exe".into(),
-    };
-    let context = Context {
-        game: Game::Abiotic,
-        root: PathBuf::new(),
-        pid: 5,
-        identity: identity.clone(),
-        process_key: "main".into(),
-        launch_token: LAUNCH.into(),
-        native: process::NativeProcess { pid: 42, identity },
-    };
-    let evaluate = |body: &serde_json::Value| {
-        classify_completion(
-            Game::Abiotic,
-            parse_context(&context, &serde_json::to_vec(body).unwrap(), &request()),
-        )
-    };
-    let body = packet();
-    let (message, completion) = evaluate(&body).unwrap();
-    assert!(matches!(completion, WorldSaveCompletion::Requested));
-    assert!(message.contains("request was processed"));
-    assert!(!message.contains("completed successfully"));
-    for (field, invalid) in [
-        ("request_id", serde_json::json!(TOKEN)),
-        ("boot_id", serde_json::json!(TOKEN)),
-        ("world_token", serde_json::json!(ID)),
-        ("launch_token", serde_json::json!(format!("LGSM_UWS_{ID}"))),
-        ("timestamp", serde_json::json!(137)),
-        ("action", serde_json::json!("saveprobe")),
-        ("ready", serde_json::json!(false)),
-        ("invoked", serde_json::json!(false)),
-        ("call_returned", serde_json::json!(false)),
-        ("error", serde_json::json!("save_failed")),
-        ("native_process_id", serde_json::json!(43)),
-        ("extra", serde_json::json!(true)),
-    ] {
-        let mut invalid_body = body.clone();
-        invalid_body[field] = invalid;
-        assert!(evaluate(&invalid_body).is_err(), "{field}");
+fn native_void_actions_report_requested_without_claiming_disk_completion() {
+    for game in [Game::Abiotic, Game::Scum] {
+        let identity = ProcessIdentity {
+            creation_time: 123,
+            image_path: format!("D:/fixture/{}", game.executable()),
+        };
+        let context = Context {
+            game,
+            root: PathBuf::new(),
+            pid: 5,
+            identity: identity.clone(),
+            process_key: "main".into(),
+            launch_token: LAUNCH.into(),
+            native: process::NativeProcess { pid: 42, identity },
+        };
+        let evaluate = |body: &serde_json::Value| {
+            classify_completion(
+                game,
+                parse_context(&context, &serde_json::to_vec(body).unwrap(), &request()),
+            )
+        };
+        let mut body = packet();
+        if game == Game::Scum {
+            body["native_process_id"] = 42.into();
+            body["native_creation_time"] = "123".into();
+        }
+        let (message, completion) = evaluate(&body).unwrap();
+        assert!(matches!(completion, WorldSaveCompletion::Requested));
+        assert!(message.contains("request was processed"));
+        assert!(!message.contains("completed successfully"));
+        for (field, invalid) in [
+            ("request_id", serde_json::json!(TOKEN)),
+            ("boot_id", serde_json::json!(TOKEN)),
+            ("world_token", serde_json::json!(ID)),
+            ("launch_token", serde_json::json!(format!("LGSM_UWS_{ID}"))),
+            ("timestamp", serde_json::json!(137)),
+            ("action", serde_json::json!("saveprobe")),
+            ("ready", serde_json::json!(false)),
+            ("invoked", serde_json::json!(false)),
+            ("call_returned", serde_json::json!(false)),
+            ("error", serde_json::json!("save_failed")),
+            ("native_process_id", serde_json::json!(43)),
+            ("extra", serde_json::json!(true)),
+        ] {
+            let mut invalid_body = body.clone();
+            invalid_body[field] = invalid;
+            assert!(evaluate(&invalid_body).is_err(), "{field}");
+        }
+        let mut rejected = body.clone();
+        rejected["ready"] = false.into();
+        rejected["invoked"] = false.into();
+        rejected["call_returned"] = false.into();
+        rejected["error"] = "world_unavailable".into();
+        assert!(
+            evaluate(&rejected)
+                .unwrap_err()
+                .contains("before invocation")
+        );
+        assert!(classify_completion(game, Err("timeout or missing receipt".into())).is_err());
+        // A void native save call cannot attest a native write result.
+        let mut unsupported_confirmation = body;
+        unsupported_confirmation["write_confirmed"] = true.into();
+        assert!(evaluate(&unsupported_confirmation).is_err());
     }
-    let mut rejected = body.clone();
-    rejected["ready"] = false.into();
-    rejected["invoked"] = false.into();
-    rejected["call_returned"] = false.into();
-    rejected["error"] = "world_unavailable".into();
-    assert!(
-        evaluate(&rejected)
-            .unwrap_err()
-            .contains("before invocation")
-    );
-    assert!(classify_completion(Game::Abiotic, Err("timeout or missing receipt".into())).is_err());
-    // The existing Abiotic protocol still cannot attest a native write result.
-    let mut unsupported_confirmation = body;
-    unsupported_confirmation["write_confirmed"] = true.into();
-    assert!(evaluate(&unsupported_confirmation).is_err());
 }
 
 #[test]
-fn abiotic_request_semantics_do_not_relax_other_native_completion_contracts() {
-    for game in [Game::Moria, Game::Nightingale, Game::Conan, Game::Scum] {
+fn request_semantics_do_not_relax_other_native_completion_contracts() {
+    for game in [Game::Moria, Game::Nightingale, Game::Conan] {
         let body = packet();
         let bytes = serde_json::to_vec(&body).unwrap();
         assert!(

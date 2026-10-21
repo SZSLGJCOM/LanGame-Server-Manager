@@ -1,4 +1,4 @@
-//! Recoverable two-file publication for the closed native world-save bridges.
+//! Recoverable publication for the owned native world-save bridges.
 use super::Game;
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
@@ -14,6 +14,7 @@ fn mod_dir(game: Game) -> String {
 }
 const DIRECTORY: &str = "langame_world_save";
 const MAX_FILE: usize = 4 * 1024 * 1024;
+const RETIRED_SCUM_BOOTSTRAP: &str = "dlls/main.dll";
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -229,14 +230,7 @@ pub(crate) fn publish(
 
 pub(super) fn payload<'a>(game: Game, script: &'a [u8]) -> BTreeMap<&'static str, &'a [u8]> {
     let mut files = BTreeMap::from([("Scripts/main.lua", script), ("enabled.txt", &[] as &[u8])]);
-    for (name, bytes) in [
-        game.native_payload(),
-        game.startup_payload(),
-        game.notices_payload(),
-    ]
-    .into_iter()
-    .flatten()
-    {
+    if let Some((name, bytes)) = game.native_payload() {
         files.insert(name, bytes);
     }
     files
@@ -244,21 +238,24 @@ pub(super) fn payload<'a>(game: Game, script: &'a [u8]) -> BTreeMap<&'static str
 
 fn validate_hashes(game: Game, files: &BTreeMap<String, String>) -> bool {
     let allowed = payload(game, &[]);
-    files.keys().all(|name| allowed.contains_key(name.as_str()))
-        && files
-            .values()
-            .all(|value| value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit()))
+    files.keys().all(|name| {
+        allowed.contains_key(name.as_str())
+            || (game == Game::Scum && name == RETIRED_SCUM_BOOTSTRAP)
+    }) && files
+        .values()
+        .all(|value| value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit()))
 }
 
 fn upgradable_record(game: Game, files: &BTreeMap<String, String>) -> bool {
-    files.len() == payload(game, &[]).len()
+    let current = payload(game, &[]);
+    (files.len() == current.len() && current.keys().all(|name| files.contains_key(*name)))
         // The original owned Moria mod had no native DLL. Add only the newly
         // bundled DLL while retaining CAS checks on both previously owned files.
         || (game == Game::Moria && files.len() == 2
             && files.contains_key("Scripts/main.lua") && files.contains_key("enabled.txt"))
-        || (game == Game::Scum && files.len() == 3
-            && files.contains_key("Scripts/main.lua") && files.contains_key("enabled.txt")
-            && files.contains_key("native/LgsmScumSaveControl.dll"))
+        || (game == Game::Scum && files.len() == current.len() + 1
+            && current.keys().all(|name| files.contains_key(*name))
+            && files.contains_key(RETIRED_SCUM_BOOTSTRAP))
 }
 
 pub(super) fn owned(game: Game, root: &Path) -> Result<bool, String> {
@@ -272,7 +269,9 @@ pub(super) fn owned(game: Game, root: &Path) -> Result<bool, String> {
         || owner.module_id != game.id()
         || !validate_hashes(game, &owner.files)
         || owner.pending_files.as_ref().is_some_and(|files| {
-            files.len() != payload(game, &[]).len() || !validate_hashes(game, files)
+            files.len() < payload(game, &[]).len()
+                || !upgradable_record(game, files)
+                || !validate_hashes(game, files)
         })
         || (owner.pending_files.is_none() && !upgradable_record(game, &owner.files))
     {
@@ -304,6 +303,9 @@ pub(super) fn complete(game: Game, root: &Path, script: &[u8]) -> Result<bool, S
         return Err("The native world-save control installation is incomplete; restart this instance to prepare it.".into());
     }
     let payload = payload(game, script);
+    if game == Game::Scum && exists(&root.join(mod_dir(game)).join(RETIRED_SCUM_BOOTSTRAP))? {
+        return Err("The retired SCUM observer is still installed; restart this instance to prepare native save requests.".into());
+    }
     for (name, bytes) in payload {
         let path = root.join(mod_dir(game)).join(name);
         let _parents = pin(
@@ -370,7 +372,9 @@ fn publish_payload_with(
             || owner.module_id != game.id()
             || !validate_hashes(game, &owner.files)
             || owner.pending_files.as_ref().is_some_and(|pending| {
-                !validate_hashes(game, pending) || pending.len() != payload.len()
+                pending.len() < payload.len()
+                    || !validate_hashes(game, pending)
+                    || !upgradable_record(game, pending)
             })
             || (owner.pending_files.is_none() && !upgradable_record(game, &owner.files))
         {
@@ -393,6 +397,30 @@ fn publish_payload_with(
             files: BTreeMap::new(),
             pending_files: None,
         }
+    };
+    // Only the former, unchanged owned bootstrap may be retired. An interrupted
+    // retirement may leave its old receipt with an absent file and is resumable.
+    let retired = root.join(mod_dir(game)).join(RETIRED_SCUM_BOOTSTRAP);
+    let retired_hash = if game == Game::Scum && exists(&retired)? {
+        let _parents = pin(
+            retired.parent().ok_or("Invalid retired bootstrap path")?,
+            false,
+        )?;
+        let actual = hash(&read(&retired, MAX_FILE)?);
+        if owner.files.get(RETIRED_SCUM_BOOTSTRAP) != Some(&actual)
+            && owner
+                .pending_files
+                .as_ref()
+                .and_then(|files| files.get(RETIRED_SCUM_BOOTSTRAP))
+                != Some(&actual)
+        {
+            return Err(
+                "The retired SCUM bootstrap is unowned or changed; it was preserved.".into(),
+            );
+        }
+        Some(actual)
+    } else {
+        None
     };
     let mut originals = BTreeMap::new();
     for name in payload.keys() {
@@ -427,6 +455,10 @@ fn publish_payload_with(
             );
         }
     }
+    if let Some(expected) = retired_hash {
+        crate::commands::commands_managed_save_control::retire_owned_file(&retired, &expected)?;
+    }
+    owner.files.remove(RETIRED_SCUM_BOOTSTRAP);
     owner.pending_files = Some(expected.clone());
     let intent = serde_json::to_vec(&owner).map_err(|error| error.to_string())?;
     commit(&owner_path, original_owner.as_deref(), &intent)?;

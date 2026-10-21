@@ -4,6 +4,12 @@
 #include <functional>
 #include <iostream>
 namespace {
+unsigned calls = 0;
+void* received_system = nullptr;
+bool received_force = false;
+void save_boundary(void* system, bool force) {
+    ++calls; received_system = system; received_force = force;
+}
 template<class T> void put(uintptr_t address, T value) {
     std::memcpy(reinterpret_cast<void*>(address), &value, sizeof(value));
 }
@@ -15,7 +21,7 @@ void rejects(const std::function<void()>& action, std::string_view expected) {
 }
 int main() {
     // Zero-filled private memory represents only documented object fields. No
-    // function pointer, DLL loader or native persistence routine is executed.
+    // game function pointer, DLL loader or persistence routine is executed.
     auto allocated = VirtualAlloc(nullptr, 0x7450000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     assert(allocated);
     auto image = reinterpret_cast<uintptr_t>(allocated);
@@ -33,6 +39,8 @@ int main() {
     put<uint8_t>(mode + 0xf0, 3); put<uint8_t>(mode + 0x5c, 0x80); put<uint8_t>(state + 0x5c, 0x80);
     auto validate = [&] { entity_contract(image, system, instance, world); };
     validate();
+    native_save(reinterpret_cast<uintptr_t>(&save_boundary) - SAVE_RVA, system);
+    assert(calls == 1 && received_system == reinterpret_cast<void*>(system) && received_force);
     for (auto offset : {0x30, 0x798, 0x79a, 0x79b}) {
         auto previous = read<uint8_t>(system + offset);
         put<uint8_t>(system + offset, previous == 0 ? 1 : 0);

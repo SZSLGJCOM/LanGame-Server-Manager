@@ -13,7 +13,7 @@ export function worldSaveDescription(moduleId: string, locale: string): string {
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   if (moduleId === "rimworld") return text("请求当前在线玩家客户端保存并上传世界进度，由游戏客户端执行。离线客户端无法保存。", "Ask active clients to save and upload their progress. The game clients perform the save. Offline clients cannot be saved.");
   if (moduleId === "barotrauma") return text("保存回合间大厅中已加载的战役检查点。进行中的回合无法手动保存；不会结束当前回合。", "Save the loaded campaign checkpoint in the lobby between rounds. Ongoing rounds cannot be saved manually; this action does not end a round.");
-  if (moduleId === "scum") return text("调用游戏原生保存，写入全局状态、待保存的坐标变化和已注册的持久化实体，并自动校验结果。备份另行复制已落盘的数据。", "Run the native save for global state, pending transform changes and registered persistent entities, then verify completion automatically. A separate backup copies data already on disk.");
+  if (moduleId === "scum") return text("请求游戏原生保存全局状态、待保存的坐标变化和已注册的持久化实体。游戏处理保存请求，程序不确认写盘完成。备份另行复制已落盘的数据。", "Request the native save for global state, pending transform changes and registered persistent entities. The game processes the request; disk completion is not verified. A separate backup copies data already on disk.");
   return text("请求游戏服务器将当前世界写入存档。备份另行复制已写入磁盘的数据。", "Ask the game server to write its current world to disk. A separate backup copies data already on disk.");
 }
 
