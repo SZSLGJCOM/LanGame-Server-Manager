@@ -687,12 +687,14 @@ pub(super) async fn register_smoke_stdin_capture_process(
     let script_path = process_root.join(format!("{process_key}.ps1"));
     let capture_path = process_root.join(format!("{process_key}-command.txt"));
     let pending_capture_path = process_root.join(format!("{process_key}-command.pending"));
+    let ready_path = process_root.join(format!("{process_key}-{}.ready", uuid::Uuid::new_v4()));
     let escaped_capture_path = capture_path.to_string_lossy().replace('\'', "''");
     let escaped_pending_path = pending_capture_path.to_string_lossy().replace('\'', "''");
+    let escaped_ready_path = ready_path.to_string_lossy().replace('\'', "''");
     fs::write(
         &script_path,
         format!(
-            "$line = [Console]::In.ReadLine()\nif ($line -eq '[LGSM-STDIN-CAPTURE-EXIT]') {{ exit 0 }}\nSet-Content -LiteralPath '{escaped_pending_path}' -Value $line -ErrorAction Stop\n[System.IO.File]::Move('{escaped_pending_path}', '{escaped_capture_path}')\nStart-Sleep -Seconds 20\n"
+            "[System.IO.File]::WriteAllText('{escaped_ready_path}', 'ready')\n$line = [Console]::In.ReadLine()\nif ($line -eq '[LGSM-STDIN-CAPTURE-EXIT]') {{ exit 0 }}\nSet-Content -LiteralPath '{escaped_pending_path}' -Value $line -ErrorAction Stop\n[System.IO.File]::Move('{escaped_pending_path}', '{escaped_capture_path}')\nStart-Sleep -Seconds 20\n"
         ),
     )?;
 
@@ -745,29 +747,49 @@ pub(super) async fn register_smoke_stdin_capture_process(
     .await?;
 
     let refreshed_details = read_instance_details(&storage.paths, &details.summary.id).await?;
-    let mut runtime = state.runtime_supervisor.lock().unwrap();
-    runtime.insert_running(
-        refreshed_details.summary,
-        Some(session_id),
-        vec![ManagedProcess {
-            run_id: process_state.run_id,
-            process_key: process_key.to_string(),
-            display_name: String::from("Master shard"),
-            pid: spawned.pid,
-            process_identity: spawned.process_identity.clone(),
-            root_process_identity: spawned.root_process_identity.clone(),
-            log_path: spawned.log_path,
-            is_primary: true,
-            uses_script_entrypoint: spawned.uses_script_entrypoint,
-            performance_policy: RuntimePerformancePolicy::default(),
-            last_performance_refresh: None,
-            last_performance_target_count: None,
-            last_performance_application: None,
-            child: spawned.child.take(),
-            hidden_desktop: spawned.hidden_desktop.take(),
-        }],
-    );
-
+    {
+        let mut runtime = state.runtime_supervisor.lock().unwrap();
+        runtime.insert_running(
+            refreshed_details.summary,
+            Some(session_id),
+            vec![ManagedProcess {
+                run_id: process_state.run_id,
+                process_key: process_key.to_string(),
+                display_name: String::from("Master shard"),
+                pid: spawned.pid,
+                process_identity: spawned.process_identity.clone(),
+                root_process_identity: spawned.root_process_identity.clone(),
+                log_path: spawned.log_path,
+                is_primary: true,
+                uses_script_entrypoint: spawned.uses_script_entrypoint,
+                performance_policy: RuntimePerformancePolicy::default(),
+                last_performance_refresh: None,
+                last_performance_target_count: None,
+                last_performance_application: None,
+                child: spawned.child.take(),
+                hidden_desktop: spawned.hidden_desktop.take(),
+            }],
+        );
+    }
+    // Registering a process does not mean PowerShell has initialized its console
+    // reader. Keep fixture startup separate from command and exit deadlines.
+    tokio::time::timeout(Duration::from_secs(15), async {
+        while !ready_path.try_exists()? {
+            if state
+                .runtime_supervisor
+                .lock()
+                .unwrap()
+                .instance_process_tree_is_running(&details.summary.id)?
+                == Some(false)
+            {
+                return Err("stdin capture process exited before its reader was ready".into());
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+        Ok::<(), Box<dyn std::error::Error>>(())
+    })
+    .await
+    .map_err(|_| "stdin capture process did not initialize its reader")??;
     Ok(capture_path)
 }
 #[path = "commands_access_smoke_tests.rs"]

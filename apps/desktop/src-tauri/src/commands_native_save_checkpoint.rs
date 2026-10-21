@@ -629,6 +629,7 @@ mod tests {
     #[tokio::test]
     async fn native_checkpoint_survives_later_lifecycle_save_cycles() {
         let root = crate::commands::tests::temp_test_dir("save-checkpoint-cycles");
+        let root = dunce::canonicalize(&root).unwrap();
         for child in ["config", "runtime", "saves", "logs"] {
             fs::create_dir(root.join(child)).unwrap();
         }

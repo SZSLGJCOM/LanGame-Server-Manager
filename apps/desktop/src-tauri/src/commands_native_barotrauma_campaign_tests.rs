@@ -84,6 +84,8 @@ fn native_campaign_prelude_requires_fresh_creation_and_exact_restart_file() {
     let root =
         std::env::temp_dir().join(format!("baro_campaign_{}", uuid::Uuid::new_v4().simple()));
     fs::create_dir(&root).unwrap();
+    // Expand short TEMP aliases before checking ordinary versus verbatim paths.
+    let root = dunce::canonicalize(&root).unwrap();
     let save = root.join(format!("{SAVE_NAME}.save"));
     assert!(validate_campaign_files(&root, &save, true).is_ok());
     assert!(validate_campaign_files(&root, &save, false).is_err());

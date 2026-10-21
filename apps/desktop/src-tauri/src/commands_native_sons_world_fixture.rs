@@ -372,6 +372,7 @@ mod tests {
         let root =
             std::env::temp_dir().join(format!("sons_checkpoint_{}", uuid::Uuid::new_v4().simple()));
         fs::create_dir(&root).unwrap();
+        let root = dunce::canonicalize(&root).unwrap();
         let fixture = root.join("fixture");
         let instance = fixture.join("instance");
         let config_root = instance.join("config");
