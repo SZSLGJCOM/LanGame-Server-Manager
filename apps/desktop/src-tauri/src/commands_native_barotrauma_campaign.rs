@@ -160,6 +160,16 @@ pub(super) async fn prepare<R: tauri::Runtime>(
     // completion; the formal save's owner-thread preflight rechecks both flags.
     // This native round teardown is not attributed to the manual-save action.
     wait(runtime, running, &owner, round_offset, "Round started").await?;
+    if cycle == "restart"
+        && std::env::var("LANGAME_NATIVE_EXACT_SAVE_READBACK").as_deref() == Ok("true")
+    {
+        // Capture the load evidence while the restored revision is active.
+        // EndGame itself writes campaign data and must happen after readback.
+        println!(
+            "NATIVE_BAROTRAUMA_CAMPAIGN cycle=restart phase=checkpoint_loaded native_selector=unique_full_path campaign_loaded=true round_started=true endgame_before_readback=false"
+        );
+        return Ok(());
+    }
     let offset = send(runtime, running, &owner, "endgame").await?;
     wait(runtime, running, &owner, offset, "Round ended.").await?;
     validate_campaign_files(&saves, &save, false)?;

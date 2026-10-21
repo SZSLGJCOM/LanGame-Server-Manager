@@ -1,5 +1,7 @@
 fn main() {
     println!("cargo:rerun-if-env-changed=STATIC_VCRUNTIME");
+    println!("cargo:rerun-if-env-changed=LANGAME_ARK_ARCHIVE_DIR");
+    println!("cargo:rerun-if-env-changed=LANGAME_PROXY_SOURCE_DIR");
     println!("cargo:rerun-if-changed=icons/icon.ico");
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {

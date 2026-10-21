@@ -6,6 +6,25 @@ use std::collections::HashSet;
 use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[path = "commands_native_save_checkpoint.rs"]
+mod checkpoint;
+
+pub(super) async fn before_start<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    details: &InstanceDetails,
+    cycle: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    checkpoint::before_start(runtime, details, cycle).await
+}
+
+pub(super) async fn after_stop<R: tauri::Runtime>(
+    runtime: &runtime::NativeRuntime<'_, '_, R>,
+    running: &InstanceDetails,
+    cycle: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    checkpoint::after_stop(runtime, running, cycle).await
+}
+
 type Attempt = (String, i64, String);
 static ATTEMPTS: OnceLock<Mutex<HashSet<Attempt>>> = OnceLock::new();
 
@@ -69,6 +88,11 @@ pub(super) async fn verify<R: tauri::Runtime>(
     }
     let expected = generation(running)?;
     require_current(runtime, running, &expected).await?;
+    if cycle == "restart" && checkpoint::enabled()? {
+        checkpoint::verify(runtime, running).await?;
+        require_current(runtime, running, &expected).await?;
+        return Ok(());
+    }
     let windrose = if running.summary.module_id == "windrose" {
         let primary = primary_process(running)?;
         let pid = primary.pid.ok_or("Windrose has no managed bootstrap PID")?;
@@ -181,6 +205,12 @@ pub(super) async fn verify<R: tauri::Runtime>(
         result.write_confirmation_pending,
         completion,
     );
+    if checkpoint::enabled()? {
+        if result.save_completion != Some(WorldSaveCompletion::Confirmed) {
+            return Err("Exact checkpoint acceptance requires native completion evidence before capture; command delivery alone is insufficient".into());
+        }
+        checkpoint::capture(runtime, running).await?;
+    }
     Ok(())
 }
 

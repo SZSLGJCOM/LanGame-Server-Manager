@@ -14,7 +14,8 @@
       "config_json",
       "romestead_hotfix_0_25_1_4",
       "launch_args",
-      "start_romestead_bat",
+      "dotnet_apphost_runtime_discovery",
+      "isolated_launch_lifecycle_2026_09_20",
       "player_management"
     ]
   },
@@ -83,19 +84,10 @@
           "/SleepThresholdMs": -1,
           "/UnknownFuture/keep": true
         }
-      },
-      {
-        "root": "install",
-        "path": "start-romestead.bat",
-        "format": "text",
-        "fragments": [
-          "Server.exe",
-          "DOTNET_ROOT"
-        ]
       }
     ],
     "launch": {
-      "executable_suffix": "start-romestead.bat",
+      "executable_suffix": "Server.exe",
       "arguments": [
         "--trace",
         "--verbose"

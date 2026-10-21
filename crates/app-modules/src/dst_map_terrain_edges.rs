@@ -10,6 +10,8 @@ use super::{
 
 const MAX_EDGE_PNG_BYTES: usize = 512 * 1024;
 
+type TerrainEdgeRegions = ([f64; 4], BTreeMap<u8, [f64; 4]>);
+
 /// Content-identified image-space regions. Numeric atlas names are not used as
 /// an adjacency table, and the observed explicit texture is never substituted.
 #[derive(Debug, Clone)]
@@ -113,7 +115,7 @@ fn classify(
     pixels: &RgbaImage,
     parsed: &atlas::Atlas,
     budget: &mut ReadBudget,
-) -> Result<([f64; 4], BTreeMap<u8, [f64; 4]>), String> {
+) -> Result<TerrainEdgeRegions, String> {
     if parsed.elements.len() != 48 {
         return Err(
             "Terrain edge atlas does not contain a complete 47-shape set and opaque region".into(),

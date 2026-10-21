@@ -33,6 +33,8 @@ pub(crate) fn parse_atlas(bytes: &[u8]) -> Result<Atlas, String> {
     parse_atlas_elements(bytes, AtlasUse::Configuration).map(|(atlas, _)| atlas)
 }
 
+// Full-map validation supports native-resource acceptance and selected-read comparisons.
+#[cfg(test)]
 pub(crate) fn parse_atlas_with_issues(bytes: &[u8]) -> Result<(Atlas, Vec<String>), String> {
     parse_atlas_elements(bytes, AtlasUse::Map)
 }
@@ -79,6 +81,7 @@ pub(crate) fn parse_atlas_for_map_index(
 #[derive(Clone, Copy)]
 enum AtlasUse<'a> {
     Configuration,
+    #[cfg(test)]
     Map,
     SelectedMap(&'a BTreeSet<String>),
     Terrain,

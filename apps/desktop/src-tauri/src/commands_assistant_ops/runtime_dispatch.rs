@@ -1154,7 +1154,7 @@ async fn send_instance_runtime_command_inner(
             execute,
         )
         .await?;
-        let save_completion = super::super::commands_world_save::network_save_completion(
+        let save_completion = super::commands_world_save::network_save_completion(
             &details.summary.module_id,
             "telnet",
             runtime_action_id.as_deref(),

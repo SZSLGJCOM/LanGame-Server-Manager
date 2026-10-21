@@ -8,7 +8,7 @@
 ## `2026-07-13-steam_public_build_23662689.json`
 
 - Evidence: `best_effort_verified` at `2026-07-13` (build `Steam public build 23662689`)
-- Sources: `steam_public_build_23662689`, `steamcmd_appinfo_4763510_2026_07_01`, `steamcmd_app_update_4763510_2026_07_01`, `romestead_smoke_launch_2026_07_01`, `romestead_server_setup_guide_2026_05_28`, `config_json`, `romestead_hotfix_0_25_1_4`, `launch_args`, `start_romestead_bat`, `player_management`
+- Sources: `steam_public_build_23662689`, `steamcmd_appinfo_4763510_2026_07_01`, `steamcmd_app_update_4763510_2026_07_01`, `romestead_smoke_launch_2026_07_01`, `romestead_server_setup_guide_2026_05_28`, `config_json`, `romestead_hotfix_0_25_1_4`, `launch_args`, `dotnet_apphost_runtime_discovery`, `isolated_launch_lifecycle_2026_09_20`, `player_management`
 - Coverage: editable `9`, specialized `0`, derived `0`, generated `0`, excluded `2`
 
 ### Initial native files
@@ -62,15 +62,6 @@
       },
       "path": "config.json",
       "root": "install"
-    },
-    {
-      "format": "text",
-      "fragments": [
-        "Server.exe",
-        "DOTNET_ROOT"
-      ],
-      "path": "start-romestead.bat",
-      "root": "install"
     }
   ],
   "launch": {
@@ -78,7 +69,7 @@
       "--trace",
       "--verbose"
     ],
-    "executable_suffix": "start-romestead.bat"
+    "executable_suffix": "Server.exe"
   }
 }
 ```

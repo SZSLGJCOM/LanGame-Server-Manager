@@ -69,6 +69,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 );
             }
         }
+        Box::pin(manual_save_probe::before_start(self, details, cycle)).await?;
         let offsets = smoke.log_baselines(details, effective_install_root)?;
         let preview = if offline_dst {
             Some(
@@ -322,6 +323,7 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 "Native stop recorded a process crash instead of a clean managed stop".into(),
             );
         }
+        Box::pin(manual_save_probe::after_stop(self, &running, cycle)).await?;
         println!(
             "NATIVE_LIFECYCLE module={module_id} phase=cycle_stopped cycle={cycle} run_id={run_id} active_run=none"
         );

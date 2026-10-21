@@ -146,7 +146,7 @@ test("instance backups and cluster snapshots share one size formatter", () => {
 
 test("the save file listing is requested by instance and backup id, never by a UI path", () => {
   const api = fs.readFileSync(path.join(__dirname, "../src/api.ts"), "utf8");
-  assert.match(api, /invokeOrMock<Partial<SaveFileListing>>\("list_instance_save_files", \{ instanceId, backupId \}\)/);
+  assert.match(api, /invokeOrMock<SaveFileListing>\("list_instance_save_files", \{ instanceId, backupId \}\)/);
   const source = (file) => fs.readFileSync(path.join(__dirname, "../src/views/servers", file), "utf8");
   assert.match(source("use-save-file-listing.ts"), /listInstanceSaveFiles\(instanceId, backupId\)/);
   assert.match(source("SaveFileBrowser.tsx"), /useSaveFileListing\(instanceId, backupId\)/);

@@ -209,15 +209,15 @@ fn plan(
         ) {
             continue;
         }
-        if let Some(alias) = alternate(name) {
-            if select(
+        if let Some(alias) = alternate(name)
+            && select(
                 name,
                 indexed.0.get(&alias),
                 DstMapIconFallbackKind::IndexedAlias,
                 &mut output,
-            ) {
-                continue;
-            }
+            )
+        {
+            continue;
         }
         match inventory::candidate(root, mods, sources, name, budget) {
             Ok(Some(candidate)) => {

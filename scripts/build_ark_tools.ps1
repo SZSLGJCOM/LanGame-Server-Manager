@@ -16,6 +16,17 @@ if (($outputRoot.StartsWith($projectRoot + [IO.Path]::DirectorySeparatorChar, [S
     -not $outputRoot.StartsWith($portableTarget + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
     throw 'ARK build output must use Cargo OUT_DIR, outside source directories.'
 }
+$archiveRoot = $env:LANGAME_ARK_ARCHIVE_DIR
+if (-not [string]::IsNullOrEmpty($archiveRoot)) {
+    if (-not [IO.Path]::IsPathRooted($archiveRoot) -or [IO.Path]::GetPathRoot($archiveRoot).Length -lt 3 -or
+        -not (Test-Path -LiteralPath $archiveRoot -PathType Container)) {
+        throw 'LANGAME_ARK_ARCHIVE_DIR must be an existing absolute directory.'
+    }
+    $archiveRoot = [IO.Path]::GetFullPath($archiveRoot)
+    if ($outputRoot -eq $archiveRoot -or $outputRoot.StartsWith($archiveRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'ARK build output must be outside the read-only archive directory.'
+    }
+} else { $archiveRoot = $null }
 [IO.Directory]::CreateDirectory($outputRoot) | Out-Null
 $sourceRoot = Join-Path $projectRoot 'modules/ark-tools'
 Add-Type -AssemblyName System.Net.Http
@@ -29,8 +40,9 @@ function Get-ArchiveSha256([string]$Path) {
 }
 
 function Get-VerifiedArchive([string]$Name, [string]$Url, [string]$Sha256) {
-    $destination = Join-Path $outputRoot $Name
-    if (-not (Test-Path -LiteralPath $destination)) {
+    $destination = Join-Path $(if ($archiveRoot) { $archiveRoot } else { $outputRoot }) $Name
+    if (-not (Test-Path -LiteralPath $destination -PathType Leaf)) {
+        if ($archiveRoot) { throw "Missing ARK archive in LANGAME_ARK_ARCHIVE_DIR: $Name" }
         $partial = $destination + '.download'
         $client = [Net.Http.HttpClient]::new()
         $cancel = [Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(120))

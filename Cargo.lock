@@ -2758,6 +2758,7 @@ dependencies = [
  "encoding_rs",
  "if-addrs",
  "keyring",
+ "libsqlite3-sys",
  "minisign-verify",
  "mlua",
  "reqwest",

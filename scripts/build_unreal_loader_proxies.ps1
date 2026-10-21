@@ -18,6 +18,18 @@ foreach ($path in @($output, $projectRoot)) {
         throw 'MSVC build paths contain unsupported command characters.'
     }
 }
+$sourceArchive = $env:LANGAME_PROXY_SOURCE_DIR
+if (-not [string]::IsNullOrEmpty($sourceArchive)) {
+    if (-not [IO.Path]::IsPathRooted($sourceArchive) -or [IO.Path]::GetPathRoot($sourceArchive).Length -lt 3 -or
+        -not (Test-Path -LiteralPath $sourceArchive -PathType Container)) {
+        throw 'LANGAME_PROXY_SOURCE_DIR must be an existing absolute directory.'
+    }
+    $sourceArchive = [IO.Path]::GetFullPath($sourceArchive)
+    $archivePrefix = $sourceArchive.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if ($output -eq $sourceArchive -or $output.StartsWith($archivePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Proxy build output must be outside the read-only source directory.'
+    }
+} else { $sourceArchive = $null }
 $extensions = Join-Path $projectRoot 'modules/runescapedragonwilds/extensions'
 $manifest = Get-Content -LiteralPath (Join-Path $extensions 'proxy-sources.json') -Raw | ConvertFrom-Json
 if ($manifest.schema -ne 1 -or $manifest.ue4ss_commit -ne '527a483b63b4dd0104fe1ca1a3934a06b87fcfb2' -or
@@ -117,6 +129,22 @@ try {
                 $entry.url -notmatch '^https://raw\.githubusercontent\.com/(UE4SS-RE/RE-UE4SS/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2|fmtlib/fmt/40626af88bd7df9a5fb80be7b25ac85b122d6c21)/' -or
                 $entry.sha256 -notmatch '^[a-f0-9]{64}$') {
                 throw 'UnrealLoader proxy source entry is outside the fixed source manifest.'
+            }
+            if ($sourceArchive) {
+                $archivePath = [IO.Path]::GetFullPath((Join-Path $sourceArchive $entry.path))
+                if (-not $archivePath.StartsWith($archivePrefix, [StringComparison]::OrdinalIgnoreCase) -or
+                    -not (Test-Path -LiteralPath $archivePath -PathType Leaf)) {
+                    throw ('Missing proxy source in LANGAME_PROXY_SOURCE_DIR: ' + $entry.path)
+                }
+                if ((Get-Item -LiteralPath $archivePath).Length -gt $maximumSourceBytes -or
+                    (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash -ne $entry.sha256) {
+                    throw ('Configured proxy source SHA-256 mismatch: ' + $entry.path)
+                }
+                if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                    [IO.Directory]::CreateDirectory((Split-Path -Parent $path)) | Out-Null
+                    Assert-PlainControlBuildOutput (Split-Path -Parent $path)
+                    Copy-Item -LiteralPath $archivePath -Destination $path
+                }
             }
             if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
                 $remainingMilliseconds = 300000 - $budget.ElapsedMilliseconds

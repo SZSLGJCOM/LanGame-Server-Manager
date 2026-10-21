@@ -48,6 +48,8 @@ Windows 开发环境需要 Git、MSVC C++ 构建工具、WebView2、Python 3.11 
 
 TypeScript 7 CLI 负责正式类型检查；`@typescript/typescript6` 为源码分析与测试夹具提供稳定的 compiler API，两者有不同职责。`windows-core` 的 COM 类型必须与 `webview2-com` 一致，当前分别固定为 `0.62.2` / `0.39.1`，应作为兼容组合核验，不能仅按更大的版本号单独替换。
 
+构建 ARK 扩展时，可将 `LANGAME_ARK_ARCHIVE_DIR` 设为已存在的绝对目录，复用 `AsaApi-sdk.zip`、`AseApi-sdk.zip`、`asa-runtime.zip` 和 `AsaApiLoader-sdk.zip`。文件名、官方来源及固定 SHA-256 见 `scripts/build_ark_tools.ps1`。构建输出不能写入此只读目录；缺失文件或校验失败会直接停止，不回退联网。`LANGAME_PROXY_SOURCE_DIR` 同样接受只读绝对目录，按 `modules/runescapedragonwilds/extensions/proxy-sources.json` 的相对路径提供 32 个固定版本源码；Dragonwilds 与 Unreal loader 构建校验后复制到各自输出目录，再沿用短路径构建及 Git blob 校验。未设置这些变量时保持原有下载与验证流程。
+
 从仓库根目录安装锁定的依赖并构建：
 
 ```powershell
@@ -213,6 +215,8 @@ The server list and runtime overview load directly. Configuration, Mod, player, 
 Use Windows with Git, the MSVC C++ build tools, WebView2, Python 3.11 or later, and the versions declared in [`rust-toolchain.toml`](../rust-toolchain.toml) and the `engines` field of [`apps/desktop/package.json`](../apps/desktop/package.json). Follow the [build and run commands above](#构建与运行), starting the frontend and desktop in separate terminals. Install dependencies from their lock files.
 
 TypeScript 7 provides the production type checker; `@typescript/typescript6` supplies the stable compiler API used for syntax inspection and test fixtures. Keep `windows-core` COM types compatible with `webview2-com`: the current pair is pinned to `0.62.2` / `0.39.1` and must be evaluated together rather than upgraded independently by version number.
+
+For ARK extension builds, `LANGAME_ARK_ARCHIVE_DIR` can point to an existing absolute directory containing `AsaApi-sdk.zip`, `AseApi-sdk.zip`, `asa-runtime.zip` and `AsaApiLoader-sdk.zip`. Official sources and pinned SHA-256 values are defined in `scripts/build_ark_tools.ps1`. Build output must stay outside this read-only input directory; missing or invalid archives stop the build without a network fallback. `LANGAME_PROXY_SOURCE_DIR` similarly accepts a read-only absolute directory containing the 32 pinned source files at the relative paths in `modules/runescapedragonwilds/extensions/proxy-sources.json`. Dragonwilds and Unreal loader builds verify and copy these files into their own output directories, retaining short-path builds and Git blob checks. Leaving these variables unset preserves the normal download and verification flow.
 
 ### Change and verification
 

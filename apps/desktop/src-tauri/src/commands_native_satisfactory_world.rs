@@ -429,11 +429,9 @@ fn restart_save(
                 .into(),
         );
     }
-    Ok(if loaded_world(snapshot, instance, world) {
-        None
-    } else {
-        Some(save.save_name.clone())
-    })
+    // Auto-loading the same session does not identify its save revision. Load
+    // the unique formal checkpoint even when an autosave already started it.
+    Ok(Some(save.save_name.clone()))
 }
 
 #[cfg(test)]
@@ -498,7 +496,7 @@ mod tests {
         let mut current = snapshot();
         assert_eq!(
             restart_save(&current, "fixture", "OwnedWorld").unwrap(),
-            None
+            Some("LGSM_manual_save_once".into())
         );
         current.is_game_running = false;
         assert_eq!(
