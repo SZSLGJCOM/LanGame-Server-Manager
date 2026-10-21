@@ -104,7 +104,7 @@ fn automatic_save_program_reservation_contains_source_and_private_target_once() 
     for module in ["squad", "dontstarve", "soulmask", "missing"] {
         assert_eq!(
             program_roots(&instance(module, &root), &library).unwrap(),
-            [library.clone()]
+            std::slice::from_ref(&library)
         );
     }
 }
@@ -123,7 +123,7 @@ fn native_save_commands_keep_shared_programs_and_do_not_restrict_runtime_variant
             details.settings_json = settings.into();
             assert_eq!(
                 program_roots(&details, &library).unwrap(),
-                [library.clone()],
+                std::slice::from_ref(&library),
                 "{module}"
             );
             assert_eq!(details.settings_json, settings);

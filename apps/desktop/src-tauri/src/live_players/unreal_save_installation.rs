@@ -236,7 +236,7 @@ pub(crate) fn publish(
     Ok(())
 }
 
-pub(super) fn payload<'a>(game: Game, script: &'a [u8]) -> BTreeMap<&'static str, &'a [u8]> {
+pub(super) fn payload(game: Game, script: &[u8]) -> BTreeMap<&'static str, &[u8]> {
     let mut files = BTreeMap::from([("Scripts/main.lua", script), ("enabled.txt", &[] as &[u8])]);
     if let Some((name, bytes)) = game.native_payload() {
         files.insert(name, bytes);

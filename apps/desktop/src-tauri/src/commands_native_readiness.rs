@@ -7,9 +7,7 @@ use app_modules::ModuleDescriptor;
 use app_platform_win::WindowsPlatform;
 use serde::Deserialize;
 
-#[path = "commands_native_log_readiness.rs"]
-mod native_logs;
-use native_logs::{LogBaseline, new_log_contains};
+use super::native_logs::{self, LogBaseline, new_log_contains};
 
 #[path = "commands_native_ark_maps_readiness.rs"]
 pub(super) mod ark_maps;

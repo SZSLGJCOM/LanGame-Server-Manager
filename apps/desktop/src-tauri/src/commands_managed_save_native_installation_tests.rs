@@ -173,7 +173,7 @@ async fn automatic_managed_save_installs_real_loaders_compiles_sdk_and_rotates_s
         let _install = app_steamcmd::acquire_game_install_lifecycle(
             &state.install_locks,
             module,
-            &[runtime.clone()],
+            std::slice::from_ref(&runtime),
         )
         .await
         .unwrap();

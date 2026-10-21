@@ -225,7 +225,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
     )
     .await?;
     if let Some(preflight) = copy_preflight.as_ref() {
-        preflight.require_capacity(&[install_root.clone()])?;
+        preflight.require_capacity(std::slice::from_ref(&install_root))?;
     }
     let created = command_result(
         create_instance_record_inner(
@@ -566,21 +566,14 @@ async fn smoke_dst_native_world_generation_save_and_reload()
                 .await?,
             );
         }
-        if generation == 0 {
-            if let Some(input) = &fixture_input {
-                for process in &started.processes {
-                    fixture_evidence.push(
-                        map_fixtures::arrange(
-                            &state,
-                            &id,
-                            process,
-                            started.run_id,
-                            &run_root,
-                            input,
-                        )
+        if generation == 0
+            && let Some(input) = &fixture_input
+        {
+            for process in &started.processes {
+                fixture_evidence.push(
+                    map_fixtures::arrange(&state, &id, process, started.run_id, &run_root, input)
                         .await?,
-                    );
-                }
+                );
             }
         }
         map_save_checks::verify(

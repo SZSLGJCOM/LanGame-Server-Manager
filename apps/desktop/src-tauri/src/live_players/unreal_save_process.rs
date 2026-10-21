@@ -116,21 +116,19 @@ fn entries(profile: GameProfile, root: &Path) -> Result<Vec<Entry>, String> {
             .position(|value| *value == 0)
             .unwrap_or(entry.szExeFile.len());
         let name = String::from_utf16_lossy(&entry.szExeFile[..end]);
-        if name.eq_ignore_ascii_case(profile.bootstrap())
-            || name.eq_ignore_ascii_case(profile.shipping())
-        {
-            if let Some(identity) = app_runtime::inspect_process_identity(entry.th32ProcessID)
+        if (name.eq_ignore_ascii_case(profile.bootstrap())
+            || name.eq_ignore_ascii_case(profile.shipping()))
+            && let Some(identity) = app_runtime::inspect_process_identity(entry.th32ProcessID)
                 .map_err(|_| "Cannot verify a native game process identity.")?
-            {
-                let image = std::fs::canonicalize(&identity.image_path)
-                    .map_err(|_| "Cannot verify a native game process image.")?;
-                if accepted_image(&image, &shipping, bootstrap.as_deref()) {
-                    found.push(Entry {
-                        pid: entry.th32ProcessID,
-                        parent: entry.th32ParentProcessID,
-                        identity,
-                    });
-                }
+        {
+            let image = std::fs::canonicalize(&identity.image_path)
+                .map_err(|_| "Cannot verify a native game process image.")?;
+            if accepted_image(&image, &shipping, bootstrap.as_deref()) {
+                found.push(Entry {
+                    pid: entry.th32ProcessID,
+                    parent: entry.th32ParentProcessID,
+                    identity,
+                });
             }
         }
         available = unsafe { Process32NextW(snapshot.0, &mut entry) };
@@ -241,15 +239,20 @@ mod tests {
             },
         };
         assert_eq!(
-            select(GameProfile::Dragonwilds, &[child.clone()], 5, &root)
-                .unwrap()
-                .pid,
+            select(
+                GameProfile::Dragonwilds,
+                std::slice::from_ref(&child),
+                5,
+                &root
+            )
+            .unwrap()
+            .pid,
             20
         );
         assert_eq!(
             select(
                 GameProfile::Dragonwilds,
-                &[child.clone()],
+                std::slice::from_ref(&child),
                 20,
                 &child.identity
             )
@@ -343,9 +346,14 @@ mod tests {
             },
         };
         assert_eq!(
-            select(GameProfile::Astroneer, &[child.clone()], 5, &root)
-                .unwrap()
-                .pid,
+            select(
+                GameProfile::Astroneer,
+                std::slice::from_ref(&child),
+                5,
+                &root
+            )
+            .unwrap()
+            .pid,
             20
         );
         let mut foreign = child.clone();
@@ -405,9 +413,14 @@ mod tests {
             identity: identity(11, true),
         };
         assert_eq!(
-            select(GameProfile::Windrose, &[entry.clone()], 5, &root)
-                .unwrap()
-                .pid,
+            select(
+                GameProfile::Windrose,
+                std::slice::from_ref(&entry),
+                5,
+                &root
+            )
+            .unwrap()
+            .pid,
             20
         );
         let mut invalid = entry.clone();
@@ -425,7 +438,7 @@ mod tests {
         assert!(
             select(
                 GameProfile::Windrose,
-                &[direct.clone()],
+                std::slice::from_ref(&direct),
                 5,
                 &identity(11, true)
             )

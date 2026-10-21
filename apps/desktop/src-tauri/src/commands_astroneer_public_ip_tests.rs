@@ -193,7 +193,6 @@ async fn astroneer_public_ip_preparation_persists_renders_reuses_and_rejects_sta
             current.settings_json
         );
         drop(reservation);
-        drop(state);
         drop(app);
         Ok::<(), Box<dyn std::error::Error>>(())
     }

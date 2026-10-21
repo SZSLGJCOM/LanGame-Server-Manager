@@ -178,13 +178,13 @@ fn entries(image: &str) -> Result<Vec<Entry>, String> {
             .iter()
             .position(|value| *value == 0)
             .unwrap_or(entry.szExeFile.len());
-        if String::from_utf16_lossy(&entry.szExeFile[..end]).eq_ignore_ascii_case(image) {
-            if let Some(identity) = app_runtime::inspect_process_identity(entry.th32ProcessID)
-                .map_err(|_| "Cannot verify a matching dedicated server process; process admission was rejected.")? {
-                let image = dunce::canonicalize(&identity.image_path)
-                    .map_err(|_| "Cannot verify a matching dedicated server program path; process admission was rejected.")?;
-                found.push(Entry { pid: entry.th32ProcessID, image });
-            }
+        if String::from_utf16_lossy(&entry.szExeFile[..end]).eq_ignore_ascii_case(image)
+            && let Some(identity) = app_runtime::inspect_process_identity(entry.th32ProcessID)
+                .map_err(|_| "Cannot verify a matching dedicated server process; process admission was rejected.")?
+        {
+            let image = dunce::canonicalize(&identity.image_path)
+                .map_err(|_| "Cannot verify a matching dedicated server program path; process admission was rejected.")?;
+            found.push(Entry { pid: entry.th32ProcessID, image });
         }
         available = unsafe { Process32NextW(snapshot.0, &mut entry) };
     }

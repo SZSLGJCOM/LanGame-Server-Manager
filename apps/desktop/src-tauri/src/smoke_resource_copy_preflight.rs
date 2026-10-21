@@ -420,7 +420,7 @@ mod tests {
         create_junction(&link, &fixture.source);
         let metadata = fs::symlink_metadata(&link).unwrap();
         assert!(plain(&metadata).is_err());
-        assert!(source_bytes(&[link.clone()], 100, 64).is_err());
+        assert!(source_bytes(std::slice::from_ref(&link), 100, 64).is_err());
         assert!(read_floor(&link.join("policy.json")).is_err());
         let parent = link.parent().unwrap();
         assert!(source_bytes(&[parent.to_path_buf()], 100, 64).is_err());

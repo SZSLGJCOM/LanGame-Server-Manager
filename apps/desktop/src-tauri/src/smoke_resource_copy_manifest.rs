@@ -579,7 +579,7 @@ mod tests {
         fs::write(source.join("asset"), b"fixture").unwrap();
         manifest
             .copy_preflight()
-            .require_capacity(&[source.clone()])
+            .require_capacity(std::slice::from_ref(&source))
             .unwrap();
         fs::write(&policy, b"{}").unwrap();
         assert!(

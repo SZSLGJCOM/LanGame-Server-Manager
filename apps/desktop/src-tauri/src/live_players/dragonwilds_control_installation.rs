@@ -50,10 +50,8 @@ fn single_link(file: &File) -> bool {
             BY_HANDLE_FILE_INFORMATION, GetFileInformationByHandle,
         };
         let mut information: BY_HANDLE_FILE_INFORMATION = unsafe { std::mem::zeroed() };
-        return unsafe {
-            GetFileInformationByHandle(file.as_raw_handle().cast(), &mut information)
-        } != 0
-            && information.nNumberOfLinks == 1;
+        (unsafe { GetFileInformationByHandle(file.as_raw_handle().cast(), &mut information) }) != 0
+            && information.nNumberOfLinks == 1
     }
     #[cfg(not(windows))]
     {

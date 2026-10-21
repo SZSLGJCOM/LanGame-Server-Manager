@@ -160,13 +160,19 @@ fn compatible_proxy(profile: Profile, name: &str, value: &str) -> bool {
         )
 }
 
+struct Inspection {
+    prior: Option<Vec<u8>>,
+    receipt: Receipt,
+    current: BTreeMap<String, Vec<u8>>,
+}
+
 /// Inspect every destination before preparing an intent. Existing supported
 /// manually installed runtimes may be adopted, but an unknown byte is not owned.
 fn inspect(
     win64: &Path,
     profile: Profile,
     expected: &BTreeMap<String, String>,
-) -> Result<(Option<Vec<u8>>, Receipt, BTreeMap<String, Vec<u8>>), String> {
+) -> Result<Inspection, String> {
     check_other_proxies(win64, profile)?;
     let prior = original(&win64.join(OWNER), 16 * 1024)?;
     let mut receipt = prior
@@ -201,14 +207,20 @@ fn inspect(
             current.insert(name.clone(), bytes);
         }
     }
-    Ok((prior, receipt, current))
+    Ok(Inspection {
+        prior,
+        receipt,
+        current,
+    })
 }
 
 pub(super) fn installed(root: &Path, profile: Profile) -> Result<bool, String> {
     let _pins = verified_root(root, profile)?;
     let win64 = profile.win64(root);
     let expected = archive::expected(profile);
-    let (_, receipt, current) = inspect(&win64, profile, &expected)?;
+    let Inspection {
+        receipt, current, ..
+    } = inspect(&win64, profile, &expected)?;
     if receipt.pending_files.is_some() || current.len() != expected.len() {
         return Ok(false);
     }
@@ -243,7 +255,11 @@ fn publish_runtime(
         .iter()
         .map(|(name, bytes)| (name.clone(), hash(bytes)))
         .collect::<BTreeMap<_, _>>();
-    let (prior, mut receipt, current) = inspect(win64, profile, &expected)?;
+    let Inspection {
+        prior,
+        mut receipt,
+        current,
+    } = inspect(win64, profile, &expected)?;
     let settings = original(&win64.join(SETTINGS), 64 * 1024)?;
     let merged = profile::merge_settings(settings.as_deref().unwrap_or(&[]), profile.settings())?;
     let mut expected = expected;

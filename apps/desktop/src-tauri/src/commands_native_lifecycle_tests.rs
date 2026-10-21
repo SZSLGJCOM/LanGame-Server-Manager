@@ -45,6 +45,8 @@ mod manual_save_probe;
 #[cfg(windows)]
 #[path = "commands_native_moria_shutdown_control.rs"]
 mod moria_shutdown_control;
+#[path = "commands_native_log_readiness.rs"]
+mod native_logs;
 #[path = "commands_native_package.rs"]
 mod package;
 #[path = "commands_native_player_counts.rs"]

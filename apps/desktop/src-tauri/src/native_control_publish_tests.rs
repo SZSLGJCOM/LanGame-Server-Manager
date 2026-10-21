@@ -147,17 +147,17 @@ fn readonly_destination_is_not_forced_and_failed_source_is_cleaned() {
     let root = Fixture::new();
     let destination = root.0.join("request.txt");
     fs::write(&destination, b"retained readonly").unwrap();
-    let mut permissions = fs::metadata(&destination).unwrap().permissions();
-    permissions.set_readonly(true);
-    fs::set_permissions(&destination, permissions.clone()).unwrap();
+    let original_permissions = fs::metadata(&destination).unwrap().permissions();
+    let mut readonly_permissions = original_permissions.clone();
+    readonly_permissions.set_readonly(true);
+    fs::set_permissions(&destination, readonly_permissions).unwrap();
     let temporary = root.0.join("request.pending");
     let mut pending = PendingFile::create(&temporary, b"must fail").unwrap();
     assert!(pending.replace(&destination).is_err());
     drop(pending);
     assert_eq!(fs::read(&destination).unwrap(), b"retained readonly");
     assert!(!temporary.exists());
-    permissions.set_readonly(false);
-    fs::set_permissions(&destination, permissions).unwrap();
+    fs::set_permissions(&destination, original_permissions).unwrap();
 }
 
 #[cfg(windows)]

@@ -143,7 +143,7 @@ pub(super) async fn save_world(
         },
     )
     .await
-    .map_err(|error| {
+    .inspect_err(|error| {
         append_desktop_app_log(
             storage,
             "warning",
@@ -155,7 +155,6 @@ pub(super) async fn save_world(
                 "error": error.as_str(),
             }),
         );
-        error
     })?;
     Ok(InstanceRuntimeCommandResult {
         instance_id: details.summary.id.clone(),

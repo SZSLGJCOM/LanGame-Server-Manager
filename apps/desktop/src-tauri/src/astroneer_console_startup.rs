@@ -79,7 +79,9 @@ fn rows() -> Result<Vec<Row>, String> {
             break;
         }
         return Ok(words[1..1 + count * 6]
-            .chunks_exact(6)
+            .as_chunks::<6>()
+            .0
+            .iter()
             .map(|word| Row {
                 state: word[0],
                 local_address: word[1],

@@ -6,8 +6,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::io::{Read, Write};
 
-#[path = "commands_native_log_readiness.rs"]
-mod log_cursor;
+use super::super::native_logs as log_cursor;
 #[path = "commands_native_save_checkpoint_profiles.rs"]
 mod profiles;
 #[path = "commands_native_save_checkpoint_sqlite.rs"]

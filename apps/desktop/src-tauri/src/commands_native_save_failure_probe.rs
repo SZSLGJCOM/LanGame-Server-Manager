@@ -54,8 +54,7 @@ fn correlated_unknown(
     response: &[u8],
     old_nonce: Option<&str>,
     pid: u32,
-    before: u128,
-    after: u128,
+    request_window: std::ops::RangeInclusive<u128>,
 ) -> Result<(), String> {
     let session = frame(session, &["module", "run", "token"])?;
     let request = frame(request, &["run", "nonce", "token", "op", "expires"])?;
@@ -78,7 +77,7 @@ fn correlated_unknown(
         || request[2] != session[2]
         || request[3] != "save"
         || expires.to_string() != request[4]
-        || !(before..=after).contains(&issued)
+        || !request_window.contains(&issued)
         || pid == 0
         || response[0] != module
         || response[1] != session[1]
@@ -311,8 +310,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
         &guard_read_regular(&channel.join("response.txt"), 2048)?,
         old_nonce,
         pid,
-        before,
-        after,
+        before..=after,
     )?;
     if before_sha != digest(&mut lock)? {
         return Err("Native failed save changed the locked primary".into());
@@ -434,8 +432,7 @@ fn locked_failure_receipt_requires_current_nonce_unknown_and_native_sink_failure
             body.as_bytes(),
             old,
             pid,
-            99,
-            101,
+            99..=101,
         )
     };
     assert!(check(&response, None, 42).is_ok());
