@@ -174,8 +174,11 @@ async function run() {
   checks++;
 
   await click(fixture.querySelector('[role="tab"][id$="-maintenance"]'));
-  await settleUntil(() => !!fixture.querySelector(".server-file-backup-row"), "Maintenance must show backup rows");
-  const row = fixture.querySelector<HTMLElement>(".server-file-backup-row")!;
+  await settleUntil(() => !!fixture.querySelector('.maintenance-workspace [data-configuration-section-id="backups"] button'),
+    "Maintenance navigation must finish loading");
+  await click(fixture.querySelector('.maintenance-workspace [data-configuration-section-id="backups"] button'));
+  await settleUntil(() => !!fixture.querySelector(".server-backup-list-scroll .server-file-backup-row"), "Maintenance must show backup rows");
+  const row = fixture.querySelector<HTMLElement>(".server-backup-list-scroll .server-file-backup-row")!;
   check(row, "Maintenance must show backup rows");
   row.scrollIntoView({ block: "center" });
   await click(row.querySelector(".inline-confirm-action > button"));

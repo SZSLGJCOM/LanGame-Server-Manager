@@ -200,7 +200,9 @@ async function accountControlSetup(locale: string) {
   const anchor = disabled.closest<HTMLElement>("[data-valheim-control-setup]");
   check(disabled.disabled && anchor?.tabIndex === 0, `${locale}: enabling account management requires an actually stopped instance`);
   const reason = document.getElementById(disabled.getAttribute("aria-describedby") ?? "")?.textContent;
-  check(reason?.includes(locale === "zh-CN" ? "先正常停止" : "Stop the server normally"), `${locale}: running setup explains the stop requirement only through accessible help`);
+  check(reason?.includes(locale === "zh-CN" ? "启动时会自动准备" : "Startup automatically prepares")
+    && reason.includes(locale === "zh-CN" ? "先正常停服" : "stopping the server normally"),
+    `${locale}: running setup explains automatic startup preparation and the stop requirement through accessible help`);
   await act(async () => { anchor.focus(); });
   const deadline = performance.now() + 4000;
   while (!document.querySelector(".configuration-field-help-tooltip.is-visible")) {

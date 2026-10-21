@@ -132,6 +132,51 @@ fn links_and_junctions_inside_the_root_are_never_followed() {
 }
 
 #[test]
+fn skipped_links_share_the_entry_budget() {
+    let root = temp_root("link-cap");
+    let saves = root.join("saves");
+    let outside = root.join("outside");
+    fs::create_dir_all(&saves).unwrap();
+    fs::create_dir_all(&outside).unwrap();
+    fs::write(outside.join("secret.db"), b"outside").unwrap();
+    for index in 0..3 {
+        create_directory_link(&saves.join(format!("link-{index}")), &outside);
+    }
+    fs::write(saves.join("world.db"), b"world").unwrap();
+
+    let capped = list_directory_tree(&saves, 2).unwrap();
+    assert!(capped.truncated && capped.entries.is_empty());
+    assert_eq!(capped.skipped_links, ["link-0", "link-1"]);
+    let exact = list_directory_tree(&saves, 4).unwrap();
+    assert!(!exact.truncated);
+    assert_eq!(relative_paths(&exact), ["world.db"]);
+    assert_eq!(exact.skipped_links.len(), 3);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn wide_directories_retain_only_the_requested_name_prefix() {
+    let root = temp_root("wide");
+    for index in (0..256).rev() {
+        fs::write(root.join(format!("{index:03}.sav")), b"s").unwrap();
+    }
+    let children = read_sorted_children(&root, 4).unwrap();
+    assert_eq!(
+        children
+            .iter()
+            .map(|(name, _)| name.as_str())
+            .collect::<Vec<_>>(),
+        ["000.sav", "001.sav", "002.sav", "003.sav"]
+    );
+    let listing = list_directory_tree(&root, 3).unwrap();
+    assert!(listing.truncated);
+    assert_eq!(relative_paths(&listing), ["000.sav", "001.sav", "002.sav"]);
+    let empty = list_directory_tree(&root, 0).unwrap();
+    assert!(empty.truncated && empty.entries.is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn a_linked_root_is_rejected() {
     let root = temp_root("link-root");
     let target = root.join("target");

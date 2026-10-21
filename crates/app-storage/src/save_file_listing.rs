@@ -2,15 +2,17 @@
 //!
 //! Both roots are resolved from stored instance state, never from caller paths.
 //! The walk never follows links, junctions or other reparse points and stops at
-//! a fixed entry budget, so a hostile or huge tree cannot escape or exhaust it.
+//! a fixed entry budget. Directory enumeration retains only the first names
+//! needed for that budget instead of allocating the complete directory.
 
 use super::*;
 use serde::Serialize;
+use std::collections::BinaryHeap;
 
 #[path = "save_slots.rs"]
 pub(crate) mod slots;
 
-/// Upper bound on returned entries (files and directories together).
+/// Upper bound on returned files, directories and skipped links together.
 pub const MAX_SAVE_FILE_LISTING_ENTRIES: usize = 2_000;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -121,7 +123,13 @@ fn list_directory_tree(root: &Path, limit: usize) -> Result<SaveFileListing, Sto
     let mut pending = vec![(canonical_root.clone(), String::new())];
     while let Some((directory, prefix)) = pending.pop() {
         let mut nested = Vec::new();
-        for (name, path) in read_sorted_children(&directory)? {
+        let remaining = limit.saturating_sub(listing.entries.len() + listing.skipped_links.len());
+        // One extra name distinguishes an exact fit from a truncated listing.
+        for (name, path) in read_sorted_children(&directory, remaining.saturating_add(1))? {
+            if listing.entries.len() + listing.skipped_links.len() >= limit {
+                listing.truncated = true;
+                return Ok(listing);
+            }
             let relative = if prefix.is_empty() {
                 name
             } else {
@@ -135,10 +143,6 @@ fn list_directory_tree(root: &Path, limit: usize) -> Result<SaveFileListing, Sto
             if is_link_or_reparse(&metadata) {
                 listing.skipped_links.push(relative);
                 continue;
-            }
-            if listing.entries.len() >= limit {
-                listing.truncated = true;
-                return Ok(listing);
             }
             let is_directory = metadata.is_dir();
             if is_directory {
@@ -170,24 +174,36 @@ fn list_directory_tree(root: &Path, limit: usize) -> Result<SaveFileListing, Sto
     Ok(listing)
 }
 
-fn read_sorted_children(directory: &Path) -> Result<Vec<(String, PathBuf)>, StorageError> {
+fn read_sorted_children(
+    directory: &Path,
+    limit: usize,
+) -> Result<Vec<(String, PathBuf)>, StorageError> {
     let entries = fs::read_dir(directory).map_err(|source| StorageError::ReadPath {
         path: directory.to_path_buf(),
         source,
     })?;
-    let mut children = Vec::new();
+    // Reading names is necessary to preserve the alphabetic prefix on filesystems
+    // with unordered iteration. Keep only the smallest names, without collecting
+    // metadata or allocating storage proportional to the full directory size.
+    let mut children = BinaryHeap::new();
     for entry in entries {
         let entry = entry.map_err(|source| StorageError::ReadPath {
             path: directory.to_path_buf(),
             source,
         })?;
-        children.push((
+        let child = (
             entry.file_name().to_string_lossy().into_owned(),
             entry.path(),
-        ));
+        );
+        if children.len() < limit {
+            children.push(child);
+        } else if let Some(mut largest) = children.peek_mut()
+            && child < *largest
+        {
+            *largest = child;
+        }
     }
-    children.sort_by(|left, right| left.0.cmp(&right.0));
-    Ok(children)
+    Ok(children.into_sorted_vec())
 }
 
 #[cfg(test)]
