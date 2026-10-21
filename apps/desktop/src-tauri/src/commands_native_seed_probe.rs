@@ -231,7 +231,18 @@ impl SeedProbe {
         Ok(())
     }
 
-    pub(super) fn verify_unknown_mod_preserved(&self) -> ProbeResult<()> {
+    pub(super) fn verify_first_deleted(&self, retained_program: bool) -> ProbeResult<()> {
+        if retained_program {
+            return self.verify_unknown_mod_preserved();
+        }
+        match fs::symlink_metadata(&self.first_program) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(error) => Err(error.into()),
+            Ok(_) => Err("native peer deletion retained its instance-owned program".into()),
+        }
+    }
+
+    fn verify_unknown_mod_preserved(&self) -> ProbeResult<()> {
         let path = checked_path(
             &self.fixture,
             &self.first_program.join(&self.mod_sentinel),
@@ -341,12 +352,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn seed_probe_requires_original_unknown_mod_bytes_to_remain() {
+    fn seed_probe_preserves_unknown_mod_until_owned_program_deletion() {
         let root = std::env::temp_dir().join(format!("native-seed-mod-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).unwrap();
         let probe = SeedProbe {
             fixture: root.clone(),
-            first_program: root.clone(),
+            first_program: root.join("program"),
             first_saves: root.join("saves"),
             baseline: BTreeMap::new(),
             corrupted_baseline: BTreeMap::new(),
@@ -355,10 +366,11 @@ mod tests {
             mod_sentinel: "unknown.txt".into(),
             save_sentinel: "save.txt".into(),
         };
-        let path = root.join(&probe.mod_sentinel);
+        fs::create_dir(&probe.first_program).unwrap();
+        let path = probe.first_program.join(&probe.mod_sentinel);
         fs::create_dir(&probe.first_saves).unwrap();
         fs::write(probe.first_saves.join(&probe.save_sentinel), b"").unwrap();
-        fs::write(root.join(&probe.changed_entry), [0xff]).unwrap();
+        fs::write(probe.first_program.join(&probe.changed_entry), [0xff]).unwrap();
         fs::write(&path, UNKNOWN_MOD_CONTENTS).unwrap();
         probe.verify_first_preserved().unwrap();
         let mut changed = UNKNOWN_MOD_CONTENTS.to_vec();
@@ -367,6 +379,13 @@ mod tests {
         assert!(probe.verify_first_preserved().is_err());
         fs::remove_file(&path).unwrap();
         assert!(probe.verify_first_preserved().is_err());
+        fs::write(&path, UNKNOWN_MOD_CONTENTS).unwrap();
+        probe.verify_first_deleted(true).unwrap();
+        assert!(probe.verify_first_deleted(false).is_err());
+        assert_eq!(probe.first_program.parent(), Some(root.as_path()));
+        fs::remove_dir_all(&probe.first_program).unwrap();
+        probe.verify_first_deleted(false).unwrap();
+        assert!(probe.verify_first_deleted(true).is_err());
         assert_eq!(root.parent(), Some(std::env::temp_dir().as_path()));
         fs::remove_dir_all(root).unwrap();
     }

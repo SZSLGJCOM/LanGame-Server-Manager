@@ -798,12 +798,12 @@ async fn run_native_package(
                     .into(),
             );
         }
-        Box::pin(archive::delete_restored(&runtime, &first)).await?;
+        let retained_program = Box::pin(archive::delete_restored(&runtime, &first)).await?;
         if !list_instances(&storage.paths).await?.is_empty() {
             return Err("native peer deletion did not release its instance association".into());
         }
         if let Some(probe) = &seed_probe {
-            probe.verify_unknown_mod_preserved()?;
+            probe.verify_first_deleted(retained_program)?;
         }
         println!(
             "NATIVE_LIFECYCLE module={module_id} phase=first_instance_deleted library=preserved remaining_instances=0"

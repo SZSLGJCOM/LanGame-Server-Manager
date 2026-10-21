@@ -261,10 +261,11 @@ async fn interrupt_restore_commit<R: tauri::Runtime>(
     Ok(())
 }
 
+/// Return whether the program remains in the library after instance deletion.
 pub(super) async fn delete_restored<R: tauri::Runtime>(
     runtime: &super::runtime::NativeRuntime<'_, '_, R>,
     previous: &super::InstanceDetails,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<bool, Box<dyn std::error::Error>> {
     use crate::commands::commands_storage_management as management;
     let state = runtime.state;
     let id = &previous.summary.id;
@@ -332,7 +333,7 @@ pub(super) async fn delete_restored<R: tauri::Runtime>(
             "independent_program_removed"
         },
     );
-    Ok(())
+    Ok(retained_program)
 }
 
 pub(super) async fn verify_retirement_with_library<R: tauri::Runtime>(
