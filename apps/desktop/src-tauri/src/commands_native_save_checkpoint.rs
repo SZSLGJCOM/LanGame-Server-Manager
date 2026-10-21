@@ -200,7 +200,13 @@ fn digest(path: &Path) -> Result<(u64, String), String> {
     if bytes != metadata.len() {
         return Err("Checkpoint changed while being read".into());
     }
-    Ok((bytes, format!("{:x}", hash.finalize())))
+    Ok((
+        bytes,
+        hash.finalize()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+    ))
 }
 
 fn copy_new(source: &Path, target: &Path) -> Result<(), String> {
