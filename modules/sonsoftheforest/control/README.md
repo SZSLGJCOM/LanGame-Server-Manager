@@ -9,8 +9,7 @@ bytes, SHA-256
 No installer or downloaded script is executed. Existing changed loader files,
 proxy DLLs or configuration are preserved and reported as conflicts. The fixed
 loader is installed and configured automatically on first startup; later starts
-verify it and refresh owned extension files. **Prepare save extension early** is
-an optional stopped-instance action for performing this setup ahead of time.
+verify it and refresh owned extension files.
 
 The fixed C# source is compiled using the Windows Framework compiler and this
 release's bundled .NET 6 SDK assemblies. It installs `Mods/LanGame.Sons.Save.dll`

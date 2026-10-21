@@ -9,8 +9,7 @@ save action. A running round, absent campaign or pending submarine switch is
 rejected with a specific reason.
 
 Starting the instance automatically prepares the extension before creating the
-game process. The stopped-instance **Prepare save extension early** action can
-perform the same setup ahead of startup. LanGame publishes the fixed
+game process. LanGame publishes the fixed
 source as an owned `.langame-world-save/LanGame.Barotrauma.Save.dll`; the normal
 .NET startup-hook mechanism loads it on the next start. An existing nonempty
 `DOTNET_STARTUP_HOOKS` is preserved as a conflict, rather than overwritten. No

@@ -4,8 +4,7 @@ Starting the instance automatically prepares its save extension before creating
 the game process. This detaches a shared program into the instance's private
 runtime, compiles the fixed repository source with the Windows Framework
 compiler and the verified installed SDK, and installs or refreshes the owned
-native Mod. **Prepare save extension early** remains an optional stopped-instance
-action for completing the same preparation ahead of startup.
+native Mod.
 
 Core Keeper uses its bundled `PugMod.IMod` loader; no BepInEx or external loader is
 needed. The native package's `Manager.EarlyInit` adds `PugMod.SideLoader` unless

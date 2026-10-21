@@ -4427,14 +4427,14 @@ VCS commit / 版本提交: 252e25161a91af476cbea620e29d277592d27ec7
 Legal text / 法律文本: 1c7cf76689c837a68ed8d704994e52a0f2940c087958f860d17f3186afbdcc0c — checksum-verified crate file rustls-platform-verifier-0.7.1/LICENSE-MIT
 Legal text / 法律文本: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4 — checksum-verified crate file rustls-platform-verifier-0.7.1/LICENSE-APACHE
 --------------------------------------------------------------------------------
-Package / 软件包: rustls-webpki@0.103.15
+Package / 软件包: rustls-webpki@0.103.16
 Declared license / 声明许可证: ISC
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2
-Source archive / 源码归档: https://static.crates.io/crates/rustls-webpki/rustls-webpki-0.103.15.crate
+Archive SHA-256: 4443b1b6d39d7c663139942cc4558262562d2c84123bb6282ef177009ca8b281
+Source archive / 源码归档: https://static.crates.io/crates/rustls-webpki/rustls-webpki-0.103.16.crate
 Repository / 仓库: https://github.com/rustls/webpki
-VCS commit / 版本提交: c14836d8de33c0ad0ac7dcb28fe9aade20831a4d
-Legal text / 法律文本: 5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a — checksum-verified crate file rustls-webpki-0.103.15/LICENSE
+VCS commit / 版本提交: 8ecdcc76f56b68fda67a6adf7976f5eed5006a4c
+Legal text / 法律文本: 5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a — checksum-verified crate file rustls-webpki-0.103.16/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: rustls@0.23.46
 Declared license / 声明许可证: Apache-2.0 OR ISC OR MIT
@@ -6133,14 +6133,14 @@ Repository / 仓库: https://github.com/tauri-apps/webkit2gtk-rs
 VCS commit / 版本提交: 8de4e245df5c08562a28348e77bcf51cb01e67ea
 Legal text / 法律文本: 3f39c032be4639be635da96d77c4d0f4393c3595a164450ffd86f3d17701ec10 — checksum-verified crate file webkit2gtk-2.0.2/LICENSE
 --------------------------------------------------------------------------------
-Package / 软件包: webpki-root-certs@1.0.9
+Package / 软件包: webpki-root-certs@1.0.10
 Declared license / 声明许可证: CDLA-Permissive-2.0
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: b96554aa2acc8ccdb7e1c9a58a7a68dd5d13bccc69cd124cb09406db612a1c9b
-Source archive / 源码归档: https://static.crates.io/crates/webpki-root-certs/webpki-root-certs-1.0.9.crate
+Archive SHA-256: 58ec80e73fd8baf57bf0d9615554c75348bda990d6d5bbeab964dd068319fecb
+Source archive / 源码归档: https://static.crates.io/crates/webpki-root-certs/webpki-root-certs-1.0.10.crate
 Repository / 仓库: https://github.com/rustls/webpki-roots
-VCS commit / 版本提交: 0a553dbc8b3f18ea05c4f881cffa3f2d005d0d30
-Legal text / 法律文本: e271993808fec50ab29350b39539cdec611a9103f827e0aa26d61da70e2d33f8 — checksum-verified crate file webpki-root-certs-1.0.9/LICENSE
+VCS commit / 版本提交: 70760478b9d3ea729b22faa0b5324da38a297c1c
+Legal text / 法律文本: e271993808fec50ab29350b39539cdec611a9103f827e0aa26d61da70e2d33f8 — checksum-verified crate file webpki-root-certs-1.0.10/LICENSE
 --------------------------------------------------------------------------------
 Package / 软件包: webview2-com-macros@0.8.1
 Declared license / 声明许可证: MIT
@@ -15588,7 +15588,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 5b698ca13897be3afdb7174256fa1574f8c6892b8bea1a66dd6469d3fe27885a
-Source / 来源: checksum-verified crate file rustls-webpki-0.103.15/LICENSE
+Source / 来源: checksum-verified crate file rustls-webpki-0.103.16/LICENSE
 --------------------------------------------------------------------------------
 Except as otherwise noted, this project is licensed under the following
 (ISC-style) terms:
@@ -29826,7 +29826,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: e271993808fec50ab29350b39539cdec611a9103f827e0aa26d61da70e2d33f8
-Source / 来源: checksum-verified crate file webpki-root-certs-1.0.9/LICENSE
+Source / 来源: checksum-verified crate file webpki-root-certs-1.0.10/LICENSE
 --------------------------------------------------------------------------------
 # Community Data License Agreement - Permissive - Version 2.0
 

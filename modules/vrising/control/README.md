@@ -1,8 +1,7 @@
 # Native save extension
 
-Startup automatically prepares the extension before creating the game process;
-the optional stopped-instance **Prepare save extension early** action runs the
-same preparation ahead of time. Preparation uses the existing reviewed
+Startup automatically prepares the extension before creating the game process.
+Preparation uses the existing reviewed
 `BepInEx-BepInExPack_V_Rising` 1.733.2 installation/ownership workflow, compiles the
 fixed source against that exact loader's bundled .NET 6 SDK assemblies, and
 installs `BepInEx/plugins/LanGame.VRising.Save.dll`. A missing reviewed loader is
