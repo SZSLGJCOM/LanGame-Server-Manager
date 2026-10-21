@@ -742,7 +742,7 @@ fn artwork_isolation_retains_completed_pngs_when_output_budget_rejects_later_art
     let enabled = TestRoot::new();
     let mut texture = rgba_texture(128, 128, [0, 0, 0, 255]);
     let mut state = 0x1234_5678u32;
-    for pixel in texture[18..].chunks_exact_mut(4) {
+    for pixel in texture[18..].as_chunks_mut::<4>().0 {
         for channel in pixel.iter_mut().take(3) {
             state ^= state << 13;
             state ^= state >> 17;

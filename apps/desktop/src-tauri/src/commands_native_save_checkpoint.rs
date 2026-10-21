@@ -275,16 +275,27 @@ fn native_text(paths: &[PathBuf]) -> Result<String, String> {
 pub(super) async fn capture<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     running: &InstanceDetails,
+    cycle: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if !enabled()? {
         return Ok(());
     }
     let (fixture, running) = input(runtime, running)?;
+    let cycle = cycle.to_owned();
     let handle = tokio::runtime::Handle::current();
-    worker(move || handle.block_on(capture_owned(&fixture, &running))).await
+    worker(move || handle.block_on(capture_owned(&fixture, &running, &cycle))).await
 }
 
-async fn capture_owned(fixture: &Path, running: &InstanceDetails) -> Result<(), String> {
+async fn capture_owned(
+    fixture: &Path,
+    running: &InstanceDetails,
+    cycle: &str,
+) -> Result<(), String> {
+    // This checkpoint belongs to the initial-save/restart pair. Later restore
+    // cycles still verify their native save receipts without replacing it.
+    if cycle != "initial" {
+        return Ok(());
+    }
     let (fixture, saves, program) = binding(fixture, running)?;
     let _pins = guard_pin_directories(&saves)?;
     let id = &running.summary.id;
@@ -614,6 +625,73 @@ mod tests {
             restored: false,
             read_back: false,
         }
+    }
+
+    #[tokio::test]
+    async fn native_checkpoint_survives_later_lifecycle_save_cycles() {
+        let root = crate::commands::tests::temp_test_dir("save-checkpoint-cycles");
+        for child in ["config", "runtime", "saves", "logs"] {
+            fs::create_dir(root.join(child)).unwrap();
+        }
+        fs::write(root.join("runtime/.langame-private-runtime"), b"managed\n").unwrap();
+        let config = root.join("config/instance.json");
+        let saves = root.join("saves");
+        let world = saves.join("world0.ksd");
+        let log = root.join("logs/enshrouded_server.log");
+        fs::write(&config, b"{}").unwrap();
+        fs::write(&world, b"manual A").unwrap();
+        fs::write(&log, b"").unwrap();
+        let mut running: InstanceDetails = serde_json::from_value(json!({
+            "summary": { "id": format!("checkpoint-{}", uuid::Uuid::new_v4()),
+                "name": "fixture", "module_id": "enshrouded", "status": "Running",
+                "bind_ip": "127.0.0.1", "port_count": 0, "autostart": false },
+            "config_file_path": config, "saves_path": saves,
+            "auto_backup_on_stop": false, "backup_retention_count": 0,
+            "settings_json": "{}", "ports": [],
+            "active_run": { "run_id": 1, "session_id": "first", "pid": null,
+                "log_path": null, "process_count": 0, "processes": [] }
+        }))
+        .unwrap();
+        capture_owned(&root, &running, "initial").await.unwrap();
+        fs::write(&world, b"shutdown B").unwrap();
+        restore_owned(&root, &running).unwrap();
+        assert_eq!(fs::read(&world).unwrap(), b"manual A");
+        running.active_run.as_mut().unwrap().run_id = 2;
+        before_start_owned(&root, &running).unwrap();
+        fs::write(&log, b"Found file 'world0.ksd'\nSavegame deserialization took 1ms\nSwitching state from LoadEcsScene to Run\n").unwrap();
+        verify_owned(&root, &running).unwrap();
+        for (run, cycle, bytes) in [
+            (3, "after_restore", b"later C"),
+            (4, "after_program_maintenance", b"later D"),
+            (5, "after_archive_restore", b"later E"),
+        ] {
+            running.active_run.as_mut().unwrap().run_id = run;
+            fs::write(&world, bytes).unwrap();
+            capture_owned(&root, &running, cycle).await.unwrap();
+            assert_eq!(fs::read(&world).unwrap(), bytes);
+            assert_eq!(
+                fs::read(root.join("manual-checkpoint/world0.ksd")).unwrap(),
+                b"manual A"
+            );
+        }
+        assert!(
+            capture_owned(&root, &running, "initial")
+                .await
+                .unwrap_err()
+                .contains("already captured")
+        );
+        let checkpoint = checkpoints().unwrap().remove(&running.summary.id).unwrap();
+        assert!(checkpoint.restored && checkpoint.read_back);
+        assert_eq!(checkpoint.run_id, 1);
+        assert_eq!(
+            files(
+                &checkpoint.copy,
+                &profiles::roots("enshrouded", &checkpoint.copy).unwrap()
+            )
+            .unwrap(),
+            checkpoint.manifest
+        );
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

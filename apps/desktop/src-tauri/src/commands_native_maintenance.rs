@@ -169,10 +169,14 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
         let error = result
             .err()
             .ok_or("whole-package replacement unexpectedly overwrote an instance")?;
-        if !error.contains("此游戏使用整包替换安装")
-            || inventory::program_files(runtime.descriptor, &root)? != programs
-        {
-            return Err("whole-package replacement failed without preserving programs at its explicit refusal boundary".into());
+        if !error.contains("此游戏使用整包替换安装") {
+            return Err(format!(
+                "native replacement probe did not reach its expected refusal: {error}"
+            )
+            .into());
+        }
+        if inventory::program_files(runtime.descriptor, &root)? != programs {
+            return Err("whole-package replacement refusal changed the program files".into());
         }
     } else {
         let updated = result?;

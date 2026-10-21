@@ -209,7 +209,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
         if result.save_completion != Some(WorldSaveCompletion::Confirmed) {
             return Err("Exact checkpoint acceptance requires native completion evidence before capture; command delivery alone is insufficient".into());
         }
-        checkpoint::capture(runtime, running).await?;
+        checkpoint::capture(runtime, running, cycle).await?;
     }
     Ok(())
 }

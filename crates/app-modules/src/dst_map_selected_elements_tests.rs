@@ -102,7 +102,13 @@ fn registered_alias_uses_its_actual_element_despite_unrequested_invalid_uvs() {
         &icon_atlas("indexed.tex", "target.png"),
         [0, 255, 0, 255],
     );
-    let output = load(&native, &enabled, &[path.clone()], &["target.png"], &[]);
+    let output = load(
+        &native,
+        &enabled,
+        std::slice::from_ref(&path),
+        &["target.png"],
+        &[],
+    );
     assert!(output.issues.is_empty(), "{:?}", output.issues);
     assert_eq!(pixel(&output, "target.png"), [255, 0, 0, 255]);
     assert_eq!(
@@ -328,14 +334,26 @@ fn selected_element_duplicates_keep_existing_first_declaration_and_error_semanti
     let mut pixels = rgba_texture(2, 1, [255, 0, 0, 255]);
     pixels[22..26].copy_from_slice(&[0, 0, 255, 255]);
     enabled.write("images/same.tex", &pixels);
-    let output = load(&native, &enabled, &[path.clone()], &["target.png"], &[]);
+    let output = load(
+        &native,
+        &enabled,
+        std::slice::from_ref(&path),
+        &["target.png"],
+        &[],
+    );
     assert!(output.issues.is_empty(), "{:?}", output.issues);
     assert_eq!(pixel(&output, "target.png"), [255, 0, 0, 255]);
     let shadowed_bad = String::from_utf8(xml.to_vec())
         .unwrap()
         .replace("u1=\"0.5\" u2=\"1\"", "u1=\"0.5\" u2=\"95\"");
     enabled.write("images/same.xml", shadowed_bad.as_bytes());
-    let output = load(&native, &enabled, &[path.clone()], &["target.png"], &[]);
+    let output = load(
+        &native,
+        &enabled,
+        std::slice::from_ref(&path),
+        &["target.png"],
+        &[],
+    );
     assert!(output.issues.is_empty(), "{:?}", output.issues);
     assert_eq!(pixel(&output, "target.png"), [255, 0, 0, 255]);
     let indexed = load(&native, &enabled, &[], &["target.png"], &[]);

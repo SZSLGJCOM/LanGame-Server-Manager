@@ -155,6 +155,12 @@ fn installed_mod_evidence_omits_only_owned_internal_observers() {
     )
     .unwrap();
     fixture.write_mod("install/mods/user-addon", "name='User addon';version='1.0'");
+    assert_eq!(fixture.read(&[], 0).unwrap().total_matches, 2);
+    fs::write(
+        helper.join("render_observer.lua"),
+        include_bytes!("../../../../../modules/dontstarve/world_map_shared/render_observer.lua"),
+    )
+    .unwrap();
     let page = fixture.read(&[], 0).unwrap();
     assert_eq!(page.total_matches, 1);
     assert_eq!(page.entries[0].folder_name, "user-addon");

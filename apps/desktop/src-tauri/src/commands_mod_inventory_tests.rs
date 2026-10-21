@@ -20,6 +20,13 @@ fn manual_mod_inventory_omits_owned_helpers_but_retains_same_named_user_mods() {
     .unwrap();
     fs::create_dir(root.join("user-addon")).unwrap();
     fs::write(root.join("user-addon/modmain.lua"), b"user content").unwrap();
+    let incomplete = read_manual_mod_inventory_items(None, &root).unwrap();
+    assert_eq!(incomplete.len(), 2);
+    fs::write(
+        helper.join("render_observer.lua"),
+        include_bytes!("../../../../modules/dontstarve/world_map_shared/render_observer.lua"),
+    )
+    .unwrap();
     let items = read_manual_mod_inventory_items(None, &root).unwrap();
     assert_eq!(items.len(), 1);
     assert_eq!(items[0].name, "user-addon");
