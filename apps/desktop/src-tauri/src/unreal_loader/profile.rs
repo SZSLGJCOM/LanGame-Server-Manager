@@ -10,6 +10,21 @@ pub(super) struct Profile {
 }
 
 impl Profile {
+    // Both loader preparation and save installation must admit the same image
+    // and, for Conan, the provider shipped with that exact executable.
+    pub fn verify_game_image(self, actual: &str) -> Result<Option<&'static str>, String> {
+        if actual == self.game_hash {
+            return Ok((self.id == "conanexiles")
+                .then_some("d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2"));
+        }
+        match (self.id, actual) {
+            ("conanexiles", "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14") => {
+                Ok(Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"))
+            }
+            ("scum", "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971") => Ok(None),
+            _ => Err("This game build is outside the verified native save contract; no files were changed.".into()),
+        }
+    }
     pub fn get(id: &str) -> Result<Self, String> {
         let (id, project, executable, game_hash, proxy) = match id {
             "abioticfactor" => (
@@ -82,10 +97,6 @@ impl Profile {
             "version.dll" => Some(include_bytes!(concat!(
                 env!("OUT_DIR"),
                 "/unreal-loader-proxies/version.dll"
-            ))),
-            "winmm.dll" => Some(include_bytes!(concat!(
-                env!("OUT_DIR"),
-                "/unreal-loader-proxies/winmm.dll"
             ))),
             "dsound.dll" => Some(include_bytes!(concat!(
                 env!("OUT_DIR"),

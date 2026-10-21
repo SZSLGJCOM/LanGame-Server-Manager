@@ -1,4 +1,4 @@
-// Conan Exiles Enhanced Steam build 25488622. Flush the current world's dirty actors.
+// Conan Exiles Enhanced: flush the current world's dirty actors on verified builds.
 #include <windows.h>
 #include <cstdint>
 #include <functional>
@@ -7,12 +7,30 @@
 #include "completion.hpp"
 namespace dw::Database { class QueryResultBase; }
 namespace {
-constexpr std::string_view GAME_HASH = "2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1";
 constexpr std::string_view UE4SS_HASH = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
 constexpr wchar_t GAME_NAME[] = L"ConanSandboxServer-Win64-Shipping.exe";
 constexpr wchar_t BRIDGE_NAME[] = L"LgsmConanSaveControl.dll";
-constexpr uintptr_t SAVE_RVA = 0x44dd2a0;
-constexpr std::string_view SAVE_PROLOGUE = "48895c24184889742420574881ec80000000488b05476f31064833c448894424";
+struct GameProfile {
+    std::string_view image_hash, provider_hash, save_prologue;
+    uintptr_t save, component_class, weak_owner;
+};
+constexpr GameProfile PROFILES[]{
+    {"2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1",
+     "d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2",
+     "48895c24184889742420574881ec80000000488b05476f31064833c448894424", 0x44dd2a0, 0xaac3dd0, 0x167e230},
+    {"d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14",
+     "2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6",
+     "48895c24184889742420574881ec80000000488b0597e133064833c448894424", 0x44e3350, 0xaaf0d70, 0x167faf0},
+};
+const GameProfile* selected_profile{};
+bool select_game_profile(std::string_view identity) {
+    selected_profile = nullptr;
+    for (const auto& profile : PROFILES) {
+        if (identity == profile.image_hash) { selected_profile = &profile; return true; }
+    }
+    return false;
+}
+const GameProfile& game_profile();
 void target_contract(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 struct Request;
 const char* native_save_async(uintptr_t, const Request&);
@@ -20,8 +38,15 @@ const char* native_observe_async(uintptr_t, const Request&);
 }
 #define LGSM_SAVE_EXPORT luaopen_lgsm_conan_save
 #define LGSM_NATIVE_SAVE_ASYNC
+#define LGSM_SELECT_GAME_PROFILE
+#define SAVE_RVA game_profile().save
+#define SAVE_PROLOGUE game_profile().save_prologue
 #include "../../../apps/desktop/src-tauri/native/world_save_bridge.hpp"
 namespace {
+const GameProfile& game_profile() {
+    require(selected_profile != nullptr, "game_profile_unavailable");
+    return *selected_profile;
+}
 struct Provider {
     HMODULE module{};
     Handle file;
@@ -37,7 +62,7 @@ struct Provider {
         require(module && same_file(module_path(module), executable.parent_path() / L"Dreamworld.dll"), "provider_module");
         auto opened = open_file(module_path(module), GENERIC_READ, OPEN_EXISTING, FILE_SHARE_READ);
         file.value = opened.value; opened.value = INVALID_HANDLE_VALUE;
-        require(hash_file(file.value) == "d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2", "provider_fingerprint");
+        require(hash_file(file.value) == game_profile().provider_hash, "provider_fingerprint");
         thread_id = reinterpret_cast<void* (*)(uint32_t*)>(GetProcAddress(module,
             "?GetCurrentThreadId@Thread@dw@@SA?AVid@thread@std@@XZ"));
         require(thread_id != nullptr, "provider_thread_api");
@@ -72,7 +97,7 @@ struct Provider {
 Provider& provider() { static Provider value; return value; }
 void target_contract(uintptr_t image, uintptr_t component, uintptr_t game_mode, uintptr_t world) {
     provider().verify();
-    auto cls = read<uintptr_t>(image + 0xaac3dd0);
+    auto cls = read<uintptr_t>(image + game_profile().component_class);
     require(cls && readable(component, 0x240) && read<uintptr_t>(component + 0x10) == cls
         && !(read<uint32_t>(component + 8) & 0x40018010), "component_class");
     require(readable(game_mode, 0x5b0) && !(read<uint32_t>(game_mode + 8) & 0x40018010)
@@ -80,7 +105,7 @@ void target_contract(uintptr_t image, uintptr_t component, uintptr_t game_mode, 
     require(readable(world, 0x28) && !(read<uint32_t>(world + 8) & 0x40018010)
         && read<uintptr_t>(component + 0xc0) == world, "component_world");
     using WeakOwner = void* (*)(void*);
-    require(reinterpret_cast<uintptr_t>(reinterpret_cast<WeakOwner>(image + 0x167e230)(
+    require(reinterpret_cast<uintptr_t>(reinterpret_cast<WeakOwner>(image + game_profile().weak_owner)(
         reinterpret_cast<void*>(component + 0x150))) == game_mode, "component_game_mode");
     auto db = read<uintptr_t>(game_mode + 0x5a0);
     require(db && readable(db, sizeof(void*)), "database_unavailable");

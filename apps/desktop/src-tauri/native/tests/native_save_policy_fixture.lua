@@ -129,7 +129,7 @@ test("ambiguous worlds cannot save",function() local s=harness();s.ambiguous=tru
 test("native contract rejects unsupported image",function() local s=harness();s.bad_native=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("timeout while queued cannot invoke later",function() local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.now=s.now+4;s.tick();s.dispatch();s.tick();assert(not s.receipt().invoked and s.calls==0) end)
 test("timeout after publication blocks native entry",function() local s=harness();local p=s.probe();s.on_publish=function() s.on_publish=nil;s.now=s.now+4;s.tick() end;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==0) end)
-test("watchdog within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+(conan and 4 or 31);s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
+test("watchdog within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+31;s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
 test("world changes within native preserves unknown",function() local s=harness();local p=s.probe();s.on_call=s.replace_world;local r=s.save(p);assert(r.invoked and not r.confirmed and s.calls==1) end)
 test("old boot blocks native entry",function() local s=harness();local p=s.probe();p.boot=string.rep("f",32);assert(not s.save(p).invoked and s.calls==0) end)
 test("extra fields and moderation cannot invoke",function() local s=harness();s.write("kick");s.tick();s.dispatch();s.tick();assert(s.calls==0 and not s.files[base.."response.json"]);s.write("saveprobe");s.files[base.."request.json"]=s.files[base.."request.json"]:gsub('}$',',"extra":true}');s.tick();s.dispatch();s.tick();assert(s.calls==0 and not s.files[base.."response.json"]) end)
@@ -164,7 +164,6 @@ test("late pending completion never resends",function()
     local s=harness();local p=s.probe();s.on_poll=function() s.now=1031 end;local r=s.save(p)
     assert(not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1)
 end)
-if not conan then
 test("entered snapshot crosses queue deadline without losing its owned completion",function()
     local s=harness();local p=s.probe()
     s.on_call=function() s.now=s.now+3;s.tick() end
@@ -199,14 +198,13 @@ test("completion poll still rejects expired EngineTick queue admission",function
     s.tick();s.now=s.now+3;s.tick();s.dispatch();s.tick();local r=s.receipt()
     assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1 and s.polls==0)
 end)
-end
 -- Feed actual production-encoder output back through the Rust host parser.
 local contract = harness()
 local ready = contract.probe()
 LGSM_TEST_PROBE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_PROBE_REPLY = contract.files[base.."response.json"]
-contract.native_false=true
-contract.save(ready)
+local saved = contract.save(ready)
+assert(saved.confirmed and saved.returned and not saved.error and contract.calls == 1 and contract.polls == 1)
 LGSM_TEST_SAVE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_SAVE_REPLY = contract.files[base.."response.json"]
 return count

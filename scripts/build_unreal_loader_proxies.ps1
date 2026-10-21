@@ -230,7 +230,7 @@ try {
     $shortBuild = Join-Path $shortRoot $buildName
     # Regenerate only this verified project's CMake metadata: a prior build may
     # have used the original long path or a different temporary drive letter.
-    foreach ($proxyName in @('version', 'dsound', 'winmm')) {
+    foreach ($proxyName in @('version', 'dsound')) {
         $systemDll = Join-Path $env:WINDIR ('System32/' + $proxyName + '.dll')
         if ((Get-AuthenticodeSignature -LiteralPath $systemDll).Status -ne 'Valid') {
             throw ('The local system proxy target is not signed: ' + $proxyName)

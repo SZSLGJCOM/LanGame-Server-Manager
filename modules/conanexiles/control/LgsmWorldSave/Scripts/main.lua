@@ -1,4 +1,4 @@
--- Conan Exiles Enhanced Steam build 25488622. Native world-persistence flush only.
+-- Conan Exiles Enhanced verified profiles. Native world-persistence flush only.
 -- The separate native bridge pins complete image/loader hashes and its ABI.
 local SAVE_CONFIG = { project = "ConanSandbox", executable = "ConanSandboxServer-Win64-Shipping.exe", launch_identity = true, world_from_netdriver = true, fingerprint = {} }
 local function build_save_target(api)
@@ -14,7 +14,7 @@ local function build_save_target(api)
         return string.format("%08x%08x%08x%08x", math.random(0, 0x7fffffff), math.random(0, 0x7fffffff),
             math.random(0, 0x7fffffff), counter % 0x7fffffff)
     end
-    local function bridge(operation, proxy, instance, world, validate, frame)
+    local function bridge(operation, proxy, instance, world, validate, frame, enter_native)
         if not native then
             local loaded = package.loadlib(root .. "\\ConanSandbox\\Binaries\\Win64\\ue4ss\\Mods\\LgsmWorldSave\\native\\LgsmConanSaveControl.dll", "luaopen_lgsm_conan_save")
             api.check(type(loaded) == "function", "api_unavailable"); native = loaded
@@ -37,6 +37,7 @@ local function build_save_target(api)
         api.check(removed or code == 2, "api_unavailable")
         api.check(os.rename(temporary, directory .. "native-request.txt"), "api_unavailable")
         validate() -- No native entry may follow a cancelled or stale closure.
+        if enter_native then enter_native() end
         native()
         local response = io.open(directory .. "native-response.txt", "rb")
         api.check(response ~= nil, "save_call_unknown")
@@ -79,10 +80,10 @@ local function build_save_target(api)
         end
         return { world = world, instance = instance, persistence = proxy, save_name = world:GetFullName(),
             native_process_id = expected_pid, native_creation_time = expected_creation, current = current,
-            invoke = function(validate)
+            invoke = function(validate, enter_native)
                 validate()
                 api.check(current(), "save_call_unknown")
-                local status, pid, creation, frame = bridge("save", proxy, game_mode, world, validate)
+                local status, pid, creation, frame = bridge("save", proxy, game_mode, world, validate, nil, enter_native)
                 api.check(pid == expected_pid and creation == expected_creation, "save_call_unknown")
                 validate(); api.check(current(), "save_call_unknown")
                 local complete, confirmed, native_error = terminal(status)

@@ -67,16 +67,16 @@ pub(super) fn validate(game: Game, root: &Path) -> Result<Vec<File>, String> {
     const LOADER: &str = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
     let win64 = game.win64(root);
     let loader = win64.join("ue4ss");
+    let game_image = win64.join(game.executable());
+    let provider_image = win64.join("Dreamworld.dll");
+    let mut provider_hash = None;
     let mut pins = pin(&loader, false).map_err(|_| "The automatically prepared UE4SS loader directory is unavailable. Check the startup preparation error.")?;
     let mut binaries = vec![
-        (win64.join(game.executable()), game.game_hash()),
-        (loader.join("UE4SS.dll"), LOADER),
+        (game_image.clone(), None),
+        (loader.join("UE4SS.dll"), Some(LOADER)),
     ];
     if game == Game::Conan {
-        binaries.push((
-            win64.join("Dreamworld.dll"),
-            "d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2",
-        ));
+        binaries.push((provider_image.clone(), None));
     }
     for (path, expected) in binaries {
         let mut options = OpenOptions::new();
@@ -107,7 +107,15 @@ pub(super) fn validate(game: Game, root: &Path) -> Result<Vec<File>, String> {
             .iter()
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
-        if actual != expected {
+        if path == game_image {
+            provider_hash = crate::unreal_loader::verify_game_image(game.id(), &actual)?;
+        } else if Some(actual.as_str())
+            != if path == provider_image {
+                provider_hash
+            } else {
+                expected
+            }
+        {
             return Err("The game or UE4SS version is outside the verified native save contract. No files were changed.".into());
         }
         pins.push(file);

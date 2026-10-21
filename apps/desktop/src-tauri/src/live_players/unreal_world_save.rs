@@ -66,15 +66,6 @@ impl Game {
             Self::Scum => "SCUMServer.exe",
         }
     }
-    fn game_hash(self) -> &'static str {
-        match self {
-            Self::Abiotic => "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f",
-            Self::Moria => "4513fb58ca31a3c7c7640ebeff9717ef68776b922986036f0c5b325dd28255fb",
-            Self::Nightingale => "8e06c60524066655aee66da2e06b52c702a951afc3c28b59a2923f9dd51bd7eb",
-            Self::Conan => "2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1",
-            Self::Scum => "4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad",
-        }
-    }
     fn win64(self, root: &Path) -> PathBuf {
         root.join(self.project()).join("Binaries/Win64")
     }

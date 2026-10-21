@@ -1,4 +1,4 @@
-// Closed save transport used only by the two fixed game contracts. No Lua ABI imports.
+// Closed save transport for fixed game contracts. No Lua ABI imports.
 // The game adapter declares its exact image, member ABI, ownership and readiness checks.
 #include <windows.h>
 #include <cstdio>
@@ -150,7 +150,12 @@ struct Image {
         pins = pin_directories(directory);
         auto shipping_file = open_file(path, GENERIC_READ, OPEN_EXISTING, FILE_SHARE_READ);
         auto core_file = open_file(module_path(core), GENERIC_READ, OPEN_EXISTING, FILE_SHARE_READ);
-        require(hash_file(shipping_file.value) == GAME_HASH && hash_file(core_file.value) == UE4SS_HASH, "module_fingerprint");
+#ifdef LGSM_SELECT_GAME_PROFILE
+        const auto accepted_game = select_game_profile(hash_file(shipping_file.value));
+#else
+        const auto accepted_game = hash_file(shipping_file.value) == GAME_HASH;
+#endif
+        require(accepted_game && hash_file(core_file.value) == UE4SS_HASH, "module_fingerprint");
         shipping.value = shipping_file.value; shipping_file.value = INVALID_HANDLE_VALUE;
         ue4ss.value = core_file.value; core_file.value = INVALID_HANDLE_VALUE;
         base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));

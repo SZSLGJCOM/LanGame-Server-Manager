@@ -4,9 +4,18 @@
 
 ## 绑定版本与调用范围
 
-当前验证版本为 Steam app `3792580`、build `25247308`，`SCUM/Binaries/Win64/SCUMServer.exe` 的 SHA-256 为 `4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad`。加载器为官方 UE4SS `3.0.1-1125-g527a483b`，核心 SHA-256 为 `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958`，配置见 `extensions/UE4SS-settings.ini`。其他构建需要重新核对 ABI、对象布局及真实调用，不能只更新哈希。
+当前绑定 Steam app `3792580` 的两个构建，按 `SCUM/Binaries/Win64/SCUMServer.exe` 完整 SHA-256 选择固定配置：
+
+| Build | SHA-256 |
+| --- | --- |
+| 25247308 | `4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad` |
+| 25803875 | `070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971` |
+
+加载器为官方 UE4SS `3.0.1-1125-g527a483b`，核心 SHA-256 为 `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958`，配置见 `extensions/UE4SS-settings.ini`。其他构建需要重新核对 ABI、对象布局及真实调用，不能只更新哈希。
 
 `AutoSave` RVA `0x1b94040` 的 ABI 为 `void(this, bool force)`。正常 tick 传 `false`；本入口传 `true`，覆盖全局持久化状态（`0x1ba7060`）、已登记坐标变更（`0x1b94ee0`）和已登记实体的强制保存（`0x1b94250`）。它不调用退出函数，也不承诺覆盖独立子系统、尚未到达服务端的数据或整个进程内存。
+
+上述地址来自 build 25247308。在 25803875 中，完整 528 字节 AutoSave 入口、三个保存阶段、EntitySystem 构造与 Actor::EndPlay 指令除重定位引用外一致，对象字段偏移未变。新入口为 `0x1bb2680`，三个阶段为 `0x1bc59c0`、`0x1bb3520`、`0x1bb2890`；类 singleton、vtable 与 GetWorld 分别为 `0x7500180`、`0x5edfe20`、`0x1552cc0`。构建测试分别执行两个配置的准入检查；这不替代各版本的真实保存验收。
 
 执行前核对完整游戏与加载器哈希、函数字节、原生类/vptr、唯一 EntitySystem、当前实例 outer、原生 GetWorld、UWorld.OwningGameInstance、GameNetDriver 和当前 GameMode authority。当前 GameMode/GameState 的原生 ActorHasBegunPlay 状态须为 `+0x5c & 0xc0 == 0x80`，EntitySystem 不能处于加载、保存或退出状态。对象检查及调用都在 EngineTick 上执行；原生桥再次核验游戏线程。
 

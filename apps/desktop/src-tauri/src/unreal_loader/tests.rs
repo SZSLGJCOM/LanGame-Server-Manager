@@ -37,6 +37,36 @@ fn install(fixture: &Fixture, files: &BTreeMap<String, Vec<u8>>) -> Result<Insta
 }
 
 #[test]
+fn save_image_admission_preserves_game_and_provider_pairing() {
+    let current_conan = "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14";
+    let current_scum = "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971";
+    assert_eq!(
+        verify_game_image(
+            "conanexiles",
+            Profile::get("conanexiles").unwrap().game_hash
+        )
+        .unwrap(),
+        Some("d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2")
+    );
+    assert_eq!(
+        verify_game_image("conanexiles", current_conan).unwrap(),
+        Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6")
+    );
+    for image in [Profile::get("scum").unwrap().game_hash, current_scum] {
+        assert_eq!(verify_game_image("scum", image).unwrap(), None);
+    }
+    for (module_id, image) in [
+        ("conanexiles", current_scum),
+        ("scum", current_conan),
+        ("returntomoria", current_conan),
+        ("conanexiles", "unreviewed-image"),
+        ("palworld", current_conan),
+    ] {
+        assert!(verify_game_image(module_id, image).is_err(), "{module_id}");
+    }
+}
+
+#[test]
 fn first_install_activates_after_core_and_configuration_and_preserves_mods() {
     let fixture = Fixture::new();
     fs::create_dir_all(fixture.0.join("ue4ss/Mods/OperatorMod")).unwrap();
@@ -394,17 +424,12 @@ fn real_mod_search_path_overrides_are_preserved_before_any_loader_publication() 
 #[test]
 fn game_specific_native_config_directory_cannot_hide_the_owned_profile() {
     let fixture = Fixture::new();
-    let name = fixture
-        .0
-        .ancestors()
-        .nth(3)
-        .and_then(Path::file_name)
-        .unwrap();
-    let redirect = fixture.0.join("ue4ss").join(name);
+    let win64 = profile().win64(&fixture.0.join("runtime"));
+    let redirect = win64.join("ue4ss/runtime");
     fs::create_dir_all(&redirect).unwrap();
     fs::write(redirect.join("UE4SS-settings.ini"), b"operator profile").unwrap();
     assert!(
-        install(&fixture, &payload(1))
+        installation::publish_fixture(&win64, profile(), &payload(1), publish)
             .unwrap_err()
             .contains("game-specific")
     );
@@ -412,7 +437,7 @@ fn game_specific_native_config_directory_cannot_hide_the_owned_profile() {
         fs::read(redirect.join("UE4SS-settings.ini")).unwrap(),
         b"operator profile"
     );
-    assert!(!fixture.0.join(".langame-ue4ss-loader.json").exists());
+    assert!(!win64.join(".langame-ue4ss-loader.json").exists());
 }
 
 #[test]
@@ -509,34 +534,27 @@ fn archive_checks_traversal_aliases_duplicates_and_digest_before_installation() 
 fn game_profiles_use_the_native_verified_import_proxies() {
     assert_eq!(Profile::get("abioticfactor").unwrap().proxy, "version.dll");
     assert_eq!(Profile::get("conanexiles").unwrap().proxy, "dsound.dll");
-    for id in [
-        "returntomoria",
-        "nightingale",
-        "palworld",
-        "astroneer",
-        "scum",
-        "windrose",
-    ] {
+    for id in ["returntomoria", "nightingale", "scum", "windrose"] {
         assert_eq!(Profile::get(id).unwrap().proxy, "dwmapi.dll");
     }
     assert!(!supported("squad"));
     assert!(supported("abioticfactor"));
 }
 
-#[test]
-fn humanitz_uses_its_fixed_shipping_image_and_winmm_forwarding_proxy() {
-    let human = Profile::get("humanitz").unwrap();
-    assert_eq!(human.project, "HumanitZServer");
-    assert_eq!(human.executable, "HumanitZServer-Win64-Shipping.exe");
-    assert_eq!(human.proxy, "winmm.dll");
-    #[cfg(windows)]
-    {
-        let bytes = human.proxy_bytes().unwrap();
-        assert!(bytes.starts_with(b"MZ"));
-        let expected = archive::expected(human);
-        assert_eq!(expected.get("winmm.dll"), Some(&hash(bytes)));
-        assert!(!expected.contains_key("dwmapi.dll"));
+#[tokio::test]
+async fn native_save_games_reject_unneeded_ue4ss_preparation() {
+    let fixture = Fixture::new();
+    for id in ["palworld", "astroneer", "humanitz"] {
+        assert!(!supported(id), "{id}");
+        assert!(Profile::get(id).is_err(), "{id}");
+        assert!(installed(&fixture.0, id).is_err(), "{id}");
+        assert!(prepare(id).await.is_err(), "{id}");
     }
+    assert!(fs::read_dir(&fixture.0).unwrap().next().is_none());
+}
+
+#[test]
+fn unrelated_winmm_forwarding_proxy_is_preserved_before_loader_publication() {
     let fixture = Fixture::new();
     fs::write(fixture.0.join("winmm.dll"), b"external forwarding proxy").unwrap();
     assert!(

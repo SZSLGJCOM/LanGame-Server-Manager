@@ -38,7 +38,15 @@ pub(crate) enum InstallOutcome {
 }
 
 pub(crate) fn supported(module_id: &str) -> bool {
-    !matches!(module_id, "palworld" | "astroneer" | "humanitz") && Profile::get(module_id).is_ok()
+    Profile::get(module_id).is_ok()
+}
+
+/// Validate an executable and return the paired native provider hash, if any.
+pub(crate) fn verify_game_image(
+    module_id: &str,
+    actual: &str,
+) -> Result<Option<&'static str>, String> {
+    Profile::get(module_id)?.verify_game_image(actual)
 }
 
 #[cfg(test)]

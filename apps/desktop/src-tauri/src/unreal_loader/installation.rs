@@ -58,14 +58,12 @@ fn original(path: &Path, limit: usize) -> Result<Option<Vec<u8>>, String> {
 fn verified_root(root: &Path, profile: Profile) -> Result<Vec<std::fs::File>, String> {
     let mut pins = pin(root, false)?;
     pins.extend(pin(&profile.win64(root), false)?);
-    let mut binaries = vec![(profile.executable, profile.game_hash)];
+    let mut binaries = vec![profile.executable];
+    let mut provider_hash = None;
     if profile.id == "conanexiles" {
-        binaries.push((
-            "Dreamworld.dll",
-            "d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2",
-        ));
+        binaries.push("Dreamworld.dll");
     }
-    for (name, expected) in binaries {
+    for name in binaries {
         let path = profile.win64(root).join(name);
         let metadata = std::fs::symlink_metadata(&path).map_err(|error| error.to_string())?;
         let mut unsafe_file = !metadata.is_file()
@@ -108,7 +106,9 @@ fn verified_root(root: &Path, profile: Profile) -> Result<Vec<std::fs::File>, St
             .iter()
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
-        if actual != expected {
+        if name == profile.executable {
+            provider_hash = profile.verify_game_image(&actual)?;
+        } else if provider_hash != Some(actual.as_str()) {
             return Err("This game build is outside the verified automatic UE4SS save contract; no loader files were changed.".into());
         }
         pins.push(file);

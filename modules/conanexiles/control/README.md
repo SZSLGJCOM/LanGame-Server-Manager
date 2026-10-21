@@ -2,15 +2,19 @@
 
 Starting the instance automatically prepares its independent runtime, installs and configures the fixed official UE4SS **3.0.1-1125-g527a483b**, a correctly generated genuine upstream **DSOUND proxy**, and the owned `LgsmWorldSave` policy and native bridge before creating the game process. This Shipping image imports `DSOUND.dll`; it does not import the default DWM proxy or the version proxy. Renaming a DLL does not supply the required exports. The generated proxy is bundled with LanGame; users need no native build tools. Archive/core/proxy hashes are checked and required [native-save settings](../../abioticfactor/control/UE4SS-settings.ini) are merged while preserving unrelated fields, comments and existing Mods. A compatible verified loader can be reused; ambiguous entries, unknown core/proxy files and externally edited owned files are preserved and reported as conflicts. Owned interrupted publication can resume. Shared program files remain untouched. The private mod contains `Scripts/main.lua`, `enabled.txt` and `native/LgsmConanSaveControl.dll` plus its ownership marker.
 
-The closed adapter supports Enhanced Steam build **25488622** only:
+The adapter supports Enhanced Steam builds **25488622** and **25792439**. A fixed profile is selected from the complete executable hash and requires its paired provider:
 
-| File | SHA-256 |
-| --- | --- |
-| `ConanSandboxServer-Win64-Shipping.exe` | `2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1` |
-| `Dreamworld.dll` | `d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2` |
-| `ue4ss/UE4SS.dll` | `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958` |
+| Build | File | SHA-256 |
+| --- | --- | --- |
+| 25488622 | `ConanSandboxServer-Win64-Shipping.exe` | `2c3fef162b159bd16124b7ea8030884aa1f66e7b1d966e63542407e590d04fa1` |
+| 25488622 | `Dreamworld.dll` | `d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2` |
+| 25792439 | `ConanSandboxServer-Win64-Shipping.exe` | `d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14` |
+| 25792439 | `Dreamworld.dll` | `2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6` |
+| Both | `ue4ss/UE4SS.dll` | `91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958` |
 
 The native bridge verifies actual loaded-module paths, pins/hashes these files and rejects a changed contract. It calls the whole-world persistence component, not the reflected **CharacterPersistenceComponent.ForceSave** method.
+
+The following evidence uses build 25488622 addresses. In 25792439 the save entry, writer, pre-removal flush, transfer entry, class singleton and weak-owner accessor move to `0x44e3350`, `0x44e3440`, `0x44e48e0`, `0x4e74ee0`, `0xaaf0d70` and `0x167faf0`. Their instruction bodies and field offsets are unchanged after resolving relocated references; the native class metadata still names `WorldPersistenceComponent`. Every Dreamworld PE section is byte-identical, including its SQL worker, exports and result layout. Both complete file identities remain pinned.
 
 | Fixed-image evidence | Contract |
 | --- | --- |

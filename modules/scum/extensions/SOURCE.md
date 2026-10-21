@@ -45,6 +45,6 @@ Rust 原生启动探针为 `isolated_scum_reads_current_empty_snapshots_and_reje
 - 真实专服中当前唯一 EntitySystem 的 outer 是当前 ConZGameInstance，原生 GetWorld 与 GameNetDriver 绑定正式 The_Island 世界。EntitySystem 有 authority、loading、save busy、shutdown 状态；控制桥逐项拒绝不满足条件的实例。
 - 专服的 `GameState.bReplicatedHasBegunPlay` 仍为 false。保存控制检查固定构建原生 `AActor::ActorHasBegunPlay` 状态：当前 GameMode 与 GameState 的 `+0x5c` 高两位必须为 `0x80`。原生 `AActor::EndPlay` RVA `0x3ec3aa0` 检查此值并在拆除前立即清除。
 
-这只提供“持久化实体”，其他子系统继续原生自动持久化；既不是完整世界快照，也不是备份。加载器、可执行文件、签名或所属世界变化即拒绝，不将任意新构建地址当作兼容 API。原生 void 返回只代表调用已返回，界面继续显示写入待确认。构建、反例测试和真实调用范围见控制目录说明。
+这只提供“持久化实体”，其他子系统继续原生自动持久化；既不是完整世界快照，也不是备份。加载器、可执行文件、签名或所属世界变化即拒绝，不将任意新构建地址当作兼容 API。原生 void 返回只代表调用已返回，界面显示保存请求已发送，不声称写盘完成。构建、反例测试和真实调用范围见控制目录说明。
 
 原生程序清单请求的是 `highestAvailable`，不是 `requireAdministrator`。该固定构建在独立世界以 `RunAsInvoker` 子进程环境成功启动，进程和启动 shell 的 TokenElevation 均为 0；世界运行无需新增特权。LanGame 对 SCUM 使用相同的进程环境，保留操作系统文件和进程权限，不设置全局环境、注册表或防火墙。

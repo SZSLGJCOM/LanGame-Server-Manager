@@ -1,4 +1,4 @@
--- SCUM build 25247308: submit native AutoSave(true); storage completion is not observed.
+-- SCUM verified profiles: submit native AutoSave(true); storage completion is not observed.
 local SAVE_CONFIG = { project = "SCUM", executable = "SCUMServer.exe", launch_identity = true, world_from_netdriver = true, native_world_readiness = true, fingerprint = {} }
 local function build_save_target(api)
     local source = debug.getinfo(1, "S").source:gsub("^@", "")

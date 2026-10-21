@@ -19,10 +19,12 @@ void rejects(const std::function<void()>& action, std::string_view expected) {
     assert(rejected);
 }
 }
-int main() {
+void check_profile(const GameProfile& profile) {
+    assert(select_game_profile(profile.image_hash));
+    calls = 0;
     // Zero-filled private memory represents only documented object fields. No
     // game function pointer, DLL loader or persistence routine is executed.
-    auto allocated = VirtualAlloc(nullptr, 0x7450000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    auto allocated = VirtualAlloc(nullptr, 0x7510000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
     assert(allocated);
     auto image = reinterpret_cast<uintptr_t>(allocated);
     std::array<unsigned char, 0x800> system_bytes{};
@@ -32,8 +34,8 @@ int main() {
     auto world = reinterpret_cast<uintptr_t>(world_bytes.data());
     auto mode = reinterpret_cast<uintptr_t>(mode_bytes.data());
     auto state = reinterpret_cast<uintptr_t>(state_bytes.data());
-    put(image + 0x7447070, image + 0x100);
-    put(system, image + 0x5e40c60); put(system + 0x10, image + 0x100);
+    put(image + profile.entity_class, image + 0x100);
+    put(system, image + profile.entity_vtable); put(system + 0x10, image + 0x100);
     put(system + 0x20, instance); put<uint8_t>(system + 0x30, 1);
     put(world + 0x180, instance); put(world + 0x118, mode); put(world + 0x120, state);
     put<uint8_t>(mode + 0xf0, 3); put<uint8_t>(mode + 0x5c, 0x80); put<uint8_t>(state + 0x5c, 0x80);
@@ -56,7 +58,7 @@ int main() {
     put(system + 0x20, world); rejects(validate, "entity_system_instance"); put(system + 0x20, instance);
     put(world + 0x180, world); rejects(validate, "world_instance"); put(world + 0x180, instance);
     put(system + 0x10, world); rejects(validate, "entity_system_class"); put(system + 0x10, image + 0x100);
-    put(system, world); rejects(validate, "entity_system_class"); put(system, image + 0x5e40c60);
+    put(system, world); rejects(validate, "entity_system_class"); put(system, image + profile.entity_vtable);
     for (uint32_t flag : {0x10u, 0x8000u, 0x10000u, 0x40000000u}) {
         put(system + 8, flag); rejects(validate, "object_unavailable"); put<uint32_t>(system + 8, 0);
     }
@@ -67,4 +69,13 @@ int main() {
     rejects([&] { (void)parse(frame.substr(0, frame.size() - 1)); }, "request_format");
     assert(VirtualFree(allocated, 0, MEM_RELEASE));
     std::cout << "SCUM native ownership, authority, lifecycle, loading, busy, shutdown and frame guards passed\n";
+}
+
+int main() {
+    for (const auto& profile : PROFILES) {
+        check_profile(profile);
+        assert(&game_profile() == &profile);
+        assert(!select_game_profile(std::string(64, '0')));
+        rejects([] { (void)game_profile(); }, "game_profile_unavailable");
+    }
 }

@@ -3,26 +3,51 @@
 #include <cstdint>
 #include <string_view>
 namespace {
-constexpr std::string_view GAME_HASH = "4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad";
 constexpr std::string_view UE4SS_HASH = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
 constexpr wchar_t GAME_NAME[] = L"SCUMServer.exe";
 constexpr wchar_t BRIDGE_NAME[] = L"LgsmScumSaveControl.dll";
-constexpr uintptr_t SAVE_RVA = 0x1b94040;
-constexpr std::string_view SAVE_PROLOGUE = "48895c2420574881ecb0000000488b05a45484054833c4488984249000000080";
+struct GameProfile {
+    std::string_view image_hash, save_prologue;
+    uintptr_t save, entity_class, entity_vtable, get_world;
+};
+constexpr GameProfile PROFILES[]{
+    {"4ca11449c4c8d3a243c797c719f66e33192eefad53a9c64cca9aac925c9e39ad",
+     "48895c2420574881ecb0000000488b05a45484054833c4488984249000000080",
+     0x1b94040, 0x7447070, 0x5e40c60, 0x15501c0},
+    {"070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971",
+     "48895c2420574881ecb0000000488b0594eb8d054833c4488984249000000080",
+     0x1bb2680, 0x7500180, 0x5edfe20, 0x1552cc0},
+};
+const GameProfile* selected_profile{};
+bool select_game_profile(std::string_view identity) {
+    selected_profile = nullptr;
+    for (const auto& profile : PROFILES) {
+        if (identity == profile.image_hash) { selected_profile = &profile; return true; }
+    }
+    return false;
+}
+const GameProfile& game_profile();
 void target_contract(uintptr_t, uintptr_t, uintptr_t, uintptr_t);
 void native_save(uintptr_t, uintptr_t);
 }
 #define LGSM_SAVE_EXPORT luaopen_lgsm_scum_save
+#define LGSM_SELECT_GAME_PROFILE
+#define SAVE_RVA game_profile().save
+#define SAVE_PROLOGUE game_profile().save_prologue
 #include "../../../apps/desktop/src-tauri/native/world_save_bridge.hpp"
 namespace {
+const GameProfile& game_profile() {
+    require(selected_profile != nullptr, "game_profile_unavailable");
+    return *selected_profile;
+}
 void alive(uintptr_t object, size_t size) {
     require(readable(object, size) && !(read<uint32_t>(object + 8) & 0x40018010), "object_unavailable");
 }
 void entity_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uintptr_t world) {
     alive(system, 0x79c);
-    auto cls = read<uintptr_t>(image + 0x7447070);
+    auto cls = read<uintptr_t>(image + game_profile().entity_class);
     require(cls && read<uintptr_t>(system + 0x10) == cls
-        && read<uintptr_t>(system) == image + 0x5e40c60, "entity_system_class");
+        && read<uintptr_t>(system) == image + game_profile().entity_vtable, "entity_system_class");
     alive(instance, 0x28);
     require(read<uintptr_t>(system + 0x20) == instance, "entity_system_instance");
     alive(world, 0x188);
@@ -43,10 +68,11 @@ void entity_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uint
 }
 void target_contract(uintptr_t image, uintptr_t system, uintptr_t instance, uintptr_t world) {
     entity_contract(image, system, instance, world);
-    prologue(image, 0x15501c0, "488b49204885c9740a488b0148ffa06001000033c0c3");
-    require(read<uintptr_t>(image + 0x5e40c60 + 0x160) == image + 0x15501c0, "world_accessor");
+    const auto& profile = game_profile();
+    prologue(image, profile.get_world, "488b49204885c9740a488b0148ffa06001000033c0c3");
+    require(read<uintptr_t>(image + profile.entity_vtable + 0x160) == image + profile.get_world, "world_accessor");
     using GetWorld = void* (*)(void*);
-    require(reinterpret_cast<uintptr_t>(reinterpret_cast<GetWorld>(image + 0x15501c0)(
+    require(reinterpret_cast<uintptr_t>(reinterpret_cast<GetWorld>(image + profile.get_world)(
         reinterpret_cast<void*>(system))) == world, "entity_system_world");
 }
 void native_save(uintptr_t image, uintptr_t system) {

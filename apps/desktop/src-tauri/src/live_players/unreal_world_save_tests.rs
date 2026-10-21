@@ -125,10 +125,9 @@ fn native_world_save_policies_run_real_nightingale_and_conan_payloads() {
             ))
             .eval()
             .unwrap();
-        check_lua_host_receipt_contract(&lua, false);
+        check_lua_host_receipt_contract(&lua, true);
         assert_eq!(
-            cases,
-            if game == Game::Nightingale { 34 } else { 29 },
+            cases, 34,
             "{name}: every actual native policy case must run"
         );
     }
