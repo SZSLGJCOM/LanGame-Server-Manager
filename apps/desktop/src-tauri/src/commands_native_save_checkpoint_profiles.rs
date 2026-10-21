@@ -88,21 +88,20 @@ pub(super) fn native_logs(module: &str, program: &Path, details: &InstanceDetail
         }
     }
     let native = match module {
-        "corekeeper" | "enshrouded" => Path::new(&details.config_file_path)
+        "corekeeper" | "enshrouded" | "conanexiles" => Path::new(&details.config_file_path)
             .parent()
             .and_then(Path::parent)
             .map(|root| {
-                root.join(if module == "corekeeper" {
-                    "logs/CoreKeeperServer.log"
-                } else {
-                    "logs/enshrouded_server.log"
+                root.join(match module {
+                    "corekeeper" => "logs/CoreKeeperServer.log",
+                    "enshrouded" => "logs/enshrouded_server.log",
+                    _ => "logs/conan-server.log",
                 })
             }),
         "valheim" => Some(program.join("BepInEx/LogOutput.log")),
         "nightingale" => Some(program.join("NWX/Saved/Logs/NWX.log")),
         "runescapedragonwilds" => Some(program.join("RSDragonwilds/Saved/Logs/RSDragonwilds.log")),
         "scum" => Some(program.join("SCUM/Saved/Logs/SCUM.log")),
-        "conanexiles" => Some(program.join("ConanSandbox/Saved/Logs/ConanSandbox.log")),
         _ => None,
     };
     if let Some(path) = native {
@@ -115,16 +114,15 @@ pub(super) fn native_logs(module: &str, program: &Path, details: &InstanceDetail
 
 pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<(), String> {
     let loaded = match module {
-        // Observed in corekeeper-135855-419165/test.log:580-583. The native
-        // spelling "finishied" is intentional. A new-world seed is insufficient.
+        // The native spelling "finishied" is intentional. A new-world seed
+        // without deserialization is insufficient.
         "corekeeper" => {
             fresh.contains("Decompressed brotli compressed world file:")
                 && fresh.contains("Deserialize world finishied")
                 && fresh.contains("successfully loaded world file into SerializeWorld")
                 && !fresh.contains("no existing save file, starting with empty world")
         }
-        // nightingale-162958-078773/test.log:629-630 distinguishes the restart
-        // from the initial E_WorldPersistenceLoadState::FirstLaunch at line860.
+        // SubsequentLaunch distinguishes a restored world from FirstLaunch.
         "nightingale" => {
             fresh.contains("E_WorldPersistenceLoadState::SubsequentLaunch")
                 && fresh.contains(
@@ -133,8 +131,7 @@ pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<
                 && !fresh.contains("E_WorldPersistenceLoadState::FirstLaunch")
         }
         "runescapedragonwilds" => dragon_loaded(before, fresh)?,
-        // Actual native exact-manual-reload console:176,259,263. Run alone is
-        // also reached by a new world and is never treated as reload evidence.
+        // Run alone is also reached by a new world; require deserialization.
         "enshrouded" => {
             fresh.contains("Found file 'world0.ksd'")
                 && fresh.contains("Savegame deserialization took ")
@@ -143,22 +140,15 @@ pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<
                     .to_ascii_lowercase()
                     .contains("failed to load server save game")
         }
-        // valheim-100306-740253/test.log:633-643, build25730807. Native profile
-        // admission remains elsewhere; this does not admit build25909431 saves.
+        // Bind the reloaded world to the last completed native save number.
         "valheim" => valheim_loaded(before, fresh)?,
         "theforest" => {
             return Err("The Forest has no verified reload-specific native log observation; world_ready does not prove a checkpoint was loaded".into());
         }
-        // conanexiles-133716-961236/test.log:647-649. First creation in the
-        // same capture loaded zero actors; Ready/WorldPersistenceDone alone is
-        // insufficient. The caller restores the exact database and server UID.
-        "conanexiles" => {
-            fresh.lines().any(|line| {
-                positive_count(line, "WorldPersistence: Finished loading ", " actors in ")
-            }) && fresh.contains("Entered application state 'WorldPersistenceDone'")
-        }
-        // scum/runtime/SCUM/Saved/Logs/SCUM.log:1459, after the persisted
-        // database was restored. Readiness/global stats do not prove DB loading.
+        // The caller restores the exact database and server UID. An empty
+        // player world can still reload its persisted native mod controllers.
+        "conanexiles" => conan_loaded(before, fresh),
+        // Readiness/global stats do not prove the restored DB was loaded.
         "scum" => fresh.lines().any(|line| {
             line.contains("LogEntitySystem: DbLoadState took ")
                 && positive_count(line, " for ", " entities")
@@ -178,6 +168,38 @@ fn positive_count(line: &str, prefix: &str, suffix: &str) -> bool {
         .and_then(|(_, value)| value.split_once(suffix))
         .and_then(|(value, _)| value.parse::<u64>().ok())
         .is_some_and(|count| count > 0)
+}
+
+fn conan_loaded(before: &str, fresh: &str) -> bool {
+    if !fresh.contains("Entered application state 'WorldPersistenceDone'") {
+        return false;
+    }
+    if fresh
+        .lines()
+        .any(|line| positive_count(line, "WorldPersistence: Finished loading ", " actors in "))
+    {
+        return true;
+    }
+    let spawning = "Persistence: Spawning mod controller: ";
+    let loading = "Persistence: Loading mod controller: ";
+    let expected: BTreeSet<_> = before
+        .lines()
+        .filter_map(|line| {
+            line.split_once(spawning)
+                .or_else(|| line.split_once(loading))
+        })
+        .map(|(_, name)| name.trim())
+        .filter(|name| !name.is_empty())
+        .collect();
+    let loaded: BTreeSet<_> = fresh
+        .lines()
+        .filter_map(|line| line.split_once(loading))
+        .map(|(_, name)| name.trim())
+        .filter(|name| !name.is_empty())
+        .collect();
+    // Spawning means regeneration, whereas Loading reads actor_position rows
+    // selected by mod_controllers in the restored native SQLite snapshot.
+    !expected.is_empty() && expected == loaded && !fresh.contains(spawning)
 }
 
 fn valheim_loaded(before: &str, fresh: &str) -> Result<bool, String> {
@@ -405,6 +427,46 @@ mod tests {
         require_loaded("scum", "", scum).unwrap();
         assert!(require_loaded("scum", "", &scum.replace("3960 entities", "0 entities")).is_err());
         assert!(require_loaded("scum", "", "GlobalStats").is_err());
+    }
+
+    #[test]
+    fn conan_empty_player_world_reloads_its_persisted_controllers() {
+        let before = "Persistence: Spawning mod controller: BP_ConanSword_DLC_ModController_C\nPersistence: Spawning mod controller: DLC_Turan_Modcontroller_C";
+        let loaded = "Persistence: Loading mod controller: BP_ConanSword_DLC_ModController_C\nPersistence: Loading mod controller: DLC_Turan_Modcontroller_C\nWorldPersistence: Finished loading 0 actors in 0.0 seconds.\nEntered application state 'WorldPersistenceDone'";
+        require_loaded("conanexiles", before, loaded).unwrap();
+        require_loaded("conanexiles", loaded, loaded).unwrap();
+        for invalid in [
+            loaded.replace("DLC_Turan_Modcontroller_C", "Other_ModController_C"),
+            loaded.replace("Persistence: Loading mod controller: DLC_Turan_Modcontroller_C", ""),
+            format!("{loaded}\nPersistence: Loading mod controller: Other_ModController_C"),
+            loaded.replace("Loading mod controller", "Spawning mod controller"),
+            loaded.replace("WorldPersistenceDone", "WorldPersistence"),
+            "Loading active mod controllers (#16 expected)\nEntered application state 'WorldPersistenceDone'".into(),
+        ] {
+            assert!(require_loaded("conanexiles", before, &invalid).is_err());
+        }
+        assert!(require_loaded("conanexiles", "", loaded).is_err());
+        assert!(
+            require_loaded(
+                "conanexiles",
+                "Persistence: Spawning mod controller: ",
+                loaded
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn conan_native_log_uses_the_instance_abslog_destination() {
+        let details =
+            crate::commands::tests::manual_runtime_tests::player_snapshot_fixture_instance(
+                "conanexiles",
+                app_core::InstanceStatus::Running,
+            );
+        assert_eq!(
+            native_logs("conanexiles", Path::new("D:/fixture/runtime"), &details),
+            [PathBuf::from("D:/fixture/logs/conan-server.log")]
+        );
     }
 
     #[test]
