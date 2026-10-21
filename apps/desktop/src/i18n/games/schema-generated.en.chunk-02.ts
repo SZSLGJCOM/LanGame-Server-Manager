@@ -2,8 +2,6 @@ import type { MessageCatalog } from "../../i18n-config";
 
 // Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.
 export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
-  "settings.schema.dontstarve.master_stageplays.option.never": "Never",
-  "settings.schema.dontstarve.master_start_location.option.darkness": "Darkness",
   "settings.schema.dontstarve.master_start_location.option.default": "Default",
   "settings.schema.dontstarve.master_start_location.option.plus": "Plus",
   "settings.schema.dontstarve.master_summerhounds.option.default": "Default",

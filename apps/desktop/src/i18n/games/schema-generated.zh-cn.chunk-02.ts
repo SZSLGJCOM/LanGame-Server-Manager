@@ -2,8 +2,6 @@ import type { MessageCatalog } from "../../i18n-config";
 
 // Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.
 export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
-  "settings.schema.dontstarve.master_squid.option.always": "始终",
-  "settings.schema.dontstarve.master_squid.option.default": "默认",
   "settings.schema.dontstarve.master_squid.option.never": "从不",
   "settings.schema.dontstarve.master_squid.option.often": "较多",
   "settings.schema.dontstarve.master_squid.option.rare": "稀少",
@@ -331,8 +329,8 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
   "settings.schema.projectzomboid.backups_on_version_change.title": "备份",
   "settings.schema.projectzomboid.backups_period.description": "将“备份”写入 Project Zomboid Dedicated Server 配置文件中的 BackupsPeriod。",
   "settings.schema.projectzomboid.backups_period.title": "备份",
-  "settings.schema.projectzomboid.save_world_every_minutes.description": "将“自动- 世界”写入 Project Zomboid Dedicated Server 配置文件中的 SaveWorldEveryMinutes。",
-  "settings.schema.projectzomboid.save_world_every_minutes.title": "自动- 世界",
+  "settings.schema.projectzomboid.save_world_every_minutes.description": "将“世界自动保存间隔（分钟）”写入 Project Zomboid Dedicated Server 配置文件中的 SaveWorldEveryMinutes。",
+  "settings.schema.projectzomboid.save_world_every_minutes.title": "世界自动保存间隔（分钟）",
   "settings.schema.projectzomboid.steam_scoreboard.option.admin": "管理员",
   "settings.schema.projectzomboid.steam_scoreboard.option.false": "否",
   "settings.schema.projectzomboid.steam_scoreboard.option.true": "是",

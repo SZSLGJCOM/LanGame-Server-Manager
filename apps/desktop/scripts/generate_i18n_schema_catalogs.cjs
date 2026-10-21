@@ -96,6 +96,7 @@ const EXACT_ZH_TITLES = {
   "Admin Password": "管理员密码",
   "Admin Steam IDs": "管理员 Steam ID",
   "Auto Save Interval Seconds": "自动保存间隔（秒）",
+  "Auto-save World Minutes": "世界自动保存间隔（分钟）",
   "Bind IP": "绑定 IP",
   "Difficulty": "难度",
   "Enable BattlEye": "启用 BattlEye",

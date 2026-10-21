@@ -669,7 +669,6 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.abioticfactor.platform_limited.option.playstation": "选项",
   "settings.schema.abioticfactor.platform_limited.option.xbox": "选项",
   "settings.schema.arksurvivalascended.active_map_mod.description": "将“启用地图”写入 ARK: Survival Ascended Dedicated Server 配置文件中的 ServerSettings.ActiveMapMod。",
-  "settings.schema.arksurvivalascended.additional_maps.description": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。",
   "settings.schema.arksurvivalascended.additional_maps.title": "附加地图服务器",
   "settings.schema.arksurvivalascended.admin_list_url.title": "管理员名单 URL",
   "settings.schema.arksurvivalascended.admin_logging.description": "将“管理员”写入 ARK: Survival Ascended Dedicated Server 配置文件中的 ServerSettings.AdminLogging。",
@@ -729,7 +728,6 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.arksurvivalascended.use_character_tracker.description": "将“使用”写入 ARK: Survival Ascended Dedicated Server 配置文件中的 ServerSettings.UseCharacterTracker。",
   "settings.schema.arksurvivalascended.young_ice_fox_death_cooldown.description": "将“死亡冷却”写入 ARK: Survival Ascended Dedicated Server 配置文件中的 ServerSettings.YoungIceFoxDeathCooldown。",
   "settings.schema.arksurvivalevolved.active_total_conversion.description": "将“启用”写入 ARK: Survival Evolved Dedicated Server 配置文件中的 ServerSettings.ActiveTotalConversion。",
-  "settings.schema.arksurvivalevolved.additional_maps.description": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；所有地图共用此实例的配置、模组和跨服传输数据。",
   "settings.schema.arksurvivalevolved.additional_maps.title": "附加地图服务器",
   "settings.schema.arksurvivalevolved.admin_logging.description": "将“管理员”写入 ARK: Survival Evolved Dedicated Server 配置文件中的 ServerSettings.AdminLogging。",
   "settings.schema.arksurvivalevolved.allow_cave_building_pv_p.description": "将“允许建筑”写入 ARK: Survival Evolved Dedicated Server 配置文件中的 ServerSettings.AllowCaveBuildingPvP。",
@@ -2501,5 +2499,7 @@ export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.dontstarve.master_spiders.option.rare": "稀少",
   "settings.schema.dontstarve.master_spiders.option.uncommon": "较少",
   "settings.schema.dontstarve.master_spiders.title": "蜘蛛巢密度",
-  "settings.schema.dontstarve.master_squid.description": "控制主世界乌贼出现频率。"
+  "settings.schema.dontstarve.master_squid.description": "控制主世界乌贼出现频率。",
+  "settings.schema.dontstarve.master_squid.option.always": "始终",
+  "settings.schema.dontstarve.master_squid.option.default": "默认"
 };

@@ -663,7 +663,6 @@ export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.abioticfactor.platform_limited.option.playstation": "PlayStation",
   "settings.schema.abioticfactor.platform_limited.option.xbox": "Xbox / Windows Store",
   "settings.schema.arksurvivalascended.active_map_mod.description": "Native ARK server setting ActiveMapMod.",
-  "settings.schema.arksurvivalascended.additional_maps.description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
   "settings.schema.arksurvivalascended.additional_maps.title": "Additional Map Servers",
   "settings.schema.arksurvivalascended.admin_list_url.title": "AdminListURL",
   "settings.schema.arksurvivalascended.admin_logging.description": "Native ARK server setting AdminLogging.",
@@ -843,7 +842,6 @@ export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.arksurvivalascended.young_ice_fox_death_cooldown.title": "YoungIceFoxDeathCooldown",
   "settings.schema.arksurvivalevolved.active_total_conversion.description": "Native ARK server setting ActiveTotalConversion.",
   "settings.schema.arksurvivalevolved.active_total_conversion.title": "ActiveTotalConversion",
-  "settings.schema.arksurvivalevolved.additional_maps.description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; all maps share this instance's configuration, mods and cluster transfers.",
   "settings.schema.arksurvivalevolved.additional_maps.title": "Additional Map Servers",
   "settings.schema.arksurvivalevolved.adjustable_mutagen_spawn_delay_multiplier.title": "AdjustableMutagenSpawnDelayMultiplier",
   "settings.schema.arksurvivalevolved.admin_logging.description": "Native ARK server setting AdminLogging.",
@@ -2501,5 +2499,7 @@ export const EN_US_SCHEMA_GENERATED_MESSAGES_CHUNK_01: MessageCatalog = {
   "settings.schema.dontstarve.master_squid.option.never": "Never",
   "settings.schema.dontstarve.master_squid.option.often": "Often",
   "settings.schema.dontstarve.master_squid.option.rare": "Rare",
-  "settings.schema.dontstarve.master_stageplays.option.default": "Default"
+  "settings.schema.dontstarve.master_stageplays.option.default": "Default",
+  "settings.schema.dontstarve.master_stageplays.option.never": "Never",
+  "settings.schema.dontstarve.master_start_location.option.darkness": "Darkness"
 };
