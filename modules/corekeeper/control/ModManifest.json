@@ -5,7 +5,7 @@
   "requiredOn": 2,
   "skipSafetyChecks": true,
   "accessesExtraAssemblies": true,
-  "disableHarmonyPatching": false,
+  "disableHarmonyPatching": true,
   "files": [{ "path": "LanGame.CoreKeeper.Save.dll" }],
   "dependencies": []
 }

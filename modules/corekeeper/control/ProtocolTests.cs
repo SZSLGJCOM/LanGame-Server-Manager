@@ -115,6 +115,16 @@ internal static class ProtocolTests
                 pending.Process(Request(Nonce()));
             }
             Check(!tracked,"disposing the channel abandons observation without replaying the native operation");
+            observation = SaveReceipt.Dispatched;
+            using (SaveLoop queued = new SaveLoop(root,"corekeeper",asynchronous))
+            {
+                string request = Request(Nonce());
+                queued.Process(request); int submissions = started;
+                queued.ObservePending(0);
+                Check(queued.Process(request).Contains("status=dispatched\nissue=none\n") &&
+                    !tracked && started == submissions,
+                    "asynchronous native submission releases ownership without claiming disk completion or replaying");
+            }
             string reloadRequest=Request(Nonce());
             using (SaveLoop before = new SaveLoop(root,"corekeeper",delegate {return delegate {return true;};}))
                 before.Process(reloadRequest); // Persists dispatch marker, simulates lost final reply.

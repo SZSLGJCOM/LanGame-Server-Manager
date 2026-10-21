@@ -10,20 +10,10 @@ use std::{
 const PROTOCOL: &str = include_str!("../../../../modules/corekeeper/control/SaveProtocol.cs");
 const FILES: &str = include_str!("../../../../modules/corekeeper/control/SaveFiles.cs");
 const CORE: &str = include_str!("../../../../modules/corekeeper/control/CoreKeeperSave.cs");
-const CORE_EXTRA: &[(&str, &str)] = &[
-    (
-        "CoreKeeperSaveNative.cs",
-        include_str!("../../../../modules/corekeeper/control/CoreKeeperSaveNative.cs"),
-    ),
-    (
-        "CoreKeeperSaveCompletion.cs",
-        include_str!("../../../../modules/corekeeper/control/CoreKeeperSaveCompletion.cs"),
-    ),
-    (
-        "CoreKeeperSaveHooks.cs",
-        include_str!("../../../../modules/corekeeper/control/CoreKeeperSaveHooks.cs"),
-    ),
-];
+const CORE_EXTRA: &[(&str, &str)] = &[(
+    "CoreKeeperSaveNative.cs",
+    include_str!("../../../../modules/corekeeper/control/CoreKeeperSaveNative.cs"),
+)];
 const VRISING: &str = include_str!("../../../../modules/vrising/control/VRisingSave.cs");
 const VRISING_EXTRA: &[(&str, &str)] = &[(
     "VRisingSaveCompletion.cs",
@@ -147,11 +137,11 @@ pub(super) fn native_files(game: Profile) -> Result<Vec<(&'static str, &'static 
         "corekeeper" => vec![
             (
                 "CoreKeeperServer_Data/Managed/Pug.Other.dll",
-                "042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938",
+                "631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0",
             ),
             (
                 "CoreKeeperServer_Data/Managed/PugMod.SDK.Runtime.dll",
-                "6f1bd3ea3c46c7e6392c42f27bca6baf1bfb13a4eaa89756941eb51e193e7664",
+                "ed2157a69174d6e85331d2744e3e3c9c43fa7e1e69be344aac1158c3f711ec5d",
             ),
             (
                 "CoreKeeperServer_Data/Managed/UnityEngine.CoreModule.dll",
@@ -162,12 +152,12 @@ pub(super) fn native_files(game: Profile) -> Result<Vec<(&'static str, &'static 
                 "6ae62e082dc494a2433984177f60ca4db5fae69b1f360a8b33754172b310b8c5",
             ),
             (
-                "CoreKeeperServer_Data/Managed/0Harmony.dll",
-                "01fc6fcb6408811b72e25bfc3628cca08b27473758966777254500d07d170b4e",
+                "CoreKeeperServer_Data/Managed/Unity.Entities.dll",
+                "e4f03d5dcc4547f2730218fd128e918a26d24590f31b827d334c09a0de2e762a",
             ),
             (
-                "CoreKeeperServer_Data/Managed/Unity.Entities.dll",
-                "d73687d44b81ceccb1f0416cd373d75e2dc58d8d998ed26310e31f48650a6c1d",
+                "CoreKeeperServer_Data/Managed/Pug.ECS.Components.dll",
+                "c2822ba48eec76430167963ddfd885eb2d5225cf5193850f1833583a27401d0f",
             ),
         ],
         "vrising" => vec![
@@ -210,7 +200,12 @@ pub(super) fn verify_native(root: &Path, game: Profile) -> Result<(), String> {
 
 pub(super) fn pin_native(root: &Path, game: Profile) -> Result<Vec<File>, String> {
     let mut pins = io::pin_directories(root)?;
-    for (relative, expected) in native_files(game)? {
+    let files = if game.module == "corekeeper" {
+        corekeeper_native_files(root, game)?
+    } else {
+        native_files(game)?
+    };
+    for (relative, expected) in files {
         let path = root.join(relative);
         pins.extend(io::pin_directories(
             path.parent().ok_or("Invalid native path")?,
@@ -225,6 +220,27 @@ pub(super) fn pin_native(root: &Path, game: Profile) -> Result<Vec<File>, String
         pins.push(file);
     }
     Ok(pins)
+}
+
+fn corekeeper_native_files(
+    root: &Path,
+    game: Profile,
+) -> Result<Vec<(&'static str, &'static str)>, String> {
+    let mut files = native_files(game)?;
+    let primary = io::read_regular(&root.join(files[0].0), 512 * 1024 * 1024)?;
+    match io::digest(&primary).as_str() {
+        "631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0" => {}
+        "042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938" => {
+            // Build 25537714 uses the same native save API. Select its whole
+            // dependency tuple; independently mixing admitted DLLs is invalid.
+            files[0].1 = "042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938";
+            files[1].1 = "6f1bd3ea3c46c7e6392c42f27bca6baf1bfb13a4eaa89756941eb51e193e7664";
+            files[4].1 = "d73687d44b81ceccb1f0416cd373d75e2dc58d8d998ed26310e31f48650a6c1d";
+            files[5].1 = "564660969f1c3630fbe6e133e118ced32906682bc8b53839a139211cc4fd177f";
+        }
+        _ => return Err("This Core Keeper build has not been verified for native saving.".into()),
+    }
+    Ok(files)
 }
 
 pub(super) fn inspect(root: &Path, game: Profile) -> Result<Option<Ownership>, String> {
@@ -427,8 +443,6 @@ impl Drop for Scratch {
             "NativeSave.cs",
             "SonsSaveCompletion.cs",
             "CoreKeeperSaveNative.cs",
-            "CoreKeeperSaveCompletion.cs",
-            "CoreKeeperSaveHooks.cs",
             "VRisingSaveCompletion.cs",
             "0Harmony.dll",
             "manifest.json",
@@ -607,11 +621,9 @@ fn references(root: &Path, game: Profile) -> Result<Vec<(PathBuf, String)>, Stri
         return Ok(Vec::new());
     }
     if game.module == "corekeeper" {
+        let files = corekeeper_native_files(root, game)?;
         return Ok([
-            (
-                "PugMod.SDK.Runtime.dll",
-                "6f1bd3ea3c46c7e6392c42f27bca6baf1bfb13a4eaa89756941eb51e193e7664",
-            ),
+            ("PugMod.SDK.Runtime.dll", files[1].1),
             (
                 "UnityEngine.CoreModule.dll",
                 "d184eb633e67cd97d5a0eb0faf3a8f05bdfe17e56c3cef5595cf15c685030aa6",
@@ -619,10 +631,6 @@ fn references(root: &Path, game: Profile) -> Result<Vec<(PathBuf, String)>, Stri
             (
                 "netstandard.dll",
                 "6ae62e082dc494a2433984177f60ca4db5fae69b1f360a8b33754172b310b8c5",
-            ),
-            (
-                "0Harmony.dll",
-                "01fc6fcb6408811b72e25bfc3628cca08b27473758966777254500d07d170b4e",
             ),
         ]
         .into_iter()

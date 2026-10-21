@@ -14,59 +14,45 @@ the inspected build. The extension is installed as
 `CoreKeeperServer_Data/StreamingAssets/Mods/LanGameSaveControl/`, with
 `ModManifest.json` and `LanGame.CoreKeeper.Save.dll`.
 
-This particular local extension requires `skipSafetyChecks` and
-`accessesExtraAssemblies`: the official SDK restrictions otherwise exclude
-`System.IO`, `System.Diagnostics`, `System.Runtime.InteropServices`, reflection,
-and native assembly access. They are needed for pinned, authenticated local IPC
-and exact native binding. This permission applies to this Mod only. The Mod
-uses the package's fingerprinted Harmony for its closed save observers; no
-loader-wide safety option or other Mod is changed. See the official
-[scripting restrictions](https://github.com/Pugstorm/CoreKeeperModDocs/blob/main/modding-documentation/creating-mods/creating-a-mod/creating-mods-via-scripts-and-prefabs.md#scripting-restrictions).
-The inspected `PugMod.Loader.LoadDll` selects `ScriptSecurityMode` from that
-individual Mod's metadata.
+This local extension requires `skipSafetyChecks` and
+`accessesExtraAssemblies` for pinned, authenticated local IPC and reflection.
+These permissions apply only to this Mod. Harmony patching is disabled; no
+native method body, writer thread, filesystem call or other Mod is changed.
 
-Verified package: Steam app 1963720, build 25537714. The current
-`CoreKeeperServer_Data/Managed/Pug.Other.dll` SHA-256 is
-`042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938`.
-The installer also pins the SDK, Unity CoreModule and netstandard hashes.
+Verified packages: Steam app 1963720, builds 25537714 and 25825323. Each build
+has a complete fingerprint tuple for `Pug.Other.dll`, `Pug.ECS.Components.dll`,
+`Unity.Entities.dll`, the SDK, Unity CoreModule and netstandard. Mixed tuples are
+rejected. The native save APIs and their IL were compared across both packages;
+metadata tokens are not an integration dependency.
 
-The main-thread `IMod.Update` validates `Manager.ecs.WorldsAreLoaded`, the current
-server world, and `SaveSystem.SaveIsPending`, then creates exactly one native
-`SerializeWorldSystem.SerializeWorld` component entity. The admitted
-`SaveSystem.QueueNewSave` does only this creation through a deferred ECB; direct
-native creation gives the request a real Entity Index+Version immediately. It
-creates no caller-named save, backup or shutdown.
+On the game's `IMod.Update` thread, the extension validates the current ECS
+manager, loaded server world, shutdown state and `SaveSystem.SaveIsPending`.
+A native entity query also requires a world object eligible for serialization.
+A new empty world can report loaded before creating any such objects; writing
+only its metadata would fail the native loader's `ObjectDataSerializedCD`
+requirement on restart. That state is rejected as `world_not_ready` before
+queueing or writing. The extension does not resume simulation to create objects.
+It calls `ECSManager.QueueNewServerSave()` once, preserving its Boolean result.
+This is the game's ordinary automatic-save queue. `SaveSystem.Save()` is not
+used because it disables player and inventory systems for shutdown saving.
 
-The observer binds that exact entity in the serializer's trigger query to one
-serialization generation. Only that serializer's `WriteCompressedWorldData`
-payload array, size and world-file descriptor can bind a native `WriteRequest`.
-The standalone writer can swallow errors and return buffers after failures, so
-neither void return nor `returnQueue` is completion. Its admitted IL flushes and
-closes the temporary stream before `File.Replace` or `File.Move`. The observer
-records only normal returns from those two original publication calls, then
-requires that same native request to reach its end before the pool can reuse
-the payload. Path, platform and exact published bytes must also match. Native
-calls and exception handling are retained; observers never throw into the game.
-
-The Mod constructs its observers during native loader construction, before
-`IMod.Init`. Admission additionally requires evidence that this filesystem's
-actual writer thread entered the transformed loop. Installing a patch after a
-long-lived writer frame has started cannot manufacture that evidence. Changed
-native IL, conflicting patches, absent observations, target changes, failed
-publication, expiry and disposal cannot emit a completed receipt. The owner
-thread rechecks the current world and storage target before acknowledging the
-same pending nonce. While its owned request is pending, it advances the same
+An empty server pauses simulation. While the request is pending, the extension
+flushes the queued event and advances `SerializeWorldRunSystem`, the native chunk
+preparation normally performed by simulation. It then advances the
 serialization-group / BeginSimulation ECB / serialization-group sequence used
-by native `SaveSystem.SaveDone`. This drains that work on the owner thread even
-when an empty server has timescale zero; it does not advance the simulation
-clock or enqueue another save. A busy or blocked serializer still cannot emit
-completion until the owned writer actually publishes its payload.
+by `SaveSystem.SaveDone`, every 200 ms with
+the protocol's two-minute deadline. It never advances the simulation clock,
+queues a second save or waits synchronously for the serialization worker.
+World changes, expiry and disposal release the pending operation without retry.
 
-For this dedicated-server snapshot, required world metadata is serialized into
-the same world payload. `WriteWorldInfo(int)` is the server's explicit rejected
-client-file path; independent world-generation-parameter initialization is not
-part of `WriteSerializedDataToFile`. This acknowledgement concerns the current
-server snapshot, not client-side saves or storage durability after power loss.
+`SerializeWorldSystem.LastWorldWrite` changes after the game submits serialized
+bytes to its own filesystem queue. Advancement ends only after that changes,
+the native serialization state is `Idle`, and no save trigger remains. This
+also drains a request queued while an earlier automatic save is in progress. The
+receipt is `dispatched`, displayed as a requested save, never `completed`.
+Serialization errors leave the request unconfirmed. The extension does not
+infer disk success from a timestamp, log line or another task's write, and does
+not replace the game's serialization, filesystem or error handling.
 
 ## Shared protocol and installer boundary
 
@@ -95,7 +81,7 @@ by nonce and recovered from the persisted response after a loader reload.
 An asynchronous adapter can return `Pending` and observe its own native
 operation on subsequent owner-thread ticks. The loop owns at most one such
 request, retains its nonce and cached executing receipt, and bounds observation
-with a monotonic two-minute deadline. Completion updates that same cached nonce;
+with a monotonic two-minute deadline. Submission or completion updates that same cached nonce;
 failure, expiry or disposal releases observer ownership without native replay.
 An already available native completion is recorded before expiring an otherwise
 unfinished observation; the manager's independent 125-second total deadline
@@ -125,19 +111,10 @@ These checks exercise real pinned file IPC with synthetic native callbacks. They
 do not start a server or prove native disk completion. Runtime compatibility must
 be checked again when native package hashes change.
 
-`Test-Completion.ps1` compiles the production observer and its boundary tests
-with the Windows Framework compiler. Supply `-RuntimeRoot`, a fresh external
-`-OutputDirectory` and a modern `.NET` `-RuntimeConfiguration` for reading the
-native netstandard 2.1 SDK IL. The tests cover request/generation isolation,
-failure paths, worker ownership, original exception preservation and exact
-rewrites of the admitted native writer/publication IL. They do not replace a
-real loader startup, locked-primary failure, save and restart acceptance run.
+Native acceptance uses both admitted server packages: an uninitialized empty
+world rejects without writing, and an initialized world's manual snapshot is
+copied before shutdown and loaded in a separate process. Normal shutdown saves
+are not used as evidence that the preceding manual save succeeded.
 
-On 2026-10-19 the earlier admission-only extension in an isolated copy of the verified server, with a fresh task-owned
-`-datapath`, loaded this exact Mod through the native loader. The native log
-reported `LanGameSaveControl` and `LanGame.CoreKeeper.Save.dll` with
-`safetyCheck=False`. A single request after 65.4 seconds returned
-`status=dispatched`, `issue=none`, while that isolated server remained running.
-Its owned copied-path processes were then stopped by the test's final cleanup.
-This historical run verifies real loader entry and native queue acceptance. It
-does not verify the subsequently added completion observer or restart/readback.
+Build the production extension against the admitted package with
+`Build-Control.ps1 -Module corekeeper -RuntimeRoot <runtime> -OutputDirectory <external-output>`.

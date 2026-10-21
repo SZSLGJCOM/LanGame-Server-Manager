@@ -1,135 +1,141 @@
 using System;
 using System.Reflection;
+using System.Threading;
 using LanGame.SaveControl;
 
 namespace LanGame.CoreKeeper
 {
-    // All mutation is confined to creating the game's ordinary SerializeWorld
-    // event, once, on IMod.Update. Observers only read existing native objects.
     internal sealed class CoreSaveTarget
     {
-        private const BindingFlags Instance = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        internal readonly object World, Serializer, Filesystem, Platform, File;
-        private readonly object ecs, saves, manager, components;
-        private readonly PropertyInfo worldProperty, loaded;
-        private readonly MethodInfo create, matches, exists, worldId;
-        private readonly FieldInfo trigger;
-        private readonly int id;
-        private readonly Type entityType;
-        private readonly string relativePath;
-        private readonly PropertyInfo nativeSaves, nativeFilesystem;
-        private readonly object serializationGroup, beginCommands;
-        private readonly MethodInfo updateSerialization, updateCommands;
-        internal object Manager { get { return manager; } }
+        private const BindingFlags Instance = BindingFlags.Public | BindingFlags.Instance;
+        private readonly object ecs, world, saves, serializer, serializationGroup, beginCommands, prepareChunks;
+        private readonly PropertyInfo nativeEcs, worldProperty, loaded, closing, pending, unmanaged;
+        private readonly MethodInfo queue, updateSerialization, updateCommands, updateChunks;
+        private readonly MethodInfo readState;
+        private readonly Type stateData, trigger;
+        private readonly FieldInfo lastWrite, state;
+        private readonly object idle;
+        private readonly DateTime previousWrite;
+        private readonly int ownerThread = Thread.CurrentThread.ManagedThreadId;
 
-        internal CoreSaveTarget()
+        internal CoreSaveTarget(string entitiesHash, string componentsHash)
         {
-            Type nativeManager = NativeBinding.Type("Pug.Other", "Manager");
-            ecs = Property(nativeManager, "ecs", BindingFlags.Public | BindingFlags.Static).GetValue(null, null);
+            Type manager = NativeBinding.Type("Pug.Other", "Manager");
+            nativeEcs = Property(manager, "ecs", BindingFlags.Public | BindingFlags.Static);
+            ecs = nativeEcs.GetValue(null, null);
             if (ecs == null) throw new SaveFailure("world_not_ready");
             loaded = Property(ecs.GetType(), "WorldsAreLoaded", Instance);
+            closing = Property(ecs.GetType(), "IsClosing", Instance);
             worldProperty = Property(ecs.GetType(), "ServerWorld", Instance);
-            World = worldProperty.GetValue(ecs, null);
-            if (World == null || !(bool)loaded.GetValue(ecs, null)) throw new SaveFailure("world_not_ready");
-            Type saveType = NativeBinding.Type("Pug.Other", "SaveSystem");
-            saves = System(World, saveType);
-            if (saves == null) throw new SaveFailure("world_not_ready");
-            PropertyInfo pending = Property(saveType, "SaveIsPending", Instance);
-            if (pending.PropertyType != typeof(bool) || (bool)pending.GetValue(saves, null)) throw new SaveFailure("save_busy");
-            Type serializer = NativeBinding.Type("Pug.Other", "SerializeWorldSystem");
-            Serializer = System(World, serializer);
-            if (Serializer == null) throw new SaveFailure("world_not_ready");
-            trigger = Field(serializer, "triggerQ");
-            nativeSaves = Property(nativeManager, "saves", BindingFlags.Public | BindingFlags.Static);
-            nativeFilesystem = Property(nativeManager, "filesystemManager", BindingFlags.Public | BindingFlags.Static);
-            manager = nativeSaves.GetValue(null, null);
-            Filesystem = nativeFilesystem.GetValue(null, null);
-            if (manager == null || Filesystem == null) throw new SaveFailure("world_not_ready");
-            if (!CoreSaveHooks.WriterArmed(Filesystem)) throw new SaveFailure("api_unavailable");
-            Platform = Field(Filesystem.GetType(), "platformImpl").GetValue(Filesystem);
-            if (Platform == null || Platform.GetType() != nativeManager.Assembly.GetType("Pug.Platform.StandaloneFilesystem", true))
-                throw new SaveFailure("api_unavailable");
-            worldId = NativeBinding.Method(manager.GetType(), "GetWorldId", Instance, typeof(int));
-            id = (int)worldId.Invoke(manager, null);
-            Array files = (Array)Field(manager.GetType(), "worldDataFiles").GetValue(manager);
-            if (id < 0 || id >= files.Length) throw new SaveFailure("world_not_ready");
-            File = files.GetValue(id);
-            if ((int)Field(File.GetType(), "fileTypeId").GetValue(File) != 3) throw new SaveFailure("api_unavailable");
-            relativePath = (string)NativeBinding.Method(Filesystem.GetType(), "GetFilePath", Instance,
-                typeof(string), File.GetType()).Invoke(Filesystem, new[] { File });
-            if (String.IsNullOrEmpty(relativePath)) throw new SaveFailure("api_unavailable");
-            object entityManager = Property(World.GetType(), "EntityManager", Instance).GetValue(World, null);
-            Type entities = entityManager.GetType();
-            NativeBinding.VerifyFile(entities.Assembly.Location,
-                "d73687d44b81ceccb1f0416cd373d75e2dc58d8d998ed26310e31f48650a6c1d");
-            Type component = entities.Assembly.GetType("Unity.Entities.ComponentType", true);
-            entityType = entities.Assembly.GetType("Unity.Entities.Entity", true);
-            Type eventType = serializer.GetNestedType("SerializeWorld", BindingFlags.Public | BindingFlags.NonPublic);
-            if (eventType == null) throw new SaveFailure("api_unavailable");
-            Array types = Array.CreateInstance(component, 1);
-            types.SetValue(NativeBinding.Method(component, "op_Implicit", BindingFlags.Public | BindingFlags.Static,
-                component, typeof(Type)).Invoke(null, new object[] { eventType }), 0);
-            components = types;
-            create = NativeBinding.Method(entities, "CreateEntity", Instance, entityType, component.MakeArrayType());
-            exists = NativeBinding.Method(entities, "Exists", Instance, typeof(bool), entityType);
-            matches = NativeBinding.Method(trigger.FieldType, "Matches", Instance, typeof(bool), entityType);
-            // SaveSystem.SaveDone uses this same group/ECB/group sequence to
-            // drain serialization without advancing the simulation clock.
-            // An empty dedicated server has timescale=0, so merely creating
-            // the ordinary save entity can otherwise wait indefinitely.
-            serializationGroup = System(World, NativeBinding.Type("Pug.Other", "SerializationSystemGroup"));
-            beginCommands = System(World, entities.Assembly.GetType("Unity.Entities.BeginSimulationEntityCommandBufferSystem", true));
+            world = worldProperty.GetValue(ecs, null);
+            if (world == null || !(bool)loaded.GetValue(ecs, null) || (bool)closing.GetValue(ecs, null))
+                throw new SaveFailure("world_not_ready");
+            NativeBinding.VerifyFile(world.GetType().Assembly.Location, entitiesHash);
+            Type objects = NativeBinding.Type("Pug.ECS.Components", "ObjectDataCD");
+            NativeBinding.VerifyFile(objects.Assembly.Location, componentsHash);
+            RequireSaveableObjects(objects);
+            saves = System(world, NativeBinding.Type("Pug.Other", "SaveSystem"));
+            serializer = System(world, NativeBinding.Type("Pug.Other", "SerializeWorldSystem"));
+            if (saves == null || serializer == null) throw new SaveFailure("world_not_ready");
+            pending = Property(saves.GetType(), "SaveIsPending", Instance);
+            if ((bool)pending.GetValue(saves, null)) throw new SaveFailure("save_busy");
+            queue = NativeBinding.Method(ecs.GetType(), "QueueNewServerSave", Instance, typeof(bool));
+            lastWrite = serializer.GetType().GetField("LastWorldWrite", Instance);
+            if (lastWrite == null || lastWrite.FieldType != typeof(DateTime)) throw new SaveFailure("api_unavailable");
+            previousWrite = (DateTime)lastWrite.GetValue(serializer);
+            serializationGroup = System(world, NativeBinding.Type("Pug.Other", "SerializationSystemGroup"));
+            beginCommands = System(world, NativeBinding.Type("Unity.Entities", "Unity.Entities.BeginSimulationEntityCommandBufferSystem"));
             if (serializationGroup == null || beginCommands == null) throw new SaveFailure("world_not_ready");
             updateSerialization = NativeBinding.Method(serializationGroup.GetType(), "Update", Instance, typeof(void));
             updateCommands = NativeBinding.Method(beginCommands.GetType(), "Update", Instance, typeof(void));
+            Type handle = NativeBinding.Type("Unity.Entities", "Unity.Entities.SystemHandle");
+            MethodInfo existing = NativeBinding.Method(world.GetType(), "GetExistingSystem", Instance, handle, typeof(Type));
+            prepareChunks = existing.Invoke(world, new object[] { NativeBinding.Type("Pug.Other", "SerializeWorldRunSystem") });
+            unmanaged = Property(world.GetType(), "Unmanaged", Instance);
+            updateChunks = NativeBinding.Method(prepareChunks.GetType(), "Update", Instance, typeof(void), unmanaged.PropertyType);
+            stateData = NativeBinding.Type("Pug.Other", "SerializeWorldDataCD");
+            trigger = NativeBinding.Type("Pug.Other", "SerializeWorldSystem+SerializeWorld");
+            state = stateData.GetField("State", Instance);
+            if (state == null || !state.FieldType.IsEnum) throw new SaveFailure("api_unavailable");
+            idle = Enum.Parse(state.FieldType, "Idle");
+            Type queryType = NativeBinding.Type("Unity.Entities", "Unity.Entities.EntityQuery");
+            MethodInfo singleton = queryType.GetMethod("GetSingleton", Instance, null, Type.EmptyTypes, null);
+            if (singleton == null || !singleton.IsGenericMethodDefinition) throw new SaveFailure("api_unavailable");
+            readState = singleton.MakeGenericMethod(stateData);
         }
 
-        internal void Validate()
+        private void Validate()
         {
-            if (!(bool)loaded.GetValue(ecs, null) || !Object.ReferenceEquals(World, worldProperty.GetValue(ecs, null)) ||
-                !Object.ReferenceEquals(Serializer, System(World, Serializer.GetType())) ||
-                !Object.ReferenceEquals(manager, nativeSaves.GetValue(null, null)) ||
-                !Object.ReferenceEquals(Filesystem, nativeFilesystem.GetValue(null, null)) ||
-                !Object.ReferenceEquals(Platform, Field(Filesystem.GetType(), "platformImpl").GetValue(Filesystem)) ||
-                !File.Equals(((Array)Field(manager.GetType(), "worldDataFiles").GetValue(manager)).GetValue(id)) ||
-                (int)worldId.Invoke(manager, null) != id)
+            if (Thread.CurrentThread.ManagedThreadId != ownerThread ||
+                !Object.ReferenceEquals(ecs, nativeEcs.GetValue(null, null)) ||
+                !(bool)loaded.GetValue(ecs, null) || (bool)closing.GetValue(ecs, null) ||
+                !Object.ReferenceEquals(world, worldProperty.GetValue(ecs, null)) ||
+                !Object.ReferenceEquals(saves, System(world, saves.GetType())) ||
+                !Object.ReferenceEquals(serializer, System(world, serializer.GetType())))
                 throw new SaveFailure("target_changed");
         }
-
-        internal object Submit()
+        internal bool Submit()
         {
             Validate();
-            object entityManager = Property(World.GetType(), "EntityManager", Instance).GetValue(World, null);
-            // QueueNewSave's admitted IL only records this component creation in
-            // an ECB. Immediate native creation gives this request a real Entity
-            // Index+Version before another update can consume the event.
-            return create.Invoke(entityManager, new[] { components });
+            if ((bool)pending.GetValue(saves, null)) throw new SaveFailure("save_busy");
+            return (bool)queue.Invoke(ecs, null);
         }
-
-        internal bool Consumes(object serializer, object entity)
+        private void RequireSaveableObjects(Type objects)
         {
-            if (!Object.ReferenceEquals(serializer, Serializer) || entity == null || entity.GetType() != entityType) return false;
-            Validate();
-            object entityManager = Property(World.GetType(), "EntityManager", Instance).GetValue(World, null);
-            return (bool)exists.Invoke(entityManager, new[] { entity }) &&
-                (bool)matches.Invoke(trigger.GetValue(Serializer), new[] { entity });
+            // A metadata-only new world cannot pass the native loader's
+            // ObjectDataSerializedCD requirement. Do not publish such a save.
+            object query = Query(objects, NativeBinding.Type("Pug.ECS.Components", "DontSerializeCD"));
+            try { if (IsEmpty(query)) throw new SaveFailure("world_not_ready"); }
+            finally { ((IDisposable)query).Dispose(); }
         }
-
-        internal bool SameFile(object value) { return File.Equals(value); }
-        internal void Pump()
+        private object Query(Type required, Type excluded = null)
+        {
+            object manager = Property(world.GetType(), "EntityManager", Instance).GetValue(world, null);
+            Type component = NativeBinding.Type("Unity.Entities", "Unity.Entities.ComponentType");
+            const BindingFlags Static = BindingFlags.Public | BindingFlags.Static;
+            MethodInfo read = NativeBinding.Method(component, "ReadOnly", Static, component, typeof(Type));
+            MethodInfo exclude = NativeBinding.Method(component, "Exclude", Static, component, typeof(Type));
+            Array types = Array.CreateInstance(component, excluded == null ? 1 : 2);
+            types.SetValue(read.Invoke(null, new object[] { required }), 0);
+            if (excluded != null) types.SetValue(exclude.Invoke(null, new object[] { excluded }), 1);
+            Type queryType = NativeBinding.Type("Unity.Entities", "Unity.Entities.EntityQuery");
+            MethodInfo create = NativeBinding.Method(manager.GetType(), "CreateEntityQuery", Instance, queryType, component.MakeArrayType());
+            return create.Invoke(manager, new object[] { types });
+        }
+        private static bool IsEmpty(object query)
+        {
+            return (bool)Property(query.GetType(), "IsEmpty", Instance).GetValue(query, null);
+        }
+        private bool QueueDrained()
+        {
+            object data = Query(stateData);
+            try
+            {
+                if (!idle.Equals(state.GetValue(readState.Invoke(data, null)))) return false;
+            }
+            finally { ((IDisposable)data).Dispose(); }
+            object events = Query(trigger);
+            try { return IsEmpty(events); }
+            finally { ((IDisposable)events).Dispose(); }
+        }
+        internal bool Advance()
         {
             Validate();
+            // This native preparation system normally runs in the simulation
+            // group. Empty servers pause that group, so new chunks otherwise
+            // never become eligible for serialization. Flush the queued event,
+            // prepare its chunks, then use the native SaveDone drain sequence.
+            updateCommands.Invoke(beginCommands, null);
+            updateChunks.Invoke(prepareChunks, new[] { unmanaged.GetValue(world, null) });
             updateSerialization.Invoke(serializationGroup, null);
             updateCommands.Invoke(beginCommands, null);
             updateSerialization.Invoke(serializationGroup, null);
             Validate();
-        }
-        internal string RelativePath() { return relativePath; }
-        internal static FieldInfo Field(Type type, string name)
-        {
-            FieldInfo field = type.GetField(name, Instance);
-            if (field == null) throw new SaveFailure("api_unavailable");
-            return field;
+            // The game sets this after handing bytes to its filesystem queue.
+            // It ends our bounded pump; it is never a disk-completion receipt.
+            // An earlier automatic save can write while our queued event is
+            // still pending. Keep advancing until the native queue is idle.
+            return (DateTime)lastWrite.GetValue(serializer) != previousWrite && QueueDrained();
         }
         private static PropertyInfo Property(Type type, string name, BindingFlags flags)
         {

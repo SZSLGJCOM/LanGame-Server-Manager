@@ -342,6 +342,12 @@ namespace LanGame.SaveControl
                 {
                     SaveReceipt observed = adapter.Observe();
                     if (observed == SaveReceipt.Completed) response = Reply(pendingNonce, "completed", "none");
+                    else if (observed == SaveReceipt.Dispatched)
+                    {
+                        string issue = adapter.UnconfirmedIssue == null ? "none" : adapter.UnconfirmedIssue();
+                        if (!ValidUnconfirmedIssue(issue)) throw new SaveFailure("native_outcome_unknown");
+                        response = Reply(pendingNonce, "dispatched", issue);
+                    }
                     else if (observed == SaveReceipt.Failed) response = FailedReply(pendingNonce);
                     else if (observed != SaveReceipt.Pending || elapsedMilliseconds - pendingSince >= CompletionBudgetMilliseconds)
                         response = Reply(pendingNonce, "unknown", "native_outcome_unknown");

@@ -14,10 +14,26 @@ $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $references=[Collections.Generic.List[string]]::new()
 if ($Module -eq 'corekeeper') {
     $expected=@{
-        'CoreKeeperServer_Data/Managed/PugMod.SDK.Runtime.dll'='6f1bd3ea3c46c7e6392c42f27bca6baf1bfb13a4eaa89756941eb51e193e7664'
+        'CoreKeeperServer_Data/Managed/PugMod.SDK.Runtime.dll'='ed2157a69174d6e85331d2744e3e3c9c43fa7e1e69be344aac1158c3f711ec5d'
         'CoreKeeperServer_Data/Managed/UnityEngine.CoreModule.dll'='d184eb633e67cd97d5a0eb0faf3a8f05bdfe17e56c3cef5595cf15c685030aa6'
         'CoreKeeperServer_Data/Managed/netstandard.dll'='6ae62e082dc494a2433984177f60ca4db5fae69b1f360a8b33754172b310b8c5'
-        'CoreKeeperServer_Data/Managed/0Harmony.dll'='01fc6fcb6408811b72e25bfc3628cca08b27473758966777254500d07d170b4e'
+    }
+    $primary='CoreKeeperServer_Data/Managed/Pug.Other.dll'
+    $entities='CoreKeeperServer_Data/Managed/Unity.Entities.dll'
+    $components='CoreKeeperServer_Data/Managed/Pug.ECS.Components.dll'
+    switch ((Get-FileHash -LiteralPath (Join-Path $runtime $primary) -Algorithm SHA256).Hash.ToLowerInvariant()) {
+        '631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0' {
+            $expected[$primary]='631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0'
+            $expected[$entities]='e4f03d5dcc4547f2730218fd128e918a26d24590f31b827d334c09a0de2e762a'
+            $expected[$components]='c2822ba48eec76430167963ddfd885eb2d5225cf5193850f1833583a27401d0f'
+        }
+        '042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938' {
+            $expected[$primary]='042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938'
+            $expected[$entities]='d73687d44b81ceccb1f0416cd373d75e2dc58d8d998ed26310e31f48650a6c1d'
+            $expected[$components]='564660969f1c3630fbe6e133e118ced32906682bc8b53839a139211cc4fd177f'
+            $expected['CoreKeeperServer_Data/Managed/PugMod.SDK.Runtime.dll']='6f1bd3ea3c46c7e6392c42f27bca6baf1bfb13a4eaa89756941eb51e193e7664'
+        }
+        default {throw 'Unsupported Core Keeper native package.'}
     }
     $source='CoreKeeperSave.cs'; $assembly='LanGame.CoreKeeper.Save.dll'
 } else {
@@ -42,7 +58,7 @@ if ($Module -eq 'corekeeper') {
 foreach($path in ($expected.Keys | Sort-Object)) {
     $file=Join-Path $runtime $path
     if ((Get-FileHash -LiteralPath $file -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected[$path]) {throw "SDK identity mismatch: $path"}
-    $references.Add('/reference:'+$file)
+    if ($Module -ne 'corekeeper' -or $path -notin @($primary,$entities,$components)) {$references.Add('/reference:'+$file)}
 }
 $arguments=@('/nologo','/noconfig','/target:library','/langversion:5','/warnaserror+')
 if ($Module -eq 'corekeeper') {foreach($name in @('System.dll','System.Core.dll')) {$arguments+='/reference:'+(Join-Path (Split-Path $compiler) $name)}}
@@ -52,7 +68,7 @@ $arguments+=$references.ToArray()
 if ($Module -eq 'sonsoftheforest') {$arguments+='/resource:'+(Join-Path $repository 'modules/sonsoftheforest/control/manifest.json')+',LanGame.Sons.manifest.json'}
 $arguments+=@((Join-Path $PSScriptRoot 'SaveProtocol.cs'),(Join-Path $PSScriptRoot 'SaveFiles.cs'),(Join-Path $repository "modules/$Module/control/$source"))
 if ($Module -eq 'corekeeper') {
-    foreach($name in @('CoreKeeperSaveNative.cs','CoreKeeperSaveCompletion.cs','CoreKeeperSaveHooks.cs')) {$arguments+=Join-Path $PSScriptRoot $name}
+    $arguments+=Join-Path $PSScriptRoot 'CoreKeeperSaveNative.cs'
 } elseif ($Module -eq 'sonsoftheforest') {
     $arguments+=Join-Path $repository 'modules/sonsoftheforest/control/SonsSaveCompletion.cs'
 }
