@@ -565,3 +565,122 @@ fn unrelated_winmm_forwarding_proxy_is_preserved_before_loader_publication() {
     assert_eq!(fixture.read("winmm.dll"), b"external forwarding proxy");
     assert!(!fixture.0.join(".langame-ue4ss-loader.json").exists());
 }
+
+#[test]
+fn conan_layout_matches_the_native_fname_property_slot() {
+    let conan = Profile::get("conanexiles").unwrap();
+    let layout = include_bytes!("../../../../../modules/conanexiles/control/VTableLayout.ini");
+    assert_eq!(
+        hash(layout),
+        "20bd7529e536c9267b60f8b13990785401bf3cb4c091d2f59dd94105ccba2c10"
+    );
+    assert_eq!(
+        archive::expected(conan).get("ue4ss/VTableLayout.ini"),
+        Some(&hash(layout))
+    );
+    let mut section = "";
+    let mut fields = Vec::new();
+    let mut properties = Vec::new();
+    for line in std::str::from_utf8(layout).unwrap().lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            section = line;
+        } else if !line.is_empty() && !line.starts_with(';') {
+            match section {
+                "[FField]" => fields.push(line),
+                "[FProperty]" => properties.push(line),
+                _ => {}
+            }
+        }
+    }
+    // Both admitted Conan images put the native return-4 implementation at
+    // slot 46. Slot 45 returns the vtable pointer, not an alignment.
+    let slot = fields.len() - 1
+        + properties
+            .iter()
+            .position(|name| *name == "GetMinAlignment")
+            .unwrap();
+    assert_eq!(slot, 46);
+    for id in [
+        "abioticfactor",
+        "returntomoria",
+        "nightingale",
+        "scum",
+        "windrose",
+    ] {
+        let other = Profile::get(id).unwrap();
+        assert!(!archive::expected(other).contains_key("ue4ss/VTableLayout.ini"));
+    }
+}
+
+#[test]
+fn conan_layout_upgrade_is_owned_recoverable_and_preserves_custom_files() {
+    let conan = Profile::get("conanexiles").unwrap();
+    let layout = include_bytes!("../../../../../modules/conanexiles/control/VTableLayout.ini");
+    let mut prior_files = payload(1);
+    prior_files.remove("dwmapi.dll");
+    prior_files.insert("dsound.dll".into(), vec![1; 12]);
+    let mut updated = prior_files.clone();
+    updated.insert("ue4ss/VTableLayout.ini".into(), layout.to_vec());
+    for scenario in ["upgrade", "interrupted", "custom", "incomplete_receipt"] {
+        let fixture = Fixture::new();
+        installation::publish_fixture(&fixture.0, conan, &prior_files, publish).unwrap();
+        if scenario == "custom" {
+            fs::write(fixture.0.join("ue4ss/VTableLayout.ini"), b"operator layout").unwrap();
+        } else if scenario == "incomplete_receipt" {
+            let mut receipt: serde_json::Value =
+                serde_json::from_slice(&fixture.read(".langame-ue4ss-loader.json")).unwrap();
+            receipt["files"]
+                .as_object_mut()
+                .unwrap()
+                .remove("ue4ss/LICENSE");
+            fs::write(
+                fixture.0.join(".langame-ue4ss-loader.json"),
+                serde_json::to_vec(&receipt).unwrap(),
+            )
+            .unwrap();
+        }
+        let prior_receipt = fixture.read(".langame-ue4ss-loader.json");
+        let mut layout_written = false;
+        let result =
+            installation::publish_fixture(&fixture.0, conan, &updated, |path, previous, bytes| {
+                if scenario == "interrupted" && layout_written {
+                    return Err("publication interrupted after layout".into());
+                }
+                publish(path, previous, bytes)?;
+                layout_written |= path == fixture.0.join("ue4ss/VTableLayout.ini");
+                Ok(())
+            });
+        if matches!(scenario, "custom" | "incomplete_receipt") {
+            assert!(result.is_err(), "{scenario}");
+            assert_eq!(fixture.read(".langame-ue4ss-loader.json"), prior_receipt);
+            if scenario == "custom" {
+                assert_eq!(fixture.read("ue4ss/VTableLayout.ini"), b"operator layout");
+            } else {
+                assert!(!fixture.0.join("ue4ss/VTableLayout.ini").exists());
+            }
+            continue;
+        }
+        if scenario == "interrupted" {
+            assert!(result.is_err());
+            assert!(layout_written);
+            assert_eq!(
+                installation::publish_fixture(&fixture.0, conan, &updated, publish).unwrap(),
+                InstallOutcome::Installed
+            );
+        } else {
+            assert_eq!(result.unwrap(), InstallOutcome::Installed);
+        }
+        assert_eq!(fixture.read("ue4ss/VTableLayout.ini"), layout);
+        for (name, bytes) in &prior_files {
+            assert_eq!(&fixture.read(name), bytes);
+        }
+        assert_eq!(
+            installation::publish_fixture(&fixture.0, conan, &updated, |_, _, _| {
+                panic!("A complete Conan layout must not be republished")
+            })
+            .unwrap(),
+            InstallOutcome::Reused
+        );
+    }
+}

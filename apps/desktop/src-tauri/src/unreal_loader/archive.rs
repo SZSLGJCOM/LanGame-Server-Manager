@@ -43,6 +43,9 @@ pub(super) fn prepare(profile: Profile, bytes: &[u8]) -> Result<PreparedLoader, 
     for (path, license) in profile::licenses() {
         files.insert(path.into(), license.to_vec());
     }
+    if let Some(layout) = profile.vtable_layout() {
+        files.insert(profile::VTABLE_LAYOUT.into(), layout.to_vec());
+    }
     Ok(PreparedLoader {
         module_id: profile.id.into(),
         files,
@@ -112,6 +115,9 @@ pub(super) fn expected(profile: Profile) -> BTreeMap<String, String> {
     }
     for (name, bytes) in profile::licenses() {
         expected.insert(name.into(), hash(bytes));
+    }
+    if let Some(layout) = profile.vtable_layout() {
+        expected.insert(profile::VTABLE_LAYOUT.into(), hash(layout));
     }
     expected
 }

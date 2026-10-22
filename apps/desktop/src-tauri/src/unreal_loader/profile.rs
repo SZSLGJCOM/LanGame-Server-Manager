@@ -1,5 +1,7 @@
 use super::*;
 
+pub(super) const VTABLE_LAYOUT: &str = "ue4ss/VTableLayout.ini";
+
 #[derive(Clone, Copy)]
 pub(super) struct Profile {
     pub id: &'static str,
@@ -90,6 +92,11 @@ impl Profile {
             }
             _ => include_str!("../../../../../modules/abioticfactor/control/UE4SS-settings.ini"),
         }
+    }
+    pub fn vtable_layout(self) -> Option<&'static [u8]> {
+        (self.id == "conanexiles").then_some(include_bytes!(
+            "../../../../../modules/conanexiles/control/VTableLayout.ini"
+        ))
     }
     pub fn proxy_bytes(self) -> Option<&'static [u8]> {
         #[cfg(windows)]

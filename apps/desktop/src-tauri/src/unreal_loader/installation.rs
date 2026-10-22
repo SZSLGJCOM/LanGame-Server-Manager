@@ -29,6 +29,16 @@ fn decode(
                     && hash.bytes().all(|byte| byte.is_ascii_hexdigit())
             })
     };
+    // Existing Conan installations predate the required upstream layout. Only
+    // that single missing member may extend an otherwise complete owned set.
+    // inspect still checks every existing byte before any publication.
+    let complete = |files: &BTreeMap<String, String>| {
+        files.len() == allowed.len()
+            || (profile.id == "conanexiles"
+                && allowed.contains_key(profile::VTABLE_LAYOUT)
+                && !files.contains_key(profile::VTABLE_LAYOUT)
+                && files.len() + 1 == allowed.len())
+    };
     if receipt.schema != 1
         || receipt.module_id != profile.id
         || receipt.archive_sha256 != ARCHIVE_HASH
@@ -36,8 +46,8 @@ fn decode(
         || receipt
             .pending_files
             .as_ref()
-            .is_some_and(|files| files.len() != allowed.len() || !valid(files))
-        || (receipt.pending_files.is_none() && receipt.files.len() != allowed.len())
+            .is_some_and(|files| !complete(files) || !valid(files))
+        || (receipt.pending_files.is_none() && !complete(&receipt.files))
     {
         return Err(
             "The UE4SS ownership receipt does not match this game; existing files were preserved."
