@@ -148,40 +148,49 @@ pub(super) async fn ensure_for_start<L: crate::state::StorageContextTaskLease>(
     storage: &StorageBootstrap,
     details: &InstanceDetails,
     operation: &L,
-) -> Result<Vec<(String, String)>, String> {
+) -> Result<Option<Vec<(String, String)>>, String> {
     if !requires_automatic_setup(&details.summary.module_id) {
-        return Ok(Vec::new());
+        return Ok(None);
     }
-    ensure_installed(storage, details, operation).await?;
+    if !ensure_installed(storage, details, operation).await? {
+        return Ok(None);
+    }
     let details = details.clone();
     spawn_blocking_storage_context_task(operation, move || startup_environment(&details))
         .await
         .map_err(|_| "Native save startup session worker failed.")?
+        .map(Some)
 }
 
 async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
     storage: &StorageBootstrap,
     details: &InstanceDetails,
     operation: &L,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let game = profile(&details.summary.module_id)?;
     stopped(details)?;
     validate_inherited_environment(game)?;
     let runtime = root(details)?;
     let check = runtime.clone();
     let check_details = details.clone();
-    let needs_redloader = spawn_blocking_storage_context_task(operation, move || {
+    let preparation = spawn_blocking_storage_context_task(operation, move || {
         process::ensure_instance_scope(&check_details, &check, game, None)?;
-        payload::verify_native(&check, game)?;
+        let Some(_native) = payload::pin_supported_native(&check, game)? else {
+            payload::deactivate_owned(&check, game)?;
+            return Ok(None);
+        };
         payload::inspect(&check, game)?;
         if game.module == "sonsoftheforest" {
-            redloader::requires_archive(&check)
+            redloader::requires_archive(&check).map(Some)
         } else {
-            Ok(false)
+            Ok(Some(false))
         }
     })
     .await
     .map_err(|_| "Native save inspection worker failed.")??;
+    let Some(needs_redloader) = preparation else {
+        return Ok(false);
+    };
     if game.module == "vrising" {
         ensure_bepinex_loader(
             storage,
@@ -197,7 +206,7 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
         None
     };
     let install_details = details.clone();
-    spawn_blocking_storage_context_task(operation, move || {
+    spawn_blocking_storage_context_task(operation, move || -> Result<(), String> {
         process::ensure_instance_scope(&install_details, &runtime, game, None)?;
         if let Some(archive) = archive {
             redloader::install(&runtime, &archive)?;
@@ -208,7 +217,8 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
         Ok(())
     })
     .await
-    .map_err(|_| "Native save preparation worker failed.")?
+    .map_err(|_| "Native save preparation worker failed.")??;
+    Ok(true)
 }
 
 /// Reuse an intact reviewed loader without network access. The fixed release
@@ -344,7 +354,7 @@ where
 
 #[cfg(test)]
 #[path = "commands_native_save_control_tests.rs"]
-mod tests;
+pub(super) mod tests;
 
 #[cfg(all(test, windows))]
 #[path = "commands_managed_save_native_installation_tests.rs"]

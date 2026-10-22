@@ -1,6 +1,9 @@
 use super::*;
 use std::path::PathBuf;
 
+#[path = "commands_dragonwilds_startup_tests.rs"]
+mod startup;
+
 const PROXY: &[u8] = b"MZfixture-proxy";
 const REBUILT_PROXY: &[u8] = b"MZsame-reviewed-source-different-PE-output";
 const SERVER: &[u8] = b"MZfixture-shipping";
@@ -54,7 +57,7 @@ impl Fixture {
     }
 
     fn inspect(&self) -> Result<Preparation, String> {
-        self.with_release(|release| inspect_release(&self.root, PROXY, &digest(SERVER), release))
+        self.with_release(|release| inspect_release(&self.root, PROXY, &[&digest(SERVER)], release))
     }
 
     fn install(&self) -> Result<(), String> {
@@ -122,7 +125,7 @@ impl Drop for Fixture {
 #[test]
 fn fresh_verified_server_needs_download_and_unknown_build_stays_native() {
     let fixture = Fixture::new();
-    assert_eq!(fixture.inspect().unwrap(), Preparation::Download);
+    assert_eq!(fixture.inspect().unwrap(), Preparation::NeedsInstall);
     fs::write(
         fixture
             .root
@@ -197,7 +200,7 @@ fn rebuilt_bundled_proxy_keeps_complete_verified_existing_installation_ready() {
     let receipt = fs::read(fixture.root.join(RECEIPT)).unwrap();
     fixture.with_release(|release| {
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
             Preparation::Ready
         );
         install_payload(
@@ -226,15 +229,15 @@ fn retired_proxy_restores_its_recorded_bytes_after_application_rebuild() {
     fs::write(&shipping, b"MZunknown-update").unwrap();
     fixture.with_release(|release| {
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
             Preparation::UnsupportedBuild
         );
         assert!(!fixture.proxy().exists());
         assert_eq!(fs::read(fixture.loader().join(PROXY_COPY)).unwrap(), PROXY);
         fs::write(&shipping, SERVER).unwrap();
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
-            Preparation::Download
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
+            Preparation::NeedsInstall
         );
         install_payload(
             &fixture.root,
@@ -246,7 +249,7 @@ fn retired_proxy_restores_its_recorded_bytes_after_application_rebuild() {
         )
         .unwrap();
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
             Preparation::Ready
         );
     });
@@ -274,8 +277,8 @@ fn rebuilt_application_recovers_from_intent_before_any_proxy_copy_was_written() 
     assert!(!fixture.proxy().exists());
     fixture.with_release(|release| {
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
-            Preparation::Download
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
+            Preparation::NeedsInstall
         );
         install_payload(
             &fixture.root,
@@ -287,7 +290,7 @@ fn rebuilt_application_recovers_from_intent_before_any_proxy_copy_was_written() 
         )
         .unwrap();
         assert_eq!(
-            inspect_release(&fixture.root, REBUILT_PROXY, &digest(SERVER), release).unwrap(),
+            inspect_release(&fixture.root, REBUILT_PROXY, &[&digest(SERVER)], release).unwrap(),
             Preparation::Ready
         );
     });
@@ -337,7 +340,7 @@ fn incomplete_intent_and_staging_are_recovered_before_proxy_publication() {
         b"partial unpublished copy",
     )
     .unwrap();
-    assert_eq!(fixture.inspect().unwrap(), Preparation::Download);
+    assert_eq!(fixture.inspect().unwrap(), Preparation::NeedsInstall);
     assert!(!fixture.proxy().exists());
     fixture.install().unwrap();
     assert_eq!(fixture.inspect().unwrap(), Preparation::Ready);
@@ -361,7 +364,7 @@ fn interruption_after_loader_or_proxy_publication_can_finalize() {
         if !proxy_published {
             fs::remove_file(fixture.proxy()).unwrap();
         }
-        assert_eq!(fixture.inspect().unwrap(), Preparation::Download);
+        assert_eq!(fixture.inspect().unwrap(), Preparation::NeedsInstall);
         fixture.install().unwrap();
         assert_eq!(fixture.inspect().unwrap(), Preparation::Ready);
         assert!(!fixture.root.join(INTENT).exists());
@@ -419,7 +422,7 @@ fn updated_game_retires_only_owned_proxy_and_supported_build_can_restore_it() {
     assert!(fixture.loader().join("UE4SS.dll").exists());
     assert_eq!(fixture.inspect().unwrap(), Preparation::UnsupportedBuild);
     fs::write(&shipping, SERVER).unwrap();
-    assert_eq!(fixture.inspect().unwrap(), Preparation::Download);
+    assert_eq!(fixture.inspect().unwrap(), Preparation::NeedsInstall);
     fixture.install().unwrap();
     assert_eq!(fixture.inspect().unwrap(), Preparation::Ready);
 }
@@ -452,27 +455,35 @@ fn zip_size_digest_and_selected_file_digest_are_independently_checked() {
     let hash = digest(&fs::read(&archive).unwrap());
     fixture.with_release(|release| {
         assert!(
-            read_archive(&archive, size + 1, &hash, release)
+            read_archive(&fs::read(&archive).unwrap(), size + 1, &hash, release)
                 .unwrap_err()
                 .contains("size or SHA-256")
         );
         assert!(
-            read_archive(&archive, size, &"0".repeat(64), release)
+            read_archive(&fs::read(&archive).unwrap(), size, &"0".repeat(64), release)
                 .unwrap_err()
                 .contains("size or SHA-256")
         );
         let altered = [("UE4SS.dll", fixture.payload["UE4SS.dll"].len(), "invalid")];
         assert!(
-            read_archive(&archive, size, &hash, &altered)
+            read_archive(&fs::read(&archive).unwrap(), size, &hash, &altered)
                 .unwrap_err()
                 .contains("payload checksum")
         );
         assert_eq!(
-            read_archive(&archive, size, &hash, release).unwrap(),
+            read_archive(&fs::read(&archive).unwrap(), size, &hash, release).unwrap(),
             fixture.payload
         );
     });
-    assert!(read_archive(&archive, ARCHIVE_BYTES, ARCHIVE_SHA, RELEASE).is_err());
+    assert!(
+        read_archive(
+            &fs::read(&archive).unwrap(),
+            ARCHIVE_BYTES,
+            ARCHIVE_SHA,
+            RELEASE
+        )
+        .is_err()
+    );
     assert!(!fixture.proxy().exists());
 }
 
@@ -482,7 +493,13 @@ fn only_reviewed_archive_members_are_read_and_installed() {
     let archive = fixture.archive(true);
     let body = fs::read(&archive).unwrap();
     fixture.with_release(|release| {
-        let payload = read_archive(&archive, body.len() as u64, &digest(&body), release).unwrap();
+        let payload = read_archive(
+            &fs::read(&archive).unwrap(),
+            body.len() as u64,
+            &digest(&body),
+            release,
+        )
+        .unwrap();
         assert_eq!(payload, fixture.payload);
         install_payload(
             &fixture.root,
@@ -512,4 +529,22 @@ fn invalid_ownership_and_non_pe_programs_fail_closed() {
     .unwrap();
     assert!(fixture.inspect().is_err());
     assert!(!fixture.proxy().exists());
+}
+
+#[test]
+fn player_query_accepts_only_the_reviewed_shipping_candidates() {
+    let fixture = Fixture::new();
+    let next = b"MZ-reviewed-next-shipping";
+    let old_hash = digest(SERVER);
+    let next_hash = digest(next);
+    let supported = [old_hash.as_str(), next_hash.as_str()];
+    assert!(program_supported(&fixture.root, &supported).unwrap());
+    let path = fixture
+        .root
+        .join(WIN64)
+        .join("RSDragonwildsServer-Win64-Shipping.exe");
+    fs::write(&path, next).unwrap();
+    assert!(program_supported(&fixture.root, &supported).unwrap());
+    fs::write(path, b"MZ-unreviewed-next-shipping").unwrap();
+    assert!(!program_supported(&fixture.root, &supported).unwrap());
 }

@@ -18,7 +18,7 @@ fn unreal_world_save_installation_manifest_accepts_only_the_two_owned_files() {
 #[test]
 #[cfg(windows)]
 fn native_dll_installations_keep_game_specific_ownership_and_preserve_external_edits() {
-    for game in [Game::Moria, Game::Nightingale, Game::Conan, Game::Scum] {
+    for game in [Game::Nightingale, Game::Conan, Game::Scum] {
         let root = std::env::temp_dir().join(format!(
             "langame-native-save-payload-{}",
             uuid::Uuid::new_v4()
@@ -51,40 +51,125 @@ fn native_dll_installations_keep_game_specific_ownership_and_preserve_external_e
 }
 
 #[test]
-#[cfg(windows)]
-fn moria_two_file_owned_mod_automatically_acquires_only_its_native_dll() {
+fn moria_owned_native_bridge_retirement_recovers_and_preserves_external_edits() {
     let root = std::env::temp_dir().join(format!(
-        "langame-moria-save-upgrade-{}",
+        "langame-moria-save-retirement-{}",
         uuid::Uuid::new_v4()
     ));
     fs::create_dir(&root).unwrap();
     let game = Game::Moria;
     let directory = root.join(mod_dir(game));
     fs::create_dir_all(directory.join("Scripts")).unwrap();
-    fs::write(directory.join("Scripts/main.lua"), b"previous owned policy").unwrap();
-    fs::write(directory.join("enabled.txt"), b"").unwrap();
-    let files = BTreeMap::from([
-        ("Scripts/main.lua".into(), hash(b"previous owned policy")),
-        ("enabled.txt".into(), hash(b"")),
-    ]);
+    fs::create_dir_all(directory.join("native")).unwrap();
+    let old = [
+        ("Scripts/main.lua", &b"previous policy"[..]),
+        ("enabled.txt", &b""[..]),
+        (RETIRED_MORIA_BRIDGE, &b"previous owned bridge"[..]),
+    ];
+    for (name, bytes) in old {
+        fs::write(directory.join(name), bytes).unwrap();
+    }
     let owner = Ownership {
         protocol: 1,
         module_id: game.id().into(),
-        files,
+        files: old
+            .into_iter()
+            .map(|(name, bytes)| (name.into(), hash(bytes)))
+            .collect(),
         pending_files: None,
     };
     fs::write(root.join(OWNER), serde_json::to_vec(&owner).unwrap()).unwrap();
     assert!(owned(game, &root).unwrap());
+    verify_owned_mods(game, &root).unwrap();
+    let bridge = directory.join(RETIRED_MORIA_BRIDGE);
+    fs::write(&bridge, b"operator edit").unwrap();
+    assert!(verify_owned_mods(game, &root).is_err());
+    let original_owner = fs::read(root.join(OWNER)).unwrap();
+    assert!(publish_payload(game, &root, b"current policy").is_err());
+    assert_eq!(fs::read(&bridge).unwrap(), b"operator edit");
+    assert_eq!(fs::read(root.join(OWNER)).unwrap(), original_owner);
+    fs::write(&bridge, b"previous owned bridge").unwrap();
+    assert!(
+        publish_payload_with(game, &root, b"current policy", |path, before, after| {
+            if path == root.join(OWNER) {
+                return Err("interrupted before intent publication".into());
+            }
+            publish(path, before, after)
+        })
+        .is_err()
+    );
+    assert!(!bridge.exists());
+    assert!(owned(game, &root).unwrap());
+    verify_owned_mods(game, &root).unwrap();
     publish_payload(game, &root, b"current policy").unwrap();
-    let (name, expected) = game.native_payload().unwrap();
-    assert_eq!(fs::read(directory.join(name)).unwrap(), expected);
     assert_eq!(
         fs::read(directory.join("Scripts/main.lua")).unwrap(),
         b"current policy"
     );
     let record: Ownership = serde_json::from_slice(&fs::read(root.join(OWNER)).unwrap()).unwrap();
-    assert_eq!(record.files.len(), 3);
-    assert!(record.pending_files.is_none());
+    assert_eq!(record.files.len(), 2);
+    assert!(record.pending_files.is_none() && game.native_payload().is_none());
+    fs::write(&bridge, b"unowned replacement").unwrap();
+    assert!(publish_payload(game, &root, b"next policy").is_err());
+    assert_eq!(fs::read(&bridge).unwrap(), b"unowned replacement");
+    assert_eq!(
+        fs::read(directory.join("Scripts/main.lua")).unwrap(),
+        b"current policy"
+    );
+    assert_eq!(root.parent(), Some(std::env::temp_dir().as_path()));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn loader_deactivation_requires_only_unchanged_owned_save_mods() {
+    let root = std::env::temp_dir().join(format!(
+        "langame-save-mod-admission-{}",
+        uuid::Uuid::new_v4()
+    ));
+    fs::create_dir(&root).unwrap();
+    let game = Game::Abiotic;
+    verify_owned_mods(game, &root).unwrap();
+    publish_payload(game, &root, b"owned policy").unwrap();
+    verify_owned_mods(game, &root).unwrap();
+    let owner_path = root.join(OWNER);
+    let original = fs::read(&owner_path).unwrap();
+    let mut owner = decode(game, &original).unwrap();
+    owner.pending_files = Some(BTreeMap::from([
+        ("Scripts/main.lua".into(), hash(b"pending policy")),
+        ("enabled.txt".into(), hash(b"")),
+    ]));
+    let pending = serde_json::to_vec(&owner).unwrap();
+    fs::write(&owner_path, &pending).unwrap();
+    let directory = root.join(mod_dir(game));
+    let script = directory.join("Scripts/main.lua");
+    fs::write(&script, b"pending policy").unwrap();
+    verify_owned_mods(game, &root).unwrap();
+    fs::remove_file(directory.join("enabled.txt")).unwrap();
+    verify_owned_mods(game, &root).unwrap();
+    fs::write(&script, b"operator edit").unwrap();
+    assert!(verify_owned_mods(game, &root).is_err());
+    assert_eq!(fs::read(&script).unwrap(), b"operator edit");
+    assert_eq!(fs::read(&owner_path).unwrap(), pending);
+    fs::write(&script, b"pending policy").unwrap();
+    for foreign in [
+        directory.join("user.lua"),
+        directory.parent().unwrap().join("mods.txt"),
+    ] {
+        fs::write(&foreign, b"operator content").unwrap();
+        assert!(verify_owned_mods(game, &root).is_err());
+        assert_eq!(fs::read(&foreign).unwrap(), b"operator content");
+        fs::remove_file(foreign).unwrap();
+    }
+    let query = directory.parent().unwrap().join("LgsmPlayerQuery");
+    fs::create_dir(&query).unwrap();
+    assert!(verify_owned_mods(game, &root).is_err());
+    fs::remove_dir(&query).unwrap();
+    fs::remove_file(&owner_path).unwrap();
+    assert!(verify_owned_mods(game, &root).is_err());
+    owner.module_id = Game::Conan.id().into();
+    fs::write(&owner_path, serde_json::to_vec(&owner).unwrap()).unwrap();
+    assert!(verify_owned_mods(game, &root).is_err());
+    assert_eq!(fs::read(&script).unwrap(), b"pending policy");
     assert_eq!(root.parent(), Some(std::env::temp_dir().as_path()));
     fs::remove_dir_all(root).unwrap();
 }

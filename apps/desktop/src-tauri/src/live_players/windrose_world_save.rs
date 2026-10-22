@@ -12,6 +12,7 @@ use tokio::sync::OwnedMutexGuard;
 #[path = "windrose_save_installation.rs"]
 mod installation;
 use super::unreal_save_process as process;
+pub(crate) use installation::verify_owned_mods;
 const PROFILE: process::GameProfile = process::GameProfile::Windrose;
 const DLL: &[u8] = include_bytes!(concat!(
     env!("OUT_DIR"),

@@ -7,6 +7,7 @@ $fixtureRepository = Join-Path $fixture 'repo with spaces'
 $fixtureScripts = Join-Path $fixtureRepository 'scripts'
 [IO.Directory]::CreateDirectory($fixtureScripts) | Out-Null
 $builders = @(
+    @{ Name = 'ue4ss-runtime'; Script = 'build_ue4ss_runtime.ps1'; Leaf = 'ue4ss-runtime'; Stop = 'LANGAME_UE4SS_ARCHIVE requires an absolute archive path.' },
     @{ Name = 'enshrouded'; Script = 'build_enshrouded_control.ps1'; Leaf = 'enshrouded-control'; Stop = 'MSVC C++ Build Tools are required.' },
     @{ Name = 'valheim'; Script = 'build_valheim_control.ps1'; Leaf = 'valheim-control'; Stop = 'Valheim control requires the Windows .NET Framework C# compiler.' },
     @{ Name = 'dragonwilds'; Script = 'build_dragonwilds_player_query.ps1'; Leaf = 'dragonwilds-player-query'; Stop = 'MSVC C++ Build Tools are required.' },
@@ -28,6 +29,7 @@ if (Test-Path -LiteralPath $helper) { Copy-Item -LiteralPath $helper -Destinatio
 $extensions = Join-Path $fixtureRepository 'modules/runescapedragonwilds/extensions'
 [IO.Directory]::CreateDirectory($extensions) | Out-Null
 Copy-Item -LiteralPath (Join-Path $repository 'modules/runescapedragonwilds/extensions/proxy-sources.json') -Destination $extensions
+$savedArchive = $env:LANGAME_UE4SS_ARCHIVE
 $savedCargoOut = $env:OUT_DIR
 $savedWindows = $env:WINDIR
 $savedProgramFiles = ${env:ProgramFiles(x86)}
@@ -38,8 +40,8 @@ function Test-BuilderPath($Builder, [string]$Name, [string]$Path, [bool]$Allowed
     $message = ''
     try { & (Join-Path $fixtureScripts $Builder.Script) -OutDir $Path | Out-Null }
     catch { $message = $_.Exception.Message }
-    # Every accepted path must reach a known, missing toolchain. Neither a native
-    # compiler nor a download can run in this fixture, even on a developer PC.
+    # Accepted paths must reach the missing toolchain or invalid archive input.
+    # Neither a compiler nor a download can run in this fixture.
     $passed = if ($Allowed) { $message -eq $Builder.Stop } else { $message -ne '' -and $message -ne $Builder.Stop }
     $checks.Add([pscustomobject]@{ name = $Builder.Name + '/' + $Name; passed = $passed; detail = $message })
 }
@@ -49,6 +51,7 @@ $cargoJunction = Join-Path $fixtureRepository 'target'
 $junctionTarget = Join-Path $fixture 'junction-target'
 [IO.Directory]::CreateDirectory($junctionTarget) | Out-Null
 try {
+    $env:LANGAME_UE4SS_ARCHIVE = 'relative-fixture.zip'
     $env:WINDIR = Join-Path $fixture 'missing-windows'
     ${env:ProgramFiles(x86)} = Join-Path $fixture 'missing-toolchain'
     foreach ($builder in $builders) {
@@ -101,6 +104,7 @@ try {
         Test-BuilderPath $builder 'file-ancestor' (Join-Path $fileAncestor $builder.Leaf) $false
     }
 } finally {
+    $env:LANGAME_UE4SS_ARCHIVE = $savedArchive
     $env:OUT_DIR = $savedCargoOut
     $env:WINDIR = $savedWindows
     ${env:ProgramFiles(x86)} = $savedProgramFiles

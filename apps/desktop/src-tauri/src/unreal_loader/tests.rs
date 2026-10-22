@@ -24,6 +24,25 @@ impl Drop for Fixture {
 fn profile() -> Profile {
     Profile::get("returntomoria").unwrap()
 }
+
+#[cfg(windows)]
+#[tokio::test]
+async fn bundled_runtime_prepares_every_supported_game_without_downloads() {
+    for module in [
+        "abioticfactor",
+        "returntomoria",
+        "nightingale",
+        "conanexiles",
+        "scum",
+        "windrose",
+    ] {
+        let prepared = prepare(module).await.unwrap();
+        assert_eq!(prepared.module_id, module);
+        assert_eq!(hash(&prepared.files["ue4ss/UE4SS.dll"]), CORE_HASH);
+        assert!(!prepared.files["ue4ss/LICENSE"].is_empty());
+    }
+}
+
 fn payload(version: u8) -> BTreeMap<String, Vec<u8>> {
     BTreeMap::from([
         ("ue4ss/UE4SS.dll".into(), vec![version; 20]),

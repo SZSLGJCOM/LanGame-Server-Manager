@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using BepInEx;
@@ -14,7 +15,6 @@ namespace LanGame.VRising
     {
         private static SaveControl current;
         private SaveLoop control;
-        private NativeSaveCompletion completion;
         private static object bootstrap;
         private HarmonyLib.Harmony updateHook;
         public override void Load()
@@ -32,8 +32,7 @@ namespace LanGame.VRising
             MethodInfo update = NativeBinding.Method(type, "OnUpdate", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, typeof(void));
             try
             {
-                completion = new NativeSaveCompletion(delegate(string line) { Log.LogError(line); });
-                control = new SaveLoop(root, "vrising", new SaveAdapter(Prepare, completion.Observe, completion.Abandon, completion.Issue));
+                control = new SaveLoop(root, "vrising", new SaveAdapter(Prepare));
                 current = this;
                 updateHook = new HarmonyLib.Harmony("local.langame.vrising.save");
                 updateHook.Patch(update,
@@ -91,28 +90,54 @@ namespace LanGame.VRising
             MethodInfo ready = NativeBinding.Method(saveType, "IsReadyToSave", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, typeof(bool), runtimeType);
             if (!(bool)ready.Invoke(saves, new[] { settings })) throw new SaveFailure("save_busy");
             MethodInfo save = NativeBinding.Method(saveType, "TriggerAutoSave", BindingFlags.Public | BindingFlags.Instance, typeof(bool), runtimeType);
+            ObserveNativeSaveTiming(settings);
+            IntPtr worldPointer = Pointer(world);
             return delegate {
-                if (NativeSaveCompletion.Pointer(server) != NativeSaveCompletion.Pointer(bootstrap) || !(bool)initialized.GetValue(server, null))
+                object activeWorld = worldProperty.GetValue(server, null);
+                if (Pointer(server) != Pointer(bootstrap) || !(bool)initialized.GetValue(server, null) ||
+                    Pointer(activeWorld) != worldPointer || !(bool)worldCreated.GetValue(activeWorld, null) ||
+                    (ulong)worldSequence.GetValue(activeWorld, null) != sequence)
                     throw new SaveFailure("target_changed");
-                NativeSaveCompletion observer = current == null ? null : current.completion;
-                if (observer == null) throw new SaveFailure("api_unavailable");
-                IntPtr worldPointer = NativeSaveCompletion.Pointer(world);
-                return observer.Start(saves, serializer,
-                    delegate { return (bool)save.Invoke(saves, new[] { settings }); },
-                    delegate {
-                        object activeWorld = worldProperty.GetValue(server, null);
-                        return NativeSaveCompletion.Pointer(server) == NativeSaveCompletion.Pointer(bootstrap) && (bool)initialized.GetValue(server, null) &&
-                            NativeSaveCompletion.Pointer(activeWorld) == worldPointer && (bool)worldCreated.GetValue(activeWorld, null) &&
-                            (ulong)worldSequence.GetValue(activeWorld, null) == sequence &&
-                            NativeSaveCompletion.Pointer(getSystem.MakeGenericMethod(saveType).Invoke(activeWorld, null)) == NativeSaveCompletion.Pointer(saves) &&
-                            NativeSaveCompletion.Pointer(getSystem.MakeGenericMethod(serializerType).Invoke(activeWorld, null)) == NativeSaveCompletion.Pointer(serializer);
-                    });
+                // Native bool acceptance queues its normal autosave; it is not
+                // a completed-write receipt. SaveLoop never repeats this call.
+                return (bool)save.Invoke(saves, new[] { settings }) ? SaveReceipt.Dispatched : SaveReceipt.Rejected;
             };
+        }
+        private static bool ObserveNativeSaveTiming(object settings)
+        {
+            if (Environment.GetEnvironmentVariable("LANGAME_NATIVE_EXACT_SAVE_READBACK") != "true" ||
+                Environment.GetEnvironmentVariable("LANGAME_NATIVE_MANUAL_SAVE") != "true" ||
+                Environment.GetEnvironmentVariable("LANGAME_NATIVE_MANUAL_SAVE_RESTART") != "true") return false;
+            try
+            {
+                FieldInfo interval = settings.GetType().GetField("AutoSaveIntervalSeconds", BindingFlags.Public | BindingFlags.Instance);
+                FieldInfo variance = settings.GetType().GetField("AutoSaveIntervalVarianceSeconds", BindingFlags.Public | BindingFlags.Instance);
+                if (interval == null || variance == null || interval.FieldType != typeof(float) || variance.FieldType != typeof(float))
+                    return false;
+                Console.WriteLine("LANGAME_NATIVE_SAVE_TIMING interval_seconds=" +
+                    ((float)interval.GetValue(settings)).ToString("R", CultureInfo.InvariantCulture) + " variance_seconds=" +
+                    ((float)variance.GetValue(settings)).ToString("R", CultureInfo.InvariantCulture));
+                return true;
+            }
+            catch (Exception)
+            {
+                // Missing diagnostic evidence fails isolated acceptance, never
+                // the real save. This path does not change native settings.
+                return false;
+            }
+        }
+        private static IntPtr Pointer(object native)
+        {
+            if (native == null) throw new SaveFailure("world_not_ready");
+            PropertyInfo property = native.GetType().GetProperty("Pointer", BindingFlags.Public | BindingFlags.Instance);
+            if (property == null || property.PropertyType != typeof(IntPtr)) throw new SaveFailure("api_unavailable");
+            IntPtr pointer = (IntPtr)property.GetValue(native, null);
+            if (pointer == IntPtr.Zero) throw new SaveFailure("world_not_ready");
+            return pointer;
         }
         public override bool Unload()
         {
             if (control != null) control.Dispose(); control = null;
-            if (completion != null) completion.Abandon(); completion = null;
             if (updateHook != null) updateHook.UnpatchSelf(); updateHook = null;
             current = null; bootstrap = null;
             return true;

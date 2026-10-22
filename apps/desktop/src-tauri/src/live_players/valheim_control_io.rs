@@ -227,7 +227,7 @@ pub(crate) fn read_regular(path: &Path, limit: usize) -> Result<Vec<u8>, String>
     read_optional(path, limit)?.ok_or_else(|| "The Valheim control file is missing.".into())
 }
 
-pub(super) fn pin_regular(path: &Path, limit: usize) -> Result<(File, Vec<u8>), String> {
+pub(crate) fn pin_regular(path: &Path, limit: usize) -> Result<(File, Vec<u8>), String> {
     let mut file = open_regular(path, true)?.ok_or("The Valheim control file is missing.")?;
     let bytes = read_bounded(&mut file, limit)?;
     Ok((file, bytes))

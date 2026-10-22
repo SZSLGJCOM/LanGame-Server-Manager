@@ -2,6 +2,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=STATIC_VCRUNTIME");
     println!("cargo:rerun-if-env-changed=LANGAME_ARK_ARCHIVE_DIR");
     println!("cargo:rerun-if-env-changed=LANGAME_PROXY_SOURCE_DIR");
+    println!("cargo:rerun-if-env-changed=LANGAME_UE4SS_ARCHIVE");
     println!("cargo:rerun-if-changed=icons/icon.ico");
 
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
@@ -248,15 +249,11 @@ fn main() {
     #[cfg(windows)]
     {
         let root = project_root();
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/returntomoria/control").display()
-        );
         for (script, leaf) in [
+            ("build_ue4ss_runtime.ps1", "ue4ss-runtime"),
             ("build_unreal_save_control.ps1", "native-world-save"),
             ("build_scum_save_control.ps1", "scum-save-control"),
             ("build_unreal_loader_proxies.ps1", "unreal-loader-proxies"),
-            ("build_vrising_save_control.ps1", "vrising-save-control"),
         ] {
             let source = root.join("scripts").join(script);
             println!("cargo:rerun-if-changed={}", source.display());
@@ -294,7 +291,6 @@ fn main() {
             "modules/nightingale/control",
             "modules/conanexiles/control",
             "modules/scum/control",
-            "modules/vrising/control",
             "apps/desktop/src-tauri/native",
         ] {
             println!("cargo:rerun-if-changed={}", root.join(directory).display());

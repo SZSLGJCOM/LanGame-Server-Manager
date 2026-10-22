@@ -1,5 +1,5 @@
-// Build 25811348 only. Native addresses below are RVAs in the SHA-256-pinned
-// Shipping image; no client RPC, player privilege changes, or Lua ABI imports.
+// Native addresses below are RVAs in the SHA-256-pinned Shipping profiles.
+// No client RPC, player privilege changes, or Lua ABI imports.
 #include <windows.h>
 #include <bcrypt.h>
 #include <array>
@@ -15,10 +15,41 @@
 
 namespace {
 namespace fs = std::filesystem;
-constexpr std::string_view GAME_HASH = "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed";
 constexpr std::string_view UE4SS_HASH = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
 constexpr wchar_t GAME_NAME[] = L"RSDragonwildsServer-Win64-Shipping.exe";
 constexpr size_t MAX_KNOWN = 4096, MAX_REQUEST = 512;
+struct NativeCode { uintptr_t rva; std::string_view prologue; };
+struct NativeProfile {
+    std::string_view shipping_hash;
+    NativeCode factory, ban, unban, known_players, save_bans;
+    uintptr_t matchmaker_class, settings_class, matchmaker_vtable, state_vtable;
+};
+constexpr std::array<NativeProfile, 2> NATIVE_PROFILES{{
+    { // Steam build 25811348.
+        "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
+        {0x59a24c0, "48895c240848896c2410488974241848897c242041564883"},
+        {0x5d54050, "4055534154488d6c24e04881ec20010000488b05d816a705"},
+        {0x5d51960, "48895c241848896c2420565741564881ec90000000488b05"},
+        {0x596b480, "405741544155415641574883ec30488bb9d00000004532f6"},
+        {0x5d52600, "405553574155488d6c24d84881ec28010000488b052731a7"},
+        0xbb31eb0, 0xbb1daf0, 0x9dfa7e0, 0xa0dec90,
+    },
+    { // Steam build 25991736; the native object and call layouts are unchanged.
+        "da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe",
+        {0x59a3350, "48895c240848896c2410488974241848897c242041564883"},
+        {0x5d54f80, "4055534154488d6c24e04881ec20010000488b05a8e7a605"},
+        {0x5d52890, "48895c241848896c2420565741564881ec90000000488b05"},
+        {0x596c310, "405741544155415641574883ec30488bb9d00000004532f6"},
+        {0x5d53530, "405553574155488d6c24d84881ec28010000488b05f701a7"},
+        0xbb2feb0, 0xbb1baf0, 0x9dfa140, 0xa0de0b0,
+    },
+}};
+const NativeProfile* native_profile(std::string_view shipping_hash) {
+    for (const auto& profile : NATIVE_PROFILES) {
+        if (profile.shipping_hash == shipping_hash) return &profile;
+    }
+    return nullptr;
+}
 struct Handle {
     HANDLE value = INVALID_HANDLE_VALUE;
     Handle() = default;
@@ -134,6 +165,7 @@ void prologue(uintptr_t image, uintptr_t rva, std::string_view expected) {
 }
 struct Image {
     uintptr_t base{};
+    const NativeProfile* profile{};
     bool (*game_thread)(){};
     fs::path directory;
     Handle shipping, ue4ss;
@@ -154,15 +186,15 @@ struct Image {
         // Handles below remain pinned for the process lifetime.
         auto shipping_file = open_file(path, GENERIC_READ, OPEN_EXISTING, FILE_SHARE_READ);
         auto core_file = open_file(module_path(core), GENERIC_READ, OPEN_EXISTING, FILE_SHARE_READ);
-        require(hash_file(shipping_file.value) == GAME_HASH && hash_file(core_file.value) == UE4SS_HASH, "module_fingerprint");
+        profile = native_profile(hash_file(shipping_file.value));
+        require(profile && hash_file(core_file.value) == UE4SS_HASH, "module_fingerprint");
         shipping.value = shipping_file.value; shipping_file.value = INVALID_HANDLE_VALUE;
         ue4ss.value = core_file.value; core_file.value = INVALID_HANDLE_VALUE;
         base = reinterpret_cast<uintptr_t>(game);
-        prologue(base, 0x59a24c0, "48895c240848896c2410488974241848897c242041564883");
-        prologue(base, 0x5d54050, "4055534154488d6c24e04881ec20010000488b05d816a705");
-        prologue(base, 0x5d51960, "48895c241848896c2420565741564881ec90000000488b05");
-        prologue(base, 0x596b480, "405741544155415641574883ec30488bb9d00000004532f6");
-        prologue(base, 0x5d52600, "405553574155488d6c24d84881ec28010000488b052731a7");
+        for (const auto* code : {&profile->factory, &profile->ban, &profile->unban,
+                                 &profile->known_players, &profile->save_bans}) {
+            prologue(base, code->rva, code->prologue);
+        }
         game_thread = reinterpret_cast<bool (*)()>(GetProcAddress(core, "?IsInGameThreadRaw@Unreal@RC@@YA_NXZ"));
         require(game_thread != nullptr, "thread_api");
     }
@@ -219,21 +251,22 @@ struct SharedUser { void* object{}; void* controller{}; };
 static_assert(sizeof(SharedUser) == 16);
 const char* dispatch(const Image& image, const Request& request) {
     require(image.game_thread(), "wrong_thread");
-    auto cls = read<uintptr_t>(image.base + 0xbb31eb0);
-    auto settings_class = read<uintptr_t>(image.base + 0xbb1daf0);
+    const auto& profile = *image.profile;
+    auto cls = read<uintptr_t>(image.base + profile.matchmaker_class);
+    auto settings_class = read<uintptr_t>(image.base + profile.settings_class);
     require(cls && settings_class, "native_classes");
-    require(readable(request.matchmaker, 0x730) && read<uintptr_t>(request.matchmaker) == image.base + 0x9dfa7e0
+    require(readable(request.matchmaker, 0x730) && read<uintptr_t>(request.matchmaker) == image.base + profile.matchmaker_vtable
         && read<uintptr_t>(request.matchmaker + 0x10) == cls
         && !(read<uint32_t>(request.matchmaker + 8) & 0x40000000), "matchmaker_object");
     require(readable(request.settings, 0x108) && request.settings == read<uintptr_t>(settings_class + 0x110)
         && read<uintptr_t>(request.settings + 0x10) == settings_class, "settings_object");
     auto state = read<uintptr_t>(request.matchmaker + 0x6c8);
-    // 0x3f0c1c0 gets the subsystem's UObject.Outer (+0x20) as GameInstance.
+    // The subsystem's UObject.Outer (+0x20) is its owning GameInstance.
     auto game_instance = read<uintptr_t>(request.matchmaker + 0x20);
-    require(readable(state, 0x3d0) && read<uintptr_t>(state) == image.base + 0xa0dec90, "native_state_layout");
+    require(readable(state, 0x3d0) && read<uintptr_t>(state) == image.base + profile.state_vtable, "native_state_layout");
     require(game_instance && read<uintptr_t>(state + 8) == game_instance, "native_state_owner");
     require(read<uintptr_t>(state + 0x388) && read<uintptr_t>(state + 0x398), "native_session_unready");
-    // 0x38bcc90 (GameInstance::GetWorld) performs these exact two loads:
+    // Both reviewed GameInstance::GetWorld bodies perform these exact loads:
     // GameInstance + 0x30 -> FWorldContext; FWorldContext + 0x2c0 -> UWorld.
     auto context = read<uintptr_t>(game_instance + 0x30);
     auto world = read<uintptr_t>(context + 0x2c0);
@@ -254,29 +287,29 @@ const char* dispatch(const Image& image, const Request& request) {
     auto name_capacity = read<int32_t>(source + 60);
     require(name_length >= 0 && name_length <= 513 && name_capacity >= name_length && name_capacity <= 4096
         && (!name_length || readable(name, static_cast<size_t>(name_length) * sizeof(wchar_t))), "known_player_name");
-    // The real 0x59a24c0 member ABI is RCX=source, RDX=16-byte sret. It
+    // The native factory member ABI is RCX=source, RDX=16-byte sret. It
     // copies the FUniqueNetIdRepl shared identity and FString into an owned
     // online-user allocation. Both action callees consume exactly one owned
     // SharedUser argument (verified against their original wrapper call sites).
     SharedUser user{};
     using Factory = SharedUser* (*)(void*, SharedUser*);
-    reinterpret_cast<Factory>(image.base + 0x59a24c0)(reinterpret_cast<void*>(source), &user);
+    reinterpret_cast<Factory>(image.base + profile.factory.rva)(reinterpret_cast<void*>(source), &user);
     // Invalid UID writes (0,0); allocation failure writes (0x10,0). Neither
     // owns a reference. The factory never returns a non-null controller with
     // a null object, so no manual allocator/refcount ABI is needed here.
     if (!user.controller) return user.object ? "factory_allocation" : "invalid_unique_id";
     if (request.operation == "ban") {
         using Ban = void (*)(void*, void*, SharedUser*, bool);
-        reinterpret_cast<Ban>(image.base + 0x5d54050)(reinterpret_cast<void*>(state), nullptr, &user, false);
+        reinterpret_cast<Ban>(image.base + profile.ban.rva)(reinterpret_cast<void*>(state), nullptr, &user, false);
         // Online Ban(false) saves itself. Native offline administration uses a
         // temporary internal flag; avoid changing that flag and explicitly run
         // the same native persistence method. It updates KnownPlayerList from
         // the runtime ban map and only writes config when a flag changed.
         using SaveBans = void (*)(void*);
-        reinterpret_cast<SaveBans>(image.base + 0x5d52600)(reinterpret_cast<void*>(state));
+        reinterpret_cast<SaveBans>(image.base + profile.save_bans.rva)(reinterpret_cast<void*>(state));
     } else {
         using Unban = void (*)(void*, SharedUser*);
-        reinterpret_cast<Unban>(image.base + 0x5d51960)(reinterpret_cast<void*>(state), &user);
+        reinterpret_cast<Unban>(image.base + profile.unban.rva)(reinterpret_cast<void*>(state), &user);
     }
     // Native APIs are void. SaveConfig is called by the native path; this
     // receipt only proves dispatch, never a successful or persisted ban.
@@ -328,15 +361,6 @@ void invoke() {
     write_receipt(response.value, text);
 }
 } // namespace
-
-// Shared by the save observer and moderation entry. The process image, loader,
-// physical plugin path and full hashes have one cached initialization owner.
-bool lgsm_dragon_control_image(std::uintptr_t& base, std::filesystem::path& directory, bool (*&thread)()) noexcept {
-    const auto& state = initialization();
-    if (!state.image) return false;
-    base=state.image->base; directory=state.image->directory; thread=state.image->game_thread;
-    return thread && thread();
-}
 
 // Lua's package.loadlib passes lua_State*. No Lua symbol is imported or called;
 // return 0 means no Lua results. The synchronous bounded receipt is the API.

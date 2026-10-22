@@ -11,18 +11,15 @@ namespace LanGame.SaveControl
 {
     // Completion is an explicit adapter receipt, never inferred from a void
     // reflection return, a nearby log line, or an unrelated file change.
-    internal enum SaveReceipt { Rejected, Dispatched, Completed, Pending, Failed }
+    internal enum SaveReceipt { Rejected, Dispatched, Completed, Pending }
     internal sealed class SaveAdapter
     {
         internal readonly Func<Func<SaveReceipt>> Prepare;
         internal readonly Func<SaveReceipt> Observe;
         internal readonly Action Abandon;
-        internal readonly Func<string> UnconfirmedIssue;
         internal SaveAdapter(Func<Func<SaveReceipt>> prepare) : this(prepare, null, null) { }
         internal SaveAdapter(Func<Func<SaveReceipt>> prepare, Func<SaveReceipt> observe, Action abandon)
-            : this(prepare, observe, abandon, null) { }
-        internal SaveAdapter(Func<Func<SaveReceipt>> prepare, Func<SaveReceipt> observe, Action abandon, Func<string> unconfirmedIssue)
-        { Prepare = prepare; Observe = observe; Abandon = abandon; UnconfirmedIssue = unconfirmedIssue; }
+        { Prepare = prepare; Observe = observe; Abandon = abandon; }
     }
     internal sealed class SaveFailure : Exception
     {
@@ -147,26 +144,10 @@ namespace LanGame.SaveControl
                 throw new SaveFailure("invalid_frame");
             string status = Value(fields[5], "status"), issue = Value(fields[6], "issue");
             if ((status == "completed" && issue == "none") ||
-                (status == "dispatched" && ValidUnconfirmedIssue(issue)) || status == "rejected" ||
-                (status == "unknown" && issue == "native_outcome_unknown") ||
-                (status == "failed" && ValidFailureIssue(module, issue))) return previous;
+                (status == "dispatched" && issue == "none") || status == "rejected" ||
+                (status == "unknown" && issue == "native_outcome_unknown")) return previous;
             if (status == "dispatching" && issue == "none") return Reply(nonce, "unknown", "native_outcome_unknown");
             throw new SaveFailure("invalid_frame");
-        }
-
-        internal static bool ValidUnconfirmedIssue(string issue)
-        {
-            return issue == "none";
-        }
-        internal static bool ValidFailureIssue(string module, string issue)
-        {
-            return module == "vrising" && issue == "vrising_write_failed";
-        }
-        private string FailedReply(string nonce)
-        {
-            string issue = adapter.UnconfirmedIssue == null ? null : adapter.UnconfirmedIssue();
-            if (!ValidFailureIssue(module, issue)) throw new SaveFailure("native_outcome_unknown");
-            return Reply(nonce, "failed", issue);
         }
 
         internal string Process(string request)
@@ -202,13 +183,7 @@ namespace LanGame.SaveControl
                     SaveReceipt receipt = invoke();
                     if (receipt == SaveReceipt.Completed) response = Reply(nonce, "completed", "none");
                     else if (receipt == SaveReceipt.Dispatched)
-                    {
-                        string issue = adapter.UnconfirmedIssue == null ? "none" : adapter.UnconfirmedIssue();
-                        if (!ValidUnconfirmedIssue(issue)) throw new SaveFailure("native_outcome_unknown");
-                        response = Reply(nonce, "dispatched", issue);
-                    }
-                    else if (receipt == SaveReceipt.Failed)
-                        response = FailedReply(nonce);
+                        response = Reply(nonce, "dispatched", "none");
                     else if (receipt == SaveReceipt.Rejected) response = Reply(nonce, "rejected", "native_rejected");
                     else if (receipt == SaveReceipt.Pending && adapter.Observe != null)
                     {
@@ -343,12 +318,7 @@ namespace LanGame.SaveControl
                     SaveReceipt observed = adapter.Observe();
                     if (observed == SaveReceipt.Completed) response = Reply(pendingNonce, "completed", "none");
                     else if (observed == SaveReceipt.Dispatched)
-                    {
-                        string issue = adapter.UnconfirmedIssue == null ? "none" : adapter.UnconfirmedIssue();
-                        if (!ValidUnconfirmedIssue(issue)) throw new SaveFailure("native_outcome_unknown");
-                        response = Reply(pendingNonce, "dispatched", issue);
-                    }
-                    else if (observed == SaveReceipt.Failed) response = FailedReply(pendingNonce);
+                        response = Reply(pendingNonce, "dispatched", "none");
                     else if (observed != SaveReceipt.Pending || elapsedMilliseconds - pendingSince >= CompletionBudgetMilliseconds)
                         response = Reply(pendingNonce, "unknown", "native_outcome_unknown");
                 }

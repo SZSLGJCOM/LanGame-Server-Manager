@@ -71,7 +71,11 @@ async fn prepare(
             .await
             .map(|entry| entry.into_iter().collect::<Vec<_>>())
     } else {
-        ensure_for_start(storage, details, operation).await
+        ensure_for_start(storage, details, operation)
+            .await
+            .map(|environment| {
+                environment.expect("native installation requires a supported game build")
+            })
     }
     .unwrap_or_else(|error| panic!("{}: {error}", details.summary.module_id));
     assert_eq!(

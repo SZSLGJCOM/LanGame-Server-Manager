@@ -47,7 +47,7 @@ try {
     Check ($generic[0].MakeGenericMethod([Type[]]@($serializer)).ReturnType -eq $serializer) 'serializer satisfies existing-system generic constraints'
     $saving=$serializer.GetProperty('IsSaving',$flags)
     Check ($saving.PropertyType.FullName -eq 'System.Boolean' -and !$saving.GetMethod.IsStatic) 'serializer IsSaving is instance bool'
-    foreach($nativeType in @($server,$entities.GetType('Unity.Entities.World',$true),$save,$serializer)) {
+    foreach($nativeType in @($server,$entities.GetType('Unity.Entities.World',$true))) {
         $pointer=$nativeType.GetProperty('Pointer',$flags)
         Check ($pointer.PropertyType.FullName -eq 'System.IntPtr' -and !$pointer.GetMethod.IsStatic) ('native identity pointer '+$nativeType.FullName)
     }

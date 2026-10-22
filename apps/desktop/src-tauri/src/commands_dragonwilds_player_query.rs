@@ -1,21 +1,15 @@
 //! Prepare the optional roster loader while startup owns the program lifecycle.
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use app_core::InstanceDetails;
 use app_storage::InstanceProgramMode;
 
 use crate::state::RuntimeStartReservationLease;
 
-use super::commands_mods::mod_download::{
-    ModDownloadRequest, download_mod_site_file_with_limit, mod_package_client,
-};
 use super::commands_runtime_supervision::append_startup_console_line;
 
 #[path = "commands_dragonwilds_player_query_files.rs"]
 mod files;
-
-const DOWNLOAD_URL: &str = "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip";
 
 #[cfg(windows)]
 pub(super) fn ensure_program_stopped(root: &Path) -> Result<(), String> {
@@ -107,39 +101,8 @@ fn bundled_files() -> (&'static [u8], &'static [u8], &'static [u8]) {
     (&[], &[], &[])
 }
 
-struct DownloadedLoader(PathBuf);
-
 pub(super) fn owns_compatible_loader(root: &Path) -> Result<bool, String> {
     Ok(files::inspect(root, bundled_files().0)? == files::Preparation::Ready)
-}
-
-impl Drop for DownloadedLoader {
-    fn drop(&mut self) {
-        if let Err(error) = fs::remove_file(&self.0)
-            && error.kind() != std::io::ErrorKind::NotFound
-        {
-            eprintln!("Cannot remove the temporary Dragonwilds loader download: {error}");
-        }
-    }
-}
-
-async fn download_loader() -> Result<DownloadedLoader, String> {
-    let client = mod_package_client()?;
-    download_mod_site_file_with_limit(
-        &client,
-        ModDownloadRequest {
-            download_url: DOWNLOAD_URL,
-            package_name: "Dragonwilds-UE4SS",
-            version: "3.0.1-1125-g527a483b",
-            preferred_filename: None,
-            fallback_extension: "zip",
-            integrity: None,
-            max_bytes: Some(files::ARCHIVE_BYTES),
-            download_root: &std::env::temp_dir(),
-        },
-    )
-    .await
-    .map(DownloadedLoader)
 }
 
 fn progress(log_path: Option<&Path>, message: &str) -> Result<(), String> {
@@ -189,71 +152,32 @@ pub(super) async fn prepare(
                 "Dragonwilds 玩家查询：当前游戏版本尚未验证加载器兼容性，已跳过自动安装；游戏服务器继续启动。",
             );
         }
-        files::Preparation::Download => {}
+        files::Preparation::NeedsInstall => {}
     }
     progress(
         log_path,
-        "Dragonwilds 玩家查询：正在下载已验证的 UE4SS 1125 加载器（约 8.3 MiB）…",
-    )?;
-    let archive = tokio::select! {
-        biased;
-        _ = reservation.cancelled() => return Err("启动已取消，玩家查询扩展未发布。".into()),
-        result = download_loader() => match result {
-            Ok(archive) => archive,
-            Err(error) => {
-                // A roster add-on must not turn a transient download outage into
-                // a vanilla server outage. No runtime file has been published.
-                progress(log_path, &format!("Dragonwilds 玩家查询加载器下载失败：{error}。游戏服务器继续启动，在线名单暂不可用；下次启动会重试。"))?;
-                return Ok(());
-            }
-        },
-    };
-    if reservation.is_cancelled() {
-        return Err("启动已取消，玩家查询扩展未发布。".into());
-    }
-    progress(
-        log_path,
-        "Dragonwilds 玩家查询：正在校验固定发行包并准备加载器和名单脚本…",
+        "Dragonwilds 玩家查询：正在校验并准备程序内置的加载器和名单脚本…",
     )?;
     let cancellation = reservation.storage_operation().cancellation_token();
-    let verification_failure =
-        tokio::task::spawn_blocking(move || -> Result<Option<String>, String> {
-            if cancellation.load(std::sync::atomic::Ordering::Acquire) {
-                return Err("启动已取消，玩家查询扩展未发布。".into());
-            }
-            if let Err(error) = files::verify_archive(&archive.0) {
-                return Ok(Some(error));
-            }
-            if cancellation.load(std::sync::atomic::Ordering::Acquire) {
-                return Err("启动已取消，玩家查询扩展未发布。".into());
-            }
-            files::install(&root, &archive.0, proxy, ue4ss_license, fmt_license)?;
-            Ok(None)
-        })
-        .await
-        .map_err(|error| {
-            format!("Dragonwilds player-query installation worker failed: {error}")
-        })??;
-    if let Some(error) = verification_failure {
-        return progress(
-            log_path,
-            &format!(
-                "Dragonwilds 玩家查询发行包校验失败：{error}。未发布加载器；游戏服务器继续启动，下次启动会重试。"
-            ),
-        );
-    }
+    tokio::task::spawn_blocking(move || -> Result<(), String> {
+        if cancellation.load(std::sync::atomic::Ordering::Acquire) {
+            return Err("启动已取消，玩家查询扩展未发布。".into());
+        }
+        let archive = crate::unreal_loader::bundled_archive()?;
+        files::install(&root, archive, proxy, ue4ss_license, fmt_license)
+    })
+    .await
+    .map_err(|error| format!("Dragonwilds player-query installation worker failed: {error}"))??;
     progress(
         log_path,
         "Dragonwilds 玩家查询扩展已准备，正在启动游戏服务器。",
     )
 }
 
-#[cfg(test)]
-#[tokio::test]
-#[ignore = "downloads the pinned official UE4SS release through the production Mod downloader"]
-async fn native_dragonwilds_loader_download_is_pinned() {
-    let archive = download_loader().await.unwrap();
-    files::verify_archive(&archive.0).unwrap();
+#[cfg(all(test, windows))]
+#[test]
+fn bundled_dragonwilds_loader_is_pinned() {
+    files::verify_archive(crate::unreal_loader::bundled_archive().unwrap()).unwrap();
 }
 
 #[cfg(test)]
@@ -265,12 +189,19 @@ pub(crate) fn prepare_dragonwilds_player_query_probe(
         return Err("Native loader acceptance requires a marked isolated installation.".into());
     }
     let (proxy, ue4ss_license, fmt_license) = bundled_files();
-    if files::inspect(root, proxy)? != files::Preparation::Download {
+    if files::inspect(root, proxy)? != files::Preparation::NeedsInstall {
         return Err(
             "Native loader acceptance must start from an unprepared isolated runtime.".into(),
         );
     }
-    files::install(root, archive, proxy, ue4ss_license, fmt_license)?;
+    use std::io::Read;
+    let mut bytes = Vec::new();
+    std::fs::File::open(archive)
+        .map_err(|error| error.to_string())?
+        .take(files::ARCHIVE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| error.to_string())?;
+    files::install(root, &bytes, proxy, ue4ss_license, fmt_license)?;
     verify_dragonwilds_player_query_probe(root)
 }
 

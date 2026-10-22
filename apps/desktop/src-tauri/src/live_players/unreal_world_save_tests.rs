@@ -101,8 +101,7 @@ fn unreal_world_save_lua_runs_both_actual_bundled_payloads() {
             .eval()
             .unwrap();
         assert_eq!(
-            cases,
-            if game == Game::Moria { 26 } else { 29 },
+            cases, 23,
             "each real game policy must exercise every native-save fixture"
         );
     }
@@ -125,9 +124,10 @@ fn native_world_save_policies_run_real_nightingale_and_conan_payloads() {
             ))
             .eval()
             .unwrap();
-        check_lua_host_receipt_contract(&lua, true);
+        check_lua_host_receipt_contract(&lua, game == Game::Conan);
         assert_eq!(
-            cases, 34,
+            cases,
+            if game == Game::Conan { 34 } else { 26 },
             "{name}: every actual native policy case must run"
         );
     }
@@ -214,7 +214,7 @@ fn unreal_world_save_confirmation_requires_own_completed_success() {
 
 #[test]
 fn native_void_actions_report_requested_without_claiming_disk_completion() {
-    for game in [Game::Abiotic, Game::Scum] {
+    for game in [Game::Moria, Game::Abiotic, Game::Scum, Game::Nightingale] {
         let identity = ProcessIdentity {
             creation_time: 123,
             image_path: format!("D:/fixture/{}", game.executable()),
@@ -235,13 +235,13 @@ fn native_void_actions_report_requested_without_claiming_disk_completion() {
             )
         };
         let mut body = packet();
-        if game == Game::Scum {
+        if matches!(game, Game::Scum | Game::Nightingale) {
             body["native_process_id"] = 42.into();
             body["native_creation_time"] = "123".into();
         }
         let (message, completion) = evaluate(&body).unwrap();
         assert!(matches!(completion, WorldSaveCompletion::Requested));
-        assert!(message.contains("request was processed"));
+        assert!(message.contains("request was submitted"));
         assert!(!message.contains("completed successfully"));
         for (field, invalid) in [
             ("request_id", serde_json::json!(TOKEN)),
@@ -281,25 +281,24 @@ fn native_void_actions_report_requested_without_claiming_disk_completion() {
 
 #[test]
 fn request_semantics_do_not_relax_other_native_completion_contracts() {
-    for game in [Game::Moria, Game::Nightingale, Game::Conan] {
-        let body = packet();
-        let bytes = serde_json::to_vec(&body).unwrap();
-        assert!(
-            classify_completion(game, parse(&bytes, &request())).is_err(),
-            "{game:?}"
-        );
-        let mut confirmed = body;
-        confirmed["write_confirmed"] = true.into();
-        let (_, completion) = classify_completion(
-            game,
-            parse(&serde_json::to_vec(&confirmed).unwrap(), &request()),
-        )
-        .unwrap();
-        assert!(
-            matches!(completion, WorldSaveCompletion::Confirmed),
-            "{game:?}"
-        );
-    }
+    let game = Game::Conan;
+    let body = packet();
+    let bytes = serde_json::to_vec(&body).unwrap();
+    assert!(
+        classify_completion(game, parse(&bytes, &request())).is_err(),
+        "{game:?}"
+    );
+    let mut confirmed = body;
+    confirmed["write_confirmed"] = true.into();
+    let (_, completion) = classify_completion(
+        game,
+        parse(&serde_json::to_vec(&confirmed).unwrap(), &request()),
+    )
+    .unwrap();
+    assert!(
+        matches!(completion, WorldSaveCompletion::Confirmed),
+        "{game:?}"
+    );
 }
 
 #[test]
@@ -446,7 +445,7 @@ fn unreal_world_save_profiles_are_exact_and_payloads_have_no_moderation_dispatch
                 && payload.contains("EGameThreadMethod.EngineTick")
         );
         assert!(!payload.contains("KickPlayer"));
-        assert_eq!(payload.contains("loadlib"), game == Game::Moria);
+        assert!(!payload.contains("loadlib"));
     }
 }
 

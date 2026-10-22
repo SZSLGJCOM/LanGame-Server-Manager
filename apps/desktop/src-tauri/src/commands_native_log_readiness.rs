@@ -66,6 +66,20 @@ pub(super) fn new_log_line_matches(
     new_log_matches(path, baseline, |text| text.lines().any(matches))
 }
 
+/// Structured save evidence must not parse a still-being-written final line.
+/// The baseline retains its capture offset, so a later poll includes that line.
+pub(super) fn new_complete_log_line_matches(
+    path: &Path,
+    baseline: &mut LogBaseline,
+    mut matches: impl FnMut(&str) -> bool,
+) -> Result<bool, String> {
+    new_log_matches(path, baseline, |text| {
+        text.split_inclusive('\n')
+            .filter_map(|line| line.strip_suffix('\n'))
+            .any(|line| matches(line.strip_suffix('\r').unwrap_or(line)))
+    })
+}
+
 fn new_log_matches(
     path: &Path,
     baseline: &mut LogBaseline,

@@ -3,7 +3,6 @@
 //! `install`; this module never obtains or releases those application leases.
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::time::Duration;
 
 #[path = "unreal_loader/archive.rs"]
 mod archive;
@@ -18,7 +17,6 @@ use crate::live_players::file_ipc::unreal_world_save::installation::{
 use profile::Profile;
 pub(crate) use profile::compatible_settings;
 
-const ARCHIVE_URL: &str = "https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip";
 const ARCHIVE_HASH: &str = "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7";
 const ARCHIVE_BYTES: usize = 8_718_500;
 const CORE_HASH: &str = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
@@ -35,6 +33,13 @@ pub(crate) struct PreparedLoader {
 pub(crate) enum InstallOutcome {
     Installed,
     Reused,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StartupState {
+    Ready,
+    NeedsInstall,
+    Unavailable,
 }
 
 pub(crate) fn supported(module_id: &str) -> bool {
@@ -62,29 +67,32 @@ pub(crate) fn installed(root: &Path, module_id: &str) -> Result<bool, String> {
     installation::installed(root, Profile::get(module_id)?)
 }
 
-/// Download only the fixed official asset using the application's bounded,
-/// credential-free public-transfer policy. ZIP parsing stays off the UI thread.
+/// Inspect a stopped private program. An unsupported save extension may be
+/// disabled without disabling the native server or an operator's other mods.
+pub(crate) fn prepare_startup(root: &Path, module_id: &str) -> Result<StartupState, String> {
+    installation::prepare_startup(root, Profile::get(module_id)?)
+}
+
+pub(crate) fn bundled_archive() -> Result<&'static [u8], String> {
+    #[cfg(windows)]
+    {
+        Ok(include_bytes!(concat!(
+            env!("OUT_DIR"),
+            "/ue4ss-runtime/UE4SS.zip"
+        )))
+    }
+    #[cfg(not(windows))]
+    {
+        Err("The bundled UE4SS runtime requires Windows.".into())
+    }
+}
+
+/// The Windows build embeds the hash-pinned official release. First startup
+/// requires no download; ZIP validation remains off the UI thread.
 pub(crate) async fn prepare(module_id: &str) -> Result<PreparedLoader, String> {
     let profile = Profile::get(module_id)?;
-    let client = reqwest::Client::builder()
-        .user_agent(concat!("LanGameServerManager/", env!("CARGO_PKG_VERSION")))
-        .connect_timeout(Duration::from_secs(20))
-        .build()
-        .map_err(|error| format!("Cannot prepare the UE4SS downloader: {error}"))?;
-    let request = client
-        .get(ARCHIVE_URL)
-        .build()
-        .map_err(|error| error.to_string())?;
-    let response = app_network::read_public_bytes(
-        &client,
-        request,
-        Duration::from_secs(180),
-        ARCHIVE_BYTES,
-        app_network::SourcePreference::InternationalFirst,
-    )
-    .await
-    .map_err(|error| format!("Cannot download the fixed official UE4SS 1125 runtime: {error}"))?;
-    tokio::task::spawn_blocking(move || archive::prepare(profile, &response.bytes))
+    let bytes = bundled_archive()?;
+    tokio::task::spawn_blocking(move || archive::prepare(profile, bytes))
         .await
         .map_err(|error| format!("UE4SS package preparation did not finish: {error}"))?
 }
@@ -104,3 +112,7 @@ pub(crate) fn install(
 #[cfg(test)]
 #[path = "unreal_loader/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "unreal_loader/startup_tests.rs"]
+mod startup_tests;

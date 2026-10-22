@@ -87,7 +87,7 @@ fn dragonwilds_control_install_recovers_an_owned_partial_publication_across_app_
     let completed: Ownership =
         serde_json::from_slice(&fs::read(root.0.join(OWNER)).unwrap()).unwrap();
     assert!(completed.pending_files.is_none());
-    assert_eq!(completed.files.len(), 4);
+    assert_eq!(completed.files.len(), 3);
     assert_eq!(
         fs::read(root.0.join(MOD).join("native/LgsmPlayerControl.dll")).unwrap(),
         b"MZ-different-app-build"
@@ -130,28 +130,61 @@ fn dragonwilds_control_session_is_fresh_pinned_and_invalid_existing_data_is_pres
 }
 
 #[test]
-fn dragonwilds_control_upgrade_deploys_license_without_adopting_a_foreign_file() {
+fn dragonwilds_control_upgrade_retires_only_the_owned_observer_license() {
     for foreign in [false, true] {
         let root = Root::new();
         install(&root.0, b"script", b"MZ-bridge").unwrap();
         let mut owner: Ownership =
             serde_json::from_slice(&fs::read(root.0.join(OWNER)).unwrap()).unwrap();
-        owner.files.remove("LICENSE-MinHook.txt");
-        fs::write(root.0.join(OWNER), serde_json::to_vec(&owner).unwrap()).unwrap();
-        let notice = root.0.join(MOD).join("LICENSE-MinHook.txt");
-        if foreign {
-            fs::write(&notice, b"external content").unwrap();
-        } else {
-            fs::remove_file(&notice).unwrap();
+        let notice = root.0.join(MOD).join(RETIRED_NOTICE);
+        fs::write(&notice, NOTICE).unwrap();
+        if !foreign {
+            owner.files.insert(RETIRED_NOTICE.into(), hash(NOTICE));
         }
+        let previous = serde_json::to_vec(&owner).unwrap();
+        fs::write(root.0.join(OWNER), &previous).unwrap();
         let result = install(&root.0, b"script-next", b"MZ-bridge-next");
         if foreign {
             assert!(result.is_err());
-            assert_eq!(fs::read(notice).unwrap(), b"external content");
+            assert_eq!(fs::read(&notice).unwrap(), NOTICE);
+            assert_eq!(fs::read(root.0.join(OWNER)).unwrap(), previous);
+            assert_eq!(
+                fs::read(root.0.join(MOD).join("native/LgsmPlayerControl.dll")).unwrap(),
+                b"MZ-bridge"
+            );
         } else {
             result.unwrap();
-            assert_eq!(fs::read(notice).unwrap(), NOTICE);
+            assert!(!notice.exists());
             assert!(is_complete(&root.0, b"script-next", b"MZ-bridge-next").unwrap());
+        }
+    }
+}
+#[test]
+fn dragonwilds_control_license_retirement_recovers_and_preserves_modified_content() {
+    for interrupted in [false, true] {
+        let root = Root::new();
+        install(&root.0, b"script", b"MZ-bridge").unwrap();
+        let mut owner: Ownership =
+            serde_json::from_slice(&fs::read(root.0.join(OWNER)).unwrap()).unwrap();
+        let notice = root.0.join(MOD).join(RETIRED_NOTICE);
+        if interrupted {
+            owner.pending_files = Some(owner.files.clone());
+        }
+        owner.files.insert(RETIRED_NOTICE.into(), hash(NOTICE));
+        if !interrupted {
+            fs::write(&notice, b"operator modification").unwrap();
+        }
+        let previous = serde_json::to_vec(&owner).unwrap();
+        fs::write(root.0.join(OWNER), &previous).unwrap();
+        let result = install(&root.0, b"script-next", b"MZ-bridge-next");
+        if interrupted {
+            result.unwrap();
+            assert!(!notice.exists());
+            assert!(is_complete(&root.0, b"script-next", b"MZ-bridge-next").unwrap());
+        } else {
+            assert!(result.is_err());
+            assert_eq!(fs::read(&notice).unwrap(), b"operator modification");
+            assert_eq!(fs::read(root.0.join(OWNER)).unwrap(), previous);
         }
     }
 }

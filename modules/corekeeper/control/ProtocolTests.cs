@@ -137,31 +137,6 @@ internal static class ProtocolTests
                 Invalid(delegate {files.Publish("user-save.json","data");},"arbitrary write leaf rejected");
                 Check(files.Read("request.txt",true)==null,"missing request is inactive");
             }
-            {
-                const string module = "vrising";
-                File.Delete(Path.Combine(root,"response.txt"));
-                File.WriteAllText(Path.Combine(root,"session.txt"),"LGSM_SAVE_1\nmodule="+module+"\nrun="+Run+"\ntoken="+Token+"\n",new System.Text.UTF8Encoding(false));
-                const string issue = "vrising_write_failed";
-                int failedInvokes = 0;
-                string failedRequest = Request(Nonce()), failedReply;
-                using (SaveLoop failure = new SaveLoop(root,module,new SaveAdapter(delegate { return delegate {
-                    failedInvokes++; return SaveReceipt.Pending;
-                }; }, delegate {return SaveReceipt.Failed;}, delegate {}, delegate {return issue;})))
-                {
-                    Check(failure.Process(failedRequest).Contains("status=dispatching"),"write failure is observed after owned admission");
-                    failure.ObservePending(0);
-                    failedReply = File.ReadAllText(Path.Combine(root,"response.txt"));
-                    Check(failedReply.Contains("status=failed") && failedReply.Contains("issue="+issue),"native write failure retains a specific terminal result");
-                    Check(!failedReply.Contains("status=completed") && failure.Process(failedRequest)==failedReply && failedInvokes==1,"failed operation never borrows success or redispatches");
-                }
-                using (SaveLoop replay = new SaveLoop(root,module,delegate {throw new Exception("must not repeat failed save");}))
-                    Check(replay.Process(failedRequest)==failedReply,"failed receipt survives control reload");
-                using (SaveLoop wrong = new SaveLoop(root,module,new SaveAdapter(delegate {return delegate {return SaveReceipt.Failed;};},null,null,
-                    delegate {return "unsupported_failure";})))
-                    Check(wrong.Process(Request(Nonce())).Contains("status=unknown"),"an unsupported failure code cannot certify an outcome");
-            }
-            foreach (string module in new string[] { "corekeeper", "barotrauma", "sonsoftheforest" })
-                Check(!SaveLoop.ValidFailureIssue(module, "vrising_write_failed"), "native writer failure belongs to its own module");
             Console.WriteLine("PASS: "+passed+" managed save protocol checks");
         }
         finally

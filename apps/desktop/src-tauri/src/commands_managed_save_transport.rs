@@ -69,7 +69,6 @@ pub(super) enum Reply {
     Old,
     Dispatching,
     Dispatched,
-    Failed(String),
     Completed,
     Rejected(String),
     Unknown,
@@ -97,7 +96,7 @@ pub(super) fn reply(
             .is_none_or(|v| v.to_string() != returned_pid)
         || !matches!(
             status,
-            "dispatching" | "dispatched" | "completed" | "rejected" | "unknown" | "failed"
+            "dispatching" | "dispatched" | "completed" | "rejected" | "unknown"
         )
         || !matches!(
             issue,
@@ -118,9 +117,7 @@ pub(super) fn reply(
                 | "campaign_round_running"
                 | "campaign_submarine_switch_pending"
                 | "world_context_changed"
-                | "vrising_write_failed"
         )
-        || (issue == "vrising_write_failed" && (game.module != "vrising" || status != "failed"))
     {
         return Err("The native save reply is invalid.".into());
     }
@@ -134,9 +131,6 @@ pub(super) fn reply(
         ("dispatching", "none") => Ok(Reply::Dispatching),
         ("dispatched", "none") => Ok(Reply::Dispatched),
         ("completed", "none") => Ok(Reply::Completed),
-        ("failed", "vrising_write_failed") if game.module == "vrising" => {
-            Ok(Reply::Failed(issue.into()))
-        }
         ("rejected", reason) if reason != "none" && reason != "native_outcome_unknown" => {
             Ok(Reply::Rejected(reason.into()))
         }
@@ -146,6 +140,17 @@ pub(super) fn reply(
 }
 fn unknown() -> String {
     "Save verification failed: the program did not obtain a complete native write result for this request. Success was not reported and the save was not resent.".into()
+}
+pub(super) fn completion(reply: Reply) -> Result<Option<WorldSaveCompletion>, String> {
+    match reply {
+        Reply::Old | Reply::Dispatching => Ok(None),
+        Reply::Unknown => Err(unknown()),
+        Reply::Rejected(reason) => Err(format!(
+            "The native save request was rejected ({reason}); no save completion was claimed."
+        )),
+        Reply::Dispatched => Ok(Some(WorldSaveCompletion::Requested)),
+        Reply::Completed => Ok(Some(WorldSaveCompletion::Confirmed)),
+    }
 }
 fn now() -> Result<u128, String> {
     std::time::SystemTime::now()
@@ -235,23 +240,12 @@ pub(super) fn save(
         verify().map_err(|_| unknown())?;
         if let Some(bytes) =
             io::read_optional(&directory.join("response.txt"), 2048).map_err(|_| unknown())?
+            && let Some(completion) =
+                completion(reply(&bytes, game, &session_run, &nonce, pid).map_err(|_| unknown())?)?
         {
-            match reply(&bytes, game, &session_run, &nonce, pid).map_err(|_| unknown())? {
-                Reply::Old | Reply::Dispatching => {}
-                Reply::Unknown => return Err(unknown()),
-                Reply::Failed(reason) => return Err(match reason.as_str() {
-                    "vrising_write_failed" => "The game reported a native writer failure for this request's serialized world. The save operation did not complete successfully; it was not retried.".into(),
-                    _ => "The native game reported a write failure. This request could not certify a complete world save; it was not retried.".into(),
-                }),
-                Reply::Rejected(reason) => {
-                    return Err(format!(
-                        "The native save request was rejected ({reason}); no save completion was claimed."
-                    ));
-                }
-                state @ (Reply::Dispatched | Reply::Completed) => {
-                    let completed = state == Reply::Completed;
-                    verify().map_err(|_| unknown())?;
-                    return Ok(InstanceRuntimeCommandResult {
+            let completed = completion == WorldSaveCompletion::Confirmed;
+            verify().map_err(|_| unknown())?;
+            return Ok(InstanceRuntimeCommandResult {
                         instance_id:details.summary.id.clone(),process_key:process.process_key.clone(),display_name:format!("{} native save control",game.module),pid,command:command.into(),
                         response_text:Some(if completed && game.module=="barotrauma" {
                             "The game completed writing the campaign checkpoint for this request while between rounds."
@@ -264,11 +258,9 @@ pub(super) fn save(
                         }else{
                             "The native current-world save request was accepted. Disk completion has not been confirmed; do not treat this receipt as a completed save or blindly repeat the request."
                         }.into()),
-                        write_confirmation_pending:!completed,submitted_at_unix_ms,
-                        save_completion:Some(if completed {WorldSaveCompletion::Confirmed}else{WorldSaveCompletion::Unconfirmed}),
+                        write_confirmation_pending:completion==WorldSaveCompletion::Unconfirmed,submitted_at_unix_ms,
+                        save_completion:Some(completion),
                     });
-                }
-            }
         }
         std::thread::sleep(Duration::from_millis(50));
     }

@@ -7,8 +7,12 @@ use std::collections::BTreeMap;
 use std::io::{Read, Write};
 
 use super::super::native_logs as log_cursor;
+#[path = "commands_native_dragon_save_observation.rs"]
+pub(super) mod dragon;
 #[path = "commands_native_save_checkpoint_profiles.rs"]
 mod profiles;
+#[path = "commands_native_requested_save_observation.rs"]
+pub(super) mod requested;
 #[path = "commands_native_save_checkpoint_sqlite.rs"]
 mod sqlite;
 
@@ -128,6 +132,14 @@ fn ordinary(path: &Path) -> Result<fs::Metadata, String> {
 }
 
 fn files(saves: &Path, roots: &[PathBuf]) -> Result<Manifest, String> {
+    let manifest = inventory(saves, roots)?;
+    if manifest.values().all(|(bytes, _)| *bytes == 0) {
+        return Err("The formal save produced no native checkpoint".into());
+    }
+    Ok(manifest)
+}
+
+fn inventory(saves: &Path, roots: &[PathBuf]) -> Result<Manifest, String> {
     if roots.iter().any(|path| path == saves) {
         return Err("Checkpoint roots must retain the bound save directory".into());
     }
@@ -166,9 +178,6 @@ fn files(saves: &Path, roots: &[PathBuf]) -> Result<Manifest, String> {
                 return Err("Checkpoint native file families overlap".into());
             }
         }
-    }
-    if manifest.is_empty() || total == 0 {
-        return Err("The formal save produced no native checkpoint".into());
     }
     Ok(manifest)
 }

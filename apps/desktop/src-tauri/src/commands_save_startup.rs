@@ -122,28 +122,32 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
         let environment = spawn_blocking_storage_context_task(operation, move || {
             let root = crate::live_players::dragonwilds_control::preparation_root(&details)?;
             if !super::commands_dragonwilds_player_query::owns_compatible_loader(&root)? {
-                return Err(
-                    "The Dragonwilds owned save loader must be prepared before launch.".into(),
-                );
+                return Ok(None);
             }
             super::commands_dragonwilds_player_query::ensure_program_stopped(&root)?;
-            crate::live_players::dragonwilds_control::startup_environment(&details)
+            crate::live_players::dragonwilds_control::startup_environment(&details).map(Some)
         })
         .await
         .map_err(|error| format!("Dragonwilds save session preparation failed: {error}"))??;
-        vec![environment]
+        environment.map(|value| vec![value])
     } else if crate::unreal_loader::supported(module) {
-        ensure_unreal(instance, operation)
-            .await?
-            .into_iter()
-            .collect()
+        ensure_unreal(instance, operation).await?
     } else if module == "valheim" {
         super::commands_valheim_control::ensure_for_start(storage, instance, operation)
             .await?
-            .into_iter()
-            .collect()
+            .map(|value| vec![value])
     } else {
         super::commands_managed_save_control::ensure_for_start(storage, instance, operation).await?
+    };
+    let Some(environment) = environment else {
+        if let Some(path) = log_path {
+            let _ = append_startup_console_line(
+                path,
+                "当前版本的保存扩展不可用，手动保存暂不可用；游戏服务器将继续原生启动。",
+                "",
+            );
+        }
+        return Ok(Vec::new());
     };
     if let Some(path) = log_path {
         let _ = append_startup_console_line(path, "保存扩展及加载器检查完成。", "");
@@ -155,24 +159,26 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
 pub(super) async fn ensure_unreal<L: StorageContextTaskLease>(
     instance: &InstanceDetails,
     operation: &L,
-) -> Result<Option<(String, String)>, String> {
+) -> Result<Option<Vec<(String, String)>>, String> {
     validate_unreal_environment(std::iter::empty())?;
     let details = instance.clone();
-    let (root, installed) = spawn_blocking_storage_context_task(operation, move || {
+    let (root, preparation) = spawn_blocking_storage_context_task(operation, move || {
         let root = if details.summary.module_id == "windrose" {
             crate::live_players::file_ipc::windrose_world_save::validate_preparation(&details)?
         } else {
             crate::live_players::file_ipc::unreal_world_save::validate_preparation(&details)?
         };
-        let installed = crate::unreal_loader::installed(&root, &details.summary.module_id)?;
-        Ok::<_, String>((root, installed))
+        let preparation = crate::unreal_loader::prepare_startup(&root, &details.summary.module_id)?;
+        Ok::<_, String>((root, preparation))
     })
     .await
     .map_err(|error| format!("Save loader inspection failed: {error}"))??;
-    let prepared = if installed {
-        None
-    } else {
-        Some(crate::unreal_loader::prepare(&instance.summary.module_id).await?)
+    let prepared = match preparation {
+        crate::unreal_loader::StartupState::Unavailable => return Ok(None),
+        crate::unreal_loader::StartupState::Ready => None,
+        crate::unreal_loader::StartupState::NeedsInstall => {
+            Some(crate::unreal_loader::prepare(&instance.summary.module_id).await?)
+        }
     };
     let details = instance.clone();
     spawn_blocking_storage_context_task(operation, move || {
@@ -189,10 +195,11 @@ pub(super) async fn ensure_unreal<L: StorageContextTaskLease>(
         }
         if details.summary.module_id == "windrose" {
             crate::live_players::file_ipc::windrose_world_save::ensure_prepared(&details)?;
-            Ok(None)
+            Ok(Some(Vec::new()))
         } else {
             crate::live_players::file_ipc::unreal_world_save::ensure_prepared(&details)?;
             crate::live_players::file_ipc::unreal_world_save::startup_environment(&details)
+                .map(|environment| Some(environment.into_iter().collect()))
         }
     })
     .await
@@ -215,3 +222,7 @@ pub(super) fn validate_unreal_environment<'a>(
 #[cfg(test)]
 #[path = "commands_save_startup_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "commands_unreal_startup_tests.rs"]
+mod unreal_startup_tests;

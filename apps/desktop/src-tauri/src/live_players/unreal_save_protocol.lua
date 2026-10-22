@@ -77,6 +77,7 @@ end
 local inspect = build_save_target({ check = check, valid = valid, same = same, signature = signature,
     cdo = cdo, unique = unique, byte = byte })
 local function fingerprint()
+    if SAVE_CONFIG.fingerprint == nil then return end
     -- Host also pins and SHA-256 checks the complete image and fixed loader.
     -- These file bytes prevent old queued requests reading new-build offsets.
     local file = io.open(root .. "\\" .. SAVE_CONFIG.project .. "\\Binaries\\Win64\\" .. SAVE_CONFIG.executable, "rb")
@@ -215,10 +216,9 @@ local function schedule()
                     validate()
                 end
                 local function enter_native()
-                    -- The policy calls this once, after publishing its native
-                    -- frame and immediately before the first native entry.
-                    -- Admission still uses the short gate. The native bridge
-                    -- independently checks that original frame before effect.
+                    -- The policy calls this once immediately before its native
+                    -- entry. Admission still uses the short queue gate, while
+                    -- already-entered work has the bounded execution budget.
                     check(not operation.entered, "request_expired")
                     validate_target()
                     operation.entered, operation.phase = true, "executing"

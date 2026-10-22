@@ -55,7 +55,11 @@ fn digest(value: &str) -> bool {
     value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
 }
 
-fn inspect_tree(directory: &Path, relative: &str, allowed: &[&str]) -> Result<(), String> {
+pub(super) fn inspect_tree(
+    directory: &Path,
+    relative: &str,
+    allowed: &[&str],
+) -> Result<(), String> {
     if !installation::exists(directory)? {
         return Ok(());
     }

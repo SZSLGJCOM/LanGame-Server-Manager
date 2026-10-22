@@ -5,53 +5,8 @@ use std::sync::{
 };
 const ID: &str = "1234567890abcdef1234567890abcdef";
 const TOKEN: &str = "abcdef1234567890abcdef1234567890";
-const FILETIME: u64 = 134054131932282181;
 fn reference() -> Reference<'static> {
-    Reference {
-        run: ID,
-        pid: 123,
-        creation_time: FILETIME,
-    }
-}
-#[test]
-fn observed_native_preflight_binds_the_shipping_process_without_lossy_filetime_conversion() {
-    // Actual isolated ready frame. It was rejected before any Save because the
-    // old caller compared the responder with its managed bootstrap PID.
-    let request = Request {
-        protocol: 1,
-        request_id: "8b8a95474632410aa32070034392048a",
-        requested_at: 1792497739,
-        action: "saveprobe",
-        boot_id: "",
-        world_token: "",
-        save_id: None,
-    };
-    let frame=br#"{"protocol":1,"request_id":"8b8a95474632410aa32070034392048a","timestamp":1792497739,"action":"saveprobe","boot_id":"2c3a61642ec939b6600e81366fc72743","save_id":"","world_token":"713404f315e21df40eb442e94c26cb97","ready":true,"invoked":false,"call_returned":false,"write_confirmed":false,"native_status":"ready","native_pid":"55852","native_creation_time":"134369713226028349","run":"5e9c2690d40344549868cfc5e9fe11aa","error":null}"#;
-    let run = "5e9c2690d40344549868cfc5e9fe11aa";
-    let reference = Reference {
-        run,
-        pid: 55852,
-        creation_time: 134369713226028349,
-    };
-    assert!(probe(frame, &request, &reference).is_ok());
-    for (pid, creation_time) in [
-        (55851, reference.creation_time),
-        (55852, reference.creation_time - 1),
-        (55852, 134369713226028352),
-    ] {
-        assert!(
-            probe(
-                frame,
-                &request,
-                &Reference {
-                    run,
-                    pid,
-                    creation_time
-                }
-            )
-            .is_err()
-        );
-    }
+    Reference { run: ID }
 }
 fn request(action: &str) -> Request<'_> {
     Request {
@@ -61,20 +16,13 @@ fn request(action: &str) -> Request<'_> {
         action,
         boot_id: if action == "saveprobe" { "" } else { ID },
         world_token: if action == "saveprobe" { "" } else { TOKEN },
-        save_id: if action == "savequery" {
-            Some(TOKEN)
-        } else {
-            None
-        },
     }
 }
-fn reply(request: &Request<'_>, status: &str) -> serde_json::Value {
+fn reply(request: &Request<'_>) -> serde_json::Value {
     serde_json::json!({"protocol":1,"request_id":request.request_id,"timestamp":request.requested_at,
-        "action":request.action,"boot_id":ID,"world_token":TOKEN,"save_id":request.save_id.unwrap_or(""),
-        "ready":status != "rejected", "invoked": status != "ready" && status != "rejected",
-        "call_returned":status == "completed", "write_confirmed":status == "completed",
-        "native_status":status,"native_pid":"123","native_creation_time":FILETIME.to_string(),
-        "run":ID,"error":if status == "failed" {Some("native_write_failed")} else {None}})
+        "action":request.action,"boot_id":ID,"world_token":TOKEN,
+        "ready":true,"invoked":request.action == "save","call_returned":request.action == "save",
+        "write_confirmed":false,"run":ID,"error":null})
 }
 fn bytes(value: &serde_json::Value) -> Vec<u8> {
     serde_json::to_vec(value).unwrap()
@@ -102,16 +50,16 @@ fn dragonwilds_control_save_lua_fixture_uses_the_bundled_payload_and_preserves_m
         ))
         .eval()
         .unwrap();
-    assert!(count >= 51);
+    assert!(count >= 50);
 }
 #[test]
-fn dragonwilds_control_save_probe_is_native_current_closed_and_side_effect_free() {
+fn dragonwilds_control_save_preflight_cannot_acknowledge_an_effect() {
     let request = request("saveprobe");
-    let packet = reply(&request, "ready");
+    let packet = reply(&request);
     assert!(probe(&bytes(&packet), &request, &reference()).is_ok());
     for (key, value) in [
-        ("native_status", serde_json::json!("completed")),
         ("invoked", serde_json::json!(true)),
+        ("call_returned", serde_json::json!(true)),
         ("world_token", serde_json::json!("")),
         ("timestamp", serde_json::json!(107)),
         ("write_confirmed", serde_json::json!(true)),
@@ -125,34 +73,21 @@ fn dragonwilds_control_save_probe_is_native_current_closed_and_side_effect_free(
     }
 }
 #[test]
-fn dragonwilds_control_save_rejects_foreign_identity_lossy_filetime_and_schema_pollution() {
-    let request = request("savequery");
-    let packet = reply(&request, "completed");
+fn dragonwilds_control_save_binds_current_run_world_and_nonce_and_rejects_old_completion_frames() {
+    let request = request("save");
+    let packet = reply(&request);
     assert!(parse(&bytes(&packet), &request, &reference()).is_ok());
     for (key, value) in [
         ("request_id", serde_json::json!(TOKEN)),
-        ("save_id", serde_json::json!(ID)),
         ("run", serde_json::json!(TOKEN)),
         ("boot_id", serde_json::json!(TOKEN)),
         ("world_token", serde_json::json!(ID)),
-        ("native_pid", serde_json::json!("0123")),
-        ("native_pid", serde_json::json!("124")),
-        ("native_creation_time", serde_json::json!(FILETIME)),
-        (
-            "native_creation_time",
-            serde_json::json!("134054131932282176"),
-        ),
-        (
-            "native_creation_time",
-            serde_json::json!("18446744073709551616"),
-        ),
-        (
-            "native_creation_time",
-            serde_json::json!("+134054131932282181"),
-        ),
+        ("timestamp", serde_json::json!(99)),
+        ("timestamp", serde_json::json!(107)),
+        ("write_confirmed", serde_json::json!(true)),
         ("error", serde_json::json!("untrusted text")),
-        ("write_confirmed", serde_json::json!(false)),
-        ("native_status", serde_json::json!("sent")),
+        ("native_status", serde_json::json!("completed")),
+        ("save_id", serde_json::json!(ID)),
         ("extra", serde_json::json!(true)),
     ] {
         let mut invalid = packet.clone();
@@ -172,117 +107,51 @@ fn dragonwilds_control_save_rejects_foreign_identity_lossy_filetime_and_schema_p
     }
 }
 #[test]
-fn dragonwilds_control_save_sends_once_and_queries_until_all_native_sinks_complete() {
+fn dragonwilds_control_save_sends_one_request_without_completion_queries() {
     let request = request("save");
-    let mut saves = 0;
-    let mut queries = 0;
-    complete_once(
-        &request,
-        &reference(),
-        Instant::now() + LIFETIME,
-        |sent| {
-            if sent.action == "save" {
-                saves += 1;
-                assert!(sent.save_id.is_none());
-            } else {
-                queries += 1;
-                assert_eq!(sent.action, "savequery");
-                assert_eq!(sent.save_id, Some(ID));
-                assert_ne!(sent.request_id, ID);
-            }
-            Ok(bytes(&reply(
-                sent,
-                if queries == 2 {
-                    "completed"
-                } else {
-                    "dispatching"
-                },
-            )))
-        },
-        || {},
-    )
-    .unwrap();
-    assert_eq!((saves, queries), (1, 2));
-}
-#[test]
-fn dragonwilds_control_save_recovers_lost_initial_receipt_only_with_a_read_only_query() {
-    for first in [Err("transport timeout".into()), Ok(b"invalid".to_vec())] {
-        let request = request("save");
-        let mut initial = Some(first);
-        let mut calls = 0;
-        complete_once(
-            &request,
-            &reference(),
-            Instant::now() + LIFETIME,
-            |sent| {
-                calls += 1;
-                if sent.action == "save" {
-                    return initial.take().unwrap();
-                }
-                assert_eq!(sent.save_id, Some(ID));
-                Ok(bytes(&reply(sent, "completed")))
-            },
-            || {},
-        )
-        .unwrap();
-        assert_eq!(calls, 2);
-    }
-}
-#[test]
-fn dragonwilds_control_save_never_promotes_failure_unknown_or_late_success() {
-    for status in ["failed", "unknown", "rejected"] {
-        let request = request("save");
-        let mut calls = 0;
-        let error = complete_once(
-            &request,
-            &reference(),
-            Instant::now() + LIFETIME,
-            |sent| {
-                calls += 1;
-                let mut value = reply(sent, status);
-                if status != "failed" {
-                    value["error"] = serde_json::json!(if status == "rejected" {
-                        "save_busy"
-                    } else {
-                        "native_closure_unavailable"
-                    });
-                }
-                Ok(bytes(&value))
-            },
-            || {},
-        )
-        .unwrap_err();
-        assert_eq!(calls, 1);
-        assert!(error.contains("not resent"));
-    }
     let mut calls = 0;
-    assert!(
-        complete_once(
-            &request("save"),
-            &reference(),
-            Instant::now(),
-            |sent| {
-                calls += 1;
-                Ok(bytes(&reply(sent, "completed")))
-            },
-            || {}
-        )
-        .is_err()
-    );
+    dispatch_once(&request, &reference(), |sent| {
+        calls += 1;
+        assert_eq!(sent.action, "save");
+        Ok(bytes(&reply(sent)))
+    })
+    .unwrap();
     assert_eq!(calls, 1);
 }
 #[test]
-fn dragonwilds_control_save_query_wire_binds_original_save_without_adding_a_second_save() {
-    let value = serde_json::to_value(request("savequery")).unwrap();
-    assert_eq!(value["action"], "savequery");
-    assert_eq!(value["save_id"], TOKEN);
-    assert!(
-        serde_json::to_value(request("save"))
-            .unwrap()
-            .get("save_id")
-            .is_none()
-    );
-    assert_eq!(LIFETIME, Duration::from_secs(30));
+fn dragonwilds_control_save_never_resends_a_missing_invalid_or_ambiguous_acknowledgment() {
+    let request = request("save");
+    let mut unknown = reply(&request);
+    unknown["call_returned"] = serde_json::json!(false);
+    unknown["error"] = serde_json::json!("save_call_unknown");
+    for response in [
+        Err("transport timeout".into()),
+        Ok(b"invalid".to_vec()),
+        Ok(bytes(&unknown)),
+    ] {
+        let mut response = Some(response);
+        let mut calls = 0;
+        let error = dispatch_once(&request, &reference(), |_| {
+            calls += 1;
+            response.take().unwrap()
+        })
+        .unwrap_err();
+        assert_eq!(calls, 1);
+        assert_eq!(error, UNKNOWN);
+    }
+}
+#[test]
+fn dragonwilds_control_save_distinguishes_rejection_from_unknown_invocation() {
+    let request = request("save");
+    let mut rejected = reply(&request);
+    rejected["ready"] = serde_json::json!(false);
+    rejected["invoked"] = serde_json::json!(false);
+    rejected["call_returned"] = serde_json::json!(false);
+    rejected["error"] = serde_json::json!("save_busy");
+    let error = dispatch_once(&request, &reference(), |_| Ok(bytes(&rejected))).unwrap_err();
+    assert!(error.contains("save_busy") && error.contains("No manual save was called"));
+    rejected["invoked"] = serde_json::json!(true);
+    assert!(parse(&bytes(&rejected), &request, &reference()).is_err());
 }
 struct Lease(
     Arc<AtomicUsize>,
@@ -306,8 +175,7 @@ impl Drop for Lease {
 impl StorageContextTaskLease for Lease {}
 
 #[tokio::test]
-async fn dragonwilds_control_save_cancellation_retains_storage_lease_and_mutation_until_worker_exit()
- {
+async fn dragonwilds_control_save_cancellation_retains_ownership_until_worker_exit() {
     let mutex = Arc::new(tokio::sync::Mutex::new(()));
     let mutation = mutex.clone().lock_owned().await;
     let retained = Arc::new(AtomicUsize::new(1));

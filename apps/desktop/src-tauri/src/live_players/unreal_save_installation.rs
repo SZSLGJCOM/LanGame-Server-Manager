@@ -1,6 +1,6 @@
 //! Recoverable publication for the owned native world-save bridges.
 use super::Game;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::Read;
 use std::path::Path;
@@ -15,6 +15,15 @@ fn mod_dir(game: Game) -> String {
 const DIRECTORY: &str = "langame_world_save";
 const MAX_FILE: usize = 4 * 1024 * 1024;
 const RETIRED_SCUM_BOOTSTRAP: &str = "dlls/main.dll";
+const RETIRED_MORIA_BRIDGE: &str = "native/LgsmMoriaSaveControl.dll";
+
+fn retired_payload(game: Game) -> Option<&'static str> {
+    match game {
+        Game::Moria => Some(RETIRED_MORIA_BRIDGE),
+        Game::Scum => Some(RETIRED_SCUM_BOOTSTRAP),
+        _ => None,
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -247,8 +256,7 @@ pub(super) fn payload(game: Game, script: &[u8]) -> BTreeMap<&'static str, &[u8]
 fn validate_hashes(game: Game, files: &BTreeMap<String, String>) -> bool {
     let allowed = payload(game, &[]);
     files.keys().all(|name| {
-        allowed.contains_key(name.as_str())
-            || (game == Game::Scum && name == RETIRED_SCUM_BOOTSTRAP)
+        allowed.contains_key(name.as_str()) || retired_payload(game) == Some(name.as_str())
     }) && files
         .values()
         .all(|value| value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit()))
@@ -257,13 +265,9 @@ fn validate_hashes(game: Game, files: &BTreeMap<String, String>) -> bool {
 fn upgradable_record(game: Game, files: &BTreeMap<String, String>) -> bool {
     let current = payload(game, &[]);
     (files.len() == current.len() && current.keys().all(|name| files.contains_key(*name)))
-        // The original owned Moria mod had no native DLL. Add only the newly
-        // bundled DLL while retaining CAS checks on both previously owned files.
-        || (game == Game::Moria && files.len() == 2
-            && files.contains_key("Scripts/main.lua") && files.contains_key("enabled.txt"))
-        || (game == Game::Scum && files.len() == current.len() + 1
+        || (files.len() == current.len() + 1
             && current.keys().all(|name| files.contains_key(*name))
-            && files.contains_key(RETIRED_SCUM_BOOTSTRAP))
+            && retired_payload(game).is_some_and(|name| files.contains_key(name)))
 }
 
 pub(super) fn owned(game: Game, root: &Path) -> Result<bool, String> {
@@ -271,7 +275,12 @@ pub(super) fn owned(game: Game, root: &Path) -> Result<bool, String> {
     if !exists(&root.join(OWNER))? {
         return Ok(false);
     }
-    let owner: Ownership = serde_json::from_slice(&read(&root.join(OWNER), 8192)?)
+    decode(game, &read(&root.join(OWNER), 8192)?)?;
+    Ok(true)
+}
+
+fn decode(game: Game, bytes: &[u8]) -> Result<Ownership, String> {
+    let owner: Ownership = serde_json::from_slice(bytes)
         .map_err(|_| "The native save ownership record is invalid; files were preserved.")?;
     if owner.protocol != 1
         || owner.module_id != game.id()
@@ -288,7 +297,74 @@ pub(super) fn owned(game: Game, root: &Path) -> Result<bool, String> {
                 .into(),
         );
     }
-    Ok(true)
+    Ok(owner)
+}
+
+pub(super) fn verify_owned_mods(game: Game, root: &Path) -> Result<(), String> {
+    let _root = pin(root, false)?;
+    let owner = if exists(&root.join(OWNER))? {
+        Some(decode(game, &read(&root.join(OWNER), 8192)?)?)
+    } else {
+        None
+    };
+    verify_mod_tree(
+        &game.win64(root).join("ue4ss/Mods"),
+        owner.as_ref().map(|owner| &owner.files),
+        owner
+            .as_ref()
+            .and_then(|owner| owner.pending_files.as_ref()),
+    )
+}
+
+/// Inspect existing leaves only. Missing leaves can be an interrupted owned
+/// publication or retirement; they cannot cause a foreign mod to be disabled.
+pub(crate) fn verify_mod_tree(
+    mods: &Path,
+    files: Option<&BTreeMap<String, String>>,
+    pending: Option<&BTreeMap<String, String>>,
+) -> Result<(), String> {
+    if !exists(mods)? {
+        return Ok(());
+    }
+    let _mods = pin(mods, false)?;
+    for entry in fs::read_dir(mods).map_err(|error| error.to_string())? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        if entry.file_name() != "LgsmWorldSave"
+            || !entry
+                .file_type()
+                .map_err(|error| error.to_string())?
+                .is_dir()
+        {
+            return Err(
+                "UE4SS contains an operator or unknown mod entry; its loader was preserved.".into(),
+            );
+        }
+        let files =
+            files.ok_or("The save mod has no valid ownership record; its loader was preserved.")?;
+        let known = files
+            .keys()
+            .chain(pending.into_iter().flat_map(|files| files.keys()))
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let directory = entry.path();
+        super::retired::inspect_tree(&directory, "", &known)?;
+        for name in known {
+            let path = directory.join(name);
+            if !exists(&path)? {
+                continue;
+            }
+            let _parents = pin(path.parent().ok_or("Invalid owned save path.")?, false)?;
+            let actual = hash(&read(&path, MAX_FILE)?);
+            if files.get(name) != Some(&actual)
+                && pending.and_then(|files| files.get(name)) != Some(&actual)
+            {
+                return Err("An owned save mod was modified; its loader was preserved.".into());
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Read-only admission: an older complete payload can keep serving the roster,
@@ -311,8 +387,10 @@ pub(super) fn complete(game: Game, root: &Path, script: &[u8]) -> Result<bool, S
         return Err("The native world-save control installation is incomplete; restart this instance to prepare it.".into());
     }
     let payload = payload(game, script);
-    if game == Game::Scum && exists(&root.join(mod_dir(game)).join(RETIRED_SCUM_BOOTSTRAP))? {
-        return Err("The retired SCUM observer is still installed; restart this instance to prepare native save requests.".into());
+    if let Some(name) = retired_payload(game)
+        && exists(&root.join(mod_dir(game)).join(name))?
+    {
+        return Err("A retired save adapter is still installed; restart this instance to prepare native save requests.".into());
     }
     for (name, bytes) in payload {
         let path = root.join(mod_dir(game)).join(name);
@@ -406,25 +484,25 @@ fn publish_payload_with(
             pending_files: None,
         }
     };
-    // Only the former, unchanged owned bootstrap may be retired. An interrupted
+    // Only the former, unchanged owned adapter may be retired. An interrupted
     // retirement may leave its old receipt with an absent file and is resumable.
-    let retired = root.join(mod_dir(game)).join(RETIRED_SCUM_BOOTSTRAP);
-    let retired_hash = if game == Game::Scum && exists(&retired)? {
+    let retired = retired_payload(game).map(|name| (name, root.join(mod_dir(game)).join(name)));
+    let retired_hash = if let Some((name, path)) = &retired
+        && exists(path)?
+    {
         let _parents = pin(
-            retired.parent().ok_or("Invalid retired bootstrap path")?,
+            path.parent().ok_or("Invalid retired save adapter path")?,
             false,
         )?;
-        let actual = hash(&read(&retired, MAX_FILE)?);
-        if owner.files.get(RETIRED_SCUM_BOOTSTRAP) != Some(&actual)
+        let actual = hash(&read(path, MAX_FILE)?);
+        if owner.files.get(*name) != Some(&actual)
             && owner
                 .pending_files
                 .as_ref()
-                .and_then(|files| files.get(RETIRED_SCUM_BOOTSTRAP))
+                .and_then(|files| files.get(*name))
                 != Some(&actual)
         {
-            return Err(
-                "The retired SCUM bootstrap is unowned or changed; it was preserved.".into(),
-            );
+            return Err("The retired save adapter is unowned or changed; it was preserved.".into());
         }
         Some(actual)
     } else {
@@ -463,10 +541,12 @@ fn publish_payload_with(
             );
         }
     }
-    if let Some(expected) = retired_hash {
-        crate::commands::commands_managed_save_control::retire_owned_file(&retired, &expected)?;
+    if let Some((name, path)) = &retired {
+        if let Some(expected) = retired_hash {
+            crate::commands::commands_managed_save_control::retire_owned_file(path, &expected)?;
+        }
+        owner.files.remove(*name);
     }
-    owner.files.remove(RETIRED_SCUM_BOOTSTRAP);
     owner.pending_files = Some(expected.clone());
     let intent = serde_json::to_vec(&owner).map_err(|error| error.to_string())?;
     commit(&owner_path, original_owner.as_deref(), &intent)?;

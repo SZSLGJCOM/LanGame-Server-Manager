@@ -17,7 +17,6 @@ $installation = & $vswhere -latest -products '*' -requires Microsoft.VisualStudi
 if ($LASTEXITCODE -ne 0 -or -not $installation) { throw 'MSVC x64 toolchain was not found.' }
 $vcvars = Join-Path $installation 'VC/Auxiliary/Build/vcvars64.bat'
 $games = @(
-    @{ Module = 'returntomoria'; Name = 'LgsmMoriaSaveControl' },
     @{ Module = 'nightingale'; Name = 'LgsmNightingaleSaveControl' },
     @{ Module = 'conanexiles'; Name = 'LgsmConanSaveControl' }
 )

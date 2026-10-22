@@ -30,7 +30,10 @@ pub(super) enum Game {
 }
 impl Game {
     fn from_details(details: &InstanceDetails) -> Result<Self, String> {
-        match details.summary.module_id.as_str() {
+        Self::from_id(&details.summary.module_id)
+    }
+    fn from_id(module_id: &str) -> Result<Self, String> {
+        match module_id {
             "abioticfactor" => Ok(Self::Abiotic),
             "returntomoria" => Ok(Self::Moria),
             "nightingale" => Ok(Self::Nightingale),
@@ -106,13 +109,6 @@ impl Game {
     fn native_payload(self) -> Option<(&'static str, &'static [u8])> {
         #[cfg(windows)]
         match self {
-            Self::Moria => Some((
-                "native/LgsmMoriaSaveControl.dll",
-                include_bytes!(concat!(
-                    env!("OUT_DIR"),
-                    "/native-world-save/LgsmMoriaSaveControl.dll"
-                )),
-            )),
             Self::Nightingale => Some((
                 "native/LgsmNightingaleSaveControl.dll",
                 include_bytes!(concat!(
@@ -150,6 +146,15 @@ impl Game {
             Self::Scum => process::GameProfile::Scum,
         }
     }
+}
+
+/// Before disabling an owned loader for an unsupported update, establish that
+/// doing so cannot disable an operator's other or modified mods.
+pub(crate) fn verify_owned_mods(module_id: &str, root: &Path) -> Result<(), String> {
+    if module_id == "windrose" {
+        return super::windrose_world_save::verify_owned_mods(root);
+    }
+    installation::verify_owned_mods(Game::from_id(module_id)?, root)
 }
 
 fn now() -> Result<u64, String> {
@@ -328,25 +333,18 @@ fn validate_native_identity(
 }
 
 fn parse_context(context: &Context, body: &[u8], request: &Request<'_>) -> Result<Reply, String> {
-    let reply = if matches!(
-        context.game,
-        Game::Abiotic | Game::Conan | Game::Nightingale | Game::Scum
-    ) && request.action == "save"
+    let reply = if matches!(context.game, Game::Conan | Game::Nightingale | Game::Scum)
+        && request.action == "save"
     {
         parse_with_window(body, request, 36)?
     } else {
         parse(body, request)?
     };
-    if reply.write_confirmed
-        && !matches!(context.game, Game::Moria | Game::Conan | Game::Nightingale)
-    {
+    if reply.write_confirmed && context.game != Game::Conan {
         return Err("This native adapter has no request-bound completion contract.".into());
     }
-    let native = matches!(
-        context.game,
-        Game::Moria | Game::Nightingale | Game::Conan | Game::Scum
-    )
-    .then_some(&context.native);
+    let native = matches!(context.game, Game::Nightingale | Game::Conan | Game::Scum)
+        .then_some(&context.native);
     validate_native_identity(&reply, native)?;
     Ok(reply)
 }
@@ -354,10 +352,8 @@ fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, String>
     let body = serde_json::to_vec(request).map_err(|_| "Cannot encode the native save request.")?;
     let deadline = Instant::now()
         + Duration::from_secs(
-            if matches!(
-                context.game,
-                Game::Abiotic | Game::Conan | Game::Nightingale | Game::Scum
-            ) && request.action == "save"
+            if matches!(context.game, Game::Conan | Game::Nightingale | Game::Scum)
+                && request.action == "save"
             {
                 35
             } else {
@@ -452,18 +448,19 @@ fn classify_completion(
 ) -> Result<(&'static str, WorldSaveCompletion), String> {
     // These native paths acknowledge invocation without a storage result.
     // Callers must still parse the correlated receipt before this classification.
-    if matches!(game, Game::Abiotic | Game::Scum)
-        && reply.as_ref().is_ok_and(|reply| {
-            reply.action == "save"
-                && reply.ready
-                && reply.invoked
-                && reply.call_returned
-                && !reply.write_confirmed
-                && reply.error.is_none()
-        })
-    {
+    if matches!(
+        game,
+        Game::Moria | Game::Abiotic | Game::Scum | Game::Nightingale
+    ) && reply.as_ref().is_ok_and(|reply| {
+        reply.action == "save"
+            && reply.ready
+            && reply.invoked
+            && reply.call_returned
+            && !reply.write_confirmed
+            && reply.error.is_none()
+    }) {
         return Ok((
-            "The native current-world save request was processed; storage completion is not verified.",
+            "The native current-world save request was submitted; storage completion is not verified.",
             WorldSaveCompletion::Requested,
         ));
     }

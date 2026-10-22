@@ -6,7 +6,16 @@
 
 `LgsmPlayerControl` 是另行归属的 LanGame Lua/C++ 实现，复用本页固定加载器。2026-10-17 在 build `25811348` 的隔离实服中核对反射签名、游戏线程、对象所属和模块哈希，并通过游戏原生 INI importer 导入合成 EOS 账号：原生有效性与类型检查通过，空服封禁后 `KnownPlayerList` 和 INI 均为 true，重启仍为 true；原生解封后均为 false，再重启仍为 false。未使用真实账号，未验证真人踢出、封禁后重连或客户端认证。探针进程已全部回收。
 
-原生桥只从游戏当前 `KnownPlayerList` 复制身份，调用已核对的原生管理和保存路径，不修改玩家权限，不通过客户端 RPC 冒充管理员。桥的 `dispatched` 仅说明调用完成；生产 Lua 继续核对内存/INI 标志，封禁还要求账号离线。当前接口和内部布局只对固定 Shipping SHA-256 有效，升级必须重新验证，不扫描猜测新地址。Lua 构造测试覆盖 37 个行为用例；这些用例不能代替真实玩家断连验收。
+原生桥只从游戏当前 `KnownPlayerList` 复制身份，调用已核对的原生管理及名单持久化路径，不修改玩家权限，不通过客户端 RPC 冒充管理员。桥的 `dispatched` 仅说明调用完成；生产 Lua 继续核对内存/INI 标志，封禁还要求账号离线。当前接口和内部布局只对固定 Shipping SHA-256 有效，升级必须重新验证，不扫描猜测新地址。手动保存独立调用游戏反射接口，见 [保存契约](../control/LgsmPlayerControl/SAVE.md)。历史构造用例不能代替真实玩家断连验收。
+
+封禁桥的两个版本配置直接由完整 Shipping 哈希选择：
+
+| Steam build | Shipping SHA-256 |
+| --- | --- |
+| `25811348` | `89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed` |
+| `25991736` | `da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe` |
+
+新版配置来自两个实际 PE 的限定差分：身份工厂、封禁、解封、名单持久化的完整调用体，以及 MatchmakingSubsystem、原生会话状态构造器和 `KnownPlayerList` 访问体，在代码与数据地址重定位外保持原有参数、引用计数和字段布局。新版名单持久化中的两个 image-base 分发表也分别核对，不按统一地址增量推算。独立检查以只读、不可执行的 PE 映射核验两版全部五个入口前缀及未知哈希拒绝。此项是静态兼容证据；新版隔离合成账号的封禁、解封及重启持久化仍需实服验收，不能替代真人断连或认证测试。
 
 同一隔离副本只启用冻结生产控制脚本和原生桥，两次不同请求取得完整空名单，`boot_id` 一致，每次只读原生 probe 均为 ready。布局修正后的生产脚本 SHA-256 为 `d39a41375193abdfd1040b202815ff70edd26e33f8950f540b08a193b520aa6e`；本次独立 MSVC 构建的桥 SHA-256 为 `7ed776ff6724389adbab6caec50d19637eaeddafd97cdec33a7476b494b14e99`。应用内嵌构建可能产生不同 PE 哈希，安装按本次构建记录校验。
 
@@ -35,7 +44,7 @@ Dragonwilds 专服使用 `version.dll` 加载代理。[作者发布页的 2026-0
 
 ## 许可边界
 
-UE4SS、代理生成器及所用第一方依赖采用 [MIT 许可证](https://github.com/UE4SS-RE/RE-UE4SS/blob/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/LICENSE)。`fmt 11.2.0` 采用其 [MIT 许可证](https://github.com/fmtlib/fmt/blob/11.2.0/LICENSE)。构建输出附带两份许可证；复用或分发时保留。应用内嵌固定源码构建的专服代理及两份许可证，在独立运行副本启动准备时下载上表中的官方核心，并将核心及代理的许可证一并保留在 `ue4ss/`。仓库不保存这些上游源文件、Windows 系统 DLL 或生成的代理 DLL。
+UE4SS、代理生成器及所用第一方依赖采用 [MIT 许可证](https://github.com/UE4SS-RE/RE-UE4SS/blob/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/LICENSE)。`fmt 11.2.0` 采用其 [MIT 许可证](https://github.com/fmtlib/fmt/blob/11.2.0/LICENSE)。构建输出附带两份许可证；复用或分发时保留。Windows 构建内嵌上表中的完整官方归档、固定源码构建的专服代理及许可证。`scripts/build_ue4ss_runtime.ps1` 仅从固定官方 URL 下载，或读取 `LANGAME_UE4SS_ARCHIVE` 指定的本地归档；均核对长度和哈希，不执行下载内容。实例启动从内嵌字节准备加载器，将核心及代理的许可证一并保留在 `ue4ss/`，无需启动时下载。仓库不保存这些上游源文件、Windows 系统 DLL 或生成的代理 DLL。
 
 RSDWTools/Dev Kit 仅用于发现可观察的游戏 API 线索。本实现不复制其模块、界面、配置或派生脚本，也不将其许可解释为可重新分发整个工具包。
 
@@ -43,7 +52,7 @@ RSDWTools/Dev Kit 仅用于发现可观察的游戏 API 线索。本实现不复
 
 ### 2026-10-16：自动下载、首次安装及原生重启
 
-自动准备沿用生产 Mod 下载器。真实联网探针 `native_dragonwilds_loader_download_is_pinned` 成功取得固定官方资产，并通过准确大小、发行包 SHA-256 及三个必要成员的独立哈希校验。
+当时的自动准备沿用生产 Mod 下载器，历史联网探针成功取得固定官方资产，并通过准确大小、发行包 SHA-256 及三个必要成员的独立哈希校验。
 
 `isolated_dragonwilds_automatic_loader_install_survives_native_restart` 在不带加载器的标记独立副本中调用生产安装器，随后经生产 `spawn_launch_plan` 连续启动两次。两次运行分别取得两个不同请求标识对应的完整空名单，停止后拒绝旧进程；原生生成日志后，安装检查仍保持就绪。测试通过 1 项、失败 0 项，用时 17.21 秒。本次内嵌代理为 448,512 字节，SHA-256 `3244536c75b12db2cb6ba75f62bdd450a677763fdbc01ddf57a6e7cf9bb8fa4e`，仍来自同一固定源码清单。首次启动后游戏从保存的 INI 移除了 `AdminPassword`，重启探针沿用原生保存状态，不重复要求首次夹具的明文字段。
 

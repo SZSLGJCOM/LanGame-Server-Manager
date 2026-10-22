@@ -55,7 +55,12 @@ pub async fn prepare_valheim_player_control(
         let instance = read_instance_details(&storage.paths, &instance_id)
             .await
             .map_err(|error| error.to_string())?;
-        ensure_installed(&storage, &instance, &worker_operation).await?;
+        if !ensure_installed(&storage, &instance, &worker_operation).await? {
+            return Err(
+                "This Valheim server build has not been verified for native account control."
+                    .into(),
+            );
+        }
         read_instance_details(&storage.paths, &instance_id)
             .await
             .map_err(|error| error.to_string())
@@ -74,7 +79,9 @@ pub(super) async fn ensure_for_start<L: crate::state::StorageContextTaskLease>(
     if instance.summary.module_id != "valheim" {
         return Ok(None);
     }
-    ensure_installed(storage, instance, operation).await?;
+    if !ensure_installed(storage, instance, operation).await? {
+        return Ok(None);
+    }
     let instance = instance.clone();
     spawn_blocking_storage_context_task(operation, move || startup_environment(&instance))
         .await
@@ -85,17 +92,25 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     operation: &L,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     ensure_stopped(instance)?;
     let root = independent_root(instance)?;
     let probe_root = root.clone();
-    spawn_blocking_storage_context_task(operation, move || {
+    let supported = spawn_blocking_storage_context_task(operation, move || {
         super::commands_managed_save_control::ensure_stopped_program(&probe_root, "valheim")?;
-        verify_supported_game(&probe_root)?;
-        inspect_plugin_destination(&probe_root).map(|_| ())
+        let supported = supported_game(&probe_root)?;
+        if supported {
+            inspect_plugin_destination(&probe_root)?;
+        } else {
+            deactivate_owned_plugin(&probe_root)?;
+        }
+        Ok::<_, String>(supported)
     })
     .await
     .map_err(|_| "Valheim extension inspection worker failed.")??;
+    if !supported {
+        return Ok(false);
+    }
     super::commands_managed_save_control::ensure_bepinex_loader(
         storage,
         instance,
@@ -108,7 +123,8 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
         install_owned_plugin(&root, io::bundled_payload())
     })
     .await
-    .map_err(|_| "Valheim extension installation worker failed.")?
+    .map_err(|_| "Valheim extension installation worker failed.")??;
+    Ok(true)
 }
 
 fn ensure_stopped(instance: &InstanceDetails) -> Result<(), String> {
@@ -145,6 +161,13 @@ pub(super) const NATIVE_PREPARATION_FILES: [&str; 3] = [
 ];
 
 fn verify_supported_game(root: &Path) -> Result<(), String> {
+    if !supported_game(root)? {
+        return Err("This Valheim server build has not been verified for native account control. Existing game files were preserved.".into());
+    }
+    Ok(())
+}
+
+fn supported_game(root: &Path) -> Result<bool, String> {
     let _root = io::pin_directories(root)?;
     let managed = root.join("valheim_server_Data/Managed");
     let _managed = io::pin_directory(&managed)?;
@@ -170,14 +193,12 @@ fn verify_supported_game(root: &Path) -> Result<(), String> {
             "63e114e7cfdcc38e4f4391c18b91f774290274d2b9200e6d85d757cbe3673e18",
         ),
     ];
-    if platform != "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a"
-        || !known.iter().any(|(expected_main, expected_utils)| {
-            main == *expected_main && utils == *expected_utils
-        })
-    {
-        return Err("This Valheim server build has not been verified for native account control. Existing game files were preserved.".into());
-    }
-    Ok(())
+    Ok(
+        platform == "8953c24a2f2af7ae257cc64fb36dde9d102c871c29b4cdd97d0c3c001de5bd5a"
+            && known.iter().any(|(expected_main, expected_utils)| {
+                main == *expected_main && utils == *expected_utils
+            }),
+    )
 }
 
 fn read_owner(root: &Path) -> Result<Option<Ownership>, String> {
@@ -259,6 +280,28 @@ fn verified_plugin_hash(root: &Path, owner: &Ownership) -> Result<Option<String>
         );
     }
     Ok(current)
+}
+
+fn deactivate_owned_plugin(root: &Path) -> Result<(), String> {
+    let _root = io::pin_directories(root)?;
+    let record = root.join(io::OWNER);
+    let owner_pin = if let Some(previous) = io::read_optional(&record, 4096)? {
+        let (pin, bytes) = io::pin_regular(&record, 4096)?;
+        if bytes != previous {
+            return Err("The Valheim control ownership changed; it was preserved.".into());
+        }
+        Some(pin)
+    } else {
+        None
+    };
+    let owner = inspect_plugin_destination(root)?;
+    if let Some(hash) = verified_plugin_hash(root, &owner)? {
+        if owner_pin.is_none() {
+            return Err("The Valheim control ownership changed; it was preserved.".into());
+        }
+        super::commands_managed_save_control::retire_owned_file(&root.join(io::PLUGIN), &hash)?;
+    }
+    Ok(())
 }
 
 fn install_owned_plugin(root: &Path, payload: &[u8]) -> Result<(), String> {
@@ -412,7 +455,10 @@ pub(super) fn is_prepared(instance: &InstanceDetails) -> Result<bool, String> {
         super::commands_program_storage::instance_root(instance)?,
     )
     .map_err(|error| error.to_string())?;
-    Ok(read_owner(&root)?.is_some())
+    let Some(owner) = read_owner(&root)? else {
+        return Ok(false);
+    };
+    verified_plugin_hash(&root, &owner).map(|hash| hash.is_some())
 }
 
 pub(super) async fn sync_roster(

@@ -20,7 +20,7 @@ pub(super) const RUNTIME_FILES: [(&str, &str); 4] = [
 
 pub(super) fn prepare(profile: Profile, bytes: &[u8]) -> Result<PreparedLoader, String> {
     if bytes.len() != ARCHIVE_BYTES || hash(bytes) != ARCHIVE_HASH {
-        return Err("The download is not the fixed official UE4SS 1125 archive; no runtime files were changed.".into());
+        return Err("The package is not the fixed official UE4SS 1125 archive; no runtime files were changed.".into());
     }
     let mut files = extract(bytes)?;
     for (name, expected) in RUNTIME_FILES {

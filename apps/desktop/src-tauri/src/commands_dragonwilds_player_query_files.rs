@@ -20,7 +20,10 @@ const PROXY_SOURCE_REVISION: &str =
     "7d2a03749c570614b0fb88705c0d89b4134ff608e6affb6be7d639fa307b2f35";
 pub(super) const ARCHIVE_BYTES: u64 = 8_718_500;
 const ARCHIVE_SHA: &str = "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7";
-const SERVER_SHA: &str = "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed";
+const SERVER_SHAS: &[&str] = &[
+    "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
+    "da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe",
+];
 const MAX_FILE: usize = 24 * 1024 * 1024;
 const MAX_PROXY: usize = 4 * 1024 * 1024;
 const MAX_ENCODED_PROXY: usize = MAX_PROXY.div_ceil(3) * 4;
@@ -50,7 +53,7 @@ const RELEASE: &[(&str, usize, &str)] = &[
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum Preparation {
     Ready,
-    Download,
+    NeedsInstall,
     ExternalLoader,
     UnsupportedBuild,
 }
@@ -197,19 +200,22 @@ fn pin_chain(path: &Path) -> Result<Vec<File>, String> {
     Ok(pins)
 }
 
-fn program_supported(root: &Path, server_sha: &str) -> Result<bool, String> {
+fn program_supported(root: &Path, server_shas: &[&str]) -> Result<bool, String> {
     fingerprint(
         &root.join("RSDragonwildsServer.exe"),
         32 * 1024 * 1024,
         true,
     )?;
-    Ok(fingerprint(
-        &root
-            .join(WIN64)
-            .join("RSDragonwildsServer-Win64-Shipping.exe"),
-        512 * 1024 * 1024,
-        true,
-    )? == server_sha)
+    Ok(server_shas.contains(
+        &fingerprint(
+            &root
+                .join(WIN64)
+                .join("RSDragonwildsServer-Win64-Shipping.exe"),
+            512 * 1024 * 1024,
+            true,
+        )?
+        .as_str(),
+    ))
 }
 
 fn ownership(root: &Path, name: &str) -> Result<Option<Ownership>, String> {
@@ -430,7 +436,7 @@ fn validate_tree(
 }
 
 pub(super) fn inspect(root: &Path, proxy: &[u8]) -> Result<Preparation, String> {
-    inspect_release(root, proxy, SERVER_SHA, RELEASE)
+    inspect_release(root, proxy, SERVER_SHAS, RELEASE)
 }
 
 fn verified_proxy(win64: &Path, owner: &Ownership) -> Result<bool, String> {
@@ -456,7 +462,7 @@ fn retire_proxy(win64: &Path, owner: &Ownership) -> Result<(), String> {
 fn inspect_release(
     root: &Path,
     proxy: &[u8],
-    server_sha: &str,
+    server_shas: &[&str],
     release: &[(&str, usize, &str)],
 ) -> Result<Preparation, String> {
     if !proxy.starts_with(b"MZ") || proxy.len() > 4 * 1024 * 1024 {
@@ -464,7 +470,7 @@ fn inspect_release(
     }
     let _pins = pin_chain(&root.join(WIN64))?;
     super::ensure_program_stopped(root)?;
-    let supported = program_supported(root, server_sha)?;
+    let supported = program_supported(root, server_shas)?;
     let win64 = root.join(WIN64);
     if let Some(owner) = ownership(root, RECEIPT)? {
         validate_owner(&owner, release)?;
@@ -478,7 +484,7 @@ fn inspect_release(
                 let _exchange = pin_chain(&root.join("langame_player_query"))?;
                 Preparation::Ready
             } else {
-                Preparation::Download
+                Preparation::NeedsInstall
             },
         );
     }
@@ -500,7 +506,7 @@ fn inspect_release(
                 );
             }
         }
-        return Ok(Preparation::Download);
+        return Ok(Preparation::NeedsInstall);
     }
     for name in ["version.dll", "dwmapi.dll", LOADER, STAGE] {
         if exists(&win64.join(name))? {
@@ -508,30 +514,26 @@ fn inspect_release(
         }
     }
     Ok(if supported {
-        Preparation::Download
+        Preparation::NeedsInstall
     } else {
         Preparation::UnsupportedBuild
     })
 }
 
 fn read_archive(
-    archive: &Path,
+    archive: &[u8],
     size: u64,
     hash: &str,
     release: &[(&str, usize, &str)],
 ) -> Result<BTreeMap<String, Vec<u8>>, String> {
-    let _pins = pin_chain(archive.parent().ok_or("UE4SS archive has no parent")?)?;
-    let file = open_regular(archive, size)?;
-    if file.metadata().map_err(|error| error.to_string())?.len() != size
-        || fingerprint(archive, size, false)? != hash
-    {
+    if archive.len() as u64 != size || digest(archive) != hash {
         return Err(
             "Dragonwilds UE4SS archive size or SHA-256 does not match the pinned official release"
                 .into(),
         );
     }
-    let mut zip =
-        zip::ZipArchive::new(file).map_err(|error| format!("Invalid UE4SS archive: {error}"))?;
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(archive))
+        .map_err(|error| format!("Invalid UE4SS archive: {error}"))?;
     if zip.len() > 512 {
         return Err("UE4SS archive has too many entries".into());
     }
@@ -564,7 +566,8 @@ fn read_archive(
     Ok(payload)
 }
 
-pub(super) fn verify_archive(archive: &Path) -> Result<(), String> {
+#[cfg(test)]
+pub(super) fn verify_archive(archive: &[u8]) -> Result<(), String> {
     read_archive(archive, ARCHIVE_BYTES, ARCHIVE_SHA, RELEASE).map(|_| ())
 }
 
@@ -618,13 +621,13 @@ fn publish_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
 
 pub(super) fn install(
     root: &Path,
-    archive: &Path,
+    archive: &[u8],
     proxy: &[u8],
     ue4ss_license: &[u8],
     fmt_license: &[u8],
 ) -> Result<(), String> {
     let _pins = pin_chain(&root.join(WIN64))?;
-    if inspect(root, proxy)? != Preparation::Download {
+    if inspect(root, proxy)? != Preparation::NeedsInstall {
         return Ok(());
     }
     let payload = read_archive(archive, ARCHIVE_BYTES, ARCHIVE_SHA, RELEASE)?;

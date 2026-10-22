@@ -65,11 +65,12 @@ fn original(path: &Path, limit: usize) -> Result<Option<Vec<u8>>, String> {
     read(path, limit).map(Some)
 }
 
-fn verified_root(root: &Path, profile: Profile) -> Result<Vec<std::fs::File>, String> {
+fn inspect_game_image(root: &Path, profile: Profile) -> Result<(Vec<std::fs::File>, bool), String> {
     let mut pins = pin(root, false)?;
     pins.extend(pin(&profile.win64(root), false)?);
     let mut binaries = vec![profile.executable];
     let mut provider_hash = None;
+    let mut supported = true;
     if profile.id == "conanexiles" {
         binaries.push("Dreamworld.dll");
     }
@@ -117,11 +118,24 @@ fn verified_root(root: &Path, profile: Profile) -> Result<Vec<std::fs::File>, St
             .map(|byte| format!("{byte:02x}"))
             .collect::<String>();
         if name == profile.executable {
-            provider_hash = profile.verify_game_image(&actual)?;
+            // This pure profile lookup only reports an unsupported image.
+            // File, permission and path failures above remain hard errors.
+            match profile.verify_game_image(&actual) {
+                Ok(provider) => provider_hash = provider,
+                Err(_) => supported = false,
+            }
         } else if provider_hash != Some(actual.as_str()) {
-            return Err("This game build is outside the verified automatic UE4SS save contract; no loader files were changed.".into());
+            supported = false;
         }
         pins.push(file);
+    }
+    Ok((pins, supported))
+}
+
+fn verified_root(root: &Path, profile: Profile) -> Result<Vec<std::fs::File>, String> {
+    let (pins, supported) = inspect_game_image(root, profile)?;
+    if !supported {
+        return Err("This game build is outside the verified automatic UE4SS save contract; no loader files were changed.".into());
     }
     Ok(pins)
 }
@@ -226,11 +240,14 @@ fn inspect(
 
 pub(super) fn installed(root: &Path, profile: Profile) -> Result<bool, String> {
     let _pins = verified_root(root, profile)?;
-    let win64 = profile.win64(root);
+    installed_at(&profile.win64(root), profile)
+}
+
+fn installed_at(win64: &Path, profile: Profile) -> Result<bool, String> {
     let expected = archive::expected(profile);
     let Inspection {
         receipt, current, ..
-    } = inspect(&win64, profile, &expected)?;
+    } = inspect(win64, profile, &expected)?;
     if receipt.pending_files.is_some() || current.len() != expected.len() {
         return Ok(false);
     }
@@ -243,6 +260,45 @@ pub(super) fn installed(root: &Path, profile: Profile) -> Result<bool, String> {
         return Ok(false);
     };
     Ok(profile::merge_settings(&settings, profile.settings())? == settings)
+}
+
+pub(super) fn prepare_startup(root: &Path, profile: Profile) -> Result<StartupState, String> {
+    let (_pins, supported) = inspect_game_image(root, profile)?;
+    let win64 = profile.win64(root);
+    if supported {
+        return installed_at(&win64, profile).map(|installed| {
+            if installed {
+                StartupState::Ready
+            } else {
+                StartupState::NeedsInstall
+            }
+        });
+    }
+    // Moria's orderly native console shutdown is independently build-specific.
+    // Starting an unknown image would lose the supported stop/save contract.
+    if profile.id == "returntomoria" {
+        return Err("This Moria build is outside the verified native shutdown profile. Update the manager before starting it; existing files were preserved.".into());
+    }
+    let Inspection { prior, current, .. } = inspect(&win64, profile, &archive::expected(profile))?;
+    let Some(proxy) = current.get(profile.proxy) else {
+        return Ok(StartupState::Unavailable);
+    };
+    if prior.is_none() {
+        return Err("This game build is unsupported by the existing operator-installed UE4SS loader. Its files were preserved; disable or update it through its original manager before starting.".into());
+    }
+    // Disabling a shared loader must not silently unload an operator's mods.
+    // The save installer owns the payload schema and verifies all current and
+    // pending leaves before this single activation file is removed.
+    let settings = original(&win64.join(SETTINGS), 64 * 1024)?.unwrap_or_default();
+    profile::merge_settings(&settings, profile.settings())?;
+    crate::live_players::file_ipc::unreal_world_save::verify_owned_mods(profile.id, root)?;
+    crate::commands::commands_managed_save_control::retire_owned_file(
+        &win64.join(profile.proxy),
+        &hash(proxy),
+    )?;
+    // Retain the receipt and inactive payload so a later supported build can
+    // restore the same installation through the normal publication path.
+    Ok(StartupState::Unavailable)
 }
 
 pub(super) fn install(

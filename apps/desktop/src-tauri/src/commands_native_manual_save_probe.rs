@@ -109,6 +109,8 @@ pub(super) async fn verify<R: tauri::Runtime>(
     } else {
         None
     };
+    let dragon_observation = checkpoint::dragon::prepare(runtime, running, cycle).await?;
+    let requested_observation = checkpoint::requested::prepare(runtime, running, cycle).await?;
     let input = serde_json::from_value(json!({
         "instanceId": running.summary.id,
         "command": action.command_template,
@@ -206,7 +208,27 @@ pub(super) async fn verify<R: tauri::Runtime>(
         completion,
     );
     if checkpoint::enabled()? {
-        if result.save_completion != Some(WorldSaveCompletion::Confirmed) {
+        if matches!(
+            running.summary.module_id.as_str(),
+            "runescapedragonwilds" | "vrising"
+        ) {
+            if result.save_completion != Some(WorldSaveCompletion::Requested) {
+                return Err("Reflected native save must retain its Requested receipt".into());
+            }
+            if let Some(observation) = dragon_observation {
+                observation.wait().await?;
+                require_current(runtime, running, &expected).await?;
+            } else if let Some(observation) = requested_observation {
+                observation.wait().await?;
+                require_current(runtime, running, &expected).await?;
+            } else if cycle == "initial" {
+                return Err(
+                    "Requested save checkpoint has no independent native observation".into(),
+                );
+            }
+            // The initial snapshot owns the exact restart proof. Later lifecycle
+            // saves retain their normal Requested receipt without recapturing it.
+        } else if result.save_completion != Some(WorldSaveCompletion::Confirmed) {
             return Err("Exact checkpoint acceptance requires native completion evidence before capture; command delivery alone is insufficient".into());
         }
         checkpoint::capture(runtime, running, cycle).await?;

@@ -1,4 +1,4 @@
--- The real owned asynchronous Nightingale/Conan policy/protocol with deterministic native,
+-- The real Nightingale request and Conan completion policies with deterministic native,
 -- and file boundaries. This fixture never loads a DLL or touches game data.
 local source, game = assert(LGSM_TEST_SOURCE), assert(LGSM_TEST_GAME)
 assert(game == "conan" or game == "nightingale")
@@ -71,7 +71,7 @@ local function harness(missing_launch)
                     s.calls=s.calls+1;s.save_frame=req
                     if s.on_call then s.on_call() end
                     if s.throw then error("native failure") end
-                    status=s.native_false and "unknown" or (s.false_confirmation and "returned" or s.initial_status or "pending")
+                    status=s.native_false and "unknown" or (s.false_confirmation and (conan and "returned" or "confirmed") or s.initial_status or (conan and "pending" or "returned"))
                 end
             end
             s.files[base.."native-response.txt"]="schema=1\nnonce="..(s.wrong_nonce and string.rep("f",32) or id).."\nop="..op.."\nstatus="..status.."\npid="..(s.replaced_pid and "12" or "11").."\ncreation_time=123456789012345678\n"
@@ -116,9 +116,20 @@ local function harness(missing_launch)
 end
 local count=0
 local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));count=count+1 end
+if not conan then
+    test("periodic native request is acknowledged once without a completion observer",function()
+        local s=harness();local p=s.probe();s.initial_status="returned"
+        local r=s.save(p)
+        assert(r.invoked and r.returned and not r.confirmed and not r.error and s.calls==1 and s.polls==0,
+            "native periodic queue dispatch must remain Requested without a second writer or completion poll")
+        s.tick();s.dispatch();assert(s.calls==1 and s.polls==0)
+    end)
+end
 test("probe returns native identity without saving",function() local s=harness();local r=s.probe();assert(s.calls==0 and s.probes==1 and r.pid=="11" and r.creation=="123456789012345678") end)
+if conan then
 test("owned async completion is confirmed exactly once",function() local s=harness();local r=s.save(s.probe());assert(r.confirmed and r.invoked and r.returned and not r.error and s.calls==1 and s.polls==1 and s.probes==1);s.tick();s.dispatch();assert(s.calls==1) end)
-test("false remains unknown",function() local s=harness();local p=s.probe();s.native_false=true;local r=s.save(p);assert(r.invoked and not r.confirmed and not r.error and s.calls==1) end)
+end
+test("false remains unknown",function() local s=harness();local p=s.probe();s.native_false=true;local r=s.save(p);assert(r.invoked and not r.confirmed and (conan and not r.error or not conan and r.error=="save_call_unknown") and s.calls==1) end)
 test("native exception remains unknown",function() local s=harness();local p=s.probe();s.throw=true;local r=s.save(p);assert(r.invoked and not r.confirmed and s.calls==1) end)
 test("wrong native nonce remains unknown",function() local s=harness();local p=s.probe();s.wrong_nonce=true;assert(not s.save(p).confirmed and s.calls==1) end)
 test("different native identity remains unknown",function() local s=harness();local p=s.probe();s.replaced_pid=true;assert(not s.save(p).confirmed and s.calls==1) end)
@@ -138,7 +149,8 @@ test("client net driver cannot save",function() local s=harness();s.driver.Serve
 test("ambiguous native owner cannot save",function() local s=harness();s.duplicate_target=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("missing loader cannot save",function() local s=harness();s.no_native=true;assert(not s.exchange("saveprobe").ready and s.calls==0) end)
 test("missing launch identity cannot save",function() local s=harness(true);assert(not s.exchange("saveprobe").ready and s.calls==0) end)
-test("bare returned receipt cannot assert disk completion",function() local s=harness();local p=s.probe();s.false_confirmation=true;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1) end)
+test("unsupported native receipt cannot assert disk completion",function() local s=harness();local p=s.probe();s.false_confirmation=true;local r=s.save(p);assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1) end)
+if conan then
 test("all repeated pending polls retain the original native frame",function()
     local s=harness();local p=s.probe();s.on_poll=function() if s.polls<3 then s.poll_status="pending" else s.poll_status="confirmed" end end
     local r=s.save(p);assert(r.confirmed and s.calls==1 and s.polls==3)
@@ -164,18 +176,21 @@ test("late pending completion never resends",function()
     local s=harness();local p=s.probe();s.on_poll=function() s.now=1031 end;local r=s.save(p)
     assert(not r.confirmed and s.calls==1);s.tick();s.dispatch();assert(s.calls==1)
 end)
-test("entered snapshot crosses queue deadline without losing its owned completion",function()
+end
+test("entered native call can cross queue deadline within its execution budget",function()
     local s=harness();local p=s.probe()
     s.on_call=function() s.now=s.now+3;s.tick() end
     local r=s.save(p)
-    assert(r.confirmed and r.returned and not r.error and s.calls==1 and s.polls==1)
+    assert(r.confirmed==conan and r.returned and not r.error and s.calls==1 and s.polls==(conan and 1 or 0))
 end)
+if conan then
 test("observation execution crosses queue deadline within the original completion budget",function()
     local s=harness();local p=s.probe()
     s.on_poll=function() s.now=s.now+3;s.tick() end
     local r=s.save(p)
     assert(r.confirmed and r.returned and not r.error and s.calls==1 and s.polls==1)
 end)
+end
 test("expired queued callback cannot clear a later operation dispatch",function()
     local s=harness();local p=s.probe()
     s.write("save",p.boot,p.world);s.tick();s.now=s.now+3;s.tick();s.tick()
@@ -193,18 +208,20 @@ test("late entered return cannot overwrite a newer queued operation",function()
     s.tick();assert(#s.queue==1,"late native return released a newer dispatch")
     s.dispatch();s.tick();local r=s.receipt();assert(r.ready and not r.invoked and s.calls==1)
 end)
+if conan then
 test("completion poll still rejects expired EngineTick queue admission",function()
     local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.dispatch()
     s.tick();s.now=s.now+3;s.tick();s.dispatch();s.tick();local r=s.receipt()
     assert(r.invoked and not r.confirmed and r.error=="save_call_unknown" and s.calls==1 and s.polls==0)
 end)
+end
 -- Feed actual production-encoder output back through the Rust host parser.
 local contract = harness()
 local ready = contract.probe()
 LGSM_TEST_PROBE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_PROBE_REPLY = contract.files[base.."response.json"]
 local saved = contract.save(ready)
-assert(saved.confirmed and saved.returned and not saved.error and contract.calls == 1 and contract.polls == 1)
+assert(saved.confirmed==conan and saved.returned and not saved.error and contract.calls==1 and contract.polls==(conan and 1 or 0))
 LGSM_TEST_SAVE_REQUEST = contract.files[base.."request.json"]
 LGSM_TEST_SAVE_REPLY = contract.files[base.."response.json"]
 return count

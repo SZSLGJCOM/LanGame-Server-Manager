@@ -273,7 +273,7 @@ async fn automatic_save_installs_real_unreal_runtime_and_bridge_from_a_clean_pro
         let first = ensure_unreal(&details, &operation)
             .await
             .unwrap_or_else(|error| panic!("{module}: {error}"));
-        assert_eq!(first.is_some(), module != "windrose");
+        assert_eq!(first.unwrap().len(), usize::from(module != "windrose"));
         assert!(
             crate::unreal_loader::installed(&runtime, module).unwrap(),
             "{module}"

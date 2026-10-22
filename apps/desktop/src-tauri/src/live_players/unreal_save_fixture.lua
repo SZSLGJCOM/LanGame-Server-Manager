@@ -12,7 +12,7 @@ local function object(id, kind)
         IsA=function(_, expected) return expected == kind end }
 end
 local function harness(missing_launch)
-    local s = { now=1000, files={}, queue={}, calls=0, factories=0, serial=0, random=0,
+    local s = { now=1000, files={}, queue={}, calls=0, reflected_calls=0, factories=0, serial=0, random=0,
         clock=0, binary_reads=0, properties={} }
     s.environment_token="LGSM_UWS_"..string.rep("a",32)
     if missing_launch then s.environment_token=nil end
@@ -26,16 +26,13 @@ local function harness(missing_launch)
     s.replace_world()
     s.manager = object(6, "/Script/Moria.MorSaveGameManager")
     s.manager.GetOuter=function() return s.instance end
-    s.manager.LgsmWorldSaveInitialized, s.manager.LgsmWorldSaveEnabled = 1, 1
-    s.manager.LgsmWorldSaveRestoring, s.manager.LgsmWorldSaveQuicksave, s.manager.LgsmWorldSaveState = 0, 0, 0
     s.worldstate = object(7, "/Script/Moria.MorSaveSystemWorldState")
     s.worldstate.GetOuter=function() return {OwningWorld=s.world} end
-    s.worldstate.LgsmWorldSaveWorldReady, s.worldstate.bAutoSaveEnabled = 1, true
+    s.worldstate.bAutoSaveEnabled = true
     s.manager.CurrentWorldState = {Get=function() return s.worldstate end}
     s.subsystem = object(8, "/Script/AbioticFactor.SaveQueueSubsystem")
     s.subsystem.GetOuter=function() return s.world end
-    s.subsystem.LgsmWorldSaveInFlight, s.subsystem.LgsmWorldSaveQueueCount = 0, 0
-    s.instance.LgsmWorldSaveSaving, s.instance.ActiveWorldSaveName = 0, text("CurrentWorld")
+    s.instance.ActiveWorldSaveName = text("CurrentWorld")
     local env = setmetatable({}, {__index=_G})
     env.debug={ getinfo=function() return {source="@D:/fixture/"..project.."/Binaries/Win64/ue4ss/Mods/LgsmWorldSave/Scripts/main.lua"} end }
     env.math=setmetatable({random=function() s.random=s.random+1; return s.random end},{__index=math})
@@ -45,17 +42,10 @@ local function harness(missing_launch)
         return s.now
     end, remove=function(path) if s.files[path] then s.files[path]=nil; return true end return nil,"missing",2 end,
         rename=function(a,b) s.files[b]=s.files[a];s.files[a]=nil;return true end }
-    local sites={}
-    for offset,hex in source:gmatch('{(%d+), "([0-9a-f]+)"}') do
-        sites[tonumber(offset)]=hex:gsub("..",function(v) return string.char(tonumber(v,16)) end)
-    end
-    local site_count=0;for _ in pairs(sites) do site_count=site_count+1 end;assert(site_count==(moria and 4 or 6))
     env.io={ open=function(path, mode)
         if path:sub(-4)==".exe" then
-            local position=0
-            return {seek=function(_,how,offset) assert(how=="set");position=offset;return offset end,
-                read=function(_,count) s.binary_reads=s.binary_reads+1;return s.bad_binary and "" or sites[position] end,
-                close=function() return true end}
+            s.binary_reads=s.binary_reads+1
+            error("reflection-only saving must not read binary byte windows")
         end
         if mode=="rb" then
             if not s.files[path] then return nil end
@@ -96,7 +86,7 @@ local function harness(missing_launch)
         if s.throw then error("native failure") end
     end
     functions["/Script/Moria.MorUIFunctionLibrary:SaveCurrentWorld"]=native("save",0x4022401,
-        {{"WorldContext","ObjectProperty"}},function(_,world) assert(world==s.world);effect() end)
+        {{"WorldContext","ObjectProperty"}},function(_,world) assert(world==s.world);s.reflected_calls=s.reflected_calls+1;effect() end)
     functions["/Script/AbioticFactor.SaveCurrentWorld:SaveCurrentWorld"]=native("factory",0x4022401,
         {{"WorldContextObject","ObjectProperty"},{"ReturnValue","ObjectProperty"}},function(_,world)
             assert(s.in_game and world==s.world);s.factories=s.factories+1
@@ -109,18 +99,6 @@ local function harness(missing_launch)
         effect()
         if not s.defer_completion then s.action.LgsmWorldSaveSucceeded=s.native_failed and 0 or 1;s.action.LgsmWorldSaveCompletionHandle=1234 end
     end)
-    env.package={loadlib=function(path,export)
-        local name="LgsmMoriaSaveControl.dll"
-        assert(moria and export=="luaopen_lgsm_moria_save" and path:sub(-#name)==name)
-        return function()
-            local body=assert(s.files[base.."native-request.txt"])
-            local id,op=body:match("^schema=1\nnonce=([0-9a-f]+)\nop=([a-z]+)\n")
-            assert(id and (op=="probe" or op=="save"))
-            local status="ready"
-            if op=="save" then effect();status=s.native_failed and "failed" or "confirmed" end
-            s.files[base.."native-response.txt"]="schema=1\nnonce="..id.."\nop="..op.."\nstatus="..status.."\npid=11\ncreation_time=123456789012345678\n"
-        end
-    end}
     env.StaticFindObject=function(path)
         if functions[path] then return functions[path] end
         local result=object(200,path);result.GetCDO=function() return object(201,path) end;return result
@@ -150,23 +128,36 @@ local function harness(missing_launch)
 end
 local count=0
 local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));count=count+1 end
-test("preflight has no effect",function() local s=harness();s.probe();assert(s.calls==0 and s.factories==0 and s.binary_reads==(moria and 4 or 6)) end)
-test("one native save uses only its own result",function() local s=harness();local r=s.save(s.probe());assert(r.invoked and r.returned and r.confirmed==moria and not r.error and s.calls==1,s.files[base.."response.json"].." calls="..s.calls);s.tick();s.dispatch();assert(s.calls==1) end)
-test("native completed failure is not success",function() local s=harness();local p=s.probe();s.native_failed=true;local r=s.save(p);assert(r.invoked and r.returned and not r.confirmed and r.error=="save_failed" and s.calls==1) end)
+test("preflight has no effect",function() local s=harness();s.probe();assert(s.calls==0 and s.factories==0 and s.binary_reads==0) end)
+test("native reflection acknowledges one request without a completion observer",function()
+    local s=harness();local p=s.probe();s.defer_completion=true
+    s.write("save",p.boot,p.world);s.tick();s.dispatch();s.tick()
+    local body=s.files[base.."response.json"] or ""
+    assert(body:find('"request_id":"'..s.id..'"',1,true),"Activate must acknowledge the request without waiting on private action fields")
+    local r=s.receipt()
+    assert(s.calls==1 and (not moria or s.reflected_calls==1),"Moria must call the reflected SaveCurrentWorld once")
+    assert(r.returned and not r.confirmed and not r.error,"native void invocation must remain Requested")
+    assert(next(s.properties)==nil,"reflection-only saving must not register private offset properties")
+    s.tick();s.dispatch();assert(s.calls==1)
+end)
+test("one native save acknowledges its own invocation",function() local s=harness();local r=s.save(s.probe());assert(r.invoked and r.returned and not r.confirmed and not r.error and s.calls==1,s.files[base.."response.json"].." calls="..s.calls);s.tick();s.dispatch();assert(s.calls==1) end)
 test("native exception is unknown",function() local s=harness();local p=s.probe();s.throw=true;local r=s.save(p);assert(r.invoked and not r.returned and r.error=="save_call_unknown" and s.calls==1) end)
-test("busy is rejected",function() local s=harness();local p=s.probe();s.manager.LgsmWorldSaveState=1;s.subsystem.LgsmWorldSaveInFlight=1;local r=s.save(p);assert(not r.invoked and r.error=="save_busy" and s.calls==0) end)
-test("queue busy is rejected",function() local s=harness();local p=s.probe();s.manager.LgsmWorldSaveState=1;s.subsystem.LgsmWorldSaveQueueCount=1;assert(not s.save(p).invoked and s.calls==0) end)
+test("private busy bytes are not interpreted by the reflected caller",function()
+    local s=harness();local p=s.probe()
+    s.manager.LgsmWorldSaveState=1;s.manager.LgsmWorldSaveRestoring=1
+    s.subsystem.LgsmWorldSaveInFlight=1;s.subsystem.LgsmWorldSaveQueueCount=1;s.instance.LgsmWorldSaveSaving=1
+    local r=s.save(p);assert(r.invoked and r.returned and not r.confirmed and s.calls==1 and next(s.properties)==nil)
+end)
 test("world replacement is rejected",function() local s=harness();local p=s.probe();s.replace_world();local r=s.save(p);assert(not r.invoked and r.error=="target_changed" and s.calls==0) end)
 test("boot replacement is rejected",function() local s=harness();local p=s.probe();p.boot=string.rep("f",32);assert(s.save(p).error=="target_changed" and s.calls==0) end)
 test("world token replacement is rejected",function() local s=harness();local p=s.probe();p.world=string.rep("f",32);assert(s.save(p).error=="target_changed" and s.calls==0) end)
 test("signature drift is rejected",function() local s=harness();local p=s.probe();s.bad_signature=true;assert(not s.save(p).invoked and s.calls==0) end)
-test("binary drift is rejected",function() local s=harness();local p=s.probe();s.bad_binary=true;assert(not s.save(p).invoked and s.calls==0) end)
 test("not ready is rejected",function() local s=harness();local p=s.probe();s.gs.bReplicatedHasBegunPlay=false;assert(not s.save(p).invoked and s.calls==0) end)
 test("ambiguous world is rejected",function() local s=harness();local p=s.probe();s.ambiguous=true;assert(s.save(p).error=="world_ambiguous" and s.calls==0) end)
 test("wrong game instance is rejected",function() local s=harness();local p=s.probe();s.instance.IsA=function() return false end;assert(not s.save(p).invoked and s.calls==0) end)
 test("server connection is rejected",function() local s=harness();local p=s.probe();s.driver.ServerConnection=s.instance;assert(not s.save(p).invoked and s.calls==0) end)
 test("pre-call timeout cannot invoke later",function() local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.now=s.now+3;s.tick();s.dispatch();s.tick();local r=s.receipt();assert(not r.invoked and s.calls==0) end)
-test("timeout inside native stays unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+3;s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and r.error=="save_call_unknown" and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
+test("timeout inside native stays unknown",function() local s=harness();local p=s.probe();s.on_call=function() s.now=s.now+31;s.tick() end;local r=s.save(p);assert(r.invoked and not r.returned and r.error=="save_call_unknown" and s.calls==1);s.tick();s.dispatch();assert(s.calls==1) end)
 test("timeout at final gate stays unknown",function()
     local s=harness();local p=s.probe();s.write("save",p.boot,p.world);s.tick();s.clock=0
     s.on_time=function(n) if n==7 then s.on_time=nil;s.now=s.now+3;s.tick() end end
@@ -178,28 +169,11 @@ test("replay remains inert after TTL",function() local s=harness();s.save(s.prob
 test("missing launch environment rejects before any effect",function() local s=harness(true);local r=s.exchange("saveprobe");assert(not r.ready and not r.invoked and s.calls==0) end)
 test("launch identity is frozen at module initialization",function() local s=harness();local p=s.probe();local token=s.environment_token;s.environment_token="LGSM_UWS_"..string.rep("b",32);local r=s.save(p);assert(r.launch==token and r.invoked and s.calls==1) end)
 if moria then
-    test("restore blocks native save",function() local s=harness();local p=s.probe();s.manager.LgsmWorldSaveRestoring=1;assert(not s.save(p).invoked and s.calls==0) end)
+    test("foreign current world state is rejected",function() local s=harness();local p=s.probe();s.worldstate.GetOuter=function() return {OwningWorld=invalid} end;assert(not s.save(p).invoked and s.calls==0) end)
     test("disabled autosave is not overridden",function() local s=harness();local p=s.probe();s.worldstate.bAutoSaveEnabled=false;assert(not s.save(p).invoked and s.calls==0) end)
-    test("worldstate readiness is checked",function() local s=harness();local p=s.probe();s.worldstate.LgsmWorldSaveWorldReady=0;assert(not s.save(p).invoked and s.calls==0) end)
 else
     test("factory is activated once",function() local s=harness();s.save(s.probe());assert(s.factories==1 and s.calls==1) end)
-    test("native busy is checked",function() local s=harness();local p=s.probe();s.instance.LgsmWorldSaveSaving=1;assert(not s.save(p).invoked and s.factories==0) end)
     test("world replacement inside factory blocks activation",function() local s=harness();local p=s.probe();s.on_factory=s.replace_world;local r=s.save(p);assert(r.invoked and r.error=="save_call_unknown" and s.factories==1 and s.calls==0) end)
-    test("queued action is not completion",function()
-        local s=harness();local p=s.probe();s.defer_completion=true;s.write("save",p.boot,p.world)
-        s.tick();s.dispatch();s.tick();s.dispatch();s.tick();assert(not s.files[base.."response.json"]:find('"request_id":"'..s.id..'"',1,true) and s.calls==1)
-        s.action.LgsmWorldSaveSucceeded=1;s.action.LgsmWorldSaveCompletionHandle=1234
-        s.dispatch();s.tick();local r=s.receipt();assert(r.returned and not r.confirmed and not r.error and s.calls==1)
-    end)
-    test("unrelated global queue idle cannot complete an action",function()
-        local s=harness();local p=s.probe();s.defer_completion=true;s.write("save",p.boot,p.world);s.tick();s.dispatch();s.tick()
-        s.instance.LgsmWorldSaveSaving=0;s.subsystem.LgsmWorldSaveInFlight=0
-        s.dispatch();s.tick();assert(s.calls==1 and not s.files[base.."response.json"]:find('"request_id":"'..s.id..'"',1,true))
-        s.now=s.now+31;s.tick();s.dispatch();s.tick();local r=s.receipt();assert(not r.confirmed and r.error=="save_call_unknown" and s.calls==1)
-    end)
-    test("world replacement during completion remains unknown",function()
-        local s=harness();local p=s.probe();s.defer_completion=true;s.write("save",p.boot,p.world);s.tick();s.dispatch();s.tick()
-        s.replace_world();s.action.LgsmWorldSaveSucceeded=1;s.dispatch();s.tick();local r=s.receipt();assert(not r.confirmed and r.error=="save_call_unknown" and s.calls==1)
-    end)
+
 end
 return count

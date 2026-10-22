@@ -2,6 +2,112 @@ use super::*;
 use crate::live_players::valheim_control::{AccessLists, ControlSnapshot, ValidatedPeer};
 use app_storage::PlayerAccessMutationOperation::{Add, Remove};
 
+#[tokio::test]
+async fn unsupported_valheim_start_retires_owned_plugin_without_a_new_session() {
+    use super::super::commands_managed_save_control::tests::Fixture;
+    for installed in [false, true] {
+        let fixture = Fixture::new();
+        let (storage, details) = fixture.unsupported_instance("valheim");
+        let runtime = fixture.0.join("runtime");
+        let session = runtime.join(io::DIRECTORY).join(io::SESSION);
+        let mut previous_receipt = None;
+        if installed {
+            install_owned_plugin(&runtime, b"previous plugin").unwrap();
+            let mut owner = read_owner(&runtime).unwrap().unwrap();
+            owner.pending_plugin_sha256 = Some(io::digest(b"pending plugin"));
+            std::fs::write(runtime.join(io::PLUGIN), b"pending plugin").unwrap();
+            let bytes = serde_json::to_vec(&owner).unwrap();
+            std::fs::write(runtime.join(io::OWNER), &bytes).unwrap();
+            previous_receipt = Some(bytes);
+            std::fs::write(&session, b"existing session").unwrap();
+            assert!(is_prepared(&details).unwrap());
+        }
+        let foreign = runtime.join("operator-mod.dll");
+        std::fs::write(&foreign, b"operator mod").unwrap();
+        let state = crate::state::DesktopState::default();
+        let operation = state
+            .begin_storage_context_operation("optional save test")
+            .unwrap();
+        for _ in 0..2 {
+            assert!(
+                ensure_for_start(&storage, &details, &operation)
+                    .await
+                    .unwrap_or_else(|error| panic!("installed={installed}: {error}"))
+                    .is_none()
+            );
+            assert!(!runtime.join(io::PLUGIN).exists());
+            assert!(!is_prepared(&details).unwrap());
+            assert_eq!(
+                std::fs::read(runtime.join(io::OWNER)).ok(),
+                previous_receipt
+            );
+            assert_eq!(
+                std::fs::read(&session).ok(),
+                installed.then(|| b"existing session".to_vec())
+            );
+            assert_eq!(std::fs::read(&foreign).unwrap(), b"operator mod");
+        }
+        install_owned_plugin(&runtime, b"new reviewed plugin").unwrap();
+        assert!(is_prepared(&details).unwrap());
+        assert_eq!(
+            std::fs::read(runtime.join(io::PLUGIN)).unwrap(),
+            b"new reviewed plugin"
+        );
+    }
+}
+
+#[tokio::test]
+async fn unsupported_valheim_start_preserves_foreign_modified_and_invalid_files() {
+    use super::super::commands_managed_save_control::tests::Fixture;
+    for problem in ["foreign", "modified", "invalid_owner", "missing_native"] {
+        let fixture = Fixture::new();
+        let (storage, details) = fixture.unsupported_instance("valheim");
+        let runtime = fixture.0.join("runtime");
+        if problem == "foreign" {
+            std::fs::create_dir_all(runtime.join("BepInEx/plugins")).unwrap();
+            std::fs::write(runtime.join(io::PLUGIN), b"operator mod").unwrap();
+        } else {
+            install_owned_plugin(&runtime, b"owned plugin").unwrap();
+            match problem {
+                "modified" => std::fs::write(runtime.join(io::PLUGIN), b"operator mod").unwrap(),
+                "invalid_owner" => {
+                    std::fs::write(runtime.join(io::OWNER), b"invalid receipt").unwrap()
+                }
+                _ => std::fs::remove_file(runtime.join(NATIVE_PREPARATION_FILES[2])).unwrap(),
+            }
+        }
+        let before = [io::PLUGIN, io::OWNER].map(|path| std::fs::read(runtime.join(path)).ok());
+        let state = crate::state::DesktopState::default();
+        let operation = state
+            .begin_storage_context_operation("optional save test")
+            .unwrap();
+        assert!(
+            ensure_for_start(&storage, &details, &operation)
+                .await
+                .is_err(),
+            "{problem}"
+        );
+        assert_eq!(
+            [io::PLUGIN, io::OWNER].map(|path| std::fs::read(runtime.join(path)).ok()),
+            before
+        );
+    }
+}
+
+#[test]
+fn valheim_preparation_requires_its_owned_plugin_to_remain_present() {
+    use super::super::commands_managed_save_control::tests::Fixture;
+    let fixture = Fixture::new();
+    let (_, details) = fixture.unsupported_instance("valheim");
+    let runtime = fixture.0.join("runtime");
+    install_owned_plugin(&runtime, b"owned plugin").unwrap();
+    assert!(is_prepared(&details).unwrap());
+    std::fs::remove_file(runtime.join(io::PLUGIN)).unwrap();
+    assert!(!is_prepared(&details).unwrap());
+    std::fs::write(runtime.join(io::PLUGIN), b"operator mod").unwrap();
+    assert!(is_prepared(&details).is_err());
+}
+
 struct Scratch(PathBuf);
 impl Scratch {
     fn new() -> Self {

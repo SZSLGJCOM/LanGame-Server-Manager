@@ -15,24 +15,6 @@ const CORE_EXTRA: &[(&str, &str)] = &[(
     include_str!("../../../../modules/corekeeper/control/CoreKeeperSaveNative.cs"),
 )];
 const VRISING: &str = include_str!("../../../../modules/vrising/control/VRisingSave.cs");
-const VRISING_EXTRA: &[(&str, &str)] = &[(
-    "VRisingSaveCompletion.cs",
-    include_str!("../../../../modules/vrising/control/VRisingSaveCompletion.cs"),
-)];
-#[cfg(windows)]
-const VRISING_NATIVE: &[u8] = include_bytes!(concat!(
-    env!("OUT_DIR"),
-    "/vrising-save-control/LgsmVRisingSaveControl.dll"
-));
-#[cfg(not(windows))]
-const VRISING_NATIVE: &[u8] = &[];
-#[cfg(windows)]
-const VRISING_NATIVE_LICENSE: &[u8] = include_bytes!(concat!(
-    env!("OUT_DIR"),
-    "/vrising-save-control/LICENSE.minhook.txt"
-));
-#[cfg(not(windows))]
-const VRISING_NATIVE_LICENSE: &[u8] = &[];
 const SONS: &str = include_str!("../../../../modules/sonsoftheforest/control/SonsSave.cs");
 const SONS_COMPLETION: &str =
     include_str!("../../../../modules/sonsoftheforest/control/SonsSaveCompletion.cs");
@@ -51,7 +33,6 @@ fn source(game: Profile) -> &'static str {
 fn extra_sources(game: Profile) -> &'static [(&'static str, &'static str)] {
     match game.module {
         "corekeeper" => CORE_EXTRA,
-        "vrising" => VRISING_EXTRA,
         "sonsoftheforest" => &[("SonsSaveCompletion.cs", SONS_COMPLETION)],
         _ => &[],
     }
@@ -63,26 +44,14 @@ pub(super) fn source_hash(game: Profile) -> String {
         .collect::<String>();
     io::digest(
         format!(
-            "compiler-v1\0{PROTOCOL}\0{FILES}\0{}\0{CORE_MANIFEST}\0{SONS_MANIFEST}\0{extra}\0{}",
+            "compiler-v1\0{PROTOCOL}\0{FILES}\0{}\0{CORE_MANIFEST}\0{SONS_MANIFEST}\0{extra}",
             source(game),
-            match game.module {
-                "vrising" => format!(
-                    "{}\0{}",
-                    io::digest(VRISING_NATIVE),
-                    io::digest(VRISING_NATIVE_LICENSE)
-                ),
-                _ => String::new(),
-            }
         )
         .as_bytes(),
     )
 }
 fn paths(game: Profile) -> Vec<&'static str> {
     let mut paths = vec![game.plugin];
-    if game.module == "vrising" {
-        paths.push("BepInEx/plugins/LgsmVRisingSaveControl.dll");
-        paths.push("BepInEx/plugins/LanGame.VRising.Save.minhook.LICENSE.txt");
-    }
     if game.module == "corekeeper" {
         paths
             .push("CoreKeeperServer_Data/StreamingAssets/Mods/LanGameSaveControl/ModManifest.json");
@@ -91,6 +60,22 @@ fn paths(game: Profile) -> Vec<&'static str> {
         paths.push("Mods/LanGame.Sons.Save/manifest.json");
     }
     paths
+}
+fn retired_paths(game: Profile) -> &'static [&'static str] {
+    if game.module == "vrising" {
+        &[
+            "BepInEx/plugins/LgsmVRisingSaveControl.dll",
+            "BepInEx/plugins/LanGame.VRising.Save.minhook.LICENSE.txt",
+        ]
+    } else {
+        &[]
+    }
+}
+fn owned_paths(game: Profile) -> Vec<&'static str> {
+    paths(game)
+        .into_iter()
+        .chain(retired_paths(game).iter().copied())
+        .collect()
 }
 pub(super) fn inspect_ancestors(root: &Path, parent: &Path) -> Result<Vec<File>, String> {
     let mut pins = io::pin_directories(root)?;
@@ -199,27 +184,38 @@ pub(super) fn verify_native(root: &Path, game: Profile) -> Result<(), String> {
 }
 
 pub(super) fn pin_native(root: &Path, game: Profile) -> Result<Vec<File>, String> {
+    pin_supported_native(root, game)?.ok_or_else(|| format!(
+        "The {} server build has not been verified for native saving. Existing files were preserved.",
+        game.module
+    ))
+}
+
+/// An ordinary, readable but unknown dependency tuple is optional at startup.
+/// Missing, inaccessible or replaced files remain errors at every caller.
+pub(super) fn pin_supported_native(
+    root: &Path,
+    game: Profile,
+) -> Result<Option<Vec<File>>, String> {
     let mut pins = io::pin_directories(root)?;
-    let files = if game.module == "corekeeper" {
-        corekeeper_native_files(root, game)?
-    } else {
-        native_files(game)?
-    };
-    for (relative, expected) in files {
+    let mut files = native_files(game)?;
+    let mut hashes = Vec::with_capacity(files.len());
+    for (relative, _) in &files {
         let path = root.join(relative);
         pins.extend(io::pin_directories(
             path.parent().ok_or("Invalid native path")?,
         )?);
         let (file, bytes) = io::pin_regular(&path, 512 * 1024 * 1024)?;
-        if io::digest(&bytes) != expected {
-            return Err(format!(
-                "The {} server build has not been verified for native saving. Existing files were preserved.",
-                game.module
-            ));
-        }
+        hashes.push(io::digest(&bytes));
         pins.push(file);
     }
-    Ok(pins)
+    if game.module == "corekeeper" && !select_corekeeper_files(&hashes[0], &mut files) {
+        return Ok(None);
+    }
+    Ok(files
+        .iter()
+        .zip(hashes)
+        .all(|((_, expected), actual)| *expected == actual)
+        .then_some(pins))
 }
 
 fn corekeeper_native_files(
@@ -228,7 +224,14 @@ fn corekeeper_native_files(
 ) -> Result<Vec<(&'static str, &'static str)>, String> {
     let mut files = native_files(game)?;
     let primary = io::read_regular(&root.join(files[0].0), 512 * 1024 * 1024)?;
-    match io::digest(&primary).as_str() {
+    if !select_corekeeper_files(&io::digest(&primary), &mut files) {
+        return Err("This Core Keeper build has not been verified for native saving.".into());
+    }
+    Ok(files)
+}
+
+fn select_corekeeper_files(primary: &str, files: &mut [(&'static str, &'static str)]) -> bool {
+    match primary {
         "631b58cfb806e838bc0c770963b3ec13edeba368007e2ad91e280bd7bf8ad2b0" => {}
         "042b6db4b62a34c5354b19e478302b723b3c89a4e6c6912ffd0ce91c78311938" => {
             // Build 25537714 uses the same native save API. Select its whole
@@ -238,9 +241,48 @@ fn corekeeper_native_files(
             files[4].1 = "d73687d44b81ceccb1f0416cd373d75e2dc58d8d998ed26310e31f48650a6c1d";
             files[5].1 = "564660969f1c3630fbe6e133e118ced32906682bc8b53839a139211cc4fd177f";
         }
-        _ => return Err("This Core Keeper build has not been verified for native saving.".into()),
+        _ => return false,
     }
-    Ok(files)
+    true
+}
+
+/// Remove only this extension's verified scan entries. Keep its receipt and
+/// control data so a supported build can use the ordinary publication path again.
+pub(super) fn deactivate_owned(root: &Path, game: Profile) -> Result<(), String> {
+    let _root = io::pin_directories(root)?;
+    let record = root.join(OWNER);
+    let owner_pin = if let Some(previous) = io::read_optional(&record, 65536)? {
+        let (pin, bytes) = io::pin_regular(&record, 65536)?;
+        if previous != bytes {
+            return Err("The save extension ownership changed; it was preserved.".into());
+        }
+        Some(pin)
+    } else {
+        None
+    };
+    // Inspect every destination before retiring the first one, including an
+    // unowned installation and an interrupted owned publication.
+    let Some(owner) = inspect(root, game)? else {
+        return Ok(());
+    };
+    if owner_pin.is_none() {
+        return Err("The save extension ownership changed; it was preserved.".into());
+    }
+    for relative in owned_paths(game) {
+        let path = root.join(relative);
+        if let Some(bytes) = io::read_optional(&path, 4 * 1024 * 1024)? {
+            let hash = io::digest(&bytes);
+            if owner.files.get(relative) != Some(&hash)
+                && owner.pending_files.get(relative) != Some(&hash)
+            {
+                return Err(
+                    "A save extension changed during deactivation; it was preserved.".into(),
+                );
+            }
+            io::remove_owned(&path, &hash)?;
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn inspect(root: &Path, game: Profile) -> Result<Option<Ownership>, String> {
@@ -248,7 +290,7 @@ pub(super) fn inspect(root: &Path, game: Profile) -> Result<Option<Ownership>, S
     let owner = io::read_optional(&root.join(OWNER), 65536)?
         .map(|b| decode(&b, game))
         .transpose()?;
-    for relative in paths(game) {
+    for relative in owned_paths(game) {
         let path = root.join(relative);
         let _pins = inspect_ancestors(root, path.parent().ok_or("Invalid extension path")?)?;
         let current = io::read_optional(&path, 4 * 1024 * 1024)?;
@@ -276,7 +318,7 @@ pub(super) fn inspect(root: &Path, game: Profile) -> Result<Option<Ownership>, S
 fn decode(bytes: &[u8], game: Profile) -> Result<Ownership, String> {
     let owner: Ownership = serde_json::from_slice(bytes)
         .map_err(|_| "The save extension ownership record is invalid.")?;
-    let allowed = paths(game);
+    let allowed = owned_paths(game);
     if owner.protocol != 1
         || owner.module_id != game.module
         || owner
@@ -358,13 +400,6 @@ fn publish_payload_with(
 ) -> Result<(), String> {
     let _root = io::pin_directories(root)?;
     let mut files = BTreeMap::from([(game.plugin.to_owned(), plugin)]);
-    if game.module == "vrising" {
-        if VRISING_NATIVE.is_empty() || VRISING_NATIVE_LICENSE.is_empty() {
-            return Err("The bundled V Rising save observer is unavailable.".into());
-        }
-        files.insert(paths(game)[1].into(), VRISING_NATIVE.to_vec());
-        files.insert(paths(game)[2].into(), VRISING_NATIVE_LICENSE.to_vec());
-    }
     if game.module == "corekeeper" {
         files.insert(paths(game)[1].into(), CORE_MANIFEST.as_bytes().to_vec());
     }
@@ -385,7 +420,7 @@ fn publish_payload_with(
     });
     // Preserve the *actual* known previous/pending bytes for crash recovery.
     let mut originals = BTreeMap::new();
-    for path in paths(game) {
+    for path in owned_paths(game) {
         let original = io::read_optional(&root.join(path), 4 * 1024 * 1024)?;
         if let Some(bytes) = &original {
             let hash = io::digest(bytes);
@@ -412,6 +447,13 @@ fn publish_payload_with(
         let path = root.join(path);
         let _pins = create_directories(root, path.parent().ok_or("Invalid extension path")?)?;
         publish(&path, original.as_deref(), &bytes)?;
+    }
+    // The new managed entry no longer loads the observer. Retire its exact
+    // owned sidecars only after publication; keep the intent until cleanup ends.
+    for path in retired_paths(game) {
+        if let Some(Some(bytes)) = originals.get(*path) {
+            io::remove_owned(&root.join(path), &io::digest(bytes))?;
+        }
     }
     let _control = create_directories(root, &root.join(DIRECTORY))?;
     owner.files = std::mem::take(&mut owner.pending_files);
@@ -443,7 +485,6 @@ impl Drop for Scratch {
             "NativeSave.cs",
             "SonsSaveCompletion.cs",
             "CoreKeeperSaveNative.cs",
-            "VRisingSaveCompletion.cs",
             "0Harmony.dll",
             "manifest.json",
             "save.dll",
@@ -468,17 +509,6 @@ fn compile(root: &Path, game: Profile) -> Result<Vec<u8>, String> {
             .map_err(|_| "Cannot stage the fixed save extension source.")?;
     }
     for (name, text) in extra_sources(game) {
-        let text = if game.module == "vrising" && *name == "VRisingSaveCompletion.cs" {
-            if VRISING_NATIVE.is_empty() || text.matches("LGSM_VRISING_NATIVE_SHA256").count() != 1
-            {
-                return Err(
-                    "The V Rising native observer binding is unavailable or invalid.".into(),
-                );
-            }
-            text.replace("LGSM_VRISING_NATIVE_SHA256", &io::digest(VRISING_NATIVE))
-        } else {
-            (*text).into()
-        };
         std::fs::write(scratch.0.join(name), text)
             .map_err(|_| "Cannot stage the native save completion source.")?;
     }

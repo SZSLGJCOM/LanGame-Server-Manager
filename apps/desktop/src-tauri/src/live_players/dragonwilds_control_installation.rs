@@ -11,6 +11,7 @@ const OWNER: &str = ".langame-dragonwilds-player-control.json";
 const MOD: &str = "RSDragonwilds/Binaries/Win64/ue4ss/Mods/LgsmPlayerControl";
 const DIRECTORY: &str = "langame_player_control";
 const SESSION: &str = "save-session.txt";
+const RETIRED_NOTICE: &str = "LICENSE-MinHook.txt";
 const NOTICE: &[u8] =
     include_bytes!("../../../../../modules/enshrouded/control/vendor/minhook/LICENSE.txt");
 const MAX_FILE: usize = 4 * 1024 * 1024;
@@ -172,17 +173,19 @@ pub(crate) fn is_complete(root: &Path, script: &[u8], bridge: &[u8]) -> Result<b
         .map_err(|_| "The Dragonwilds control ownership record is invalid.")?;
     if owner.protocol != 1
         || owner.module_id != "runescapedragonwilds"
-        || owner.files.len() != 4
+        || !(3..=4).contains(&owner.files.len())
         || !validate_hashes(&owner.files)
         || owner.pending_files.is_some()
     {
         return Err("The Dragonwilds control installation is incomplete; restart this instance to prepare it.".into());
     }
+    if owner.files.contains_key(RETIRED_NOTICE) {
+        return Ok(false);
+    }
     let payload = [
         ("Scripts/main.lua", script),
         ("native/LgsmPlayerControl.dll", bridge),
         ("enabled.txt", &[] as &[u8]),
-        ("LICENSE-MinHook.txt", NOTICE),
     ];
     for (name, bytes) in payload {
         let path = root.join(MOD).join(name);
@@ -225,7 +228,6 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
         ("Scripts/main.lua".to_owned(), script),
         ("native/LgsmPlayerControl.dll".to_owned(), bridge),
         ("enabled.txt".to_owned(), &[] as &[u8]),
-        ("LICENSE-MinHook.txt".to_owned(), NOTICE),
     ]);
     let expected = payload
         .iter()
@@ -260,6 +262,43 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
             files: BTreeMap::new(),
             pending_files: None,
         }
+    };
+    // A previous save observer bundled MinHook. Its unchanged owned notice is
+    // retired only after the replacement DLL and script have been published.
+    let retired_path = root.join(MOD).join(RETIRED_NOTICE);
+    let _retired_parent = if exists(&root.join(MOD))? {
+        pin(&root.join(MOD), false)?
+    } else {
+        Vec::new()
+    };
+    let retired = if exists(&retired_path)? {
+        let bytes = read(&retired_path, MAX_FILE)?;
+        let expected = hash(NOTICE);
+        if hash(&bytes) != expected
+            || (owner.files.get(RETIRED_NOTICE) != Some(&expected)
+                && owner
+                    .pending_files
+                    .as_ref()
+                    .and_then(|files| files.get(RETIRED_NOTICE))
+                    != Some(&expected))
+        {
+            return Err(
+                "The retired Dragonwilds license is not unchanged owned content; it was preserved."
+                    .into(),
+            );
+        }
+        Some(
+            app_storage::program_removal_files::identity(&retired_path, false)
+                .map_err(|error| error.to_string())?
+                .ok_or("The retired Dragonwilds license disappeared during preparation.")?,
+        )
+    } else {
+        if owner.pending_files.is_none() && owner.files.contains_key(RETIRED_NOTICE) {
+            return Err(
+                "An owned Dragonwilds license is missing; the installation was preserved.".into(),
+            );
+        }
+        None
     };
     let mut originals = BTreeMap::new();
     for name in payload.keys() {
@@ -300,7 +339,6 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
     // Enable last. The ownership intent recognizes every partial publication,
     // while an unknown external modification can never authorize replacement.
     for name in [
-        "LICENSE-MinHook.txt",
         "native/LgsmPlayerControl.dll",
         "Scripts/main.lua",
         "enabled.txt",
@@ -310,6 +348,13 @@ pub(crate) fn install(root: &Path, script: &[u8], bridge: &[u8]) -> Result<(), S
             originals.get(name).map(Vec::as_slice),
             payload[name],
         )?;
+    }
+    if let Some(identity) = retired {
+        if read(&retired_path, MAX_FILE)? != NOTICE {
+            return Err("The retired Dragonwilds license changed; it was preserved.".into());
+        }
+        app_storage::program_removal_files::remove_file(&retired_path, &identity)
+            .map_err(|error| error.to_string())?;
     }
     owner.files = expected;
     owner.pending_files = None;

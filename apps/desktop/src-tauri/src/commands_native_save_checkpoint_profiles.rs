@@ -21,6 +21,8 @@ pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> 
         // Preserve complete generations: .chunk plus .chunks/.db2/.fwl2/.ok,
         // rather than treating any one leaf as a standalone Valheim checkpoint.
         "valheim" => Ok(vec![saves.join("worlds_local")]),
+        // Native V Rising rotates compressed autosaves within its versioned world.
+        "vrising" => Ok(vec![saves.join("v4")]),
         // record.json and state must stay together. ServerState selects the same
         // dedicated deploy; logs, crash output and IPC are not persistence input.
         "nightingale" => Ok(vec![
@@ -142,6 +144,7 @@ pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<
         }
         // Bind the reloaded world to the last completed native save number.
         "valheim" => valheim_loaded(before, fresh)?,
+        "vrising" => vrising_loaded(before, fresh),
         "theforest" => {
             return Err("The Forest has no verified reload-specific native log observation; world_ready does not prove a checkpoint was loaded".into());
         }
@@ -168,6 +171,42 @@ fn positive_count(line: &str, prefix: &str, suffix: &str) -> bool {
         .and_then(|(_, value)| value.split_once(suffix))
         .and_then(|(value, _)| value.parse::<u64>().ok())
         .is_some_and(|count| count > 0)
+}
+
+pub(super) fn vrising_completed_path(line: &str) -> Option<&str> {
+    let (path, details) = line
+        .split_once("PersistenceV2 - Finished Saving to '")?
+        .1
+        .split_once("'. ")?;
+    (path.ends_with(".save.gz")
+        && positive_count(details, "Total Persistent ChunkCount ", ".")
+        && positive_count(details, "Total Save Size: ", " "))
+    .then_some(path)
+}
+
+fn vrising_loaded(before: &str, fresh: &str) -> bool {
+    let Some(saved) = before.lines().rev().find_map(vrising_completed_path) else {
+        return false;
+    };
+    let normalize = |path: &str| path.replace('\\', "/").to_ascii_lowercase();
+    let loaded = fresh
+        .lines()
+        .filter_map(|line| {
+            line.split_once("PersistenceV2 - Loading save at ")
+                .and_then(|(_, path)| path.strip_suffix('.'))
+                .map(normalize)
+        })
+        .collect::<BTreeSet<_>>();
+    loaded == BTreeSet::from([normalize(saved)])
+        && fresh.lines().any(|line| {
+            line.split_once("PersistenceV2 - Deserialized Header. Persistent Component Types: ")
+                .and_then(|(_, value)| value.trim().parse::<u64>().ok())
+                .is_some_and(|count| count > 0)
+        })
+        && fresh.lines().any(|line| {
+            positive_count(line, "PersistenceV2 - Finished Loading ", " Entities")
+                && positive_count(line, "spread over ", " Archetypes.")
+        })
 }
 
 fn conan_loaded(before: &str, fresh: &str) -> bool {
@@ -273,14 +312,20 @@ fn bracketed<'a>(line: &'a str, prefix: &str) -> Option<&'a str> {
 }
 
 fn guid(value: &str) -> Option<String> {
-    (value.len() == 32 && value.bytes().all(|byte| byte.is_ascii_hexdigit()))
-        .then(|| value.to_ascii_lowercase())
+    (value.len() == 32
+        && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        && value.bytes().any(|byte| byte != b'0'))
+    .then(|| value.to_ascii_lowercase())
 }
 
 fn dragon_loaded(before: &str, fresh: &str) -> Result<bool, String> {
     let mut expected = BTreeSet::new();
     for line in before.lines() {
-        let value = if line.contains("LogPersistence:") {
+        // Initialize logs an all-zero placeholder before the actual world is
+        // selected. Only the configured identity or a native save binds capture.
+        let value = if line.contains("LogPersistence:")
+            && line.contains("SaveGameInternal() : Starting save")
+        {
             bracketed(line, "Guid[")
         } else if line.contains("Setting [\"WorldSaveGuid\"]") {
             bracketed(line, "value[")
@@ -309,6 +354,34 @@ fn dragon_loaded(before: &str, fresh: &str) -> Result<bool, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vrising_reload_requires_the_captured_native_save_and_deserialization() {
+        let before = "PersistenceV2 - Finished Saving to 'C:\\fixture\\Saves\\v4\\world1\\AutoSave_1.save.gz'. Total Persistent ChunkCount 2678. Total Save Size: 7096465 Total Uncompressed Save Size: 33580424";
+        let fresh = "PersistenceV2 - Loading save at C:\\fixture\\Saves\\v4\\world1\\AutoSave_1.save.gz.\nPersistenceV2 - Deserialized Header. Persistent Component Types: 1542\nPersistenceV2 - Finished Loading 274735 Entities spread over 139 Archetypes.";
+        require_loaded("vrising", before, fresh).unwrap();
+        for invalid in [
+            fresh.replace("AutoSave_1", "AutoSave_2"),
+            fresh.replace("274735 Entities", "0 Entities"),
+            fresh.replace("Types: 1542", "Types: 0"),
+            fresh.lines().take(2).collect::<Vec<_>>().join("\n"),
+            "[Server] Startup Completed - Disabling Scene Loading Systems".into(),
+            format!(
+                "{fresh}\nPersistenceV2 - Loading save at C:\\fixture\\Saves\\v4\\other\\AutoSave_1.save.gz."
+            ),
+        ] {
+            assert!(require_loaded("vrising", before, &invalid).is_err());
+        }
+        assert!(require_loaded("vrising", "Triggering AutoSave 1!", fresh).is_err());
+        assert!(
+            require_loaded(
+                "vrising",
+                &before.replace("ChunkCount 2678", "ChunkCount 0"),
+                fresh
+            )
+            .is_err()
+        );
+    }
 
     #[test]
     fn ready_or_new_world_does_not_prove_reload() {
@@ -347,6 +420,38 @@ mod tests {
             .is_err()
         );
         assert!(require_loaded("runescapedragonwilds", "", loaded).is_err());
+    }
+
+    #[test]
+    fn dragon_reload_ignores_uninitialized_identity_but_rejects_distinct_saved_worlds() {
+        let initialize = "LogPersistence: [DedicatedServer] Initialize() : (Guid[00000000000000000000000000000000] WorldName[INVALID_WORLD_NAME])";
+        let settings = "LogNetSessionSettings: Setting [\"WorldSaveGuid\"] written with key[xg] value[2400C79B40D08D307DB96689E21B12F9]";
+        let saved = "LogPersistence: [DedicatedServer] SaveGameInternal() : Starting save (Guid[2400C79B40D08D307DB96689E21B12F9] WorldName[Ashenfall] SlotName[Ashenfall])";
+        let loaded = "LogPersistence: PostLoadWorldState() : World load SUCCEEDED (slot: Ashenfall) (Guid[2400C79B40D08D307DB96689E21B12F9])\nLogSpudSubsystem: Load: Success";
+        let before = format!("{initialize}\n{settings}\n{saved}");
+        require_loaded("runescapedragonwilds", &before, loaded).unwrap();
+        let other = saved.replace(
+            "2400C79B40D08D307DB96689E21B12F9",
+            "11111111111111111111111111111111",
+        );
+        assert!(
+            require_loaded(
+                "runescapedragonwilds",
+                &format!("{before}\n{other}"),
+                loaded
+            )
+            .is_err()
+        );
+        assert!(require_loaded("runescapedragonwilds", initialize, loaded).is_err());
+        let zero = saved.replace(
+            "2400C79B40D08D307DB96689E21B12F9",
+            "00000000000000000000000000000000",
+        );
+        let zero_loaded = loaded.replace(
+            "2400C79B40D08D307DB96689E21B12F9",
+            "00000000000000000000000000000000",
+        );
+        assert!(require_loaded("runescapedragonwilds", &zero, &zero_loaded).is_err());
     }
 
     #[test]

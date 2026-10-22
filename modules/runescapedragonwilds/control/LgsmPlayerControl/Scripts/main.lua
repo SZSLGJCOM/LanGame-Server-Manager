@@ -360,11 +360,11 @@ local function schedule()
                 end
                 require_condition(type(IsInGameThread) == "function" and IsInGameThread(), "dispatcher_unavailable")
                 validate_current()
+                if world_save.is_request(request) then
+                    return world_save.execute(request, validate_current, function() operation.invoked = true end)
+                end
                 local players, api, native = collect()
                 validate_current()
-                if world_save.is_request(request) then
-                    return world_save.execute(request, validate_current, native, function() operation.invoked = true end)
-                end
                 if request.action == "query" then return players end
                 require_condition(request.boot_id == boot_id, "target_changed")
                 local target = target_row(players, request)

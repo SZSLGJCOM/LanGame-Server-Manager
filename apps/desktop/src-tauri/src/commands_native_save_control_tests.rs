@@ -29,6 +29,66 @@ fn managed_startup_hooks_preserve_existing_plan_hooks_including_windows_key_alia
 fn packet(nonce: &str, status: &str, issue: &str) -> Vec<u8> {
     format!("LGSM_SAVE_1\nmodule=corekeeper\nrun={}\nnonce={nonce}\npid=42\nstatus={status}\nissue={issue}\n","a".repeat(32)).into_bytes()
 }
+
+#[test]
+fn native_acknowledgements_keep_request_and_disk_completion_distinct_for_every_profile() {
+    for module in ["corekeeper", "vrising", "sonsoftheforest", "barotrauma"] {
+        let game = profile(module).unwrap();
+        let run = "a".repeat(32);
+        let nonce = "b".repeat(32);
+        for (status, expected) in [
+            ("dispatched", WorldSaveCompletion::Requested),
+            ("completed", WorldSaveCompletion::Confirmed),
+        ] {
+            let bytes = String::from_utf8(packet(&nonce, status, "none"))
+                .unwrap()
+                .replace("module=corekeeper", &format!("module={module}"));
+            let reply = transport::reply(bytes.as_bytes(), game, &run, &nonce, 42).unwrap();
+            assert_eq!(
+                transport::completion(reply).unwrap(),
+                Some(expected),
+                "{module}: {status}"
+            );
+        }
+    }
+}
+
+#[test]
+fn native_pending_old_and_failed_replies_do_not_become_acknowledgements() {
+    let game = profile("corekeeper").unwrap();
+    let run = "a".repeat(32);
+    let nonce = "b".repeat(32);
+    for status in ["dispatching", "dispatched"] {
+        let returned_nonce = if status == "dispatching" {
+            nonce.clone()
+        } else {
+            "c".repeat(32)
+        };
+        let reply = transport::reply(
+            &packet(&returned_nonce, status, "none"),
+            game,
+            &run,
+            &nonce,
+            42,
+        )
+        .unwrap();
+        assert_eq!(transport::completion(reply).unwrap(), None);
+    }
+    for (status, issue) in [
+        ("unknown", "native_outcome_unknown"),
+        ("rejected", "save_busy"),
+    ] {
+        let reply =
+            transport::reply(&packet(&nonce, status, issue), game, &run, &nonce, 42).unwrap();
+        let error = transport::completion(reply).unwrap_err();
+        assert!(error.contains(if status == "unknown" {
+            "not resent"
+        } else {
+            "save_busy"
+        }));
+    }
+}
+
 #[test]
 fn native_admission_is_pending_and_correlated_not_a_disk_receipt() {
     use transport::{Reply, reply};
@@ -119,54 +179,68 @@ fn native_admission_is_pending_and_correlated_not_a_disk_receipt() {
     assert!(reply(&duplicate, game, &run, &nonce, 42).is_err());
 }
 
-#[test]
-fn terminal_write_failures_are_module_scoped_and_cannot_claim_completion() {
-    use transport::{Reply, reply};
-    let run = "a".repeat(32);
-    let nonce = "b".repeat(32);
-    for (module, issue) in [("vrising", "vrising_write_failed")] {
-        let frame = |status: &str| {
-            String::from_utf8(packet(&nonce, status, issue))
-                .unwrap()
-                .replace("module=corekeeper", &format!("module={module}"))
-                .into_bytes()
-        };
-        let game = profile(module).unwrap();
-        assert_eq!(
-            reply(&frame("failed"), game, &run, &nonce, 42).unwrap(),
-            Reply::Failed(issue.into())
-        );
-        for status in [
-            "completed",
-            "dispatching",
-            "dispatched",
-            "unknown",
-            "rejected",
-        ] {
-            assert!(reply(&frame(status), game, &run, &nonce, 42).is_err());
-        }
-        assert!(reply(&frame("failed"), game, &run, &nonce, 43).is_err());
-        assert!(
-            reply(
-                &packet(&nonce, "failed", issue),
-                profile("corekeeper").unwrap(),
-                &run,
-                &nonce,
-                42
-            )
-            .is_err()
-        );
-    }
-}
-pub(super) struct Fixture(pub(super) std::path::PathBuf);
+pub(in crate::commands) struct Fixture(pub(in crate::commands) std::path::PathBuf);
 impl Fixture {
-    pub(super) fn new() -> Self {
+    pub(in crate::commands) fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
             "langame-managed-save-test-{}",
             uuid::Uuid::new_v4().simple()
         ));
         std::fs::create_dir(&root).unwrap();
         Self(root)
+    }
+
+    pub(in crate::commands) fn unsupported_instance(
+        &self,
+        module: &str,
+    ) -> (StorageBootstrap, InstanceDetails) {
+        let runtime = self.0.join("runtime");
+        std::fs::create_dir_all(&runtime).unwrap();
+        std::fs::create_dir_all(self.0.join("config")).unwrap();
+        std::fs::write(runtime.join(".langame-private-runtime"), b"managed\n").unwrap();
+        let (image, files) = if module == "valheim" {
+            (
+                "valheim_server.exe",
+                super::super::commands_valheim_control::NATIVE_PREPARATION_FILES.to_vec(),
+            )
+        } else {
+            let game = profile(module).unwrap();
+            (
+                game.image,
+                payload::native_files(game)
+                    .unwrap()
+                    .into_iter()
+                    .map(|(path, _)| path)
+                    .collect(),
+            )
+        };
+        for relative in files.into_iter().chain([image]) {
+            let path = runtime.join(relative);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, b"unexecuted unsupported native image").unwrap();
+        }
+        let storage = app_storage::bootstrap_storage_with_paths(app_storage::StoragePaths {
+            app_data_root: self.0.join("app-data"),
+            settings_path: self.0.join("app-data/settings.json"),
+            database_path: self.0.join("app-data/db/probe.db"),
+            logs_root: self.0.join("logs"),
+            modules_root: self.0.join("modules"),
+            migrations_root: self.0.join("migrations"),
+            steamcmd_root: self.0.join("steamcmd"),
+            games_root: self.0.join("games"),
+            instances_root: self.0.join("instances"),
+            archives_root: self.0.join("instances/.trash"),
+        })
+        .unwrap();
+        let details = serde_json::from_value(serde_json::json!({
+            "summary":{"id":"optional-save","name":"Optional save","module_id":module,
+                "status":"Stopped","bind_ip":"127.0.0.1","port_count":0,"autostart":false},
+            "config_file_path":self.0.join("config/instance.json"),
+            "saves_path":self.0.join("data/worlds"),"auto_backup_on_stop":false,
+            "backup_retention_count":0,"settings_json":"{}","ports":[],"active_run":null
+        }))
+        .unwrap();
+        (storage, details)
     }
 }
 impl Drop for Fixture {

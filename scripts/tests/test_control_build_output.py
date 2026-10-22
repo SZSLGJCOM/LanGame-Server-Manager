@@ -10,6 +10,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILDERS = {
+    "build_ue4ss_runtime.ps1": "ue4ss-runtime",
     "build_enshrouded_control.ps1": "enshrouded-control",
     "build_valheim_control.ps1": "valheim-control",
     "build_dragonwilds_player_query.ps1": "dragonwilds-player-query",
@@ -43,7 +44,7 @@ class ControlBuildOutputTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         summary = json.loads(result.stdout)
-        self.assertEqual(summary["checks"], 175)
+        self.assertEqual(summary["checks"], 200)
         self.assertEqual(summary["failed"], 0)
 
 

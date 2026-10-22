@@ -6,8 +6,8 @@ poll_interval_ms = 1000
 stability_window_ms = 3000
 probe_mode = "all"
 
-# The private fixture does not advertise on Steam or EOS. Require completed
-# world startup and a real autosave before testing data retention.
+# The private fixture does not advertise on Steam or EOS. World startup and
+# owned endpoints establish readiness; persistence is verified after saving.
 [fixture.settings]
 list_on_steam = false
 list_on_eos = false
@@ -18,12 +18,6 @@ id = "world-hosted"
 kind = "log_marker"
 sources = [{ kind = "process", process_key = "main" }]
 any_of = ["[Server] Startup Completed - Disabling Scene Loading Systems"]
-
-[[probes]]
-id = "world-saved"
-kind = "log_marker"
-sources = [{ kind = "process", process_key = "main" }]
-any_of = ["PersistenceV2 - Finished Saving to '"]
 
 [[probes]]
 id = "game-endpoint"

@@ -224,7 +224,6 @@ try {
     foreach ($name in @('version.dll', 'LgsmPlayerControl.dll', 'LICENSE-UE4SS.txt', 'LICENSE-fmt.txt')) {
         Copy-Item -LiteralPath (Join-Path $shortBuild ('bin/Release/' + $name)) -Destination (Join-Path $output $name)
     }
-    Copy-Item -LiteralPath (Join-Path $projectRoot 'modules/enshrouded/control/vendor/minhook/LICENSE.txt') -Destination (Join-Path $output 'LICENSE-MinHook.txt')
 } finally {
     try { [LgsmDragonwildsDriveMapping]::Remove($mapping.Drive, $rawTarget) } finally {
         $mapping.Mutex.ReleaseMutex()

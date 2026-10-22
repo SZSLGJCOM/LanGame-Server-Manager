@@ -7,8 +7,7 @@ preserves HumanitZ's native authentication and `Game saved!` acknowledgement
 framing; it does not send an unsupported generic completion marker.
 
 Saving no longer installs UE4SS, a proxy or the former native writer observer.
-Existing game Mods, loaders and operator settings are retained. The internal
-native-profile and diagnostic implementation is not a current save prerequisite.
+Existing game Mods, loaders and operator settings are retained.
 
 A successful native submission returns `save_completion=requested`. Maintenance
 and the server card report that the save request was sent and the game performs

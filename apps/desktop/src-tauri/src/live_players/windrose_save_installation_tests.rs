@@ -17,7 +17,9 @@ impl Drop for Directory {
 #[test]
 fn interrupted_pending_version_remains_owned_after_a_new_intent_and_second_crash() {
     let root = Directory::new();
+    verify_owned_mods(&root.0).unwrap();
     publish_installation(&root.0, b"script-a", b"dll-a", publish).unwrap();
+    verify_owned_mods(&root.0).unwrap();
     let owner_path = root.0.join(OWNER);
     let bytes = read(&owner_path, 8192).unwrap();
     let mut owner = decode(&bytes).unwrap();
@@ -35,6 +37,7 @@ fn interrupted_pending_version_remains_owned_after_a_new_intent_and_second_crash
     .unwrap();
     let script = root.0.join(MOD).join("Scripts/main.lua");
     publish(&script, Some(b"script-a"), b"script-b").unwrap();
+    verify_owned_mods(&root.0).unwrap();
     // New release C recognizes actual script B, publishes its intent, then
     // crashes before touching any payload. A later D must still recognize B.
     let mut publications = 0;
@@ -66,11 +69,13 @@ fn interrupted_pending_version_remains_owned_after_a_new_intent_and_second_crash
 fn unowned_and_externally_modified_native_files_are_preserved() {
     let root = Directory::new();
     fs::create_dir_all(root.0.join(MOD)).unwrap();
+    assert!(verify_owned_mods(&root.0).is_err());
     assert!(publish_installation(&root.0, b"script", b"dll", publish).is_err());
     fs::remove_dir_all(root.0.join("R5")).unwrap();
     publish_installation(&root.0, b"script", b"dll", publish).unwrap();
     let dll = root.0.join(MOD).join(NATIVE);
     fs::write(&dll, b"operator-edit").unwrap();
+    assert!(verify_owned_mods(&root.0).is_err());
     assert!(publish_installation(&root.0, b"next", b"next-dll", publish).is_err());
     assert_eq!(fs::read(dll).unwrap(), b"operator-edit");
 }

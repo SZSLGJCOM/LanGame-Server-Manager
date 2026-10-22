@@ -1,6 +1,236 @@
 use super::*;
 use crate::commands::commands_managed_save_control::{profile, tests::Fixture};
 
+fn previous_vrising_observer(root: &Path) {
+    let game = profile("vrising").unwrap();
+    publish_payload(root, game, b"previous plugin".to_vec()).unwrap();
+    let mut owner = inspect(root, game).unwrap().unwrap();
+    for path in retired_paths(game) {
+        std::fs::write(root.join(path), path.as_bytes()).unwrap();
+        owner
+            .files
+            .insert((*path).into(), io::digest(path.as_bytes()));
+    }
+    owner.source_sha256 = "previous observer source".into();
+    std::fs::write(root.join(OWNER), serde_json::to_vec(&owner).unwrap()).unwrap();
+}
+
+#[test]
+fn vrising_publication_retires_owned_observer_after_replacement_and_recovers_interruption() {
+    for interrupted in [false, true] {
+        let (fixture, game) = fixture("vrising");
+        previous_vrising_observer(&fixture.0);
+        if interrupted {
+            assert!(
+                publish_payload_with(
+                    &fixture.0,
+                    game,
+                    b"new plugin".to_vec(),
+                    |path, old, new| {
+                        io::replace_owned(path, old, new)?;
+                        Err("publication interrupted".into())
+                    }
+                )
+                .is_err()
+            );
+            assert_eq!(
+                std::fs::read(fixture.0.join(game.plugin)).unwrap(),
+                b"new plugin"
+            );
+            assert!(
+                retired_paths(game)
+                    .iter()
+                    .all(|path| fixture.0.join(path).is_file())
+            );
+        }
+        publish_payload(&fixture.0, game, b"new plugin".to_vec()).unwrap();
+        verify_prepared(&fixture.0, game).unwrap();
+        assert!(
+            retired_paths(game)
+                .iter()
+                .all(|path| !fixture.0.join(path).exists())
+        );
+        assert_eq!(inspect(&fixture.0, game).unwrap().unwrap().files.len(), 1);
+    }
+}
+
+#[test]
+fn vrising_observer_retirement_preserves_foreign_or_modified_sidecars_before_publication() {
+    for owned in [false, true] {
+        let (fixture, game) = fixture("vrising");
+        if owned {
+            previous_vrising_observer(&fixture.0);
+        } else {
+            publish_payload(&fixture.0, game, b"previous plugin".to_vec()).unwrap();
+        }
+        std::fs::write(fixture.0.join(retired_paths(game)[1]), b"operator file").unwrap();
+        let before = owned_paths(game)
+            .into_iter()
+            .chain([OWNER])
+            .map(|path| (path, std::fs::read(fixture.0.join(path)).ok()))
+            .collect::<Vec<_>>();
+        assert!(publish_payload(&fixture.0, game, b"new plugin".to_vec()).is_err());
+        for (path, bytes) in before {
+            assert_eq!(std::fs::read(fixture.0.join(path)).ok(), bytes);
+        }
+    }
+}
+
+#[tokio::test]
+async fn unsupported_vrising_start_also_retires_the_owned_native_observer() {
+    let fixture = Fixture::new();
+    let (storage, details) = fixture.unsupported_instance("vrising");
+    let runtime = fixture.0.join("runtime");
+    previous_vrising_observer(&runtime);
+    let receipt = std::fs::read(runtime.join(OWNER)).unwrap();
+    let state = crate::state::DesktopState::default();
+    let operation = state
+        .begin_storage_context_operation("optional save test")
+        .unwrap();
+    assert!(
+        super::super::ensure_for_start(&storage, &details, &operation)
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        owned_paths(profile("vrising").unwrap())
+            .iter()
+            .all(|path| !runtime.join(path).exists())
+    );
+    assert_eq!(std::fs::read(runtime.join(OWNER)).unwrap(), receipt);
+}
+
+#[tokio::test]
+async fn unsupported_managed_start_without_an_extension_needs_no_session() {
+    for module in ["corekeeper", "vrising", "sonsoftheforest", "barotrauma"] {
+        let fixture = Fixture::new();
+        let (storage, details) = fixture.unsupported_instance(module);
+        let state = crate::state::DesktopState::default();
+        let operation = state
+            .begin_storage_context_operation("optional save test")
+            .unwrap();
+        let environment = super::super::ensure_for_start(&storage, &details, &operation)
+            .await
+            .unwrap_or_else(|error| {
+                panic!("{module}: optional extension blocked startup: {error}")
+            });
+        assert_eq!(
+            serde_json::to_value(environment).unwrap(),
+            serde_json::Value::Null
+        );
+        let runtime = fixture.0.join("runtime");
+        assert!(!runtime.join(OWNER).exists());
+        assert!(!runtime.join(DIRECTORY).exists());
+    }
+}
+
+#[tokio::test]
+async fn unsupported_managed_start_retires_owned_scan_files_and_can_prepare_again() {
+    for module in ["corekeeper", "vrising", "sonsoftheforest", "barotrauma"] {
+        let fixture = Fixture::new();
+        let (storage, details) = fixture.unsupported_instance(module);
+        let game = profile(module).unwrap();
+        let runtime = fixture.0.join("runtime");
+        publish_payload(&runtime, game, b"previous plugin".to_vec()).unwrap();
+        let mut owner = decode(
+            &io::read_regular(&runtime.join(OWNER), 65536).unwrap(),
+            game,
+        )
+        .unwrap();
+        owner
+            .pending_files
+            .insert(game.plugin.into(), io::digest(b"pending plugin"));
+        std::fs::write(runtime.join(game.plugin), b"pending plugin").unwrap();
+        let receipt = serde_json::to_vec(&owner).unwrap();
+        std::fs::write(runtime.join(OWNER), &receipt).unwrap();
+        let session = runtime.join(DIRECTORY).join("session.txt");
+        std::fs::write(&session, b"existing session").unwrap();
+        let foreign = runtime.join("operator-mod.dll");
+        std::fs::write(&foreign, b"operator mod").unwrap();
+        let state = crate::state::DesktopState::default();
+        let operation = state
+            .begin_storage_context_operation("optional save test")
+            .unwrap();
+        for _ in 0..2 {
+            let environment = super::super::ensure_for_start(&storage, &details, &operation)
+                .await
+                .unwrap_or_else(|error| panic!("{module}: {error}"));
+            assert_eq!(
+                serde_json::to_value(environment).unwrap(),
+                serde_json::Value::Null
+            );
+            for relative in paths(game) {
+                assert!(!runtime.join(relative).exists(), "{module}: {relative}");
+            }
+            assert_eq!(std::fs::read(runtime.join(OWNER)).unwrap(), receipt);
+            assert_eq!(std::fs::read(&session).unwrap(), b"existing session");
+            assert_eq!(std::fs::read(&foreign).unwrap(), b"operator mod");
+        }
+        publish_payload(&runtime, game, b"new reviewed plugin".to_vec()).unwrap();
+        verify_prepared(&runtime, game).unwrap();
+        assert_eq!(
+            std::fs::read(runtime.join(game.plugin)).unwrap(),
+            b"new reviewed plugin"
+        );
+    }
+}
+
+#[tokio::test]
+async fn unsupported_managed_start_preserves_conflicts_before_retiring_any_file() {
+    for module in ["corekeeper", "vrising", "sonsoftheforest", "barotrauma"] {
+        for problem in ["foreign", "modified", "invalid_owner", "missing_native"] {
+            let fixture = Fixture::new();
+            let (storage, details) = fixture.unsupported_instance(module);
+            let game = profile(module).unwrap();
+            let runtime = fixture.0.join("runtime");
+            if problem == "foreign" {
+                let plugin = runtime.join(game.plugin);
+                std::fs::create_dir_all(plugin.parent().unwrap()).unwrap();
+                std::fs::write(plugin, b"operator mod").unwrap();
+            } else {
+                publish_payload(&runtime, game, b"owned plugin".to_vec()).unwrap();
+                match problem {
+                    "modified" => std::fs::write(
+                        runtime.join(paths(game).last().unwrap()),
+                        b"operator change",
+                    )
+                    .unwrap(),
+                    "invalid_owner" => {
+                        std::fs::write(runtime.join(OWNER), b"invalid receipt").unwrap()
+                    }
+                    _ => std::fs::remove_file(
+                        runtime.join(native_files(game).unwrap().last().unwrap().0),
+                    )
+                    .unwrap(),
+                }
+            }
+            let tracked = paths(game).into_iter().chain([OWNER]).collect::<Vec<_>>();
+            let before = tracked
+                .iter()
+                .map(|path| std::fs::read(runtime.join(path)).ok())
+                .collect::<Vec<_>>();
+            let state = crate::state::DesktopState::default();
+            let operation = state
+                .begin_storage_context_operation("optional save test")
+                .unwrap();
+            assert!(
+                super::super::ensure_for_start(&storage, &details, &operation)
+                    .await
+                    .is_err(),
+                "{module}: {problem}"
+            );
+            assert_eq!(
+                tracked
+                    .iter()
+                    .map(|path| std::fs::read(runtime.join(path)).ok())
+                    .collect::<Vec<_>>(),
+                before
+            );
+        }
+    }
+}
+
 #[test]
 fn compiler_response_preserves_long_reference_lists_and_quoted_unicode_paths() {
     let game = profile("vrising").unwrap();
@@ -44,7 +274,7 @@ fn compiler_response_preserves_long_reference_lists_and_quoted_unicode_paths() {
     )));
     assert!(text.ends_with(&format!(
         "\"{}\"\r\n",
-        scratch.join("VRisingSaveCompletion.cs").display()
+        scratch.join("NativeSave.cs").display()
     )));
     let sons = compiler_response(
         Path::new("C:/Windows/Framework/csc.exe"),
@@ -58,7 +288,6 @@ fn compiler_response_preserves_long_reference_lists_and_quoted_unicode_paths() {
         "\"{}\"\r\n",
         scratch.join("SonsSaveCompletion.cs").display()
     )));
-    assert!(!sons.contains("VRisingSaveCompletion.cs"));
 }
 
 #[test]
