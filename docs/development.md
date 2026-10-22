@@ -184,7 +184,17 @@ python -B scripts/verify_open_source_history.py
 
 Read [Contributing](../CONTRIBUTING.md#english) and the [Contributor Agreement](../CONTRIBUTOR_AGREEMENT.md#english) before submitting changes. See the [project introduction](../README.en.md) for usage and [desktop release guide](desktop-release.md) for installer builds.
 
-The repository separates the React/Tauri application in `apps/desktop/`, reusable Rust components in `crates/`, game definitions and fixtures in `modules/`, database schema in `migrations/`, and verification tools in `scripts/`.
+### Repository layout
+
+| Path | Responsibility |
+| --- | --- |
+| `apps/desktop/` | React interface, translations, frontend checks and the Tauri command adapter layer |
+| `crates/` | Domain types, storage, runtime, module integration, SteamCMD and Windows support |
+| `modules/` | Game manifests, settings schemas, native templates and acceptance fixtures |
+| `migrations/` | Database schema |
+| `scripts/` | Verification, generation and build tools |
+| `docs/` | User guides, integration requirements, protocols and configuration sources |
+| `.github/` | Issue forms, contribution templates and CI |
 
 ### Runtime flow and ownership
 
@@ -265,3 +275,41 @@ Local debug builds optimize only the current SHA-1/SHA-256 dependencies at level
 Generated game translations retain only fallback keys not overridden by hand-authored catalogs. After changing schema, settings modules or authored message keys, run `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs`; `--module <module-id>` limits schema regeneration to one game. Generation respects runtime spread order. Verification loads actual exports, including computed messages, to check effective values, placeholders and language coverage.
 
 Preserve retained data during schema changes and verify backups, conversion, integrity and actual startup. Never bypass validation by deleting data or rewriting migration checksums. Keep credentials, private addresses, player data, runtime output, proprietary binaries and unlicensed media out of commits. Preserve third-party notices and use the [private security reporting process](../SECURITY.md#english). Run the [publication-boundary checks](#数据与公开边界); history checks require a complete clone. Source checks do not replace installation, upgrade, uninstall or data-retention acceptance.
+
+### Modules and generated files
+
+When adding a game or changing configuration, startup, lifecycle, ports, queries or player management, follow [game integration validation](game-integration-validation.md#english). Settings and exclusions are recorded in `config-sources.toml`, and sanitized fixtures belong in `modules/<module-id>/config-fixtures/`; support claims should have an authoritative source or reproducible dedicated-server evidence.
+
+The configuration ledger and acceptance Markdown are generated from module sources. After changing sources or generators, regenerate them instead of editing generated output:
+
+```powershell
+python -B scripts/verify_game_config_provenance.py --write
+python -B scripts/verify_game_config_acceptance.py --require-all --write
+```
+
+Before submitting, check the generated output and configuration coverage:
+
+```powershell
+python -B scripts/verify_game_config_provenance.py --check
+python -B scripts/verify_module_setting_coverage.py
+python -B scripts/verify_game_config_acceptance.py --require-all --check
+python -B scripts/verify_library_media.py
+```
+
+Generated targets are `docs/game-config-source-ledger.md`, `docs/game-config-source-ledger.csv` and `docs/game-config-acceptance/*.md`. Tauri-generated `apps/desktop/src-tauri/gen/schemas/` is not committed; permission changes belong in `capabilities/default.json` or `tauri.conf.json`.
+
+Generated game translation catalogs keep only fallbacks not covered by handwritten dictionaries. After changing keys in a schema, settings module or handwritten dictionary, run `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs`; append `--module <module-id>` for a single game. The generator determines coverage from the actual dictionary merge order and does not delete generated entries that still take effect after earlier dictionaries. Verification loads the actual exports and checks dynamic entries, final text, placeholders and Chinese/English coverage, rather than substituting a source-string scan for runtime results.
+
+### Data and publication boundaries
+
+Changes to persisted formats must preserve valid data: back up first, then verify conversion, integrity and actual startup. Do not delete data or modify migration checksums to bypass failures. Tests use isolated data; generated output, logs and local runtime data stay out of commits.
+
+Credentials, private addresses, player data, proprietary game binaries and unauthorized media must not enter source code or issue reports. Keep third-party licenses and attribution, and report vulnerabilities privately through the [security policy](../SECURITY.md#english). Run the publication boundary checks before submitting:
+
+```powershell
+python -B scripts/verify_no_tracked_secrets.py
+python -B scripts/verify_open_source_boundary.py
+python -B scripts/verify_open_source_history.py
+```
+
+The history check requires a full clone. Passing source checks does not replace installation, upgrade, uninstallation and data-retention acceptance.

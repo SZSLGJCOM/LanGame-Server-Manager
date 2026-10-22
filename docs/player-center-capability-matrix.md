@@ -116,3 +116,14 @@ Conan、Palworld 的目录和格式由安装包读写函数核对；Necesse、Un
 Source RCON、WebSocket 和 Telnet 的完整命令交换限时 8 秒，HumanitZ 为 12 秒；HTTP、UDP 及日志采集分别有独立的总预算。UI 的响应预览长度不再截断内部名单解析所需的响应。
 
 新增或调整游戏能力时，同步修改模块契约、消费者、测试和本表。真实服务器验收仍应覆盖零人、多人、重名、中文名、服务器重启及配置变化；未执行的真实服务器场景不得写成已通过。
+
+## English summary
+
+This page is maintained in Chinese; the capability table above uses bilingual headers and module IDs. Key points:
+
+- Of the current 32 games, 31 declare an online roster collector; some interfaces need extra configuration, an extension, or public player names. The table records the collection method and action ownership declared by each module; it does not mean a real online-server acceptance has been run for every game. Contract tests check all 32 games against module manifests, schemas, mock projections and response samples; protocol parsing and transport bounds are verified by Rust tests.
+- Online modes in the table: `structured` (11 modules: live snapshot plus row actions explicitly declared in the manifest), `read_only` (20 modules: live names or identities without row actions; a name is not a manageable account ID), `manual_id` (1 module, RimWorld Together: no reliable live roster parser, existing manual-target actions are kept) and `unsupported` (no live roster or manual player actions).
+- Access lists (admin, allow, block, priority) are independent from the online roster and are never used to generate online players.
+- The native ban list reads each game's own persistent file and remains viewable after the server stops or players go offline. Unbanning requires a successful refresh and selecting an exact native identity; a submitted native command is not reported as a successful unban until the list is re-read. Except for Squad, unbanning requires the server to be running; Squad edits the persistent file, can be used while stopped, and takes effect after restart.
+- Roster refresh checks the current running instance, process and configuration, and transports are bounded by total time, frames, bytes and lines. Authentication failures, missing configuration, incomplete responses, unpublished names and missing adapters are shown separately; a failure is never displayed as "nobody online".
+- Response samples live in `apps/desktop/src-tauri/test-data/live-players/`. Multiplayer samples are constructed protocol test data, **not captures of real online players**.

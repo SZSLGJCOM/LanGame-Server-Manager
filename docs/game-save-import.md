@@ -1,4 +1,8 @@
-# 存档导入
+# 存档导入 / Save import
+
+[简体中文](#简体中文) | [English](#english)
+
+## 简体中文
 
 在服务器实例的 **维护 → 导入存档** 中选择来源文件并检查导入内容。
 
@@ -28,3 +32,34 @@
 导入要求双方停服，检查后确认；自动建立可恢复的导入前备份，保留来源及目标服务器配置。七日杀世界和生成地图分别备份、分别计算保留数量，失败时两个导入范围一起回滚。布局和文件校验不能替代启动游戏后核对世界与玩家。
 
 逐游戏限制与原始资料保留在 [存档支持数据](../apps/desktop/src/save-import/guides.json)，界面按当前游戏展示。
+
+## English
+
+Choose the source files in the server instance under **Maintenance → Import save** and review what will be imported.
+
+Of the 32 games, 31 support importing existing dedicated-server saves; Squad has no persistent world to import.
+
+| Game | Import scope and requirements |
+| --- | --- |
+| ARK ASE / ASA | Current map, players and tribes; source server IDs are mapped to the target instance, cluster data is handled separately |
+| Conan Exiles | Native game_0.db or legacy Game.db; the game performs the version upgrade |
+| HumanitZ | Complete SaveGames matching SaveName |
+| Nightingale | Offline world, Profiles and the matching CurrentDeploy selection |
+| Project Zomboid | Multiplayer world and character records; the login account database is not imported, original usernames and SteamIDs are used |
+| SCUM | Native dedicated-server SaveFiles database |
+| Soulmask | Level01_Main dedicated world; other map conversion is handled separately |
+| RimWorld Together | Complete Assets, preserving username and settlement association |
+| Rust | World, map and player databases; target cfg and Rust+ identity are preserved |
+| Satisfactory | World .sav; loaded through the in-game Server Manager after startup |
+| 7 Days to Die | Selected world and matching GeneratedWorlds; real map and save names must match |
+| Sons of the Forest / The Forest | Selected dedicated slot; start mode must be Continue |
+| Unturned | Matching Level and Players set for the map |
+| Windrose | Complete Default after the server stops; configuration and native world ID must match |
+
+Dedicated-server save import is also supported for these 15 games: Abiotic Factor, Astroneer, Barotrauma, Core Keeper, Don't Starve Together, Enshrouded, Minecraft Java, Necesse, Palworld, Return to Moria, Romestead, RuneScape: Dragonwilds, Terraria, Valheim, V Rising.
+
+Single-player-to-dedicated limits are shown separately: original host identities for ARK, Palworld, HumanitZ and others are not converted automatically; SCUM single-player conversion is not supported; Nightingale single-player migration follows the game's own process. Support for importing local world files does not mean versions, Mods or character identities have been converted.
+
+Import requires both servers to be stopped and is confirmed after review. A recoverable pre-import backup is created automatically and source and target server configurations are preserved. 7 Days to Die worlds and generated maps are backed up and retained separately, and both scopes roll back together on failure. Layout and file checks do not replace verifying the world and players after starting the game.
+
+Per-game limits and original references are kept in the [save support data](../apps/desktop/src/save-import/guides.json); the interface shows the entry for the current game.

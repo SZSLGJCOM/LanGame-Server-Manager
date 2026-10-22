@@ -1,147 +1,52 @@
 <p align="center">
-  <a href="https://langame.cn/products/langame-server-manager/"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo.svg" alt="LanGame Server Manager" width="420" align="middle"></picture></a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://langame.cn/"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/entrogenesis-dark.svg"><img src="assets/entrogenesis.svg" alt="熵灵硅界 · ENTROGENESIS" width="230" align="middle"></picture></a>
+  <a href="https://langame.cn/products/langame-server-manager/"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg"><img src="assets/logo.svg" alt="LanGame Server Manager" width="420"></picture></a>
 </p>
 
 # LanGame Server Manager
 
 [简体中文](README.md) | [English](README.en.md)
 
-[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Documentation](docs/README.md#english) · [Hosting guides](https://langame.cn/hosting/) · [WeChat](#follow-us-on-wechat)
+[Website](https://langame.cn/) · [Product page](https://langame.cn/products/langame-server-manager/) · [Documentation](docs/README.md#english) · [Hosting guides](https://langame.cn/hosting/)
 
-[LanGame Server Manager](https://langame.cn/products/langame-server-manager/) is a **Windows** desktop game server manager. Use it on a Windows PC at home or in a machine room, or on a Windows Server host, to install dedicated servers, edit native settings, manage Mods, operate multiple instances, and handle logs and backups from one desktop app.
-
-Hosting yourself usually means SteamCMD, scattered config files, and a pile of native console windows. This app keeps day-to-day operations in one place: servers run in the background without covering the desktop, and you can reopen the app from the system tray. Server files, settings, and saves are normally stored on the computer running the manager.
+LanGame Server Manager is a Windows desktop app for installing, configuring, and running dedicated game servers, turning a spare laptop, an old PC, or a Windows Server machine into a game host.
 
 <p align="center">
-  <img src="assets/lgsm-system-49eec728.webp" alt="System page: host resources and sample instances" width="920">
+  <img src="assets/lgsm-system-49eec728.webp" alt="LanGame Server Manager interface" width="920">
 </p>
 
-<p align="center"><em>Current interface with sample data.</em></p>
+## Features
 
-## Main features
+- One-click server installation with managed SteamCMD and required runtimes
+- Native per-game settings with isolated instances
+- Mod installation, updates, and management
+- Built-in LanGameCMD hosts your servers, with no annoying CMD pop-ups
+- Resource and instance status monitoring
+- Player management, plus GM tools for supported games
+- Save import, backup, and recovery
+- Optional LAN AI assistant (bring your own model service)
 
-**32** game server integrations are available (including Palworld, Minecraft, ARK ASE / ASA, Don't Starve Together, Enshrouded, 7 Days to Die, Project Zomboid, Valheim, and more; see the expandable list below or the [product page](https://langame.cn/products/langame-server-manager/)).
+Supports [32 games](docs/games.md#english).
 
-- **One-stop deployment and runtime preparation**: Includes managed SteamCMD (supporting anonymous and interactive Steam Guard login) and automatically checks and prepares required Java, .NET, Visual C++, legacy DirectX, and XNA runtimes before startup.
-- **Deep native configuration and multi-instance isolation**: Edit room, permission, and world rules through structured per-game forms (including ARK multi-map clusters and Don't Starve Together Master/Caves shards), with isolated instance directories, port groups, and power controls ([configuration guide](docs/server-configuration.md#english)).
-- **Full-lifecycle Mod management**: Supports Steam Workshop auto-updates with verified cache fallback, native CurseForge updates for ARK: Survival Ascended, and local Mod import, dependency checks, and configuration-preserving removal ([Mod guide](docs/mod-management.md#english)).
-- **Player Center and server tools**: Collects online player rosters across 31 games, manages administrators, allowlists, and native persistent ban lists, and provides scheduled broadcasts ([capability matrix](docs/player-center-capability-matrix.md)).
-- **Save import, backup, and recovery**: Validates and imports existing dedicated-server saves across 31 games, with scheduled/stop backups and recoverable instance archiving ([save import](docs/game-save-import.md)).
-- **Host monitoring and background tray operation**: Tracks host resource usage and instance health, with an integrated in-app console and minimize-to-tray support ([monitoring guide](docs/system-monitoring.md#english)).
-- **LAN AI assistant (BYOK)**: Connects to your own model service, combining a synchronized 32-game documentation library with live instance logs for troubleshooting and preview-confirmed repairs; sends messages and required diagnostic context to the service you configure ([assistant guide](docs/assistant.md#english) · [privacy notice](PRIVACY.md#english)).
+## Download and get started
 
-<details>
-<summary>All 32 supported games</summary>
+Download the Windows installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases), install it, and add a server in the app. Runs on Windows 10 / 11 and Windows Server.
 
-- **Palworld** · **Minecraft Java Edition** · **ARK: Survival Ascended** · **ARK: Survival Evolved**
-- **Don't Starve Together** · **Enshrouded** · **7 Days to Die** · **Project Zomboid**
-- **Valheim** · **Terraria** · **Rust** · **Satisfactory**
-- **SCUM** · **V Rising** · **Soulmask** · **Conan Exiles**
-- **Sons Of The Forest** · **The Forest** · **Core Keeper** · **Barotrauma**
-- **Abiotic Factor** · **RuneScape: Dragonwilds** · **The Lord of the Rings: Return to Moria** · **ASTRONEER**
-- **RimWorld Together** · **Squad** · **Unturned** · **Necesse**
-- **Nightingale** · **HumanitZ** · **Windrose** · **Romestead**
+Players on the same LAN can join directly, or you can pair it with networking tools such as Radmin VPN or Hamachi. For public hosting, the app configures Windows Firewall rules automatically; router port forwarding is up to you. See the [networking guide](https://langame.cn/networking/).
 
-</details>
+## Development
 
-## Download and install
+[Build from source](docs/development.md#english) · [Privacy](PRIVACY.md#english)
 
-Download the Windows x64 installer from [GitHub Releases](https://github.com/SZSLGJCOM/LanGame-Server-Manager/releases) (setup offers Simplified Chinese; both packages install the same application and do not bundle game server files):
+## License
 
-- **`x64-setup.exe` (everyday installation and in-app updates)**: Smaller package; reuses an existing WebView2 runtime or installs it over the internet via the embedded Microsoft bootstrapper.
-- **`x64-offline-setup.exe` (offline installation)**: Includes the full WebView2 installer for disconnected machines or networks that cannot reach Microsoft's download service.
+Source-available, noncommercial use only: [License](LICENSE) · [Brand rules](NOTICE) · [Contributing](CONTRIBUTING.md#english) · [Security](SECURITY.md#english)
 
-Application installation and data locations are separate. First use creates `LanGame` at the root of the writable fixed non-system drive with the most available space, or uses the system drive if no other drive is usable. A nonempty `LanGame` directory whose ownership cannot be verified is skipped without adopting or overwriting its contents; the saved choice does not change with free space, and existing data stays in place without automatic migration. See [data locations](docs/desktop-release.md#data-locations-and-uninstallation) for the directory layout.
+## LanGame products
 
-Before manual installation or removal, choose **Exit** from the system tray and wait for servers to stop. Uninstallation preserves game data, server settings, databases, existing data and the saved location record; optional interface-data cleanup resets interface settings such as language, theme and model-service configuration.
-
-## Requirements
-
-Runs on **Windows 10 / 11** and **Windows Server**, with Simplified Chinese and English interfaces. Each game has its own hardware, storage, and network requirements. Instance startup checks the actual program dependencies and prepares required Java, .NET, Visual C++, legacy DirectX, and [Microsoft XNA Framework 4.0](https://www.microsoft.com/en-us/download/details.aspx?id=20914) (for vanilla Terraria) from official verified sources; system runtime installation may require accepting a Windows elevation prompt, and installation failures or required restarts block startup with an explanation. Native LAN, and overlay LANs such as Radmin VPN and Hamachi, can bind to the detected adapter; public connections still need suitable ports and firewall rules. Some settings take effect only after a server restart.
-
-## Use and permissions
-
-- Noncommercial use only. Paid game servers, business use and commercial services require separate written permission.
-- Private changes and contributions to the official project are permitted. Independent modified releases are not.
-- Public official distributions may be shared free of charge, complete and unchanged, with their license and notices.
-
-[License](LICENSE) · [Brand rules](NOTICE) · [Contribution guide](CONTRIBUTING.md#english) · [Contributor agreement](CONTRIBUTOR_AGREEMENT.md#english) · [Permission requests](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues/new?template=contact_request.yml)
-
-## Guides and feedback
-
-- Server guides (Chinese): [Palworld](https://langame.cn/articles/langame-palworld-server-guide/), [Minecraft](https://langame.cn/articles/langame-minecraft-server-guide/), [Don't Starve Together](https://langame.cn/articles/langame-dst-server-guide/), and [more games](https://langame.cn/hosting/)
-- [Multiplayer and networking](https://langame.cn/networking/) · [Full documentation](docs/README.md#english)
-- [Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) for suggestions and feedback. Keep credentials, private server details, and player information out of public posts
-
-## LanGame product family
-
-Server Manager focuses on Windows hosting and server operation. Related products in the [LanGame](https://langame.cn/products/) family include:
-
-- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players, with a game library, classic emulators, LINK multiplayer, and SOFA streaming
-- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces, coordinating Orbit terminals, game distribution, and seat operations
+- [LanGame OS Orbit](https://langame.cn/products/langame-os-orbit/): an AI game terminal for PC players; players on the same network can discover and join supported servers from Orbit
+- [LanGame OS Stellar](https://langame.cn/products/langame-os-stellar/): an AI venue management platform for esports spaces
 - [LanGame OS Lunet](https://langame.cn/products/langame-os-lunet/): the SOFA streaming core on Android, for streaming from Orbit on the same network
 
-Hosts can install and start servers with Server Manager; players on the same network can discover and join supported services from Orbit.
+## Community
 
-## Follow us on WeChat
-
-Scan with WeChat to follow **熵灵硅界 (ENTROGENESIS)**.
-
-<a href="assets/wechat-official-account.jpg"><img src="assets/wechat-official-account.jpg" alt="QR code for the 熵灵硅界 (ENTROGENESIS) WeChat Official Account" width="215" height="215"></a>
-
-## Run from source
-
-Requires Git, Rust `1.99.0` (MSVC), Node.js `>=26.10.0 <27`, npm `>=12.2.0 <13`, and Python 3.11 or later. See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for C++ Build Tools and WebView2. Building the embedded Dragonwilds player-query proxy also requires CMake 3.24 or later. The first build downloads and verifies pinned proxy sources; later builds reuse the build cache. Ordinary server hosts do not need these build tools.
-
-<details>
-<summary>Build, run, and package commands</summary>
-
-From the repository root, install the npm version pinned by `packageManager`, then install dependencies and check the workspace. The npm version bundled with Node.js may differ from the project requirement:
-
-```powershell
-$packageManager = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).packageManager
-npm install --global $packageManager
-$npmPrefix = npm prefix --global
-$env:PATH = "$npmPrefix;$env:PATH"
-npm --version
-npm.cmd --version
-npm ci --prefix apps/desktop --strict-allow-scripts
-npm --prefix apps/desktop run build
-cargo check --workspace --locked
-```
-
-Start the frontend development server:
-
-```powershell
-npm --prefix apps/desktop run dev
-```
-
-Start the desktop process in a second terminal:
-
-```powershell
-cargo run --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --bin langame-desktop
-```
-
-Build a local installer (network update checks are disabled by default; no release signing key is required):
-
-```powershell
-cargo install tauri-cli --version "=2.12.2" --locked
-Push-Location apps/desktop
-try {
-    cargo tauri build -- --locked
-    if ($LASTEXITCODE -ne 0) { throw "Tauri build failed." }
-}
-finally {
-    Pop-Location
-}
-```
-
-The first build downloads dependencies and the WebView2 installer. See the [release guide](docs/desktop-release.md) for signed distributions.
-
-</details>
-
-## About this repository
-
-This repository contains the LanGame Server Manager source, build tools, and [user documentation](docs/README.md#english), under the [LanGame Source-Available License 1.0](LICENSE). See the [third-party notices](THIRD_PARTY_NOTICES.md).
+[Issues](https://github.com/SZSLGJCOM/LanGame-Server-Manager/issues) · [WeChat Official Account](assets/wechat-official-account.jpg)

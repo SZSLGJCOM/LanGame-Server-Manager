@@ -185,4 +185,38 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 
 客户端初始化后检查一次，空闲时每四小时检查；关闭某版本提示后，本次会话不重复提示。更新下载并验签完成后才协调停止后台及游戏进程。手动安装或卸载前使用应用的安全退出，关闭到托盘不等于退出。
 
-安装目录与游戏数据独立；卸载保留服务器配置、数据库、实例、存档、归档、备份和已保存的数据位置。可选界面数据清理仅重置 WebView/localStorage 设置。具体默认路径及旧数据兼容规则见 [Data locations and uninstallation](#data-locations-and-uninstallation)。
+安装目录与游戏数据独立；卸载保留服务器配置、数据库、实例、存档、归档、备份和已保存的数据位置。可选界面数据清理仅重置 WebView/localStorage 设置。具体默认路径及旧数据兼容规则见[数据位置与卸载](#数据位置与卸载)。
+
+### 数据位置与卸载
+
+本节对应英文 [Data locations and uninstallation](#data-locations-and-uninstallation)。
+
+应用安装目录与数据位置相互独立。首次使用且没有既有设置或数据库时，LGSM 按可用空间从大到小依次尝试可写的本地固定非系统盘，最后尝试 Windows 系统盘。候选盘根目录下不存在或为空的 `LanGame` 目录会被初始化。非空目录只有在带有绑定到该实际目录的有效 LGSM 标记、且布局完整符合预期时才能复用；无法识别的目录会被跳过，不接管其中内容。若所有自动候选都不可用，首次启动允许选择另一个本地父目录来放置 `LanGame`，或选择一个空的 `LanGame` 目录（同样经过上述检查），也可以取消启动。所选位置会被保存，之后不随剩余空间变化重新计算。已保存的位置不可用时必须将其恢复，不提供改选其他磁盘。
+
+新安装使用 `LanGame/server-files` 存放游戏程序，`LanGame/instances` 存放实例，`LanGame/cmd/steamcmd` 存放 SteamCMD。服务器路径设置、数据库、日志、知识库和媒体缓存位于 `LanGame/app-data/ServerManager/<local-user-directory-id>` 下，分别为 `settings.json`、`db`、`logs`、`knowledge` 和 `cache`；每个 Windows 账户使用独立的数据库。Windows 在 `%LOCALAPPDATA%\LanGame\ServerManager\storage-location.json` 保存体积很小的位置记录。已登记的位置不要求新的目录标记。旧用户数据目录中已有的后端设置或数据库保留原处，不自动迁移，其中已有的本地运行库和已配置的游戏目录也一样。
+
+WebView 的 Windows 配置文件、浏览器存储和浏览器缓存与上述目录分开，仍位于 `%LOCALAPPDATA%\cn.langame.servermanager`。卸载会移除应用，但保留游戏数据、服务器设置、后端 `settings.json`、数据库、曾使用的数据目录和位置记录，以便重新安装后找回。可选的界面数据清理针对应用标识符/WebView 目录，会重置保存在 localStorage 中的界面设置，包括语言、主题和模型服务配置；它不会清除保留的服务器数据或后端文件。
+
+发布者为 Entro Genesis。安装器在 Tauri 初始化页面前复制缺失的设置，以沿用此前 LanGame Team 的安装目录和语言。已有的 Entro Genesis 设置和显式指定的 `/D` 安装目录优先。只有安装成功才会弃用旧的已知值，属于其他安装路径的记录会被保留。产品名称、应用标识符、数据位置和更新签名身份保持不变。
+
+Tauri 的应用内更新会替换卸载程序的资源列表，但不会移除早期安装包已弃用的文件。`apps/desktop/src-tauri/installer/retired-resources.nsh` 记录这些文件的确切路径和原始 SHA256（包括分发时的行尾）。安装和卸载只删除完全匹配的文件；被编辑的文件、额外文件和目录链接会被保留。弃用其他内置资源时，把其原始身份加入此列表，并通过同一安装器夹具验证。不得改为递归删除 modules 目录。
+
+一次性 NSIS 保护夹具在不使用真实服务器数据的情况下验证进程保护、安装器语言和弃用资源清理：
+
+```powershell
+pwsh -NoProfile -File scripts/tests/test_desktop_installer_guard.ps1 `
+    -NsisRoot 'C:\BuildTools\NSIS'
+```
+
+`-NsisRoot` 必须包含 `makensis.exe` 以及测试所需的 Tauri NSIS 插件。`-CompileOnly` 只验证编译；省略它即执行安装/卸载场景，包括保留已修改文件以及删除失败后重试。完整夹具应在受支持、且应用控制策略允许测试可执行文件运行的 Windows 测试机上执行。仅编译通过不能证明运行时行为。
+
+Windows 原生 CI 任务通过 `scripts/prepare_desktop_installer_tools.ps1` 准备 Tauri 固定版本的 NSIS 工具，校验下载的资产，并运行同一夹具入口。
+
+公开分发前，在受支持的 Windows 测试机上使用可丢弃数据验证：
+
+1. 在没有 WebView2 的一次性 Windows 镜像上，验证小包在可连接微软时能安装；运行库下载被阻断时报告失败，而不是声称安装可用。断开网络，验证离线包在两种安装器语言下都能安装和启动，并核对 Windows 卸载登记。验证两种安装包都会复用已有运行库而不重新下载。不要卸载开发工作站的运行库来模拟这些测试。
+2. LGSM 或其运行时正在运行时手动升级/卸载：操作应安全地等待或拒绝，不强制结束进程；协调关闭后重试。
+3. 应用停止时升级和卸载，包括保留配置、实例、存档、归档和备份；重新安装后读回保留的数据。
+4. 较旧的已签名版本发现更高版本，显示更新说明，下载，验证真实签名，安全停止服务器，安装，并在数据完整的情况下重启。
+5. 下载中断、更新源不可用、签名错误和安装失败都报告可操作的错误；下载失败不会停止正在运行的服务器。
+6. 记录最终安装包的 Windows 签名状态。若配置了应用发布者签名，核对预期发布者和证书链。无论是否使用 Windows 发布者签名，都通过实际 Tauri 更新器验证一次可信更新和一次被篡改的更新。

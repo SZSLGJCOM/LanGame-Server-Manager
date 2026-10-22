@@ -7,6 +7,7 @@
 ### 使用指南
 
 - [项目介绍与下载](../README.md)
+- [支持的游戏](games.md#简体中文)：32 款游戏列表。
 - [服务器配置](server-configuration.md#简体中文)：设置、保存、实例隔离与生效方式。
 - [Mod 管理](mod-management.md#简体中文)：导入、启停、依赖检查与保留配置的删除。
 - [存档导入支持结果](game-save-import.md)：31 款已有专服存档迁入与单机转换限制。
@@ -34,6 +35,7 @@
 ### Operating servers
 
 - [Project introduction and downloads](../README.en.md).
+- [Supported games](games.md#english): the list of 32 games.
 - [Server configuration](server-configuration.md#english): settings, saving, instance isolation and applying changes.
 - [Mod management](mod-management.md#english): import, enablement, dependency checks and deletion with configuration preservation.
 - [Save import support](game-save-import.md): existing dedicated saves for 31 games and single-player conversion limits.
