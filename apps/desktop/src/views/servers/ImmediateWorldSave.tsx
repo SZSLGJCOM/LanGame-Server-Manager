@@ -8,6 +8,7 @@ import { selectLocaleText, useI18n } from "../../i18n";
 import type { InstanceDetails, InstanceRuntimeCommandResult, ModuleDetails } from "../../types";
 import { requestImmediateWorldSave, resolveWorldSaveAction, worldSaveDescription, worldSaveTitle, worldSaveResultMessage } from "./world-save-action";
 import { MaintenanceToolbar } from "./MaintenanceToolbar";
+import { requireWorldSaveReadiness, useWorldSaveReadiness } from "./use-world-save-readiness";
 import "./immediate-world-save.css";
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
 }
 
 interface SaveState {
-  instanceId: string;
+  scope: { instanceId: string };
   sending: boolean;
   response: InstanceRuntimeCommandResult | null;
   error: string | null;
@@ -27,13 +28,15 @@ interface SaveState {
 
 export function ImmediateWorldSave({ details, moduleDetails, readOnly, children }: Props) {
   const { locale, t } = useI18n();
-  const scope = useMemo(() => ({ instanceId: details.summary.id }), [details.summary.id]);
+  const scope = useMemo(() => ({ instanceId: details.summary.id }), [details.summary.id, details.active_run?.run_id, details.active_run?.session_id]);
   const currentScope = useRef<typeof scope | null>(scope);
   currentScope.current = scope;
   const request = useRef<typeof scope | null>(null);
   const [state, setState] = useState<SaveState | null>(null);
   const model = resolveWorldSaveAction(details, moduleDetails, locale);
-  const visible = state?.instanceId === scope.instanceId ? state : null;
+  const preparationReason = useWorldSaveReadiness(details.summary, details.active_run, Boolean(model.action && !model.unavailable && !readOnly), locale);
+  const unavailable = model.unavailable || preparationReason;
+  const visible = state?.scope === scope ? state : null;
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
   useEffect(() => {
     currentScope.current = scope;
@@ -41,18 +44,20 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly, children 
   }, [scope]);
 
   async function saveWorld() {
-    if (readOnly || !model?.action || model.unavailable || request.current) return;
+    if (readOnly || !model?.action || unavailable || request.current) return;
     const operationScope = scope;
     request.current = operationScope;
-    setState({ instanceId: scope.instanceId, sending: true, response: null, error: null });
+    setState({ scope: operationScope, sending: true, response: null, error: null });
     try {
+      await requireWorldSaveReadiness(details, locale);
+      if (currentScope.current !== operationScope) return;
       const response = await requestImmediateWorldSave(details, moduleDetails, locale, sendInstanceRuntimeCommand);
       if (currentScope.current === operationScope) {
-        setState({ instanceId: scope.instanceId, sending: false, response, error: null });
+        setState({ scope: operationScope, sending: false, response, error: null });
       }
     } catch (error) {
       if (currentScope.current === operationScope) {
-        setState({ instanceId: scope.instanceId, sending: false, response: null, error: describeError(error) });
+        setState({ scope: operationScope, sending: false, response: null, error: describeError(error) });
       }
     } finally {
       request.current = null;
@@ -79,9 +84,9 @@ export function ImmediateWorldSave({ details, moduleDetails, readOnly, children 
       <ConfigurationHelp description={worldSaveDescription(details.summary.module_id, locale)}>{(help) =>
         <span ref={help.anchorRef} {...help.interactionProps} tabIndex={0} aria-describedby={help.descriptionId}>{title}<ShellIcon name="alert-circle" className="maintenance-help-icon" /></span>}</ConfigurationHelp>
       <MaintenanceToolbar label={title}>
-        <ConfigurationActionHelp reason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : model.unavailable || null}>
+        <ConfigurationActionHelp reason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : unavailable || null}>
           <button type="button" className="secondary-button maintenance-action" aria-busy={Boolean(visible?.sending) || undefined}
-            disabled={readOnly || Boolean(model.unavailable) || Boolean(state?.sending)} onClick={() => void saveWorld()}>
+            disabled={readOnly || Boolean(unavailable) || Boolean(state?.sending)} onClick={() => void saveWorld()}>
             <ShellIcon name="download" className="maintenance-action__icon" aria-hidden="true" />
             {state?.sending ? text("保存中…", "Saving…") : text("保存存档", "Save game")}
           </button>

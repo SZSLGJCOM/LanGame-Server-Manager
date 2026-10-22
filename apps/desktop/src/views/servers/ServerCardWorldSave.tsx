@@ -7,6 +7,7 @@ import { selectLocaleText, useI18n } from "../../i18n";
 import { instanceHasRunningProcess } from "../../runtime-action-state";
 import type { InstanceSummary } from "../../types";
 import { requestImmediateWorldSave, worldSaveDescription, worldSaveTitle, worldSaveResultMessage } from "./world-save-action";
+import { requireWorldSaveReadiness, useWorldSaveReadiness } from "./use-world-save-readiness";
 
 interface Props {
   instance: InstanceSummary;
@@ -26,9 +27,10 @@ export function ServerCardWorldSave({ instance, supported, disabled, onActivity 
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+  const preparationReason = useWorldSaveReadiness(instance, undefined, supported && !disabled && instanceHasRunningProcess(instance), locale);
   if (!supported) return null;
   const unavailable = disabled ? text("请等待当前实例操作完成。", "Wait for the current instance operation to finish.")
-    : !instanceHasRunningProcess(instance) ? text("请先启动服务器，再保存当前世界。", "Start the server before saving the current world.") : null;
+    : !instanceHasRunningProcess(instance) ? text("请先启动服务器，再保存当前世界。", "Start the server before saving the current world.") : preparationReason;
   const label = worldSaveTitle(instance.module_id, locale);
 
   async function save() {
@@ -42,6 +44,8 @@ export function ServerCardWorldSave({ instance, supported, disabled, onActivity 
       if (details.summary.id !== instance.id || details.summary.module_id !== instance.module_id) {
         throw new Error("World-save instance identity mismatch");
       }
+      await requireWorldSaveReadiness(details, locale);
+      if (!mounted.current) return;
       const result = await requestImmediateWorldSave(details, module, locale, sendInstanceRuntimeCommand);
       if (!mounted.current) return;
       const summary = worldSaveResultMessage(result, locale);

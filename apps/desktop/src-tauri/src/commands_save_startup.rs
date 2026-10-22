@@ -92,12 +92,18 @@ pub(super) async fn ensure_private_program(
     Ok((guards, result?))
 }
 
+#[derive(Debug)]
+pub(super) struct SavePreparation {
+    pub environment: Vec<(String, String)>,
+    pub available: bool,
+}
+
 pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     operation: &L,
     log_path: Option<&str>,
-) -> Result<Vec<(String, String)>, String> {
+) -> Result<SavePreparation, String> {
     super::commands_managed_save_control::cleanup_for_start(instance, operation).await?;
     let retired = instance.clone();
     spawn_blocking_storage_context_task(operation, move || {
@@ -111,7 +117,10 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
         && module != "valheim"
         && !super::commands_managed_save_control::requires_automatic_setup(module)
     {
-        return Ok(Vec::new());
+        return Ok(SavePreparation {
+            environment: Vec::new(),
+            available: true,
+        });
     }
     if let Some(path) = log_path {
         let _ = append_startup_console_line(path, "正在检查并自动准备保存扩展及所需加载器…", "");
@@ -147,12 +156,18 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
                 "",
             );
         }
-        return Ok(Vec::new());
+        return Ok(SavePreparation {
+            environment: Vec::new(),
+            available: false,
+        });
     };
     if let Some(path) = log_path {
         let _ = append_startup_console_line(path, "保存扩展及加载器检查完成。", "");
     }
-    Ok(environment)
+    Ok(SavePreparation {
+        environment,
+        available: true,
+    })
 }
 
 /// Caller owns the stopped instance and its independent program lifecycle lock.

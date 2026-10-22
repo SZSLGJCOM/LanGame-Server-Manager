@@ -1031,6 +1031,12 @@ export interface StartedProcess {
   performance: RuntimePerformanceApplication;
 }
 
+export interface InstanceWorldSaveReadiness {
+  run_id: number;
+  session_id: string | null;
+  prepared: boolean | null;
+}
+
 export interface StartInstanceResult {
   warnings: RuntimeStartWarning[];
   summary: InstanceSummary;

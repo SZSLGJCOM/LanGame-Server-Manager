@@ -26,6 +26,7 @@ fn source_rcon_executor(module_id: &str) -> fn(&str, &str, &str) -> Result<Strin
     match module_id {
         "conanexiles" => crate::runtime_transport::conan_rcon_exec,
         "rust" => crate::runtime_transport::rust_rcon_exec,
+        "vrising" => crate::runtime_transport::vrising_rcon_exec,
         "arksurvivalevolved" | "arksurvivalascended" | "squad" => {
             crate::runtime_transport::player_list_rcon_exec
         }
@@ -120,6 +121,11 @@ fn source_rcon_executor_selects_read_only_completion_for_ark_and_squad() {
     assert!(std::ptr::fn_addr_eq(
         source_rcon_executor("rust"),
         crate::runtime_transport::rust_rcon_exec as fn(&str, &str, &str) -> Result<String, String>
+    ));
+    assert!(std::ptr::fn_addr_eq(
+        source_rcon_executor("vrising"),
+        crate::runtime_transport::vrising_rcon_exec
+            as fn(&str, &str, &str) -> Result<String, String>
     ));
 }
 

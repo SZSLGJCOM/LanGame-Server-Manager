@@ -61,3 +61,13 @@ Official contracts:
 - [BepInEx IL2CPP BasePlugin](https://github.com/BepInEx/BepInEx/blob/master/Runtimes/Unity/BepInEx.Unity.IL2CPP/BasePlugin.cs) defines the loader lifecycle.
 - Reviewed loader archive identity and file hashes remain in
   `apps/desktop/src-tauri/assets/mod-loaders/vrising.json`.
+
+Immediate Stop sends the native console interrupt, which invokes the game's
+`OnApplicationQuit` and `SaveOnExit` path. It does not depend on RCON being
+enabled. The native RCON `shutdown` command schedules positive integer minutes;
+zero is rejected and cannot implement immediate Stop. RCON commands use one
+matching response, as in the officially recommended
+[mcrcon client](https://github.com/Tiiffi/mcrcon/blob/master/mcrcon.c).
+V Rising rejects Source response-value markers. Native `error:` replies remain
+command failures, and neither a response nor a delivered console interrupt
+substitutes for observing the complete owned process tree exit.

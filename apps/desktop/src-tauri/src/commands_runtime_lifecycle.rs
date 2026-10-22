@@ -666,7 +666,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .await
         .map_err(|error| format!("Automatic save extension preparation failed: {error}"))?;
     program_guards = guards;
-    let save_environment = save_environment?;
+    let save_preparation = save_environment?;
     let first_world_instance = instance.clone();
     let (guards, first_world_plan) =
         spawn_blocking_storage_context_task(runtime_start_reservation, move || {
@@ -686,7 +686,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             None
         }
     };
-    for (key, value) in save_environment {
+    for (key, value) in save_preparation.environment {
         if key == "DOTNET_STARTUP_HOOKS" {
             super::commands_managed_save_control::validate_startup_hook_environment(
                 launch_plans
@@ -1277,7 +1277,12 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             .runtime_supervisor
             .lock()
             .map_err(|_| String::from("runtime supervisor lock poisoned"))?;
-        runtime.insert_running(summary.clone(), session_id.clone(), managed_processes);
+        runtime.insert_running_with_save_preparation(
+            summary.clone(),
+            session_id.clone(),
+            managed_processes,
+            Some(save_preparation.available),
+        );
     }
 
     update_state_instances(state, instances)?;

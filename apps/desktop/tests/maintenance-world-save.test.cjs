@@ -66,7 +66,7 @@ function response(overrides = {}) { return { instance_id: "fixture", command: "s
   response_text: "Saved the game", write_confirmation_pending: false, save_completion: "confirmed", submitted_at_unix_ms: 1, ...overrides }; }
 function descendants(node) { return React.isValidElement(node) ? [node, ...React.Children.toArray(node.props.children).flatMap(descendants)] : []; }
 
-function harness(send = async () => response()) {
+function harness(send = async () => response(), readiness = async () => ({ run_id: 1, session_id: null, prepared: true })) {
   const hooks = [], effects = [], calls = [];
   let cursor = 0, writes = 0;
   const same = (a, b) => a?.length === b?.length && a.every((value, index) => Object.is(value, b[index]));
@@ -85,8 +85,15 @@ function harness(send = async () => response()) {
   const loaded = new Module(filename, module); loaded.filename = filename;
   const requireFromFile = Module.createRequire(filename);
   loaded.require = (name) => {
+    if (name === "./use-world-save-readiness") {
+      const hookFile = path.resolve(path.dirname(filename), "use-world-save-readiness.ts");
+      const hook = new Module(hookFile, loaded); hook.filename = hookFile;
+      hook.require = loaded.require;
+      hook._compile(transpileTypeScript(fs.readFileSync(hookFile, "utf8"), hookFile), hookFile);
+      return hook.exports;
+    }
     if (name === "react") return react;
-    if (name === "../../api") return { sendInstanceRuntimeCommand: (...args) => { calls.push(args); return send(...args); } };
+    if (name === "../../api") return { readInstanceWorldSaveReadiness: readiness, sendInstanceRuntimeCommand: (...args) => { calls.push(args); return send(...args); } };
     if (name === "../../i18n") return { useI18n: () => ({ locale: "en-US", t: (key) => key }), selectLocaleText: (_, _zh, en) => en };
     if (name === "../../app-state") return { describeError: (error) => error.message ?? String(error) };
     if (name === "../../components/ShellIcon") return { ShellIcon: () => React.createElement("svg") };
@@ -105,7 +112,7 @@ function harness(send = async () => response()) {
     const nodes = descendants(view);
     return { root: view, html: renderToStaticMarkup(view), button: nodes.find((node) => node.type === "button") };
   }
-  return { props, calls, render, unmount() { for (const hook of hooks) hook?.cleanup?.(); } };
+  return { props, calls, render, async ready() { render(); await settle(); return render(); }, unmount() { for (const hook of hooks) hook?.cleanup?.(); } };
 }
 
 test("immediate saves have exact declared native commands and are reachable from Maintenance", () => {
@@ -158,11 +165,11 @@ test("save capability comes from module metadata without a game allowlist", () =
   }
 });
 
-test("save actions need no separate preparation control", () => {
+test("save actions need no separate preparation control", async () => {
   for (const id of ["corekeeper", "vrising", "sonsoftheforest", "abioticfactor", "returntomoria", "windrose", "rimworld", "barotrauma", "nightingale", "conanexiles", "scum", "unturned", "minecraft", "romestead", "necesse", "projectzomboid", "terraria", "sevendaystodie", "arksurvivalevolved"]) {
     const state = harness();
     state.props.details = instance(id); state.props.moduleDetails = moduleDetails(id);
-    const running = state.render();
+    const running = await state.ready();
     assert.doesNotMatch(running.html, /Prepare save extension/i);
     assert.equal(moduleDetails(id).runtime.player_actions.some((action) => action.id === "prepare_world_save"), false, id);
     assert.doesNotMatch(running.html, /before first use|manually install|loader manually/i);
@@ -240,7 +247,7 @@ test("maintenance sends declared save action independently of AI and preserves n
   for (const id of Object.keys(expected)) {
     const state = harness(async () => response({ response_text: "Native save response" }));
     state.props.details = instance(id); state.props.moduleDetails = moduleDetails(id);
-    state.render().button.props.onClick(); await settle();
+    (await state.ready()).button.props.onClick(); await settle();
     assert.equal(state.calls.length, 1, id);
     assert.equal(state.calls[0][0], `${id}-fixture`);
     assert.equal(state.calls[0][1], expected[id].command_template);
@@ -253,17 +260,17 @@ test("maintenance sends declared save action independently of AI and preserves n
 
 test("world-save settings refresh cannot duplicate an in-flight operation", async () => {
   const waiting = deferred(); const state = harness(() => waiting.promise);
-  const oldButton = state.render().button; oldButton.props.onClick(); oldButton.props.onClick();
+  const oldButton = (await state.ready()).button; oldButton.props.onClick(); oldButton.props.onClick();
   state.props.details = { ...state.props.details, settings_json: JSON.stringify({ enable_rcon: true, rcon_password: "fixture-pz-rcon-safe" }) };
   assert.equal(state.render().button.props.disabled, true);
-  state.render().button.props.onClick(); assert.equal(state.calls.length, 1);
+  (await state.ready()).button.props.onClick(); assert.equal(state.calls.length, 1);
   waiting.resolve(response()); await settle();
   assert.equal(state.render().button.props.disabled, false); state.unmount();
 });
 
 test("late save results do not cross instance boundaries", async () => {
   const waiting = deferred(); const state = harness(() => waiting.promise);
-  state.render().button.props.onClick();
+  (await state.ready()).button.props.onClick();
   state.props.details = instance("minecraft", "other-instance"); state.render();
   waiting.resolve(response({ response_text: "old instance response" })); await settle();
   assert.doesNotMatch(state.render().html, /old instance response/);
@@ -272,19 +279,19 @@ test("late save results do not cross instance boundaries", async () => {
 
 test("world-save missing completion and errors fail verification without retry", async () => {
   const pending = harness(async () => response({ write_confirmation_pending: true, save_completion: "unconfirmed", response_text: "native writer pending" }));
-  pending.render().button.props.onClick(); await settle();
+  (await pending.ready()).button.props.onClick(); await settle();
   assert.match(pending.render().html, /role="alert"[^]*Save outcome unknown/);
   assert.doesNotMatch(pending.render().html, /command was accepted/);
   assert.equal(pending.calls.length, 1); pending.unmount();
   const failed = harness(async () => { throw new Error("native save connection lost"); });
-  failed.render().button.props.onClick(); await settle();
+  (await failed.ready()).button.props.onClick(); await settle();
   assert.match(failed.render().html, /role="alert"[^]*native save connection lost/);
   assert.equal(failed.calls.length, 1); failed.unmount();
 });
 
 test("requested saving succeeds without claiming native completion", async () => {
   const state = harness(async () => response({ save_completion: "requested", response_text: "Native command processed" }));
-  state.render().button.props.onClick(); await settle();
+  (await state.ready()).button.props.onClick(); await settle();
   const view = state.render();
   assert.match(view.html, /Save request sent\. The game will perform the save\./);
   assert.match(view.html, /Native command processed/);
@@ -296,7 +303,7 @@ test("requested saving succeeds without claiming native completion", async () =>
 test("confirmed transport delivery and missing save status cannot claim native save completion", async () => {
   for (const completion of [undefined, null, "unconfirmed"]) {
     const state = harness(async () => response({ write_confirmation_pending: false, save_completion: completion, response_text: "Command sent" }));
-    state.render().button.props.onClick(); await settle();
+    (await state.ready()).button.props.onClick(); await settle();
     assert.match(state.render().html, /role="alert"[^]*Save outcome unknown/);
     assert.doesNotMatch(state.render().html, /Save completed/);
     assert.equal(state.calls.length, 1); state.unmount();
@@ -313,4 +320,58 @@ test("archived immediate save keeps the shared card and restore hint without sen
   await settle();
   assert.deepEqual(state.calls, []);
   state.unmount();
+});
+
+
+test("maintenance save explains vanilla fallback before dispatch", async () => {
+  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false }));
+  state.props.details = instance("runescapedragonwilds");
+  state.props.moduleDetails = moduleDetails("runescapedragonwilds");
+  state.render(); await settle();
+  const view = state.render();
+  assert.equal(view.button.props.disabled, true);
+  assert.match(view.html, /save extension.*not prepared/i);
+  view.button.props.onClick(); await settle();
+  assert.equal(state.calls.length, 0);
+  state.unmount();
+});
+
+
+test("maintenance readiness is scoped to the active run and survives reconnect", async () => {
+  for (const value of [null, { run_id: 1, session_id: null, prepared: null },
+    { run_id: 2, session_id: null, prepared: true }, { run_id: 1, session_id: "another-session", prepared: true }]) {
+    const state = harness(undefined, async () => value);
+    state.props.details = instance("runescapedragonwilds");
+    state.props.moduleDetails = moduleDetails("runescapedragonwilds");
+    const view = await state.ready();
+    assert.equal(view.button.props.disabled, true);
+    assert.match(view.html, value?.prepared ? /run has changed/ : /readiness for this run is unknown/);
+    view.button.props.onClick(); await settle();
+    assert.equal(state.calls.length, 0);
+    state.unmount();
+  }
+  const reconnect = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false }));
+  assert.equal((await reconnect.ready()).button.props.disabled, true);
+  reconnect.unmount();
+});
+
+test("maintenance rechecks readiness before dispatch and discards late queries", async () => {
+  let reads = 0;
+  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: ++reads === 1 }));
+  (await state.ready()).button.props.onClick(); await settle();
+  assert.equal(state.calls.length, 0);
+  assert.match(state.render().html, /save extension was not prepared/);
+  state.unmount();
+
+  const wait = deferred();
+  let current = wait.promise;
+  const moved = harness(undefined, () => current);
+  assert.equal(moved.render().button.props.disabled, true);
+  moved.props.details = instance("minecraft", "replacement");
+  current = Promise.resolve({ run_id: 1, session_id: null, prepared: false });
+  await moved.ready();
+  wait.resolve({ run_id: 1, session_id: null, prepared: true }); await settle();
+  assert.equal(moved.render().button.props.disabled, true);
+  assert.match(moved.render().html, /save extension was not prepared/);
+  moved.unmount();
 });

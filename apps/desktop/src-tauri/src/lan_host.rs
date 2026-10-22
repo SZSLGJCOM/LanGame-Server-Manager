@@ -1236,6 +1236,15 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "read_instance_world_save_readiness" => boxed_command(|| async move {
+            to_json(
+                commands::commands_storage::read_instance_world_save_readiness(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
         "read_instance_details_from_storage" => boxed_command(|| async move {
             to_json(
                 commands::read_instance_details_from_storage(

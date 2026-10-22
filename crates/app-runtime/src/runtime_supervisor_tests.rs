@@ -827,7 +827,21 @@ fn runtime_supervisor_restores_ownership_after_a_failed_stop_attempt() {
         hidden_desktop: None,
     };
     let mut supervisor = RuntimeSupervisor::default();
-    supervisor.insert_running(summary, Some(String::from("session-1")), vec![process]);
+    supervisor.insert_running_with_save_preparation(
+        summary,
+        Some(String::from("session-1")),
+        vec![process],
+        Some(false),
+    );
+    let readiness = app_core::InstanceWorldSaveReadiness {
+        run_id: 1,
+        session_id: Some(String::from("session-1")),
+        prepared: Some(false),
+    };
+    assert_eq!(
+        supervisor.world_save_readiness("stop-recovery"),
+        Some(readiness.clone())
+    );
 
     let detached = supervisor
         .take_running_for_stop("stop-recovery")
@@ -835,4 +849,37 @@ fn runtime_supervisor_restores_ownership_after_a_failed_stop_attempt() {
     assert!(!supervisor.is_tracked("stop-recovery"));
     assert!(supervisor.restore_running_after_failed_stop(detached));
     assert!(supervisor.is_tracked("stop-recovery"));
+    assert_eq!(
+        supervisor.world_save_readiness("stop-recovery"),
+        Some(readiness)
+    );
+
+    // A replacement run has its own preparation result; the old result cannot
+    // survive stop/removal or leak into an adopted run with unknown readiness.
+    let mut detached = supervisor.take_running_for_stop("stop-recovery").unwrap();
+    assert_eq!(supervisor.world_save_readiness("stop-recovery"), None);
+    detached.processes[0].run_id = 2;
+    supervisor.insert_running_with_save_preparation(
+        detached.summary,
+        Some(String::from("session-2")),
+        detached.processes,
+        Some(true),
+    );
+    assert_eq!(
+        supervisor.world_save_readiness("stop-recovery"),
+        Some(app_core::InstanceWorldSaveReadiness {
+            run_id: 2,
+            session_id: Some(String::from("session-2")),
+            prepared: Some(true),
+        })
+    );
+    let detached = supervisor.take_running_for_stop("stop-recovery").unwrap();
+    supervisor.insert_running(detached.summary, detached.session_id, detached.processes);
+    assert_eq!(
+        supervisor
+            .world_save_readiness("stop-recovery")
+            .unwrap()
+            .prepared,
+        None
+    );
 }

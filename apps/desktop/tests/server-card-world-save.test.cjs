@@ -26,7 +26,9 @@ function harness(overrides = {}, moduleId = "dontstarve") {
   const react = { ...React,
     useRef(initial) { const i = cursor++; hooks[i] ??= { current: initial }; return hooks[i]; },
     useState(initial) { const i = cursor++; hooks[i] ??= { value: initial }; return [hooks[i].value, (value) => { hooks[i].value = value; }]; },
-    useEffect(create) { const i = cursor++; if (!hooks[i]) { hooks[i] = {}; effects.push(() => { hooks[i].cleanup = create(); }); } }
+    useEffect(create, deps) { const i = cursor++; const previous = hooks[i];
+      if (previous?.deps?.length === deps?.length && deps.every((value, index) => Object.is(value, previous.deps[index]))) return;
+      hooks[i] = { deps }; effects.push(() => { previous?.cleanup?.(); hooks[i].cleanup = create(); }); }
   };
   const props = { instance: { id: "dst-card", name: "DST", module_id: moduleId, status: "Running", active_process_count: 4 }, supported: true, onActivity: (value) => notices.push(value) };
   const details = { summary: props.instance,
@@ -36,6 +38,7 @@ function harness(overrides = {}, moduleId = "dontstarve") {
     active_run: { run_id: 1, processes: (moduleId === "dontstarve" ? ["master", "caves", "islands", "volcano"] : ["main"]).map((process_key) => ({ process_key, status: "Running" })) } };
   const api = {
     readInstanceDetails: async () => details,
+    readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: true }),
     readModuleDetails: async () => moduleDetails(moduleId),
     sendInstanceRuntimeCommand: async (...args) => { calls.push(args); return { response_text: "All enabled shards confirmed", write_confirmation_pending: false, save_completion: "confirmed" }; },
     ...overrides
@@ -44,6 +47,13 @@ function harness(overrides = {}, moduleId = "dontstarve") {
   const loaded = new Module(filename, module); loaded.filename = filename;
   const fromFile = Module.createRequire(filename);
   loaded.require = (name) => {
+    if (name === "./use-world-save-readiness") {
+      const hookFile = path.resolve(path.dirname(filename), "use-world-save-readiness.ts");
+      const hook = new Module(hookFile, loaded); hook.filename = hookFile;
+      hook.require = loaded.require;
+      hook._compile(transpileTypeScript(fs.readFileSync(hookFile, "utf8"), hookFile), hookFile);
+      return hook.exports;
+    }
     if (name === "react") return react;
     if (name === "../../api") return api;
     if (name === "../../i18n") return { useI18n: () => ({ locale: "en-US" }), selectLocaleText: (_, _zh, en) => en };
@@ -53,6 +63,7 @@ function harness(overrides = {}, moduleId = "dontstarve") {
   };
   loaded._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
   return { props, details, calls, notices,
+    async ready() { this.render(); await settle(); return this.render(); },
     render() { cursor = 0; const root = loaded.exports.ServerCardWorldSave(props); while (effects.length) effects.shift()();
       return { html: renderToStaticMarkup(root), button: descendants(root).find((node) => node.type === "button") }; },
     unmount() { for (const hook of hooks) hook?.cleanup?.(); }
@@ -60,7 +71,7 @@ function harness(overrides = {}, moduleId = "dontstarve") {
 }
 
 test("card save is a dedicated icon and uses the same declared save action", async () => {
-  const state = harness(); const view = state.render();
+  const state = harness(); const view = await state.ready();
   assert.match(view.button.props.className, /server-list-card-save-action/);
   assert.doesNotMatch(view.button.props.className, /server-list-card-copy-action/);
   view.button.props.onClick(); await settle();
@@ -76,7 +87,7 @@ test("card save hides unsupported games, blocks stopped or busy instances, and v
   state.props.instance = { ...state.details.summary, status: "Stopped", active_process_count: 0 }; assert.equal(state.render().button.props.disabled, true);
   state.props.instance = state.details.summary; state.props.disabled = true; assert.equal(state.render().button.props.disabled, true);
   state.props.disabled = false; state.details.active_run.processes.pop();
-  state.render().button.props.onClick(); await settle();
+  (await state.ready()).button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0); assert.match(state.notices[0].params.message, /volcano/);
   state.unmount();
 });
@@ -88,7 +99,7 @@ test("every connected game card sends its own declared save command", async () =
     enshrouded: "save", rimworld: "save", barotrauma: "save", soulmask: "SaveWorld 1", nightingale: "save", conanexiles: "save", scum: "save_persistent_state" };
   for (const [id, command] of Object.entries(expected)) {
     const state = harness({}, id);
-    const button = state.render().button;
+    const button = (await state.ready()).button;
     assert.equal(button.props.disabled, false, id);
     button.props.onClick(); await settle();
     assert.equal(state.calls.length, 1, id);
@@ -99,11 +110,11 @@ test("every connected game card sends its own declared save command", async () =
   }
 });
 
-test("scoped card actions expose their persistence boundaries in their accessible descriptions", () => {
+test("scoped card actions expose their persistence boundaries in their accessible descriptions", async () => {
   for (const [id, scope] of [["rimworld", /active clients.*Offline clients cannot be saved/],
     ["barotrauma", /lobby between rounds.*does not end a round/],
     ["scum", /global state.*transform changes.*registered persistent entities/]]) {
-    const state = harness({}, id); const button = state.render().button;
+    const state = harness({}, id); const button = (await state.ready()).button;
     assert.match(button.props.title, scope);
     if (id === "scum") assert.match(button.props["aria-label"], /^Save persistent state:/);
     state.unmount();
@@ -112,7 +123,7 @@ test("scoped card actions expose their persistence boundaries in their accessibl
 
 test("card visibility never replaces current capability validation before dispatch", async () => {
   const state = harness({ readModuleDetails: async () => moduleDetails("squad") });
-  state.render().button.props.onClick(); await settle();
+  (await state.ready()).button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0);
   assert.equal(state.notices[0].tone, "error");
   state.unmount();
@@ -121,7 +132,7 @@ test("card visibility never replaces current capability validation before dispat
 test("card distinguishes requested saving, native completion and unknown results", async () => {
   for (const completion of [undefined, "unconfirmed", "requested", "confirmed"]) {
     const state = harness({ sendInstanceRuntimeCommand: async () => ({ write_confirmation_pending: false, save_completion: completion }) });
-    state.render().button.props.onClick(); await settle();
+    (await state.ready()).button.props.onClick(); await settle();
     const accepted = completion === "confirmed" || completion === "requested";
     assert.match(state.notices[0].params.message, completion === "confirmed" ? /Save completed/
       : completion === "requested" ? /Save request sent\. The game will perform the save\./ : /Save outcome unknown/);
@@ -134,8 +145,53 @@ test("card distinguishes requested saving, native completion and unknown results
 test("card save neither duplicates an in-flight command nor displays a late unmounted result", async () => {
   const wait = deferred(); let sends = 0;
   const state = harness({ sendInstanceRuntimeCommand: async () => { sends++; return wait.promise; } });
-  const button = state.render().button; button.props.onClick(); button.props.onClick(); await settle();
+  const button = (await state.ready()).button; button.props.onClick(); button.props.onClick(); await settle();
   assert.equal(sends, 1); assert.equal(state.render().button.props.disabled, true);
   state.unmount(); wait.resolve({ response_text: "Late save", write_confirmation_pending: false }); await settle();
   assert.deepEqual(state.notices, []);
+});
+
+
+
+test("card save explains vanilla fallback before dispatch", async () => {
+  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: false }) }, "runescapedragonwilds");
+  state.render(); await settle();
+  const button = (await state.ready()).button;
+  assert.equal(button.props.disabled, true);
+  assert.match(button.props.title, /save extension.*not prepared/i);
+  button.props.onClick(); await settle();
+  assert.equal(state.calls.length, 0);
+  state.unmount();
+});
+
+
+test("card refresh and preflight preserve current-run readiness", async () => {
+  let prepared = true;
+  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared }) }, "runescapedragonwilds");
+  assert.equal((await state.ready()).button.props.disabled, false);
+  prepared = false;
+  state.props.instance = { ...state.props.instance };
+  assert.equal((await state.ready()).button.props.disabled, true);
+  state.unmount();
+
+  let reads = 0;
+  const changed = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: ++reads, session_id: null, prepared: true }) });
+  (await changed.ready()).button.props.onClick(); await settle();
+  assert.equal(changed.calls.length, 0);
+  assert.match(changed.notices[0].params.message, /run has changed/);
+  changed.unmount();
+});
+
+test("card does not query unsupported or stopped games and explains connection errors", async () => {
+  let reads = 0;
+  const state = harness({ readInstanceWorldSaveReadiness: async () => { reads++; throw new Error("offline"); } });
+  state.props.supported = false; await state.ready(); assert.equal(reads, 0);
+  state.props.supported = true;
+  state.props.instance = { ...state.props.instance, status: "Stopped", active_process_count: 0 };
+  await state.ready(); assert.equal(reads, 0);
+  state.props.instance = state.details.summary;
+  const view = await state.ready(); assert.equal(reads, 1);
+  assert.equal(view.button.props.disabled, true);
+  assert.match(view.button.props.title, /Check the connection/);
+  state.unmount();
 });

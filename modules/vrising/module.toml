@@ -72,12 +72,8 @@ enabled_setting_key = "rcon_enabled"
 grace_period_ms = 15000
 
 [[runtime.shutdown.commands]]
-transport = "source_rcon"
-fallback_transport = "console_ctrl_c"
-command = "shutdown 0 \"LanGame app exit\""
-port_name = "rcon"
-password_setting_key = "rcon_password"
-enabled_setting_key = "rcon_enabled"
+transport = "console_ctrl_c"
+command = "CTRL_C"
 wait_after_ms = 12000
 
 [storage]

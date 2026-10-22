@@ -46,6 +46,7 @@ pub struct ManagedInstance {
     // Drop cancels outstanding input before releasing any child process handles.
     stdin_dispatches: StdinDispatchRegistry,
     pub processes: Vec<ManagedProcess>,
+    world_save_prepared: Option<bool>,
 }
 
 #[derive(Debug, Clone)]
@@ -112,7 +113,17 @@ impl RuntimeSupervisor {
         &mut self,
         summary: InstanceSummary,
         session_id: Option<String>,
+        processes: Vec<ManagedProcess>,
+    ) {
+        self.insert_running_with_save_preparation(summary, session_id, processes, None);
+    }
+
+    pub fn insert_running_with_save_preparation(
+        &mut self,
+        summary: InstanceSummary,
+        session_id: Option<String>,
         mut processes: Vec<ManagedProcess>,
+        world_save_prepared: Option<bool>,
     ) {
         sort_managed_processes(&mut processes);
         self.instances.insert(
@@ -122,8 +133,22 @@ impl RuntimeSupervisor {
                 session_id,
                 stdin_dispatches: StdinDispatchRegistry::default(),
                 processes,
+                world_save_prepared,
             },
         );
+    }
+
+    pub fn world_save_readiness(
+        &self,
+        instance_id: &str,
+    ) -> Option<app_core::InstanceWorldSaveReadiness> {
+        let instance = self.instances.get(instance_id)?;
+        let primary = select_primary_managed_process(&instance.processes)?;
+        Some(app_core::InstanceWorldSaveReadiness {
+            run_id: primary.run_id,
+            session_id: instance.session_id.clone(),
+            prepared: instance.world_save_prepared,
+        })
     }
 
     pub fn take_running_for_stop(&mut self, instance_id: &str) -> Option<ManagedInstance> {

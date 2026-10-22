@@ -132,6 +132,7 @@ register_commands! {
     (list_instances_from_storage, [crate::commands::commands_storage], Runtime, Allowed, Bounded),
     (read_instance_connection_info_from_storage, [crate::commands::commands_instance_network], Runtime, Allowed, Bounded),
     (update_instance_autostart, [crate::commands::commands_autostart], Runtime, Allowed, Bounded),
+    (read_instance_world_save_readiness, [crate::commands::commands_storage], Runtime, Allowed, Bounded),
     (read_instance_details_from_storage, [crate::commands::commands_storage], Runtime, Allowed, Bounded),
     (read_instance_isolation, [crate::commands::commands_instance_isolation], Runtime, Allowed, Bounded),
     (read_dragonwilds_world_settings, [crate::commands::commands_dragonwilds_world], Runtime, Allowed, Bounded),

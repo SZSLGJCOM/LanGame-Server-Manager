@@ -19,6 +19,9 @@ pub(crate) use profile::compatible_settings;
 
 const ARCHIVE_HASH: &str = "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c5433383c3eef48f7";
 const ARCHIVE_BYTES: usize = 8_718_500;
+#[cfg(windows)]
+static BUNDLED_ARCHIVE: [u8; ARCHIVE_BYTES] =
+    *include_bytes!(concat!(env!("OUT_DIR"), "/ue4ss-runtime/UE4SS.zip"));
 const CORE_HASH: &str = "91d5444f41d19d0bb502f0fbdc15d76421e20359e898caa39e41e134c8f87958";
 const FILE_LIMIT: usize = 32 * 1024 * 1024;
 
@@ -63,6 +66,7 @@ pub(crate) fn diagnostic_log_path(root: &Path, module_id: &str) -> Option<std::p
 
 /// Read-only admission distinguishes missing preparation from incompatible
 /// files. A conflict is an error and must not be treated as permission to replace.
+#[cfg(test)]
 pub(crate) fn installed(root: &Path, module_id: &str) -> Result<bool, String> {
     installation::installed(root, Profile::get(module_id)?)
 }
@@ -76,10 +80,7 @@ pub(crate) fn prepare_startup(root: &Path, module_id: &str) -> Result<StartupSta
 pub(crate) fn bundled_archive() -> Result<&'static [u8], String> {
     #[cfg(windows)]
     {
-        Ok(include_bytes!(concat!(
-            env!("OUT_DIR"),
-            "/ue4ss-runtime/UE4SS.zip"
-        )))
+        Ok(&BUNDLED_ARCHIVE)
     }
     #[cfg(not(windows))]
     {

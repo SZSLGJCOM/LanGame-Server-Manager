@@ -4,7 +4,7 @@ import { invokeMock } from "../../src/api-mock";
 import { I18nProvider } from "../../src/i18n";
 import { immediateWorldSaveAction } from "../../src/runtime-save-capability";
 import { ValheimAccountControlSetup } from "../../src/views/servers/player-center/ValheimAccountControlSetup";
-import type { BootstrapResponse, InstanceDetails, InstanceRuntimeCommandResult, ModuleDetails } from "../../src/types";
+import type { BootstrapResponse, InstanceDetails, InstanceRuntimeCommandResult, InstanceWorldSaveReadiness, ModuleDetails } from "../../src/types";
 import { ImmediateWorldSave } from "../../src/views/servers/ImmediateWorldSave";
 import { ServerCardWorldSave } from "../../src/views/servers/ServerCardWorldSave";
 import { MaintenanceWorkspace } from "../../src/views/servers/MaintenanceWorkspace";
@@ -27,6 +27,7 @@ let responseMode: "requested" | "confirmed" | "unconfirmed" | "pending" | "faile
 let resolveSave: ((value: InstanceRuntimeCommandResult) => void) | undefined;
 let activeDetails: InstanceDetails;
 let activeModule: ModuleDetails | null = null;
+let readiness: InstanceWorldSaveReadiness | undefined;
 const cardNotices: Array<{ tone?: string; params?: Record<string, unknown> }> = [];
 // Replace only the native IPC boundary. The production component, configuration
 // guards and API envelope run against current module TOML declarations.
@@ -35,6 +36,8 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
 }) => {
   if (command === "read_instance_details_from_storage") return activeDetails;
   if (command === "read_module_details") return activeModule;
+  if (command === "read_instance_world_save_readiness") return readiness ?? (activeDetails.active_run
+    ? { run_id: activeDetails.active_run.run_id, session_id: activeDetails.active_run.session_id ?? null, prepared: true } : null);
   if (command !== "send_instance_runtime_command") throw new Error(`Unexpected native command: ${command}`);
   calls.push(args.input);
   if (responseMode === "failed") throw new Error("Native save connection lost");
@@ -90,6 +93,7 @@ async function run() {
   const configurationGuards: string[] = [];
   const persistenceScopes: string[] = [];
   const startupPreparedModules: string[] = [];
+  const readinessGuards: string[] = [];
   const savedFixtures = new Map<string, { details: InstanceDetails; module: ModuleDetails }>();
   for (const [moduleId, command] of [
     ["dontstarve", "c_save()"], ["minecraft", "save-all flush"], ["projectzomboid", "save"], ["terraria", "save"],
@@ -274,6 +278,52 @@ async function run() {
   const scopeRect = fixture.querySelector(".immediate-world-save > .form-note")!.getBoundingClientRect();
   check(scopeRect.width > 0 && scopeRect.right <= innerWidth && scopeRect.bottom <= innerHeight,
     "The Barotrauma save limitation must remain fully readable in the delivered viewport");
+  const dragon = savedFixtures.get("runescapedragonwilds")!;
+  const firstRun = { ...dragon.details, summary: { ...dragon.details.summary },
+    active_run: { ...dragon.details.active_run!, run_id: 41, session_id: "save-session-41" } };
+  readiness = { run_id: 41, session_id: "save-session-41", prepared: false };
+  await render(firstRun, dragon.module);
+  check(button().disabled && cardSave().disabled && fixture.textContent?.includes("本次运行未准备保存扩展")
+    && cardSave().title.includes("本次运行未准备保存扩展"), "Both save entries must explain unavailable preparation for this run");
+  const beforeUnavailable = calls.length;
+  await submit();
+  await act(async () => cardSave().click());
+  check(calls.length === beforeUnavailable, "Vanilla fallback must never dispatch a save from either entry");
+  readinessGuards.push("unprepared-run");
+  readiness = undefined;
+  await render({ ...firstRun, summary: { ...firstRun.summary } }, dragon.module);
+  check(!button().disabled && !cardSave().disabled, "Prepared run must allow both save entries");
+  responseMode = "deferred";
+  await submit();
+  check(calls.length === beforeUnavailable + 1 && Boolean(resolveSave), "Prepared run must dispatch its save once");
+  const oldSave = calls.at(-1)!;
+  const nextRun = { ...firstRun, summary: { ...firstRun.summary },
+    active_run: { ...firstRun.active_run, run_id: 42, session_id: "save-session-42" } };
+  readiness = { run_id: 41, session_id: "save-session-41", prepared: true };
+  await render(nextRun, dragon.module);
+  check(button().disabled && fixture.textContent?.includes("服务器运行已变化"), "Old readiness must not authorize the next run");
+  const beforeStaleCard = cardNotices.length;
+  await act(async () => cardSave().click());
+  await settle(() => !cardSave().disabled && cardNotices.length === beforeStaleCard + 1, "Stale card readiness did not settle");
+  check(calls.length === beforeUnavailable + 1 && cardNotices.at(-1)?.tone === "error"
+    && cardNotices.at(-1)?.params?.message?.toString().includes("服务器运行已变化"),
+    "Card preflight must reject stale readiness before dispatching to the new run");
+  readinessGuards.push("changed-run");
+  await act(async () => resolveSave!({ instance_id: oldSave.instanceId, command: oldSave.command, process_key: "main",
+    display_name: "Save transport", pid: 1, response_text: "Stale completion from run 41",
+    write_confirmation_pending: false, save_completion: "confirmed", submitted_at_unix_ms: Date.now() }));
+  check(!fixture.querySelector(".immediate-world-save")?.textContent?.includes("Stale completion from run 41")
+    && !fixture.querySelector(".immediate-world-save")?.textContent?.includes("保存完成。"),
+    "A prior run's late completion must never be displayed as the new run's result");
+  readinessGuards.push("late-result");
+  readiness = undefined;
+  responseMode = "requested";
+  await render({ ...nextRun, summary: { ...nextRun.summary } }, dragon.module);
+  check(!button().disabled && !cardSave().disabled, "The current prepared run must recover both save entries");
+  await submit();
+  check(calls.length === beforeUnavailable + 2 && fixture.textContent?.includes("已发送保存请求，由游戏执行保存。"),
+    "The new run must submit once and retain honest Requested feedback");
+  readinessGuards.push("current-run");
   const finalSave = savedFixtures.get("minecraft")!;
   responseMode = innerWidth > 1000 ? "confirmed" : "requested";
   await render(finalSave.details, finalSave.module);
@@ -285,7 +335,8 @@ async function run() {
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   return { status: "passed", checks, maintenance_modules: maintenanceModules, card_modules: cardModules,
     startup_prepared_modules: startupPreparedModules, persistence_scopes: persistenceScopes,
-    configuration_guards: configurationGuards, browser_errors: errors, viewport: { width: innerWidth, height: innerHeight } };
+    configuration_guards: configurationGuards, readiness_guards: readinessGuards,
+    browser_errors: errors, viewport: { width: innerWidth, height: innerHeight } };
 }
 let watchdog: ReturnType<typeof setTimeout>;
 void Promise.race([run(), new Promise<never>((_, reject) => { watchdog = setTimeout(() => reject(new Error("Save UI stalled")), 25000); })])

@@ -135,6 +135,21 @@ pub(crate) fn player_list_rcon_exec(
     )
 }
 
+pub(crate) fn vrising_rcon_exec(
+    endpoint: &str,
+    password: &str,
+    command: &str,
+) -> Result<String, String> {
+    let mut stream = DeadlineTcpStream::connect(endpoint, Duration::from_secs(3))
+        .map_err(|error| format!("failed to connect to V Rising RCON `{endpoint}`: {error}"))?;
+    source_rcon_exchange(
+        &mut stream,
+        password,
+        command,
+        SourceRconCompletion::VRising,
+    )
+}
+
 pub(crate) fn rust_rcon_exec(
     endpoint: &str,
     password: &str,
@@ -151,6 +166,7 @@ enum SourceRconCompletion {
     PlayerList,
     Rust,
     ArkShutdownFirstResponse,
+    VRising,
 }
 
 fn source_rcon_exchange<S: Read + Write>(
@@ -201,9 +217,8 @@ fn source_rcon_exchange_with_delivery<S: Read + Write>(
         // ARK and Squad ignore empty response-value requests. A separate
         // read-only command supplies their ordered response boundary.
         SourceRconCompletion::PlayerList => (2, "ListPlayers"),
-        // This mode is selected only by the exact native ARK DoExit shutdown
-        // adapter. The caller closes its socket after this first response.
-        SourceRconCompletion::ArkShutdownFirstResponse => (0, ""),
+        // Native single-response modes return before writing any marker.
+        SourceRconCompletion::ArkShutdownFirstResponse | SourceRconCompletion::VRising => (0, ""),
     };
     // Minecraft treats one socket read as one request. Wait for its first reply
     // before sending the marker so the two requests cannot be read together.
@@ -213,6 +228,11 @@ fn source_rcon_exchange_with_delivery<S: Read + Write>(
             .map_err(|error| format!("RCON command response read failed: {error}"))?;
         if packet.id == -1 {
             return Err(String::from("RCON command was rejected"));
+        }
+        if matches!(completion, SourceRconCompletion::VRising) && packet.id != EXEC_ID {
+            return Err(String::from(
+                "V Rising RCON response ID does not match its command",
+            ));
         }
         if packet.id == EXEC_ID {
             if packet.packet_type != 0 {
@@ -226,6 +246,19 @@ fn source_rcon_exchange_with_delivery<S: Read + Write>(
     }
     let response =
         response.ok_or_else(|| String::from("RCON command response was not received"))?;
+    if matches!(completion, SourceRconCompletion::VRising) {
+        // V Rising sends one response per command and rejects response-value
+        // probes. Its officially recommended mcrcon client uses this boundary.
+        let response = String::from_utf8(response)
+            .map_err(|_| String::from("V Rising RCON response contains invalid UTF-8"))?;
+        if response.trim_start().starts_with("error:") {
+            return Err(format!(
+                "V Rising RCON command rejected: {}",
+                response.trim()
+            ));
+        }
+        return Ok(response);
+    }
     #[cfg(test)]
     NATIVE_ARK_SHUTDOWN_TRACE.with(|slot| {
         if let Some(trace) = slot.get() {

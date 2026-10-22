@@ -16,6 +16,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 
     assert.deepEqual(report.card_modules, saveModules, "Every connected game must submit from its card shortcut");
     assert.deepEqual(report.startup_prepared_modules, startupPreparedModules, "Saving needs no separate preparation control");
     assert.deepEqual(report.persistence_scopes, ["rimworld", "barotrauma", "scum"]);
+    assert.deepEqual(report.readiness_guards, ["unprepared-run", "changed-run", "late-result", "current-run"]);
     assert.deepEqual(report.configuration_guards, ["rust", "arksurvivalevolved", "sevendaystodie", "palworld"].flatMap((id) =>
       ["disabled", "password", "missing-port", "udp-port"].map((reason) => `${id}:${reason}`))
       .concat(["password", "missing-port", "udp-port"].map((reason) => `astroneer:${reason}`), "sevendaystodie:eac-preserved"));

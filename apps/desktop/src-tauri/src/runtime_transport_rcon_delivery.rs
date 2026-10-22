@@ -59,6 +59,7 @@ pub(crate) fn source_rcon_shutdown_exec(
                 SourceRconCompletion::PlayerList
             }
             "rust" => SourceRconCompletion::Rust,
+            "vrising" => SourceRconCompletion::VRising,
             _ => SourceRconCompletion::ResponseValue,
         };
         let response = source_rcon_exchange_with_delivery(

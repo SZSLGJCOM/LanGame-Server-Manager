@@ -238,6 +238,7 @@ fn inspect(
     })
 }
 
+#[cfg(test)]
 pub(super) fn installed(root: &Path, profile: Profile) -> Result<bool, String> {
     let _pins = verified_root(root, profile)?;
     installed_at(&profile.win64(root), profile)

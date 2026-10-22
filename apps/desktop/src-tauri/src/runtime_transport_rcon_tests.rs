@@ -57,6 +57,79 @@ impl Write for ProtocolPeer {
 }
 
 #[test]
+fn vrising_rcon_preserves_one_complete_response_without_a_marker() {
+    for body in [String::new(), "V Rising 1.1.15".into(), "中".repeat(4096)] {
+        let auth = response_packet(14001, 2, "");
+        let reply = response_packet(14002, 0, &body);
+        let mut peer = ProtocolPeer {
+            earliest_request_offsets: vec![0, auth.len() as u64],
+            replies: Cursor::new([auth, reply].concat()),
+            requests: Vec::new(),
+        };
+        assert_eq!(
+            source_rcon_exchange(
+                &mut peer,
+                "fixture",
+                "version",
+                SourceRconCompletion::VRising
+            )
+            .unwrap(),
+            body
+        );
+        assert_eq!(peer.requests.len(), 2);
+        assert_eq!(
+            (peer.requests[1].id, peer.requests[1].packet_type),
+            (14002, 2)
+        );
+    }
+}
+
+#[test]
+fn vrising_rcon_rejects_native_errors_and_invalid_response_frames() {
+    let native_error = "error: no successfully parsed entries in <message times>";
+    for (reply, message) in [
+        (
+            response_packet(14002, 0, native_error),
+            "V Rising RCON command rejected:",
+        ),
+        (
+            response_packet(14003, 0, "unrelated"),
+            "response ID does not match",
+        ),
+        (
+            response_packet(14002, 2, "wrong type"),
+            "invalid response type",
+        ),
+        (response_fragment(14002, &[0xff]), "invalid UTF-8"),
+        (i32::MAX.to_le_bytes().to_vec(), "invalid RCON packet size"),
+        (
+            response_packet(14002, 0, "truncated")[..15].to_vec(),
+            "failed to fill whole buffer",
+        ),
+    ] {
+        let auth = response_packet(14001, 2, "");
+        let mut peer = ProtocolPeer {
+            earliest_request_offsets: vec![0, auth.len() as u64],
+            replies: Cursor::new([auth, reply].concat()),
+            requests: Vec::new(),
+        };
+        let error = source_rcon_exchange(
+            &mut peer,
+            "fixture",
+            "shutdown 0 notice",
+            SourceRconCompletion::VRising,
+        )
+        .unwrap_err();
+        assert!(error.contains(message), "{error}");
+        assert_eq!(
+            peer.requests.len(),
+            2,
+            "a rejected command must not be replayed"
+        );
+    }
+}
+
+#[test]
 fn source_rcon_exchange_serializes_minecraft_requests_and_preserves_all_response_fragments() {
     let auth = response_packet(14001, 2, "");
     let first = response_packet(14002, 0, "page one\n");

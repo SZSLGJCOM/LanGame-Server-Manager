@@ -68,7 +68,7 @@ impl Startup {
         }
     }
 
-    async fn prepare(&self) -> Result<Vec<(String, String)>, String> {
+    async fn prepare(&self) -> Result<commands_save_startup::SavePreparation, String> {
         let state = DesktopState::default();
         let reservation = match state.try_reserve_runtime_start("dragon", "manual")? {
             RuntimeStartReservationAttempt::Reserved(value) => value,
@@ -152,7 +152,9 @@ async fn optional_save_start_preserves_native_launch_after_owned_loader_retireme
         b"0123456789abcdef0123456789abcdef"
     );
     assert!(
-        result.as_ref().is_ok_and(Vec::is_empty),
+        result
+            .as_ref()
+            .is_ok_and(|value| value.environment.is_empty() && !value.available),
         "optional extension blocked native launch: {result:?}"
     );
     fixture.assert_optional_save_log();
@@ -168,7 +170,9 @@ async fn optional_save_start_preserves_unknown_and_external_loader_launches() {
         }
         let result = fixture.prepare().await;
         assert!(
-            result.as_ref().is_ok_and(Vec::is_empty),
+            result
+                .as_ref()
+                .is_ok_and(|value| value.environment.is_empty() && !value.available),
             "external={external}: {result:?}"
         );
         if external {

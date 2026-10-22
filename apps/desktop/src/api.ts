@@ -37,6 +37,7 @@ import type {
   InstanceBroadcastEvent,
   InstanceBroadcastPolicy,
   InstanceDetails,
+  InstanceWorldSaveReadiness,
   InstanceConnectionInfo,
   SaveInstanceSettingsOptions,
   InstanceIsolationReport,
@@ -172,6 +173,7 @@ export const readModuleDetails = async (moduleId: string, options: { includePres
 };
 export const readModuleConfigurationIcons = (moduleId: string) =>
   invokeOrMock<Record<string, string>>("read_module_configuration_icons", { moduleId });
+export const readInstanceWorldSaveReadiness = (instanceId: string) => invokeOrMock<InstanceWorldSaveReadiness | null>("read_instance_world_save_readiness", { instanceId });
 export const readInstanceDetails = (instanceId: string) => invokeOrMock<InstanceDetails>("read_instance_details_from_storage", { instanceId });
 export const readInstanceIsolation = (instanceId: string) =>
   invokeOrMock<InstanceIsolationReport>("read_instance_isolation", { input: { instance_id: instanceId } });

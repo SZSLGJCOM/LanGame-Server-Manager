@@ -250,6 +250,21 @@ pub async fn list_instances_from_storage(
     }
     Ok(instances)
 }
+
+/// Read only the active runtime ownership record; no plugin files are scanned.
+#[tauri::command]
+pub async fn read_instance_world_save_readiness(
+    state: tauri::State<'_, DesktopState>,
+    instance_id: String,
+) -> Result<Option<app_core::InstanceWorldSaveReadiness>, String> {
+    let _operation = state.begin_storage_context_operation("world save readiness")?;
+    let runtime = state
+        .runtime_supervisor
+        .lock()
+        .map_err(|_| String::from("runtime supervisor lock poisoned"))?;
+    Ok(runtime.world_save_readiness(&instance_id))
+}
+
 #[tauri::command]
 pub async fn read_instance_details_from_storage(
     state: tauri::State<'_, DesktopState>,

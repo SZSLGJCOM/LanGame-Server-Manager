@@ -265,3 +265,60 @@ fn ark_shutdown_first_ack_selection_never_changes_other_commands_or_games() {
         );
     }
 }
+
+#[test]
+fn vrising_rcon_response_closes_real_socket_without_unsupported_marker() {
+    let (endpoint, peer) = shutdown_loopback_peer("version");
+    let result = source_rcon_shutdown_exec("vrising", &endpoint, "fixture", "version");
+    let extra_request = peer.join().unwrap();
+    assert_eq!(result.unwrap(), "Exiting...\r\n");
+    assert!(
+        !extra_request,
+        "V Rising rejects Source response-value markers"
+    );
+    let (endpoint, peer) = shutdown_loopback_peer("version");
+    let result = vrising_rcon_exec(&endpoint, "fixture", "version");
+    let extra_request = peer.join().unwrap();
+    assert_eq!(result.unwrap(), "Exiting...\r\n");
+    assert!(
+        !extra_request,
+        "ordinary V Rising commands use the same native boundary"
+    );
+}
+
+#[test]
+fn vrising_rcon_preserves_auth_failure_partial_write_and_unknown_delivery() {
+    for (auth_id, partial, expected_attempted) in [
+        (-1, false, false),
+        (14001, true, true),
+        (14001, false, true),
+    ] {
+        let mut auth = Vec::new();
+        source_rcon_write_packet(&mut auth, auth_id, 2, "").unwrap();
+        let mut peer = DeliveryPeer {
+            replies: Cursor::new(auth),
+            writes: 0,
+            partial_command: partial,
+        };
+        let mut attempted = false;
+        let error = source_rcon_exchange_with_delivery(
+            &mut peer,
+            "fixture",
+            "version",
+            SourceRconCompletion::VRising,
+            &mut attempted,
+        )
+        .unwrap_err();
+        assert_eq!(attempted, expected_attempted);
+        if partial {
+            assert!(error.contains("fixture partial command write"));
+            assert_eq!(peer.writes, 3);
+        } else if expected_attempted {
+            assert!(error.contains("fixture response timeout"));
+            assert_eq!(peer.writes, 2);
+        } else {
+            assert!(error.contains("authentication failed"));
+            assert_eq!(peer.writes, 1);
+        }
+    }
+}

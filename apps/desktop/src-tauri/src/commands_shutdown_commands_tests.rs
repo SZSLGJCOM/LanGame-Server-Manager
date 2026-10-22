@@ -1,5 +1,24 @@
 use super::*;
 
+#[test]
+fn vrising_immediate_stop_uses_native_console_exit_without_rcon_dependency() {
+    let module_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let descriptor = app_modules::discover_modules(&module_root)
+        .unwrap()
+        .into_iter()
+        .find(|module| module.summary.id == "vrising")
+        .unwrap();
+    let shutdown = descriptor.runtime.shutdown.unwrap();
+    assert_eq!(shutdown.grace_period_ms, 15000);
+    assert_eq!(shutdown.commands.len(), 1);
+    let stop = &shutdown.commands[0];
+    assert_eq!(stop.transport, "console_ctrl_c");
+    assert!(stop.fallback_transport.is_none());
+    assert!(stop.port_name.is_none());
+    assert!(stop.password_setting_key.is_none());
+    assert!(stop.enabled_setting_key.is_none());
+}
+
 fn unreal_console_details(module_id: &str) -> InstanceDetails {
     serde_json::from_value(json!({
         "summary": {

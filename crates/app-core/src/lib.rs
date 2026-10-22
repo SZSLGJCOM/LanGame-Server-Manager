@@ -1238,6 +1238,15 @@ pub struct StartedProcess {
     pub performance: RuntimePerformanceApplication,
 }
 
+/// Startup preparation for the exact run owned by the runtime service.
+/// This is not a claim that a save request has completed or reached disk.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct InstanceWorldSaveReadiness {
+    pub run_id: i64,
+    pub session_id: Option<String>,
+    pub prepared: Option<bool>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StartInstanceResult {
     #[serde(default)]
