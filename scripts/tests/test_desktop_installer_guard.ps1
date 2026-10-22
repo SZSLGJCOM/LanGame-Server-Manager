@@ -56,20 +56,33 @@ Name "LGSM disposable process probe"
 OutFile "@PROBE@"
 !include FileFunc.nsh
 Section
+!ifdef LOCK_FILE
+  System::Call 'kernel32::CreateFileW(w "${LOCK_FILE}", i 0x80000000, i 1, p 0, i 3, i 0x80, p 0) p .r2'
+  StrCmp $2 -1 0 +3
+  SetErrorLevel 1
+  Quit
+!endif
   FileOpen $0 "@READY@" w
   FileWrite $0 "ready"
   FileClose $0
   ${GetParameters} $0
   ${GetOptions} $0 "/DURATION=" $1
   Sleep $1
+!ifdef LOCK_FILE
+  System::Call 'kernel32::CloseHandle(p r2)'
+!endif
 SectionEnd
 '@
     $probeFile = Write-Fixture 'probe.nsi' ($probeSource.Replace('@PROBE@', $probeExe).Replace('@READY@', $readyPath))
     Compile-Fixture $probeFile
+    $lockerExe = Join-Path $fixtureRoot 'image-lock.exe'
+    $lockerFile = Write-Fixture 'image-lock.nsi' ($probeSource.Replace('@PROBE@', $lockerExe).Replace('@READY@', $readyPath))
+    Compile-Fixture $lockerFile @("/DLOCK_FILE=$probeExe")
 
-    function Start-Probe([int]$Duration) {
+    function Start-Probe([int]$Duration, [switch]$HoldImageLock) {
         if (Test-Path -LiteralPath $readyPath) { Remove-Item -LiteralPath $readyPath }
-        $process = Start-Process -FilePath $probeExe -ArgumentList "/DURATION=$Duration" -PassThru -WindowStyle Hidden
+        $executable = if ($HoldImageLock) { $lockerExe } else { $probeExe }
+        $process = Start-Process -FilePath $executable -ArgumentList "/DURATION=$Duration" -PassThru -WindowStyle Hidden
         $ownedProcesses.Add($process)
         $deadline = [DateTime]::UtcNow.AddSeconds(5)
         while (-not (Test-Path -LiteralPath $readyPath)) {
@@ -164,6 +177,40 @@ SectionEnd
     if (-not $uninstallProcess.WaitForExit(5000) -or $uninstallProcess.ExitCode -ne 0 -or
         -not (Test-Path -LiteralPath $uninstallReceipt)) { throw 'Idle uninstall did not proceed.' }
     $scenarios++
+    # A process can disappear while another handle still excludes image writes.
+    # The updater must not enter file replacement just because enumeration is empty.
+    Remove-Item -LiteralPath $updateReceipt
+    $lockedHash = (Get-FileHash -LiteralPath $probeExe -Algorithm SHA256).Hash
+    $imageLock = [IO.File]::Open($probeExe, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try {
+        Run-Guard $update $updateReceipt 10
+    } finally {
+        $imageLock.Dispose()
+    }
+    if ((Get-FileHash -LiteralPath $probeExe -Algorithm SHA256).Hash -ne $lockedHash) {
+        throw 'Readiness probing changed the existing executable.'
+    }
+    $locker = Start-Probe 1400 -HoldImageLock
+    Run-Guard $update $updateReceipt 0
+    if (-not $locker.HasExited -or (Get-FileHash -LiteralPath $probeExe -Algorithm SHA256).Hash -ne $lockedHash) {
+        throw 'Updater did not wait for the image lock to clear without changing existing bytes.'
+    }
+    Remove-Item -LiteralPath $updateReceipt
+    $attributes = [IO.File]::GetAttributes($probeExe)
+    try {
+        [IO.File]::SetAttributes($probeExe, $attributes -bor [IO.FileAttributes]::ReadOnly)
+        Run-Guard $update $updateReceipt 10
+    } finally {
+        [IO.File]::SetAttributes($probeExe, $attributes)
+    }
+    $absentImage = Join-Path $fixtureRoot 'inactive-probe.exe'
+    Move-Item -LiteralPath $probeExe -Destination $absentImage
+    try {
+        Run-Guard $update $updateReceipt 0
+        if (Test-Path -LiteralPath $probeExe) { throw 'Readiness probing created a missing executable.' }
+    } finally {
+        Move-Item -LiteralPath $absentImage -Destination $probeExe
+    }
     Write-Output "NSIS maintenance guard: $scenarios scenarios passed; real application and data untouched."
 }
 finally {

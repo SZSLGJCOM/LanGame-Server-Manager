@@ -63,6 +63,7 @@
   Push $R0
   Push $R1
   Push $R2
+  Push $R3
   ; Tauri passes a full installation path; the process plugin matches names.
   ; Keep guarding every same-user runtime, including another installation.
   ${GetFileName} "${executablePath}" $R2
@@ -73,7 +74,7 @@
     nsis_tauri_utils::FindProcessCurrentUser "$R2"
     Pop $R0
     IfErrors lgsm_probe_failed_${LGSM_GUARD_ID}
-    StrCmp $R0 1 lgsm_ready_${LGSM_GUARD_ID}
+    StrCmp $R0 1 lgsm_file_probe_${LGSM_GUARD_ID}
     StrCmp $R0 0 0 lgsm_probe_failed_${LGSM_GUARD_ID}
     ; The updater stops the runtime before launching NSIS, then exits itself.
     ; Wait only for that documented parent-exit handoff, at most ten seconds.
@@ -83,6 +84,34 @@
     Sleep 200
     IntOp $R1 $R1 - 1
     Goto lgsm_probe_${LGSM_GUARD_ID}
+
+  lgsm_file_probe_${LGSM_GUARD_ID}:
+    StrCmp $UpdateMode 1 0 lgsm_ready_${LGSM_GUARD_ID}
+    ; Process enumeration can finish before the old image's write lock clears.
+    ; OPEN_EXISTING checks the actual replacement boundary without modifying it.
+    System::Call 'kernel32::CreateFileW(w "${executablePath}", i 0x40000000, i 7, p 0, i 3, i 0x80, p 0) p .R0 ?e'
+    Pop $R3
+    StrCmp $R0 -1 lgsm_file_unavailable_${LGSM_GUARD_ID}
+    System::Call 'kernel32::CloseHandle(p R0)'
+    Goto lgsm_ready_${LGSM_GUARD_ID}
+
+  lgsm_file_unavailable_${LGSM_GUARD_ID}:
+    StrCmp $R3 2 lgsm_ready_${LGSM_GUARD_ID} ; no existing file
+    StrCmp $R3 3 lgsm_ready_${LGSM_GUARD_ID} ; no existing directory
+    ; Access denial may be a transient image lock or a permanent permission.
+    ; Both share the existing handoff budget; other errors fail immediately.
+    StrCmp $R3 5 lgsm_file_wait_${LGSM_GUARD_ID}
+    StrCmp $R3 32 lgsm_file_wait_${LGSM_GUARD_ID}
+    StrCmp $R3 33 lgsm_file_wait_${LGSM_GUARD_ID} lgsm_file_failed_${LGSM_GUARD_ID}
+  lgsm_file_wait_${LGSM_GUARD_ID}:
+    IntCmp $R1 0 lgsm_file_failed_${LGSM_GUARD_ID}
+    Sleep 200
+    IntOp $R1 $R1 - 1
+    Goto lgsm_probe_${LGSM_GUARD_ID}
+  lgsm_file_failed_${LGSM_GUARD_ID}:
+    DetailPrint "Cannot open existing application for replacement (Windows error $R3)."
+    StrCpy $R0 "$(lgsmFileNotWritable)"
+    Goto lgsm_refuse_${LGSM_GUARD_ID}
 
   lgsm_busy_${LGSM_GUARD_ID}:
     StrCpy $R0 "$(lgsmCloseBeforeMaintenance)"
@@ -95,6 +124,7 @@
     StrCmp $PassiveMode 1 lgsm_abort_${LGSM_GUARD_ID}
     MessageBox MB_OK|MB_ICONEXCLAMATION $R0
   lgsm_abort_${LGSM_GUARD_ID}:
+    Pop $R3
     Pop $R2
     Pop $R1
     Pop $R0
@@ -102,6 +132,7 @@
     Abort
 
   lgsm_ready_${LGSM_GUARD_ID}:
+    Pop $R3
     Pop $R2
     Pop $R1
     Pop $R0

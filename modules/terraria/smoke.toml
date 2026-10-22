@@ -14,6 +14,9 @@ port_name = "game"
 protocol = "tcp"
 
 [[probes]]
-id = "game-connect"
-kind = "tcp_connect"
-port_name = "game"
+# Short-lived clients can race vanilla Terraria's network-stream teardown.
+# Observe the owned listener and this run's startup log without adding a client.
+id = "server-started"
+kind = "log_marker"
+sources = [{ kind = "process", process_key = "main" }]
+any_of = ["Server started"]

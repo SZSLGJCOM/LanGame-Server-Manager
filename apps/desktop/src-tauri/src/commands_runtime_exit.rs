@@ -1,7 +1,8 @@
 /// Windows process exit codes preserve the native exception's unsigned bits.
 /// Recognize documented crash statuses explicitly; arbitrary nonzero game codes
 /// (including ARK's -1) and STATUS_CONTROL_C_EXIT are not crash evidence.
-/// Reference: Microsoft's MS-ERREF NTSTATUS Values specification.
+/// References: Microsoft's MS-ERREF NTSTATUS Values specification and
+/// https://learn.microsoft.com/en-us/shows/inside/e0434352 (CLR exceptions).
 pub(super) fn windows_crash_exit_reason(exit_code: Option<i32>) -> Option<&'static str> {
     match exit_code? as u32 {
         0x8000_0001 => Some("STATUS_GUARD_PAGE_VIOLATION"),
@@ -30,6 +31,7 @@ pub(super) fn windows_crash_exit_reason(exit_code: Option<i32>) -> Option<&'stat
         0xC000_0417 => Some("STATUS_INVALID_CRUNTIME_PARAMETER"),
         0xC000_0420 => Some("STATUS_ASSERTION_FAILURE"),
         0xC000_0602 => Some("STATUS_FAIL_FAST_EXCEPTION"),
+        0xE043_4352 => Some("CLR_EXCEPTION"),
         _ => None,
     }
 }
@@ -43,6 +45,10 @@ mod tests {
         assert_eq!(
             windows_crash_exit_reason(Some(-2147483645)),
             Some("STATUS_BREAKPOINT")
+        );
+        assert_eq!(
+            windows_crash_exit_reason(Some(-532462766)),
+            Some("CLR_EXCEPTION")
         );
         for code in [
             0xC000_0005_u32,

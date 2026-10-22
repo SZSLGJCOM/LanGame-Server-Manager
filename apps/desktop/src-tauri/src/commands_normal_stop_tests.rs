@@ -815,34 +815,36 @@ async fn normal_stop_rcon_response_failure_waits_full_grace_for_cooperative_exit
 
 #[tokio::test]
 async fn normal_stop_native_exception_is_persisted_as_crash_after_owned_tree_exit() {
-    let mut fixture = Fixture::new().await;
-    fixture.persist_running().await;
-    // Reproduce the native status from Sons of the Forest without crashing a
-    // test runner or touching a game. This owned fixture exits on its stdin.
-    let shutdown: ModuleShutdownSpec = serde_json::from_value(json!({
-        "grace_period_ms": 3000, "commands": [{"transport": "stdin", "command": "exit:-2147483645", "wait_after_ms": 0}]
-    })).unwrap();
-    let lease = fixture
-        .state
-        .begin_storage_context_operation("native exception stop regression")
-        .unwrap();
-    let result = super::super::commands_instance_stop::stop_run(
-        &fixture.state,
-        &fixture.storage,
-        &lease,
-        &fixture.details,
-        &fixture.active,
-        Some(&shutdown),
-        InstanceShutdownSource::Manual,
-    )
-    .await;
-    let error =
-        result.expect_err("an exited tree with STATUS_BREAKPOINT is not a successful normal stop");
-    assert!(
-        error.contains("native_shutdown_crash") && error.contains("0x80000003"),
-        "{error}"
-    );
-    fixture.assert_finalized(-2147483645, true).await;
+    for (code, status) in [(-2147483645, "0x80000003"), (-532462766, "0xE0434352")] {
+        let mut fixture = Fixture::new().await;
+        fixture.persist_running().await;
+        // Exercise native and CLR exception statuses through the same owned
+        // process finalization without crashing the test runner or a game.
+        let shutdown: ModuleShutdownSpec = serde_json::from_value(json!({
+            "grace_period_ms": 3000, "commands": [{"transport": "stdin", "command": format!("exit:{code}"), "wait_after_ms": 0}]
+        })).unwrap();
+        let lease = fixture
+            .state
+            .begin_storage_context_operation("native exception stop regression")
+            .unwrap();
+        let result = super::super::commands_instance_stop::stop_run(
+            &fixture.state,
+            &fixture.storage,
+            &lease,
+            &fixture.details,
+            &fixture.active,
+            Some(&shutdown),
+            InstanceShutdownSource::Manual,
+        )
+        .await;
+        let error = result
+            .expect_err("an exited tree with an exception status is not a successful normal stop");
+        assert!(
+            error.contains("native_shutdown_crash") && error.contains(status),
+            "{error}"
+        );
+        fixture.assert_finalized(code, true).await;
+    }
 }
 
 #[tokio::test]

@@ -119,6 +119,8 @@ Publish the incremented version's installer, signature and matching manifest tog
 
 The installer and uninstaller guard against a running desktop or runtime. Exit LGSM through its coordinated shutdown action before manually upgrading or uninstalling; closing the window to the tray does not stop the application. The guard must not force-kill an active game server. Application updates download before coordinating runtime shutdown and installation.
 
+During an application update, the same ten-second handoff budget also waits for an existing executable to become writable. The probe never truncates or changes the file; a persistent lock or permission error stops installation before replacement.
+
 Passive updates reuse the saved installer language, or use the system language when none was saved. They never open a language selection dialog; interactive manual installation still offers the language selector. The installer guard test entry also runs eight isolated language-initialization cases, including the old updater's `/P /UPDATE /R /ARGS` invocation.
 
 An enabled build automatically prompts when a new version is found. Download opens that version's official GitHub Release page; Update in app starts the existing updater after the prompt explains saving, stopping and restarting. There is no header button or second confirmation screen. Dismissing the prompt does not install anything or cause repeated prompts for the same version during ordinary background checks.
