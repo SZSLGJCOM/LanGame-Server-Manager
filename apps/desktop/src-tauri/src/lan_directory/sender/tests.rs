@@ -37,12 +37,12 @@ fn sender_pins_the_actual_source_and_multicast_interface() {
 #[test]
 fn interface_selection_covers_lan_and_virtual_lan_without_names_or_route_priority() {
     let addresses = eligible_interfaces([
-        ("192.168.31.150".parse().unwrap(), true),
+        ("192.168.1.150".parse().unwrap(), true),
         ("10.88.0.2".parse().unwrap(), true),
         ("26.94.69.218".parse().unwrap(), true),
         ("100.65.2.3".parse().unwrap(), true),
         ("169.254.1.2".parse().unwrap(), true),
-        ("192.168.31.150".parse().unwrap(), true),
+        ("192.168.1.150".parse().unwrap(), true),
         ("192.168.9.2".parse().unwrap(), false),
         ("127.0.0.1".parse().unwrap(), true),
         ("198.18.0.1".parse().unwrap(), true),
@@ -59,7 +59,7 @@ fn interface_selection_covers_lan_and_virtual_lan_without_names_or_route_priorit
             "26.94.69.218",
             "100.65.2.3",
             "169.254.1.2",
-            "192.168.31.150"
+            "192.168.1.150"
         ]
         .map(|address| address.parse().unwrap())
         .into()

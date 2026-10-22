@@ -1013,7 +1013,7 @@ fn abioticfactor_multihome_uses_only_instance_bind_and_keeps_use_local_ips_indep
             name: String::from("Abiotic Factor"),
             module_id: String::from("abioticfactor"),
             status: InstanceStatus::Stopped,
-            bind_ip: String::from("192.168.31.42"),
+            bind_ip: String::from("192.168.1.42"),
             port_count: 0,
             autostart: false,
             active_process_count: 0,
@@ -1047,7 +1047,7 @@ fn abioticfactor_multihome_uses_only_instance_bind_and_keeps_use_local_ips_indep
         };
         let multihome = lookup_abioticfactor_launch_token(&context, "multihome_flag")
             .expect("known Abiotic Factor token");
-        assert_eq!(multihome, "-MultiHome=192.168.31.42");
+        assert_eq!(multihome, "-MultiHome=192.168.1.42");
         assert_eq!(multihome.matches("-MultiHome=").count(), 1);
         assert_eq!(
             lookup_abioticfactor_launch_token(&context, "use_local_ips_flag").as_deref(),

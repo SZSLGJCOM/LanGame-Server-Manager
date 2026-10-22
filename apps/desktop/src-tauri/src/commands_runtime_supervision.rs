@@ -1905,9 +1905,9 @@ mod strict_bind_verification_tests {
     fn strict_bind_accepts_only_the_selected_address() {
         assert_eq!(
             evaluate_strict_bind_endpoints(
-                "192.168.31.150",
+                "192.168.1.150",
                 &[game_port()],
-                &[endpoint("192.168.31.150")],
+                &[endpoint("192.168.1.150")],
             ),
             StrictBindEvaluation::Ready
         );
@@ -1916,7 +1916,7 @@ mod strict_bind_verification_tests {
     #[test]
     fn strict_bind_rejects_wildcard_listener() {
         let evaluation = evaluate_strict_bind_endpoints(
-            "192.168.31.150",
+            "192.168.1.150",
             &[game_port()],
             &[endpoint("0.0.0.0")],
         );
@@ -1927,7 +1927,7 @@ mod strict_bind_verification_tests {
     #[test]
     fn strict_bind_waits_until_required_listener_appears() {
         assert_eq!(
-            evaluate_strict_bind_endpoints("192.168.31.150", &[game_port()], &[]),
+            evaluate_strict_bind_endpoints("192.168.1.150", &[game_port()], &[]),
             StrictBindEvaluation::Pending {
                 missing_port_names: vec![String::from("game")],
             }
@@ -1937,8 +1937,8 @@ mod strict_bind_verification_tests {
     #[test]
     fn strict_bind_normalizes_ipv4_mapped_ipv6_address() {
         assert_eq!(
-            normalize_strict_bind_address("::ffff:192.168.31.150").unwrap(),
-            "192.168.31.150"
+            normalize_strict_bind_address("::ffff:192.168.1.150").unwrap(),
+            "192.168.1.150"
         );
     }
 }

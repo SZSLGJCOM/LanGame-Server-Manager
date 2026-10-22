@@ -70,7 +70,7 @@ test("instance ports are partitioned by module role without changing the complet
 test("persisted network comparison normalizes bind and ignores port ordering", () => {
   const { networkDraftMatchesPersisted } = loadPortPresentation();
   const details = {
-    summary: { bind_ip: "192.168.31.51" },
+    summary: { bind_ip: "192.168.1.51" },
     ports: [
       { name: "game", protocol: "udp", port: 7777 },
       { name: "rcon", protocol: "tcp", port: 27020 }
@@ -78,15 +78,15 @@ test("persisted network comparison normalizes bind and ignores port ordering", (
   };
 
   assert.equal(
-    networkDraftMatchesPersisted(details, " 192.168.31.51 ", [
+    networkDraftMatchesPersisted(details, " 192.168.1.51 ", [
       { name: "rcon", protocol: "TCP", port: 27020 },
       { name: "game", protocol: "UDP", port: 7777 }
     ]),
     true
   );
-  assert.equal(networkDraftMatchesPersisted(details, "192.168.31.52", details.ports), false);
+  assert.equal(networkDraftMatchesPersisted(details, "192.168.1.52", details.ports), false);
   assert.equal(
-    networkDraftMatchesPersisted(details, "192.168.31.51", [
+    networkDraftMatchesPersisted(details, "192.168.1.51", [
       { name: "game", protocol: "udp", port: 7778 },
       { name: "rcon", protocol: "tcp", port: 27020 }
     ]),
@@ -422,12 +422,12 @@ test("player join address follows the selected network route", () => {
   const { resolveSelectedJoinEndpoint } = loadConnectivitySelection();
   const endpoints = [
     { address: "26.10.0.8", endpoint: "26.10.0.8:7777", kind: "overlay", label: "Radmin VPN" },
-    { address: "192.168.31.51", endpoint: "192.168.31.51:7777", kind: "lan", label: "LAN" }
+    { address: "192.168.1.51", endpoint: "192.168.1.51:7777", kind: "lan", label: "LAN" }
   ];
 
-  assert.equal(resolveSelectedJoinEndpoint(endpoints, "192.168.31.51"), endpoints[1]);
+  assert.equal(resolveSelectedJoinEndpoint(endpoints, "192.168.1.51"), endpoints[1]);
   assert.equal(resolveSelectedJoinEndpoint(endpoints, "missing"), endpoints[0]);
-  assert.equal(resolveSelectedJoinEndpoint([], "192.168.31.51"), null);
+  assert.equal(resolveSelectedJoinEndpoint([], "192.168.1.51"), null);
 });
 
 test("the unified configuration workspace mounts infrastructure only from built-in sections", () => {

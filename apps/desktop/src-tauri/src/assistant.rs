@@ -1042,7 +1042,7 @@ mod tests {
             AssistantProviderSettings {
                 provider: String::from("ollama"),
                 model: String::from("qwen"),
-                base_url: String::from("http://192.168.31.51:11434/v1"),
+                base_url: String::from("http://192.168.1.51:11434/v1"),
                 api_key: String::new(),
             },
             AssistantProviderSettings {

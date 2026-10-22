@@ -2384,14 +2384,14 @@ mod tests {
     #[test]
     fn netstat_endpoint_parser_normalizes_ipv4_mapped_ipv6() {
         let endpoints = parse_netstat_network_endpoints(
-            "  UDP    [::ffff:192.168.31.150]:14159    *:*    33996\r\n",
+            "  UDP    [::ffff:192.168.1.150]:14159    *:*    33996\r\n",
         );
 
         assert_eq!(
             endpoints,
             vec![ParsedNetworkEndpoint {
                 protocol: String::from("udp"),
-                local_address: String::from("192.168.31.150"),
+                local_address: String::from("192.168.1.150"),
                 local_port: 14159,
                 owning_pid: 33996,
             }]
@@ -2530,14 +2530,14 @@ mod tests {
             "palworld-main",
             "Palworld Main",
             &ports,
-            Some("192.168.31.150"),
+            Some("192.168.1.150"),
         );
 
         assert_eq!(specs.len(), 2);
         assert_eq!(specs[0].rule_name, "LanGame palworld-main game UDP 8211");
         assert_eq!(specs[0].protocol, "UDP");
         assert_eq!(specs[0].local_port, 8211);
-        assert_eq!(specs[0].local_address, "192.168.31.150");
+        assert_eq!(specs[0].local_address, "192.168.1.150");
         assert_eq!(specs[1].rule_name, "LanGame palworld-main query TCP 27015");
         assert_eq!(specs[1].protocol, "TCP");
         assert_eq!(specs[1].local_port, 27015);

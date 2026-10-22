@@ -2814,7 +2814,7 @@ pub(super) fn strict_bind_firewall_rule_failures_block_instance_start() {
     let decision = firewall_rule_failure_start_decision(
         "Necesse",
         "New-NetFirewallRule failed",
-        Some("192.168.31.150"),
+        Some("192.168.1.150"),
     );
 
     assert!(!decision.continue_start);

@@ -7,13 +7,13 @@ fn specs() -> Vec<WindowsFirewallRuleSpec> {
             rule_name: "LanGame alpha game UDP 7778".into(),
             protocol: "UDP".into(),
             local_port: 7778,
-            local_address: "192.168.31.150".into(),
+            local_address: "192.168.1.150".into(),
         },
         WindowsFirewallRuleSpec {
             rule_name: "LanGame alpha query TCP 27017".into(),
             protocol: "TCP".into(),
             local_port: 27017,
-            local_address: "192.168.31.150".into(),
+            local_address: "192.168.1.150".into(),
         },
     ]
 }
@@ -397,7 +397,7 @@ fn firewall_fixed_script_roundtrips_multiple_rules_and_skips_verified_rules() {
     assert_eq!(created["reply"]["rules"][0]["local_port"], 7778);
     assert_eq!(
         created["reply"]["rules"][1]["local_address"],
-        "192.168.31.150"
+        "192.168.1.150"
     );
     assert_eq!(created["created"], 2);
     let existing = simulate(
@@ -453,7 +453,7 @@ fn firewall_fixed_script_repairs_owned_stale_scope_and_probe_never_mutates() {
 fn firewall_readonly_probe_rejects_restricted_remote_scope() {
     let prefix = "foreach($spec in $fixtureSpecs){$script:Items += New-TestRule $spec 'LanGame Server Manager'}";
     let restricted = simulate(
-        &format!("{prefix};$script:Items[0].Address.RemoteAddress='192.168.31.1'"),
+        &format!("{prefix};$script:Items[0].Address.RemoteAddress='192.168.1.1'"),
         false,
     );
     assert_eq!(restricted["reply"]["state"], "repair");

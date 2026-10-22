@@ -16,11 +16,11 @@ const translator = (locale) => (key, params, fallback) => translate(locale, key,
 test("firewall cancellation preserves strict startup context without echoing native text", () => {
   const payload = { code: "windows_firewall_setup_failed", reason: "elevation_cancelled",
     message: "untrusted native detail https://private.invalid/?token=secret",
-    instance_name: "ASA Main", local_address: "192.168.31.150", log_path: "D:/logs/app.log", continue_start: false };
+    instance_name: "ASA Main", local_address: "192.168.1.150", log_path: "D:/logs/app.log", continue_start: false };
   for (const locale of ["zh-CN", "en-US"]) {
     const result = formatDesktopError(translator(locale), JSON.stringify(payload));
     assert.match(result, /ASA Main/);
-    assert.match(result, /192\.168\.31\.150/);
+    assert.match(result, /192\.168\.1\.150/);
     assert.match(result, /D:\/logs\/app\.log/);
     assert.doesNotMatch(result, /private|token|secret|errors\.firewall/);
     assert.match(result, locale === "zh-CN" ? /授权已取消.*尚未启动服务器/s : /prompt was cancelled.*server was not started/s);

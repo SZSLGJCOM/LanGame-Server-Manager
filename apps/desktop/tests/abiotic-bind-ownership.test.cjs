@@ -65,11 +65,11 @@ test("Abiotic mock launch matches runtime bind ownership for specific and wildca
     use_local_ips: true
   };
 
-  details = await updateNetwork(details, "192.168.31.42", settings);
+  details = await updateNetwork(details, "192.168.1.42", settings);
   let launch = await invokeMock("preview_instance_launch", { instanceId: details.summary.id });
   assert.deepEqual(
     launch.args.filter((arg) => arg.startsWith("-MultiHome=")),
-    ["-MultiHome=192.168.31.42"]
+    ["-MultiHome=192.168.1.42"]
   );
   assert.equal(launch.args.filter((arg) => arg === "-UseLocalIPs").length, 1);
 
