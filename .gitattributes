@@ -25,3 +25,6 @@ apps/desktop/public/fonts/inter/OFL.txt -text -whitespace
 apps/desktop/src-tauri/THIRD_PARTY_LICENSES-RUST.txt -whitespace
 apps/desktop/third-party-license-sources/** -whitespace
 scripts/third_party_license_sources/** -whitespace
+
+# Preserve the pinned upstream layout byte-for-byte, including its final blank line.
+modules/conanexiles/control/VTableLayout.ini whitespace=-blank-at-eof
