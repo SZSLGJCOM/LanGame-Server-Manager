@@ -1915,11 +1915,8 @@ mod strict_bind_verification_tests {
 
     #[test]
     fn strict_bind_rejects_wildcard_listener() {
-        let evaluation = evaluate_strict_bind_endpoints(
-            "192.168.1.150",
-            &[game_port()],
-            &[endpoint("0.0.0.0")],
-        );
+        let evaluation =
+            evaluate_strict_bind_endpoints("192.168.1.150", &[game_port()], &[endpoint("0.0.0.0")]);
 
         assert!(matches!(evaluation, StrictBindEvaluation::Failed { .. }));
     }
