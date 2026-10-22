@@ -82,6 +82,7 @@ impl Startup {
             &self.details,
             &reservation,
             log.to_str(),
+            true,
         )
         .await
     }
@@ -204,6 +205,7 @@ async fn optional_save_start_keeps_invalid_ownership_as_an_error() {
             &fixture.details,
             &operation,
             None,
+            true,
         )
         .await
         .is_err()

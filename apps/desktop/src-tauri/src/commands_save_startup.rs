@@ -103,6 +103,7 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
     instance: &InstanceDetails,
     operation: &L,
     log_path: Option<&str>,
+    native_extension_prepared: bool,
 ) -> Result<SavePreparation, String> {
     super::commands_managed_save_control::cleanup_for_start(instance, operation).await?;
     let retired = instance.clone();
@@ -115,6 +116,7 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
     if !crate::unreal_loader::supported(module)
         && module != "runescapedragonwilds"
         && module != "valheim"
+        && module != "enshrouded"
         && !super::commands_managed_save_control::requires_automatic_setup(module)
     {
         return Ok(SavePreparation {
@@ -125,7 +127,9 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
     if let Some(path) = log_path {
         let _ = append_startup_console_line(path, "正在检查并自动准备保存扩展及所需加载器…", "");
     }
-    let environment = if module == "runescapedragonwilds" {
+    let environment = if module == "enshrouded" {
+        native_extension_prepared.then(Vec::new)
+    } else if module == "runescapedragonwilds" {
         validate_unreal_environment(std::iter::empty())?;
         let details = instance.clone();
         let environment = spawn_blocking_storage_context_task(operation, move || {

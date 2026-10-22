@@ -24,9 +24,9 @@ pub(super) async fn prepare(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
     log_path: Option<&str>,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     if instance.summary.module_id != "enshrouded" {
-        return Ok(());
+        return Ok(true);
     }
     let binding = app_storage::read_instance_program_install(&storage.paths, &instance.summary.id)
         .await
@@ -54,8 +54,8 @@ pub(super) async fn prepare(
         }
     })
     .await;
-    match prepared {
-        Ok(Some(executable)) => {
+    let native_extension_prepared = match prepared {
+        Ok(Some((executable, installed))) => {
             let updater_storage = storage.clone();
             let instance_id = instance.summary.id.clone();
             crate::enshrouded_extension::start_refresh(
@@ -93,6 +93,7 @@ pub(super) async fn prepare(
                     );
                 },
             );
+            installed
         }
         Err(_) => {
             // A failed optional worker must not prevent the actual game from starting.
@@ -107,10 +108,11 @@ pub(super) async fn prepare(
                 )
             })
             .await;
+            false
         }
-        Ok(None) => {}
-    }
-    Ok(())
+        Ok(None) => false,
+    };
+    Ok(native_extension_prepared)
 }
 
 fn report_preparation_failure(
@@ -142,7 +144,7 @@ fn prepare_local(
     instance: &InstanceDetails,
     binding: Result<Option<app_storage::InstanceProgramInstall>, String>,
     log_path: Option<&str>,
-) -> Result<Option<String>, String> {
+) -> Result<Option<(String, bool)>, String> {
     let instance_root = super::commands_program_storage::instance_root(instance)?;
     if app_storage::instance_program_mode(instance_root).map_err(|e| e.to_string())?
         != InstanceProgramMode::Independent
@@ -183,7 +185,8 @@ fn prepare_local(
     };
     let resolution =
         crate::enshrouded_extension::resolve_local(&storage.paths.app_data_root, &executable);
-    let install_issue = prepare_optional_install(&root, &executable, resolution.package.as_ref());
+    let (installed, install_issue) =
+        prepare_optional_install(&root, &executable, resolution.package.as_ref());
     let issue = install_issue.or(resolution.update_issue);
     super::commands_runtime_supervision::append_desktop_app_log(
         storage,
@@ -203,7 +206,7 @@ fn prepare_local(
             issue.as_deref().unwrap_or(""),
         );
     }
-    Ok(Some(executable))
+    Ok(Some((executable, installed)))
 }
 
 /// Extension setup is optional. Preserve unrelated loaders and fail closed for
@@ -212,24 +215,30 @@ fn prepare_optional_install(
     root: &Path,
     executable: &str,
     selected: Option<&crate::enshrouded_extension::SignedPackage>,
-) -> Option<String> {
-    let error = install_selected(root, executable, selected).err()?;
+) -> (bool, Option<String>) {
+    let error = match install_selected(root, executable, selected) {
+        Ok(installed) => return (installed, None),
+        Err(error) => error,
+    };
     let cleanup = (|| {
         let _root_guard = io::pin_directory(root)?;
         retire_owned_proxy(root)?;
         io::publish_manager_state(root, executable, RuntimePlayerExtensionStatus::NotInstalled)
     })();
-    Some(match cleanup {
-        Ok(()) => error,
-        Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
-    })
+    (
+        false,
+        Some(match cleanup {
+            Ok(()) => error,
+            Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
+        }),
+    )
 }
 
 fn install_selected(
     root: &Path,
     executable: &str,
     selected: Option<&crate::enshrouded_extension::SignedPackage>,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let _root_guard = io::pin_directory(root)?;
     if io::digest(&io::read_regular(
         &root.join("enshrouded_server.exe"),
@@ -253,14 +262,16 @@ fn install_selected(
             } else {
                 RuntimePlayerExtensionStatus::NotInstalled
             },
-        )
+        )?;
+        Ok(installed)
     } else {
         retire_owned_proxy(root)?;
         io::publish_manager_state(
             root,
             executable,
             RuntimePlayerExtensionStatus::UnsupportedGameBuild,
-        )
+        )?;
+        Ok(false)
     }
 }
 

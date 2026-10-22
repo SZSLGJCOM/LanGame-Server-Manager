@@ -615,7 +615,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .await
         .map_err(|error| format!("runtime start extension preparation task failed: {error}"))?;
     program_guards = guards;
-    extension_result?;
+    let native_extension_prepared = extension_result?;
     let (module, mut launch_plans) = Box::pin(super::commands_runtime_environment::prepare(
         state,
         storage,
@@ -659,6 +659,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                 &save_instance,
                 &save_operation,
                 save_log.as_deref(),
+                native_extension_prepared,
             )
             .await;
             (program_guards, result)
