@@ -304,7 +304,7 @@ add_rule(
     selected_license="Apache-2.0",
     repository="https://github.com/tauri-apps/tauri",
     vcs_sha1="30da1fd6e17de6107ecc850c95dfb16b5729f2dd",
-    sources=[sibling("tauri-build@2.7.2", "LICENSE-APACHE-2.0")],
+    sources=[sibling("tauri-build@2.7.3", "LICENSE-APACHE-2.0")],
 )
 for package_id, vcs_sha1 in (
     ("webview2-com@0.39.1", "edc2caf886175ccaebe86078c9cfe1ae2a187328"),

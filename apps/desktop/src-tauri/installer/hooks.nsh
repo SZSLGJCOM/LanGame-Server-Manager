@@ -1,4 +1,4 @@
-; Tauri CLI 2.12.2 includes installerHooks after utils.nsh. Replace its process
+; Tauri CLI 2.12.3 includes installerHooks after utils.nsh. Replace its process
 ; guard instead of allowing its later check to kill a newly started process.
 ; The desktop and runtime service share an executable name. Neither may be
 ; force-terminated by installation or removal: servers must save and stop first.

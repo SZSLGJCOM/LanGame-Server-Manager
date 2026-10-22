@@ -1,4 +1,4 @@
-; Complete Tauri CLI 2.12.2 NSIS message keys, with LanGame-authored wording.
+; Complete Tauri CLI 2.12.3 NSIS message keys, with LanGame-authored wording.
 ; Keep the keys and runtime placeholders aligned with the pinned Tauri template.
 LangString addOrReinstall ${LANG_ENGLISH} "Install or repair application files"
 LangString alreadyInstalled ${LANG_ENGLISH} "Existing installation"

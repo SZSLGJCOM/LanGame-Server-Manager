@@ -7,7 +7,7 @@ if ($env:OS -ne 'Windows_NT' -or [string]::IsNullOrWhiteSpace($env:RUNNER_TEMP))
     throw 'Installer tools require a Windows runner with RUNNER_TEMP.'
 }
 $package = Get-Content -LiteralPath (Join-Path $PSScriptRoot '../apps/desktop/package.json') -Raw | ConvertFrom-Json
-if ($package.devDependencies.'@tauri-apps/cli' -cne '2.12.2') {
+if ($package.devDependencies.'@tauri-apps/cli' -cne '2.12.3') {
     throw 'Review the installer tool pins when changing the Tauri CLI version.'
 }
 $runnerTemp = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\')
@@ -17,16 +17,16 @@ if (-not $output.StartsWith($runnerTemp + '\', [StringComparison]::OrdinalIgnore
     throw 'Installer tools need a new directory beneath RUNNER_TEMP.'
 }
 
-# Tool versions and SHA1 pins: tauri-cli-v2.12.2/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
-# https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.12.2/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
+# Tool versions and SHA1 pins: tauri-cli-v2.12.3/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
+# https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.12.3/crates/tauri-bundler/src/bundle/windows/nsis/mod.rs
 # SHA256 digests and sizes are also pinned from the corresponding official GitHub release assets.
 $downloads = @(
     @{
-        name = 'nsis-3.11.zip'
-        url = 'https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.11/nsis-3.11.zip'
-        bytes = 2361546
-        sha1 = 'ef7ff767e5cbd9edd22add3a32c9b8f4500bb10d'
-        sha256 = 'c7d27f780ddb6cffb4730138cd1591e841f4b7edb155856901cdf5f214394fa1'
+        name = 'nsis-3.13.zip'
+        url = 'https://github.com/tauri-apps/binary-releases/releases/download/nsis-3.13/nsis-3.13.zip'
+        bytes = 2363925
+        sha1 = 'db14f8af2ea346b786c6ae19343f61aaf5e09b8e'
+        sha256 = 'ba63dffc4410ee89193e1cb5a41989991bd77c61068da17e3156d136b7b0b3d8'
     },
     @{
         name = 'nsis_tauri_utils.dll'
@@ -46,8 +46,8 @@ foreach ($download in $downloads) {
         throw "Installer tool download does not match the pinned asset: $($download.name)"
     }
 }
-Expand-Archive -LiteralPath (Join-Path $output 'nsis-3.11.zip') -DestinationPath $output
-$nsisRoot = Join-Path $output 'nsis-3.11'
+Expand-Archive -LiteralPath (Join-Path $output 'nsis-3.13.zip') -DestinationPath $output
+$nsisRoot = Join-Path $output 'nsis-3.13'
 $plugins = Join-Path $nsisRoot 'Plugins/x86-unicode/additional'
 New-Item -ItemType Directory -Path $plugins -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $output 'nsis_tauri_utils.dll') -Destination $plugins
