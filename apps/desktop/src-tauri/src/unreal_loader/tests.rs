@@ -569,6 +569,18 @@ fn unrelated_winmm_forwarding_proxy_is_preserved_before_loader_publication() {
 #[test]
 fn conan_layout_matches_the_native_fname_property_slot() {
     let conan = Profile::get("conanexiles").unwrap();
+    let settings = crate::live_players::file_ipc::unreal_world_save::installation::profile_entries(
+        conan.settings(),
+    )
+    .unwrap();
+    // The fixed loader resolves layout inheritance before automatic version
+    // detection. Without both overrides it treats FProperty as UField-derived.
+    for (key, value) in [("MajorVersion", "5"), ("MinorVersion", "8")] {
+        assert_eq!(
+            settings.get(&("EngineVersionOverride".into(), key.into())),
+            Some(&value.to_owned())
+        );
+    }
     let layout = include_bytes!("../../../../../modules/conanexiles/control/VTableLayout.ini");
     assert_eq!(
         hash(layout),
@@ -622,9 +634,27 @@ fn conan_layout_upgrade_is_owned_recoverable_and_preserves_custom_files() {
     prior_files.insert("dsound.dll".into(), vec![1; 12]);
     let mut updated = prior_files.clone();
     updated.insert("ue4ss/VTableLayout.ini".into(), layout.to_vec());
-    for scenario in ["upgrade", "interrupted", "custom", "incomplete_receipt"] {
+    for scenario in [
+        "upgrade",
+        "interrupted",
+        "custom",
+        "incomplete_receipt",
+        "foreign_minor",
+        "foreign_major",
+        "foreign_debug",
+        "foreign_stats",
+    ] {
         let fixture = Fixture::new();
         installation::publish_fixture(&fixture.0, conan, &prior_files, publish).unwrap();
+        let overrides = match scenario {
+            "foreign_minor" => "\n[EngineVersionOverride]\nMajorVersion=5\nMinorVersion=6\n",
+            "foreign_major" => "\n[EngineVersionOverride]\nMajorVersion=4\nMinorVersion=27\n",
+            "foreign_debug" => "\n[EngineVersionOverride]\nDebugBuild=true\n",
+            "foreign_stats" => "\n[EngineVersionOverride]\nStats=true\n",
+            _ => "",
+        };
+        let prior_settings = format!("{}{overrides}", profile().settings());
+        fs::write(fixture.0.join("ue4ss/UE4SS-settings.ini"), &prior_settings).unwrap();
         if scenario == "custom" {
             fs::write(fixture.0.join("ue4ss/VTableLayout.ini"), b"operator layout").unwrap();
         } else if scenario == "incomplete_receipt" {
@@ -651,9 +681,13 @@ fn conan_layout_upgrade_is_owned_recoverable_and_preserves_custom_files() {
                 layout_written |= path == fixture.0.join("ue4ss/VTableLayout.ini");
                 Ok(())
             });
-        if matches!(scenario, "custom" | "incomplete_receipt") {
+        if matches!(scenario, "custom" | "incomplete_receipt") || scenario.starts_with("foreign_") {
             assert!(result.is_err(), "{scenario}");
             assert_eq!(fixture.read(".langame-ue4ss-loader.json"), prior_receipt);
+            assert_eq!(
+                fixture.read("ue4ss/UE4SS-settings.ini"),
+                prior_settings.as_bytes()
+            );
             if scenario == "custom" {
                 assert_eq!(fixture.read("ue4ss/VTableLayout.ini"), b"operator layout");
             } else {
@@ -672,6 +706,10 @@ fn conan_layout_upgrade_is_owned_recoverable_and_preserves_custom_files() {
             assert_eq!(result.unwrap(), InstallOutcome::Installed);
         }
         assert_eq!(fixture.read("ue4ss/VTableLayout.ini"), layout);
+        assert!(compatible_settings(
+            std::str::from_utf8(&fixture.read("ue4ss/UE4SS-settings.ini")).unwrap(),
+            conan.settings()
+        ));
         for (name, bytes) in &prior_files {
             assert_eq!(&fixture.read(name), bytes);
         }

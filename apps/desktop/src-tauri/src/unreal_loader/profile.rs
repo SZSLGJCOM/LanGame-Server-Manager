@@ -86,6 +86,9 @@ impl Profile {
     }
     pub fn settings(self) -> &'static str {
         match self.id {
+            "conanexiles" => {
+                include_str!("../../../../../modules/conanexiles/control/UE4SS-settings.ini")
+            }
             "scum" => include_str!("../../../../../modules/scum/extensions/UE4SS-settings.ini"),
             "windrose" => {
                 include_str!("../../../../../modules/windrose/extensions/UE4SS-settings.ini")
@@ -150,10 +153,9 @@ fn engine_override_compatible(
 ) -> bool {
     let version = ["MajorVersion", "MinorVersion"].into_iter().all(|key| {
         let key = ("EngineVersionOverride".into(), key.into());
-        required.contains_key(&key)
-            || current
-                .get(&key)
-                .is_none_or(|value| value.is_empty() || value == "-1")
+        current.get(&key).is_none_or(|value| {
+            value.is_empty() || value == "-1" || required.get(&key) == Some(value)
+        })
     });
     version
         && ["DebugBuild", "Stats"].into_iter().all(|key| {
@@ -176,7 +178,7 @@ fn mod_paths_compatible(current: &BTreeMap<(String, String), String>) -> bool {
 }
 
 /// Preserve operator additions while retaining the tested native profile's
-/// engine autodetection. Explicit version/layout overrides change that contract.
+/// engine-version contract, including automatic detection where supported.
 pub(crate) fn compatible_settings(current: &str, required: &str) -> bool {
     use crate::live_players::file_ipc::unreal_world_save::installation::profile_entries;
     let Some(current) = profile_entries(current) else {
@@ -205,7 +207,7 @@ pub(super) fn merge_settings(current: &[u8], required: &str) -> Result<Vec<u8>, 
         return Err("The existing UE4SS mod-directory override conflicts with the owned save extension path; the settings were preserved.".into());
     }
     if !engine_override_compatible(&existing, &wanted) {
-        return Err("The existing UE4SS engine-version override conflicts with the verified automatic-detection profile; the settings were preserved.".into());
+        return Err("The existing UE4SS engine-version override conflicts with the verified native profile; the settings were preserved.".into());
     }
     let mut missing = wanted.clone();
     let mut section = String::new();

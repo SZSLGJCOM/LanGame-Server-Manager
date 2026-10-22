@@ -420,6 +420,10 @@ fn unreal_world_save_known_rejection_is_distinct_from_unknown_delivery() {
 
 #[test]
 fn unreal_world_save_profiles_are_exact_and_payloads_have_no_moderation_dispatch() {
+    assert_eq!(
+        Game::Conan.profile(),
+        include_str!("../../../../../modules/conanexiles/control/UE4SS-settings.ini")
+    );
     let a = Game::Abiotic.profile();
     assert_eq!(
         a,

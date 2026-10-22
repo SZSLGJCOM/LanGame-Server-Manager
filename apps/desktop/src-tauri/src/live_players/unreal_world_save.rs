@@ -96,6 +96,9 @@ impl Game {
     }
     fn profile(self) -> &'static str {
         match self {
+            Self::Conan => {
+                include_str!("../../../../../modules/conanexiles/control/UE4SS-settings.ini")
+            }
             Self::Scum => include_str!("../../../../../modules/scum/extensions/UE4SS-settings.ini"),
             _ => include_str!("../../../../../modules/abioticfactor/control/UE4SS-settings.ini"),
         }
