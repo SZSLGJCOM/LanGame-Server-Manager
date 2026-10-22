@@ -181,6 +181,16 @@ SectionEnd
     # The updater must not enter file replacement just because enumeration is empty.
     Remove-Item -LiteralPath $updateReceipt
     $lockedHash = (Get-FileHash -LiteralPath $probeExe -Algorithm SHA256).Hash
+    $writer = [IO.File]::Open($probeExe, [IO.FileMode]::Open, [IO.FileAccess]::Write,
+        [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)
+    try {
+        Run-Guard $update $updateReceipt 10
+    } finally {
+        $writer.Dispose()
+    }
+    if ((Get-FileHash -LiteralPath $probeExe -Algorithm SHA256).Hash -ne $lockedHash) {
+        throw 'Readiness probing changed bytes while another writer held the file.'
+    }
     $imageLock = [IO.File]::Open($probeExe, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
     try {
         Run-Guard $update $updateReceipt 10

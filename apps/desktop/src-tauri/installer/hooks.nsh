@@ -88,8 +88,8 @@
   lgsm_file_probe_${LGSM_GUARD_ID}:
     StrCmp $UpdateMode 1 0 lgsm_ready_${LGSM_GUARD_ID}
     ; Process enumeration can finish before the old image's write lock clears.
-    ; OPEN_EXISTING checks the actual replacement boundary without modifying it.
-    System::Call 'kernel32::CreateFileW(w "${executablePath}", i 0x40000000, i 7, p 0, i 3, i 0x80, p 0) p .R0 ?e'
+    ; Match NSIS's GENERIC_WRITE/FILE_SHARE_READ; OPEN_EXISTING never truncates.
+    System::Call 'kernel32::CreateFileW(w "${executablePath}", i 0x40000000, i 1, p 0, i 3, i 0x80, p 0) p .R0 ?e'
     Pop $R3
     StrCmp $R0 -1 lgsm_file_unavailable_${LGSM_GUARD_ID}
     System::Call 'kernel32::CloseHandle(p R0)'
