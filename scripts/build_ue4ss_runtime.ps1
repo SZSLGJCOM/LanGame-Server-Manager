@@ -1,6 +1,9 @@
 param([Parameter(Mandatory = $true)][string]$OutDir)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+foreach ($moduleName in @('Microsoft.PowerShell.Management', 'Microsoft.PowerShell.Utility')) {
+    Import-Module -Name ([IO.Path]::Combine($PSHOME, 'Modules', $moduleName, $moduleName + '.psd1')) -ErrorAction Stop
+}
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $PSScriptRoot 'build_control_output.ps1')
 $output = Resolve-ControlBuildOutput -OutDir $OutDir -ProjectRoot $projectRoot -CargoLeaf 'ue4ss-runtime'

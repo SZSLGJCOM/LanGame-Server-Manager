@@ -34,6 +34,34 @@ class ControlBuildOutputTests(unittest.TestCase):
         self.assertIn('root.join("scripts/build_control_output.ps1").display()', build)
 
     @unittest.skipUnless(os.name == "nt", "Windows path and junction semantics require Windows PowerShell")
+    def test_archive_verification_without_powershell_module_autoload(self):
+        powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+        with tempfile.TemporaryDirectory(prefix="c-", dir=os.environ.get("LGSM_BUILD_PATH_TEST_ROOT")) as directory:
+            root = Path(directory)
+            archive = root / "untrusted.zip"
+            with archive.open("wb") as stream:
+                stream.truncate(8718500)
+            output = root / "output"
+            wrapper = root / "verify.ps1"
+            builder = str(ROOT / "scripts/build_ue4ss_runtime.ps1").replace("'", "''")
+            destination = str(output).replace("'", "''")
+            wrapper.write_text(
+                "$ErrorActionPreference = 'Stop'\n$PSModuleAutoLoadingPreference = 'None'\n"
+                f"& '{builder}' -OutDir '{destination}'\n",
+                encoding="utf-8-sig",
+            )
+            environment = dict(os.environ, LANGAME_UE4SS_ARCHIVE=str(archive), PSModulePath=str(root / "no-modules"))
+            result = subprocess.run(
+                [str(powershell), "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                 "-File", str(wrapper)],
+                cwd=ROOT, env=environment, capture_output=True, text=True, timeout=30, check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("UE4SS archive does not match the pinned official release", result.stderr)
+            self.assertEqual(archive.stat().st_size, 8718500)
+            self.assertFalse((output / "UE4SS.zip").exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows path and junction semantics require Windows PowerShell")
     def test_real_builder_path_boundaries(self):
         powershell = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
         with tempfile.TemporaryDirectory(prefix="c-", dir=os.environ.get("LGSM_BUILD_PATH_TEST_ROOT")) as directory:
