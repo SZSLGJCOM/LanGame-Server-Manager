@@ -331,6 +331,9 @@ fn setup_tray(app: &mut tauri::App) -> tauri::Result<()> {
     let separator = PredefinedMenuItem::separator(app)?;
     let exit = MenuItem::with_id(app, TRAY_MENU_EXIT, exit_label, true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &separator, &exit])?;
+    #[cfg(windows)]
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray-windows.png"))?;
+    #[cfg(not(windows))]
     let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/icon.png"))?;
 
     TrayIconBuilder::with_id("main")

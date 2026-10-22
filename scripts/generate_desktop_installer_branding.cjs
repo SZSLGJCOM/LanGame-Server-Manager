@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Build NSIS branding from the existing path-based LGSM logo; no fonts or npm dependencies.
-// Usage: node scripts/generate_desktop_installer_branding.cjs --work-dir <external-directory> [--check] [--browser <exe>]
+// Build NSIS or Windows tray branding from existing LGSM vectors; no fonts or npm dependencies.
+// Usage: node scripts/generate_desktop_installer_branding.cjs --work-dir <external-directory> [--tray-only] [--check] [--browser <exe>]
 const assert = require("node:assert/strict");
 const fs = require("node:fs/promises");
 const path = require("node:path");
@@ -10,14 +10,16 @@ const { pathToFileURL } = require("node:url");
 
 const root = path.resolve(__dirname, "..");
 const brandingRoot = path.join(root, "apps/desktop/src-tauri/installer/branding");
+const iconsRoot = path.join(root, "apps/desktop/src-tauri/icons");
 const sourceRoot = path.join(root, "apps/desktop/src/assets");
 
 function parseArguments() {
   const args = process.argv.slice(2);
-  const result = { check: false };
+  const result = { check: false, trayOnly: false };
   while (args.length) {
     const arg = args.shift();
     if (arg === "--check") result.check = true;
+    else if (arg === "--tray-only") result.trayOnly = true;
     else if (arg === "--work-dir" || arg === "--browser") {
       const value = args.shift();
       assert.ok(value && !value.startsWith("--"), `${arg} needs a value`);
@@ -77,6 +79,21 @@ async function makeSources() {
   ];
 }
 
+async function makeTraySource() {
+  const source = (await fs.readFile(path.join(iconsRoot, "icon.svg"), "utf8")).replaceAll("\r\n", "\n");
+  assert.match(source, /viewBox="0 0 512 512"/);
+  assert.doesNotMatch(source, /<(?:text|image|script)\b/i, "Tray geometry must remain self-contained vector paths");
+  const body = source.slice(source.indexOf(">") + 1, source.lastIndexOf("</svg>"))
+    .replace(/\s*<(title|desc)\b[^>]*>[\s\S]*?<\/\1>/g, "");
+  return {
+    name: "tray-windows", width: 64, height: 64,
+    sourceSha256: createHash("sha256").update(source).digest("hex"),
+    svg: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 512 512" color-interpolation="sRGB">'
+      // Use the existing installer background so the light symbol remains legible on either taskbar theme.
+      + '<rect width="512" height="512" fill="#181818"/>' + body + '</svg>',
+  };
+}
+
 function renderDocument(sources) {
   return `<!doctype html><meta charset="utf-8"><title>LGSM installer branding</title>`
     + sources.map((source) => `<img id="${source.name}" width="${source.width}" height="${source.height}" src="data:image/svg+xml;base64,${Buffer.from(source.svg).toString("base64")}">`).join("")
@@ -90,13 +107,33 @@ function renderDocument(sources) {
           const context = canvas.getContext("2d", {colorSpace:"srgb"}); context.drawImage(image,0,0);
           const bytes = context.getImageData(0,0,item.width,item.height).data;
           let binary = ""; for (const byte of bytes) binary += String.fromCharCode(byte);
-          return {...item, canvas, rgba: btoa(binary)};
+          return {...item, canvas, rgba: btoa(binary),
+            ...(item.name === "tray-windows" ? {png:canvas.toDataURL("image/png").split(",")[1]} : {})};
         });
-        const preview = document.createElement("canvas"); preview.width=1002; preview.height=990;
-        const context = preview.getContext("2d"); context.fillStyle="#DCDCDC"; context.fillRect(0,0,1002,990);
-        context.imageSmoothingEnabled=false;
-        context.drawImage(canvases[1].canvas,18,24,492,942);
-        context.drawImage(canvases[0].canvas,534,24,450,171);
+        const tray = canvases.length === 1 && canvases[0].name === "tray-windows";
+        const preview = document.createElement("canvas"); preview.width=tray ? 1024 : 1002; preview.height=tray ? 288 : 990;
+        const context = preview.getContext("2d");
+        if (tray) {
+          ["#F9F9F9", "#202020"].forEach((background, theme) => {
+            const offset = theme * 512;
+            context.fillStyle=background; context.fillRect(offset,0,512,288);
+            context.fillStyle=theme ? "#F5F7FA" : "#181818"; context.font="12px sans-serif";
+            [16,20,24,32].forEach((size,index) => {
+              const sample=document.createElement("canvas"); sample.width=size; sample.height=size;
+              const sampleContext=sample.getContext("2d"); sampleContext.imageSmoothingQuality="high";
+              sampleContext.drawImage(canvases[0].canvas,0,0,size,size);
+              const x=offset+24+index*120;
+              context.fillText(size+" px",x,24); context.drawImage(sample,x,40);
+              context.imageSmoothingEnabled=false; context.drawImage(sample,x,112,size*4,size*4);
+            });
+            context.fillText("Native size above / 4x pixel preview below",offset+24,272);
+          });
+        } else {
+          context.fillStyle="#DCDCDC"; context.fillRect(0,0,1002,990);
+          context.imageSmoothingEnabled=false;
+          context.drawImage(canvases[1].canvas,18,24,492,942);
+          context.drawImage(canvases[0].canvas,534,24,450,171);
+        }
         document.getElementById("result").textContent = JSON.stringify({
           renderer:navigator.userAgent, images:canvases.map(({canvas,...item})=>item), preview:preview.toDataURL("image/png").split(",")[1]
         });
@@ -152,7 +189,7 @@ async function main() {
   const scratch = path.join(options.workDir, `installer-branding-render-${randomUUID()}`);
   await fs.mkdir(scratch);
   try {
-    const sources = await makeSources();
+    const sources = options.trayOnly ? [await makeTraySource()] : await makeSources();
     const document = path.join(scratch, "render.html");
     await fs.writeFile(document, renderDocument(sources));
     const stdout = await runBrowser(await browserExecutable(options.browser), [
@@ -170,15 +207,19 @@ async function main() {
       const rendered = result.images.find(image => image.name===source.name);
       assert.equal(rendered.width, source.width); assert.equal(rendered.height, source.height);
       const bitmap = encodeBitmap(source.width, source.height, Buffer.from(rendered.rgba,"base64"));
-      for (const [extension, bytes] of [["svg",Buffer.from(source.svg)], ["bmp",bitmap]]) {
-        const destination=path.join(brandingRoot,`${source.name}.${extension}`);
+      const outputs = options.trayOnly ? [["png",Buffer.from(rendered.png,"base64")]]
+        : [["svg",Buffer.from(source.svg)], ["bmp",bitmap]];
+      for (const [extension, bytes] of outputs) {
+        const destination=path.join(options.trayOnly ? iconsRoot : brandingRoot,`${source.name}.${extension}`);
         if (options.check) assert.ok((await fs.readFile(destination)).equals(bytes), `${source.name}.${extension} is stale; regenerate with the same Chromium renderer`);
         else await fs.writeFile(destination,bytes);
       }
     }
-    await fs.writeFile(path.join(options.workDir,"installer-branding-preview.png"),Buffer.from(result.preview,"base64"));
-    await fs.writeFile(path.join(options.workDir,"installer-branding-renderer.json"),JSON.stringify({renderer:result.renderer,dimensions:sources.map(({name,width,height})=>({name,width,height}))},null,2)+"\n");
-    console.log(`${options.check ? "Verified" : "Generated"} NSIS header 150x57 and sidebar 164x314 (opaque 24-bit BMP).`);
+    const prefix = options.trayOnly ? "tray-windows" : "installer-branding";
+    await fs.writeFile(path.join(options.workDir,`${prefix}-preview.png`),Buffer.from(result.preview,"base64"));
+    await fs.writeFile(path.join(options.workDir,`${prefix}-renderer.json`),JSON.stringify({renderer:result.renderer,
+      dimensions:sources.map(({name,width,height,sourceSha256})=>({name,width,height,sourceSha256}))},null,2)+"\n");
+    console.log(`${options.check ? "Verified" : "Generated"} ${options.trayOnly ? "Windows tray icon 64x64 (opaque PNG)" : "NSIS header 150x57 and sidebar 164x314 (opaque 24-bit BMP)"}.`);
   } finally {
     assert.equal(path.dirname(scratch),options.workDir);
     assert.ok(path.basename(scratch).startsWith("installer-branding-render-"));

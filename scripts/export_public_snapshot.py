@@ -56,6 +56,7 @@ FIRST_PARTY_ASSET_ALLOWLIST = frozenset(
         "apps/desktop/src-tauri/icons/icon.ico",
         "apps/desktop/src-tauri/icons/icon.png",
         "apps/desktop/src-tauri/icons/icon.svg",
+        "apps/desktop/src-tauri/icons/tray-windows.png",
         "apps/desktop/src-tauri/installer/branding/header.bmp",
         "apps/desktop/src-tauri/installer/branding/header.svg",
         "apps/desktop/src-tauri/installer/branding/sidebar.bmp",
