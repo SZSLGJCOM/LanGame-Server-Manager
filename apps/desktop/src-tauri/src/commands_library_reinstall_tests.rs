@@ -39,7 +39,10 @@ impl PackageServer {
         }
         let bytes = zip.finish()?.into_inner();
         let integrity = app_core::DownloadIntegritySpec {
-            sha256: format!("{:x}", Sha256::digest(&bytes)),
+            sha256: Sha256::digest(&bytes)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect(),
             size: bytes.len() as u64,
         };
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;

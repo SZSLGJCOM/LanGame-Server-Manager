@@ -234,7 +234,11 @@ fn file_sha256(path: &Path) -> Result<String, std::io::Error> {
         }
         digest.update(&buffer[..count]);
     }
-    Ok(format!("{:x}", digest.finalize()))
+    Ok(digest
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 fn verify_events(
