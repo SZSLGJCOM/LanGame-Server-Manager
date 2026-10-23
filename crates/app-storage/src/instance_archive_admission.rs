@@ -83,6 +83,7 @@ async fn admit(
             crate::program_runtime::instance_uses_exclusive_program(&original)?,
         )
     };
+    crate::backups::ensure_backup_record_ready(&record, &saves)?;
     let root_paths = paths.clone();
     let claims = [
         original.clone(),

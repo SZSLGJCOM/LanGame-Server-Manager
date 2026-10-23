@@ -292,6 +292,12 @@ async fn refresh_and_save(
         schedule.next_due = None;
         return Ok(());
     }
+    Box::pin(super::commands_world_save::readiness::require_ready(
+        state.inner(),
+        &storage.paths,
+        &details,
+    ))
+    .await?;
     let completion = RuntimeStdinWriteCompletion::default();
     let receipt = dispatch_managed_stdin_command_with_budget(
         state,

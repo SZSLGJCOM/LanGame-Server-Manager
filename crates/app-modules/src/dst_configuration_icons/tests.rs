@@ -75,10 +75,93 @@ fn installed_icons_use_native_keys_and_preserve_shard_fields() {
 fn current_schema_has_a_source_mapping_for_every_native_world_option() {
     let schema = include_str!("../../../../modules/dontstarve/schema.json");
     let icons = requested_icons(schema).unwrap();
-    assert_eq!(icons.len(), 276);
+    assert_eq!(icons.len(), 278);
     assert_eq!(icons["master_task_set"].atlas, "worldgen_customization");
     assert_eq!(icons["master_task_set"].element, "world_map.tex");
     assert!(!icons.contains_key("master_settings_preset"));
+    for key in ["bat_boss", "rocky_boss"] {
+        let icon = &icons[&format!("caves_{key}")];
+        assert_eq!(icon.atlas, "worldsettings_customization");
+        assert_eq!(icon.element, format!("{key}.tex"));
+        assert!(!icons.contains_key(&format!("master_{key}")));
+    }
+}
+
+#[test]
+#[ignore = "requires an owned 759671 or newer official package in LANGAME_DST_SMOKE_PACKAGE"]
+fn installed_cave_boss_icons_load_with_the_complete_current_schema() {
+    let package = PathBuf::from(
+        std::env::var_os("LANGAME_DST_SMOKE_PACKAGE").expect("owned official DST package"),
+    );
+    let cache = TestRoot::new();
+    let schema = include_str!("../../../../modules/dontstarve/schema.json");
+    let result = load_dst_configuration_icons(&package, &cache.0, schema).unwrap();
+    assert!(result.warnings.is_empty(), "{:?}", result.warnings);
+    for field in ["caves_bat_boss", "caves_rocky_boss", "master_weather"] {
+        let png = result.icons.get(field).expect("native configuration icon");
+        let image = image::load_from_memory(png).unwrap().into_rgba8();
+        assert!(image.width() > 0 && image.height() > 0);
+        assert!(image.pixels().any(|pixel| pixel.0[3] != 0));
+    }
+}
+
+#[test]
+fn world_presets_do_not_consume_the_native_icon_field_budget() {
+    let mut properties: serde_json::Map<_, _> = (0..MAX_ICON_FIELDS)
+        .map(|index| {
+            (
+                format!("field_{index}"),
+                serde_json::json!({"x-lsgm-section":"mastersettings", "x-lsgm-source-key":"overrides.weather"}),
+            )
+        })
+        .collect();
+    for (field, section, source) in [
+        (
+            "master_settings_preset",
+            "mastersettings",
+            "settings_preset",
+        ),
+        ("master_worldgen_preset", "mastergen", "worldgen_preset"),
+        ("caves_settings_preset", "cavessettings", "settings_preset"),
+        ("caves_worldgen_preset", "cavesgen", "worldgen_preset"),
+        ("outside_world", "mods", "overrides.weather"),
+    ] {
+        properties.insert(
+            field.into(),
+            serde_json::json!({"x-lsgm-section":section, "x-lsgm-source-key":source}),
+        );
+    }
+    let schema = serde_json::json!({"properties":&properties}).to_string();
+    assert_eq!(requested_icons(&schema).unwrap().len(), MAX_ICON_FIELDS);
+    for source in ["overrides.weather", "overrides.unknown_native_option"] {
+        properties.insert(
+            "excess_native".into(),
+            serde_json::json!({"x-lsgm-section":"cavessettings", "x-lsgm-source-key":source}),
+        );
+        let schema = serde_json::json!({"properties":&properties}).to_string();
+        assert!(
+            requested_icons(&schema)
+                .err()
+                .is_some_and(|error| error.contains("count or name limit"))
+        );
+    }
+}
+
+#[test]
+fn native_icon_schema_and_field_names_retain_their_byte_limits() {
+    for length in [128, 129] {
+        let properties = serde_json::Map::from_iter([(
+            "x".repeat(length),
+            serde_json::json!({"x-lsgm-section":"mastergen", "x-lsgm-source-key":"overrides.task_set"}),
+        )]);
+        let schema = serde_json::json!({"properties":properties}).to_string();
+        assert_eq!(requested_icons(&schema).is_ok(), length == 128);
+    }
+    assert!(
+        requested_icons(&" ".repeat(MAX_SCHEMA_BYTES + 1))
+            .err()
+            .is_some_and(|error| error.contains("schema exceeds its byte limit"))
+    );
 }
 
 #[test]
@@ -124,7 +207,7 @@ fn repeated_schema_fields_cannot_amplify_png_output_past_the_budget() {
         "data/images/worldsettings_customization.tex",
         &texture::tests::texture_fixture(4, 72, 72, &pixels),
     );
-    let properties: serde_json::Map<_, _> = (0..MAX_FIELDS).map(|index| (format!("field_{index}"), serde_json::json!({"x-lsgm-section":"mastersettings", "x-lsgm-source-key":"overrides.weather"}))).collect();
+    let properties: serde_json::Map<_, _> = (0..MAX_ICON_FIELDS).map(|index| (format!("field_{index}"), serde_json::json!({"x-lsgm-section":"mastersettings", "x-lsgm-source-key":"overrides.weather"}))).collect();
     let schema = serde_json::json!({"properties":properties}).to_string();
     assert!(
         load_dst_configuration_icons(&root.0, &root.0, &schema)

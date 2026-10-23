@@ -204,10 +204,8 @@ pub(super) fn request(
     let reply = read_reply(&mut child, &output, deadline)
         .map_err(|_| error(target, "Moria exit helper result is unknown; no retry"))?;
     verified_members(root, target, job, pinned, true)?;
-    let input_read = parse_reply(&reply, &nonce, root, target)?;
-    eprintln!(
-        "MORIA_SHUTDOWN phase=native_exit_observed input_read={input_read} native_tree_exit_confirmed=false"
-    );
+    let delivery = parse_reply(&reply, &nonce, root, target)?;
+    eprintln!("MORIA_SHUTDOWN phase={delivery} native_tree_exit_confirmed=false");
     Ok(())
 }
 
@@ -371,7 +369,7 @@ pub fn run_worker() -> i32 {
         ) {
             let response = serde_json::json!({
                 "nonce":nonce,"root":root,"target":target,"queued":false,
-                "input_read":null,
+                "delivery":null,
                 "error":"authorization rejected before console attachment",
             });
             return if writeln!(output, "\n{FRAME}{response}").is_ok() {
@@ -393,7 +391,7 @@ pub fn run_worker() -> i32 {
     );
     let response = serde_json::json!({
         "nonce":request.nonce,"root":request.root,"target":request.target,
-        "input_read":result.as_ref().ok().copied(),
+        "delivery":result.as_ref().ok().copied(),
         "queued":result.is_ok(),"error":result.err().map(|failure| failure.to_string()),
     });
     if writeln!(output, "\n{FRAME}{response}").is_err() {

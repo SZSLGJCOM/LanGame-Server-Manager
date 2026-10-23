@@ -217,7 +217,24 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             }
             Box::pin(save_failure_probe::verify(self, &running, cycle)).await?;
             sons_backup_snapshot = sons_backup_probe::capture(self, &running).await?;
-            Box::pin(manual_save_probe::verify(self, &running, cycle)).await?;
+            if let Err(error) = Box::pin(manual_save_probe::verify(self, &running, cycle)).await {
+                let logs =
+                    diagnostics::failed_run_logs(&running, effective_install_root, &package.root)
+                        .unwrap_or_else(|detail| {
+                            eprintln!(
+                                "NATIVE_DIAGNOSTIC phase=manual_save_readback log_read={detail}"
+                            );
+                            Vec::new()
+                        });
+                print_native_failure(
+                    "manual_save_readback",
+                    &error.to_string(),
+                    &logs,
+                    settings,
+                    &package.root,
+                );
+                return Err(error);
+            }
         } else {
             sons_backup_snapshot = sons_backup_probe::capture(self, &running).await?;
             Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;

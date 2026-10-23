@@ -122,6 +122,20 @@ local function attach_render_observer()
 end
 observe(attach_render_observer)
 
+-- Room indices can return to their previous value between map polls. Track
+-- successful native changes as well as the current room identity.
+AddComponentPostInit("virtualroomset", function(component)
+    component._lgsm_map_revision = 0
+    for _, name in G.ipairs({ "SetCurrentRoomIndex", "SetOriginInTiles" }) do
+        local original = component[name]
+        if G.type(original) == "function" then
+            component[name] = wrap(original, function(room)
+                room._lgsm_map_revision = (room._lgsm_map_revision or 0) + 1
+            end)
+        end
+    end
+end)
+
 -- This runs inside CreateEntity, before a prefab adds its MiniMapEntity and
 -- calls SetIcon. PrefabPostInitAny would run after those initial icon changes.
 AddGlobalClassPostConstruct("entityscript", "EntityScript", function(inst)

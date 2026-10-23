@@ -1,6 +1,9 @@
 use super::*;
 use serde_json::json;
 
+#[path = "dst_map_geometry_tests.rs"]
+mod geometry_tests;
+
 fn push(capture: &mut Capture, value: serde_json::Value) -> Result<Option<DstMapSnapshot>, String> {
     capture.push(&format!("[00:01:02]: [LGSM-DST-MAP:nonce] {value}\t"))
 }
@@ -289,7 +292,7 @@ fn native_query_budget_counts_utf8_bytes_and_the_terminating_newline() {
     assert_eq!(at_limit.len() + 1, MAX_QUERY_BYTES);
     assert_eq!(bounded_query(at_limit.clone()).unwrap(), at_limit);
     assert!(bounded_query(format!("{at_limit}x")).is_err());
-    assert!(bounded_query("中".repeat(MAX_QUERY_BYTES / 3)).is_err());
+    assert!(bounded_query("中".repeat(MAX_QUERY_BYTES.div_ceil(3))).is_err());
 }
 
 #[test]

@@ -34,8 +34,11 @@ builds require inspection and validation before they can control players.
 
 Before starting an Enshrouded instance, the manager hashes its actual executable
 and selects only locally verified exact-build support from the signed cache or
-built-in payload. Extension preparation is optional: a failed check or install is
-logged, unrelated loaders are preserved, and normal game startup continues.
+built-in payload. Missing compatible support is optional: the unchanged owned
+proxy is retired before normal game startup continues without the extension.
+Unknown or modified `dbghelp.dll` files are preserved and block startup because
+they would still be injected. Local ownership, path, publication and cleanup
+failures also block startup; they are not treated as an unavailable update.
 Hashing, signature checks and file work run off the async executor.
 
 Each normal start may also launch one bounded background check of the published

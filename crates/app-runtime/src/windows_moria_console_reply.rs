@@ -89,7 +89,7 @@ pub(super) fn parse_reply(
     if replies.next().is_some()
         || !keys(
             &value,
-            &["nonce", "root", "target", "queued", "input_read", "error"],
+            &["nonce", "root", "target", "queued", "delivery", "error"],
         )
         || value["nonce"].as_str() != Some(nonce)
         || value["root"].as_u64() != Some(root.into())
@@ -98,16 +98,14 @@ pub(super) fn parse_reply(
         return Err(invalid());
     }
     if value["queued"] == true && value["error"].is_null() {
-        return match value["input_read"].as_str() {
-            Some("cancel_requested") => Ok("cancel_requested"),
-            Some("no_pending_read") => Ok("no_pending_read"),
-            Some("input_thread_exited") => Ok("input_thread_exited"),
+        return match value["delivery"].as_str() {
+            Some("native_exit_queued") => Ok("native_exit_queued"),
             Some("native_process_exited") => Ok("native_process_exited"),
             _ => Err(invalid()),
         };
     }
     if value["queued"] == false
-        && value["input_read"].is_null()
+        && value["delivery"].is_null()
         && let Some(message) = value["error"]
             .as_str()
             .filter(|message| message.len() <= 1024 && !message.chars().any(char::is_control))

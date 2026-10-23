@@ -11,6 +11,32 @@ function fixtureMode(mode) {
   };
 }
 
+for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 }]) {
+  test(`DST Cursed Confrontation Caves settings save all five choices at ${viewport.width}×${viewport.height}`, { timeout: 90000 }, async () => {
+    const report = await runBrowserFixture({
+      fixturePath: "configuration-catalog-browser.html", viewport, fixtureCleanup: true, bundleWithMiddleware: true,
+      fixtureMiddleware: fixtureMode("dontstarve-cursed-confrontation"),
+      screenshotPath: process.env.LANGAME_CONFIGURATION_REVIEW_DIR
+        ? path.join(process.env.LANGAME_CONFIGURATION_REVIEW_DIR, `dontstarve-caves-bosses-${viewport.width}x${viewport.height}.png`)
+        : undefined
+    });
+    assert.equal(report.status, "passed", report.error);
+    assert.deepEqual(report.caves_boss_titles, ["猎犬蝙蝠", "岩石大师"]);
+    assert.deepEqual(report.boss_value_readbacks, {
+      caves_bat_boss: ["never", "rare", "default", "often", "always"],
+      caves_rocky_boss: ["never", "rare", "default", "often", "always"]
+    });
+    assert.equal(report.master_boss_controls, 0);
+    assert.equal(report.setting_save_readbacks, 10);
+    assert.equal(report.save_boundary, "synthetic onSave; no server files written");
+    assert.deepEqual(report.browser_errors, []);
+    assert.equal(report.browser_exited, true);
+    assert.equal(report.browser_processes_remaining, 0);
+    assert.equal(report.scratch_removed, true);
+    console.log(`DST_CURSED_CONFRONTATION_CONFIGURATION_BROWSER ${JSON.stringify(report)}`);
+  });
+}
+
 test("Core Keeper preserves existing 32-character passwords through input, save and reload", { timeout: 90000 }, async () => {
   const report = await runBrowserFixture({
     fixturePath: "configuration-catalog-browser.html", viewport: { width: 1560, height: 900 }, fixtureCleanup: true, bundleWithMiddleware: true,

@@ -61,8 +61,8 @@ export function DstWorldToolsPanel({ command, season, phase, shard, target, reas
         {tool("dry", "stop-circle", text("停雨", "Stop rain"), () => void command.run("dst_set_rain", { enabled: "false" }))}
         <InlineConfirmAction className="secondary-button dst-gm-tool" wrapperClassName="dst-gm-confirm" scopeKey={`dst-clear:${shard}`} disabled={busy || Boolean(clearReason)}
           title={clearReason ?? text(`清理分片 ${shard} 地面上的掉落物`, `Clear dropped items on shard ${shard}`)}
-          confirmation={text(`删除分片 ${shard} 地面上所有无主掉落物？不可撤销；不可替代物品、重物、装备、容器、陷阱和生物会保留。`,
-            `Delete every unowned item lying on shard ${shard}? This cannot be undone; irreplaceable, heavy, equippable, container, trap and living items stay.`)}
+          confirmation={text(`删除分片 ${shard} 地面上所有无主掉落物？不可撤销；仪式祭品、不可替代物品、重物、装备、容器、陷阱和生物会保留。`,
+            `Delete every unowned item lying on shard ${shard}? This cannot be undone; ritual offerings, irreplaceable, heavy, equippable, container, trap and living items stay.`)}
           confirmLabel={text("清理", "Clear")} onConfirm={() => command.run("dst_clear_ground_items", { shard })}>
           <ShellIcon name="trash" /><span>{text("清理", "Clear")}</span>
         </InlineConfirmAction>

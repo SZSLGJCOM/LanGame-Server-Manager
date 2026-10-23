@@ -2,9 +2,9 @@ use super::*;
 
 #[path = "commands_mod_thunderstore_plan.rs"]
 mod thunderstore_plan;
-pub(in crate::commands) use thunderstore_plan::prepare_thunderstore_install;
 pub(in crate::commands) use thunderstore_plan::{
-    prepare_thunderstore_install_for_startup, prepare_thunderstore_install_with_policy,
+    ThunderstorePreparationFailure, prepare_thunderstore_install_for_startup,
+    prepare_thunderstore_install_with_policy, prepare_thunderstore_save_loader,
 };
 
 #[cfg(test)]

@@ -11,6 +11,12 @@ proxy DLLs or configuration are preserved and reported as conflicts. The fixed
 loader is installed and configured automatically on first startup; later starts
 verify it and refresh owned extension files.
 
+A failed remote download can skip manual save after the installer verifies all
+remaining loader files, retires only the owned unchanged `version.dll` from an
+incomplete installation, and removes the owned save plugin. It retains the
+loader receipt for recovery. Unowned or modified proxies, local path failures
+and unsuccessful cleanup block startup without deleting operator files.
+
 The fixed C# source is compiled using the Windows Framework compiler and this
 release's bundled .NET 6 SDK assemblies. It installs `Mods/LanGame.Sons.Save.dll`
 and `Mods/LanGame.Sons.Save/manifest.json`; the same manifest is embedded as

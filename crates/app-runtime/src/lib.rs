@@ -68,6 +68,8 @@ use stdin_write::WindowsPipeWriter;
 #[path = "launch_templates.rs"]
 mod launch_templates;
 use launch_templates::*;
+mod launch_run_log;
+pub use launch_run_log::bind_corekeeper_run_log;
 #[path = "performance_policy.rs"]
 mod performance_policy;
 #[cfg(windows)]

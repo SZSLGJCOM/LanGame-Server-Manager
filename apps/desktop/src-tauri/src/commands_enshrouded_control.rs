@@ -35,27 +35,28 @@ pub(super) async fn prepare(
     let worker_instance = instance.clone();
     let log_path = log_path.map(str::to_owned);
     let prepared = tokio::task::spawn_blocking(move || {
-        match prepare_local(
+        let result = prepare_local(
             &worker_storage,
             &worker_instance,
             binding,
             log_path.as_deref(),
-        ) {
-            Ok(executable) => executable,
-            Err(error) => {
-                report_preparation_failure(
-                    &worker_storage,
-                    &worker_instance.summary.id,
-                    log_path.as_deref(),
-                    &error,
-                );
-                None
-            }
+        );
+        if let Err(error) = &result {
+            report_preparation_failure(
+                &worker_storage,
+                &worker_instance.summary.id,
+                log_path.as_deref(),
+                error,
+            );
         }
+        result
     })
-    .await;
+    .await
+    .map_err(
+        |_| "The Enshrouded extension worker failed; its inactive state could not be verified.",
+    )??;
     let native_extension_prepared = match prepared {
-        Ok(Some((executable, installed))) => {
+        Some((executable, installed)) => {
             let updater_storage = storage.clone();
             let instance_id = instance.summary.id.clone();
             crate::enshrouded_extension::start_refresh(
@@ -95,22 +96,7 @@ pub(super) async fn prepare(
             );
             installed
         }
-        Err(_) => {
-            // A failed optional worker must not prevent the actual game from starting.
-            let storage = storage.clone();
-            let instance_id = instance.summary.id.clone();
-            let _ = tokio::task::spawn_blocking(move || {
-                report_preparation_failure(
-                    &storage,
-                    &instance_id,
-                    None,
-                    "The extension preparation worker failed.",
-                )
-            })
-            .await;
-            false
-        }
-        Ok(None) => false,
+        None => false,
     };
     Ok(native_extension_prepared)
 }
@@ -125,13 +111,13 @@ fn report_preparation_failure(
         storage,
         "warn",
         "instance.enshrouded_extension.preparation_failed",
-        "Player-management extension preparation failed; continuing game startup",
+        "Player-management extension preparation failed its local safety checks; game startup was blocked",
         serde_json::json!({ "instance_id": instance_id, "extension_issue": error }),
     );
     if let Some(path) = log_path {
         let _ = super::commands_runtime_supervision::append_startup_console_line(
             path,
-            "Enshrouded player-management extension unavailable; continuing game startup.",
+            "Enshrouded extension could not be safely prepared or disabled; game startup was blocked.",
             error,
         );
     }
@@ -149,7 +135,7 @@ fn prepare_local(
     if app_storage::instance_program_mode(instance_root).map_err(|e| e.to_string())?
         != InstanceProgramMode::Independent
     {
-        return Ok(None);
+        return Err("Enshrouded extension preparation requires this instance's exclusive program directory.".into());
     }
     let root =
         app_storage::resolve_instance_runtime_root(instance_root).map_err(|e| e.to_string())?;
@@ -185,9 +171,8 @@ fn prepare_local(
     };
     let resolution =
         crate::enshrouded_extension::resolve_local(&storage.paths.app_data_root, &executable);
-    let (installed, install_issue) =
-        prepare_optional_install(&root, &executable, resolution.package.as_ref());
-    let issue = install_issue.or(resolution.update_issue);
+    let installed = prepare_optional_install(&root, &executable, resolution.package.as_ref())?;
+    let issue = resolution.update_issue;
     super::commands_runtime_supervision::append_desktop_app_log(
         storage,
         if issue.is_some() { "warn" } else { "info" },
@@ -209,29 +194,25 @@ fn prepare_local(
     Ok(Some((executable, installed)))
 }
 
-/// Extension setup is optional. Preserve unrelated loaders and fail closed for
-/// moderation while allowing ordinary game startup to continue.
+/// Compatibility misses are optional; local ownership, path and publication
+/// failures must retain a hard boundary even if the old proxy can be retired.
 fn prepare_optional_install(
     root: &Path,
     executable: &str,
     selected: Option<&crate::enshrouded_extension::SignedPackage>,
-) -> (bool, Option<String>) {
+) -> Result<bool, String> {
     let error = match install_selected(root, executable, selected) {
-        Ok(installed) => return (installed, None),
+        Ok(installed) => return Ok(installed),
         Err(error) => error,
     };
     let cleanup = (|| {
         let _root_guard = io::pin_directory(root)?;
-        retire_owned_proxy(root)?;
-        io::publish_manager_state(root, executable, RuntimePlayerExtensionStatus::NotInstalled)
+        retire_owned_proxy(root)
     })();
-    (
-        false,
-        Some(match cleanup {
-            Ok(()) => error,
-            Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
-        }),
-    )
+    Err(match cleanup {
+        Ok(()) => error,
+        Err(cleanup) => format!("{error} Extension cleanup also failed: {cleanup}"),
+    })
 }
 
 fn install_selected(
@@ -290,10 +271,11 @@ fn install(root: &Path, payload: &[u8]) -> Result<(), String> {
 
 fn retire_owned_proxy(root: &Path) -> Result<(), String> {
     let owner_path = root.join(io::OWNER);
-    if !owner_path
-        .try_exists()
-        .map_err(|_| "Cannot inspect native control ownership.")?
-    {
+    let path = root.join(DLL);
+    if !path_exists(&owner_path)? {
+        if path_exists(&path)? {
+            return Err("An unowned Enshrouded dbghelp.dll would still be injected; it was preserved and startup was blocked.".into());
+        }
         return Ok(());
     }
     let owner: Ownership = serde_json::from_slice(&io::read_regular(&owner_path, 4096)?)
@@ -301,20 +283,24 @@ fn retire_owned_proxy(root: &Path) -> Result<(), String> {
     if owner.schema != 1 || owner.module_id != "enshrouded" {
         return Err("Native control ownership is incompatible with this instance.".into());
     }
-    let path = root.join(DLL);
-    if path
-        .try_exists()
-        .map_err(|_| "Cannot inspect the installed native proxy.")?
-    {
+    if path_exists(&path)? {
         let hash = io::digest(&io::read_regular(&path, MAX_DLL)?);
-        if owner.plugin_sha256.as_deref() == Some(hash.as_str())
-            || owner.pending_plugin_sha256.as_deref() == Some(hash.as_str())
+        if owner.plugin_sha256.as_deref() != Some(hash.as_str())
+            && owner.pending_plugin_sha256.as_deref() != Some(hash.as_str())
         {
-            fs::remove_file(&path)
-                .map_err(|_| "Cannot retire the owned proxy for an unsupported server build.")?;
+            return Err("The Enshrouded native proxy was changed; it was preserved and cannot be safely disabled.".into());
         }
+        super::commands_managed_save_control::retire_owned_file(&path, &hash)?;
     }
     Ok(())
+}
+
+fn path_exists(path: &Path) -> Result<bool, String> {
+    match fs::symlink_metadata(path) {
+        Ok(_) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(error) => Err(format!("Cannot inspect Enshrouded extension path: {error}")),
+    }
 }
 
 #[cfg(test)]
@@ -328,10 +314,7 @@ fn install_payload(
     signed: Option<&crate::enshrouded_extension::SignedPackage>,
 ) -> Result<bool, String> {
     let owner_path = root.join(io::OWNER);
-    let mut owner = if owner_path
-        .try_exists()
-        .map_err(|_| "Cannot inspect native control ownership.")?
-    {
+    let mut owner = if path_exists(&owner_path)? {
         let owner: Ownership = serde_json::from_slice(&io::read_regular(&owner_path, 4096)?)
             .map_err(|_| "Invalid Enshrouded native control ownership record.")?;
         if owner.schema != 1 || owner.module_id != "enshrouded" {
@@ -347,22 +330,16 @@ fn install_payload(
         }
     };
     let dll_path = root.join(DLL);
-    if dll_path
-        .try_exists()
-        .map_err(|_| "Cannot inspect the existing dbghelp.dll.")?
-    {
+    if path_exists(&dll_path)? {
         let current = io::digest(&io::read_regular(&dll_path, MAX_DLL)?);
         if owner.plugin_sha256.as_deref() != Some(current.as_str())
             && owner.pending_plugin_sha256.as_deref() != Some(current.as_str())
         {
-            // A user loader owns this name; do not replace it or block startup.
-            return Ok(false);
+            return Err("An unknown or modified Enshrouded dbghelp.dll was preserved; it cannot be safely replaced or disabled.".into());
         }
     }
     let directory = root.join(io::DIRECTORY);
-    if directory
-        .try_exists()
-        .map_err(|_| "Cannot inspect the native control directory.")?
+    if path_exists(&directory)?
         && owner.plugin_sha256.is_none()
         && owner.pending_plugin_sha256.is_none()
     {

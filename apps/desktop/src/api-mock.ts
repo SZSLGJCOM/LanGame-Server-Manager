@@ -1282,7 +1282,7 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
     }
     case "read_instance_world_save_readiness": {
       const run = ensureMockInstanceDetails(String(args?.instanceId ?? args?.instance_id ?? "")).active_run;
-      return (run ? { run_id: run.run_id, session_id: run.session_id ?? null, prepared: true } : null) as T;
+      return (run ? { run_id: run.run_id, session_id: run.session_id ?? null, prepared: true, world_ready: true } : null) as T;
     }
     case "read_instance_details_from_storage":
       return ensureMockInstanceDetails(String(args?.instanceId ?? args?.instance_id ?? "srv-dst-1")) as T;

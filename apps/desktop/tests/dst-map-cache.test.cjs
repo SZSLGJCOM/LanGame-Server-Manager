@@ -99,7 +99,7 @@ test.afterEach(() => { Date.now = nativeNow; delete globalThis.indexedDB; });
 
 function entry(instanceId = "server-a", shard = "master") {
   return { terrainAt: now - 1000, view: { center: { x: 1, y: 1 }, zoom: 2 }, snapshot: {
-    instanceId, shard, runId: 7, capturedAtUnixMs: now, session: "world-a", width: 2, height: 2, tileScale: 4,
+    instanceId, shard, runId: 7, capturedAtUnixMs: now, session: "world-a", geometryRevision: "15:0:30:40:1", width: 2, height: 2, tileScale: 4,
     day: 4, season: "winter", phase: "day", tiles: [1, 3, 3, 1], tileNames: { 1: "IMPASSABLE", 3: "MOD_GROUND" },
     tileKinds: { 1: "void", 3: "land" }, players: [], tileTextures: {}, tileBaseTextures: {}, tileColors: {},
     terrainLayers: [], landmarks: [], roads: [], landmarksTruncated: false,
@@ -143,7 +143,7 @@ test("identity isolates instances/shards and cameras require the same native ses
   assert.equal(await saveDstMapCache(value), true);
   assert.equal(await readDstMapCache("server-b", "master"), null);
   assert.equal(await readDstMapCache("server-a", "caves"), null);
-  for (const changed of [{ instanceId: "b" }, { shard: "caves" }, { session: "other" }, { width: 3 }, { height: 3 }, { tileScale: 8 }]) {
+  for (const changed of [{ instanceId: "b" }, { shard: "caves" }, { session: "other" }, { width: 3 }, { height: 3 }, { tileScale: 8 }, { geometryRevision: "15:1:30:40:2" }]) {
     assert.equal(dstMapCachedView(value, { ...value.snapshot, ...changed }), null);
   }
   assert.deepEqual(dstMapCachedView(value, { ...value.snapshot, runId: 8 }), value.view);
@@ -160,6 +160,12 @@ test("persisted data is revalidated instead of trusting metadata or an old DTO",
   assert.equal(await saveDstMapCache({ ...entry(), terrainAt: now + 1 }), false);
   const bad = entry(); bad.snapshot.players = [{ id: "bad", x: Infinity }];
   assert.equal(await saveDstMapCache(bad), false);
+});
+
+test("snapshots without virtual room geometry evidence are discarded", async () => {
+  assert.equal(await saveDstMapCache(entry()), true);
+  delete db.stores.get("maps").get(key("server-a")).snapshot.geometryRevision;
+  assert.equal(await readDstMapCache("server-a", "master"), null);
 });
 
 test("older collection cannot replace newer data but equal collection can update the camera", async () => {

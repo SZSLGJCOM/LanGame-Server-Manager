@@ -8,14 +8,14 @@ fn reply(value: Value) -> Vec<u8> {
 
 #[test]
 fn exit_reply_requires_one_complete_current_owner_receipt() {
-    let good = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":true,"input_read":"cancel_requested","error":null});
+    let good = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":true,"delivery":"native_exit_queued","error":null});
     assert!(parse_reply(&reply(good.clone()), NONCE, 40, 41).is_ok());
     for (key, bad) in [
         ("nonce", Value::from("ffffffffffffffffffffffffffffffff")),
         ("root", Value::from(42)),
         ("target", Value::from(42)),
         ("queued", Value::from("true")),
-        ("input_read", Value::from("cancelled_and_saved")),
+        ("delivery", Value::from("cancel_requested")),
         ("error", Value::from("ignored error")),
     ] {
         let mut value = good.clone();
@@ -25,11 +25,17 @@ fn exit_reply_requires_one_complete_current_owner_receipt() {
     let mut extra = good.clone();
     extra["command"] = Value::from("shutdown");
     assert!(parse_reply(&reply(extra), NONCE, 40, 41).is_err());
+    let mut exited = good.clone();
+    exited["delivery"] = Value::from("native_process_exited");
+    assert_eq!(
+        parse_reply(&reply(exited), NONCE, 40, 41).unwrap(),
+        "native_process_exited"
+    );
     assert!(parse_reply(good.to_string().as_bytes(), NONCE, 40, 41).is_err());
     let mut duplicate = reply(good.clone());
     duplicate.extend(reply(good));
     assert!(parse_reply(&duplicate, NONCE, 40, 41).is_err());
-    let rejected = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":false,"input_read":null,"error":"input delivery uncertain"});
+    let rejected = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":false,"delivery":null,"error":"input delivery uncertain"});
     let failure = parse_reply(&reply(rejected), NONCE, 40, 41)
         .unwrap_err()
         .to_string();
@@ -97,7 +103,7 @@ fn moria_exit_helper_entry() {
         if mode == "delayed" {
             std::thread::sleep(Duration::from_millis(80));
         }
-        let value = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":true,"input_read":"cancel_requested","error":null});
+        let value = serde_json::json!({"nonce":NONCE,"root":40,"target":41,"queued":true,"delivery":"native_exit_queued","error":null});
         std::io::stdout().write_all(&reply(value)).unwrap();
         std::process::exit(0);
     }

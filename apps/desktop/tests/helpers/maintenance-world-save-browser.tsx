@@ -37,7 +37,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: async (com
   if (command === "read_instance_details_from_storage") return activeDetails;
   if (command === "read_module_details") return activeModule;
   if (command === "read_instance_world_save_readiness") return readiness ?? (activeDetails.active_run
-    ? { run_id: activeDetails.active_run.run_id, session_id: activeDetails.active_run.session_id ?? null, prepared: true } : null);
+    ? { run_id: activeDetails.active_run.run_id, session_id: activeDetails.active_run.session_id ?? null, prepared: true, world_ready: true } : null);
   if (command !== "send_instance_runtime_command") throw new Error(`Unexpected native command: ${command}`);
   calls.push(args.input);
   if (responseMode === "failed") throw new Error("Native save connection lost");
@@ -281,15 +281,23 @@ async function run() {
   const dragon = savedFixtures.get("runescapedragonwilds")!;
   const firstRun = { ...dragon.details, summary: { ...dragon.details.summary },
     active_run: { ...dragon.details.active_run!, run_id: 41, session_id: "save-session-41" } };
-  readiness = { run_id: 41, session_id: "save-session-41", prepared: false };
+  readiness = { run_id: 41, session_id: "save-session-41", prepared: false, world_ready: true };
   await render(firstRun, dragon.module);
-  check(button().disabled && cardSave().disabled && fixture.textContent?.includes("本次运行未准备保存扩展")
-    && cardSave().title.includes("本次运行未准备保存扩展"), "Both save entries must explain unavailable preparation for this run");
+  check(button().disabled && cardSave().disabled && fixture.textContent?.includes("手动保存暂不可用")
+    && cardSave().title.includes("手动保存暂不可用"), "Both save entries must explain unavailable preparation for this run");
   const beforeUnavailable = calls.length;
   await submit();
   await act(async () => cardSave().click());
   check(calls.length === beforeUnavailable, "Vanilla fallback must never dispatch a save from either entry");
   readinessGuards.push("unprepared-run");
+  readiness = { run_id: 41, session_id: "save-session-41", prepared: true, world_ready: false };
+  await render({ ...firstRun, summary: { ...firstRun.summary } }, dragon.module);
+  check(button().disabled && cardSave().disabled && cardSave().title.includes("等待世界加载"),
+    "Preparation must not enable saving before the world has loaded");
+  await submit();
+  await act(async () => cardSave().click());
+  check(calls.length === beforeUnavailable, "An unloaded world must not receive a save request");
+  readinessGuards.push("loading-world");
   readiness = undefined;
   await render({ ...firstRun, summary: { ...firstRun.summary } }, dragon.module);
   check(!button().disabled && !cardSave().disabled, "Prepared run must allow both save entries");
@@ -299,7 +307,7 @@ async function run() {
   const oldSave = calls.at(-1)!;
   const nextRun = { ...firstRun, summary: { ...firstRun.summary },
     active_run: { ...firstRun.active_run, run_id: 42, session_id: "save-session-42" } };
-  readiness = { run_id: 41, session_id: "save-session-41", prepared: true };
+  readiness = { run_id: 41, session_id: "save-session-41", prepared: true, world_ready: true };
   await render(nextRun, dragon.module);
   check(button().disabled && fixture.textContent?.includes("服务器运行已变化"), "Old readiness must not authorize the next run");
   const beforeStaleCard = cardNotices.length;

@@ -6,14 +6,19 @@ use std::ffi::c_void;
 use windows_sys::Win32::System::JobObjects::IsProcessInJob;
 
 const MAX_MEMBERS: usize = 64;
+const MAX_EMPTY_READS: u32 = 32;
 const SHIPPING: &str = "MoriaServer-Win64-Shipping.exe";
 
 #[path = "windows_moria_console_helper.rs"]
 mod helper;
 pub use helper::{run_if_requested, run_worker};
 
-#[path = "windows_moria_console_shutdown.rs"]
-mod shutdown;
+#[path = "windows_moria_console_input.rs"]
+mod input_reader;
+
+#[path = "windows_moria_console_receipt.rs"]
+mod receipt;
+use receipt::{exit_response_received, require_empty_prompt};
 
 fn error(pid: u32, message: impl Into<String>) -> RuntimeProcessError {
     RuntimeProcessError::WriteTrackedProcessStdin {
@@ -157,9 +162,11 @@ fn verified_members(
             }
             continue;
         }
-        if !belongs(&member.handle, job)?
-            || !process_identities_match(&member.identity, &member.handle.identity()?)
-        {
+        // This retained kernel handle was identity-checked when pinned. It
+        // cannot change to a reused PID. Image-path queries become unavailable
+        // during teardown before the same handle is signaled; they add no
+        // ownership evidence here. Keep checking live Job membership instead.
+        if !belongs(&member.handle, job)? {
             return Err(RuntimeProcessError::ProcessIdentityMismatch {
                 pid: member.handle.pid,
             });
@@ -175,7 +182,7 @@ fn verify(
     job: *mut c_void,
     pinned: &[Pinned],
     allow_exited: bool,
-) -> Result<(), RuntimeProcessError> {
+) -> Result<bool, RuntimeProcessError> {
     let allowed = verified_members(root, target, job, pinned, allow_exited)?;
     let mut members = [0u32; MAX_MEMBERS];
     let count =
@@ -194,7 +201,7 @@ fn verify(
             "Moria console contains an unowned or changed process",
         ));
     }
-    Ok(())
+    Ok(members[..count].contains(&target))
 }
 
 struct Handle(*mut c_void);
@@ -318,56 +325,19 @@ const _: () = assert!(std::mem::align_of::<InputRecord>() == 4);
 const _: () = assert!(std::mem::offset_of!(InputRecord, event) == 4);
 const _: () = assert!(std::mem::size_of::<BufferInfo>() == 22);
 
-fn require_empty_prompt(
-    pid: u32,
-    input: &Handle,
-    output: &Handle,
-) -> Result<(), RuntimeProcessError> {
-    let mut pending = 0;
-    let mut before = BufferInfo::default();
-    if unsafe { GetNumberOfConsoleInputEvents(input.0, &mut pending) } == 0
-        || pending != 0
-        || unsafe { GetConsoleScreenBufferInfo(output.0, &mut before) } == 0
-        || before.cursor.x != 2
-        || before.cursor.y < 0
-    {
-        return Err(error(
-            pid,
-            "Moria console has pending input or no complete prompt",
-        ));
-    }
-    // Read only the two prompt cells, never console history or join credentials.
-    let mut prompt = [0u16; 2];
-    let mut read = 0;
-    let mut after = BufferInfo::default();
-    if unsafe {
-        ReadConsoleOutputCharacterW(
-            output.0,
-            prompt.as_mut_ptr(),
-            2,
-            Coord {
-                x: 0,
-                y: before.cursor.y,
-            },
-            &mut read,
-        )
-    } == 0
-        || read != 2
-        || prompt != [b'>' as u16, b' ' as u16]
-        || unsafe { GetConsoleScreenBufferInfo(output.0, &mut after) } == 0
-        || before.cursor != after.cursor
-        || before.size != after.size
-    {
-        return Err(error(pid, "Moria console prompt changed before delivery"));
-    }
-    Ok(())
-}
-
 fn write_exit_once(
     pid: u32,
     write: impl FnOnce(&[InputRecord]) -> Result<u32, std::io::Error>,
 ) -> Result<(), RuntimeProcessError> {
-    let events: Vec<_> = "exit\r"
+    write_fixed_input_once(pid, "exit\r", write)
+}
+
+fn write_fixed_input_once(
+    pid: u32,
+    text: &'static str,
+    write: impl FnOnce(&[InputRecord]) -> Result<u32, std::io::Error>,
+) -> Result<(), RuntimeProcessError> {
+    let events: Vec<_> = text
         .encode_utf16()
         .flat_map(|character| {
             [true, false].map(|down| InputRecord {
@@ -390,7 +360,7 @@ fn write_exit_once(
         Ok(written) if written as usize == events.len() => Ok(()),
         _ => Err(error(
             pid,
-            "Moria exit input delivery failed or is uncertain; no retry",
+            "Moria console input delivery failed or is uncertain; no retry",
         )),
     }
 }
@@ -407,7 +377,12 @@ fn deliver(
         .find(|member| member.handle.pid == target)
         .ok_or_else(|| error(target, "Moria Shipping owner is unavailable"))?
         .identity;
-    let shutdown = shutdown::ShutdownRead::prepare(target, target_identity, job, deadline)?;
+    if std::time::Instant::now() >= deadline {
+        return Err(error(
+            target,
+            "Moria exit deadline expired before console attachment",
+        ));
+    }
     // Serialize with the separate read-only player helper without extending its
     // authority. A busy player query makes shutdown fail before any input write.
     let name: Vec<u16> = format!(
@@ -430,8 +405,15 @@ fn deliver(
     let output = open_console(target, "CONOUT$", 0x80000000)?;
     require_empty_prompt(target, &input, &output)?;
     verify(root, target, job, pinned, false)?;
-    require_empty_prompt(target, &input, &output)?;
-    shutdown.before_write()?;
+    let reader = input_reader::InputReader::find(target, target_identity.creation_time, deadline)?;
+    verify(root, target, job, pinned, false)?;
+    let before = require_empty_prompt(target, &input, &output)?;
+    if std::time::Instant::now() >= deadline {
+        return Err(error(
+            target,
+            "Moria exit deadline expired before input delivery",
+        ));
+    }
     write_exit_once(target, |events| {
         let mut written = 0;
         if unsafe {
@@ -446,7 +428,96 @@ fn deliver(
     // Exit may already have completed. Retained handles distinguish that from
     // PID reuse; any remaining console member must still belong to this Job.
     verify(root, target, job, pinned, true)?;
-    shutdown.finish()
+    if let Some(reader) = reader {
+        let mut response_seen = false;
+        let mut last_woken: Option<receipt::Prompt> = None;
+        let mut wake_count = 0_u32;
+        let mut next_wake = std::time::Instant::now();
+        loop {
+            let target_handle = &pinned
+                .iter()
+                .find(|member| member.handle.pid == target)
+                .ok_or_else(|| error(target, "Moria Shipping owner is unavailable"))?
+                .handle;
+            if !target_handle.is_running()? {
+                return Ok("native_process_exited");
+            }
+            if !reader.running()? {
+                // The input thread ended naturally. Continue observing native
+                // shutdown through the supervisor's complete Job deadline.
+                return Ok("native_exit_queued");
+            }
+            if !verify(root, target, job, pinned, true)? {
+                // Native teardown detached the target. The remaining sender
+                // console cannot provide further game input or output evidence.
+                return Ok("native_exit_queued");
+            }
+            let prompt = if wake_count < MAX_EMPTY_READS && std::time::Instant::now() >= next_wake {
+                match &last_woken {
+                    Some(previous) => receipt::stable_prompt(target, &input, &output)?
+                        .filter(|prompt| prompt.follows_empty_read(previous)),
+                    None => exit_response_received(target, &input, &output, &before)?,
+                }
+            } else {
+                None
+            };
+            response_seen |= prompt.is_some();
+            if let Some(prompt) = prompt
+                && reader.pending()?
+            {
+                if !verify(root, target, job, pinned, true)? {
+                    // The native console detached. Never write to the sender's
+                    // remaining console; the supervisor observes the owned Job.
+                    return Ok("native_exit_queued");
+                }
+                if require_empty_prompt(target, &input, &output)? != prompt {
+                    return Err(error(target, "Moria prompt changed before empty input"));
+                }
+                if std::time::Instant::now() >= deadline {
+                    return Err(error(target, "Moria empty input deadline expired"));
+                }
+                // A new empty native read loops through the game's own Stop
+                // flag without dispatching another command. Do not cancel the
+                // read: some Windows versions report success with stale input.
+                write_fixed_input_once(target, "\r", |events| {
+                    let mut written = 0;
+                    if unsafe {
+                        WriteConsoleInputW(
+                            input.0,
+                            events.as_ptr(),
+                            events.len() as u32,
+                            &mut written,
+                        )
+                    } == 0
+                    {
+                        Err(std::io::Error::last_os_error())
+                    } else {
+                        Ok(written)
+                    }
+                })?;
+                last_woken = Some(prompt);
+                wake_count += 1;
+                if wake_count < MAX_EMPTY_READS {
+                    next_wake = std::time::Instant::now()
+                        + deadline.saturating_duration_since(std::time::Instant::now())
+                            / (MAX_EMPTY_READS - wake_count);
+                }
+            }
+            if std::time::Instant::now() >= deadline {
+                return Err(error(
+                    target,
+                    format!(
+                        "Moria native exit did not complete (native_response_seen={response_seen}, empty_reads={wake_count}); exit is not replayed"
+                    ),
+                ));
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+    // A native console receipt is independent of any build-specific memory
+    // layout. The lifecycle caller still waits for the complete owned Job;
+    // queued input is neither a save confirmation nor proof of process exit.
+    Ok("native_exit_queued")
 }
 
 #[link(name = "kernel32")]

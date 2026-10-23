@@ -275,11 +275,6 @@ pub(super) fn prepare_startup(root: &Path, profile: Profile) -> Result<StartupSt
             }
         });
     }
-    // Moria's orderly native console shutdown is independently build-specific.
-    // Starting an unknown image would lose the supported stop/save contract.
-    if profile.id == "returntomoria" {
-        return Err("This Moria build is outside the verified native shutdown profile. Update the manager before starting it; existing files were preserved.".into());
-    }
     let Inspection { prior, current, .. } = inspect(&win64, profile, &archive::expected(profile))?;
     let Some(proxy) = current.get(profile.proxy) else {
         return Ok(StartupState::Unavailable);

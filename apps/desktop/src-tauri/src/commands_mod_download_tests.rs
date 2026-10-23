@@ -126,7 +126,7 @@ async fn thunderstore_download_cancellation_settles_active_writer_and_removes_pa
     );
     let result = result.expect("download did not settle within its fixture budget");
     assert!(
-        matches!(result, Err(ModDownloadFailure::Terminal(_))),
+        matches!(result, Err(ModDownloadFailure::Cancelled)),
         "cancellation must end the active writer without publication: {result:?}"
     );
     assert_eq!(
@@ -437,14 +437,61 @@ async fn cancelled_download_writer_removes_its_unique_file() {
         .unwrap();
 
     drop(messages);
-    let error = wait_for_mod_download_writer(writer)
-        .await
-        .expect_err("closed channel represents cancellation");
-
-    assert!(error.contains("cancelled"));
+    assert_eq!(
+        wait_for_mod_download_writer(writer).await.unwrap(),
+        DownloadWriteCompletion::Cancelled
+    );
     assert!(!path.exists());
     assert_download_root_empty(&root);
     let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn interrupted_download_preserves_a_real_writer_cleanup_failure() {
+    use std::os::windows::fs::OpenOptionsExt;
+
+    let root = download_test_root("writer-cleanup-denied");
+    let path = root.join("partial.zip");
+    let (messages, receiver) = tokio::sync::mpsc::channel(1);
+    let (ready_sender, ready_receiver) = tokio::sync::oneshot::channel();
+    let writer_path = path.clone();
+    let writer = tokio::task::spawn_blocking(move || {
+        write_downloaded_mod_file(writer_path, receiver, ready_sender, None, None)
+    });
+    ready_receiver.await.unwrap().unwrap();
+    // A real Windows reader allows writes but denies deletion. A network
+    // interruption must not hide the writer's inability to remove this file.
+    let held = OpenOptions::new()
+        .read(true)
+        .share_mode(0x1 | 0x2)
+        .open(&path)
+        .unwrap();
+    messages
+        .send(ModDownloadWriteMessage::Chunk(b"partial".to_vec()))
+        .await
+        .unwrap();
+    drop(messages);
+    let failure = settle_aborted_mod_download(
+        writer,
+        ModDownloadFailure::Interrupted("fixture transfer interrupted".into()),
+    )
+    .await;
+    let ModDownloadFailure::Terminal(message) = failure else {
+        panic!("cleanup failure must prevent optional fallback: {failure:?}");
+    };
+    assert!(
+        message.contains("fixture transfer interrupted"),
+        "{message}"
+    );
+    assert!(
+        message.contains("failed to remove cancelled mod package"),
+        "{message}"
+    );
+    assert_eq!(fs::read(&path).unwrap(), b"partial");
+    drop(held);
+    fs::remove_file(path).unwrap();
+    fs::remove_dir(root).unwrap();
 }
 
 #[path = "commands_mod_integrity_tests.rs"]

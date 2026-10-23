@@ -837,6 +837,7 @@ fn runtime_supervisor_restores_ownership_after_a_failed_stop_attempt() {
         run_id: 1,
         session_id: Some(String::from("session-1")),
         prepared: Some(false),
+        world_ready: None,
     };
     assert_eq!(
         supervisor.world_save_readiness("stop-recovery"),
@@ -871,6 +872,7 @@ fn runtime_supervisor_restores_ownership_after_a_failed_stop_attempt() {
             run_id: 2,
             session_id: Some(String::from("session-2")),
             prepared: Some(true),
+            world_ready: None,
         })
     );
     let detached = supervisor.take_running_for_stop("stop-recovery").unwrap();

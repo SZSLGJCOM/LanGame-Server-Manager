@@ -161,6 +161,44 @@ impl Drop for Fixture {
 }
 
 #[test]
+fn optional_loader_fallback_requires_absence_or_a_complete_owned_disabled_loader() {
+    for module in ["valheim", "vrising"] {
+        let fixture = Fixture::new(module);
+        verify_inactive_loader(&fixture.root, &fixture.loader).unwrap();
+        fixture.install(&[], Some(&fixture.archive)).unwrap();
+        let receipt = fs::read(fixture.root.join(fixture.loader.receipt)).unwrap();
+        assert!(verify_inactive_loader(&fixture.root, &fixture.loader).is_err());
+        let disabled = String::from_utf8(fixture.config.to_vec())
+            .unwrap()
+            .replace("enabled = true", "enabled = false");
+        fs::write(fixture.root.join(CONFIG), &disabled).unwrap();
+        verify_inactive_loader(&fixture.root, &fixture.loader).unwrap();
+        assert_eq!(
+            fs::read(fixture.root.join(CONFIG)).unwrap(),
+            disabled.as_bytes()
+        );
+        assert_eq!(
+            fs::read(fixture.root.join(fixture.loader.receipt)).unwrap(),
+            receipt
+        );
+        fs::remove_file(fixture.root.join(fixture.loader.expected_assembly)).unwrap();
+        assert!(verify_inactive_loader(&fixture.root, &fixture.loader).is_err());
+        assert!(fixture.root.join("winhttp.dll").is_file());
+    }
+    for path in ["winhttp.dll", CONFIG, "BepInEx/core/BepInEx.dll"] {
+        let fixture = Fixture::new("valheim");
+        let file = fixture.root.join(path);
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(&file, b"operator content").unwrap();
+        assert!(
+            verify_inactive_loader(&fixture.root, &fixture.loader).is_err(),
+            "{path}"
+        );
+        assert_eq!(fs::read(file).unwrap(), b"operator content");
+    }
+}
+
+#[test]
 fn bepinex_loader_and_plugin_publish_together_without_changing_native_files() {
     for module_id in ["valheim", "vrising"] {
         let fixture = Fixture::new(module_id);

@@ -7,6 +7,12 @@ export function serverStartSuccessMessage(result: StartInstanceResult | undefine
   if (!result || !warnings.length) return message("activity.serverStartSent", { id: instanceId });
   const key = warnings.some((warning) => warning.code === "world_initialization_incomplete")
     ? "activity.serverStartWorldInitializationIncomplete"
+    : warnings.some((warning) => warning.code === "graceful_stop_unavailable")
+    ? "activity.serverStartGracefulStopUnavailable"
+    : warnings.some((warning) => warning.code === "manual_save_unavailable")
+    ? "activity.serverStartManualSaveUnavailable"
+    : warnings.some((warning) => warning.code === "program_update_using_installed")
+    ? "activity.serverStartUsingInstalledProgram"
     : warnings.some((warning) => warning.code === "mod_update_source_required")
     ? "activity.serverStartModSourceRequired" : "activity.serverStartUsingCache";
   return message(key, { id: instanceId }, { tone: "warning",

@@ -202,6 +202,7 @@ pub(in crate::commands) enum ModDownloadFailure {
     Interrupted(String),
     Http(String),
     Terminal(String),
+    Cancelled,
 }
 
 impl ModDownloadFailure {
@@ -211,6 +212,7 @@ impl ModDownloadFailure {
             | Self::Interrupted(value)
             | Self::Http(value)
             | Self::Terminal(value) => value,
+            Self::Cancelled => "Mod package preparation was cancelled".into(),
         }
     }
 }
@@ -270,14 +272,18 @@ async fn download_mod_site_file_with_limit_inner(
                 ..request
             };
             if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
-                return Err(String::from("Mod package preparation was cancelled").into());
+                return Err(ModDownloadFailure::Cancelled);
             }
             match download_mod_file_from_source(client, attempt, cancellation).await {
                 Ok(path) => {
                     app_network::record_success(candidate);
                     return Ok(path);
                 }
-                Err(error @ (ModDownloadFailure::Terminal(_) | ModDownloadFailure::Http(_))) => {
+                Err(
+                    error @ (ModDownloadFailure::Terminal(_)
+                    | ModDownloadFailure::Http(_)
+                    | ModDownloadFailure::Cancelled),
+                ) => {
                     return Err(error);
                 }
                 Err(ModDownloadFailure::Network(error)) => {
@@ -322,7 +328,7 @@ async fn download_mod_file_from_source(
         .map_err(|error| format!("failed to prepare mod package download: {error}"))?;
     let response = tokio::select! {
         biased;
-        _=cancelled(cancellation)=>return Err(ModDownloadFailure::Terminal("Mod package preparation was cancelled".into())),
+        _=cancelled(cancellation)=>return Err(ModDownloadFailure::Cancelled),
         result=app_network::send_with_retry(client,http_request,Duration::from_secs(20))=>result,
     };
     let mut response = response.map_err(|error| {
@@ -376,21 +382,35 @@ async fn download_mod_file_from_source(
             expected_bytes,
         )
     });
-    ready_receiver
+    let ready = ready_receiver
         .await
-        .map_err(|_| String::from("mod package download writer stopped unexpectedly"))??;
+        .map_err(|_| String::from("mod package download writer stopped unexpectedly"))
+        .and_then(|result| result);
+    if let Err(error) = ready {
+        drop(message_sender);
+        return Err(settle_aborted_mod_download(writer, error.into()).await);
+    }
     let cleanup = DownloadedFileCleanup::new(path);
 
     let mut received_bytes = 0u64;
     let started = std::time::Instant::now();
     loop {
-        let wait_budget = download_read_budget(started.elapsed(), received_bytes)?;
+        let wait_budget = match download_read_budget(started.elapsed(), received_bytes) {
+            Ok(budget) => budget,
+            Err(error) => {
+                drop(message_sender);
+                return Err(settle_aborted_mod_download(
+                    writer,
+                    ModDownloadFailure::Interrupted(error),
+                )
+                .await);
+            }
+        };
         let received = tokio::select! {
             biased;
             _=cancelled(cancellation)=> {
                 drop(message_sender);
-                let _=wait_for_mod_download_writer(writer).await;
-                return Err(ModDownloadFailure::Terminal("Mod package preparation was cancelled".into()));
+                return Err(settle_aborted_mod_download(writer, ModDownloadFailure::Cancelled).await);
             },
             result=tokio::time::timeout(wait_budget,response.chunk())=>result,
         };
@@ -399,48 +419,66 @@ async fn download_mod_file_from_source(
             Ok(Ok(None)) => break,
             Ok(Err(error)) => {
                 drop(message_sender);
-                let _ = wait_for_mod_download_writer(writer).await;
-                return Err(ModDownloadFailure::Interrupted(format!(
-                    "failed to read mod package download: {}",
-                    error.without_url()
-                )));
+                return Err(settle_aborted_mod_download(
+                    writer,
+                    ModDownloadFailure::Interrupted(format!(
+                        "failed to read mod package download: {}",
+                        error.without_url()
+                    )),
+                )
+                .await);
             }
             Err(_) => {
                 drop(message_sender);
-                let _ = wait_for_mod_download_writer(writer).await;
-                return Err(ModDownloadFailure::Interrupted(
-                    "mod package download stopped making progress".into(),
-                ));
+                return Err(settle_aborted_mod_download(
+                    writer,
+                    ModDownloadFailure::Interrupted(
+                        "mod package download stopped making progress".into(),
+                    ),
+                )
+                .await);
             }
         };
-        received_bytes = received_bytes
-            .checked_add(chunk.len() as u64)
-            .ok_or_else(|| String::from("mod package download size overflowed"))?;
+        let Some(total) = received_bytes.checked_add(chunk.len() as u64) else {
+            drop(message_sender);
+            return Err(settle_aborted_mod_download(
+                writer,
+                String::from("mod package download size overflowed").into(),
+            )
+            .await);
+        };
+        received_bytes = total;
         if let Some(max_bytes) = max_bytes
             && received_bytes > max_bytes
         {
             drop(message_sender);
-            let _ = wait_for_mod_download_writer(writer).await;
-            return Err(mod_download_size_limit_error(received_bytes, max_bytes).into());
+            return Err(settle_aborted_mod_download(
+                writer,
+                mod_download_size_limit_error(received_bytes, max_bytes).into(),
+            )
+            .await);
         }
         if let Some(expected) = integrity
             && received_bytes > expected.size
         {
             drop(message_sender);
-            let _ = wait_for_mod_download_writer(writer).await;
-            return Err(mod_download_metadata_size_error(received_bytes, expected.size).into());
+            return Err(settle_aborted_mod_download(
+                writer,
+                mod_download_metadata_size_error(received_bytes, expected.size).into(),
+            )
+            .await);
         }
         if message_sender
             .send(ModDownloadWriteMessage::Chunk(chunk.to_vec()))
             .await
             .is_err()
         {
-            return wait_for_mod_download_writer(writer)
-                .await
-                .and(Err(String::from(
-                    "mod package download writer stopped unexpectedly",
-                )))
-                .map_err(Into::into);
+            drop(message_sender);
+            return Err(settle_aborted_mod_download(
+                writer,
+                String::from("mod package download writer stopped unexpectedly").into(),
+            )
+            .await);
         }
     }
 
@@ -454,12 +492,13 @@ async fn download_mod_file_from_source(
         .await
         .is_err()
     {
-        return wait_for_mod_download_writer(writer)
-            .await
-            .and(Err(String::from(
-                "mod package download writer stopped unexpectedly",
-            )))
-            .map_err(Into::into);
+        drop(commit_sender);
+        drop(message_sender);
+        return Err(settle_aborted_mod_download(
+            writer,
+            String::from("mod package download writer stopped unexpectedly").into(),
+        )
+        .await);
     }
     let prepared = prepared_receiver
         .await
@@ -468,22 +507,25 @@ async fn download_mod_file_from_source(
     if let Err(error) = prepared {
         drop(commit_sender);
         drop(message_sender);
-        let _ = wait_for_mod_download_writer(writer).await;
-        return Err(error.into());
+        return Err(settle_aborted_mod_download(writer, error.into()).await);
     }
     if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
         drop(commit_sender);
         drop(message_sender);
-        let _ = wait_for_mod_download_writer(writer).await;
-        return Err(ModDownloadFailure::Terminal(
-            "Mod package preparation was cancelled".into(),
-        ));
+        return Err(settle_aborted_mod_download(writer, ModDownloadFailure::Cancelled).await);
     }
-    commit_sender
-        .send(())
-        .map_err(|_| String::from("mod package download writer stopped unexpectedly"))?;
-    wait_for_mod_download_writer(writer).await?;
-    Ok(cleanup.keep())
+    if commit_sender.send(()).is_err() {
+        drop(message_sender);
+        return Err(settle_aborted_mod_download(
+            writer,
+            String::from("mod package download writer stopped unexpectedly").into(),
+        )
+        .await);
+    }
+    match wait_for_mod_download_writer(writer).await? {
+        DownloadWriteCompletion::Committed => Ok(cleanup.keep()),
+        DownloadWriteCompletion::Cancelled => Err(ModDownloadFailure::Cancelled),
+    }
 }
 
 fn mod_download_size_limit_error(received_bytes: u64, max_bytes: u64) -> String {
@@ -500,13 +542,19 @@ fn mod_download_metadata_size_error(received_bytes: u64, expected_bytes: u64) ->
     )
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum DownloadWriteCompletion {
+    Committed,
+    Cancelled,
+}
+
 fn write_downloaded_mod_file(
     path: PathBuf,
     mut messages: tokio::sync::mpsc::Receiver<ModDownloadWriteMessage>,
     ready: tokio::sync::oneshot::Sender<Result<(), String>>,
     integrity: Option<ModDownloadIntegrity>,
     expected_bytes: Option<u64>,
-) -> Result<(), String> {
+) -> Result<DownloadWriteCompletion, String> {
     use crate::commands::commands_mod_capacity::{ModSpaceBudget, require_mod_capacity};
     let capacity = (|| {
         require_mod_capacity(&path, expected_bytes.unwrap_or(0))?;
@@ -533,8 +581,8 @@ fn write_downloaded_mod_file(
     };
     if ready.send(Ok(())).is_err() {
         drop(file);
-        let _ = fs::remove_file(&path);
-        return Err(String::from("mod package download was cancelled"));
+        remove_cancelled_download(&path)?;
+        return Ok(DownloadWriteCompletion::Cancelled);
     }
 
     let mut file = Some(file);
@@ -579,32 +627,64 @@ fn write_downloaded_mod_file(
                     .sync_all()
                     .map_err(|error| format!("failed to flush downloaded mod package: {error}"));
                 drop(output);
-                if prepared.send(sync_result.clone()).is_err() || sync_result.is_err() {
-                    break sync_result;
+                let acknowledged = prepared.send(sync_result.clone()).is_ok();
+                if let Err(error) = sync_result {
+                    break Err(error);
+                }
+                if !acknowledged {
+                    break Ok(DownloadWriteCompletion::Cancelled);
                 }
                 committed = commit.recv().is_ok();
                 break if committed {
-                    Ok(())
+                    Ok(DownloadWriteCompletion::Committed)
                 } else {
-                    Err(String::from("mod package download was cancelled"))
+                    Ok(DownloadWriteCompletion::Cancelled)
                 };
             }
-            None => break Err(String::from("mod package download was cancelled")),
+            None => break Ok(DownloadWriteCompletion::Cancelled),
         }
     };
     drop(file);
-    if !committed {
-        let _ = fs::remove_file(&path);
+    if !committed && let Err(cleanup) = remove_cancelled_download(&path) {
+        return Err(match result {
+            Err(error) => format!("{error}; {cleanup}"),
+            Ok(_) => cleanup,
+        });
     }
     result
 }
 
 async fn wait_for_mod_download_writer(
-    writer: tokio::task::JoinHandle<Result<(), String>>,
-) -> Result<(), String> {
+    writer: tokio::task::JoinHandle<Result<DownloadWriteCompletion, String>>,
+) -> Result<DownloadWriteCompletion, String> {
     writer
         .await
         .map_err(|error| format!("mod package download writer failed: {error}"))?
+}
+
+fn remove_cancelled_download(path: &Path) -> Result<(), String> {
+    fs::remove_file(path).map_err(|error| {
+        format!(
+            "failed to remove cancelled mod package {}: {error}",
+            path.display()
+        )
+    })
+}
+
+/// A request/body failure never hides a concurrent disk or cleanup failure.
+/// Cancellation is acknowledged only after the writer has closed and removed
+/// its unpublished file. Startup policy can then distinguish its own deadline.
+async fn settle_aborted_mod_download(
+    writer: tokio::task::JoinHandle<Result<DownloadWriteCompletion, String>>,
+    failure: ModDownloadFailure,
+) -> ModDownloadFailure {
+    match wait_for_mod_download_writer(writer).await {
+        Ok(DownloadWriteCompletion::Cancelled) => failure,
+        Ok(DownloadWriteCompletion::Committed) => ModDownloadFailure::Terminal(
+            "mod package writer committed after its request was aborted".into(),
+        ),
+        Err(error) => ModDownloadFailure::Terminal(format!("{}; {error}", failure.message())),
+    }
 }
 
 #[cfg(test)]

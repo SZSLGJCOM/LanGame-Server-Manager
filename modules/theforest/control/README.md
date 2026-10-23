@@ -16,9 +16,11 @@ source tree or in an approved build output directory.
 
 `commands_theforest_control.rs` prepares the embedded DLL only in a verified
 independent instance program directory. It verifies the supported game
-assembly fingerprint and refuses unknown game builds, directory reparse
-points, or conflicting user DLLs. Its small ownership record allows only
-verified previous LanGame payloads to be replaced.
+assembly fingerprint before enabling the extension. Unknown builds deactivate
+only an unchanged owned bridge and allow native game startup with manual save
+unavailable. Directory reparse points, conflicting user DLLs and failed cleanup
+still block startup. Its small ownership record allows only verified previous
+LanGame payloads to be replaced or retired, and is retained for recovery.
 
 The native `saveFolderPath` requires a trailing separator because the game
 concatenates the player mode directly. Startup refuses nonempty or non-plain

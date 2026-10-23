@@ -34,12 +34,12 @@ function labels(fields, key) {
 
 const reviewedCopyFields = [
   "backup_log_count", "backup_log_period", "caves_acidrain_enabled",
-  "caves_atriumgate", "caves_berrybush", "caves_boons",
+  "caves_atriumgate", "caves_bat_boss", "caves_berrybush", "caves_boons",
   "caves_cavelight", "caves_chest_mimics", "caves_daywalker",
   "caves_evergreen_regrowth", "caves_itemmimics", "caves_moon_spider",
   "caves_mutated_birds", "caves_mutated_merm", "caves_mutated_spiderqueen",
   "caves_prefabswaps_start", "caves_reeds_regrowth", "caves_rifts_enabled",
-  "caves_rifts_frequency", "caves_start_location", "caves_task_set",
+  "caves_rifts_frequency", "caves_rocky_boss", "caves_start_location", "caves_task_set",
   "caves_touchstone", "caves_tree_rock", "caves_tree_rock_regrowth",
   "caves_twiggytrees_regrowth", "caves_wormattacks_boss", "master_alternatehunt",
   "master_antliontribute", "master_balatro", "master_bananabush_portalrate",
@@ -87,6 +87,11 @@ test("DST reviewed fields show meaningful bilingual names and descriptions", () 
   assert.equal(zh.get("master_palmconetree").title, "棕榈松果树");
   assert.equal(zh.get("master_rifts_enabled").title, "月亮裂隙");
   assert.equal(zh.get("caves_rifts_enabled").title, "暗影裂隙");
+  assert.equal(zh.get("caves_bat_boss").title, "猎犬蝙蝠");
+  assert.equal(zh.get("caves_rocky_boss").title, "岩石大师");
+  const en = fieldsFor("en-US", EN_US_MESSAGES);
+  assert.equal(en.get("caves_bat_boss").title, "Hound Batilisks");
+  assert.equal(en.get("caves_rocky_boss").title, "Rock Masters");
   assert.match(zh.get("master_palmcone_seed_portalrate").description, /相对概率/u);
   assert.match(zh.get("caves_tree_rock_regrowth").description, /再生速度/u);
 });

@@ -119,6 +119,23 @@ test("backup restore is enabled only for writable stopped instances with a resto
   }
 });
 
+test("manual backups require a stopped instance even while runtime status is transitioning", () => {
+  for (const [status, activeRun, expectedDisabled] of [
+    ["stopped", null, false], ["running", null, true], ["starting", null, true], ["stopping", null, true],
+    ["stopped", { processes: [{ status: "running", process_key: "server" }] }, true]
+  ]) {
+    const view = maintenance("minecraft", {
+      details: { summary: { id: "fixture", module_id: "minecraft", status, active_process_count: 0 },
+        active_run: activeRun, config_file_path: "D:/fixture/config/instance.json", backup_uses_declared_saves_path: true },
+      onCreateBackup: () => {}
+    });
+    const action = view.named("backups", "MaintenanceAction").find((element) => element.props.label === "servers.details.backupNow");
+    assert.ok(action);
+    const markup = renderToStaticMarkup(action);
+    assert.equal(/<button\b[^>]*\bdisabled(?:=|\s|>)/.test(markup), expectedDisabled, status);
+  }
+});
+
 test("retired section ids resolve to their consolidated entries", () => {
   const { resolveMaintenanceSectionId } = load("views/servers/MaintenanceWorkspace.tsx");
   assert.equal(resolveMaintenanceSectionId("save-import"), "saves");

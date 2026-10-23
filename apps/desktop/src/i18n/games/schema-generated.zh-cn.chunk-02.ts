@@ -2,6 +2,16 @@ import type { MessageCatalog } from "../../i18n-config";
 
 // Generated from modules/*/schema.json by generate_i18n_schema_catalogs.cjs.
 export const ZH_CN_SCHEMA_GENERATED_MESSAGES_CHUNK_02: MessageCatalog = {
+  "settings.schema.dontstarve.master_spiders.option.insane": "极高",
+  "settings.schema.dontstarve.master_spiders.option.mostly": "很多",
+  "settings.schema.dontstarve.master_spiders.option.never": "从不",
+  "settings.schema.dontstarve.master_spiders.option.often": "较多",
+  "settings.schema.dontstarve.master_spiders.option.rare": "稀少",
+  "settings.schema.dontstarve.master_spiders.option.uncommon": "较少",
+  "settings.schema.dontstarve.master_spiders.title": "蜘蛛巢密度",
+  "settings.schema.dontstarve.master_squid.description": "控制主世界乌贼出现频率。",
+  "settings.schema.dontstarve.master_squid.option.always": "始终",
+  "settings.schema.dontstarve.master_squid.option.default": "默认",
   "settings.schema.dontstarve.master_squid.option.never": "从不",
   "settings.schema.dontstarve.master_squid.option.often": "较多",
   "settings.schema.dontstarve.master_squid.option.rare": "稀少",

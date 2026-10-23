@@ -1,6 +1,56 @@
 use super::*;
 
 #[test]
+fn corekeeper_smoke_reads_only_the_current_native_process_log() {
+    let root = crate::commands::tests::temp_test_dir("core-smoke-log");
+    let modules = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
+    let descriptor = app_modules::discover_modules(&modules)
+        .unwrap()
+        .into_iter()
+        .find(|descriptor| descriptor.summary.id == "corekeeper")
+        .unwrap();
+    let manifest = SmokeManifest::load(&descriptor).unwrap();
+    let console = root.join("logs/managed-console/run-42-main.log");
+    let native = root.join("logs/corekeeper-run-42-main.log");
+    let mut instance = crate::commands::tests::corekeeper_run_log_tests::running_instance(&console);
+    instance.config_file_path = root
+        .join("config/instance.json")
+        .to_string_lossy()
+        .into_owned();
+    std::fs::create_dir_all(native.parent().unwrap()).unwrap();
+    std::fs::write(root.join("logs/CoreKeeperServer.log"), "timescale = 0\n").unwrap();
+    std::fs::write(&native, "Loading world\n").unwrap();
+    assert_eq!(
+        manifest
+            .evidence_log_paths(&instance, &root)
+            .unwrap()
+            .as_slice(),
+        std::slice::from_ref(&native)
+    );
+    let mut baselines = manifest.log_baselines(&instance, &root).unwrap();
+    let markers = manifest
+        .probes
+        .iter()
+        .find_map(|probe| match probe {
+            Probe::LogMarker { any_of, .. } => Some(any_of),
+            _ => None,
+        })
+        .unwrap();
+    let baseline = baselines.logs.get_mut(&native).unwrap();
+    assert!(!new_log_contains(&native, baseline, markers).unwrap());
+    std::fs::write(&native, "Loading world\ntimescale = 0\n").unwrap();
+    assert!(new_log_contains(&native, baseline, markers).unwrap());
+    instance.active_run = None;
+    assert!(
+        manifest
+            .evidence_log_paths(&instance, &root)
+            .unwrap()
+            .is_empty()
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
 fn dragonwilds_readiness_requires_one_positive_native_record() {
     let modules = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../modules");
     let descriptor = app_modules::discover_modules(&modules)

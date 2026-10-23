@@ -31,14 +31,50 @@ impl Drop for PreparedThunderstoreInstall {
 
 pub(in crate::commands) struct ThunderstorePreparationFailure {
     pub(in crate::commands) message: String,
-    pub(in crate::commands) reason: Option<app_core::RuntimeModUpdateReason>,
+    kind: PreparationFailureKind,
+}
+
+enum PreparationFailureKind {
+    Local,
+    Remote(app_core::RuntimeModUpdateReason),
+    Cancelled,
+}
+
+impl ThunderstorePreparationFailure {
+    pub(in crate::commands) fn remote(
+        message: String,
+        reason: app_core::RuntimeModUpdateReason,
+    ) -> Self {
+        Self {
+            message,
+            kind: PreparationFailureKind::Remote(reason),
+        }
+    }
+
+    pub(in crate::commands) fn cancelled() -> Self {
+        Self {
+            message: "Thunderstore startup Mod preparation was cancelled".into(),
+            kind: PreparationFailureKind::Cancelled,
+        }
+    }
+
+    pub(in crate::commands) fn reason(&self) -> Option<app_core::RuntimeModUpdateReason> {
+        match self.kind {
+            PreparationFailureKind::Remote(reason) => Some(reason),
+            _ => None,
+        }
+    }
+
+    pub(in crate::commands) fn is_cancelled(&self) -> bool {
+        matches!(self.kind, PreparationFailureKind::Cancelled)
+    }
 }
 
 impl From<String> for ThunderstorePreparationFailure {
     fn from(message: String) -> Self {
         Self {
             message,
-            reason: None,
+            kind: PreparationFailureKind::Local,
         }
     }
 }
@@ -53,19 +89,18 @@ fn download_failure(
         }
         ModDownloadFailure::Http(_) => Some(app_core::RuntimeModUpdateReason::Http),
         ModDownloadFailure::Terminal(_) => None,
+        ModDownloadFailure::Cancelled => return preparation_cancelled(),
     };
-    ThunderstorePreparationFailure {
-        message:
-            "Thunderstore Mod package download was not completed; no new package was published"
-                .into(),
-        reason,
+    let message =
+        "Thunderstore Mod package download was not completed; no new package was published".into();
+    match reason {
+        Some(reason) => ThunderstorePreparationFailure::remote(message, reason),
+        None => message.into(),
     }
 }
 
 fn preparation_cancelled() -> ThunderstorePreparationFailure {
-    "Thunderstore startup Mod preparation was cancelled"
-        .to_owned()
-        .into()
+    ThunderstorePreparationFailure::cancelled()
 }
 
 async fn provider_result<T, F: std::future::Future<Output = Result<T, String>>>(
@@ -78,13 +113,16 @@ async fn provider_result<T, F: std::future::Future<Output = Result<T, String>>>(
         _=async {match cancellation {Some(cancellation)=>cancellation.cancelled().await,None=>std::future::pending().await}}=>return Err(preparation_cancelled()),
         result=future=>result,
     };
-    result.map_err(|_| ThunderstorePreparationFailure {
-        message: "Thunderstore 模组版本查询或包准备未完成；尚未发布新的模组。".into(),
-        reason: Some(reason),
+    result.map_err(|_| {
+        ThunderstorePreparationFailure::remote(
+            "Thunderstore 模组版本查询或包准备未完成；尚未发布新的模组。".into(),
+            reason,
+        )
     })
 }
 
-pub(in crate::commands) async fn prepare_thunderstore_install(
+#[cfg(test)]
+async fn prepare_thunderstore_install(
     module_id: &str,
     source: &app_core::ModuleModSourceSpec,
     references: &[String],
@@ -106,6 +144,32 @@ pub(in crate::commands) async fn prepare_thunderstore_install(
     )
     .await
     .map_err(|error| error.message)
+}
+
+/// Automatic save loaders use the same pinned release preparation, retaining
+/// remote failure kinds and cooperative cancellation before any runtime write.
+pub(in crate::commands) async fn prepare_thunderstore_save_loader(
+    module_id: &str,
+    source: &app_core::ModuleModSourceSpec,
+    references: &[String],
+    root: &Path,
+    cancellation: &app_steamcmd::InstallCancellation,
+) -> Result<PreparedThunderstoreInstall, ThunderstorePreparationFailure> {
+    prepare_thunderstore_install_inner(
+        module_id,
+        source,
+        references,
+        root,
+        PreparationOptions {
+            #[cfg(test)]
+            fixture: None,
+            installed: &[],
+            cancellation: Some(cancellation),
+            existing_runtime_only: false,
+            version_policy: None,
+        },
+    )
+    .await
 }
 
 pub(in crate::commands) async fn prepare_thunderstore_install_with_policy(
@@ -312,9 +376,10 @@ async fn prepare_thunderstore_install_inner(
             profile.module_id,
         )
         .await
-        .map_err(|_| ThunderstorePreparationFailure {
-            message: "Thunderstore Mod archive preparation was not completed".into(),
-            reason: None,
+        .map_err(|_| {
+            ThunderstorePreparationFailure::from(
+                "Thunderstore Mod archive preparation was not completed".to_owned(),
+            )
         })?;
         if cancellation.is_some_and(|cancellation| cancellation.is_cancelled()) {
             cleanup_downloaded_mod_source(&path);

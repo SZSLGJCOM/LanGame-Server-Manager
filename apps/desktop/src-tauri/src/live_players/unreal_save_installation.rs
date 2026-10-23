@@ -25,6 +25,52 @@ fn retired_payload(game: Game) -> Option<&'static str> {
     }
 }
 
+/// Retire the old fixed-address Moria bridge even when the current game or
+/// loader cannot prepare its replacement. Retaining the receipt makes a
+/// cancelled cleanup safe to resume without adopting unknown file contents.
+pub(super) fn retire_moria_bridge(root: &Path) -> Result<(), String> {
+    let _root = pin(root, false)?;
+    let game = Game::Moria;
+    let path = root.join(mod_dir(game)).join(RETIRED_MORIA_BRIDGE);
+    if !exists(&path)? {
+        return Ok(());
+    }
+    let owner = decode(game, &read(&root.join(OWNER), 8192)?)?;
+    if let Some(expected) = verified_retired_hash(game, root, &owner)? {
+        crate::commands::commands_managed_save_control::retire_owned_file(&path, &expected)?;
+    }
+    Ok(())
+}
+
+fn verified_retired_hash(
+    game: Game,
+    root: &Path,
+    owner: &Ownership,
+) -> Result<Option<String>, String> {
+    let Some(name) = retired_payload(game) else {
+        return Ok(None);
+    };
+    let path = root.join(mod_dir(game)).join(name);
+    if !exists(&path)? {
+        return Ok(None);
+    }
+    let _parents = pin(
+        path.parent().ok_or("Invalid retired save adapter path")?,
+        false,
+    )?;
+    let actual = hash(&read(&path, MAX_FILE)?);
+    if owner.files.get(name) != Some(&actual)
+        && owner
+            .pending_files
+            .as_ref()
+            .and_then(|files| files.get(name))
+            != Some(&actual)
+    {
+        return Err("The retired save adapter is unowned or changed; it was preserved.".into());
+    }
+    Ok(Some(actual))
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Ownership {
@@ -487,27 +533,7 @@ fn publish_payload_with(
     // Only the former, unchanged owned adapter may be retired. An interrupted
     // retirement may leave its old receipt with an absent file and is resumable.
     let retired = retired_payload(game).map(|name| (name, root.join(mod_dir(game)).join(name)));
-    let retired_hash = if let Some((name, path)) = &retired
-        && exists(path)?
-    {
-        let _parents = pin(
-            path.parent().ok_or("Invalid retired save adapter path")?,
-            false,
-        )?;
-        let actual = hash(&read(path, MAX_FILE)?);
-        if owner.files.get(*name) != Some(&actual)
-            && owner
-                .pending_files
-                .as_ref()
-                .and_then(|files| files.get(*name))
-                != Some(&actual)
-        {
-            return Err("The retired save adapter is unowned or changed; it was preserved.".into());
-        }
-        Some(actual)
-    } else {
-        None
-    };
+    let retired_hash = verified_retired_hash(game, root, &owner)?;
     let mut originals = BTreeMap::new();
     for name in payload.keys() {
         let path = root.join(mod_dir(game)).join(name);

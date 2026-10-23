@@ -111,7 +111,7 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
     if !supported {
         return Ok(false);
     }
-    super::commands_managed_save_control::ensure_bepinex_loader(
+    let loader_available = super::commands_managed_save_control::ensure_bepinex_loader(
         storage,
         instance,
         operation,
@@ -120,11 +120,15 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
     .await?;
     spawn_blocking_storage_context_task(operation, move || {
         super::commands_managed_save_control::ensure_stopped_program(&root, "valheim")?;
-        install_owned_plugin(&root, io::bundled_payload())
+        if loader_available {
+            install_owned_plugin(&root, io::bundled_payload())
+        } else {
+            deactivate_owned_plugin(&root)
+        }
     })
     .await
     .map_err(|_| "Valheim extension installation worker failed.")??;
-    Ok(true)
+    Ok(loader_available)
 }
 
 fn ensure_stopped(instance: &InstanceDetails) -> Result<(), String> {

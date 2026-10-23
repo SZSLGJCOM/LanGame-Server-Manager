@@ -9,7 +9,10 @@ use std::time::{Duration, Instant};
 use app_core::ProcessIdentity;
 use serde_json::Value;
 
-use super::{HELPER_FLAG, MAX_RESPONSE_BYTES, NativePlayerConsoleError as Error, valid_request};
+use super::{
+    ConsoleCommand, HELPER_FLAG, MAX_RESPONSE_BYTES, NativePlayerConsoleError as Error,
+    valid_request,
+};
 
 #[path = "native_player_console_win32.rs"]
 mod console;
@@ -44,18 +47,28 @@ fn collect_with_executable(
     identity: &ProcessIdentity,
     nonce: &str,
 ) -> Result<String, Error> {
-    if !crate::process_matches_identity(pid, identity).map_err(|_| Error::Io)? {
-        return Err(Error::ProcessUnavailable);
-    }
     let request = serde_json::json!({
         "pid": pid, "creation_time": identity.creation_time,
         "image_path": identity.image_path, "nonce": nonce,
     });
+    let mut invocation = Command::new(executable);
+    invocation.arg(HELPER_FLAG).arg(request.to_string());
+    collect_from_invocation(invocation, pid, identity, nonce, false)
+}
+
+pub(super) fn collect_from_invocation(
+    mut invocation: Command,
+    pid: u32,
+    identity: &ProcessIdentity,
+    nonce: &str,
+    framed: bool,
+) -> Result<String, Error> {
+    if !crate::process_matches_identity(pid, identity).map_err(|_| Error::Io)? {
+        return Err(Error::ProcessUnavailable);
+    }
     let mut child = OwnedHelper(
         crate::windows_console_control::with_windows_console_ctrl_lock(|| {
-            Command::new(executable)
-                .arg(HELPER_FLAG)
-                .arg(request.to_string())
+            invocation
                 .stdin(Stdio::null())
                 .stdout(Stdio::piped())
                 .stderr(Stdio::null())
@@ -70,7 +83,8 @@ fn collect_with_executable(
     if !crate::process_matches_identity(pid, identity).map_err(|_| Error::Io)? {
         return Err(Error::ProcessUnavailable);
     }
-    let response: Value = serde_json::from_slice(&bytes).map_err(|_| Error::Incomplete)?;
+    let bytes = response_body(&bytes, framed)?;
+    let response: Value = serde_json::from_slice(bytes).map_err(|_| Error::Incomplete)?;
     if response.get("nonce").and_then(Value::as_str) != Some(nonce) {
         return Err(Error::Incomplete);
     }
@@ -83,6 +97,20 @@ fn collect_with_executable(
         .filter(|text| text.len() <= MAX_RESPONSE_BYTES)
         .map(str::to_owned)
         .ok_or(Error::Incomplete)
+}
+
+fn response_body(bytes: &[u8], framed: bool) -> Result<&[u8], Error> {
+    if !framed {
+        return Ok(bytes);
+    }
+    #[cfg(feature = "native-test-console")]
+    {
+        super::test_support::response_body(bytes)
+    }
+    #[cfg(not(feature = "native-test-console"))]
+    {
+        Err(Error::Incomplete)
+    }
 }
 
 fn read_helper_output(
@@ -148,6 +176,14 @@ fn read_helper_output(
 }
 
 pub(super) fn run_helper(argument: Option<&OsStr>) -> i32 {
+    run_helper_command(argument, ConsoleCommand::Players, false)
+}
+
+pub(super) fn run_helper_command(
+    argument: Option<&OsStr>,
+    command: ConsoleCommand,
+    framed: bool,
+) -> i32 {
     // Preserve the private pipe before AttachConsole replaces this process's
     // standard handles. No result, player data or error is written to CONOUT$.
     let mut output = match duplicate_output() {
@@ -186,11 +222,22 @@ pub(super) fn run_helper(argument: Option<&OsStr>) -> i32 {
     if !valid_request(pid, &identity, nonce) {
         return 2;
     }
-    let response = match console::capture(pid, &identity, nonce, HELPER_TIMEOUT) {
+    let response = match console::capture(pid, &identity, nonce, command, HELPER_TIMEOUT) {
         Ok(text) => serde_json::json!({"nonce": nonce, "text": text}),
         Err(error) => serde_json::json!({"nonce": nonce, "error": encode_error(&error)}),
     };
-    if output.write_all(response.to_string().as_bytes()).is_err() {
+    let response = response.to_string();
+    #[cfg(feature = "native-test-console")]
+    let response = if framed {
+        super::test_support::frame_response(&response)
+    } else {
+        response
+    };
+    #[cfg(not(feature = "native-test-console"))]
+    if framed {
+        return 2;
+    }
+    if output.write_all(response.as_bytes()).is_err() {
         2
     } else {
         0

@@ -7,8 +7,9 @@ pub(super) const MAX_CAPTURE_BYTES: usize = 16 * 1024 * 1024;
 // Keep headroom for the shared runtime response envelope (16 MiB wire limit).
 const MAX_RESPONSE_BYTES: usize = 14 * 1024 * 1024;
 // Native stdin accepted 16,300 bytes but stopped processing at 16,400 bytes.
-// Bound the complete UTF-8 line, including its newline, below that boundary.
-const MAX_QUERY_BYTES: usize = 15 * 1024;
+// The room signature still fits with 300 bytes of measured input headroom,
+// including the terminating newline; real native smoke covers the full query.
+const MAX_QUERY_BYTES: usize = 16_000;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -114,6 +115,7 @@ pub struct DstMapSnapshot {
     pub run_id: i64,
     pub captured_at_unix_ms: u64,
     pub session: String,
+    pub geometry_revision: String,
     pub width: usize,
     pub height: usize,
     pub tile_scale: f64,
@@ -253,6 +255,7 @@ pub(super) fn terrain_material_issues(snapshot: &DstMapSnapshot) -> Vec<String> 
 #[serde(rename_all = "snake_case")]
 enum NativeErrorCode {
     WorldNotReady,
+    GeometryChanged,
 }
 
 #[derive(Deserialize)]
@@ -266,6 +269,8 @@ enum Frame {
         height: usize,
         tile_scale: f64,
         session: String,
+        #[serde(default)]
+        geometry_revision: String,
         day: u32,
         season: String,
         phase: String,
@@ -381,6 +386,12 @@ impl Capture {
         let frame: Frame =
             serde_json::from_str(json).map_err(|_| "Invalid native DST map frame.".to_string())?;
         if let Frame::Error { message, code } = frame {
+            if matches!(code, Some(NativeErrorCode::GeometryChanged)) {
+                return Err(super::map_error(
+                    super::MapErrorCode::GeometryChanged,
+                    message,
+                ));
+            }
             if matches!(code, Some(NativeErrorCode::WorldNotReady)) {
                 return Err(super::map_error(
                     super::MapErrorCode::WorldNotReady,
@@ -402,6 +413,7 @@ impl Capture {
             height,
             tile_scale,
             session,
+            geometry_revision,
             day,
             season,
             phase,
@@ -416,6 +428,8 @@ impl Capture {
                 || !tile_scale.is_finite()
                 || !(0.1..=100.0).contains(&tile_scale)
                 || !bounded_text(&session, 128)
+                || geometry_revision.len() > 2048
+                || geometry_revision.chars().any(char::is_control)
                 || !bounded_text(&game_version, 64)
                 || !bounded_text(&season, 64)
                 || !bounded_text(&phase, 64)
@@ -428,6 +442,7 @@ impl Capture {
                 run_id: 0,
                 captured_at_unix_ms: 0,
                 session,
+                geometry_revision,
                 width,
                 height,
                 tile_scale,

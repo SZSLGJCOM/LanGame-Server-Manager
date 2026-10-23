@@ -2781,13 +2781,13 @@ fn run_log_paths_keep_elevated_redirection_outside_managed_retention() {
             performance_preview: app_core::RuntimePerformancePolicyPreview::default(),
         },
     }];
-    assign_process_log_paths_with_stamp(&instance, &mut plans, 456);
+    assign_process_log_paths_with_stamp(&instance, &mut plans, 456).unwrap();
     assert_eq!(
         Path::new(&plans[0].log_path),
         Path::new("D:/fixture/logs/run-456-main.log")
     );
     plans[0].launch_plan.requires_admin = false;
-    assign_process_log_paths_with_stamp(&instance, &mut plans, 456);
+    assign_process_log_paths_with_stamp(&instance, &mut plans, 456).unwrap();
     let expected = if cfg!(windows) {
         "D:/fixture/logs/managed-console/run-456-main.log"
     } else {

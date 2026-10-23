@@ -34,6 +34,22 @@ test("DST environmental hazards and giants use their official groups", () => {
   }
 });
 
+test("Cursed Confrontation cave bosses expose the native monster settings", () => {
+  const choices = ["never", "rare", "default", "often", "always"];
+  for (const nativeKey of ["bat_boss", "rocky_boss"]) {
+    const key = `caves_${nativeKey}`;
+    const group = groupsFor("cavessettings").find((entry) => entry.fields.some((field) => field.key === key));
+    assert.equal(group?.id, "monsters", key);
+    const field = group.fields.find((entry) => entry.key === key);
+    assert.equal(field.sourceKey, `overrides.${nativeKey}`);
+    assert.equal(field.defaultValue, "default");
+    assert.deepEqual(field.enumOptions.map((option) => option.value), choices);
+    for (const section of ["mastergen", "mastersettings", "cavesgen"]) {
+      assert.ok(pageFields(section).every((entry) => entry.sourceKey !== `overrides.${nativeKey}`));
+    }
+  }
+});
+
 test("DST grouping preserves every field, enum and source binding without mutating input", () => {
   for (const section of ["mastergen", "mastersettings", "cavesgen", "cavessettings"]) {
     const fields = pageFields(section);

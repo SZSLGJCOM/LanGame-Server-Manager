@@ -294,6 +294,10 @@ async fn smoke_dst_native_world_generation_save_and_reload()
             values.insert(format!("world_{event}"), json!("enabled"));
         }
     }
+    if scenario == "shadowy_depths" {
+        values.insert("caves_bat_boss".into(), json!("rare"));
+        values.insert("caves_rocky_boss".into(), json!("often"));
+    }
     failure_checks::configure_scenario(&scenario, &mut values);
     let four_shards = scenario == "island_adventures";
     if four_shards {
@@ -555,7 +559,7 @@ async fn smoke_dst_native_world_generation_save_and_reload()
             );
             native_features.extend(
                 feature_checks::verify(
-                    &state,
+                    state.clone(),
                     &id,
                     process,
                     started.run_id,

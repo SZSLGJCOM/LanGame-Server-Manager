@@ -70,7 +70,7 @@ function packet(input: Input): DstWorldMap {
     return land ? (x < -10 ? 7 : z > 10 ? 5 : x > 12 ? 3 : 6) : 201;
   });
   return { instanceId: input.instanceId, shard: input.shard, runId: 7, capturedAtUnixMs: Date.now(),
-    session: `world-${input.shard}`, width, height, tileScale: 4, day: 25, season: "autumn", phase: "day",
+    session: `world-${input.shard}`, geometryRevision: "", width, height, tileScale: 4, day: 25, season: "autumn", phase: "day",
     tiles: input.includeTerrain ? tiles : null,
     tileNames: input.includeTerrain ? { 201: "OCEAN_COASTAL", 3: "ROCKY", 5: "SAVANNA", 6: "GRASS", 7: "FOREST" } : {},
     tileKinds: input.includeTerrain ? { 201: "ocean", 3: "land", 5: "land", 6: "land", 7: "land" } : {},

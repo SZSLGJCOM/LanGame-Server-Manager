@@ -167,6 +167,12 @@ fn retire(module: &str, root: &Path, project: &str, allowed: &[&str]) -> Result<
 
 pub(crate) fn cleanup_retired(details: &InstanceDetails) -> Result<(), String> {
     let module = details.summary.module_id.as_str();
+    if module == "returntomoria" {
+        stopped(details)?;
+        let root = runtime_root(details)?;
+        process::stopped(process::GameProfile::Moria, &root)?;
+        return installation::retire_moria_bridge(&root);
+    }
     let Some((project, game, allowed)) = profile(module) else {
         return Ok(());
     };
@@ -251,6 +257,85 @@ mod tests {
             assert!(retire("palworld", &fixture.0, "Pal", allowed).is_err());
             assert!(directory.join("enabled.txt").exists());
             assert!(fixture.0.join(installation::OWNER).exists());
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn moria_retired_bridge_cleanup_is_independent_of_current_game_and_loader_versions() {
+        for scenario in ["owned", "pending", "modified", "unowned"] {
+            let root = std::env::temp_dir().join(format!(
+                "langame-moria-retired-start-{}",
+                uuid::Uuid::new_v4()
+            ));
+            let fixture = Fixture(root);
+            let runtime = fixture.0.join("runtime");
+            let directory = runtime.join("Moria/Binaries/Win64/ue4ss/Mods/LgsmWorldSave");
+            fs::create_dir_all(directory.join("native")).unwrap();
+            fs::create_dir_all(directory.join("Scripts")).unwrap();
+            fs::write(runtime.join(".langame-private-runtime"), b"managed\n").unwrap();
+            fs::write(
+                runtime.join("Moria/Binaries/Win64/MoriaServer-Win64-Shipping.exe"),
+                b"unsupported game image; never executed",
+            )
+            .unwrap();
+            fs::write(directory.join("Scripts/main.lua"), b"old policy").unwrap();
+            fs::write(directory.join("enabled.txt"), b"").unwrap();
+            let bridge = directory.join("native/LgsmMoriaSaveControl.dll");
+            fs::write(&bridge, b"owned old native bridge").unwrap();
+            let mut files = BTreeMap::from([
+                ("Scripts/main.lua", installation::hash(b"old policy")),
+                ("enabled.txt", installation::hash(b"")),
+                (
+                    "native/LgsmMoriaSaveControl.dll",
+                    installation::hash(b"owned old native bridge"),
+                ),
+            ]);
+            let pending = if scenario == "pending" {
+                let pending = files.clone();
+                files.insert(
+                    "native/LgsmMoriaSaveControl.dll",
+                    installation::hash(b"previous bridge"),
+                );
+                Some(pending)
+            } else {
+                None
+            };
+            let record = runtime.join(installation::OWNER);
+            if scenario != "unowned" {
+                fs::write(
+                    &record,
+                    serde_json::to_vec(&json!({"protocol":1,"module_id":"returntomoria",
+                    "files":files,"pending_files":pending}))
+                    .unwrap(),
+                )
+                .unwrap();
+            }
+            if scenario == "modified" {
+                fs::write(&bridge, b"operator replacement").unwrap();
+            }
+            let owner_before = fs::read(&record).ok();
+            let details: InstanceDetails = serde_json::from_value(json!({
+                "summary":{"id":"fixture","name":"fixture","module_id":"returntomoria",
+                    "status":"Stopped","active_process_count":0,"bind_ip":"127.0.0.1","port_count":0,"autostart":false},
+                "config_file_path":fixture.0.join("config/server.ini"),"saves_path":"", "settings_json":"{}",
+                "ports":[],"active_run":null,"auto_backup_on_stop":false,"backup_retention_count":0
+            })).unwrap();
+            let result = cleanup_retired(&details);
+            if matches!(scenario, "owned" | "pending") {
+                result.unwrap();
+                assert!(!bridge.exists(), "{scenario}");
+                cleanup_retired(&details).unwrap();
+            } else {
+                assert!(result.is_err(), "{scenario}");
+                assert!(bridge.exists(), "{scenario}");
+            }
+            assert_eq!(fs::read(&record).ok(), owner_before);
+            assert_eq!(
+                fs::read(directory.join("Scripts/main.lua")).unwrap(),
+                b"old policy"
+            );
+            assert!(directory.join("enabled.txt").exists());
         }
     }
 }

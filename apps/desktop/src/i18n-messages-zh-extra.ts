@@ -1,6 +1,15 @@
 import type { MessageCatalog } from "./i18n-config";
 
 export const ZH_CN_EXTRA_MESSAGES: MessageCatalog = {
+  "activity.serverStartManualSaveUnavailable": "服务器正在运行，手动保存暂不可用：{id}",
+  "activity.serverStartGracefulStopUnavailable": "服务器正在运行，管理器正常停服暂不可用：{id}",
+  "runtime.startWarning.gracefulStopUnavailable": "{name}：管理器正常停服暂不可用。",
+  "runtime.startWarning.gracefulStopUnavailableAdvice": "请先通过游戏自身的保存和退出功能结束服务器。管理器不会自动强制结束进程，具体原因见启动日志。",
+  "activity.serverStartUsingInstalledProgram": "游戏更新检查未完成，使用已有版本启动：{id}",
+  "runtime.startWarning.manualSaveUnavailable": "{name}：服务器正在运行，手动保存暂不可用。",
+  "runtime.startWarning.manualSaveUnavailableAdvice": "游戏自身的保存机制不受此限制。请留意停服能力提示，具体原因已记录到启动日志。",
+  "runtime.startWarning.usingInstalledProgram": "{name}：游戏更新检查未完成，使用已核验的现有程序启动。",
+  "runtime.startWarning.usingInstalledProgramAdvice": "尚未确认游戏是否为最新版本。稍后可重新检查游戏更新，具体原因见启动日志。",
   "activity.serverStartWorldInitializationIncomplete": "服务器正在运行，首个世界初始化未完成：{id}",
   "runtime.startWarning.worldInitializationIncomplete": "{name}：服务器正在运行，但首个世界初始化未完成。",
   "runtime.startWarning.worldInitializationAdvice": "运行中的服务器和已有数据已保留，管理器不会自动重发创建世界的命令。具体原因已记录到启动日志。",
@@ -10,7 +19,7 @@ export const ZH_CN_EXTRA_MESSAGES: MessageCatalog = {
   "servers.dailyMaintenance.time": "执行时间（本机时间）",
   "servers.dailyMaintenance.description": "LGSM 运行期间按本机时间执行。离线期间错过的任务不补跑；运行中的任务依次完成，繁忙时延后。",
   "servers.dailyMaintenance.restartDescription": "仅重启正在运行的实例。先正常停服，失败时不会继续启动。",
-  "servers.dailyMaintenance.backupDescription": "与“立即备份”使用相同的文件备份流程，不会先要求游戏立即保存。",
+  "servers.dailyMaintenance.backupDescription": "与“立即备份”使用相同的一致性检查，必须先停服。实例仍在运行、启动或停止时会记录备份失败，不复制文件或替换旧备份。",
   "servers.dailyMaintenance.archived": "归档恢复后保留策略时间，定时任务默认关闭。",
   "servers.dailyMaintenance.invalidTime": "请输入 00:00 至 23:59 的时间。",
   "servers.dailyMaintenance.reload": "重新加载策略",

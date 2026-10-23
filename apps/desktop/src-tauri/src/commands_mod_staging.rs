@@ -25,7 +25,7 @@ mod bepinex_loader;
 pub(super) use bepinex_loader::{
     ThunderstoreGameProfile, reviewed_loader_satisfies, runtime_loader_requires_archive,
     stage_thunderstore_online_mod_sources, stage_thunderstore_online_mod_sources_for_startup,
-    thunderstore_game_profile,
+    thunderstore_game_profile, verify_native_start_without_loader,
 };
 
 const MANUAL_MOD_ARCHIVE_MAX_ENTRY_COUNT: usize = 20_000;

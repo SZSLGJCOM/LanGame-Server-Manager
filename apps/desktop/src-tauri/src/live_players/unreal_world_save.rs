@@ -19,6 +19,9 @@ pub(crate) mod installation;
 #[path = "unreal_save_retired.rs"]
 mod retired;
 pub(crate) use retired::cleanup_retired;
+#[cfg(all(test, feature = "native-test-console"))]
+#[path = "unreal_moria_save_timing.rs"]
+pub(crate) mod moria_test_timing;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Game {
@@ -90,6 +93,19 @@ impl Game {
                 include_str!("../../../../../modules/scum/control/LgsmWorldSave/Scripts/main.lua")
             }
         };
+        // The opt-in native acceptance binary observes the actual timer policy.
+        // Production payloads and the save request/receipt contract are unchanged.
+        #[cfg(all(test, feature = "native-test-console"))]
+        if self == Self::Moria {
+            return [
+                policy.as_bytes(),
+                b"\n",
+                include_bytes!("unreal_moria_save_timing.lua"),
+                b"\n",
+                include_bytes!("unreal_save_protocol.lua"),
+            ]
+            .concat();
+        }
         [
             policy.as_bytes(),
             b"\n",
@@ -287,16 +303,102 @@ struct Reply {
     native_process_id: Option<u32>,
     native_creation_time: Option<String>,
 }
-fn parse(body: &[u8], request: &Request<'_>) -> Result<Reply, String> {
+
+#[derive(Debug)]
+struct SaveFailure {
+    phase: &'static str,
+    cause: &'static str,
+    message: String,
+}
+
+impl SaveFailure {
+    fn new(phase: &'static str, cause: &'static str, message: impl Into<String>) -> Self {
+        Self {
+            phase,
+            cause,
+            message: message.into(),
+        }
+    }
+
+    fn transport(phase: &'static str, error: super::BridgeError, message: &'static str) -> Self {
+        let cause = match error {
+            super::BridgeError::Missing => "missing",
+            super::BridgeError::Busy => "busy",
+            super::BridgeError::Io => "io",
+            super::BridgeError::Limit => "size_limit",
+            super::BridgeError::Timeout => "timeout",
+            super::BridgeError::Process => "process_changed",
+            super::BridgeError::Incomplete => "incomplete",
+        };
+        Self::new(phase, cause, message)
+    }
+}
+
+fn receipt_diagnostic(
+    game: Game,
+    action: &str,
+    elapsed: Duration,
+    result: &Result<Reply, SaveFailure>,
+) -> String {
+    // The receipt and error message can contain untrusted or private data.
+    // Only closed labels and state flags enter the diagnostic, never identities.
+    let action = match action {
+        "save" => "save",
+        "saveprobe" => "saveprobe",
+        _ => "invalid",
+    };
+    let (phase, cause, reply) = match result {
+        Ok(reply) => ("native_receipt", "received", Some(reply)),
+        Err(error) => (error.phase, error.cause, None),
+    };
+    let flag = |value| match value {
+        Some(true) => "true",
+        Some(false) => "false",
+        None => "unknown",
+    };
+    let native_error = match reply.map(|reply| reply.error.as_deref()) {
+        None => "unknown",
+        Some(None) => "none",
+        Some(Some(
+            code @ ("api_unavailable"
+            | "world_unavailable"
+            | "world_ambiguous"
+            | "save_busy"
+            | "target_changed"
+            | "request_expired"
+            | "dispatcher_timeout"
+            | "dispatcher_unavailable"
+            | "save_call_unknown"
+            | "save_failed"),
+        )) => code,
+        Some(Some(_)) => "unrecognized",
+    };
+    format!(
+        "UNREAL_WORLD_SAVE module={} action={action} phase={phase} cause={cause} elapsed_ms={} ready={} invoked={} call_returned={} write_confirmed={} native_error={native_error}",
+        game.id(),
+        elapsed.as_millis(),
+        flag(reply.map(|reply| reply.ready)),
+        flag(reply.map(|reply| reply.invoked)),
+        flag(reply.map(|reply| reply.call_returned)),
+        flag(reply.map(|reply| reply.write_confirmed)),
+    )
+}
+
+fn parse(body: &[u8], request: &Request<'_>) -> Result<Reply, SaveFailure> {
     parse_with_window(body, request, 6)
 }
 fn parse_with_window(
     body: &[u8],
     request: &Request<'_>,
     completion_seconds: u64,
-) -> Result<Reply, String> {
-    let reply: Reply =
-        serde_json::from_slice(body).map_err(|_| "The native save receipt is invalid.")?;
+) -> Result<Reply, SaveFailure> {
+    let reply: Reply = serde_json::from_slice(body).map_err(|_| {
+        SaveFailure::new(
+            "receipt_validation",
+            "invalid_frame",
+            "The native save receipt is invalid.",
+        )
+    })?;
     if reply.protocol != 1
         || reply.request_id != request.request_id
         || reply.action != request.action
@@ -314,7 +416,11 @@ fn parse_with_window(
         || (request.action == "save"
             && (reply.boot_id != request.boot_id || reply.world_token != request.world_token))
     {
-        return Err("The native save receipt does not match this request.".into());
+        return Err(SaveFailure::new(
+            "receipt_validation",
+            "request_mismatch",
+            "The native save receipt does not match this request.",
+        ));
     }
     Ok(reply)
 }
@@ -332,7 +438,11 @@ fn validate_native_identity(
     }
 }
 
-fn parse_context(context: &Context, body: &[u8], request: &Request<'_>) -> Result<Reply, String> {
+fn parse_context(
+    context: &Context,
+    body: &[u8],
+    request: &Request<'_>,
+) -> Result<Reply, SaveFailure> {
     let reply = if matches!(context.game, Game::Conan | Game::Nightingale | Game::Scum)
         && request.action == "save"
     {
@@ -341,15 +451,27 @@ fn parse_context(context: &Context, body: &[u8], request: &Request<'_>) -> Resul
         parse(body, request)?
     };
     if reply.write_confirmed && context.game != Game::Conan {
-        return Err("This native adapter has no request-bound completion contract.".into());
+        return Err(SaveFailure::new(
+            "receipt_validation",
+            "unsupported_completion",
+            "This native adapter has no request-bound completion contract.",
+        ));
     }
     let native = matches!(context.game, Game::Nightingale | Game::Conan | Game::Scum)
         .then_some(&context.native);
-    validate_native_identity(&reply, native)?;
+    validate_native_identity(&reply, native).map_err(|message| {
+        SaveFailure::new("receipt_validation", "native_identity_mismatch", message)
+    })?;
     Ok(reply)
 }
-fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, String> {
-    let body = serde_json::to_vec(request).map_err(|_| "Cannot encode the native save request.")?;
+fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, SaveFailure> {
+    let body = serde_json::to_vec(request).map_err(|_| {
+        SaveFailure::new(
+            "publication",
+            "encode_failed",
+            "Cannot encode the native save request.",
+        )
+    })?;
     let deadline = Instant::now()
         + Duration::from_secs(
             if matches!(context.game, Game::Conan | Game::Nightingale | Game::Scum)
@@ -361,15 +483,21 @@ fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, String>
             },
         );
     let directory = context.root.join("langame_world_save");
-    let _pin = transport::open_directory(&context.root, &directory)
-        .map_err(|_| "The prepared native exchange is unavailable.")?;
+    let _pin = transport::open_directory(&context.root, &directory).map_err(|error| {
+        SaveFailure::transport(
+            "exchange_directory",
+            error,
+            "The prepared native exchange is unavailable.",
+        )
+    })?;
     process::verify(
         context.game.process_profile(),
         &context.root,
         context.pid,
         &context.identity,
         &context.native,
-    )?;
+    )
+    .map_err(|message| SaveFailure::new("publication", "ownership_unverified", message))?;
     transport::publish_body(
         &context.root,
         &directory,
@@ -377,7 +505,13 @@ fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, String>
         &body,
         deadline,
     )
-    .map_err(|_| "Native save publication failed or is uncertain; it was not retried.")?;
+    .map_err(|error| {
+        SaveFailure::transport(
+            "publication",
+            error,
+            "Native save publication failed or is uncertain; it was not retried.",
+        )
+    })?;
     loop {
         process::verify(
             context.game.process_profile(),
@@ -385,17 +519,27 @@ fn exchange(context: &Context, request: &Request<'_>) -> Result<Vec<u8>, String>
             context.pid,
             &context.identity,
             &context.native,
-        )?;
+        )
+        .map_err(|message| SaveFailure::new("awaiting_receipt", "ownership_unverified", message))?;
         if Instant::now() >= deadline {
-            return Err("Native save receipt timed out; the request was not retried.".into());
+            return Err(SaveFailure::new(
+                "awaiting_receipt",
+                "timeout",
+                "Native save receipt timed out; the request was not retried.",
+            ));
         }
         if let Some(body) = transport::response_for_request(
             &context.root,
             &directory.join("response.json"),
             request.request_id,
         )
-        .map_err(|_| "The native save receipt could not be read.")?
-        {
+        .map_err(|error| {
+            SaveFailure::transport(
+                "receipt_read",
+                error,
+                "The native save receipt could not be read.",
+            )
+        })? {
             return Ok(body);
         }
         std::thread::sleep(Duration::from_millis(50));
@@ -412,7 +556,14 @@ fn preflight(context: &Context) -> Result<Reply, String> {
         world_token: "",
         launch_token: &context.launch_token,
     };
-    let reply = parse_context(context, &exchange(context, &request)?, &request)?;
+    let started = Instant::now();
+    let reply =
+        exchange(context, &request).and_then(|body| parse_context(context, &body, &request));
+    eprintln!(
+        "{}",
+        receipt_diagnostic(context.game, request.action, started.elapsed(), &reply)
+    );
+    let reply = reply.map_err(|error| error.message)?;
     if !reply.ready
         || !nonce(&reply.world_token)
         || reply.invoked
@@ -437,14 +588,19 @@ fn invoke_once(
         world_token: &ready.world_token,
         launch_token: &context.launch_token,
     };
+    let started = Instant::now();
     let reply =
         exchange(context, &request).and_then(|body| parse_context(context, &body, &request));
+    eprintln!(
+        "{}",
+        receipt_diagnostic(context.game, request.action, started.elapsed(), &reply)
+    );
     classify_completion(context.game, reply)
 }
 
 fn classify_completion(
     game: Game,
-    reply: Result<Reply, String>,
+    reply: Result<Reply, SaveFailure>,
 ) -> Result<(&'static str, WorldSaveCompletion), String> {
     // These native paths acknowledge invocation without a storage result.
     // Callers must still parse the correlated receipt before this classification.
@@ -466,7 +622,7 @@ fn classify_completion(
     }
     classify(reply).map(|message| (message, WorldSaveCompletion::Confirmed))
 }
-fn classify(reply: Result<Reply, String>) -> Result<&'static str, String> {
+fn classify(reply: Result<Reply, SaveFailure>) -> Result<&'static str, String> {
     const UNKNOWN: &str = "Save verification failed: the program could not certify this request's complete native write result. Success was not reported and the save was not resent.";
     match reply {
         Ok(reply)

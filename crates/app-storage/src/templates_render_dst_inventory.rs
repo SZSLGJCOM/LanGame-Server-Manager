@@ -403,6 +403,8 @@ pub(super) const DST_CAVES_OVERRIDE_ENTRIES: &[DstOverrideEntry] = &[
     ("caves_spider_warriors", "spider_warriors", "default"),
     ("caves_spiders_setting", "spiders_setting", "default"),
     ("caves_molebats", "molebats", "default"),
+    ("caves_bat_boss", "bat_boss", "default"),
+    ("caves_rocky_boss", "rocky_boss", "default"),
     ("caves_nightmarecreatures", "nightmarecreatures", "default"),
     ("caves_spider_dropper", "spider_dropper", "default"),
     ("caves_spider_spitter", "spider_spitter", "default"),

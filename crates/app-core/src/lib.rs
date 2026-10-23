@@ -37,6 +37,7 @@ pub use system_telemetry::{DiskVolumeSnapshot, SystemTelemetry, TelemetryStatus}
 mod runtime_resources;
 pub use runtime_resources::RuntimeResourceLimits;
 mod program_update;
+pub mod runtime_logs;
 pub use program_update::InstanceProgramUpdatePolicy;
 mod runtime_start_warnings;
 pub use runtime_start_warnings::{
@@ -1245,6 +1246,9 @@ pub struct InstanceWorldSaveReadiness {
     pub run_id: i64,
     pub session_id: Option<String>,
     pub prepared: Option<bool>,
+    /// Current-run native loading evidence, independent of extension preparation.
+    #[serde(default)]
+    pub world_ready: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

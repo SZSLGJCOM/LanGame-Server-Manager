@@ -17,7 +17,9 @@ pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> 
         // Core's world metadata is in its world payload. Dragon's SaveGames and
         // Enshrouded's savegame roots contain their native primary/recovery family.
         // Return children: the owner must retain the saves directory itself.
-        "corekeeper" | "runescapedragonwilds" | "enshrouded" => children(saves),
+        "corekeeper" | "runescapedragonwilds" | "enshrouded" | "returntomoria" | "terraria" => {
+            children(saves)
+        }
         // Preserve complete generations: .chunk plus .chunks/.db2/.fwl2/.ok,
         // rather than treating any one leaf as a standalone Valheim checkpoint.
         "valheim" => Ok(vec![saves.join("worlds_local")]),
@@ -82,20 +84,27 @@ pub(super) fn native_logs(module: &str, program: &Path, details: &InstanceDetail
     if let Some(run) = &details.active_run {
         for process in &run.processes {
             if process.is_primary
+                && process.run_id == run.run_id
+                && process.session_id == run.session_id
                 && process.status == "running"
                 && let Some(path) = &process.log_path
             {
                 logs.push(PathBuf::from(path));
+                if module == "corekeeper"
+                    && let Some(native) =
+                        app_core::runtime_logs::corekeeper_native_log_path(Path::new(path))
+                {
+                    logs.push(native);
+                }
             }
         }
     }
     let native = match module {
-        "corekeeper" | "enshrouded" | "conanexiles" => Path::new(&details.config_file_path)
+        "enshrouded" | "conanexiles" => Path::new(&details.config_file_path)
             .parent()
             .and_then(Path::parent)
             .map(|root| {
                 root.join(match module {
-                    "corekeeper" => "logs/CoreKeeperServer.log",
                     "enshrouded" => "logs/enshrouded_server.log",
                     _ => "logs/conan-server.log",
                 })
@@ -144,6 +153,7 @@ pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<
         }
         // Bind the reloaded world to the last completed native save number.
         "valheim" => valheim_loaded(before, fresh)?,
+        "terraria" => return super::terraria::require_loaded(before, fresh),
         "vrising" => vrising_loaded(before, fresh),
         "theforest" => {
             return Err("The Forest has no verified reload-specific native log observation; world_ready does not prove a checkpoint was loaded".into());
@@ -572,6 +582,24 @@ mod tests {
             native_logs("conanexiles", Path::new("D:/fixture/runtime"), &details),
             [PathBuf::from("D:/fixture/logs/conan-server.log")]
         );
+    }
+
+    #[test]
+    fn corekeeper_checkpoint_collects_the_current_native_run_without_legacy_output() {
+        let root = std::env::temp_dir().join("corekeeper-checkpoint-log-path");
+        let console = root.join("logs/managed-console/run-42-main.log");
+        let mut details =
+            crate::commands::tests::corekeeper_run_log_tests::running_instance(&console);
+        let mut expected = vec![console, root.join("logs/corekeeper-run-42-main.log")];
+        expected.sort();
+        assert_eq!(
+            native_logs("corekeeper", &root.join("runtime"), &details),
+            expected
+        );
+        details.active_run.as_mut().unwrap().processes[0].run_id += 1;
+        assert!(native_logs("corekeeper", &root.join("runtime"), &details).is_empty());
+        details.active_run = None;
+        assert!(native_logs("corekeeper", &root.join("runtime"), &details).is_empty());
     }
 
     #[test]

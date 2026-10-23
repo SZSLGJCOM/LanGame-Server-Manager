@@ -1,6 +1,6 @@
 status = "best_effort_verified"
-last_verified = "2026-09-19"
-notes = "Klei official CLI/cluster documentation and game 747465 first-party scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354. The tracked world-options.json inventory contains all 236 built-in declarations: Master world generation/settings 64/126 and Caves 38/48 independently editable fields. Page membership and enum values are checked against schema.json; native-package comparison additionally checks groups, group and option order, visibility, version and hash. Caves additionally receives 34 inherited masteroption values. Mod configuration_options remain dynamically defined by each installed modinfo.lua and are represented by independent structured Master/Caves maps and raw expert escape hatches."
+last_verified = "2026-10-23"
+notes = "Klei official CLI/cluster documentation and game 759671 first-party scripts.zip SHA-256 d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef. The tracked world-options.json inventory contains all 238 built-in declarations: Master world generation/settings 64/126 and Caves 38/50 independently editable fields. Page membership and enum values are checked against schema.json; native-package comparison additionally checks groups, group and option order, visibility, version and hash. Caves additionally receives 34 inherited masteroption values. Mod configuration_options remain dynamically defined by each installed modinfo.lua and are represented by independent structured Master/Caves maps and raw expert escape hatches. Package inspection and configuration-output checks do not establish native server/client acceptance."
 
 [[sources]]
 id = "shard_layout"
@@ -57,7 +57,7 @@ id = "installed_package_world_options"
 kind = "config_file"
 path = "data/databundles/scripts.zip!/scripts/map/customize.lua; scripts/map/tasksets.lua; scripts/map/tasksets/*.lua; scripts/map/startlocations.lua; scripts/widgets/redux/worldsettings/worldsettingsmenu.lua; modules/dontstarve/world-options.json"
 authority = "installed_dst_dedicated_server_package"
-description = "2026-09-19 read-only extraction from game 747465, scripts.zip SHA-256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354. All 236 declarations, 5 worldgen groups and 10 settings groups are recorded in world-options.json. PC description branches, ocean-prefixed values, group fallbacks, all loaded task-set/start-location registrations and location/master_controlled visibility yield 64/126/38/48 controls; all 276 page-specific enum sets match schema.json. scripts/verify_dst_world_options.py checks the tracked contract by default; --install-root compares an owned native package and --write refreshes only the inventory. Unknown data expressions and dynamic registrations fail explicitly without executing Lua. This is a maintained source inventory, not automatic runtime discovery of game updates or mod options. The read-only native inventory verifier was rerun on 2026-09-30 against installed Steam build 24700372 / game 747465. All 236 declarations, groups, ordering, locations and enum values match the tracked inventory and schema; scripts.zip remains SHA256 99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354."
+description = "2026-10-23 read-only extraction from Steam build 26148034 / game 759671, scripts.zip SHA-256 d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef. All 238 declarations, 5 worldgen groups and 10 settings groups are recorded in world-options.json. PC description branches, ocean-prefixed values, group fallbacks, all loaded task-set/start-location registrations and location/master_controlled visibility yield 64/126/38/50 controls; all 278 page-specific enum sets match schema.json. The update adds cave settings bat_boss and rocky_boss in monsters; the preceding 236 declarations and their defaults, masteroption/master_sync behavior and preset values remain unchanged from game 747465. scripts/verify_dst_world_options.py checks the tracked contract by default; --install-root compares an owned native package and --write refreshes only the inventory. Unknown data expressions and dynamic registrations fail explicitly without executing Lua. This is a maintained source inventory, not automatic runtime discovery of game updates or mod options. Earlier dated acceptance fixtures retain their original package evidence."
 
 [[sources]]
 id = "installed_package_mod_docs"
@@ -118,8 +118,15 @@ id = "caves_worldgenoverride"
 kind = "config_file"
 path = "clusters/main/Caves/worldgenoverride.lua"
 authority = "installed_dst_dedicated_server_package"
-description = "Caves shard world-generation and world-setting overrides: 86 independently editable native options plus 34 inherited Master options. settings_preset and worldgen_preset default independently to DST_CAVE; custom IDs must exist in the installed game or mods. Independent schema-default fields inherit a non-default Caves preset; shared fields inherit the effective Master values and known Master settings preset. Explicit Caves extra Lua overrides and full-file scripts retain their authority."
+description = "Caves shard world-generation and world-setting overrides. Together with caves_boss_world_settings, the current schema exposes 88 independently editable native options plus 34 inherited Master options. settings_preset and worldgen_preset default independently to DST_CAVE; custom IDs must exist in the installed game or mods. Independent schema-default fields inherit a non-default Caves preset; shared fields inherit the effective Master values and known Master settings preset. Explicit Caves extra Lua overrides and full-file scripts retain their authority."
 url = "https://forums.kleientertainment.com/forums/topic/53014-worldgenoverridelua-with-the-new-post-caves-settings/"
+
+[[sources]]
+id = "caves_boss_world_settings"
+kind = "config_file"
+path = "clusters/main/Caves/worldgenoverride.lua"
+authority = "installed_dst_dedicated_server_package"
+description = "Game 759671 / Steam build 26148034 introduces bat_boss and rocky_boss in scripts/map/customize.lua's cave settings monsters group. Both default to default and accept never, rare, default, often and always. scripts/worldsettings_overrides.lua controls Hound Batilisk cave replenishment, spawn intervals and population, and Rock Master spawn attempts. These fields use the existing Caves overrides writer; their separate source record preserves the scope of earlier dated fixtures. The native images are bat_boss.tex and rocky_boss.tex in worldsettings_customization. Verified by read-only package inspection on 2026-10-23, scripts.zip SHA-256 d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef."
 
 [[sources]]
 id = "adminlist"
@@ -1663,6 +1670,18 @@ surface = "config_file"
 source = "caves_worldgenoverride"
 key = "overrides.molebats"
 schema_key = "caves_molebats"
+surface = "config_file"
+
+[[items]]
+source = "caves_boss_world_settings"
+key = "overrides.bat_boss"
+schema_key = "caves_bat_boss"
+surface = "config_file"
+
+[[items]]
+source = "caves_boss_world_settings"
+key = "overrides.rocky_boss"
+schema_key = "caves_rocky_boss"
 surface = "config_file"
 
 [[items]]

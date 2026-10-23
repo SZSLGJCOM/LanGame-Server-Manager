@@ -27,9 +27,9 @@ struct Ownership {
 pub(super) async fn prepare(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     if instance.summary.module_id != "theforest" {
-        return Ok(());
+        return Ok(true);
     }
     let instance_root = super::commands_program_storage::instance_root(instance)?;
     if app_storage::instance_program_mode(instance_root).map_err(|e| e.to_string())?
@@ -201,7 +201,7 @@ fn publish(path: &Path, bytes: &[u8]) -> Result<(), String> {
     result.map_err(|e| format!("Cannot publish The Forest control resource: {e}"))
 }
 
-fn install_files(root: &Path, payload: &[u8], expected_game_hash: &str) -> Result<(), String> {
+fn install_files(root: &Path, payload: &[u8], expected_game_hash: &str) -> Result<bool, String> {
     if payload.is_empty()
         || payload.len() as u64 > MAX_PLUGIN
         || !root.is_absolute()
@@ -228,9 +228,8 @@ fn install_files(root: &Path, payload: &[u8], expected_game_hash: &str) -> Resul
     let game = read_regular(&root.join(GAME_ASSEMBLY), 16 * 1024 * 1024)?
         .ok_or("The Forest native control assembly is missing")?;
     if digest(&game) != expected_game_hash {
-        return Err(
-            "The Forest 当前服务器版本尚未验证原生保存/停止接口；为保护存档，控制桥未安装。".into(),
-        );
+        deactivate_owned(root)?;
+        return Ok(false);
     }
     let directory = root.join("DllMods");
     match fs::create_dir(&directory) {
@@ -288,7 +287,46 @@ fn install_files(root: &Path, payload: &[u8], expected_game_hash: &str) -> Resul
         &owner_path,
         &serde_json::to_vec(&committed).map_err(|e| e.to_string())?,
     )?;
-    Ok(())
+    Ok(true)
+}
+
+/// A version mismatch disables the optional bridge, never the native server.
+/// The owner record is retained so supported builds can prepare it again.
+fn deactivate_owned(root: &Path) -> Result<(), String> {
+    let directory = root.join("DllMods");
+    match fs::symlink_metadata(&directory) {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error.to_string()),
+        Ok(_) => {}
+    }
+    let _directory = pin_directory(&directory)?;
+    let plugin = directory.join(PLUGIN);
+    let owner = read_regular(&directory.join(OWNER), 4096)?
+        .map(|bytes| {
+            serde_json::from_slice::<Ownership>(&bytes)
+                .map_err(|_| "The Forest control ownership record is invalid")
+        })
+        .transpose()?;
+    if owner
+        .as_ref()
+        .is_some_and(|owner| owner.schema != 1 || owner.module_id != "theforest")
+    {
+        return Err("The Forest control ownership record belongs to another resource".into());
+    }
+    let Some(bytes) = read_regular(&plugin, MAX_PLUGIN)? else {
+        return Ok(());
+    };
+    let actual = digest(&bytes);
+    if !owner.as_ref().is_some_and(|owner| {
+        owner.plugin_sha256.as_ref() == Some(&actual)
+            || owner.pending_plugin_sha256.as_ref() == Some(&actual)
+    }) {
+        return Err(
+            "The Forest 控制桥的归属无法确认或内容已被修改；文件已保留，无法安全停用，已取消启动。"
+                .into(),
+        );
+    }
+    super::commands_managed_save_control::retire_owned_file(&plugin, &actual)
 }
 
 #[cfg(test)]

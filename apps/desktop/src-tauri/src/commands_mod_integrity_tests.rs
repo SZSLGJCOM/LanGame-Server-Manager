@@ -203,8 +203,10 @@ async fn verified_modrinth_file_is_removed_when_commit_is_cancelled() {
         .unwrap();
     prepared_receiver.await.unwrap().unwrap();
     drop(commit);
-    let error = wait_for_mod_download_writer(writer).await.unwrap_err();
-    assert!(error.contains("cancelled"), "{error}");
+    assert_eq!(
+        wait_for_mod_download_writer(writer).await.unwrap(),
+        DownloadWriteCompletion::Cancelled
+    );
     assert_download_root_empty(&root);
     fs::remove_dir_all(root).unwrap();
 }

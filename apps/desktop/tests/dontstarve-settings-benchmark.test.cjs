@@ -1,11 +1,11 @@
 const assert = require("node:assert/strict");
-const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
 const root = path.resolve(__dirname, "..", "..", "..");
 const schema = JSON.parse(fs.readFileSync(path.join(root, "modules", "dontstarve", "schema.json"), "utf8"));
+const nativeInventory = require("../../../modules/dontstarve/world-options.json");
 const inventorySource = fs.readFileSync(path.join(
   root,
   "crates",
@@ -14,70 +14,65 @@ const inventorySource = fs.readFileSync(path.join(
   "templates_render_dst_inventory.rs"
 ), "utf8");
 
-function schemaInventory(sectionIds) {
-  return Object.values(schema.properties)
-    .filter((property) => sectionIds.has(property["x-lsgm-section"]) &&
-      property["x-lsgm-source-key"].startsWith("overrides."))
-    .map((property) => property["x-lsgm-source-key"].replace(/^overrides\./u, ""))
-    .sort();
-}
-
-function rendererInventory(constantName) {
+function rendererEntries(constantName) {
   const block = inventorySource.match(new RegExp(
     `const ${constantName}:[\\s\\S]*?= &\\[([\\s\\S]*?)\\n\\];`
   ));
   assert.ok(block, `${constantName} must exist`);
   return Array.from(
-    block[1].matchAll(/\(\s*"[^"]+"\s*,\s*"([^"]+)"\s*,\s*"[^"]+"\s*,?\s*\)/gu),
-    (match) => match[1]
+    block[1].matchAll(/\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,?\s*\)/gu),
+    ([, settingKey, nativeKey, defaultValue]) => ({ settingKey, nativeKey, defaultValue })
   );
 }
 
-function digest(values) {
-  return crypto.createHash("sha256").update([...values].sort().join("\n")).digest("hex");
+function rendererInventory(constantName) {
+  return rendererEntries(constantName).map((entry) => entry.nativeKey);
 }
 
-function schemaDefinitionDigest(sectionIds) {
-  const definitions = Object.entries(schema.properties)
-    .filter(([, property]) => sectionIds.has(property["x-lsgm-section"]) &&
-      property["x-lsgm-source-key"].startsWith("overrides."))
-    .map(([key, property]) => ({
-      key,
-      sourceKey: property["x-lsgm-source-key"],
-      type: property.type,
-      default: property.default,
-      enum: property.enum
-    }))
-    .sort((left, right) => left.key.localeCompare(right.key, "en"));
-  return crypto.createHash("sha256").update(JSON.stringify(definitions)).digest("hex");
-}
-
-test("DST first-party world inventories remain exact at Master 190 and Caves 86", () => {
-  const master = schemaInventory(new Set(["mastergen", "mastersettings"]));
-  const caves = schemaInventory(new Set(["cavesgen", "cavessettings"]));
-
-  assert.equal(master.length, 190);
-  assert.equal(caves.length, 86);
-  assert.equal(digest(master), "3bde26ac863fdade168e43ae46e6d71959ed1af64205ba09c0d3aa20db8f4c44");
-  assert.equal(digest(caves), "2692c43317cb32a15dabd50bcf30046aaf420173a96ec5608994bcf0fd0531a0");
-  assert.equal(
-    schemaDefinitionDigest(new Set(["mastergen", "mastersettings"])),
-    "b980e63db29914f8e0029d16a03d733b2c530b7fb80372e080e6eb94ad94e0d4"
-  );
-  assert.equal(
-    schemaDefinitionDigest(new Set(["cavesgen", "cavessettings"])),
-    "bf6fc99253f213acf6a5a1d471c1ad7427e07c2451e69f56019070896345059e"
-  );
-
-  const renderedMaster = [
-    ...rendererInventory("DST_SHARED_OVERRIDE_ENTRIES"),
-    ...rendererInventory("DST_MASTER_OVERRIDE_ENTRIES")
-  ];
-  const renderedCaves = rendererInventory("DST_CAVES_OVERRIDE_ENTRIES");
-  assert.deepEqual([...renderedMaster].sort(), master);
-  assert.deepEqual([...renderedCaves].sort(), caves);
-  assert.equal(new Set(renderedMaster).size, 190);
-  assert.equal(new Set(renderedCaves).size, 86);
+test("DST world fields and renderer match the verified native inventory and defaults", () => {
+  // Native ordinary options use "default"; these explicit exceptions preserve
+  // the shipped world defaults independently of the schema and renderer.
+  const defaults = {
+    world_healthpenalty: "always", world_ghostenabled: "always", world_ghostsanitydrain: "always",
+    world_portalresurection: "none", world_spawnmode: "fixed", world_basicresource_regrowth: "none",
+    world_lessdamagetaken: "none", master_wanderingtrader_enabled: "always",
+    master_ocean_seastack: "ocean_default", master_ocean_waterplant: "ocean_default",
+    caves_start_location: "caves", caves_task_set: "cave_default", caves_acidrain_enabled: "always"
+  };
+  const rendered = {
+    forest: [...rendererEntries("DST_SHARED_OVERRIDE_ENTRIES"), ...rendererEntries("DST_MASTER_OVERRIDE_ENTRIES")],
+    cave: rendererEntries("DST_CAVES_OVERRIDE_ENTRIES")
+  };
+  const expectedRendered = { forest: [], cave: [] };
+  for (const [section, category, location] of [
+    ["mastergen", "worldgen", "forest"], ["mastersettings", "settings", "forest"],
+    ["cavesgen", "worldgen", "cave"], ["cavessettings", "settings", "cave"]
+  ]) {
+    const expected = nativeInventory.options.filter((option) => option.category === category &&
+      option.locations.includes(location) && (location === "forest" || !option.masterControlled));
+    const fields = Object.entries(schema.properties).filter(([, property]) =>
+      property["x-lsgm-section"] === section && property["x-lsgm-source-key"]?.startsWith("overrides."));
+    const nativeKey = (property) => property["x-lsgm-source-key"].slice("overrides.".length);
+    assert.deepEqual(fields.map(([, property]) => nativeKey(property)).sort(),
+      expected.map((option) => option.key).sort(), `${section}: native option coverage`);
+    for (const [settingKey, property] of fields) {
+      const key = nativeKey(property);
+      const option = expected.find((entry) => entry.key === key);
+      assert.equal(property.type, "string", settingKey);
+      assert.equal(property.default, defaults[settingKey] ?? "default", `${settingKey}: default`);
+      // Native task/start registries have no stable enumeration order.
+      const choices = ["task_set", "start_location"].includes(key)
+        ? (values) => [...values].sort() : (values) => values;
+      assert.deepEqual(choices(property.enum), choices(option.values[location]), `${settingKey}: enum`);
+      assert.ok(property.enum.includes(property.default), `${settingKey}: default is selectable`);
+      expectedRendered[location].push({ settingKey, nativeKey: key, defaultValue: property.default });
+    }
+  }
+  const bySetting = (left, right) => left.settingKey.localeCompare(right.settingKey, "en");
+  for (const location of ["forest", "cave"]) {
+    assert.deepEqual(rendered[location].sort(bySetting), expectedRendered[location].sort(bySetting),
+      `${location}: renderer binding and defaults`);
+  }
 });
 
 test("Caves generation uses only the native cave task set and start location", () => {

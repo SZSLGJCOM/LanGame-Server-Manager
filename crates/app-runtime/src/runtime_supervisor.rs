@@ -148,6 +148,7 @@ impl RuntimeSupervisor {
             run_id: primary.run_id,
             session_id: instance.session_id.clone(),
             prepared: instance.world_save_prepared,
+            world_ready: None,
         })
     }
 

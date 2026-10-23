@@ -89,6 +89,7 @@ async fn context(
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install = effective_instance_install_root(&record)?;
     let target = effective_instance_saves_dir(descriptor.as_ref(), &install, &record)?;
+    recovery::ensure_record_ready(&record, &target)?;
     let (settings, settings_json) = effective_instance_settings(descriptor.as_ref(), &record)?;
     let mut protected = vec![
         paths.app_data_root.clone(),

@@ -21,7 +21,8 @@ export function readRuntimeStartWarnings(value: unknown): RuntimeStartWarning[] 
   return value.filter((entry): entry is RuntimeStartWarning => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
     const warning = entry as Record<string, unknown>;
-    if (warning.code === "world_initialization_incomplete") {
+    if (warning.code === "world_initialization_incomplete" || warning.code === "manual_save_unavailable"
+      || warning.code === "program_update_using_installed" || warning.code === "graceful_stop_unavailable") {
       return warning.provider === null && warning.reason === null
         && Array.isArray(warning.item_ids) && warning.item_ids.length === 0
         && typeof warning.message === "string" && contextText(warning.log_path)
@@ -50,6 +51,14 @@ export function runtimeStartWarningKey(warning: RuntimeStartWarning): string {
 }
 
 export function formatRuntimeStartWarning(t: TranslateFn, warning: RuntimeStartWarning, label: string) {
+  if (warning.code === "manual_save_unavailable" || warning.code === "program_update_using_installed"
+    || warning.code === "graceful_stop_unavailable") {
+    const key = warning.code === "manual_save_unavailable" ? "manualSaveUnavailable"
+      : warning.code === "graceful_stop_unavailable" ? "gracefulStopUnavailable" : "usingInstalledProgram";
+    const details = [t(`runtime.startWarning.${key}Advice`)];
+    if (warning.log_path) details.push(t("runtime.startWarning.log", { value: warning.log_path }));
+    return { text: t(`runtime.startWarning.${key}`, { name: label }), details: details.join("\n") };
+  }
   if (warning.code === "world_initialization_incomplete") {
     const details = [t("runtime.startWarning.worldInitializationAdvice")];
     if (warning.log_path) details.push(t("runtime.startWarning.log", { value: warning.log_path }));

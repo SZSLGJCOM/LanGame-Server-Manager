@@ -1282,6 +1282,9 @@ async fn update_instance_transaction(
                 })
                 .unwrap_or_else(|| paths.games_root.join(&record.summary.module_id));
         let template_install_root = effective_instance_install_root(&record)?;
+        let current_saves =
+            effective_instance_saves_dir(descriptor.as_ref(), &template_install_root, &record)?;
+        crate::backups::ensure_backup_record_ready(&record, &current_saves)?;
         let instance_root = record
             .config_dir
             .parent()
@@ -1822,6 +1825,9 @@ async fn materialize_instance_configuration_transaction(
                 })
                 .unwrap_or_else(|| paths.games_root.join(&record.summary.module_id));
         let template_install_root = effective_instance_install_root(&record)?;
+        let current_saves =
+            effective_instance_saves_dir(descriptor.as_ref(), &template_install_root, &record)?;
+        crate::backups::ensure_backup_record_ready(&record, &current_saves)?;
         let instance_root = record
             .config_dir
             .parent()

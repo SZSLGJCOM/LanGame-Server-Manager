@@ -167,7 +167,7 @@ async fn provider_failure_is_safe_and_cancellation_never_becomes_cached_start() 
     .err()
     .unwrap();
     assert_eq!(
-        failure.reason,
+        failure.reason(),
         Some(app_core::RuntimeModUpdateReason::Request)
     );
     assert!(!failure.message.contains("secret"));
@@ -181,19 +181,21 @@ async fn provider_failure_is_safe_and_cancellation_never_becomes_cached_start() 
     .await
     .err()
     .unwrap();
-    assert_eq!(cancelled.reason, None);
+    assert_eq!(cancelled.reason(), None);
+    assert!(cancelled.is_cancelled());
     use crate::commands::commands_mods::mod_download::ModDownloadFailure;
+    assert!(download_failure(ModDownloadFailure::Cancelled).is_cancelled());
     assert_eq!(
-        download_failure(ModDownloadFailure::Network("network detail".into())).reason,
+        download_failure(ModDownloadFailure::Network("network detail".into())).reason(),
         Some(app_core::RuntimeModUpdateReason::Network)
     );
     assert_eq!(
-        download_failure(ModDownloadFailure::Http("private HTTP details".into())).reason,
+        download_failure(ModDownloadFailure::Http("private HTTP details".into())).reason(),
         Some(app_core::RuntimeModUpdateReason::Http)
     );
     let local = download_failure(ModDownloadFailure::Terminal(
         "permission denied or program fault".into(),
     ));
-    assert_eq!(local.reason, None);
+    assert_eq!(local.reason(), None);
     assert!(!local.message.contains("program fault"));
 }

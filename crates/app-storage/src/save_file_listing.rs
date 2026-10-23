@@ -80,7 +80,10 @@ pub async fn list_instance_save_files(
                 load_instance_backup_for_instance(&path, &instance_id, backup_id)?;
                 path
             }
-            (None, Some(saves_dir)) => saves_dir,
+            (None, Some(saves_dir)) => {
+                recovery::ensure_record_ready(&record, &saves_dir)?;
+                saves_dir
+            }
             (None, None) => unreachable!("saves directory is resolved when no backup is requested"),
         };
         let mut listing = list_directory_tree(&root, MAX_SAVE_FILE_LISTING_ENTRIES)?;

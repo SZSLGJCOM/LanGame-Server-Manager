@@ -1059,7 +1059,7 @@ pub(super) fn assign_process_log_paths_with_stamp(
     instance: &InstanceDetails,
     launch_plans: &mut [ProcessLaunchPlan],
     stamp: u128,
-) {
+) -> Result<(), String> {
     for plan in launch_plans {
         let mut path = derive_run_log_path(instance, &plan.process_key, Some(stamp));
         // ShellExecute's elevated cmd redirection retains its own file handle;
@@ -1072,7 +1072,11 @@ pub(super) fn assign_process_log_paths_with_stamp(
             path = logs_root.join(name);
         }
         plan.log_path = path.to_string_lossy().into_owned();
+        if plan.launch_plan.module_id == "corekeeper" {
+            app_runtime::bind_corekeeper_run_log(&mut plan.launch_plan, &path)?;
+        }
     }
+    Ok(())
 }
 
 pub(super) fn build_process_launch_plans_for_instance(

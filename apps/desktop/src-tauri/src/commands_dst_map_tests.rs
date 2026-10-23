@@ -9,6 +9,7 @@ fn map_error_codes_are_stable_bounded_and_do_not_infer_stages_from_messages() {
         (MapErrorCode::ShardChanged, "SHARD_CHANGED"),
         (MapErrorCode::ConsoleUnavailable, "CONSOLE_UNAVAILABLE"),
         (MapErrorCode::WorldNotReady, "WORLD_NOT_READY"),
+        (MapErrorCode::GeometryChanged, "GEOMETRY_CHANGED"),
         (MapErrorCode::ResponseTimeout, "RESPONSE_TIMEOUT"),
         (MapErrorCode::ArtworkWorkerFailed, "ARTWORK_WORKER_FAILED"),
     ] {
@@ -34,7 +35,7 @@ fn inventory_completion_requires_all_actual_landmarks_to_agree_and_excludes_avat
     };
     let base = serde_json::json!({
         "instanceId":"owned","shard":"master","runId":1,"capturedAtUnixMs":1,
-        "session":"fixture","width":1,"height":1,"tileScale":4,
+        "session":"fixture","geometryRevision":"","width":1,"height":1,"tileScale":4,
         "day":1,"season":"autumn","phase":"day","tiles":[1],
         "tileNames":{},"tileKinds":{},"tileTextures":{},"tileBaseTextures":{},"tileColors":{},
         "terrainLayers":[],"landmarks":[landmark("1","Map.PNG","../mods/enabled/item.xml","Item.tex"),
@@ -97,7 +98,7 @@ fn edge_requests_use_final_layers_and_include_only_ocean_without_native_color() 
     layers.push(layer(8, Some(0)));
     let snapshot: protocol::DstMapSnapshot=serde_json::from_value(serde_json::json!({
         "instanceId":"owned","shard":"master","runId":1,"capturedAtUnixMs":1,
-        "session":"material-fixture","width":9,"height":1,"tileScale":4,
+        "session":"material-fixture","geometryRevision":"","width":9,"height":1,"tileScale":4,
         "day":1,"season":"autumn","phase":"day","tiles":[1,2,3,4,5,6,7,8,9],
         "tileNames":{"1":"LAND","2":"TEXTURED_OCEAN","3":"COLORED_OCEAN","4":"BROKEN_FINAL",
             "5":"LAND_OTHER_STYLE","6":"OCEAN_OTHER_STYLE","7":"COLORED_OTHER_STYLE","8":"FINAL_SUPPORTED","9":"VOID"},
@@ -294,7 +295,7 @@ impl MapProcessFixture {
             "instanceId": self.details.summary.id,
             "shard": shard,
             "runId": self.details.active_run.as_ref().unwrap().run_id,
-            "capturedAtUnixMs": 1, "session": "shared-map-session",
+            "capturedAtUnixMs": 1, "session": "shared-map-session", "geometryRevision": "",
             "width": 1, "height": 1, "tileScale": 4.0,
             "day": 1, "season": "autumn", "phase": "day",
             "tiles": null, "tileNames": {}, "tileKinds": {}, "tileTextures": {}, "tileBaseTextures": {}, "tileColors": {}, "terrainLayers": [],

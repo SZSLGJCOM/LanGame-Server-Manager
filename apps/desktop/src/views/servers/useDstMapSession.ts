@@ -3,6 +3,7 @@ import { readDstWorldMap } from "../../api-dst-map";
 import { readDstMapCache, saveDstMapCache, dstMapCachedView, type DstMapCacheEntry, type DstMapCachedView } from "../../dst-map-cache";
 import { mergeDstMapPositions, dstMapWorldKey } from "../../dst-map-session";
 import type { DstWorldMap } from "../../dst-world-map";
+import { dstMapErrorCode } from "../../dst-map-errors";
 import type { DontStarveShard } from "../settings/modules/dontstarve-shards";
 
 interface MapState {
@@ -64,7 +65,12 @@ export function useDstMapSession(instanceId: string, shard: DontStarveShard, run
         clearTimeout(freshness);
         freshness = setTimeout(() => update({ live: false }), remaining);
       } catch (error) {
-        update({ error, live: false });
+        if (dstMapErrorCode(error instanceof Error ? error.message : String(error)) === "GEOMETRY_CHANGED") {
+          // A room switched between tile batches. Discard all old geometry and
+          // retry a full capture at the normal bounded polling interval.
+          latest = null; saved = null;
+          update({ snapshot: null, initialView: null, error: null, live: false });
+        } else update({ error, live: false });
       } finally {
         busy = false;
         if (!disposed) {

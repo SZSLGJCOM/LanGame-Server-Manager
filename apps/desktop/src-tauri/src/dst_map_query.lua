@@ -13,6 +13,21 @@ if not world or not world.ismastersim or not InGamePlay() then
     return
 end
 local map = world.Map
+local function geometry()
+    local manager = world.components and world.components.virtualroommanager
+    local parts = {}
+    for _, room in ipairs(manager and manager.virtualroomsets or {}) do
+        if #parts >= 64 then error("Too many virtual room sets") end
+        local origin = room.origin or {}
+        parts[#parts + 1] = table.concat({ room.inst.GUID, room.currentroomindex,
+            origin.tx or -1, origin.ty or -1, assert(room._lgsm_map_revision) }, ":")
+    end
+    local value = table.concat(parts, ",")
+    if #value > 2048 then error("Map geometry identity exceeds limit") end
+    return value
+end
+local valid, revision = pcall(geometry)
+if not valid then emit({ k = "error", message = "Invalid room state; update the map observer and restart the shard." }) return end
 local prior = world._lgsm_world_map_query
 if prior then
     if prior.owner ~= "LGSM" or GetTimeReal() < prior.expires then
@@ -56,7 +71,7 @@ local function clean(value, limit)
     end
     return string.sub(value, 1, last)
 end
-emit({ k = "begin", width = width, height = height, tileScale = TILE_SCALE,
+emit({ k = "begin", width = width, height = height, tileScale = TILE_SCALE, geometryRevision = revision,
     gameVersion = clean(rawget(_G, "APP_VERSION"), 64),
     session = TheNet:GetSessionIdentifier(), day = world.state.cycles + 1,
     season = clean(world.state.season, 64), phase = clean(world.state.phase, 64) })
@@ -79,7 +94,7 @@ local function map_icon(entity)
     -- This limited native fallback never guesses a Mod prefab's icon.
     return landmark_icons[entity.prefab], 0
 end
-local failure
+local failure, failure_code
 local function reject(message)
     failure = message
     error(message)
@@ -342,6 +357,10 @@ local step
 step = function()
     local ok = pcall(function()
         if TheWorld ~= world then error("The shard world changed during collection") end
+        if geometry() ~= revision then
+            failure_code = "geometry_changed"
+            reject("Virtual rooms changed during collection.")
+        end
         if GetTimeReal() >= active.expires then error("The world map query expired") end
         if not terrain then finish() return end
         -- Yield every 4096 native tile reads. No persistent timer or game mutation.
@@ -363,6 +382,6 @@ step = function()
         if offset == width * height then finish()
         else active.task = world:DoTaskInTime(0, step) end
     end)
-    if not ok then release() emit({ k = "error", message = failure or "The native world map query failed." }) end
+    if not ok then release() emit({ k = "error", code = failure_code, message = failure or "The native world map query failed." }) end
 end
 step()

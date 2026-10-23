@@ -78,6 +78,7 @@ pub async fn prepare_instance_backup_restore(
     let instance_id = instance_id.to_owned();
     let backup_id = backup_id.to_owned();
     run_instance_transaction(instance_root(&record), move || {
+        recovery::ensure_record_ready(&record, &saves_dir)?;
         let path = validated_backup_path(&record, &backup_id)?;
         let backup = load_instance_backup_for_instance(&path, &instance_id, &backup_id)?;
         let saves_dir = backup_restore_scope(&record, &saves_dir, &backup);

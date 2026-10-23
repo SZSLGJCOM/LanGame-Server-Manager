@@ -7,6 +7,11 @@ server builds disable only the manager-owned save plugin before native startup;
 modified or foreign files remain conflicts. User Mods and autosave settings are
 preserved.
 
+If the reviewed loader download is unavailable, startup can continue without
+manual save only after confirming that the loader is absent or a complete owned
+installation has Doorstop explicitly disabled, and retiring the owned save
+plugin. Unknown, modified or incomplete loader files remain hard conflicts.
+
 Verified package: Steam app 1829350, build 25169871,
 1.1.15.0-r101082-b2. The IL2CPP compatibility tuple remains:
 

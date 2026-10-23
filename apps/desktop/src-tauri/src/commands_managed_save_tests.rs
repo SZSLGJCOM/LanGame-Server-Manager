@@ -27,6 +27,7 @@ impl Fixture {
             instances_root: root.join("instances"),
             archives_root: root.join("instances").join(".trash"),
         };
+        fs::create_dir_all(&paths.archives_root).unwrap();
         initialize_database(&paths).await.unwrap();
         let descriptors = discover_modules(&paths.modules_root).unwrap();
         let descriptor = find_descriptor(&descriptors, "unturned").unwrap();
@@ -70,7 +71,11 @@ impl Fixture {
     }
 
     async fn start_capture(&self) -> PathBuf {
-        crate::commands::tests::register_smoke_stdin_capture_process(
+        self.start_capture_with_world_loaded(true).await
+    }
+
+    async fn start_capture_with_world_loaded(&self, loaded: bool) -> PathBuf {
+        let capture = crate::commands::tests::register_smoke_stdin_capture_process(
             self.app.state::<DesktopState>(),
             &self.storage,
             &self.details,
@@ -78,7 +83,24 @@ impl Fixture {
             "main",
         )
         .await
-        .unwrap()
+        .unwrap();
+        if loaded {
+            self.load_world().await;
+        }
+        capture
+    }
+
+    async fn load_world(&self) {
+        use std::io::Write;
+        let details = read_instance_details(&self.storage.paths, &self.details.summary.id)
+            .await
+            .unwrap();
+        fs::OpenOptions::new()
+            .append(true)
+            .open(details.active_run.unwrap().log_path.unwrap())
+            .unwrap()
+            .write_all(b"Steam servers ready!\nLoading level: 100%\n")
+            .unwrap();
     }
 
     async fn finish_capture(&self) {
@@ -177,6 +199,62 @@ fn managed_save_interval_accepts_defaults_disable_and_bounded_seconds() {
                 .is_err()
         );
     }
+}
+
+#[tokio::test]
+async fn manual_and_scheduled_saves_wait_for_the_current_world_to_load() {
+    let fixture = Fixture::new().await;
+    let capture = fixture.start_capture_with_world_loaded(false).await;
+    let state = fixture.app.state::<DesktopState>();
+    let input = serde_json::from_value(json!({
+        "instanceId": fixture.details.summary.id, "command": "Save",
+        "runtimeActionId": "save_world"
+    }))
+    .unwrap();
+    let manual = crate::commands::send_instance_runtime_command(state.clone(), input).await;
+    let error = manual.expect_err("an unloaded world must reject manual save");
+    assert!(
+        error.contains("world is still loading"),
+        "unexpected save failure: {error}"
+    );
+    let mut worker = ManagedSaveWorker::default();
+    let now = Instant::now();
+    worker.tick(&state, &fixture.storage, now).await.unwrap();
+    worker
+        .tick(&state, &fixture.storage, now + Duration::from_secs(300))
+        .await
+        .unwrap();
+    assert!(
+        !capture.exists(),
+        "the scheduler must not send Save before world loading"
+    );
+    let readiness = crate::commands::commands_storage::read_instance_world_save_readiness(
+        state.clone(),
+        fixture.details.summary.id.clone(),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(readiness).unwrap()["world_ready"],
+        false
+    );
+    fixture.load_world().await;
+    let readiness = crate::commands::commands_storage::read_instance_world_save_readiness(
+        state.clone(),
+        fixture.details.summary.id.clone(),
+    )
+    .await
+    .unwrap()
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(readiness).unwrap()["world_ready"],
+        true
+    );
+    // The capture process reads exactly one line. Its sentinel exit proves no
+    // manual or scheduled Save was queued while the world was loading.
+    fixture.finish_capture().await;
+    assert!(!capture.exists());
 }
 
 #[test]

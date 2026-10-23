@@ -13,6 +13,8 @@ use std::ffi::OsString;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tauri::Manager;
 
+#[path = "commands_corekeeper_run_log_tests.rs"]
+mod corekeeper_run_log_tests;
 #[path = "commands_file_mods_integration_tests.rs"]
 mod file_mods_integration_tests;
 #[path = "commands_mod_game_boundaries_integration_tests.rs"]

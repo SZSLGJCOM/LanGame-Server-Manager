@@ -1,7 +1,10 @@
 use super::*;
 
+#[path = "commands_dst_native_shadowy_depths_tests.rs"]
+mod shadowy_depths_checks;
+
 pub(super) async fn verify(
-    state: &DesktopState,
+    state: tauri::State<'_, DesktopState>,
     id: &str,
     process: &StartedProcess,
     run_id: i64,
@@ -9,6 +12,12 @@ pub(super) async fn verify(
     mod_ids: &[String],
     events: &[&str],
 ) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+    if scenario == "shadowy_depths" {
+        return Ok(vec![
+            shadowy_depths_checks::verify(state, id, process, run_id).await?,
+        ]);
+    }
+    let state = state.inner();
     let mut features = Vec::new();
     let (prelude, expected) = if scenario == "events" {
         let ids = events

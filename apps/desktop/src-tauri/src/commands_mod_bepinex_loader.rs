@@ -259,6 +259,48 @@ pub(in crate::commands) fn runtime_loader_requires_archive(
     Ok(enable_doorstop(&config, loader)?.1)
 }
 
+/// A failed optional download cannot authorize an unknown or incomplete proxy.
+/// A complete owned loader may remain only when Doorstop is explicitly disabled.
+pub(in crate::commands) fn verify_native_start_without_loader(
+    module_id: &str,
+    root: &Path,
+) -> Result<(), String> {
+    let game = thunderstore_game_profile(module_id)?;
+    validate_manual_mod_target_path(root)?;
+    verify_server(root, game)?;
+    let loader = game
+        .loader
+        .ok_or("This game has no optional BepInEx loader")?;
+    verify_inactive_loader(root, loader)
+}
+
+fn verify_inactive_loader(root: &Path, loader: &BepInExProfile) -> Result<(), String> {
+    if verified_receipt(root, loader)? {
+        let config = read_document(root, CONFIG, 64 * 1024)?
+            .ok_or("Owned Doorstop configuration is missing")?;
+        if !enable_doorstop(&config, loader)?.1 {
+            return Err(
+                "The owned loader is still enabled; optional preparation cannot safely skip it."
+                    .into(),
+            );
+        }
+        return Ok(());
+    }
+    for relative in loader
+        .files
+        .keys()
+        .map(String::as_str)
+        .chain([CONFIG, BEPINEX_CONFIG])
+    {
+        if plain_file(root, relative)?.is_some() {
+            return Err(format!(
+                "An unowned loader file remains at {relative}; it was preserved and native startup was blocked."
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn stage_loader_archive(
     root: &Path,
     archive: &Path,

@@ -7,6 +7,7 @@ const { sameDstMapWorld, mergeDstMapPositions } = require("../src/dst-map-sessio
 const { dstMapErrorCode } = require("../src/dst-map-errors.ts");
 
 const initial = () => ({ instanceId: "world-instance", shard: "master", runId: 7, session: "native-session",
+  geometryRevision: "15:0:30:40:1",
   width: 400, height: 400, tileScale: 4, tiles: [1, 2], art: { icons: {} },
   players: [{ id: "KU_USER", mapX: 10 }], capturedAtUnixMs: 1000, day: 3, season: "summer", phase: "day" });
 test("position updates preserve terrain references and replace actual players and world clock", () => {
@@ -23,7 +24,7 @@ test("position updates preserve terrain references and replace actual players an
 test("any native identity or geometry change requires complete terrain before displaying positions", () => {
   const first = initial();
   for (const change of [{ instanceId: "other" }, { shard: "caves" }, { runId: 8 }, { session: "regenerated" },
-    { width: 401 }, { height: 401 }, { tileScale: 5 }]) {
+    { width: 401 }, { height: 401 }, { tileScale: 5 }, { geometryRevision: "15:1:30:40:2" }]) {
     const next = { ...first, ...change, tiles: null, art: null };
     assert.equal(sameDstMapWorld(first, next), false);
     assert.equal(mergeDstMapPositions(first, next), null);

@@ -122,6 +122,18 @@ async function run() {
   await settleUntil(() => store.getSnapshot().some((entry) => entry.text.includes("first-world initialization did not complete")), "Native world warning missing");
   check(element(".shell-activity-panel").textContent?.includes("ASTRONEER"), "Native world warning label missing");
   check(!element(".shell-activity-panel").textContent?.includes("PRIVATE_RESPONSE"), "Native initialization diagnostic body leaked"); scenarios++;
+  for (const [code, expected] of [["manual_save_unavailable", "manual saving is unavailable"],
+    ["graceful_stop_unavailable", "normal shutdown is unavailable"],
+    ["program_update_using_installed", "game update check did not complete"]] as const) {
+    manual = { id: `manual-start:${code}:5`, instanceId: code, label: "Native server", warnings: [{
+      code, provider: null, reason: null, item_ids: [], message: "PRIVATE_RESPONSE",
+      map_key: null, http_status: null, log_path: "C:/fixture/logs/native.log",
+    }] };
+    await rerender([]);
+    await settleUntil(() => store.getSnapshot().some((entry) => entry.text.includes(expected)), "Native limitation warning missing");
+    check(!element(".shell-activity-panel").textContent?.includes("PRIVATE_RESPONSE"), "Native limitation leaked diagnostic detail");
+    scenarios++;
+  }
   const bounds = element(".shell-activity-panel").getBoundingClientRect();
   check(bounds.top >= 0 && bounds.bottom <= innerHeight, "Startup warning details escaped the viewport");
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);

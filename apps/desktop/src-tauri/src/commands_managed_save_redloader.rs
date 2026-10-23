@@ -70,38 +70,102 @@ fn adopt_release(root: &Path, release: &Release) -> Result<(), String> {
     verify_release(root, release)
 }
 
-pub(super) async fn download() -> Result<Vec<u8>, String> {
-    let release = release()?;
+pub(super) enum DownloadFailure {
+    Local(String),
+    Remote(String),
+}
+
+pub(super) async fn download() -> Result<Vec<u8>, DownloadFailure> {
+    let release = release().map_err(DownloadFailure::Local)?;
+    download_release(&release).await
+}
+
+pub(super) fn finish_download(
+    root: &Path,
+    downloaded: Result<Vec<u8>, DownloadFailure>,
+) -> Result<Option<Vec<u8>>, String> {
+    finish_release_download(root, &release()?, downloaded)
+}
+
+fn finish_release_download(
+    root: &Path,
+    release: &Release,
+    downloaded: Result<Vec<u8>, DownloadFailure>,
+) -> Result<Option<Vec<u8>>, String> {
+    let message = match downloaded {
+        Ok(bytes) => return Ok(Some(bytes)),
+        Err(DownloadFailure::Local(message)) => return Err(message),
+        Err(DownloadFailure::Remote(message)) => message,
+    };
+    let cleanup = (|| {
+        let _root = io::pin_directories(root)?;
+        inspect_release(root, release)?;
+        let proxy = root.join("version.dll");
+        if let Some(bytes) = io::read_optional(&proxy, 64 * 1024 * 1024)? {
+            let expected = release
+                .files
+                .get("version.dll")
+                .ok_or("The reviewed RedLoader proxy identity is missing.")?;
+            if io::digest(&bytes) != *expected {
+                return Err("The RedLoader proxy changed; it was preserved.".to_owned());
+            }
+            if io::read_optional(&root.join(OWNER), 4096)?.as_deref()
+                != Some(receipt(release)?.as_slice())
+            {
+                return Err(
+                    "The incomplete RedLoader proxy is not owned; it was preserved.".to_owned(),
+                );
+            }
+            io::remove_owned(&proxy, expected)?;
+        }
+        Ok::<_, String>(())
+    })();
+    cleanup.map_err(|cleanup| {
+        format!("{message} RedLoader could not be safely disabled: {cleanup}")
+    })?;
+    Ok(None)
+}
+
+async fn download_release(release: &Release) -> Result<Vec<u8>, DownloadFailure> {
+    use DownloadFailure::{Local, Remote};
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(180))
         .build()
-        .map_err(|_| "Cannot initialize the official RedLoader download.")?;
+        .map_err(|_| Local("Cannot initialize the official RedLoader download.".into()))?;
     let mut response = client
         .get("https://github.com/ToniMacaroni/RedLoader/releases/download/0.8.6/Redloader.zip")
         .send()
         .await
-        .map_err(|_| "The official RedLoader download failed; no loader files were installed.")?
+        .map_err(|_| {
+            Remote("The official RedLoader download failed; no loader files were installed.".into())
+        })?
         .error_for_status()
-        .map_err(|_| "The official RedLoader release was unavailable.")?;
+        .map_err(|_| Remote("The official RedLoader release was unavailable.".into()))?;
     if response
         .content_length()
         .is_some_and(|length| length != release.archive_bytes as u64)
     {
-        return Err("The official RedLoader archive size changed.".into());
+        return Err(Remote(
+            "The official RedLoader archive size changed.".into(),
+        ));
     }
     let mut bytes = Vec::with_capacity(release.archive_bytes);
     while let Some(chunk) = response
         .chunk()
         .await
-        .map_err(|_| "The official RedLoader download was interrupted.")?
+        .map_err(|_| Remote("The official RedLoader download was interrupted.".into()))?
     {
         if bytes.len().saturating_add(chunk.len()) > release.archive_bytes {
-            return Err("The RedLoader archive exceeds its fixed size.".into());
+            return Err(Remote(
+                "The RedLoader archive exceeds its fixed size.".into(),
+            ));
         }
         bytes.extend_from_slice(&chunk);
     }
     if bytes.len() != release.archive_bytes || io::digest(&bytes) != release.archive_sha256 {
-        return Err("The official RedLoader archive does not match the reviewed release.".into());
+        return Err(Remote(
+            "The official RedLoader archive does not match the reviewed release.".into(),
+        ));
     }
     Ok(bytes)
 }
@@ -195,6 +259,65 @@ pub(super) fn install(root: &Path, bytes: &[u8]) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::commands::commands_managed_save_control::tests::Fixture;
+
+    #[test]
+    fn optional_redloader_remote_failure_disables_only_owned_incomplete_injection() {
+        let mut release = fixed_release();
+        release.files.remove("winhttp.dll");
+        release
+            .files
+            .insert("version.dll".into(), io::digest(b"fixed proxy"));
+        let remote = || Err(DownloadFailure::Remote("fixture remote failure".into()));
+        for ownership in ["absent", "owned", "unowned", "modified", "blocked"] {
+            let root = Fixture::new();
+            if matches!(ownership, "owned" | "modified" | "blocked") {
+                std::fs::write(root.0.join(OWNER), receipt(&release).unwrap()).unwrap();
+            }
+            match ownership {
+                "owned" | "unowned" => {
+                    std::fs::write(root.0.join("version.dll"), b"fixed proxy").unwrap()
+                }
+                "modified" => {
+                    std::fs::write(root.0.join("version.dll"), b"operator proxy").unwrap()
+                }
+                "blocked" => std::fs::create_dir(root.0.join("version.dll")).unwrap(),
+                _ => {}
+            }
+            let result = finish_release_download(&root.0, &release, remote());
+            if matches!(ownership, "absent" | "owned") {
+                assert_eq!(result.unwrap(), None, "{ownership}");
+                assert!(!root.0.join("version.dll").exists());
+                if ownership == "owned" {
+                    assert_eq!(
+                        std::fs::read(root.0.join(OWNER)).unwrap(),
+                        receipt(&release).unwrap()
+                    );
+                }
+            } else {
+                assert!(result.is_err(), "{ownership}");
+                assert!(root.0.join("version.dll").exists());
+            }
+        }
+    }
+
+    #[test]
+    fn optional_redloader_local_failure_does_not_retire_any_file() {
+        let root = Fixture::new();
+        std::fs::write(root.0.join("version.dll"), b"operator proxy").unwrap();
+        assert_eq!(
+            finish_release_download(
+                &root.0,
+                &fixed_release(),
+                Err(DownloadFailure::Local("local failure".into()))
+            )
+            .unwrap_err(),
+            "local failure"
+        );
+        assert_eq!(
+            std::fs::read(root.0.join("version.dll")).unwrap(),
+            b"operator proxy"
+        );
+    }
 
     fn fixed_release() -> Release {
         Release {

@@ -66,7 +66,7 @@ function response(overrides = {}) { return { instance_id: "fixture", command: "s
   response_text: "Saved the game", write_confirmation_pending: false, save_completion: "confirmed", submitted_at_unix_ms: 1, ...overrides }; }
 function descendants(node) { return React.isValidElement(node) ? [node, ...React.Children.toArray(node.props.children).flatMap(descendants)] : []; }
 
-function harness(send = async () => response(), readiness = async () => ({ run_id: 1, session_id: null, prepared: true })) {
+function harness(send = async () => response(), readiness = async () => ({ run_id: 1, session_id: null, prepared: true, world_ready: true })) {
   const hooks = [], effects = [], calls = [];
   let cursor = 0, writes = 0;
   const same = (a, b) => a?.length === b?.length && a.every((value, index) => Object.is(value, b[index]));
@@ -324,13 +324,13 @@ test("archived immediate save keeps the shared card and restore hint without sen
 
 
 test("maintenance save explains vanilla fallback before dispatch", async () => {
-  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false }));
+  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false, world_ready: true }));
   state.props.details = instance("runescapedragonwilds");
   state.props.moduleDetails = moduleDetails("runescapedragonwilds");
   state.render(); await settle();
   const view = state.render();
   assert.equal(view.button.props.disabled, true);
-  assert.match(view.html, /save extension.*not prepared/i);
+  assert.match(view.html, /manual saving is unavailable/i);
   view.button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0);
   state.unmount();
@@ -338,8 +338,8 @@ test("maintenance save explains vanilla fallback before dispatch", async () => {
 
 
 test("maintenance readiness is scoped to the active run and survives reconnect", async () => {
-  for (const value of [null, { run_id: 1, session_id: null, prepared: null },
-    { run_id: 2, session_id: null, prepared: true }, { run_id: 1, session_id: "another-session", prepared: true }]) {
+  for (const value of [null, { run_id: 1, session_id: null, prepared: null, world_ready: true },
+    { run_id: 2, session_id: null, prepared: true, world_ready: true }, { run_id: 1, session_id: "another-session", prepared: true, world_ready: true }]) {
     const state = harness(undefined, async () => value);
     state.props.details = instance("runescapedragonwilds");
     state.props.moduleDetails = moduleDetails("runescapedragonwilds");
@@ -350,17 +350,17 @@ test("maintenance readiness is scoped to the active run and survives reconnect",
     assert.equal(state.calls.length, 0);
     state.unmount();
   }
-  const reconnect = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false }));
+  const reconnect = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: false, world_ready: true }));
   assert.equal((await reconnect.ready()).button.props.disabled, true);
   reconnect.unmount();
 });
 
 test("maintenance rechecks readiness before dispatch and discards late queries", async () => {
   let reads = 0;
-  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: ++reads === 1 }));
+  const state = harness(undefined, async () => ({ run_id: 1, session_id: null, prepared: ++reads === 1, world_ready: true }));
   (await state.ready()).button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0);
-  assert.match(state.render().html, /save extension was not prepared/);
+  assert.match(state.render().html, /Manual saving is unavailable/);
   state.unmount();
 
   const wait = deferred();
@@ -368,10 +368,10 @@ test("maintenance rechecks readiness before dispatch and discards late queries",
   const moved = harness(undefined, () => current);
   assert.equal(moved.render().button.props.disabled, true);
   moved.props.details = instance("minecraft", "replacement");
-  current = Promise.resolve({ run_id: 1, session_id: null, prepared: false });
+  current = Promise.resolve({ run_id: 1, session_id: null, prepared: false, world_ready: true });
   await moved.ready();
-  wait.resolve({ run_id: 1, session_id: null, prepared: true }); await settle();
+  wait.resolve({ run_id: 1, session_id: null, prepared: true, world_ready: true }); await settle();
   assert.equal(moved.render().button.props.disabled, true);
-  assert.match(moved.render().html, /save extension was not prepared/);
+  assert.match(moved.render().html, /Manual saving is unavailable/);
   moved.unmount();
 });

@@ -9,9 +9,7 @@ use app_core::{
 };
 use app_platform_win::WindowsPlatform;
 use app_runtime::RuntimeSupervisor;
-use app_storage::{
-    StoragePaths, read_instance_details, read_instance_details_and_runtime_overview,
-};
+use app_storage::{StoragePaths, read_instance_details, read_instance_details_and_runtime_health};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use tokio::sync::{Notify, Semaphore};
@@ -251,12 +249,12 @@ pub(crate) async fn apply(
     // Nothing that can wait for a process/network inspection belongs after this
     // read: a fatal log, stop or configuration change during probing takes priority.
     let Ok((current, mut latest)) =
-        read_instance_details_and_runtime_overview(paths, &instance.summary.id).await
+        read_instance_details_and_runtime_health(paths, &instance.summary.id).await
     else {
         return;
     };
-    apply_ready_observation(&key, ownership_verified, &current, &mut latest.health);
-    *health = latest.health;
+    apply_ready_observation(&key, ownership_verified, &current, &mut latest);
+    *health = latest;
 }
 
 fn apply_ready_observation(

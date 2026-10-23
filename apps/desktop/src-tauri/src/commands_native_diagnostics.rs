@@ -146,6 +146,7 @@ pub(super) fn failed_run_logs(
     }
     let entries = std::fs::read_dir(console).map_err(|_| "failed to list fixture console")?;
     let mut logs = Vec::new();
+    let mut native_logs = Vec::new();
     for (index, entry) in entries.enumerate() {
         if index >= 32 {
             return Err("fixture console exceeds bounded log discovery");
@@ -164,6 +165,11 @@ pub(super) fn failed_run_logs(
             return Err("native console log escaped this fixture");
         }
         if path.is_file() {
+            if instance.summary.module_id == "corekeeper"
+                && let Some(native) = app_core::runtime_logs::corekeeper_native_log_path(&path)
+            {
+                native_logs.push(native);
+            }
             logs.push(app_storage::read_log_path_snapshot(
                 path.to_string_lossy().into_owned(),
                 80,
@@ -173,6 +179,7 @@ pub(super) fn failed_run_logs(
     let native_log = match instance.summary.module_id.as_str() {
         "corekeeper" => Some(instance_root.join("logs/CoreKeeperServer.log")),
         "valheim" => Some(install_root.join("BepInEx/LogOutput.log")),
+        "returntomoria" => Some(install_root.join("Moria/Saved/Logs/Moria.log")),
         "astroneer" => Some(install_root.join("Astro/Saved/Logs/Astro.log")),
         "runescapedragonwilds" => {
             Some(install_root.join("RSDragonwilds/Saved/Logs/RSDragonwilds.log"))
@@ -181,7 +188,8 @@ pub(super) fn failed_run_logs(
         "satisfactory" => Some(instance_root.join("data/Saved/Logs/FactoryGame.log")),
         _ => None,
     };
-    for path in native_log
+    native_logs.extend(native_log);
+    for path in native_logs
         .into_iter()
         .chain(crate::unreal_loader::diagnostic_log_path(
             install_root,
@@ -204,6 +212,39 @@ pub(super) fn failed_run_logs(
         logs.extend(ark_log_markers(instance, install_root, &root)?);
     }
     Ok(logs)
+}
+
+#[test]
+fn corekeeper_failed_start_diagnostics_include_run_native_output() {
+    let root = crate::commands::tests::temp_test_dir("core-native-log");
+    let console = root.join("logs/managed-console/run-42-main.log");
+    let native = root.join("logs/corekeeper-run-42-main.log");
+    std::fs::create_dir_all(console.parent().unwrap()).unwrap();
+    std::fs::write(&console, "Starting\n").unwrap();
+    std::fs::write(&native, "Current native failure\n").unwrap();
+    std::fs::write(
+        root.join("logs/CoreKeeperServer.log"),
+        "Retained older diagnostic\n",
+    )
+    .unwrap();
+    let mut instance = crate::commands::tests::corekeeper_run_log_tests::running_instance(&console);
+    instance.config_file_path = root
+        .join("config/instance.json")
+        .to_string_lossy()
+        .into_owned();
+    instance.active_run = None;
+    let logs = failed_run_logs(&instance, &root.join("runtime"), &root).unwrap();
+    assert!(logs.iter().any(|log| {
+        log.lines
+            .iter()
+            .any(|line| line == "Current native failure")
+    }));
+    assert!(logs.iter().any(|log| {
+        log.lines
+            .iter()
+            .any(|line| line == "Retained older diagnostic")
+    }));
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 // The renderer's -abslog path is authoritative. Saved/Logs may additionally

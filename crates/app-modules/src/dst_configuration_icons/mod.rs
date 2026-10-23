@@ -8,7 +8,7 @@ pub(crate) mod resources;
 pub(crate) mod texture;
 
 const MAX_SCHEMA_BYTES: usize = 1024 * 1024;
-const MAX_FIELDS: usize = 280;
+const MAX_ICON_FIELDS: usize = 280;
 const MAX_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 
 #[derive(Debug, Default)]
@@ -173,7 +173,7 @@ fn requested_icons(schema_json: &str) -> Result<BTreeMap<String, mapping::Icon>,
         .and_then(serde_json::Value::as_object)
         .ok_or_else(|| String::from("DST icon schema has no properties"))?;
     let mut requested = BTreeMap::new();
-    let mut world_fields = 0;
+    let mut icon_fields = 0;
     for (field, property) in properties {
         let section = property
             .get("x-lsgm-section")
@@ -184,12 +184,6 @@ fn requested_icons(schema_json: &str) -> Result<BTreeMap<String, mapping::Icon>,
         ) {
             continue;
         }
-        world_fields += 1;
-        if world_fields > MAX_FIELDS || field.len() > 128 {
-            return Err(String::from(
-                "DST world icon fields exceed their count or name limit",
-            ));
-        }
         let Some(key) = property
             .get("x-lsgm-source-key")
             .and_then(serde_json::Value::as_str)
@@ -197,6 +191,14 @@ fn requested_icons(schema_json: &str) -> Result<BTreeMap<String, mapping::Icon>,
         else {
             continue;
         };
+        // Presets share these sections but have no native icon. Bound native
+        // override candidates, including unknown keys, before mapping them.
+        icon_fields += 1;
+        if icon_fields > MAX_ICON_FIELDS || field.len() > 128 {
+            return Err(String::from(
+                "DST world icon fields exceed their count or name limit",
+            ));
+        }
         if let Some(icon) = mapping::icon(key) {
             requested.insert(field.clone(), icon);
         }

@@ -126,8 +126,12 @@ async fn check_policy_boundary(
     )
     .await
     .expect("policy-only startup paths must not contact an installer");
-    let result = result.map(|guard| {
-        guard.ensure_scope("minecraft", &program).unwrap();
+    let result = result.map(|outcome| {
+        outcome
+            .install_guard
+            .ensure_scope("minecraft", &program)
+            .unwrap();
+        assert!(outcome.warnings.is_empty());
     });
     assert!(
         matches!(listener.accept(), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
@@ -345,12 +349,66 @@ async fn local_manifest_source(hold_response: bool) -> Result<LocalManifestSourc
     })
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ExistingProgram {
+    Verified,
+    Changed,
+    MissingInventory,
+    Pending,
+}
+
+fn mark_program_revision_pending(
+    fixture: &AutomaticPolicyFixture,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use sha2::{Digest, Sha256};
+
+    let canonical = fs::canonicalize(&fixture.program)?;
+    let root = canonical.to_str().ok_or("fixture root is not UTF-8")?;
+    #[cfg(windows)]
+    let root = root.replace('\\', "/").to_lowercase();
+    let identity = format!("minecraft\0program-root\0{root}");
+    let revision_key = Sha256::digest(identity.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    let directory = Path::new(&fixture.storage.settings.servers_root)
+        .join(".langame/install-revisions")
+        .join(revision_key);
+    fs::create_dir_all(&directory)?;
+    fs::write(directory.join("rev-00000000000000000001.pending"), b"")?;
+    assert!(matches!(
+        app_steamcmd::read_program_install_revision(
+            Path::new(&fixture.storage.settings.servers_root),
+            "minecraft",
+            &fixture.program,
+        ),
+        Err(app_steamcmd::SteamCmdError::PackageRevisionPending { .. }),
+    ));
+    Ok(())
+}
+
 async fn check_automatic_failure_or_cancellation(
     cancel: bool,
+    existing: ExistingProgram,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let _serial = crate::commands::tests::command_smoke_lock().lock().await;
     let mut source = local_manifest_source(cancel).await?;
     let fixture = AutomaticPolicyFixture::new(source.url.clone()).await?;
+    assert!(app_storage::library_program_is_pristine(
+        &fixture.program,
+        &fixture.descriptor,
+        None,
+    )?);
+    match existing {
+        ExistingProgram::Verified => {}
+        ExistingProgram::Changed => {
+            fs::write(fixture.program.join("server.jar"), b"changed server bytes")?
+        }
+        ExistingProgram::MissingInventory => {
+            fs::remove_file(fixture.program.join(".langame-clean-package.json"))?
+        }
+        ExistingProgram::Pending => mark_program_revision_pending(&fixture)?,
+    }
     let app = tauri::test::mock_builder()
         .manage(DesktopState::default())
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
@@ -399,10 +457,42 @@ async fn check_automatic_failure_or_cancellation(
     let result = tokio::time::timeout(Duration::from_secs(5), &mut update)
         .await
         .expect("failed or cancelled metadata checks must settle");
-    assert!(
-        result.is_err(),
-        "metadata failure or cancellation must prevent startup"
-    );
+    if cancel || existing != ExistingProgram::Verified {
+        assert!(
+            result.is_err(),
+            "cancelled or unverified program must prevent startup"
+        );
+        if existing == ExistingProgram::Pending {
+            assert!(
+                result
+                    .as_ref()
+                    .err()
+                    .unwrap()
+                    .contains("the last game install did not finish")
+            );
+        }
+    } else {
+        assert!(
+            result.is_ok(),
+            "a read-only metadata failure must permit the verified installed program: {:?}",
+            result.as_ref().err(),
+        );
+        let outcome = result.as_ref().unwrap_or_else(|error| panic!("{error}"));
+        outcome
+            .install_guard
+            .ensure_scope("minecraft", &fixture.program)?;
+        assert_eq!(outcome.warnings.len(), 1);
+        let warning = &outcome.warnings[0];
+        assert_eq!(
+            warning.code,
+            app_core::RuntimeStartWarningCode::ProgramUpdateUsingInstalled
+        );
+        assert!(warning.provider.is_none() && warning.reason.is_none());
+        assert!(warning.item_ids.is_empty());
+        assert!(!warning.message.contains(&source.url));
+        assert!(!warning.message.contains("invalid manifest JSON"));
+    }
+    drop(result);
     drop(update);
     let jobs = state.app_state.read().unwrap().jobs.clone();
     assert_eq!(jobs.len(), 1);
@@ -411,18 +501,29 @@ async fn check_automatic_failure_or_cancellation(
         (&jobs[0].status, cancel),
         (JobStatus::Failed, false) | (JobStatus::Cancelled, true)
     ));
+    assert_eq!(
+        jobs[0].warnings.len(),
+        usize::from(!cancel && existing == ExistingProgram::Verified)
+    );
+    assert!(!jobs[0].cancellable);
     assert!(
         read_active_instance_run(&fixture.storage.paths, id)
             .await?
             .is_none()
     );
     assert!(!state.runtime_supervisor.lock().unwrap().is_tracked(id));
-    for root in [&fixture.program, &fixture.library] {
-        assert_eq!(
-            fs::read(root.join("server.jar"))?,
-            b"preserved fixture server"
-        );
-    }
+    assert_eq!(
+        fs::read(fixture.library.join("server.jar"))?,
+        b"preserved fixture server"
+    );
+    assert_eq!(
+        fs::read(fixture.program.join("server.jar"))?,
+        if existing == ExistingProgram::Changed {
+            b"changed server bytes".as_slice()
+        } else {
+            b"preserved fixture server".as_slice()
+        }
+    );
     let _reacquired = tokio::time::timeout(
         Duration::from_secs(3),
         app_steamcmd::acquire_game_install_lifecycle(
@@ -442,15 +543,33 @@ async fn check_automatic_failure_or_cancellation(
 }
 
 #[tokio::test]
-async fn automatic_prestart_metadata_failure_preserves_program_and_does_not_publish_a_run()
+async fn automatic_prestart_metadata_failure_allows_the_verified_installed_program()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(false).await
+    check_automatic_failure_or_cancellation(false, ExistingProgram::Verified).await
 }
 
 #[tokio::test]
 async fn automatic_prestart_cancellation_settles_job_and_releases_program_lease()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(true).await
+    check_automatic_failure_or_cancellation(true, ExistingProgram::Verified).await
+}
+
+#[tokio::test]
+async fn automatic_prestart_metadata_failure_cannot_hide_changed_program_bytes()
+-> Result<(), Box<dyn std::error::Error>> {
+    check_automatic_failure_or_cancellation(false, ExistingProgram::Changed).await
+}
+
+#[tokio::test]
+async fn automatic_prestart_metadata_failure_requires_a_verified_program_inventory()
+-> Result<(), Box<dyn std::error::Error>> {
+    check_automatic_failure_or_cancellation(false, ExistingProgram::MissingInventory).await
+}
+
+#[tokio::test]
+async fn automatic_prestart_metadata_failure_never_clears_an_interrupted_install_revision()
+-> Result<(), Box<dyn std::error::Error>> {
+    check_automatic_failure_or_cancellation(false, ExistingProgram::Pending).await
 }
 
 #[tokio::test]

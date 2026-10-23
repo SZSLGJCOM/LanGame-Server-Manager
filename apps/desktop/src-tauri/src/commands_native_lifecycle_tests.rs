@@ -63,6 +63,8 @@ mod save_failure_probe;
 mod save_guard_probe;
 #[path = "commands_native_seed_probe.rs"]
 mod seed_probe;
+#[path = "commands_native_settings_readback.rs"]
+mod settings_readback;
 #[path = "commands_native_sons_backup_probe.rs"]
 mod sons_backup_probe;
 #[path = "commands_native_sons_world_fixture.rs"]
@@ -586,22 +588,9 @@ async fn run_native_package(
     let first_run = Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
     let stopped_config = fs::read(&details.config_file_path)?;
     let reloaded = read_instance_details_from_storage(state.clone(), id.clone()).await?;
-    let settings_preserved = if module_id == "astroneer" {
-        crate::astroneer_public_ip::verify_startup_settings(
-            &details.settings_json,
-            &reloaded.settings_json,
-        )
-        .is_ok()
-    } else {
-        reloaded.settings_json == details.settings_json
-    };
-    if !settings_preserved
-        || serde_json::to_value(&reloaded.ports)? != serde_json::to_value(&details.ports)?
-        || reloaded.saves_path != details.saves_path
-        || creation::program_root(&reloaded)? != effective_install_root
-        || fs::read(&reloaded.config_file_path)? != stopped_config
-    {
-        return Err("native configuration or program root changed during stopped readback".into());
+    settings_readback::verify_stopped(&details, &reloaded, &effective_install_root)?;
+    if fs::read(&reloaded.config_file_path)? != stopped_config {
+        return Err("native configuration changed during stopped readback".into());
     }
     // run_cycle captures new log/status baselines on every invocation. The
     // first run's readiness output cannot satisfy the restarted run.
@@ -716,6 +705,14 @@ async fn run_native_package(
             .map(|(_, files)| files.len())
             .sum::<usize>()
     );
+    // Capture the stopped projection, including any game-owned roster written
+    // during the last run. Archive restoration must match this exact snapshot;
+    // comparing creation-time settings would reject valid native projections.
+    let stopped_details = read_instance_details_from_storage(state.clone(), id.clone()).await?;
+    settings_readback::verify_stopped(&details, &stopped_details, &effective_install_root)?;
+    if fs::read(&stopped_details.config_file_path)? != stopped_config {
+        return Err("native configuration changed before archive capture".into());
+    }
     let deleted = archive_instance_record(app.handle().clone(), id.clone()).await?;
     let archive = PathBuf::from(
         deleted
@@ -777,7 +774,11 @@ async fn run_native_package(
     }
     println!("NATIVE_LIFECYCLE module={module_id} phase=archived archive=verified");
     let restored = Box::pin(archive::restore_and_verify(
-        &runtime, &details, &archive, &saves, &programs,
+        &runtime,
+        &stopped_details,
+        &archive,
+        &saves,
+        &programs,
     ))
     .await?;
     Box::pin(runtime.run_cycle(&restored, "after_archive_restore", 0)).await?;

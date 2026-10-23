@@ -1,6 +1,6 @@
 {
-  "gameVersion":"747465",
-  "scriptsSha256":"99a2efdbb439c7e1386e8c8a503887e14c87689ae2c91958c2922f8f877c5354",
+  "gameVersion":"759671",
+  "scriptsSha256":"d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef",
   "groups":{
     "worldgen":[
       {"id":"global","order":1,"textKey":"STRINGS.UI.SANDBOXMENU.CHOICEGLOBAL"},
@@ -209,6 +209,7 @@
     {"key":"slurtles_setting","category":"settings","group":"animals","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"snurtles","category":"settings","group":"animals","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"wobsters","category":"settings","group":"animals","order":null,"locations":["forest"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"]}},
+    {"key":"bat_boss","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"bats_setting","category":"settings","group":"monsters","order":null,"locations":["forest","cave"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"],"cave":["never","rare","default","often","always"]}},
     {"key":"chest_mimics","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"cookiecutters","category":"settings","group":"monsters","order":null,"locations":["forest"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"]}},
@@ -221,6 +222,7 @@
     {"key":"mosquitos","category":"settings","group":"monsters","order":null,"locations":["forest"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"]}},
     {"key":"nightmarecreatures","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"pirateraids","category":"settings","group":"monsters","order":null,"locations":["forest"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"]}},
+    {"key":"rocky_boss","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"sharks","category":"settings","group":"monsters","order":null,"locations":["forest"],"masterControlled":false,"values":{"forest":["never","rare","default","often","always"]}},
     {"key":"spider_dropper","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},
     {"key":"spider_hider","category":"settings","group":"monsters","order":null,"locations":["cave"],"masterControlled":false,"values":{"cave":["never","rare","default","often","always"]}},

@@ -3,7 +3,6 @@
 use super::*;
 
 const NORMAL_STOP_BUDGET: Duration = Duration::from_secs(27);
-const EXTRA_OBSERVATION: Duration = Duration::from_secs(120);
 
 pub(super) async fn verify<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
@@ -17,6 +16,13 @@ pub(super) async fn verify<R: tauri::Runtime>(
     {
         return Err("native Moria no-loader control requires an idle isolated fixture and no save/restart probe".into());
     }
+    let transport = match std::env::var("LANGAME_NATIVE_MORIA_CONTROL_TRANSPORT").as_deref() {
+        Ok("exit") | Err(std::env::VarError::NotPresent) => "moria_console",
+        Ok("ctrl_c") => "console_ctrl_c",
+        _ => {
+            return Err("native Moria control transport must be exit or ctrl_c".into());
+        }
+    };
     let root = runtime.effective_install_root.canonicalize()?;
     let fixture = runtime.package.root.canonicalize()?;
     if !root.starts_with(&fixture) || root == fixture {
@@ -121,18 +127,21 @@ pub(super) async fn verify<R: tauri::Runtime>(
         runtime.smoke.wait_ready(runtime.descriptor, &running, &root, &fixture, offsets).await?;
         require_unmodified_loader_layout(&root)?;
         println!("NATIVE_MORIA_CONTROL phase=native_ready declared_probes=passed loader_files=absent");
-        // The production fixed-command sender authorizes the owned launch Job,
-        // pins its Shipping member and writes exit exactly once. No fallback.
-        runtime.state.runtime_supervisor.lock()
-            .map_err(|_| "runtime supervisor lock poisoned")?
-            .request_moria_console_exit(id, Some("main"))?;
-        println!("NATIVE_MORIA_CONTROL phase=exit_queued attempted_once=true native_exit_confirmed=false");
+        // Each fresh diagnostic fixture sends one explicit native request.
+        // An unknown outcome never causes a fallback, a replay or a forced stop.
         let stop_started = Instant::now();
-        let (normal_deadline_met, elapsed) = observe_exit(runtime, id, stop_started).await?;
-        println!("NATIVE_MORIA_CONTROL phase=observation_finished normal_deadline_met={normal_deadline_met} natural_tree_exit=true elapsed_ms={} formal_save=not_called acceptance_pass=not_claimed", elapsed.as_millis());
-        if !normal_deadline_met {
-            return Err("native Moria control exited only during extra diagnostic observation; original normal-stop budget failed".into());
+        {
+            let mut supervisor = runtime.state.runtime_supervisor.lock()
+                .map_err(|_| "runtime supervisor lock poisoned")?;
+            if transport == "console_ctrl_c" {
+                supervisor.request_console_interrupt(id, Some("main"))?;
+            } else {
+                supervisor.request_moria_console_exit(id, Some("main"))?;
+            }
         }
+        println!("NATIVE_MORIA_CONTROL phase=exit_queued transport={transport} attempted_once=true native_exit_confirmed=false");
+        let elapsed = observe_exit(runtime, id, stop_started).await?;
+        println!("NATIVE_MORIA_CONTROL phase=observation_finished normal_deadline_met=true natural_tree_exit=true elapsed_ms={} formal_save=not_called acceptance_pass=not_claimed", elapsed.as_millis());
         Ok(())
     }.await;
     if let Err(error) = &result {
@@ -158,8 +167,7 @@ async fn observe_exit<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     id: &str,
     started: Instant,
-) -> Result<(bool, Duration), Box<dyn std::error::Error>> {
-    let mut original_expired = false;
+) -> Result<Duration, Box<dyn std::error::Error>> {
     loop {
         let alive = runtime
             .state
@@ -170,25 +178,25 @@ async fn observe_exit<R: tauri::Runtime>(
         let elapsed = started.elapsed();
         match alive {
             Some(false) => {
-                return Ok((!original_expired && elapsed <= NORMAL_STOP_BUDGET, elapsed));
+                if elapsed > NORMAL_STOP_BUDGET {
+                    return Err(
+                        "native Moria tree exit was only observed after the normal stop budget"
+                            .into(),
+                    );
+                }
+                return Ok(elapsed);
             }
             Some(true) => {}
             None => return Err("native Moria control lost its complete owned-tree proof".into()),
         }
-        if elapsed >= NORMAL_STOP_BUDGET && !original_expired {
-            original_expired = true;
-            println!(
-                "NATIVE_MORIA_CONTROL phase=normal_deadline_failed elapsed_ms={} extra_read_only_observation_ms={} exit_retried=false",
-                elapsed.as_millis(),
-                EXTRA_OBSERVATION.as_millis()
-            );
-        }
-        if elapsed >= NORMAL_STOP_BUDGET + EXTRA_OBSERVATION {
+        if elapsed >= NORMAL_STOP_BUDGET {
             println!(
                 "NATIVE_MORIA_CONTROL phase=observation_finished normal_deadline_met=false natural_tree_exit=false elapsed_ms={} exit_retried=false",
                 elapsed.as_millis()
             );
-            return Err("native Moria no-loader tree remained alive through normal budget and 120-second read-only observation".into());
+            return Err(
+                "native Moria no-loader tree remained alive through the normal stop budget".into(),
+            );
         }
         tokio::time::sleep(Duration::from_millis(250)).await;
     }

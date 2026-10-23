@@ -191,20 +191,54 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
     let Some(needs_redloader) = preparation else {
         return Ok(false);
     };
-    if game.module == "vrising" {
-        ensure_bepinex_loader(
-            storage,
-            details,
-            operation,
-            "https://thunderstore.io/package/BepInEx/BepInExPack_V_Rising/1.733.2/",
+    let (loader_available, archive) = if game.module == "vrising" {
+        (
+            ensure_bepinex_loader(
+                storage,
+                details,
+                operation,
+                "https://thunderstore.io/package/BepInEx/BepInExPack_V_Rising/1.733.2/",
+            )
+            .await?,
+            None,
         )
-        .await?;
-    }
-    let archive = if needs_redloader {
-        Some(redloader::download().await?)
+    } else if needs_redloader {
+        let downloaded = redloader::download().await;
+        let issue = downloaded.as_ref().err().map(|error| match error {
+            redloader::DownloadFailure::Local(message)
+            | redloader::DownloadFailure::Remote(message) => message.clone(),
+        });
+        let download_root = runtime.clone();
+        let download_details = details.clone();
+        let archive = spawn_blocking_storage_context_task(operation, move || {
+            process::ensure_instance_scope(&download_details, &download_root, game, None)?;
+            redloader::finish_download(&download_root, downloaded)
+        })
+        .await
+        .map_err(|_| "Sons save loader recovery worker failed.")??;
+        if archive.is_none() {
+            report_unavailable_loader(
+                storage,
+                details,
+                issue
+                    .as_deref()
+                    .unwrap_or("The official RedLoader release is unavailable."),
+            );
+        }
+        (archive.is_some(), archive)
     } else {
-        None
+        (true, None)
     };
+    if !loader_available {
+        let cleanup_details = details.clone();
+        spawn_blocking_storage_context_task(operation, move || {
+            process::ensure_instance_scope(&cleanup_details, &runtime, game, None)?;
+            payload::deactivate_owned(&runtime, game)
+        })
+        .await
+        .map_err(|_| "Unavailable save extension cleanup worker failed.")??;
+        return Ok(false);
+    }
     let install_details = details.clone();
     spawn_blocking_storage_context_task(operation, move || -> Result<(), String> {
         process::ensure_instance_scope(&install_details, &runtime, game, None)?;
@@ -228,7 +262,7 @@ pub(super) async fn ensure_bepinex_loader<L: crate::state::StorageContextTaskLea
     details: &InstanceDetails,
     operation: &L,
     release: &'static str,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let module = details.summary.module_id.clone();
     let runtime = app_storage::resolve_instance_runtime_root(
         super::commands_program_storage::instance_root(details)?,
@@ -242,7 +276,7 @@ pub(super) async fn ensure_bepinex_loader<L: crate::state::StorageContextTaskLea
     .await
     .map_err(|_| "Save loader inspection worker failed.")??;
     if !needs_archive {
-        return Ok(());
+        return Ok(true);
     }
     let target =
         super::commands_mods::resolve_manual_mod_target(storage, details.summary.id.clone(), true)
@@ -255,28 +289,115 @@ pub(super) async fn ensure_bepinex_loader<L: crate::state::StorageContextTaskLea
         .source
         .as_ref()
         .ok_or("Save loader source is missing.")?;
-    let prepared = tokio::time::timeout(
-        Duration::from_secs(180),
-        super::commands_mods::mod_online::prepare_thunderstore_install(
+    let prepared = {
+        let cancellation = app_steamcmd::InstallCancellation::new();
+        let references = [release.into()];
+        let preparation = super::commands_mods::mod_online::prepare_thunderstore_save_loader(
             &module,
             source,
-            &[release.into()],
+            &references,
             &runtime,
-        ),
-    )
-    .await
-    .map_err(|_| "Save loader preparation exceeded 180 seconds.")??;
-    spawn_blocking_storage_context_task(operation, move || {
+            &cancellation,
+        );
+        await_loader_preparation(&cancellation, preparation, Duration::from_secs(180)).await
+    };
+    let issue = prepared.as_ref().err().map(|error| error.message.clone());
+    let available = spawn_blocking_storage_context_task(operation, move || {
         ensure_stopped_program(&runtime, &module)?;
+        let Some(prepared) = finish_optional_loader_download(&runtime, &module, prepared)? else {
+            return Ok(false);
+        };
         super::commands_mod_staging::stage_thunderstore_online_mod_sources(
             target,
             prepared.sources(),
             prepared.loader_archive(),
         )
-        .map(|_| ())
+        .map(|_| true)
     })
     .await
-    .map_err(|_| "Save loader installation worker failed.")?
+    .map_err(|_| "Save loader installation worker failed.")??;
+    if !available {
+        report_unavailable_loader(
+            storage,
+            details,
+            issue
+                .as_deref()
+                .unwrap_or("The reviewed save loader is unavailable."),
+        );
+    }
+    Ok(available)
+}
+
+async fn await_loader_preparation<T>(
+    cancellation: &app_steamcmd::InstallCancellation,
+    preparation: impl std::future::Future<
+        Output = Result<T, super::commands_mods::mod_online::ThunderstorePreparationFailure>,
+    >,
+    timeout: Duration,
+) -> Result<T, super::commands_mods::mod_online::ThunderstorePreparationFailure> {
+    tokio::pin!(preparation);
+    tokio::select! {
+        biased;
+        result = &mut preparation => result,
+        _ = tokio::time::sleep(timeout) => {
+            let cancelled_by_deadline = !cancellation.is_cancelled();
+            cancellation.cancel();
+            // Cancellation must finish before leases are released. Its local,
+            // ownership or cleanup error must not become an optional timeout.
+            let timeout_error = || super::commands_mods::mod_online::ThunderstorePreparationFailure::remote(
+                format!("Save loader preparation exceeded {} seconds.", timeout.as_secs()),
+                app_core::RuntimeModUpdateReason::Network,
+            );
+            match preparation.await {
+                Err(error) if cancelled_by_deadline && error.is_cancelled() => Err(timeout_error()),
+                Err(error) => Err(error),
+                // These are unpublished temporary downloads, not runtime files.
+                // Native fallback still verifies the actual loader separately.
+                Ok(_late_package) => Err(timeout_error()),
+            }
+        }
+    }
+}
+
+fn finish_optional_loader_download<T>(
+    root: &Path,
+    module: &str,
+    downloaded: Result<T, super::commands_mods::mod_online::ThunderstorePreparationFailure>,
+) -> Result<Option<T>, String> {
+    match downloaded {
+        Ok(prepared) => Ok(Some(prepared)),
+        Err(error)
+            if matches!(
+                error.reason(),
+                Some(
+                    app_core::RuntimeModUpdateReason::Network
+                        | app_core::RuntimeModUpdateReason::Http
+                        | app_core::RuntimeModUpdateReason::Request
+                )
+            ) =>
+        {
+            super::commands_mod_staging::verify_native_start_without_loader(module, root).map_err(
+                |cleanup| {
+                    format!(
+                        "{} Native startup could not safely skip the loader: {cleanup}",
+                        error.message
+                    )
+                },
+            )?;
+            Ok(None)
+        }
+        Err(error) => Err(error.message),
+    }
+}
+
+fn report_unavailable_loader(storage: &StorageBootstrap, details: &InstanceDetails, issue: &str) {
+    super::commands_runtime_supervision::append_desktop_app_log(
+        storage,
+        "warn",
+        "instance.save_loader.unavailable",
+        "Optional save loader unavailable; its inactive state was verified before native startup",
+        serde_json::json!({"instance_id": details.summary.id, "module_id": details.summary.module_id, "extension_issue": issue}),
+    );
 }
 
 /// Called after automatic preparation while all startup leases remain held.

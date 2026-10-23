@@ -327,6 +327,9 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     );
     // Never render or launch against a partially published native extension.
     super::commands_ark_tools::ensure_can_start_instance(&instance).await?;
+    app_storage::ensure_instance_backup_ready(&storage.paths, &instance_id)
+        .await
+        .map_err(|error| error.to_string())?;
     if app_storage::instance_uses_exclusive_program(super::commands_program_storage::instance_root(
         &instance,
     )?)
@@ -450,7 +453,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     let prestart_update_log_path = {
         let mut update_log_plans =
             build_process_launch_plans_for_instance(&storage.settings, &module, &instance)?;
-        assign_process_log_paths_with_stamp(&instance, &mut update_log_plans, startup_log_stamp);
+        assign_process_log_paths_with_stamp(&instance, &mut update_log_plans, startup_log_stamp)?;
         update_log_plans.first().map(|plan| plan.log_path.clone())
     };
     if let Some(log_path) = prestart_update_log_path.as_deref() {
@@ -475,24 +478,23 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .ok_or("startup program lifecycle lock is missing")?;
     // Keep the installer state machine out of nested confirmation/start frames
     // so the default Windows thread stack can enter automatic update checks.
-    program_guards.1 = Some(
-        Box::pin(run_prestart_update_if_needed(
-            state,
-            storage,
-            PrestartUpdateRequest {
-                descriptor,
-                module: &module,
-                instance: &instance,
-                install_guard,
-                reservation: runtime_start_reservation,
-                context: PrestartUpdateLogContext {
-                    source,
-                    console_log_path: prestart_update_log_path.as_deref(),
-                },
+    let program_update = Box::pin(run_prestart_update_if_needed(
+        state,
+        storage,
+        PrestartUpdateRequest {
+            descriptor,
+            module: &module,
+            instance: &instance,
+            install_guard,
+            reservation: runtime_start_reservation,
+            context: PrestartUpdateLogContext {
+                source,
+                console_log_path: prestart_update_log_path.as_deref(),
             },
-        ))
-        .await?,
-    );
+        },
+    ))
+    .await?;
+    program_guards.1 = Some(program_update.install_guard);
     let install_guard = program_guards
         .1
         .take()
@@ -530,7 +532,8 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
     )
     .await?;
     program_guards.1 = Some(thunderstore_update.install_guard);
-    let mut start_warnings = workshop_update.warnings;
+    let mut start_warnings = program_update.warnings;
+    start_warnings.extend(workshop_update.warnings);
     start_warnings.extend(thunderstore_update.warnings);
     let materialization_paths = storage.paths.clone();
     let public_ip_storage = storage.clone();
@@ -600,14 +603,18 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             // Native file preparation can outlive a cancelled start request.
             // Retain both program locks until that worker has actually finished.
             let result = async {
-                super::commands_theforest_control::prepare(&extension_storage, &extension_instance)
-                    .await?;
-                super::commands_enshrouded_control::prepare(
+                let forest_prepared = super::commands_theforest_control::prepare(
+                    &extension_storage,
+                    &extension_instance,
+                )
+                .await?;
+                let enshrouded_prepared = super::commands_enshrouded_control::prepare(
                     &extension_storage,
                     &extension_instance,
                     extension_log_path.as_deref(),
                 )
-                .await
+                .await?;
+                Ok::<_, String>(forest_prepared && enshrouded_prepared)
             }
             .await;
             (program_guards, result)
@@ -668,6 +675,16 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         .map_err(|error| format!("Automatic save extension preparation failed: {error}"))?;
     program_guards = guards;
     let save_preparation = save_environment?;
+    if !save_preparation.available {
+        start_warnings.push(app_core::RuntimeStartWarning::manual_save_unavailable(
+            prestart_update_log_path.clone(),
+        ));
+        if instance.summary.module_id == "theforest" {
+            start_warnings.push(app_core::RuntimeStartWarning::graceful_stop_unavailable(
+                prestart_update_log_path.clone(),
+            ));
+        }
+    }
     let first_world_instance = instance.clone();
     let (guards, first_world_plan) =
         spawn_blocking_storage_context_task(runtime_start_reservation, move || {
@@ -703,7 +720,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             plan.launch_plan.environment.insert(key.clone(), value);
         }
     }
-    assign_process_log_paths_with_stamp(&instance, &mut launch_plans, startup_log_stamp);
+    assign_process_log_paths_with_stamp(&instance, &mut launch_plans, startup_log_stamp)?;
     if let Some(primary_plan) = launch_plans.first() {
         publish_pending_start_console_log_path(
             app_handle,
@@ -876,7 +893,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
                     &instance,
                     &mut launch_plans,
                     startup_log_stamp,
-                );
+                )?;
                 ensure_launch_plans_ready(&launch_plans)?;
                 // Bootstrap deliberately postpones port remapping. Apply rules
                 // only to the persisted formal-start ports, never its old snapshot.

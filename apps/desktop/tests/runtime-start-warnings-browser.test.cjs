@@ -7,7 +7,7 @@ test("cached startup warnings show safe details and stay dismissed across pollin
     viewport: { width: 1280, height: 800 }, reducedMotion: "reduce", fixtureCleanup: true,
     screenshotPath: process.env.LANGAME_RUNTIME_START_WARNINGS_SCREENSHOT });
   assert.equal(report.status, "passed");
-  assert.equal(report.scenarios, 10);
+  assert.equal(report.scenarios, 13);
   assert.equal(report.dismissals, 2);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);

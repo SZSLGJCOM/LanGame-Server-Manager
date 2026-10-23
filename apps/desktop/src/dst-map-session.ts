@@ -4,6 +4,7 @@ import type { DstWorldMap } from "./dst-world-map";
 export function sameDstMapWorld(left: DstWorldMap, right: DstWorldMap): boolean {
   return left.instanceId === right.instanceId && left.shard === right.shard
     && left.runId === right.runId && left.session === right.session
+    && left.geometryRevision === right.geometryRevision
     && left.width === right.width && left.height === right.height && left.tileScale === right.tileScale;
 }
 
@@ -16,5 +17,5 @@ export function mergeDstMapPositions(previous: DstWorldMap | null, next: DstWorl
 
 export function dstMapWorldKey(snapshot: DstWorldMap): string {
   return JSON.stringify([snapshot.instanceId, snapshot.shard, snapshot.session,
-    snapshot.width, snapshot.height, snapshot.tileScale]);
+    snapshot.geometryRevision, snapshot.width, snapshot.height, snapshot.tileScale]);
 }

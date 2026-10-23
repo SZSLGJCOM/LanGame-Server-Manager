@@ -11,8 +11,25 @@ pub(super) fn current_run_lines<'a>(
     active_run: Option<&ActiveInstanceRun>,
     include_undated: bool,
 ) -> Cow<'a, [String]> {
-    if module_id != "runescapedragonwilds"
-        || !matches!(status, InstanceStatus::Starting | InstanceStatus::Running)
+    if module_id == "corekeeper"
+        && matches!(status, InstanceStatus::Starting | InstanceStatus::Running)
+        && let Some(source) = snapshot.source_path.as_deref()
+        && !include_undated
+    {
+        let current = active_run
+            .filter(|run| run.run_id > 0)
+            .and_then(|run| run.log_path.as_deref())
+            .and_then(|path| {
+                app_core::runtime_logs::corekeeper_native_log_path(std::path::Path::new(path))
+            });
+        if current.as_deref() != Some(std::path::Path::new(source)) {
+            return Cow::Borrowed(&[]);
+        }
+    }
+    if !matches!(
+        module_id,
+        "runescapedragonwilds" | "conanexiles" | "scum" | "satisfactory"
+    ) || !matches!(status, InstanceStatus::Starting | InstanceStatus::Running)
         || snapshot.source_path.is_none()
         || active_run.is_some_and(|run| run.log_path == snapshot.source_path)
     {
@@ -71,3 +88,7 @@ pub(super) fn dragonwilds_primary(
             })
     })
 }
+
+#[cfg(test)]
+#[path = "runtime_health_evidence_tests.rs"]
+mod tests;

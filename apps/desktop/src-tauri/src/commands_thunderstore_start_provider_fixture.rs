@@ -59,10 +59,10 @@ impl FixtureProvider {
         let key = format!("{project}-{version}");
         self.downloads.lock().unwrap().push(key.clone());
         if self.fail_download {
-            return Err(ThunderstorePreparationFailure {
-                message: "synthetic package network failure".into(),
-                reason: Some(app_core::RuntimeModUpdateReason::Network),
-            });
+            return Err(ThunderstorePreparationFailure::remote(
+                "synthetic package network failure".into(),
+                app_core::RuntimeModUpdateReason::Network,
+            ));
         }
         let path = std::env::temp_dir().join(format!(
             "langame-ts-provider-fixture-{}.zip",

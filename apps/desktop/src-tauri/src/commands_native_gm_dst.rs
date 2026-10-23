@@ -1,5 +1,9 @@
 use super::*;
 
+#[cfg(test)]
+#[path = "commands_native_gm_dst_ritual_tests.rs"]
+mod ritual_tests;
+
 pub(super) fn verify_bounded_targets(
     cases: &[&ToolCase],
 ) -> Result<(), Box<dyn std::error::Error>> {

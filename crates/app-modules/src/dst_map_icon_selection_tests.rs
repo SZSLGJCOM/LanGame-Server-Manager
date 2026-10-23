@@ -17,6 +17,144 @@ fn add_atlas(root: &TestRoot, stem: &str, element: &str, color: [u8; 4]) -> Stri
     format!("../mods/workshop-123/images/{stem}.xml")
 }
 
+fn add_native_atlas(root: &TestRoot, suffix: &str, element: &str, color: [u8; 4]) {
+    root.write(
+        &format!("data/minimap/minimap_data{suffix}.xml"),
+        &icon_atlas(&format!("minimap_atlas{suffix}.tex"), element),
+    );
+    root.write(
+        &format!("data/minimap/minimap_atlas{suffix}.tex"),
+        &rgba_texture(2, 2, color),
+    );
+}
+
+#[test]
+fn registered_third_native_atlas_keeps_icons_and_loads_later_mod_atlases() {
+    let native = TestRoot::new();
+    let enabled = TestRoot::new();
+    add_native_atlas(&native, "1", "unused.png", [255; 4]);
+    add_native_atlas(&native, "2", "pigking.png", [0, 255, 0, 255]);
+    add_native_atlas(&native, "3", "wormhole.png", [0, 0, 255, 255]);
+    add_native_atlas(&native, "", "wormhole.png", [255, 0, 0, 255]);
+    let shadowed = add_atlas(&enabled, "shadowed", "wormhole.png", [255; 4]);
+    fs::remove_file(enabled.0.join("images/shadowed.tex")).unwrap();
+    let later = add_atlas(&enabled, "later", "mod_house.png", [255, 255, 0, 255]);
+    // Game 759671 registers all three native atlases before Mod atlases.
+    // A rejected third atlas used to stop this traversal and omit the Mod too.
+    let result = load_dst_map_assets(
+        &native.0,
+        &[source(&enabled)],
+        crate::DstMapIconSources {
+            registered_atlases: &[
+                "minimap/minimap_data1.xml".into(),
+                "minimap/minimap_data2.xml".into(),
+                "minimap/minimap_data3.xml".into(),
+                shadowed,
+                later,
+            ],
+            ..Default::default()
+        },
+        &[],
+        &[],
+        &[
+            "pigking.png".into(),
+            "wormhole.png".into(),
+            "mod_house.png".into(),
+        ],
+        &[],
+    )
+    .unwrap();
+    assert!(result.issues.is_empty(), "{:?}", result.issues);
+    assert!(result.icon_fallbacks.is_empty());
+    assert_eq!(result.icons.len(), 3);
+    for (name, color) in [
+        ("pigking.png", [0, 255, 0, 255]),
+        ("wormhole.png", [0, 0, 255, 255]),
+        ("mod_house.png", [255, 255, 0, 255]),
+    ] {
+        let icon = image::load_from_memory(&result.icons[name])
+            .unwrap()
+            .into_rgba8();
+        assert_eq!(icon.get_pixel(0, 0).0, color, "{name}");
+    }
+}
+
+#[test]
+fn third_native_atlas_defaults_preserve_older_single_atlas_installations() {
+    for with_third in [false, true] {
+        let native = TestRoot::new();
+        add_native_atlas(&native, "", "wormhole.png", [255, 0, 0, 255]);
+        if with_third {
+            add_native_atlas(&native, "3", "wormhole.png", [0, 0, 255, 255]);
+        }
+        let result = load_dst_map_assets(
+            &native.0,
+            &[],
+            crate::DstMapIconSources::default(),
+            &[],
+            &[],
+            &["wormhole.png".into()],
+            &[],
+        )
+        .unwrap();
+        assert!(result.issues.is_empty(), "{:?}", result.issues);
+        assert!(result.icon_fallbacks.is_empty());
+        assert_eq!(result.icons.len(), 1);
+        let icon = image::load_from_memory(&result.icons["wormhole.png"])
+            .unwrap()
+            .into_rgba8();
+        let expected = if with_third {
+            [0, 0, 255, 255]
+        } else {
+            [255, 0, 0, 255]
+        };
+        assert_eq!(icon.get_pixel(0, 0).0, expected);
+    }
+}
+
+#[test]
+#[ignore = "reads an explicitly supplied owned DST installation with the third native minimap atlas"]
+fn installed_third_native_atlas_loads_icons_from_the_registered_game_order() {
+    let root = PathBuf::from(
+        std::env::var_os("LANGAME_DST_SMOKE_PACKAGE").expect("owned game with third minimap atlas"),
+    );
+    // Verified against the native registration order and XML in game 759671.
+    // These include an old atlas icon, moved common icons and new vault artwork.
+    let icons = [
+        "pigking.png",
+        "wormhole.png",
+        "portal_dst.png",
+        "wilson.png",
+        "vault_key.png",
+    ]
+    .map(String::from);
+    let result = load_dst_map_assets(
+        &root,
+        &[],
+        crate::DstMapIconSources {
+            registered_atlases: &[
+                "minimap/minimap_data1.xml".into(),
+                "minimap/minimap_data2.xml".into(),
+                "minimap/minimap_data3.xml".into(),
+            ],
+            ..Default::default()
+        },
+        &[],
+        &[],
+        &icons,
+        &[],
+    )
+    .unwrap();
+    assert!(result.issues.is_empty(), "{:?}", result.issues);
+    assert!(result.icon_fallbacks.is_empty());
+    assert_eq!(result.icons.len(), icons.len());
+    for name in &icons {
+        let icon = image::load_from_memory(&result.icons[name]).unwrap();
+        assert!(icon.width() > 0 && icon.width() <= 64, "{name}");
+        assert!(icon.height() > 0 && icon.height() <= 64, "{name}");
+    }
+}
+
 #[test]
 fn exact_suffixes_are_independent_and_shadowed_textures_are_never_decoded() {
     let native = TestRoot::new();

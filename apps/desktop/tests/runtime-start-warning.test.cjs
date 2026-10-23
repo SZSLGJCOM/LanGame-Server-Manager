@@ -15,6 +15,28 @@ const warning = { code: "mod_update_using_cache", provider: "steam_workshop", re
   item_ids: ["1715971", "941450"], message: "https://service.invalid/?signature=DO_NOT_RENDER_SECRET",
   log_path: "C:/fixture/logs/start.log", map_key: "main", http_status: null };
 
+test("save and game-update limitations survive startup without exposing diagnostic bodies", () => {
+  for (const [code, messageKey, zh, en] of [
+    ["manual_save_unavailable", "activity.serverStartManualSaveUnavailable", /手动保存暂不可用/, /manual saving is unavailable/i],
+    ["graceful_stop_unavailable", "activity.serverStartGracefulStopUnavailable", /正常停服暂不可用/, /normal shutdown is unavailable/i],
+    ["program_update_using_installed", "activity.serverStartUsingInstalledProgram", /游戏更新检查未完成/, /game update check did not complete/i],
+  ]) {
+    const entry = { code, provider: null, reason: null, item_ids: [], message: "PRIVATE_DOWNLOAD_URL",
+      log_path: "C:/fixture/logs/start.log", map_key: null, http_status: null };
+    assert.deepEqual(warnings.readRuntimeStartWarnings([entry]), [entry]);
+    for (const locale of ["zh-CN", "en-US"]) {
+      const rendered = warnings.formatRuntimeStartWarning(t(locale), entry, "Server A");
+      assert.match(rendered.text, locale === "zh-CN" ? zh : en);
+      assert.doesNotMatch(JSON.stringify(rendered), /PRIVATE_DOWNLOAD_URL|UE4SS|RVA|runtime\.startWarning/);
+    }
+    const result = serverStartSuccessMessage({ summary: { name: "Server A" }, run_id: 3, warnings: [entry] }, "a");
+    assert.equal(result.key, messageKey);
+    assert.equal(result.tone, "warning");
+    assert.equal(warnings.runtimeStartJobNotices([{ kind: "StartInstance", status: "Completed", id: "auto",
+      label: "Autostart Server A", warnings: [entry] }]).length, 1);
+  }
+});
+
 test("native first-world warnings survive manual and background receipts without Mod fallback claims", () => {
   const entry = { code: "world_initialization_incomplete", provider: null, reason: null, item_ids: [],
     message: "PRIVATE_RESPONSE", log_path: "C:/fixture/logs/start.log", map_key: null, http_status: null };

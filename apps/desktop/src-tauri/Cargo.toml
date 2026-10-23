@@ -47,6 +47,7 @@ zip = { version = "9.0.3", default-features = false, features = ["deflate"] }
 default = []
 custom-protocol = ["tauri/custom-protocol"]
 desktop-reliability = []
+native-test-console = ["app-runtime/native-test-console"]
 
 [dev-dependencies]
 libsqlite3-sys = "=0.37.0"

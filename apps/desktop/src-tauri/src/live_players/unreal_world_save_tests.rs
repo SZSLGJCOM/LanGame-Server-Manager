@@ -271,7 +271,17 @@ fn native_void_actions_report_requested_without_claiming_disk_completion() {
                 .unwrap_err()
                 .contains("before invocation")
         );
-        assert!(classify_completion(game, Err("timeout or missing receipt".into())).is_err());
+        assert!(
+            classify_completion(
+                game,
+                Err(SaveFailure::new(
+                    "awaiting_receipt",
+                    "timeout",
+                    "timeout or missing receipt"
+                ))
+            )
+            .is_err()
+        );
         // A void native save call cannot attest a native write result.
         let mut unsupported_confirmation = body;
         unsupported_confirmation["write_confirmed"] = true.into();
@@ -392,9 +402,13 @@ fn unreal_world_save_known_rejection_is_distinct_from_unknown_delivery() {
             .contains("Save verification failed")
     );
     assert!(
-        classify(Err("timeout".into()))
-            .unwrap_err()
-            .contains("was not resent")
+        classify(Err(SaveFailure::new(
+            "awaiting_receipt",
+            "timeout",
+            "timeout"
+        )))
+        .unwrap_err()
+        .contains("was not resent")
     );
     for code in [
         "save_busy",
@@ -414,6 +428,81 @@ fn unreal_world_save_known_rejection_is_distinct_from_unknown_delivery() {
                 .unwrap_err()
                 .contains("Save verification failed")
         );
+    }
+}
+
+#[test]
+fn native_save_failure_diagnostics_preserve_stage_without_changing_unknown_results() {
+    let mut mismatched = packet();
+    mismatched["request_id"] = TOKEN.into();
+    let mut native_failure = packet();
+    native_failure["call_returned"] = false.into();
+    native_failure["error"] = "save_call_unknown".into();
+    for (result, expected) in [
+        (
+            Err(SaveFailure::new(
+                "awaiting_receipt",
+                "timeout",
+                "request timed out",
+            )),
+            "phase=awaiting_receipt cause=timeout",
+        ),
+        (
+            parse(b"{", &request()),
+            "phase=receipt_validation cause=invalid_frame",
+        ),
+        (
+            parse(&serde_json::to_vec(&mismatched).unwrap(), &request()),
+            "phase=receipt_validation cause=request_mismatch",
+        ),
+        (
+            parse(&serde_json::to_vec(&native_failure).unwrap(), &request()),
+            "native_error=save_call_unknown",
+        ),
+    ] {
+        let line = receipt_diagnostic(Game::Moria, "save", Duration::from_millis(5010), &result);
+        assert!(line.contains(expected), "{line}");
+        assert!(line.contains("module=returntomoria action=save"), "{line}");
+        assert!(line.contains("elapsed_ms=5010"), "{line}");
+        assert!(
+            classify_completion(Game::Moria, result)
+                .unwrap_err()
+                .contains("Save verification failed")
+        );
+    }
+    let result = parse(&serde_json::to_vec(&packet()).unwrap(), &request());
+    let line = receipt_diagnostic(Game::Moria, "save", Duration::from_millis(250), &result);
+    assert!(line.contains("call_returned=true write_confirmed=false native_error=none"));
+    assert!(matches!(
+        classify_completion(Game::Moria, result).unwrap().1,
+        WorldSaveCompletion::Requested
+    ));
+}
+
+#[test]
+fn native_save_diagnostics_never_publish_receipt_identities_or_untrusted_errors() {
+    let private = format!("{ID} {TOKEN} {LAUNCH} D:/private/world\nforged_log=true");
+    let mut body = packet();
+    body["error"] = private.clone().into();
+    let result = parse(&serde_json::to_vec(&body).unwrap(), &request());
+    let received = receipt_diagnostic(Game::Moria, "save", Duration::ZERO, &result);
+    assert!(received.contains("native_error=unrecognized"));
+    let failed = receipt_diagnostic(
+        Game::Moria,
+        &private,
+        Duration::ZERO,
+        &Err(SaveFailure::new(
+            "awaiting_receipt",
+            "ownership_unverified",
+            &private,
+        )),
+    );
+    assert!(failed.contains("action=invalid"));
+    assert!(failed.contains("ready=unknown invoked=unknown"));
+    for line in [received, failed] {
+        for secret in [ID, TOKEN, LAUNCH, "D:/private", "forged_log", "\n"] {
+            assert!(!line.contains(secret), "private diagnostic content escaped");
+        }
     }
 }
 

@@ -5,6 +5,11 @@ edition.workspace = true
 license-file.workspace = true
 rust-version.workspace = true
 
+[features]
+default = []
+# Closed native acceptance commands; never enabled by normal desktop builds.
+native-test-console = []
+
 [dependencies]
 app-core = { path = "../app-core" }
 serde_json.workspace = true

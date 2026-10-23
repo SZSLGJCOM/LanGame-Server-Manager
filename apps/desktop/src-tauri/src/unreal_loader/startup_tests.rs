@@ -63,6 +63,7 @@ impl Drop for Fixture {
 fn unsupported_loader_start_disables_only_the_owned_activation_and_can_restore_it() {
     for module in [
         "abioticfactor",
+        "returntomoria",
         "nightingale",
         "conanexiles",
         "scum",

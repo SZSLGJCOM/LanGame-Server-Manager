@@ -4443,6 +4443,42 @@
       "x-lsgm-source-key": "overrides.molebats",
       "x-lsgm-source-surface": "config_file"
     },
+    "caves_bat_boss": {
+      "type": "string",
+      "title": "猎犬蝙蝠",
+      "description": "控制洞穴猎犬蝙蝠是否出现、巢穴补充速度及可生成的数量。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.11,
+      "x-lsgm-source": "caves_boss_world_settings",
+      "x-lsgm-source-key": "overrides.bat_boss",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "caves_rocky_boss": {
+      "type": "string",
+      "title": "岩石大师",
+      "description": "控制岩石大师是否出现及生成尝试的间隔。",
+      "default": "default",
+      "enum": [
+        "never",
+        "rare",
+        "default",
+        "often",
+        "always"
+      ],
+      "x-lsgm-section": "cavessettings",
+      "x-lsgm-order": 175.12,
+      "x-lsgm-source": "caves_boss_world_settings",
+      "x-lsgm-source-key": "overrides.rocky_boss",
+      "x-lsgm-source-surface": "config_file"
+    },
     "caves_nightmarecreatures": {
       "type": "string",
       "title": "遗迹梦魇频率",

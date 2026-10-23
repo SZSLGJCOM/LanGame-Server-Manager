@@ -173,7 +173,7 @@ fn dst_native_inventory_separates_cave_options_from_inherited_master_options() {
         DST_SHARED_OVERRIDE_ENTRIES.len() + DST_MASTER_OVERRIDE_ENTRIES.len(),
         190
     );
-    assert_eq!(DST_CAVES_OVERRIDE_ENTRIES.len(), 86);
+    assert_eq!(DST_CAVES_OVERRIDE_ENTRIES.len(), 88);
 
     let master = render_dst_worldgenoverride(&Map::new(), "master");
     let caves = render_dst_worldgenoverride(&Map::new(), "caves");
@@ -184,7 +184,7 @@ fn dst_native_inventory_separates_cave_options_from_inherited_master_options() {
             .count()
     };
     assert_eq!(native_entry_count(&master), 190);
-    assert_eq!(native_entry_count(&caves), 120);
+    assert_eq!(native_entry_count(&caves), 122);
     assert!(master.contains("settings_preset = \"SURVIVAL_TOGETHER\""));
     assert!(master.contains("worldgen_preset = \"SURVIVAL_TOGETHER\""));
     assert!(caves.contains("settings_preset = \"DST_CAVE\""));
@@ -199,6 +199,31 @@ fn dst_native_inventory_separates_cave_options_from_inherited_master_options() {
         "deerclops =",
     ] {
         assert!(!caves.contains(master_only), "unexpected {master_only}");
+    }
+}
+
+#[test]
+fn dst_cave_boss_settings_render_only_in_caves_and_preserve_preset_inheritance() {
+    for native_key in ["bat_boss", "rocky_boss"] {
+        let setting_key = format!("caves_{native_key}");
+        let default_caves = render_dst_worldgenoverride(&Map::new(), "caves");
+        assert!(default_caves.contains(&format!("{native_key} = \"default\"")));
+        for value in ["never", "rare", "default", "often", "always"] {
+            let settings = Map::from_iter([(setting_key.clone(), json!(value))]);
+            let rendered = render_dst_worldgenoverride(&settings, "caves");
+            assert!(rendered.contains(&format!("{native_key} = \"{value}\"")));
+            assert!(
+                !render_dst_worldgenoverride(&settings, "master")
+                    .contains(&format!("{native_key} ="))
+            );
+        }
+        let mut settings = dst_world_schema_defaults();
+        settings.insert("caves_settings_preset".into(), json!("custom_caves_rules"));
+        let inherited = render_dst_worldgenoverride(&settings, "caves");
+        assert!(!inherited.contains(&format!("{native_key} =")));
+        settings.insert(setting_key, json!("never"));
+        let changed = render_dst_worldgenoverride(&settings, "caves");
+        assert!(changed.contains(&format!("{native_key} = \"never\"")));
     }
 }
 

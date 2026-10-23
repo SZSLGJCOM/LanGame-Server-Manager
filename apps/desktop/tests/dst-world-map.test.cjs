@@ -8,7 +8,7 @@ const { dstLandmarkIconSize, indexDstLandmarks, visibleDstLandmarks } = require(
 const { clampDstMapZoom, stepDstMapZoom, anchoredDstMapCenter } = require("../src/dst-map-view.ts");
 const { dstMapEdgeMask, DST_MAP_EDGE_MASKS } = require("../src/dst-map-edge-shapes.ts");
 const valid = () => ({ instanceId: "a", shard: "volcano", runId: 2, capturedAtUnixMs: 123456,
-  session: "world-a", width: 2, height: 2, tileScale: 4, day: 3, season: "summer", phase: "day",
+  session: "world-a", geometryRevision: "", width: 2, height: 2, tileScale: 4, day: 3, season: "summer", phase: "day",
   tiles: [1, 3, 3, 1], tileNames: { 1: "IMPASSABLE", 3: "MOD_VOLCANO" }, tileKinds: { 1: "void", 3: "land" },
   tileTextures: {}, tileBaseTextures: {}, tileColors: {}, terrainLayers: [], landmarks: [], roads: [], landmarksTruncated: false,
   art: { textures: {}, icons: {}, iconFallbacks: [], issues: [], terrainBaseColor: null, terrainBaseColors: {}, terrainEdges: [] },
@@ -19,6 +19,15 @@ test("native terrain, mod names and fractional player positions survive decoding
   assert.deepEqual(parseDstWorldMap(value, "a", "volcano", true), value);
   assert.deepEqual(mapPlayerPoint(value.players[0], 2), [.75, .75]);
   assert.notEqual(terrainColor("MOD_VOLCANO"), terrainColor("OCEAN_DEEP"));
+});
+
+test("virtual room geometry identity is required and bounded", () => {
+  const value = valid();
+  for (const geometryRevision of [undefined, null, 1, "x".repeat(2049), "bad\nrevision"]) {
+    assert.throws(() => parseDstWorldMap({ ...value, geometryRevision }, "a", "volcano", true));
+  }
+  value.geometryRevision = "15:1:30:40:2";
+  assert.equal(parseDstWorldMap(value, "a", "volcano", true).geometryRevision, value.geometryRevision);
 });
 
 test("native terrain layers preserve duplicate order and a broken final material", () => {

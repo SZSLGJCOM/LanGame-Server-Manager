@@ -24,6 +24,7 @@ enum MapErrorCode {
     ShardChanged,
     ConsoleUnavailable,
     WorldNotReady,
+    GeometryChanged,
     ResponseTimeout,
     ArtworkWorkerFailed,
 }
@@ -36,6 +37,7 @@ fn map_error(code: MapErrorCode, message: impl AsRef<str>) -> String {
         MapErrorCode::ShardChanged => "SHARD_CHANGED",
         MapErrorCode::ConsoleUnavailable => "CONSOLE_UNAVAILABLE",
         MapErrorCode::WorldNotReady => "WORLD_NOT_READY",
+        MapErrorCode::GeometryChanged => "GEOMETRY_CHANGED",
         MapErrorCode::ResponseTimeout => "RESPONSE_TIMEOUT",
         MapErrorCode::ArtworkWorkerFailed => "ARTWORK_WORKER_FAILED",
     };

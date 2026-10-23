@@ -115,6 +115,7 @@ enum Probe {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum LogSource {
     Process { process_key: String },
+    NativeProcess { process_key: String },
     Instance { path: PathBuf },
     Install { path: PathBuf },
 }
@@ -212,6 +213,14 @@ impl SmokeManifest {
                         );
                     }
                     for source in sources {
+                        if let LogSource::NativeProcess { process_key } = source
+                            && (descriptor.summary.id != "corekeeper" || process_key != "main")
+                        {
+                            return Err(
+                                "Native process log probes require the Core Keeper main process"
+                                    .into(),
+                            );
+                        }
                         if let LogSource::Instance { path } | LogSource::Install { path } = source
                             && (path.as_os_str().is_empty()
                                 || !path
@@ -768,6 +777,20 @@ fn log_path(
             })
             .and_then(|process| process.log_path.as_ref())
             .map(PathBuf::from),
+        LogSource::NativeProcess { process_key } => instance
+            .active_run
+            .as_ref()
+            .and_then(|run| {
+                run.processes.iter().find(|process| {
+                    process.is_primary
+                        && process.run_id == run.run_id
+                        && process.session_id == run.session_id
+                        && process.status == "running"
+                        && &process.process_key == process_key
+                })
+            })
+            .and_then(|process| process.log_path.as_deref())
+            .and_then(|path| app_core::runtime_logs::corekeeper_native_log_path(Path::new(path))),
     })
 }
 

@@ -96,7 +96,7 @@ export const DST_GM_TOOLS: GmToolDefinition[] = [
       },
       {
         id: "dst_clear_ground_items", category: "World", title: "Clear dropped items", submitLabel: "Clear",
-        description: "Remove loose items lying on the ground of one shard; irreplaceable, heavy, equippable, container, trap and living items stay.",
+        description: "Remove loose items lying on the ground of one shard; ritual offerings, irreplaceable, heavy, equippable, container, trap and living items stay.",
         fields: [{ key: "shard", label: "Shard", type: "select", defaultValue: "master" }]
       }
 ];
@@ -241,7 +241,8 @@ function readCoordinate(values: Record<string, string>, key: "x" | "z"): { value
   return { value: String(value), error: null };
 }
 
-// Loose ground items only: no owner, not in limbo, nothing irreplaceable (eyebone, ...), heavy, equippable, a container, a trap or alive.
+// Ritual offerings retain inventoryitem and no parent even while placed in an active ritual (native 759671).
+// Loose ground items only: no owner, not in limbo, nothing ritual, irreplaceable, heavy, equippable, a container, a trap or alive.
 const DST_CLEAR_GROUND_ITEMS = 'local n=0;for _,v in pairs(Ents) do local i=v.components and v.components.inventoryitem;'
-  + 'if i and i.owner==nil and v:IsValid() and not v:IsInLimbo() and v.entity:GetParent()==nil and not v:HasOneOfTags({"irreplaceable","nonpotatable","heavy","trap","mine","player"})'
+  + 'if i and i.owner==nil and v:IsValid() and not v:IsInLimbo() and v.entity:GetParent()==nil and not v:HasOneOfTags({"ritualitem","irreplaceable","nonpotatable","heavy","trap","mine","player"})'
   + ' and v.components.equippable==nil and v.components.container==nil and v.components.health==nil then v:Remove();n=n+1 end end;print("[LGSM] Removed "..n.." dropped items")';

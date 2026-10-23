@@ -31,6 +31,7 @@ let clockOffset = 0;
 Date.now = () => nativeNow() + clockOffset;
 let checks = 0, details: InstanceDetails, playerShard: DontStarveShard | null = "master";
 let failedShard: DontStarveShard | null = null, failure = "", generation = 1, tileScale = 4;
+let room = 0;
 let hold = false, holdShard: DontStarveShard | null = null;
 const pending: { input: Input; resolve: (snapshot: DstWorldMap) => void }[] = [];
 const artworkCanvas = document.createElement("canvas"); artworkCanvas.width = artworkCanvas.height = 16;
@@ -56,9 +57,9 @@ async function wait(predicate: () => boolean, message: string, pulse = false) {
 function packet(input: Input): DstWorldMap {
   const width = 120, height = 90, id = input.shard === "master" ? 6 : input.shard === "caves" ? 13 : input.shard === "islands" ? 5 : 3;
   return { instanceId: input.instanceId, shard: input.shard, runId: details.active_run?.run_id ?? 7,
-    capturedAtUnixMs: Date.now(), session: `world-${generation}-${input.shard}`, width, height, tileScale,
+    capturedAtUnixMs: Date.now(), session: `world-${generation}-${input.shard}`, geometryRevision: `15:${room}:30:40:${room}`, width, height, tileScale,
     day: generation * 10, season: "autumn", phase: "day", tiles: input.includeTerrain ? Array<number>(width * height).fill(id) : null,
-    tileNames: input.includeTerrain ? { [id]: `FIXTURE_GENERATION_${generation}_${input.shard}` } : {},
+    tileNames: input.includeTerrain ? { [id]: `FIXTURE_GENERATION_${generation}_${input.shard}_ROOM_${room}` } : {},
     tileKinds: input.includeTerrain ? { [id]: "land" } : {}, tileTextures: {}, tileBaseTextures: {}, tileColors: {}, terrainLayers: [],
     landmarks: input.includeTerrain ? [{ id: "portal-1", prefab: "multiplayer_portal", icon: "portal.png", priority: 1, mapX: 24.5, mapZ: 30.5 },
       { id: "portal-2", prefab: "multiplayer_portal", icon: "portal.png", priority: 1, mapX: 80.5, mapZ: 60.5 }] : null,
@@ -219,6 +220,21 @@ async function run() {
     && calls.slice(scaleCalls).some(call => call.includeTerrain), "A position-only tileScale change must force a fresh full map");
   await loaded();
   check(calls.at(-1)?.includeTerrain === true, "Changed geometry must complete a new full collection");
+
+  const roomCalls = calls.length;
+  room = 1; await foreground();
+  await wait(() => calls.slice(roomCalls).some(call => !call.includeTerrain)
+    && calls.slice(roomCalls).some(call => call.includeTerrain), "A room change must immediately request new terrain without waiting sixty seconds");
+  await loaded();
+  await act(async () => {
+    const canvas = element<HTMLCanvasElement>("canvas"), bounds = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(new PointerEvent("pointermove", { clientX: Math.round(bounds.left + bounds.width / 2),
+      clientY: Math.round(bounds.top + bounds.height / 2), bubbles: true }));
+  });
+  check(fixture.querySelector(".dst-map-readout")?.textContent?.includes("ROOM_1"), "Room terrain metadata must replace the previous room");
+  failure = "DST_MAP_GEOMETRY_CHANGED: virtual room changed during collection"; await refresh();
+  await wait(() => !fixture.querySelector("canvas"), "An interrupted room capture must discard obsolete terrain");
+  failure = ""; await foreground(); await loaded();
 
   failure = "DST_MAP_WORLD_NOT_READY: original world has not generated"; await refresh();
   await wait(() => fixture.textContent?.includes("服务器的世界尚未就绪") === true, "World-not-ready error must have its distinct explanation");

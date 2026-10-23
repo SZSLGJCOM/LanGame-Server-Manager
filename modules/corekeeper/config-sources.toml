@@ -316,7 +316,7 @@ reason = "LanGame fixes this flag so the dedicated server stays background-hoste
 [[exclusions]]
 source = "launch_args"
 key = "-logfile"
-reason = "LanGame owns the per-instance CoreKeeperServer.log path."
+reason = "LanGame owns the per-instance logfile and binds it to a distinct native log for each managed run."
 
 [[exclusions]]
 source = "launch_args"

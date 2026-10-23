@@ -14,7 +14,8 @@ pub(super) async fn before_start<R: tauri::Runtime>(
     details: &InstanceDetails,
     cycle: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    checkpoint::before_start(runtime, details, cycle).await
+    checkpoint::before_start(runtime, details, cycle).await?;
+    checkpoint::restored_world::before_start(runtime, details, cycle).await
 }
 
 pub(super) async fn after_stop<R: tauri::Runtime>(
@@ -93,6 +94,17 @@ pub(super) async fn verify<R: tauri::Runtime>(
         require_current(runtime, running, &expected).await?;
         return Ok(());
     }
+    if checkpoint::enabled()?
+        && matches!(
+            cycle,
+            "after_restore" | "after_archive_restore" | "after_program_maintenance"
+        )
+    {
+        checkpoint::moria::verify_loaded(runtime, running, cycle).await?;
+        checkpoint::terraria::verify_loaded(runtime, running, cycle).await?;
+        checkpoint::restored_world::verify_loaded(runtime, running, cycle).await?;
+        require_current(runtime, running, &expected).await?;
+    }
     let windrose = if running.summary.module_id == "windrose" {
         let primary = primary_process(running)?;
         let pid = primary.pid.ok_or("Windrose has no managed bootstrap PID")?;
@@ -111,6 +123,8 @@ pub(super) async fn verify<R: tauri::Runtime>(
     };
     let dragon_observation = checkpoint::dragon::prepare(runtime, running, cycle).await?;
     let requested_observation = checkpoint::requested::prepare(runtime, running, cycle).await?;
+    let moria_observation = checkpoint::moria::prepare(runtime, running, cycle).await?;
+    let terraria_observation = checkpoint::terraria::prepare(runtime, running, cycle).await?;
     let input = serde_json::from_value(json!({
         "instanceId": running.summary.id,
         "command": action.command_template,
@@ -119,6 +133,9 @@ pub(super) async fn verify<R: tauri::Runtime>(
     // Record admission before the side effect. A failure/unknown result must not
     // permit a repeated call for this instance, run and lifecycle cycle.
     admit_once(&running.summary.id, expected.run_id, cycle)?;
+    if let Some(observation) = &moria_observation {
+        observation.before_save().await?;
+    }
     let before = unix_ms()?;
     let result = match crate::commands::send_instance_runtime_command(runtime.state.clone(), input)
         .await
@@ -210,7 +227,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     if checkpoint::enabled()? {
         if matches!(
             running.summary.module_id.as_str(),
-            "runescapedragonwilds" | "vrising"
+            "runescapedragonwilds" | "vrising" | "returntomoria" | "terraria"
         ) {
             if result.save_completion != Some(WorldSaveCompletion::Requested) {
                 return Err("Reflected native save must retain its Requested receipt".into());
@@ -219,6 +236,12 @@ pub(super) async fn verify<R: tauri::Runtime>(
                 observation.wait().await?;
                 require_current(runtime, running, &expected).await?;
             } else if let Some(observation) = requested_observation {
+                observation.wait().await?;
+                require_current(runtime, running, &expected).await?;
+            } else if let Some(observation) = moria_observation {
+                observation.wait().await?;
+                require_current(runtime, running, &expected).await?;
+            } else if let Some(observation) = terraria_observation {
                 observation.wait().await?;
                 require_current(runtime, running, &expected).await?;
             } else if cycle == "initial" {

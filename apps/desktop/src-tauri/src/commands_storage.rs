@@ -251,18 +251,16 @@ pub async fn list_instances_from_storage(
     Ok(instances)
 }
 
-/// Read only the active runtime ownership record; no plugin files are scanned.
+/// Join exact runtime ownership with native world-loading evidence.
 #[tauri::command]
 pub async fn read_instance_world_save_readiness(
     state: tauri::State<'_, DesktopState>,
     instance_id: String,
 ) -> Result<Option<app_core::InstanceWorldSaveReadiness>, String> {
     let _operation = state.begin_storage_context_operation("world save readiness")?;
-    let runtime = state
-        .runtime_supervisor
-        .lock()
-        .map_err(|_| String::from("runtime supervisor lock poisoned"))?;
-    Ok(runtime.world_save_readiness(&instance_id))
+    let storage = state.bootstrap_storage()?;
+    super::commands_world_save::readiness::snapshot(state.inner(), &storage.paths, &instance_id)
+        .await
 }
 
 #[tauri::command]
@@ -519,6 +517,7 @@ pub async fn restore_instance_backup(
     let task_instance_id = instance_id.clone();
     let restore_operation = storage_context_operation.clone();
     let install_locks = state.install_locks.clone();
+    let restore_log_storage = storage.clone();
     let result = run_instance_mutation_to_completion(
         state.inner(),
         &storage_context_operation,
@@ -537,6 +536,9 @@ pub async fn restore_instance_backup(
                     .await
                     .map_err(|error| error.to_string())?;
                 let result = if details.summary.module_id == "dontstarve" {
+                    app_storage::recover_instance_backup_restore(&storage.paths, &task_instance_id)
+                        .await
+                        .map_err(|error| error.to_string())?;
                     let prepared = app_storage::prepare_instance_backup_restore(
                         &storage.paths,
                         &task_instance_id,
@@ -576,9 +578,17 @@ pub async fn restore_instance_backup(
             }
         },
     )
-    .await?;
-
-    Ok(result)
+    .await;
+    if let Err(error) = &result {
+        append_desktop_app_log(
+            &restore_log_storage,
+            "warning",
+            "instance.backup.restore_requires_attention",
+            "Backup restore did not complete cleanly; inspect the recovery details",
+            json!({ "instance_id": instance_id, "error": error }),
+        );
+    }
+    result
 }
 
 #[tauri::command]

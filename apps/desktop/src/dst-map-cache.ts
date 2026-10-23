@@ -13,7 +13,7 @@ export interface DstMapCachedView { center: { x: number; y: number }; zoom: numb
 export interface DstMapCacheEntry { snapshot: DstWorldMap; terrainAt: number; view: DstMapCachedView | null }
 interface Metadata {
   key: string; bytes: number; terrainAt: number; touchedAt: number; capturedAt: number;
-  session: string; width: number; height: number; tileScale: number; runId: number;
+  session: string; geometryRevision: string; width: number; height: number; tileScale: number; runId: number;
 }
 interface StoredEntry extends DstMapCacheEntry { key: string }
 interface PendingWrite {
@@ -46,6 +46,7 @@ export function dstMapCachedView(entry: DstMapCacheEntry, snapshot: DstWorldMap)
   const previous = entry.snapshot;
   return previous.instanceId === snapshot.instanceId && previous.shard === snapshot.shard
     && previous.session === snapshot.session && previous.width === snapshot.width && previous.height === snapshot.height
+    && previous.geometryRevision === snapshot.geometryRevision
     && previous.tileScale === snapshot.tileScale ? validView(entry.view, snapshot) : null;
 }
 
@@ -57,10 +58,10 @@ function validate(value: unknown, instanceId: string, shard: DontStarveShard, no
     const snapshot = parseDstWorldMap(entry.snapshot, instanceId, shard, true);
     if (!timestamp(snapshot.capturedAtUnixMs, now)) return null;
     // Persist only the map DTO: unknown fields and caller-owned objects are not cache authority.
-    const { runId, capturedAtUnixMs, session, width, height, tileScale, day, season, phase,
+    const { runId, capturedAtUnixMs, session, geometryRevision, width, height, tileScale, day, season, phase,
       tiles, tileNames, tileKinds, players, tileTextures, tileBaseTextures, landmarks, tileColors,
       terrainLayers, roads, landmarksTruncated, art } = snapshot;
-    return { snapshot: { instanceId, shard, runId, capturedAtUnixMs, session, width, height, tileScale, day, season, phase,
+    return { snapshot: { instanceId, shard, runId, capturedAtUnixMs, session, geometryRevision, width, height, tileScale, day, season, phase,
       tiles, tileNames, tileKinds, players, tileTextures, tileBaseTextures, landmarks, tileColors, terrainLayers, roads, landmarksTruncated, art },
       terrainAt: entry.terrainAt, view: validView(entry.view, snapshot) };
   } catch { return null; }
@@ -112,6 +113,7 @@ function validMetadata(value: unknown, now: number): value is Metadata {
     && item.bytes > 0 && item.bytes <= MAX_ENTRY_BYTES && timestamp(item.terrainAt, now)
     && now - item.terrainAt <= MAX_AGE_MS && timestamp(item.capturedAt, now) && timestamp(item.touchedAt, now)
     && typeof item.session === "string" && item.session.length <= 128
+    && typeof item.geometryRevision === "string" && item.geometryRevision.length <= 2048
     && Number.isSafeInteger(item.width) && item.width > 0 && item.width <= 2048
     && Number.isSafeInteger(item.height) && item.height > 0 && item.height <= 2048
     && Number.isFinite(item.tileScale) && item.tileScale > 0 && Number.isSafeInteger(item.runId) && item.runId > 0;
@@ -187,6 +189,7 @@ export async function readDstMapCache(instanceId: string, shard: DontStarveShard
     if (!entry) return null;
     const meta = cached.metadata, snapshot = entry.snapshot;
     if (meta.session !== snapshot.session || meta.width !== snapshot.width || meta.height !== snapshot.height
+      || meta.geometryRevision !== snapshot.geometryRevision
       || meta.tileScale !== snapshot.tileScale || meta.runId !== snapshot.runId
       || meta.capturedAt !== snapshot.capturedAtUnixMs || meta.terrainAt !== entry.terrainAt) return null;
     const bytes = await boundedBytes({ ...entry, key }, deadline);
@@ -205,9 +208,9 @@ async function writeEntry(entry: DstMapCacheEntry, key: string, deadline: number
       metadataRows(maps, metadata, rows => {
         const old = rows.find(item => item.key === key), next = entry.snapshot;
         if (old && (old.capturedAt > next.capturedAtUnixMs || old.capturedAt === next.capturedAtUnixMs
-          && (old.session !== next.session || old.runId !== next.runId || old.width !== next.width || old.height !== next.height || old.tileScale !== next.tileScale))) return;
+          && (old.session !== next.session || old.geometryRevision !== next.geometryRevision || old.runId !== next.runId || old.width !== next.width || old.height !== next.height || old.tileScale !== next.tileScale))) return;
         const updated: Metadata = { key, bytes, terrainAt: entry.terrainAt, touchedAt: now, capturedAt: next.capturedAtUnixMs,
-          session: next.session, width: next.width, height: next.height, tileScale: next.tileScale, runId: next.runId };
+          session: next.session, geometryRevision: next.geometryRevision, width: next.width, height: next.height, tileScale: next.tileScale, runId: next.runId };
         const retained = rows.filter(item => item.key !== key).sort((a, b) => b.touchedAt - a.touchedAt || a.key.localeCompare(b.key));
         let total = bytes, count = 1;
         for (const item of retained) {
@@ -235,7 +238,7 @@ export async function saveDstMapCache(value: DstMapCacheEntry): Promise<boolean>
     if (existing) {
       const old = existing.newest, next = entry.snapshot;
       if (old.capturedAtUnixMs > next.capturedAtUnixMs || old.capturedAtUnixMs === next.capturedAtUnixMs
-        && (old.session !== next.session || old.runId !== next.runId || old.width !== next.width
+        && (old.session !== next.session || old.geometryRevision !== next.geometryRevision || old.runId !== next.runId || old.width !== next.width
           || old.height !== next.height || old.tileScale !== next.tileScale)) return false;
       existing.latest = entry; existing.newest = next;
       return existing.promise;

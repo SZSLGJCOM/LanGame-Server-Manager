@@ -22,7 +22,7 @@ export interface DstMapArt {
 export type DstTerrainKind = "land" | "ocean" | "void" | "unknown";
 export interface DstWorldMap {
   instanceId: string; shard: DontStarveShard; runId: number; capturedAtUnixMs: number;
-  session: string; width: number; height: number; tileScale: number;
+  session: string; geometryRevision: string; width: number; height: number; tileScale: number;
   day: number; season: string; phase: string;
   tiles: number[] | null; tileNames: Record<string, string>; tileKinds: Record<string, DstTerrainKind>; players: DstMapPlayer[];
   tileTextures: Record<string, string>; tileBaseTextures: Record<string, string>; landmarks: DstMapLandmark[] | null;
@@ -52,7 +52,8 @@ export function parseDstWorldMap(value: unknown, instanceId: string, shard: Dont
     || !integer(data.runId, 1, Number.MAX_SAFE_INTEGER) || !integer(data.capturedAtUnixMs, 1, Number.MAX_SAFE_INTEGER)
     || !integer(data.width, 1, 2048) || !integer(data.height, 1, 2048) || data.width * data.height > 1048576
     || typeof data.tileScale !== "number" || !Number.isFinite(data.tileScale) || data.tileScale <= 0 || data.tileScale > 100
-    || !integer(data.day, 0, 0xffffffff) || !text(data.session, 128) || !text(data.season, 64) || !text(data.phase, 64)) {
+    || !integer(data.day, 0, 0xffffffff) || !text(data.session, 128) || !text(data.geometryRevision, 2048)
+    || !text(data.season, 64) || !text(data.phase, 64)) {
     throw new Error("Invalid world map identity or dimensions.");
   }
   const names = record(data.tileNames);

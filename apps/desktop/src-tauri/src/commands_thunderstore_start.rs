@@ -211,7 +211,7 @@ async fn update_before_start_inner(
             let prepared = match prepared {
                 Ok(prepared) => prepared,
                 Err(failure) => {
-                    let Some(reason) = failure.reason else {
+                    let Some(reason) = failure.reason() else {
                         return Err(failure.message);
                     };
                     // The provider did not publish anything. Hash the actual old

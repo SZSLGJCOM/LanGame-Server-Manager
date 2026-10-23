@@ -1003,7 +1003,7 @@ interface RuntimeModStartWarning {
 }
 
 interface RuntimeWorldStartWarning {
-  code: "world_initialization_incomplete";
+  code: "world_initialization_incomplete" | "manual_save_unavailable" | "graceful_stop_unavailable" | "program_update_using_installed";
   provider: null;
   reason: null;
   item_ids: [];
@@ -1035,6 +1035,7 @@ export interface InstanceWorldSaveReadiness {
   run_id: number;
   session_id: string | null;
   prepared: boolean | null;
+  world_ready: boolean | null;
 }
 
 export interface StartInstanceResult {

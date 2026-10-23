@@ -74,7 +74,9 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
   const onChanged = props.onResumeAutoRefresh;
   const backups = props.archive?.backups.entries ?? props.selectedBackups ?? [];
   const panelLoadState = readOnly ? undefined : props.panelLoadState;
-  const canRestoreBackup = !readOnly && !instanceHasRunningProcess(props.details.summary, props.details.active_run);
+  const backupNeedsStop = ["starting", "running", "stopping"].includes(props.details.summary.status.toLowerCase())
+    || Boolean(props.details.active_run) || instanceHasRunningProcess(props.details.summary, props.details.active_run);
+  const canRestoreBackup = !readOnly && !backupNeedsStop;
   const manualBackups = backups.filter((backup) => backup.backup_kind === "manual");
   const autoStopBackups = backups.filter((backup) => backup.backup_kind === "auto_stop");
   const safeguardBackups = backups.filter((backup) => backup.backup_kind === "pre_restore");
@@ -134,9 +136,12 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
                   <span className="server-backup-count">{backupCountsUnknown ? "—" : backups.length}</span></span>}</ConfigurationHelp>
               <MaintenanceToolbar label={t("servers.maintenance.backupHistory")}>
                 <MaintenanceAction icon="plus" className="secondary-button" label={t("servers.details.backupNow")}
-                  disabledReason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : null}
+                  disabledReason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : backupNeedsStop
+                    ? t("servers.backups.stopBeforeBackup", undefined, locale === "zh-CN"
+                      ? "请先正常停服，再创建一致的存档备份。已发送保存请求不代表文件可安全复制。"
+                      : "Stop the server normally before creating a consistent save backup. Sending a save request does not make its files safe to copy.") : null}
                   disabled={!props.onCreateBackup}
-                  onClick={() => { if (!readOnly) props.onCreateBackup?.(props.details.summary.id); }} />
+                  onClick={() => { if (!readOnly && !backupNeedsStop) props.onCreateBackup?.(props.details.summary.id); }} />
                 <MaintenanceChip icon="clock" label={t("servers.maintenance.backupPolicy")} className="server-backup-policy-card">
                   <SavePolicyEditor scope="backup" details={props.details} moduleDetails={props.moduleDetails}
                     locale={locale} t={t} readOnly={readOnly} onSaveSettings={props.onSaveSettings} />

@@ -735,3 +735,65 @@
   }
 }
 ```
+
+## `2026-10-23-caves_boss_world_settings.json`
+
+- Evidence: `best_effort_verified` at `2026-10-23` (build `Dedicated-server game 759671 / Steam build 26148034; scripts.zip SHA-256 d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef. Read-only native package inspection confirms the cave-only settings, enum values, defaults and native images. This fixture checks generated configuration and launch arguments; it does not claim a running server or client acceptance check.`)
+- Sources: `caves_boss_world_settings`, `installed_package_world_options`
+- Coverage: editable `2`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "caves_bat_boss": "rare",
+  "caves_rocky_boss": "often",
+  "enable_caves": true,
+  "lan_only_cluster": true,
+  "offline_cluster": true
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "text",
+      "fragments": [
+        "settings_preset = \"DST_CAVE\"",
+        "worldgen_preset = \"DST_CAVE\"",
+        "bat_boss = \"rare\"",
+        "rocky_boss = \"often\""
+      ],
+      "path": "clusters/main/Caves/worldgenoverride.lua",
+      "root": "config"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-persistent_storage_root",
+      "{{paths.config_dir}}",
+      "-conf_dir",
+      "clusters",
+      "-cluster",
+      "main",
+      "-shard",
+      "Master",
+      "-ugc_directory",
+      "{{paths.data_dir}}/ugc/Master",
+      "-console",
+      "-bind_ip",
+      "0.0.0.0",
+      "-port",
+      "10999",
+      "-backup_log_count",
+      "100",
+      "-backup_log_period",
+      "86400"
+    ],
+    "executable_suffix": "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe"
+  }
+}
+```

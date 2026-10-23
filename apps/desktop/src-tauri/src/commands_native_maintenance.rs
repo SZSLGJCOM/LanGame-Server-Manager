@@ -36,6 +36,44 @@ impl ProgramMaintenance {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MaintenanceRefusal {
+    Pinned,
+    WholePackage,
+}
+
+impl MaintenanceRefusal {
+    fn expected(policy: app_core::InstanceProgramUpdatePolicy, replacement: bool) -> Option<Self> {
+        if policy == app_core::InstanceProgramUpdatePolicy::Pinned {
+            Some(Self::Pinned)
+        } else if replacement {
+            Some(Self::WholePackage)
+        } else {
+            None
+        }
+    }
+
+    fn verify(self, error: &str) -> Result<(), String> {
+        let reason = match self {
+            Self::Pinned => "当前版本已固定",
+            Self::WholePackage => "此游戏使用整包替换安装",
+        };
+        if !error.contains(reason) {
+            return Err(format!(
+                "native maintenance did not reach its expected {self:?} refusal: {error}"
+            ));
+        }
+        Ok(())
+    }
+
+    fn outcome(self) -> &'static str {
+        match self {
+            Self::Pinned => "pinned_rejected",
+            Self::WholePackage => "whole_package_rejected",
+        }
+    }
+}
+
 pub(super) async fn verify_backup_restore<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     details: &InstanceDetails,
@@ -125,6 +163,10 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
         );
         return Ok(false);
     }
+    let refusal = MaintenanceRefusal::expected(
+        app_core::InstanceProgramUpdatePolicy::from_settings_json(&details.settings_json)?,
+        replacement,
+    );
     let fixture = &runtime.package.root;
     let root = seed_probe::checked_path(fixture, runtime.effective_install_root, true)?;
     let before =
@@ -151,6 +193,9 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
         .write(true)
         .open(&marker)?
         .write_all(marker_bytes)?;
+    // Rejection must preserve every stopped installation byte, including
+    // support files and unknown modifications, not only its entry executable.
+    let refused_programs = refusal.map(|_| save_inventory(&root)).transpose()?;
     // A failed native installer may retain a child process. Keep the owned
     // package until shutdown is known, just as the runtime cycle does.
     if !replacement {
@@ -165,19 +210,20 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
         mode == ProgramMaintenance::Validate,
     )
     .await;
-    if replacement {
+    if let Some(refusal) = refusal {
         let error = result
             .err()
-            .ok_or("whole-package replacement unexpectedly overwrote an instance")?;
-        if !error.contains("此游戏使用整包替换安装") {
-            return Err(format!(
-                "native replacement probe did not reach its expected refusal: {error}"
-            )
-            .into());
+            .ok_or("native maintenance unexpectedly accepted a prohibited program mutation")?;
+        refusal.verify(&error)?;
+        if Some(save_inventory(&root)?) != refused_programs
+            || inventory::program_files(runtime.descriptor, &root)? != programs
+        {
+            return Err("native maintenance refusal changed the program files".into());
         }
-        if inventory::program_files(runtime.descriptor, &root)? != programs {
-            return Err("whole-package replacement refusal changed the program files".into());
-        }
+        runtime
+            .package
+            .cleanup_allowed
+            .store(true, Ordering::SeqCst);
     } else {
         let updated = result?;
         runtime
@@ -225,13 +271,29 @@ pub(super) async fn verify_program_maintenance<R: tauri::Runtime>(
     println!(
         "NATIVE_LIFECYCLE module={} phase=program_maintenance outcome={} selected={mode:?} ownership_config_saves_mod=preserved",
         details.summary.module_id,
-        if replacement {
-            "whole_package_rejected"
-        } else {
-            "passed"
-        }
+        refusal.map_or("passed", MaintenanceRefusal::outcome)
     );
-    Ok(!replacement)
+    Ok(refusal.is_none())
+}
+
+#[test]
+fn native_maintenance_refusal_observes_pinned_policy_before_package_format() {
+    use app_core::InstanceProgramUpdatePolicy::{Automatic, Pinned};
+
+    for replacement in [false, true] {
+        let expected = MaintenanceRefusal::expected(Pinned, replacement).unwrap();
+        assert_eq!(expected, MaintenanceRefusal::Pinned);
+        expected
+            .verify("实例“n”的当前版本已固定，请先切换到启动前更新，再更新它使用的服务器程序。")
+            .unwrap();
+        assert!(expected.verify("此游戏使用整包替换安装").is_err());
+        assert!(expected.verify("network request failed").is_err());
+    }
+    let replacement = MaintenanceRefusal::expected(Automatic, true).unwrap();
+    assert_eq!(replacement, MaintenanceRefusal::WholePackage);
+    replacement.verify("此游戏使用整包替换安装").unwrap();
+    assert!(replacement.verify("当前版本已固定").is_err());
+    assert_eq!(MaintenanceRefusal::expected(Automatic, false), None);
 }
 
 #[test]

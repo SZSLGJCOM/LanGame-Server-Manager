@@ -14,7 +14,7 @@ direct_connection_enabled = true
 [[probes]]
 id = "world-initialized-empty"
 kind = "log_marker"
-sources = [{ kind = "instance", path = "logs/CoreKeeperServer.log" }]
+sources = [{ kind = "native_process", process_key = "main" }]
 any_of = ["timescale = 0"]
 
 [[probes]]

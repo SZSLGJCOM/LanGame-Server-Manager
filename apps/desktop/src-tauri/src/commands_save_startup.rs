@@ -117,6 +117,7 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
         && module != "runescapedragonwilds"
         && module != "valheim"
         && module != "enshrouded"
+        && module != "theforest"
         && !super::commands_managed_save_control::requires_automatic_setup(module)
     {
         return Ok(SavePreparation {
@@ -127,7 +128,7 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
     if let Some(path) = log_path {
         let _ = append_startup_console_line(path, "正在检查并自动准备保存扩展及所需加载器…", "");
     }
-    let environment = if module == "enshrouded" {
+    let environment = if matches!(module, "enshrouded" | "theforest") {
         native_extension_prepared.then(Vec::new)
     } else if module == "runescapedragonwilds" {
         validate_unreal_environment(std::iter::empty())?;
@@ -156,7 +157,7 @@ pub(super) async fn ensure_for_start<L: StorageContextTaskLease>(
         if let Some(path) = log_path {
             let _ = append_startup_console_line(
                 path,
-                "当前版本的保存扩展不可用，手动保存暂不可用；游戏服务器将继续原生启动。",
+                "本次未能准备保存扩展，手动保存暂不可用；游戏服务器将继续原生启动。",
                 "",
             );
         }

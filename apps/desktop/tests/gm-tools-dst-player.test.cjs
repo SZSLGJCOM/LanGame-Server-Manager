@@ -60,7 +60,8 @@ test("DST ground cleanup removes only loose items on one shard and reports the c
   assert.equal(result.processKey, "master");
   const lua = result.commands[0];
   assert.match(lua, /i\.owner==nil and v:IsValid\(\) and not v:IsInLimbo\(\) and v\.entity:GetParent\(\)==nil/);
-  assert.match(lua, /HasOneOfTags\(\{"irreplaceable","nonpotatable","heavy","trap","mine","player"\}\)/);
+  assert.match(lua, /HasOneOfTags\(\{"ritualitem","irreplaceable","nonpotatable","heavy","trap","mine","player"\}\)/);
+  assert.ok(Buffer.byteLength(lua, "utf8") <= 512, "Ground cleanup must fit the native console limit");
   assert.match(lua, /components\.equippable==nil and v\.components\.container==nil and v\.components\.health==nil then v:Remove\(\);n=n\+1/);
   assert.match(lua, /print\("\[LGSM\] Removed "\.\.n\.\." dropped items"\)/);
   assert.match(build("dst_clear_ground_items", { shard: "forest" }).error ?? "", /Shard/);

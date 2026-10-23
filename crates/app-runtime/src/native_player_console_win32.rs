@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use app_core::ProcessIdentity;
 
 use super::super::{
-    NativePlayerConsoleError as Error,
+    ConsoleCommand, NativePlayerConsoleError as Error,
     frame::{Capture, Screen},
 };
 
@@ -75,6 +75,7 @@ pub(super) fn capture(
     pid: u32,
     identity: &ProcessIdentity,
     nonce: &str,
+    command: ConsoleCommand,
     timeout: Duration,
 ) -> Result<String, Error> {
     let deadline = Instant::now() + timeout;
@@ -115,7 +116,19 @@ pub(super) fn capture(
     verify_console(pid, &process)?;
     let input = open_console("CONIN$", 0xc0000000)?;
     let output = open_console("CONOUT$", 0x80000000)?;
-    let initial = read_screen(output.0)?;
+    let initial = loop {
+        if Instant::now() >= deadline {
+            return Err(Error::Timeout);
+        }
+        if !root.is_running().map_err(|_| Error::ProcessUnavailable)? {
+            return Err(Error::ProcessUnavailable);
+        }
+        verify_console(pid, &process)?;
+        if let Some(screen) = read_screen(output.0)? {
+            break screen;
+        }
+        std::thread::sleep(Duration::from_millis(20));
+    };
     // Never append a query to an operator's unfinished command or consume their
     // queued keystrokes. A prompt and an empty input queue are required.
     let last = initial.rows.last().ok_or(Error::Incomplete)?;
@@ -127,8 +140,10 @@ pub(super) fn capture(
         return Err(Error::Incomplete);
     }
     let mut capture = Capture::new(nonce, &initial)?;
-    let commands =
-        format!("LGM_PLAYER_QUERY_BEGIN_{nonce}\rplayers\rLGM_PLAYER_QUERY_END_{nonce}\r");
+    let commands = format!(
+        "LGM_PLAYER_QUERY_BEGIN_{nonce}\r{}\rLGM_PLAYER_QUERY_END_{nonce}\r",
+        command.text()
+    );
     let events: Vec<_> = commands
         .encode_utf16()
         .flat_map(|character| {
@@ -153,6 +168,9 @@ pub(super) fn capture(
         return Err(Error::ProcessUnavailable);
     }
     verify_console(pid, &process)?;
+    if Instant::now() >= deadline {
+        return Err(Error::Timeout);
+    }
     if unsafe { WriteConsoleInputW(input.0, events.as_ptr(), events.len() as u32, &mut written) }
         == 0
         || written as usize != events.len()
@@ -164,7 +182,9 @@ pub(super) fn capture(
             return Err(Error::ProcessUnavailable);
         }
         verify_console(pid, &process)?;
-        if let Some(text) = capture.observe(&read_screen(output.0)?)? {
+        if let Some(screen) = read_screen(output.0)?
+            && let Some(text) = capture.observe(&screen)?
+        {
             if !root.is_running().map_err(|_| Error::ProcessUnavailable)? {
                 return Err(Error::ProcessUnavailable);
             }
@@ -245,7 +265,7 @@ fn open_console(name: &str, access: u32) -> Result<Handle, Error> {
     }
 }
 
-fn read_screen(handle: *mut c_void) -> Result<Screen, Error> {
+fn read_screen(handle: *mut c_void) -> Result<Option<Screen>, Error> {
     let mut before = BufferInfo::default();
     if unsafe { GetConsoleScreenBufferInfo(handle, &mut before) } == 0 {
         return Err(Error::Io);
@@ -283,10 +303,24 @@ fn read_screen(handle: *mut c_void) -> Result<Screen, Error> {
     if unsafe { GetConsoleScreenBufferInfo(handle, &mut after) } == 0 {
         return Err(Error::Io);
     }
-    if before.size != after.size || before.cursor != after.cursor {
+    finish_snapshot(&before, &after, cells)
+}
+
+fn finish_snapshot(
+    before: &BufferInfo,
+    after: &BufferInfo,
+    cells: Vec<u16>,
+) -> Result<Option<Screen>, Error> {
+    if before.size != after.size {
         return Err(Error::Incomplete);
     }
-    Ok(Screen {
+    if before.cursor != after.cursor {
+        // ReadConsoleOutputCharacterW and cursor inspection are not atomic.
+        // Discard only this torn sample and observe the same request again;
+        // never replay input or feed partial rows into the frame's prefix guard.
+        return Ok(None);
+    }
+    Ok(Some(Screen {
         width: before.size.x as usize,
         height: before.size.y as usize,
         cursor_x: before.cursor.x as usize,
@@ -294,7 +328,7 @@ fn read_screen(handle: *mut c_void) -> Result<Screen, Error> {
             .chunks_exact(before.size.x as usize)
             .map(<[u16]>::to_vec)
             .collect(),
-    })
+    }))
 }
 
 #[link(name = "kernel32")]
@@ -359,5 +393,41 @@ mod tests {
         assert_eq!(std::mem::offset_of!(KeyEvent, character), 10);
         assert_eq!(std::mem::size_of::<InputRecord>(), 20);
         assert_eq!(std::mem::offset_of!(InputRecord, event), 4);
+    }
+
+    fn position(x: i16, y: i16) -> BufferInfo {
+        BufferInfo {
+            size: Coord { x: 120, y: 9001 },
+            cursor: Coord { x, y },
+            ..BufferInfo::default()
+        }
+    }
+
+    #[test]
+    fn native_console_discards_moving_cursor_sample_without_accepting_partial_output() {
+        let before = position(2, 10);
+        for after in [position(15, 10), position(2, 11), position(0, 9)] {
+            assert!(
+                finish_snapshot(&before, &after, vec![0xd800; 120])
+                    .unwrap()
+                    .is_none()
+            );
+        }
+        let stable = finish_snapshot(&before, &position(2, 10), vec![32; 120])
+            .unwrap()
+            .unwrap();
+        assert_eq!(stable.rows, vec![vec![32; 120]]);
+        assert_eq!(stable.cursor_x, 2);
+    }
+
+    #[test]
+    fn native_console_resize_remains_a_failed_capture_even_when_cursor_moves() {
+        let before = position(2, 10);
+        let mut after = position(2, 11);
+        after.size.x = 121;
+        assert!(matches!(
+            finish_snapshot(&before, &after, vec![]),
+            Err(Error::Incomplete)
+        ));
     }
 }

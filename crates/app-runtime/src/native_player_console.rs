@@ -11,6 +11,33 @@ mod frame;
 #[path = "native_player_console_windows.rs"]
 mod windows;
 
+#[cfg(feature = "native-test-console")]
+#[path = "native_player_console_test_support.rs"]
+pub mod test_support;
+
+#[derive(Clone, Copy)]
+#[cfg(windows)]
+enum ConsoleCommand {
+    Players,
+    #[cfg(feature = "native-test-console")]
+    Difficulty,
+    #[cfg(feature = "native-test-console")]
+    SetHard,
+}
+
+#[cfg(windows)]
+impl ConsoleCommand {
+    fn text(self) -> &'static str {
+        match self {
+            Self::Players => "players",
+            #[cfg(feature = "native-test-console")]
+            Self::Difficulty => "difficulty",
+            #[cfg(feature = "native-test-console")]
+            Self::SetHard => "setdifficulty hard",
+        }
+    }
+}
+
 const HELPER_FLAG: &str = "--langame-native-player-console";
 #[cfg(any(windows, test))]
 const MAX_RESPONSE_BYTES: usize = 64 * 1024;

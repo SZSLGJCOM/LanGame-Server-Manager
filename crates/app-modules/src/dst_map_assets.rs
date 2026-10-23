@@ -294,6 +294,7 @@ fn native_atlas_suffix(path: &str) -> Option<&'static str> {
     match path {
         "minimap/minimap_data1.xml" => Some("1"),
         "minimap/minimap_data2.xml" => Some("2"),
+        "minimap/minimap_data3.xml" => Some("3"),
         "minimap/minimap_data.xml" => Some(""),
         _ => None,
     }
@@ -302,7 +303,7 @@ fn native_atlas_suffix(path: &str) -> Option<&'static str> {
 fn icon_atlas_paths(registered: &[String]) -> impl Iterator<Item = &str> {
     // An observed native registration makes the complete observed order
     // authoritative. Older callers without that report retain the official
-    // data1/data2 defaults and the existing single-atlas installation fallback.
+    // data1/data2/data3 defaults and the existing single-atlas fallback.
     let defaults: &[&str] = if registered
         .iter()
         .any(|path| native_atlas_suffix(path).is_some())
@@ -312,6 +313,7 @@ fn icon_atlas_paths(registered: &[String]) -> impl Iterator<Item = &str> {
         &[
             "minimap/minimap_data1.xml",
             "minimap/minimap_data2.xml",
+            "minimap/minimap_data3.xml",
             "minimap/minimap_data.xml",
         ]
     };

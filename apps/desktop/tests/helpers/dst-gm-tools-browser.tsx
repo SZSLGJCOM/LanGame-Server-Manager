@@ -44,7 +44,7 @@ function packet(input: MapInput): DstWorldMap {
     return x * x + z * z < 300 ? 6 : 201;
   });
   return { instanceId: input.instanceId, shard: input.shard as DstWorldMap["shard"], runId: mapRun, capturedAtUnixMs: Date.now(),
-    session: `world-${input.shard}`, width, height, tileScale: 4, day: 12, season: "autumn", phase: "day",
+    session: `world-${input.shard}`, geometryRevision: "", width, height, tileScale: 4, day: 12, season: "autumn", phase: "day",
     tiles: input.includeTerrain ? tiles : null, tileNames: input.includeTerrain ? { 6: "GRASS", 201: "OCEAN_COASTAL" } : {},
     tileKinds: input.includeTerrain ? { 6: "land", 201: "ocean" } : {},
     tileTextures: input.includeTerrain ? { 6: "images/fixture_grass.tex" } : {}, tileBaseTextures: input.includeTerrain ? { 6: "levels/tiles/map_edge.tex" } : {},
@@ -290,7 +290,8 @@ async function run() {
     `A map click converts to world coordinates beside the clicked spot: ${toPoint?.[0]}`);
   await act(async () => element<HTMLButtonElement>('button[title^="清理分片 master"]').click());
   const clearReview = element(".dst-gm-confirm .inline-confirm-review");
-  check(Boolean(clearReview.textContent?.includes("不可撤销")) && clearReview.contains(element(".inline-confirm-submit")), "Clearing asks for a danger confirmation first");
+  check(Boolean(clearReview.textContent?.includes("不可撤销")) && clearReview.textContent?.includes("仪式祭品")
+    && clearReview.contains(element(".inline-confirm-submit")), "Clearing confirms its irreversible effect and preservation of ritual offerings");
   const beforeClear = commands.length;
   await act(async () => element<HTMLButtonElement>(".inline-confirm-submit").click());
   await wait(() => commands.length === beforeClear + 1 && buttonByText("冬季")?.disabled === false, "Clear did not dispatch");
@@ -359,6 +360,20 @@ async function run() {
   const give = commands.at(-1)!;
   check(give.processKey === "caves" && give.command.includes('LookupPlayerInstByUserID("KU_FIXTURE1")') && give.command.startsWith('local f="log";') && give.command.includes("SpawnPrefab(f)") && give.command.includes("for i=1,3 do"),
     `Give must reuse the item builder for the selected player on its shard: ${give.processKey} ${give.command}`);
+  await setSearch("Queen's Torch");
+  check(options()[0]?.textContent?.includes("女王火炬") && options()[0]?.querySelector("code")?.textContent === "queen_torch",
+    "The new item is found by its official English name in the Chinese interface");
+  await setSearch("女王火炬");
+  check(options().length === 1 && !options()[0].classList.contains("gmt-dst-prefab-option--custom"),
+    "The new item's Chinese name resolves to a built-in selection");
+  await act(async () => options()[0].click());
+  const newContentBefore = commands.length;
+  await act(async () => element<HTMLButtonElement>(".dst-gm-send").click());
+  await wait(() => commands.length === newContentBefore + 1 && !element<HTMLButtonElement>(".dst-gm-send").disabled, "New content give did not dispatch");
+  check(commands.at(-1)!.processKey === "caves"
+    && commands.at(-1)!.command.startsWith('local f="queen_torch";assert(PrefabExists(f),"Unknown prefab");')
+    && commands.at(-1)!.command.includes('LookupPlayerInstByUserID("KU_FIXTURE1")'),
+    "Selecting new content sends its real prefab to the selected player and shard");
   // A well-formed id outside the catalog is offered first as a custom code; the server checks it exists.
   await setSearch("  My_Mod_Item ");
   check(options()[0]?.textContent?.includes("使用代码") && options()[0].textContent?.includes("my_mod_item"), `A typed id is offered as 使用代码: ${options()[0]?.textContent}`);

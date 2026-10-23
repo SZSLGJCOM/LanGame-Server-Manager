@@ -23,7 +23,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "The Forest reads the instance server.cfg through -configfilepath. LanGame prepares its control DLL only in this instance's verified owned program directory. The server's native DllModLoader connects managed stdin commands help, status, save and shutdown to its main-thread native APIs; shutdown verifies a new checkpoint before requesting the native shutdown coroutine. Unverified builds or conflicting user DLLs are refused."
+host_notes = "The Forest reads the instance server.cfg through -configfilepath. LanGame prepares its control DLL only in this instance's verified owned program directory. The server's native DllModLoader connects managed stdin commands help, status, save and shutdown to its main-thread native APIs; shutdown verifies a new checkpoint before requesting the native shutdown coroutine. Unverified builds skip the extension after safely deactivating its owned DLL; conflicting or modified DLLs still block startup."
 
 [process.environment_template]
 LANGAME_THEFOREST_STDIN_BRIDGE = "1"

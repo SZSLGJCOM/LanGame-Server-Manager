@@ -14,7 +14,7 @@ impl Fixture {
         Self { root }
     }
     fn install(&self, payload: &[u8]) -> Result<(), String> {
-        install_files(&self.root, payload, &digest(b"fixture game assembly"))
+        install_files(&self.root, payload, &digest(b"fixture game assembly")).map(|_| ())
     }
     fn plugin(&self) -> PathBuf {
         self.root.join("DllMods").join(PLUGIN)
@@ -90,9 +90,12 @@ fn theforest_control_updates_verified_owner_and_recovers_interrupted_publication
 }
 
 #[test]
-fn theforest_control_rejects_unknown_game_and_foreign_ownership() {
+fn theforest_control_unknown_game_skips_extension_and_preserves_foreign_ownership() {
     let fixture = Fixture::new();
-    assert!(install_files(&fixture.root, b"bridge", &digest(b"other game")).is_err());
+    assert_eq!(
+        install_files(&fixture.root, b"bridge", &digest(b"other game")),
+        Ok(false)
+    );
     assert!(!fixture.root.join("DllMods").exists());
     fixture.install(b"owned bridge").unwrap();
     let foreign = Ownership {
@@ -104,6 +107,27 @@ fn theforest_control_rejects_unknown_game_and_foreign_ownership() {
     fs::write(fixture.owner(), serde_json::to_vec(&foreign).unwrap()).unwrap();
     assert!(fixture.install(b"new bridge").is_err());
     assert_eq!(fs::read(fixture.plugin()).unwrap(), b"owned bridge");
+}
+
+#[test]
+fn theforest_control_unknown_game_deactivates_only_an_unchanged_owned_bridge() {
+    let fixture = Fixture::new();
+    fixture.install(b"owned bridge").unwrap();
+    let original_owner = fs::read(fixture.owner()).unwrap();
+    assert_eq!(
+        install_files(&fixture.root, b"next bridge", &digest(b"other game")),
+        Ok(false)
+    );
+    assert!(!fixture.plugin().exists());
+    assert_eq!(fs::read(fixture.owner()).unwrap(), original_owner);
+    assert_eq!(
+        install_files(&fixture.root, b"next bridge", &digest(b"other game")),
+        Ok(false)
+    );
+    fixture.install(b"next bridge").unwrap();
+    fs::write(fixture.plugin(), b"operator replacement").unwrap();
+    assert!(install_files(&fixture.root, b"next bridge", &digest(b"other game")).is_err());
+    assert_eq!(fs::read(fixture.plugin()).unwrap(), b"operator replacement");
 }
 
 #[test]

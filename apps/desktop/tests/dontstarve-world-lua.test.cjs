@@ -61,6 +61,19 @@ test("comments, bracket keys, long strings and unknown arrays survive a targeted
   assert.equal(scriptMode(next, "master"), false);
 });
 
+test("cave boss options round-trip existing Lua without changing Master or unknown data", () => {
+  const raw = "return {override_enabled=true,overrides={bat_boss='rare',rocky_boss='often',custom={enabled=false}}}";
+  const master = "return {override_enabled=true,overrides={weather='rare'}}";
+  const current = initialize({ caves_worldgenoverride_lua: raw, master_worldgenoverride_lua: master });
+  assert.equal(current.caves_bat_boss, "rare");
+  assert.equal(current.caves_rocky_boss, "often");
+  const next = apply(current, { caves_bat_boss: "always", caves_rocky_boss: "never" });
+  assert.equal(next.caves_worldgenoverride_lua, raw.replace("'rare'", '"always"').replace("'often'", '"never"'));
+  assert.equal(next.master_worldgenoverride_lua, master);
+  assert.equal(current.caves_worldgenoverride_lua, raw);
+  assert.deepEqual(initialize(next), next);
+});
+
 test("active raw ignores existing extra while guided edits update its matching known key", () => {
   const raw = "return {override_enabled=true,overrides={weather='rare'}}";
   const extra = "weather='always', custom={enabled=false},";

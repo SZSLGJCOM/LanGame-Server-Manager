@@ -7,8 +7,9 @@ import type { InstanceDetails, ModuleDetails, UpdateInstanceInput } from "../../
 import { ConfigurationWorkspace } from "../../src/views/settings/ConfigurationWorkspace";
 import { InstanceSettingsSaveProvider } from "../../src/views/settings/InstanceSettingsSaveContext";
 import { buildConfigurationWorkspaceModel } from "../../src/views/settings/configuration-workspace-model";
-import { parseGuidedSettingsSchema } from "../../src/views/settings/guided-settings";
+import { parseGuidedSettingsSchema, serializeSettingsObject } from "../../src/views/settings/guided-settings";
 import { listConfigurationSpecializedRenderers, resolveSettingsModuleDefinition } from "../../src/views/settings/module-registry";
+import { initializeDontStarveWorldSettings } from "../../src/views/settings/modules/dontstarve-world-lua";
 import type { GuidedSettingsSchema } from "../../src/views/settings/settings-schema";
 import { CANONICAL_GAME_CONFIG_ACCEPTANCE_MODULE_IDS } from "./configuration-module-acceptance";
 import "../../src/app.css";
@@ -85,6 +86,11 @@ async function mount(moduleId: string, settingsOverrides: Record<string, unknown
     saves_path: "C:/synthetic/configuration/saves", backup_uses_declared_saves_path: true,
     auto_backup_on_stop: false, backup_retention_count: 5, active_run: null
   });
+  // Seed a stored DST snapshot, including raw-Lua projection and canonical formatting.
+  // Otherwise the development mock's compact, unprojected JSON itself queues a save.
+  if (moduleId === "dontstarve" && !persisted.has(moduleId)) {
+    initial.settings_json = serializeSettingsObject(initializeDontStarveWorldSettings(JSON.parse(initial.settings_json)));
+  }
   activeSchema = null;
   await act(async () => {
     root.render(<I18nProvider><InstanceSettingsSaveProvider key={moduleId}>
@@ -222,7 +228,59 @@ async function run() {
   check(!Object.hasOwn(window, "__TAURI_INTERNALS__"), "Catalogue acceptance must not access a native backend");
   await Promise.all([import("../../src/i18n-messages"), import("../../src/i18n-messages-zh-cn")]);
   const { mode } = await fetch("/__configuration_review_mode").then((response) => response.json()) as { mode: string };
-  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network", "enshrouded-1-0", "enshrouded-sections"].includes(mode), "Unknown configuration review mode");
+  check(["catalog", "corekeeper-password", "conan-semantics", "barotrauma-campaign", "barotrauma-network", "enshrouded-1-0", "enshrouded-sections", "dontstarve-cursed-confrontation"].includes(mode), "Unknown configuration review mode");
+  if (mode === "dontstarve-cursed-confrontation") {
+    const fields = [["caves_bat_boss", "猎犬蝙蝠"], ["caves_rocky_boss", "岩石大师"]] as const;
+    const values = ["never", "rare", "default", "often", "always"];
+    const labels = ["从不", "稀少", "默认", "经常", "始终"];
+    const { schema } = await mount("dontstarve", { enable_caves: true });
+    await selectSection("cavessettings");
+    verifySection("dontstarve", "cavessettings", schema);
+    for (const [key, title] of fields) {
+      const card = fixture.querySelector<HTMLElement>(`[data-field-key="${key}"]`);
+      const input = card?.querySelector("select");
+      check(card?.querySelector(".settings-field-label")?.textContent === title,
+        `${key}: Caves must render the official Chinese title`);
+      check(input && !input.disabled && input.getClientRects().length > 0 && input.value === "2",
+        `${key}: the five-level select must be visible, editable and initially Default`);
+      check(JSON.stringify([...input.options].map((option) => option.textContent)) === JSON.stringify(labels),
+        `${key}: all five native frequency choices must have translated labels`);
+      check(card.closest(".dst-guided-group--dst-cavessettings-monsters"),
+        `${key}: the setting belongs to the Caves hostile-creature group`);
+    }
+    check(saves.length === 0, "Opening Caves settings must not save without an edit");
+    const readbacks: Record<string, string[]> = {};
+    for (const [key] of fields) {
+      readbacks[key] = [];
+      for (const value of values) {
+        await verifySaveReadback("dontstarve", key, value);
+        readbacks[key].push(JSON.parse(saves.at(-1)!.settings_json)[key]);
+      }
+    }
+    for (const section of ["mastersettings", "mastergen"]) {
+      await selectSection(section);
+      check(fields.every(([key]) => !fixture.querySelector(`[data-field-key="${key}"]`)),
+        `${section}: Caves-only bosses must not appear on Master`);
+    }
+    const saved = JSON.parse(persisted.get("dontstarve")!.settings_json);
+    check(fields.every(([key]) => saved[key] === "always")
+      && !("master_bat_boss" in saved) && !("master_rocky_boss" in saved),
+      "Both Caves values must survive independent saves without creating Master overrides");
+    check(saves.length === 10, `Five choices for each boss must produce ten debounced saves, got ${saves.length}`);
+    await selectSection("cavessettings");
+    const cards = fields.map(([key]) => fixture.querySelector<HTMLElement>(`[data-field-key="${key}"]`)!);
+    const scrollOwner = fixture.querySelector<HTMLElement>("[data-configuration-scroll-owner]")!;
+    const bounds = cards.map((card) => card.getBoundingClientRect());
+    const container = scrollOwner.getBoundingClientRect();
+    scrollOwner.scrollTop += (Math.min(...bounds.map((box) => box.top)) + Math.max(...bounds.map((box) => box.bottom))
+      - container.top - container.bottom) / 2;
+    await act(async () => { await document.fonts.ready; await frame(); });
+    check(document.documentElement.scrollWidth <= innerWidth + 1, "Caves settings must not overflow horizontally");
+    check(errors.length === 0, "Browser and React must report no errors");
+    return { status: "passed", caves_boss_titles: fields.map(([, title]) => title), boss_value_readbacks: readbacks,
+      master_boss_controls: 0, setting_save_readbacks: saves.length,
+      save_boundary: "synthetic onSave; no server files written", browser_errors: errors };
+  }
   if (mode === "enshrouded-sections") {
     const retainedBans = "00042\n18446744073709551615";
     const { descriptor, schema, model } = await mount("enshrouded", {

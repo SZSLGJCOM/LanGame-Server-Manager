@@ -13,7 +13,7 @@ for (const viewport of [{ width: 1280, height: 800 }, { width: 960, height: 600 
     assert.equal(report.status, "passed", report.error);
     assert.deepEqual(report.browser_errors, []);
     assert.ok(report.checks >= 25, "Panel, dispatch, targeting and layout checks must complete");
-    assert.equal(report.commands, 15, "Two phases, season, rain, two revives, restore, god mode, unlock, two teleports, clear and three gives (one a typed code) must each dispatch once; the stopped shard none");
+    assert.equal(report.commands, 16, "Two phases, season, rain, two revives, restore, god mode, unlock, two teleports, clear and four gives (new content and a typed code included) must each dispatch once; the stopped shard none");
     assert.ok(report.items >= 1, "The item page holds at least one row");
     itemsByHeight.set(viewport.height, report.items);
     assert.equal(report.browser_processes_remaining, 0);

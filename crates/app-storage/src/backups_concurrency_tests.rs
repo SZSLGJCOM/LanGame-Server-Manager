@@ -113,6 +113,117 @@ impl Drop for Fixture {
     }
 }
 
+#[tokio::test]
+async fn backup_creation_rejects_every_active_transition_without_changing_saved_data() {
+    let fixture = Box::pin(Fixture::new()).await;
+    let pool = connect_pool(&fixture.paths).await.unwrap();
+    for status in ["starting", "running", "stopping"] {
+        sqlx::query("UPDATE instances SET status=?1 WHERE id='backup-instance'")
+            .bind(status)
+            .execute(&pool)
+            .await
+            .unwrap();
+        assert!(
+            Box::pin(create_instance_backup(&fixture.paths, "backup-instance"))
+                .await
+                .is_err(),
+            "manual backup must reject {status} until the game is stopped"
+        );
+        assert!(
+            Box::pin(create_instance_auto_stop_backup(
+                &fixture.paths,
+                "backup-instance"
+            ))
+            .await
+            .is_err(),
+            "auto-stop backup must also verify that {status} has actually ended"
+        );
+        assert!(
+            Box::pin(create_instance_pre_restore_backup(
+                &fixture.paths,
+                "backup-instance",
+                &fixture.backup.backup_id
+            ))
+            .await
+            .is_err(),
+            "a safeguard must not copy a live {status} world"
+        );
+    }
+    pool.close().await;
+    assert_eq!(
+        fs::read(fixture.saves.join("world")).unwrap(),
+        b"current world"
+    );
+    let backups = list_instance_backups(&fixture.paths, "backup-instance")
+        .await
+        .unwrap();
+    assert_eq!(backups.len(), 1);
+    assert_eq!(backups[0].backup_id, fixture.backup.backup_id);
+    assert_eq!(
+        fs::read(Path::new(&fixture.backup.backup_path).join("saves/world")).unwrap(),
+        b"earlier world"
+    );
+}
+
+#[tokio::test]
+async fn backup_creation_rejects_active_run_with_a_stale_stopped_summary() {
+    let fixture = Box::pin(Fixture::new()).await;
+    let pool = connect_pool(&fixture.paths).await.unwrap();
+    sqlx::query(
+        "INSERT INTO instance_runs(instance_id,status,pid) VALUES('backup-instance','running',123)",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    pool.close().await;
+    assert!(
+        Box::pin(create_instance_backup(&fixture.paths, "backup-instance"))
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        fs::read(fixture.saves.join("world")).unwrap(),
+        b"current world"
+    );
+    assert_eq!(
+        list_instance_backups(&fixture.paths, "backup-instance")
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn backup_creation_refuses_missing_saves_without_pruning_the_last_backup() {
+    let fixture = Box::pin(Fixture::new()).await;
+    let pool = connect_pool(&fixture.paths).await.unwrap();
+    sqlx::query("UPDATE instances SET backup_retention_count=1 WHERE id='backup-instance'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+    fs::remove_dir_all(&fixture.saves).unwrap();
+    assert!(
+        Box::pin(create_instance_backup(&fixture.paths, "backup-instance"))
+            .await
+            .is_err()
+    );
+    assert!(
+        !fixture.saves.exists(),
+        "a missing save root must never be replaced by an empty one"
+    );
+    let backups = list_instance_backups(&fixture.paths, "backup-instance")
+        .await
+        .unwrap();
+    assert_eq!(backups.len(), 1);
+    assert_eq!(backups[0].backup_id, fixture.backup.backup_id);
+    assert_eq!(
+        fs::read(Path::new(&fixture.backup.backup_path).join("saves/world")).unwrap(),
+        b"earlier world"
+    );
+}
+
 async fn write_unrelated(paths: &StoragePaths, id: &str) -> Result<(), sqlx::Error> {
     let options = SqliteConnectOptions::new()
         .filename(&paths.database_path)
@@ -236,4 +347,163 @@ async fn cancelled_backup_waiter_keeps_publication_coordinator_and_instance_leas
     })
     .await
     .unwrap();
+}
+
+fn interrupt_fixture_restore(fixture: &Fixture) {
+    let child = std::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "backups::tests::backup_restore_interruption_child",
+            "--nocapture",
+        ])
+        .env("LANGAME_BACKUP_RESTORE_CRASH_ROOT", &fixture.root)
+        .env("LANGAME_BACKUP_RESTORE_CRASH_TARGET", &fixture.saves)
+        .env(
+            "LANGAME_BACKUP_RESTORE_CRASH_SOURCE",
+            Path::new(&fixture.backup.backup_path).join("saves"),
+        )
+        .env("LANGAME_BACKUP_RESTORE_CRASH_STAGE", "displaced")
+        .output()
+        .unwrap();
+    assert_eq!(
+        child.status.code(),
+        Some(73),
+        "{}",
+        String::from_utf8_lossy(&child.stdout)
+    );
+}
+
+#[tokio::test]
+async fn interrupted_backup_restore_blocks_configuration_and_live_access_until_recovered() {
+    let fixture = Box::pin(Fixture::new()).await;
+    let input = || UpdateInstanceInput {
+        id: "backup-instance".to_owned(),
+        bind_ip: "0.0.0.0".to_owned(),
+        auto_backup_on_stop: false,
+        backup_retention_count: 3,
+        settings_json: "{}".to_owned(),
+        ports: Vec::new(),
+    };
+    // Prove that the same valid configuration succeeds before interruption.
+    Box::pin(crate::update_instance(&fixture.paths, input()))
+        .await
+        .unwrap();
+    Box::pin(crate::materialize_instance_configuration(
+        &fixture.paths,
+        "backup-instance",
+    ))
+    .await
+    .unwrap();
+    let config = fixture.saves.parent().unwrap().join("config/instance.json");
+    let before = fs::read(&config).unwrap();
+    interrupt_fixture_restore(&fixture);
+    assert!(!fixture.saves.exists());
+    let error = Box::pin(crate::update_instance(&fixture.paths, input()))
+        .await
+        .expect_err("configuration must not change a pending restore's save location");
+    assert!(
+        error.to_string().contains("interrupted backup restore"),
+        "{error}"
+    );
+    let error = Box::pin(crate::materialize_instance_configuration(
+        &fixture.paths,
+        "backup-instance",
+    ))
+    .await
+    .expect_err("startup materialization must not recreate a displaced world");
+    assert!(
+        error.to_string().contains("interrupted backup restore"),
+        "{error}"
+    );
+    assert_eq!(fs::read(&config).unwrap(), before);
+    assert!(!fixture.saves.exists());
+    assert!(
+        Box::pin(ensure_instance_backup_ready(
+            &fixture.paths,
+            "backup-instance"
+        ))
+        .await
+        .is_err()
+    );
+    assert!(
+        Box::pin(list_instance_save_files(
+            &fixture.paths,
+            "backup-instance",
+            None
+        ))
+        .await
+        .is_err()
+    );
+    assert!(
+        Box::pin(create_instance_backup(&fixture.paths, "backup-instance"))
+            .await
+            .is_err()
+    );
+    assert!(
+        Box::pin(list_instance_save_files(
+            &fixture.paths,
+            "backup-instance",
+            Some(&fixture.backup.backup_id)
+        ))
+        .await
+        .is_ok()
+    );
+    Box::pin(recover_instance_backup_restore(
+        &fixture.paths,
+        "backup-instance",
+    ))
+    .await
+    .unwrap();
+    Box::pin(ensure_instance_backup_ready(
+        &fixture.paths,
+        "backup-instance",
+    ))
+    .await
+    .unwrap();
+    assert_eq!(
+        fs::read(fixture.saves.join("world")).unwrap(),
+        b"current world"
+    );
+    assert_eq!(
+        fs::read(Path::new(&fixture.backup.backup_path).join("saves/world")).unwrap(),
+        b"earlier world"
+    );
+}
+
+#[tokio::test]
+async fn interrupted_backup_restore_retains_changed_recovery_copies_and_blocks_startup() {
+    let fixture = Box::pin(Fixture::new()).await;
+    interrupt_fixture_restore(&fixture);
+    let rollback = fs::read_dir(fixture.saves.parent().unwrap())
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .find(|path| {
+            path.file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with(".restore-rollback-")
+        })
+        .unwrap();
+    fs::write(rollback.join("world"), b"changed recovery world").unwrap();
+    let before = crate::test_file_snapshot::tree_snapshot(fixture.saves.parent().unwrap()).unwrap();
+    let error = Box::pin(recover_instance_backup_restore(
+        &fixture.paths,
+        "backup-instance",
+    ))
+    .await
+    .expect_err("unverified recovery contents must not be published or discarded");
+    assert!(error.to_string().contains("changed"), "{error}");
+    assert_eq!(
+        crate::test_file_snapshot::tree_snapshot(fixture.saves.parent().unwrap()).unwrap(),
+        before
+    );
+    assert!(
+        Box::pin(ensure_instance_backup_ready(
+            &fixture.paths,
+            "backup-instance"
+        ))
+        .await
+        .is_err()
+    );
+    assert!(!fixture.saves.exists());
 }

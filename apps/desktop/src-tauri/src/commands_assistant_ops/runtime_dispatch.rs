@@ -860,6 +860,16 @@ async fn send_instance_runtime_command_inner(
         return Err("Dragonwilds moderation must use the player management service and its current identity checks.".into());
     }
     ensure_expected_supervisor_state(state, &instance_id, expected_run_id)?;
+    if runtime_action_id.as_deref() == Some("save_world") {
+        let details =
+            runtime_command_instance_details(&storage, &instance_id, &mut instance_details).await?;
+        Box::pin(super::commands_world_save::readiness::require_ready(
+            state.inner(),
+            &storage.paths,
+            details,
+        ))
+        .await?;
+    }
     let audited_command = (!redact_audit_payload).then_some(normalized_command.as_str());
     let submitted_at_unix_ms = SystemTime::now()
         .duration_since(UNIX_EPOCH)

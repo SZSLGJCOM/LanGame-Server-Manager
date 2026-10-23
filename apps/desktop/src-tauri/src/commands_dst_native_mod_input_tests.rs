@@ -68,6 +68,7 @@ pub(super) fn resolve(scenario: &str, custom_json: Option<&str>) -> Result<Nativ
     }
     let ids: &[&str] = match scenario {
         "vanilla"
+        | "shadowy_depths"
         | "events"
         | "invalid_mod_lua"
         | "invalid_caves_mod_lua"
@@ -108,6 +109,7 @@ mod tests {
     fn all_existing_native_scenario_ids_and_order_are_preserved() {
         let cases: &[(&str, &[&str])] = &[
             ("vanilla", &[]),
+            ("shadowy_depths", &[]),
             ("events", &[]),
             ("invalid_mod_lua", &[]),
             ("invalid_caves_mod_lua", &[]),

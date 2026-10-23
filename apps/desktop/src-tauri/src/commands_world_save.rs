@@ -2,6 +2,9 @@
 //! must agree before a native API receives a mutating request.
 use super::*;
 
+#[path = "commands_world_save_readiness.rs"]
+pub(in crate::commands) mod readiness;
+
 #[path = "commands_theforest_world_save.rs"]
 pub(in crate::commands) mod theforest;
 

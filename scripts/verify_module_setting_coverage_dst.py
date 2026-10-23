@@ -11,7 +11,7 @@ from source_literal_scan import SourceLiteralState, source_literal_mask
 MASTER_OVERRIDE_SECTIONS = {"mastergen", "mastersettings"}
 CAVES_OVERRIDE_SECTIONS = {"cavesgen", "cavessettings"}
 EXPECTED_MASTER_OVERRIDE_COUNT = 190
-EXPECTED_CAVES_OVERRIDE_COUNT = 86
+EXPECTED_CAVES_OVERRIDE_COUNT = 88
 EXPECTED_CAVES_INHERITED_OVERRIDE_KEYS = {
     "basicresource_regrowth", "extrastartingitems", "seasonalstartingitems",
     "spawnprotection", "dropeverythingondespawn", "healthpenalty", "lessdamagetaken",

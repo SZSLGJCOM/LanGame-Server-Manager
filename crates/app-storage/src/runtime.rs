@@ -23,6 +23,8 @@ mod dragonwilds_health;
 mod enshrouded_health;
 #[path = "runtime_health_evidence.rs"]
 mod health_evidence;
+#[path = "runtime_health_snapshot.rs"]
+mod health_snapshot;
 #[path = "runtime_nightingale_health.rs"]
 mod nightingale_health;
 #[path = "runtime_sonsoftheforest_health.rs"]
@@ -106,6 +108,19 @@ pub async fn read_instance_details_and_runtime_overview(
     Ok((details, overview))
 }
 
+/// Runtime readiness only; does not contact a player-query endpoint.
+pub async fn read_instance_details_and_runtime_health(
+    paths: &StoragePaths,
+    instance_id: &str,
+) -> Result<(InstanceDetails, app_core::RuntimeHealth), StorageError> {
+    let data = read_instance_runtime_data(paths, instance_id).await?;
+    let details = data.details(paths)?;
+    let ark_health_instance =
+        app_core::ark_maps::is_ark(&details.summary.module_id).then(|| details.clone());
+    let snapshot = health_snapshot::read(paths, &data, ark_health_instance).await?;
+    Ok((details, snapshot.health))
+}
+
 struct InstanceRuntimeData {
     record: StoredInstanceRecord,
     active_run: Option<ActiveInstanceRun>,
@@ -147,6 +162,12 @@ async fn build_instance_runtime_overview(
     data: InstanceRuntimeData,
     ark_health_instance: Option<InstanceDetails>,
 ) -> Result<InstanceRuntimeOverview, StorageError> {
+    let health_snapshot::RuntimeLogHealth {
+        health_scan,
+        log_tail,
+        health,
+        query_restriction,
+    } = health_snapshot::read(paths, &data, ark_health_instance).await?;
     let InstanceRuntimeData {
         record,
         active_run,
@@ -157,73 +178,6 @@ async fn build_instance_runtime_overview(
         .ok()
         .flatten()
         .and_then(|descriptor| descriptor.runtime.player_query);
-    let log_source_path =
-        resolve_instance_log_source_path(&record, active_run.as_ref(), &recent_runs).await?;
-    let module_id = record.summary.module_id.clone();
-    let status = record.summary.status.clone();
-    let health_run = active_run.clone();
-    let health_ports = ports.clone();
-    let config_file_path = record.config_dir.join("instance.json");
-    let status_health_root = if module_id == "returntomoria" {
-        Some(effective_instance_install_root(&record)?)
-    } else {
-        None
-    };
-    let ark_health_instance = if app_core::ark_maps::is_ark(&module_id) {
-        Some(match ark_health_instance {
-            Some(details) => details,
-            None => crate::instances::project_instance_details(
-                paths,
-                record.clone(),
-                ports.clone(),
-                active_run.clone(),
-            )?,
-        })
-    } else {
-        None
-    };
-    let (health_scan, log_tail, health, query_restriction) =
-        tokio::task::spawn_blocking(move || {
-            let query_restriction =
-                if matches!(module_id.as_str(), "valheim" | "vrising" | "abioticfactor") {
-                    let settings =
-                        crate::instances::read_instance_settings_json(&config_file_path)?;
-                    steam_player_query_visibility_restriction(&module_id, &settings)
-                } else {
-                    None
-                };
-            let health_scan =
-                read_log_snapshot(log_source_path.clone(), RUNTIME_HEALTH_SCAN_LINE_LIMIT);
-            let log_tail = read_log_snapshot(log_source_path, 32);
-            let health = ark_health_instance
-                .as_ref()
-                .and_then(ark_readiness::analyze_ark_maps_runtime_health)
-                .unwrap_or_else(|| {
-                    analyze_runtime_health_with_startup_evidence(
-                        &module_id,
-                        &status,
-                        &health_scan,
-                        health_run.as_ref(),
-                        &health_ports,
-                    )
-                });
-            let health = if matches!(health.status.as_str(), "starting" | "ready") {
-                status_health_root
-                    .as_ref()
-                    .and_then(|root| {
-                        returntomoria_health::analyze(&status, root, health_run.as_ref())
-                    })
-                    .unwrap_or(health)
-            } else {
-                health
-            };
-            Ok::<_, StorageError>((health_scan, log_tail, health, query_restriction))
-        })
-        .await
-        .map_err(|error| StorageError::BlockingTaskFailed {
-            operation: "read runtime health logs",
-            message: error.to_string(),
-        })??;
     let diagnostics = collect_runtime_diagnostics(
         &record.summary.module_id,
         &record.summary.status,
@@ -747,10 +701,14 @@ fn analyze_runtime_health_with_startup_evidence(
     let Some(run_log_path) = active_run.and_then(|run| run.log_path.as_deref()) else {
         return recent_health;
     };
-    if recent_log.source_path.as_deref() != Some(run_log_path) {
+    let native = (module_id == "corekeeper")
+        .then(|| app_core::runtime_logs::corekeeper_native_log_path(Path::new(run_log_path)))
+        .flatten();
+    let source = native.as_deref().unwrap_or_else(|| Path::new(run_log_path));
+    if recent_log.source_path.as_deref().map(Path::new) != Some(source) {
         return recent_health;
     }
-    let startup_log = read_startup_log_snapshot(run_log_path);
+    let startup_log = read_startup_log_snapshot(&source.to_string_lossy());
     let startup_health = analyze_runtime_health(module_id, status, &startup_log, active_run, ports);
     if startup_health.status == "ready" || startup_log.read_error.is_some() {
         startup_health
@@ -2110,6 +2068,33 @@ async fn resolve_instance_log_source_path(
     active_run: Option<&ActiveInstanceRun>,
     recent_runs: &[InstanceRunRecord],
 ) -> Result<Option<String>, StorageError> {
+    if record.summary.module_id.eq_ignore_ascii_case("corekeeper") {
+        if let Some(active) = active_run {
+            // Its undated native log has one immutable run name. Absence or
+            // emptiness must never select a ready line from an earlier run.
+            return Ok(active
+                .log_path
+                .as_deref()
+                .and_then(|path| {
+                    app_core::runtime_logs::corekeeper_native_log_path(Path::new(path))
+                })
+                .map(|path| path.to_string_lossy().into_owned())
+                .or_else(|| active.log_path.clone()));
+        }
+        if let Some(path) = recent_runs
+            .iter()
+            .find_map(|run| {
+                run.log_path.as_deref().and_then(|path| {
+                    app_core::runtime_logs::corekeeper_native_log_path(Path::new(path))
+                })
+            })
+            .filter(|path| path.is_file())
+        {
+            return Ok(Some(path.to_string_lossy().into_owned()));
+        }
+        // Older versions used the fixed native path. Retain it for inactive
+        // diagnostics; health evidence cannot use it for a current run.
+    }
     // DST reuses its native log path across launches. Its modification time
     // cannot associate old readiness output with the current managed run.
     if record.summary.module_id.eq_ignore_ascii_case("dontstarve") {

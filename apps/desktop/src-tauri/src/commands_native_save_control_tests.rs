@@ -1,6 +1,186 @@
 use super::*;
 use std::sync::{Arc, mpsc};
 
+#[tokio::test]
+async fn save_loader_timeout_preserves_drained_failure_and_waits_for_cleanup() {
+    use super::super::commands_mods::mod_online::ThunderstorePreparationFailure;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let root = Fixture::new();
+    fs::write(root.0.join("valheim_server.exe"), b"MZfixture server").unwrap();
+    for (message, reason) in [
+        ("loader ownership conflict", None),
+        ("local publication failed", None),
+        ("owned cleanup failed", None),
+        ("preparation cancelled", None),
+        (
+            "remote request failed",
+            Some(app_core::RuntimeModUpdateReason::Request),
+        ),
+    ] {
+        let cancellation = app_steamcmd::InstallCancellation::new();
+        let drained = AtomicBool::new(false);
+        let result = await_loader_preparation(
+            &cancellation,
+            async {
+                cancellation.cancelled().await;
+                tokio::task::yield_now().await;
+                drained.store(true, Ordering::SeqCst);
+                Err::<(), _>(match reason {
+                    Some(reason) => ThunderstorePreparationFailure::remote(message.into(), reason),
+                    None => message.to_owned().into(),
+                })
+            },
+            Duration::ZERO,
+        )
+        .await;
+        assert!(cancellation.is_cancelled());
+        assert!(
+            drained.load(Ordering::SeqCst),
+            "caller returned before cleanup finished"
+        );
+        let error = result.expect_err("a deadline cannot admit a package");
+        assert_eq!(error.message, message);
+        assert_eq!(error.reason(), reason);
+        let fallback = finish_optional_loader_download::<()>(&root.0, "valheim", Err(error));
+        if reason.is_none() {
+            assert_eq!(
+                fallback.unwrap_err(),
+                message,
+                "even an empty loader directory cannot weaken a local error"
+            );
+        } else {
+            assert_eq!(fallback.unwrap(), None);
+        }
+    }
+}
+
+#[tokio::test]
+async fn save_loader_timeout_discards_late_package_before_native_fallback() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    struct Package(Arc<AtomicBool>);
+    impl Drop for Package {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+        }
+    }
+    let cancellation = app_steamcmd::InstallCancellation::new();
+    let dropped = Arc::new(AtomicBool::new(false));
+    let result = await_loader_preparation(
+        &cancellation,
+        async {
+            cancellation.cancelled().await;
+            Ok(Package(dropped.clone()))
+        },
+        Duration::ZERO,
+    )
+    .await;
+    assert!(
+        dropped.load(Ordering::SeqCst),
+        "late package ownership must be dropped before fallback"
+    );
+    let error = result
+        .err()
+        .expect("late success must not install a package");
+    assert_eq!(
+        error.reason(),
+        Some(app_core::RuntimeModUpdateReason::Network)
+    );
+    let root = Fixture::new();
+    fs::write(root.0.join("valheim_server.exe"), b"MZfixture server").unwrap();
+    fs::write(root.0.join("winhttp.dll"), b"operator proxy").unwrap();
+    assert!(finish_optional_loader_download::<()>(&root.0, "valheim", Err(error)).is_err());
+    assert_eq!(
+        fs::read(root.0.join("winhttp.dll")).unwrap(),
+        b"operator proxy"
+    );
+}
+
+#[test]
+fn optional_save_loader_remote_failure_allows_only_an_inactive_native_runtime() {
+    use super::super::commands_mods::mod_online::ThunderstorePreparationFailure;
+    for module in ["valheim", "vrising"] {
+        let root = Fixture::new();
+        let image = if module == "valheim" {
+            "valheim_server.exe"
+        } else {
+            "VRisingServer.exe"
+        };
+        fs::write(root.0.join(image), b"MZfixture server").unwrap();
+        let remote = || {
+            ThunderstorePreparationFailure::remote(
+                "fixture remote download failure".into(),
+                app_core::RuntimeModUpdateReason::Network,
+            )
+        };
+        assert_eq!(
+            finish_optional_loader_download::<()>(&root.0, module, Err(remote())).unwrap(),
+            None
+        );
+        fs::write(root.0.join("winhttp.dll"), b"operator proxy").unwrap();
+        assert!(finish_optional_loader_download::<()>(&root.0, module, Err(remote())).is_err());
+        assert_eq!(
+            fs::read(root.0.join("winhttp.dll")).unwrap(),
+            b"operator proxy"
+        );
+    }
+}
+
+#[test]
+fn optional_save_loader_local_and_cancelled_failures_remain_errors() {
+    use super::super::commands_mods::mod_online::ThunderstorePreparationFailure;
+    let root = Fixture::new();
+    fs::write(root.0.join("valheim_server.exe"), b"MZfixture server").unwrap();
+    for error in [
+        ThunderstorePreparationFailure::from("loader ownership conflict".to_owned()),
+        ThunderstorePreparationFailure::cancelled(),
+    ] {
+        let message = error.message.clone();
+        assert_eq!(
+            finish_optional_loader_download::<()>(&root.0, "valheim", Err(error)).unwrap_err(),
+            message
+        );
+    }
+    assert_eq!(
+        finish_optional_loader_download(&root.0, "valheim", Ok(7)).unwrap(),
+        Some(7)
+    );
+}
+
+#[tokio::test]
+async fn save_loader_timeout_can_skip_only_its_own_completed_cancellation() {
+    use super::super::commands_mods::mod_online::ThunderstorePreparationFailure;
+    let root = Fixture::new();
+    fs::write(root.0.join("valheim_server.exe"), b"MZfixture server").unwrap();
+    let cancellation = app_steamcmd::InstallCancellation::new();
+    let completed = std::sync::atomic::AtomicBool::new(false);
+    let result = await_loader_preparation(
+        &cancellation,
+        async {
+            cancellation.cancelled().await;
+            completed.store(true, std::sync::atomic::Ordering::SeqCst);
+            Err::<(), _>(ThunderstorePreparationFailure::cancelled())
+        },
+        Duration::ZERO,
+    )
+    .await;
+    assert!(completed.load(std::sync::atomic::Ordering::SeqCst));
+    assert_eq!(
+        finish_optional_loader_download(&root.0, "valheim", result).unwrap(),
+        None
+    );
+
+    // User/provider cancellation before the deadline is still terminal.
+    let result = await_loader_preparation(
+        &cancellation,
+        async { Err::<(), _>(ThunderstorePreparationFailure::cancelled()) },
+        Duration::from_secs(30),
+    )
+    .await;
+    let error = result.expect_err("independent cancellation must remain an error");
+    assert!(error.is_cancelled());
+    assert!(finish_optional_loader_download::<()>(&root.0, "valheim", Err(error)).is_err());
+}
+
 #[test]
 fn managed_startup_hooks_preserve_existing_plan_hooks_including_windows_key_aliases() {
     for key in [

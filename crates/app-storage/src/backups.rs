@@ -19,6 +19,9 @@ pub(crate) mod save_import;
 #[path = "backups_publication.rs"]
 pub(crate) mod publication;
 
+#[path = "backups_recovery.rs"]
+mod recovery;
+
 #[path = "save_file_listing.rs"]
 mod save_file_listing;
 pub use save_file_listing::{
@@ -29,12 +32,53 @@ pub use save_file_listing::{
 #[path = "backups_concurrency_tests.rs"]
 mod concurrency_tests;
 
+fn require_stopped_backup_source(record: &StoredInstanceRecord) -> Result<(), StorageError> {
+    if record.summary.active_process_count > 0
+        || matches!(
+            record.summary.status,
+            InstanceStatus::Starting | InstanceStatus::Running | InstanceStatus::Stopping
+        )
+    {
+        return Err(backup_confirmation_error(
+            &record.saves_dir,
+            "Stop the server normally before creating or restoring a backup. No reliable online snapshot protocol is available; a save request alone does not establish consistency",
+        ));
+    }
+    Ok(())
+}
+
+/// Starting or changing live saves must not bypass an interrupted directory
+/// replacement. A restore retry performs verified recovery while stopped.
+pub async fn ensure_instance_backup_ready(
+    paths: &StoragePaths,
+    instance_id: &str,
+) -> Result<(), StorageError> {
+    let pool = connect_pool(paths).await?;
+    let record = fetch_instance_record(&pool, instance_id).await?;
+    let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
+    let install = effective_instance_install_root(&record)?;
+    let saves = effective_instance_saves_dir(descriptor.as_ref(), &install, &record)?;
+    pool.close().await;
+    run_instance_transaction(instance_root(&record), move || {
+        recovery::ensure_record_ready(&record, &saves)
+    })
+    .await
+}
+
+pub(crate) fn ensure_backup_record_ready(
+    record: &StoredInstanceRecord,
+    saves: &Path,
+) -> Result<(), StorageError> {
+    recovery::ensure_record_ready(record, saves)
+}
+
 pub async fn create_instance_backup(
     paths: &StoragePaths,
     instance_id: &str,
 ) -> Result<InstanceBackupResult, StorageError> {
     let pool = connect_pool(paths).await?;
     let record = fetch_instance_record(&pool, instance_id).await?;
+    require_stopped_backup_source(&record)?;
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install_root = effective_instance_install_root(&record)?;
     let saves_dir = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
@@ -64,6 +108,7 @@ pub async fn create_instance_pre_restore_backup(
 ) -> Result<InstanceBackupResult, StorageError> {
     let pool = connect_pool(paths).await?;
     let record = fetch_instance_record(&pool, instance_id).await?;
+    require_stopped_backup_source(&record)?;
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install_root = effective_instance_install_root(&record)?;
     let saves_dir = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
@@ -100,6 +145,7 @@ pub(crate) async fn create_instance_archive_backup(
 ) -> Result<InstanceBackupResult, StorageError> {
     let pool = connect_pool(paths).await?;
     let record = fetch_instance_record(&pool, instance_id).await?;
+    require_stopped_backup_source(&record)?;
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install_root = effective_instance_install_root(&record)?;
     let saves_dir = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
@@ -124,6 +170,7 @@ pub async fn create_instance_auto_stop_backup(
 ) -> Result<InstanceBackupResult, StorageError> {
     let pool = connect_pool(paths).await?;
     let record = fetch_instance_record(&pool, instance_id).await?;
+    require_stopped_backup_source(&record)?;
     let descriptor = load_module_descriptor(paths, &record.summary.module_id)?;
     let install_root = effective_instance_install_root(&record)?;
     let saves_dir = effective_instance_saves_dir(descriptor.as_ref(), &install_root, &record)?;
@@ -219,15 +266,49 @@ async fn restore_instance_backup_checked(
     backup_id: &str,
     prepared: Option<PreparedInstanceBackupRestore>,
 ) -> Result<InstanceBackupRestoreResult, StorageError> {
+    let backup_id = backup_id.to_owned();
+    run_backup_restore_mutation(paths, instance_id, move |record, saves, publication| {
+        restore_instance_backup_with_publication(
+            record,
+            saves,
+            &record.summary.id,
+            &backup_id,
+            prepared.as_ref(),
+            publication,
+        )
+    })
+    .await
+}
+
+/// Recover an interrupted restore before obtaining a new confirmation snapshot.
+/// This shares the stopped-state, ownership and cancellation fences of restore.
+pub async fn recover_instance_backup_restore(
+    paths: &StoragePaths,
+    instance_id: &str,
+) -> Result<(), StorageError> {
+    run_backup_restore_mutation(paths, instance_id, recovery::recover_record).await
+}
+
+async fn run_backup_restore_mutation<T, F>(
+    paths: &StoragePaths,
+    instance_id: &str,
+    operation: F,
+) -> Result<T, StorageError>
+where
+    T: Send + 'static,
+    F: FnOnce(&StoredInstanceRecord, &Path, &publication::Publication) -> Result<T, StorageError>
+        + Send
+        + 'static,
+{
     let lock = acquire_instance_settings_mutation_lock(paths, instance_id)?;
     let paths = paths.clone();
     let instance_id = String::from(instance_id);
-    let backup_id = String::from(backup_id);
     lock.complete_mutation("restoring instance backup", async move {
         let pool = connect_pool(&paths).await?;
         let result = async {
             let mut tx = pool.begin_with("BEGIN IMMEDIATE").await?;
             let record = fetch_instance_record(&mut *tx, &instance_id).await?;
+            require_stopped_backup_source(&record)?;
             let descriptor = load_module_descriptor(&paths, &record.summary.module_id)?;
             let install_root = effective_instance_install_root(&record)?;
             let saves_dir =
@@ -261,19 +342,13 @@ async fn restore_instance_backup_checked(
                     {
                         return Err(backup_confirmation_error(&saves, "Instance ownership or runtime state changed while preparing its backup restore"));
                     }
+                    require_stopped_backup_source(&current)?;
                     ensure_instance_paths_available(&paths, connection, &current.summary.id,
                         &current.summary.module_id, &install, &current.config_dir, &current_saves).await
                 })
             }, move |publication| {
                 let _transaction = transaction_lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
-                restore_instance_backup_with_publication(
-                    &record,
-                    &saves_dir,
-                    &instance_id,
-                    &backup_id,
-                    prepared.as_ref(),
-                    &publication,
-                )
+                operation(&record, &saves_dir, &publication)
             })
             .await
         }
@@ -351,7 +426,11 @@ fn create_instance_backup_with_copy_hook<F>(
 where
     F: FnMut(&Path, &Path) -> std::io::Result<()>,
 {
-    ensure_plain_directory(saves_dir)?;
+    require_stopped_backup_source(record)?;
+    recovery::ensure_record_ready(record, saves_dir)?;
+    // A missing world is not an empty world. Creating this directory would
+    // publish an empty success and could prune the last recoverable snapshot.
+    canonical_plain_directory(saves_dir, saves_dir)?;
 
     let backup_root = instance_backup_root(record);
     ensure_plain_directory(&backup_root)?;
@@ -446,6 +525,8 @@ fn restore_instance_backup_with_publication(
     prepared: Option<&PreparedInstanceBackupRestore>,
     publication: &publication::Publication,
 ) -> Result<InstanceBackupRestoreResult, StorageError> {
+    require_stopped_backup_source(record)?;
+    recovery::recover_record(record, saves_dir, publication)?;
     #[cfg(test)]
     crate::instance_archive::test_gate::pause(
         saves_dir,
@@ -587,33 +668,34 @@ where
     let stamp = publication::Stamp::directories(&[target_dir.to_path_buf(), staging_path.clone()])?;
     check(&staging_path, target_dir)?;
     let rollback_path = unique_available_path(parent, ".restore-rollback");
+    let mut journal = recovery::Journal::prepare(target_dir, &staging_path, &rollback_path)?;
 
-    publication.publish(&stamp, || {
-    let mut rollback = RestoreRollback::new(target_dir.to_path_buf(), rollback_path.clone());
-    move_directory(target_dir, &rollback_path)?;
-    if let Err(publish_error) = publish(&staging_path, target_dir) {
-        if let Err(rollback_error) = rollback.restore() {
-            return Err(StorageError::MovePath {
-                from: rollback_path.clone(),
-                to: target_dir.to_path_buf(),
-                source: std::io::Error::other(format!(
-                    "restore publish failed ({publish_error}); restoring the original saves also failed: {rollback_error}"
-                )),
-            });
-        }
-        return Err(publish_error);
+    let result = publication.publish(&stamp, || {
+        journal.begin()?;
+        // Durable recovery now owns these paths, including after a process
+        // terminates without running this worker's destructors.
+        staging_cleanup.disarm();
+        move_directory(target_dir, &rollback_path)?;
+        publish(&staging_path, target_dir)?;
+        journal.commit()
+    });
+    if let Err(error) = result {
+        return match recovery::recover(target_dir, publication) {
+            Ok(()) => Err(error),
+            Err(recovery) => Err(backup_confirmation_error(
+                target_dir,
+                &format!(
+                    "Backup restore did not finish cleanly: {error}; recovery requires attention: {recovery}"
+                ),
+            )),
+        };
     }
-
-    staging_cleanup.disarm();
-    rollback.commit();
-    Ok(())
-    })?;
     #[cfg(test)]
     crate::instance_archive::test_gate::pause(
         target_dir,
         crate::instance_archive::test_gate::Point::BackupCleanup,
     );
-    let _ = remove_managed_directory(&rollback_path, parent);
+    recovery::recover(target_dir, publication)?;
     Ok(stats)
 }
 
@@ -1211,6 +1293,8 @@ impl Drop for DirectoryCleanup {
     }
 }
 
+// Save import transactions still use their existing in-process compensation.
+// Ordinary backup restore additionally owns a durable recovery journal.
 struct RestoreRollback {
     target: PathBuf,
     rollback: Option<PathBuf>,
@@ -1254,6 +1338,7 @@ mod tests {
     include!("backups_retention_tests.rs");
     include!("backups_restore_isolation_tests.rs");
     include!("backups_checked_tests.rs");
+    include!("backups_recovery_tests.rs");
 
     fn test_root(label: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
@@ -1285,28 +1370,58 @@ mod tests {
     }
 
     #[test]
-    fn failed_backup_copy_is_cleaned_without_publishing() {
-        let root = test_root("copy-failure");
-        let record = test_record(&root);
-        fs::create_dir_all(&record.saves_dir).unwrap();
-        fs::write(record.saves_dir.join("world.db"), b"world").unwrap();
+    fn failed_backup_copy_keeps_saves_and_the_last_published_backup() {
+        for failure in [
+            std::io::ErrorKind::StorageFull,
+            std::io::ErrorKind::Interrupted,
+        ] {
+            let root = test_root("copy-failure");
+            let record = test_record(&root);
+            fs::create_dir_all(&record.saves_dir).unwrap();
+            fs::write(record.saves_dir.join("world.db"), b"previous world").unwrap();
+            create_instance_backup_with_prefix(
+                &record,
+                &record.saves_dir,
+                &record.summary.id,
+                "saves",
+                InstanceBackupKind::Manual,
+            )
+            .unwrap();
+            fs::write(record.saves_dir.join("world.db"), b"current world").unwrap();
+            fs::write(record.saves_dir.join("players.db"), b"current players").unwrap();
+            let snapshot = crate::test_file_snapshot::tree_snapshot;
+            let saved_world = snapshot(&record.saves_dir).unwrap();
+            let backup_root = instance_backup_root(&record);
+            let published_backups = snapshot(&backup_root).unwrap();
+            let mut copies = 0;
 
-        let error = create_instance_backup_with_copy_hook(
-            &record,
-            &record.saves_dir,
-            &record.summary.id,
-            "saves",
-            InstanceBackupKind::Manual,
-            &mut |_, _| Err(std::io::Error::other("injected copy failure")),
-        )
-        .expect_err("copy failure must abort backup publication");
+            let error = create_instance_backup_with_copy_hook(
+                &record,
+                &record.saves_dir,
+                &record.summary.id,
+                "saves",
+                InstanceBackupKind::Manual,
+                &mut |_, target| {
+                    copies += 1;
+                    if copies == 2 {
+                        // One complete file and one partial write already exist
+                        // when the destination fails or copying is interrupted.
+                        fs::write(target, b"partial")?;
+                        return Err(failure.into());
+                    }
+                    Ok(())
+                },
+            )
+            .expect_err("partial copying must never publish a backup");
 
-        assert!(matches!(error, StorageError::CopyPath { .. }));
-        assert_eq!(
-            fs::read_dir(instance_backup_root(&record)).unwrap().count(),
-            0
-        );
-        fs::remove_dir_all(root).unwrap();
+            assert!(
+                matches!(error, StorageError::CopyPath { source, .. } if source.kind() == failure)
+            );
+            assert_eq!(copies, 2);
+            assert_eq!(snapshot(&record.saves_dir).unwrap(), saved_world);
+            assert_eq!(snapshot(&backup_root).unwrap(), published_backups);
+            fs::remove_dir_all(root).unwrap();
+        }
     }
 
     #[test]

@@ -6,6 +6,9 @@ pub enum RuntimeStartWarningCode {
     ModUpdateUsingCache,
     ModUpdateSourceRequired,
     WorldInitializationIncomplete,
+    ManualSaveUnavailable,
+    GracefulStopUnavailable,
+    ProgramUpdateUsingInstalled,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,6 +51,32 @@ pub struct RuntimeStartWarning {
 }
 
 impl RuntimeStartWarning {
+    pub fn manual_save_unavailable(log_path: Option<String>) -> Self {
+        Self {
+            code: RuntimeStartWarningCode::ManualSaveUnavailable,
+            provider: None,
+            reason: None,
+            item_ids: Vec::new(),
+            message: "Manual saving is unavailable; the game's own saving is unaffected.".into(),
+            log_path,
+            map_key: None,
+            http_status: None,
+        }
+    }
+
+    pub fn graceful_stop_unavailable(log_path: Option<String>) -> Self {
+        Self {
+            code: RuntimeStartWarningCode::GracefulStopUnavailable,
+            provider: None,
+            reason: None,
+            item_ids: Vec::new(),
+            message: "Normal shutdown is unavailable in the manager; automatic forced termination is disabled.".into(),
+            log_path,
+            map_key: None,
+            http_status: None,
+        }
+    }
+
     pub fn world_initialization(message: String, log_path: Option<String>) -> Self {
         Self {
             code: RuntimeStartWarningCode::WorldInitializationIncomplete,

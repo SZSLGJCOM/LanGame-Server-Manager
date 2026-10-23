@@ -13,9 +13,13 @@ export function worldSaveReadinessReason(value: InstanceWorldSaveReadiness | nul
   if (!value || value.prepared === null) {
     return text("无法确认本次运行的保存能力。请正常停止并重新启动服务器。", "Save readiness for this run is unknown. Stop the server normally and start it again.");
   }
-  return value.prepared ? null : text(
-    "本次运行未准备保存扩展，手动保存不可用。请正常停止服务器，更新程序后重新启动。",
-    "The save extension was not prepared for this run. Manual saving is unavailable. Stop the server normally, update the app, and start it again.");
+  if (!value.prepared) return text(
+    "手动保存暂不可用。游戏自身的保存机制不受此限制；请留意停服能力提示，具体原因见启动日志。",
+    "Manual saving is unavailable. The game's own saving is unaffected; check any shutdown limitation notice and the startup log.");
+  if (value.world_ready !== true) return text(
+    "正在等待世界加载完成，暂时无法手动保存。",
+    "Waiting for the world to finish loading before manual saving is available.");
+  return null;
 }
 
 export async function requireWorldSaveReadiness(details: InstanceDetails, locale: string): Promise<void> {

@@ -208,9 +208,10 @@ pub use a2s::{A2S_MAX_RESPONSE_BYTES, A2sClient, A2sQueryError};
 pub use backups::{
     MAX_SAVE_FILE_LISTING_ENTRIES, PreparedInstanceBackupRestore, SaveFileEntry, SaveFileListing,
     create_instance_auto_stop_backup, create_instance_backup, create_instance_pre_restore_backup,
-    delete_instance_backup, list_instance_backups, list_instance_save_files,
-    prepare_instance_backup_restore, rename_instance_backup, restore_instance_backup,
-    restore_prepared_instance_backup, revalidate_prepared_instance_backup_restore,
+    delete_instance_backup, ensure_instance_backup_ready, list_instance_backups,
+    list_instance_save_files, prepare_instance_backup_restore, recover_instance_backup_restore,
+    rename_instance_backup, restore_instance_backup, restore_prepared_instance_backup,
+    revalidate_prepared_instance_backup_restore,
 };
 pub use broadcast::{
     complete_instance_broadcast_event, insert_instance_broadcast_event,
@@ -259,11 +260,12 @@ pub use runtime::{
     mark_instance_process_stopped, normalize_query_host, parse_a2s_info_payload,
     parse_minecraft_query_basic_response, parse_minecraft_query_challenge_response,
     query_a2s_player_count, query_live_player_count, read_active_instance_run,
-    read_game_log_snapshot, read_instance_details_and_runtime_overview,
-    read_instance_game_log_document, read_instance_log_document,
-    read_instance_restart_failure_count, read_instance_runtime_overview, read_log_path_snapshot,
-    resolve_player_query_target, steam_player_query_visibility_restriction,
-    supports_live_player_query_protocol, windrose_native_stage,
+    read_game_log_snapshot, read_instance_details_and_runtime_health,
+    read_instance_details_and_runtime_overview, read_instance_game_log_document,
+    read_instance_log_document, read_instance_restart_failure_count,
+    read_instance_runtime_overview, read_log_path_snapshot, resolve_player_query_target,
+    steam_player_query_visibility_restriction, supports_live_player_query_protocol,
+    windrose_native_stage,
 };
 pub use runtime_log_diagnostics::runtime_fatal_log_lines;
 pub use save_paths::{InstanceSavePathContext, plan_instance_saves_dir};

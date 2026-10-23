@@ -5,6 +5,9 @@ use super::commands_install_progress::{
 use super::commands_program_storage::{ProgramUpdateRequest, install_program_with_baseline};
 use super::*;
 
+#[path = "commands_runtime_prestart_fallback.rs"]
+mod fallback;
+
 #[cfg(test)]
 #[path = "commands_runtime_prestart_account_tests.rs"]
 mod account_tests;
@@ -64,6 +67,11 @@ pub(super) struct PrestartUpdateRequest<'a> {
     pub context: PrestartUpdateLogContext<'a>,
 }
 
+pub(super) struct PrestartUpdateOutcome {
+    pub install_guard: app_steamcmd::GameInstallLifecycleGuard,
+    pub warnings: Vec<app_core::RuntimeStartWarning>,
+}
+
 fn report(
     storage: &StorageBootstrap,
     instance: &InstanceDetails,
@@ -76,7 +84,11 @@ fn report(
     }
     append_desktop_app_log(
         storage,
-        if outcome == "failed" { "error" } else { "info" },
+        match outcome {
+            "failed" => "error",
+            "using_installed" => "warn",
+            _ => "info",
+        },
         &format!("instance.prestart_update.{outcome}"),
         message,
         json!({"source": context.source, "instance_id": instance.summary.id,
@@ -90,7 +102,7 @@ pub(super) async fn run_prestart_update_if_needed(
     state: &tauri::State<'_, DesktopState>,
     storage: &StorageBootstrap,
     request: PrestartUpdateRequest<'_>,
-) -> Result<app_steamcmd::GameInstallLifecycleGuard, String> {
+) -> Result<PrestartUpdateOutcome, String> {
     let PrestartUpdateRequest {
         descriptor,
         module,
@@ -109,7 +121,10 @@ pub(super) async fn run_prestart_update_if_needed(
             "pinned",
             "当前版本已固定，使用现有服务器程序启动。",
         );
-        return Ok(install_guard);
+        return Ok(PrestartUpdateOutcome {
+            install_guard,
+            warnings: Vec::new(),
+        });
     }
     if !should_run_prestart_update(module) {
         let message = if module_supports_automatic_prestart_update(module) {
@@ -118,7 +133,10 @@ pub(super) async fn run_prestart_update_if_needed(
             "此安装源不支持启动前自动更新，使用现有程序；需要更新时请手动维护。"
         };
         report(storage, instance, &context, "unavailable", message);
-        return Ok(install_guard);
+        return Ok(PrestartUpdateOutcome {
+            install_guard,
+            warnings: Vec::new(),
+        });
     }
     let root =
         PathBuf::from(super::commands_runtime_lifecycle::private_runtime_install_root(instance)?);
@@ -154,10 +172,19 @@ pub(super) async fn run_prestart_update_if_needed(
         "正在检查启动前更新…",
     );
     let cancellation = lease.cancellation();
+    let fallback = fallback::InstalledProgramFallback {
+        storage,
+        descriptor,
+        module,
+        instance,
+        reservation,
+        cancellation,
+        context: &context,
+    };
     let update = async {
         // A read-only remote comparison avoids mutating an already-current shared
         // Minecraft install, including when another instance is running or pinned.
-        if let Some(version) = app_steamcmd::current_program_version(
+        match app_steamcmd::current_program_version(
             &storage.settings,
             module,
             &root,
@@ -165,10 +192,22 @@ pub(super) async fn run_prestart_update_if_needed(
             cancellation,
         )
         .await
-        .map_err(|error| steamcmd_error_message(&error))?
         {
-            let message = format!("已确认服务器程序为当前发布版本 {version}。");
-            return Ok((install_guard, message));
+            Ok(Some(version)) => {
+                let message = format!("已确认服务器程序为当前发布版本 {version}。");
+                return Ok((
+                    PrestartUpdateOutcome {
+                        install_guard,
+                        warnings: Vec::new(),
+                    },
+                    message,
+                ));
+            }
+            Ok(None) => {}
+            Err(error) if fallback::permits_installed_program(&error) => {
+                return fallback.recover(install_guard, &error).await;
+            }
+            Err(error) => return Err(steamcmd_error_message(&error)),
         }
         let mut install_guard = install_guard;
         let mut account_name = None;
@@ -270,6 +309,19 @@ pub(super) async fn run_prestart_update_if_needed(
                         return Err(original);
                     }
                 }
+                Err(error) if fallback::permits_installed_program(&error) => {
+                    // The provider released its lease on failure. Recheck the
+                    // exact program under a new lease; a pending revision is
+                    // still fatal even when all old files happen to match.
+                    let guard = acquire_prestart_program_guard(
+                        state,
+                        &instance.summary.module_id,
+                        &root,
+                        reservation,
+                    )
+                    .await?;
+                    return fallback.recover(guard, &error).await;
+                }
                 Err(error) => return Err(steamcmd_error_message(&error)),
             }
         };
@@ -291,7 +343,13 @@ pub(super) async fn run_prestart_update_if_needed(
             Some(version) => format!("服务器程序已更新并核验，当前版本 {version}。"),
             None => "服务器程序更新与核验已完成。".into(),
         };
-        Ok::<_, String>((guard, message))
+        Ok::<_, String>((
+            PrestartUpdateOutcome {
+                install_guard: guard,
+                warnings: Vec::new(),
+            },
+            message,
+        ))
     };
     tokio::pin!(update);
     let result = tokio::select! {
@@ -303,7 +361,7 @@ pub(super) async fn run_prestart_update_if_needed(
         result = &mut update => result,
     };
     match result {
-        Ok((guard, message)) => {
+        Ok((outcome, message)) => {
             if cancellation.is_cancelled() || reservation.is_cancelled() {
                 update_background_job(state, &job_id, |job| {
                     fail_install_progress(job, 1.0);
@@ -313,11 +371,28 @@ pub(super) async fn run_prestart_update_if_needed(
                 return Err("启动前更新已取消，实例未启动。".into());
             }
             update_background_job(state, &job_id, |job| {
-                complete_install_progress(job);
+                if outcome.warnings.is_empty() {
+                    complete_install_progress(job);
+                } else {
+                    // The startup may continue, but the update check did not
+                    // succeed and must not be presented as an installed update.
+                    fail_install_progress(job, 1.0);
+                }
                 job.detail = Some(message.clone());
+                job.warnings = outcome.warnings.clone();
             })?;
-            report(storage, instance, &context, "completed", &message);
-            Ok(guard)
+            report(
+                storage,
+                instance,
+                &context,
+                if outcome.warnings.is_empty() {
+                    "completed"
+                } else {
+                    "using_installed"
+                },
+                &message,
+            );
+            Ok(outcome)
         }
         Err(error) => {
             update_background_job(state, &job_id, |job| {

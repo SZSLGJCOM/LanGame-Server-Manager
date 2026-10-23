@@ -38,7 +38,7 @@ function harness(overrides = {}, moduleId = "dontstarve") {
     active_run: { run_id: 1, processes: (moduleId === "dontstarve" ? ["master", "caves", "islands", "volcano"] : ["main"]).map((process_key) => ({ process_key, status: "Running" })) } };
   const api = {
     readInstanceDetails: async () => details,
-    readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: true }),
+    readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: true, world_ready: true }),
     readModuleDetails: async () => moduleDetails(moduleId),
     sendInstanceRuntimeCommand: async (...args) => { calls.push(args); return { response_text: "All enabled shards confirmed", write_confirmation_pending: false, save_completion: "confirmed" }; },
     ...overrides
@@ -154,11 +154,11 @@ test("card save neither duplicates an in-flight command nor displays a late unmo
 
 
 test("card save explains vanilla fallback before dispatch", async () => {
-  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: false }) }, "runescapedragonwilds");
+  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared: false, world_ready: true }) }, "runescapedragonwilds");
   state.render(); await settle();
   const button = (await state.ready()).button;
   assert.equal(button.props.disabled, true);
-  assert.match(button.props.title, /save extension.*not prepared/i);
+  assert.match(button.props.title, /manual saving is unavailable/i);
   button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0);
   state.unmount();
@@ -167,7 +167,7 @@ test("card save explains vanilla fallback before dispatch", async () => {
 
 test("card refresh and preflight preserve current-run readiness", async () => {
   let prepared = true;
-  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared }) }, "runescapedragonwilds");
+  const state = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: 1, session_id: null, prepared, world_ready: true }) }, "runescapedragonwilds");
   assert.equal((await state.ready()).button.props.disabled, false);
   prepared = false;
   state.props.instance = { ...state.props.instance };
@@ -175,11 +175,27 @@ test("card refresh and preflight preserve current-run readiness", async () => {
   state.unmount();
 
   let reads = 0;
-  const changed = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: ++reads, session_id: null, prepared: true }) });
+  const changed = harness({ readInstanceWorldSaveReadiness: async () => ({ run_id: ++reads, session_id: null, prepared: true, world_ready: true }) });
   (await changed.ready()).button.props.onClick(); await settle();
   assert.equal(changed.calls.length, 0);
   assert.match(changed.notices[0].params.message, /run has changed/);
   changed.unmount();
+});
+
+test("card waits for world loading even after extension preparation", async () => {
+  let worldReady = false;
+  const state = harness({ readInstanceWorldSaveReadiness: async () => ({
+    run_id: 1, session_id: null, prepared: true, world_ready: worldReady,
+  }) });
+  const waiting = (await state.ready()).button;
+  assert.equal(waiting.props.disabled, true);
+  assert.match(waiting.props.title, /world.*load/i);
+  waiting.props.onClick(); await settle();
+  assert.equal(state.calls.length, 0);
+  worldReady = true;
+  state.props.instance = { ...state.props.instance };
+  assert.equal((await state.ready()).button.props.disabled, false);
+  state.unmount();
 });
 
 test("card does not query unsupported or stopped games and explains connection errors", async () => {

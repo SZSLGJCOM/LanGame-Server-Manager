@@ -22,6 +22,11 @@ Updating LanGame therefore does not require manually enabling account management
 again. Setup does not write world rules or saves. Externally changed
 and unknown files are preserved and reported instead of being overwritten.
 
+A remote loader download failure leaves native startup available only when the
+loader is absent or a complete owned installation has Doorstop explicitly
+disabled. The owned management/save plugin is then retired. Unknown ownership,
+incomplete injection, path conflicts and failed cleanup still block startup.
+
 ## Build
 
 `scripts/build_valheim_control.ps1 -OutDir <absolute-build-directory> -RunTests`

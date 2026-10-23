@@ -44,6 +44,8 @@ fn fixture() -> Lua {
         function map:AddAtlas(path) return 'native-atlas-result', nil end
         Ents = {}
         callbacks = {}
+        component_callbacks = {}
+        function AddComponentPostInit(name, fn) component_callbacks[name] = fn end
         nativeCalls = 0
         function AddGlobalClassPostConstruct(package, name, fn)
             assert(package == 'entityscript' and name == 'EntityScript')
@@ -122,6 +124,33 @@ fn observer_is_server_only_and_does_not_require_clients() {
             .unwrap()
     );
     assert!(!lua.globals().get::<bool>("client_only_mod").unwrap());
+}
+
+#[test]
+fn virtual_room_observation_preserves_native_results_and_counts_return_visits() {
+    fixture()
+        .load(
+            r#"
+        local room = {currentroomindex=0}
+        function room:SetCurrentRoomIndex(index, extra)
+            if index == -1 then error('native-room-error') end
+            self.currentroomindex=index
+            return 'room-result',nil,extra,nil
+        end
+        function room:SetOriginInTiles(x,y) self.origin={tx=x,ty=y} end
+        component_callbacks.virtualroomset(room)
+        local result=table.pack(room:SetCurrentRoomIndex(1,42))
+        assert(result.n==4 and result[1]=='room-result' and result[2]==nil and result[3]==42)
+        room:SetCurrentRoomIndex(0)
+        assert(room.currentroomindex==0 and room._lgsm_map_revision==2)
+        local ok,message=pcall(room.SetCurrentRoomIndex,room,-1)
+        assert(not ok and message:find('native-room-error',1,true) and room._lgsm_map_revision==2)
+        room:SetOriginInTiles(30,40)
+        assert(room.origin.tx==30 and room._lgsm_map_revision==3)
+    "#,
+        )
+        .exec()
+        .unwrap();
 }
 
 #[test]

@@ -9,12 +9,18 @@ use std::io::{Read, Write};
 use super::super::native_logs as log_cursor;
 #[path = "commands_native_dragon_save_observation.rs"]
 pub(super) mod dragon;
+#[path = "commands_native_moria_save_observation.rs"]
+pub(super) mod moria;
 #[path = "commands_native_save_checkpoint_profiles.rs"]
 mod profiles;
 #[path = "commands_native_requested_save_observation.rs"]
 pub(super) mod requested;
+#[path = "commands_native_restored_world.rs"]
+pub(super) mod restored_world;
 #[path = "commands_native_save_checkpoint_sqlite.rs"]
 mod sqlite;
+#[path = "commands_native_terraria_checkpoint.rs"]
+pub(super) mod terraria;
 
 const MAX_FILES: usize = 20_000;
 const MAX_BYTES: u64 = 1024 * 1024 * 1024;
@@ -347,6 +353,8 @@ async fn capture_owned(
     if after.keys().ne(source_manifest.keys()) {
         return Err("Native checkpoint file family changed during capture".into());
     }
+    terraria::verify_capture(running)?;
+    moria::verify_capture(running)?;
     let capture_logs = log_paths(
         &fixture,
         profiles::native_logs(&running.summary.module_id, &program, running),
@@ -528,6 +536,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     runtime: &runtime::NativeRuntime<'_, '_, R>,
     running: &InstanceDetails,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    terraria::verify_loaded(runtime, running, "restart").await?;
     let (fixture, running) = input(runtime, running)?;
     worker(move || verify_owned(&fixture, &running)).await
 }
@@ -538,11 +547,11 @@ fn verify_owned(fixture: &Path, running: &InstanceDetails) -> Result<(), String>
     let checkpoint = owned
         .get_mut(&running.summary.id)
         .ok_or("Restart has no saved checkpoint")?;
-    let run_id = running
+    let run = running
         .active_run
         .as_ref()
-        .ok_or("Readback has no managed run")?
-        .run_id;
+        .ok_or("Readback has no managed run")?;
+    let run_id = run.run_id;
     if !checkpoint.restored
         || checkpoint.read_back
         || checkpoint.fixture != fixture
@@ -554,27 +563,34 @@ fn verify_owned(fixture: &Path, running: &InstanceDetails) -> Result<(), String>
                 .into(),
         );
     }
-    // Managed console files are allocated by the new run, after before_start.
-    // Only a genuinely different run's new primary log may start at byte zero.
-    for process in &running
-        .active_run
-        .as_ref()
-        .ok_or("Readback has no managed run")?
-        .processes
-    {
-        if !process.is_primary || process.status != "running" {
+    // Console and Core Keeper native paths are allocated after before_start.
+    // Only a different run's new primary logs may start at byte zero.
+    for process in &run.processes {
+        if !process.is_primary
+            || process.run_id != run_id
+            || process.session_id != run.session_id
+            || process.status != "running"
+        {
             continue;
         }
         if let Some(path) = &process.log_path {
-            let path = PathBuf::from(path);
-            log_paths(&fixture, vec![path.clone()])?;
-            if !checkpoint.logs.iter().any(|(known, _)| known == &path) {
-                if checkpoint.capture_logs.contains(&path) {
-                    return Err("Restart reused a managed log without a pre-start baseline".into());
+            let mut paths = vec![PathBuf::from(path)];
+            if running.summary.module_id == "corekeeper" {
+                paths.extend(app_core::runtime_logs::corekeeper_native_log_path(
+                    Path::new(path),
+                ));
+            }
+            for path in log_paths(&fixture, paths)? {
+                if !checkpoint.logs.iter().any(|(known, _)| known == &path) {
+                    if checkpoint.capture_logs.contains(&path) {
+                        return Err(
+                            "Restart reused a managed log without a pre-start baseline".into()
+                        );
+                    }
+                    checkpoint
+                        .logs
+                        .push((path, log_cursor::LogBaseline::default()));
                 }
-                checkpoint
-                    .logs
-                    .push((path, log_cursor::LogBaseline::default()));
             }
         }
     }
@@ -595,11 +611,15 @@ fn verify_owned(fixture: &Path, running: &InstanceDetails) -> Result<(), String>
             false
         })?;
     }
-    profiles::require_loaded(
-        &running.summary.module_id,
-        &checkpoint.native_before,
-        &fresh,
-    )?;
+    if running.summary.module_id == "returntomoria" {
+        moria::verify_loaded_owned(&fixture, running, "restart")?;
+    } else {
+        profiles::require_loaded(
+            &running.summary.module_id,
+            &checkpoint.native_before,
+            &fresh,
+        )?;
+    }
     checkpoint.read_back = true;
     println!(
         "NATIVE_SAVE_READBACK module={} phase=verified initial_run={} restart_run={run_id} exact_manual_checkpoint=true native_load=passed second_save_sent=false scope=isolated_world",
@@ -633,6 +653,71 @@ mod tests {
             restored: false,
             read_back: false,
         }
+    }
+
+    #[tokio::test]
+    async fn corekeeper_checkpoint_loads_from_the_native_log_created_by_restart() {
+        let root = crate::commands::tests::temp_test_dir("core-checkpoint-restart");
+        let root = dunce::canonicalize(&root).unwrap();
+        for child in ["config", "runtime", "saves", "logs/managed-console"] {
+            fs::create_dir_all(root.join(child)).unwrap();
+        }
+        fs::write(root.join("runtime/.langame-private-runtime"), b"managed\n").unwrap();
+        let config = root.join("config/instance.json");
+        let saves = root.join("saves");
+        let world = saves.join("world.gzip");
+        fs::write(&config, b"{}").unwrap();
+        fs::write(&world, b"manual world A").unwrap();
+        let loaded = "Decompressed brotli compressed world file:\nDeserialize world finishied\nsuccessfully loaded world file into SerializeWorld\n";
+        let console = root.join("logs/managed-console/run-42-main.log");
+        let native = app_core::runtime_logs::corekeeper_native_log_path(&console).unwrap();
+        fs::write(&console, "previous console\n").unwrap();
+        fs::write(&native, loaded).unwrap();
+        let legacy = root.join("logs/CoreKeeperServer.log");
+        fs::write(&legacy, loaded).unwrap();
+        let mut running =
+            crate::commands::tests::corekeeper_run_log_tests::running_instance(&console);
+        running.summary.id = format!("checkpoint-{}", uuid::Uuid::new_v4());
+        running.config_file_path = config.to_string_lossy().into_owned();
+        running.saves_path = saves.to_string_lossy().into_owned();
+        capture_owned(&root, &running, "initial").await.unwrap();
+        fs::write(&world, b"shutdown world B").unwrap();
+        restore_owned(&root, &running).unwrap();
+        assert_eq!(fs::read(&world).unwrap(), b"manual world A");
+        let mut stopped = running.clone();
+        stopped.active_run = None;
+        before_start_owned(&root, &stopped).unwrap();
+
+        let console = root.join("logs/managed-console/run-43-main.log");
+        let native = app_core::runtime_logs::corekeeper_native_log_path(&console).unwrap();
+        let run = running.active_run.as_mut().unwrap();
+        run.run_id = 43;
+        run.session_id = Some("core-restart".into());
+        run.log_path = Some(console.to_string_lossy().into_owned());
+        run.processes[0].run_id = run.run_id;
+        run.processes[0].session_id = run.session_id.clone();
+        run.processes[0].log_path = run.log_path.clone();
+        fs::write(&console, "current console\n").unwrap();
+        fs::write(&native, "Loading world\n").unwrap();
+        assert!(
+            verify_owned(&root, &running)
+                .unwrap_err()
+                .contains("fresh native logs do not prove")
+        );
+        let mut output = fs::OpenOptions::new().append(true).open(&native).unwrap();
+        output.write_all(loaded.as_bytes()).unwrap();
+        drop(output);
+        verify_owned(&root, &running).unwrap();
+        assert!(
+            checkpoints()
+                .unwrap()
+                .remove(&running.summary.id)
+                .unwrap()
+                .read_back
+        );
+        assert_eq!(fs::read_to_string(legacy).unwrap(), loaded);
+        assert_eq!(fs::read(&world).unwrap(), b"manual world A");
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]

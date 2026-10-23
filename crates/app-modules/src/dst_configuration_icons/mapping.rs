@@ -1,5 +1,6 @@
 // Field icon bindings from Steam dedicated app 343050, scripts/map/customize.lua.
-// Verified 2026-09-07; source SHA-256 864ecdb6427e9bd712b253682fbd514bb4faa86bf587c54666fd0fa58e3d7444.
+// Verified game 759671 on 2026-10-23; scripts.zip SHA-256
+// d704a276eb8f5dce53cd8cf151e01fd19f9ee1a94cfafaa49be4d3af9edf52ef.
 // item.atlas or item.group.atlas selects the field icon; options_remap describes option values.
 
 #[derive(Clone, Copy)]
@@ -115,6 +116,7 @@ const WORLDSETTINGS: &[(&str, &str)] = &[
     ("autumn", "autumn.tex"),
     ("bananabush_portalrate", "bananabush.tex"),
     ("basicresource_regrowth", "basicresource_regrowth.tex"),
+    ("bat_boss", "bat_boss.tex"),
     ("bats_setting", "bats.tex"),
     ("bearger", "bearger.tex"),
     ("beefaloheat", "beefaloheat.tex"),
@@ -216,6 +218,7 @@ const WORLDSETTINGS: &[(&str, &str)] = &[
     ("rifts_enabled_cave", "shadowrift_portal.tex"),
     ("rifts_frequency", "lunarrift_portal.tex"),
     ("rifts_frequency_cave", "shadowrift_portal.tex"),
+    ("rocky_boss", "rocky_boss.tex"),
     ("rocky_setting", "rock_lobsters.tex"),
     ("saltstack_regrowth", "saltstack.tex"),
     ("seasonalstartingitems", "seasonalstartingitems.tex"),
