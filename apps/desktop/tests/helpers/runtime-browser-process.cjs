@@ -326,7 +326,47 @@ async function readBrowserLog(scratch) {
   }
 }
 
-async function openViewportSession(endpoint, timeoutMs = 3000, signal) {
+function browserNetworkDiagnostics(fixtureUrl) {
+  const origin = new URL(fixtureUrl).origin;
+  const requests = new Map();
+  const failures = [];
+  let droppedRequests = 0;
+  let droppedFailures = 0;
+  let observationErrors = 0;
+  const enumValue = (value) => typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value) ? value : null;
+  return {
+    observe({ method, params }) {
+      if (method === "Network.requestWillBeSent") {
+        const url = new URL(params.request.url);
+        if (url.origin !== origin) { requests.delete(params.requestId); return; }
+        if (!requests.has(params.requestId) && requests.size === 256) {
+          requests.delete(requests.keys().next().value);
+          droppedRequests++;
+        }
+        requests.set(params.requestId, { path: url.pathname.slice(0, 500), type: enumValue(params.type), status: null });
+      } else if (method === "Network.responseReceived") {
+        const request = requests.get(params.requestId);
+        if (request) request.status = params.response.status;
+      } else if (method === "Network.loadingFinished") {
+        requests.delete(params.requestId);
+      } else if (method === "Network.loadingFailed") {
+        const request = requests.get(params.requestId);
+        requests.delete(params.requestId);
+        if (!request) return;
+        if (failures.length === 16) { failures.shift(); droppedFailures++; }
+        failures.push({ ...request,
+          error: /^net::ERR_[A-Z0-9_]+$/.test(params.errorText) ? params.errorText.slice(0, 128) : "unknown",
+          canceled: params.canceled === true, blocked_reason: enumValue(params.blockedReason),
+          cors_error: enumValue(params.corsErrorStatus?.corsError) });
+      }
+    },
+    observationFailed() { observationErrors++; },
+    snapshot() { return { failures: failures.map((failure) => ({ ...failure })),
+      dropped_requests: droppedRequests, dropped_failures: droppedFailures, observation_errors: observationErrors }; },
+  };
+}
+
+async function openViewportSession(endpoint, timeoutMs = 3000, signal, networkDiagnostics) {
   signal?.throwIfAborted();
   assert.ok(timeoutMs > 0, "Viewport connection requires a remaining time budget");
   const socket = new WebSocket(endpoint);
@@ -355,7 +395,20 @@ async function openViewportSession(endpoint, timeoutMs = 3000, signal) {
   } finally {
     removeListeners();
   }
+  const observeNetwork = ({ data }) => {
+    try { networkDiagnostics.observe(JSON.parse(data)); }
+    catch { networkDiagnostics.observationFailed(); }
+  };
+  const removeObserver = () => {
+    socket.removeEventListener("message", observeNetwork);
+    socket.removeEventListener("close", removeObserver);
+  };
+  if (networkDiagnostics) {
+    socket.addEventListener("message", observeNetwork);
+    socket.addEventListener("close", removeObserver);
+  }
   return {
+    isOpen() { return socket.readyState === WebSocket.OPEN; },
     async command(method, params = {}, timeoutMs = 3000, signal) {
       signal?.throwIfAborted();
       assert.ok(timeoutMs > 0, "Viewport command requires a remaining time budget");
@@ -388,6 +441,7 @@ async function openViewportSession(endpoint, timeoutMs = 3000, signal) {
           socket.send(JSON.stringify({ id, method, params }));
         }), timeoutMs, method);
       } catch (error) {
+        removeObserver();
         socket.close();
         throw error;
       } finally {
@@ -395,7 +449,7 @@ async function openViewportSession(endpoint, timeoutMs = 3000, signal) {
         pending = false;
       }
     },
-    close() { socket.close(); },
+    close() { removeObserver(); socket.close(); },
   };
 }
 
@@ -552,6 +606,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
   let endpoint;
   let pageTargetId;
   let viewportSession;
+  let networkDiagnostics;
   let browserStartedAt;
   let startupResourceStart;
   let terminationError = null;
@@ -791,7 +846,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
         assert.ok(typeof target.targetId === "string" && target.targetId.length > 0, "Viewport target was not created");
         pageTargetId = target.targetId;
         const targetEndpoint = await pageEndpoint(true, startupBudget);
-        viewportSession = await openViewportSession(targetEndpoint, startupBudget.remaining(), startupBudget.signal);
+        networkDiagnostics = browserNetworkDiagnostics(url);
+        viewportSession = await openViewportSession(targetEndpoint, startupBudget.remaining(), startupBudget.signal, networkDiagnostics);
+        await viewportSession.command("Network.enable", {}, startupBudget.remaining(), startupBudget.signal);
         // Window size includes browser chrome. Keep this session connected because
         // Chromium clears device metrics when its owning DevTools client detaches.
         await viewportSession.command("Emulation.setDeviceMetricsOverride", {
@@ -876,7 +933,7 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
     }
     if (endpoint && child?.exitCode === null && child.signalCode === null) {
       try {
-        const page = await browserCommand(await pageEndpoint(), "Runtime.evaluate", {
+        const evaluation = {
           expression: `({ path: location.pathname, ready_state: document.readyState,
             reduced_motion: matchMedia('(prefers-reduced-motion: reduce)').matches,
             forced_colors: matchMedia('(forced-colors: active)').matches,
@@ -895,10 +952,16 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
               }),
             resource_count: performance.getEntriesByType('resource').length })`,
           returnByValue: true,
-        });
+        };
+        // The same CDP stream delivers earlier network events before this reply.
+        // The fixture's HTTP result can otherwise overtake its failure event.
+        const page = viewportSession?.isOpen()
+          ? await viewportSession.command("Runtime.evaluate", evaluation)
+          : await browserCommand(await pageEndpoint(), "Runtime.evaluate", evaluation);
         startup.page_at_failure = page.exceptionDetails ? { exception: page.exceptionDetails.text } : page.result?.value;
       } catch (pageError) { startup.page_observation_error = String(pageError); }
     }
+    if (networkDiagnostics) startup.network_at_failure = networkDiagnostics.snapshot();
   } finally {
     let treeExited = false;
     // Capture the mounted fixture first, then let React finish its own cleanup
@@ -965,4 +1028,5 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
 
 module.exports = { runBrowserFixture, removeScratch, closeBrowser, confirmBrowserExit, hostResourceUsage,
   browserTimeBudgets, browserStartupBudget, waitForBrowserEndpoint, waitForFixtureReport, prepareFixtureServer, openViewportSession,
-  fixtureUsesBundledDev, fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog };
+  fixtureUsesBundledDev, fixtureCacheDirectory, removeFixtureCache, browserCommand, browserLogEnvironment, readBrowserLog,
+  browserNetworkDiagnostics };

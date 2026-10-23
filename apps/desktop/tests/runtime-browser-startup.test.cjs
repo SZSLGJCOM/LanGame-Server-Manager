@@ -2,7 +2,48 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 const { setImmediate: nextTurn } = require("node:timers/promises");
 const { browserStartupBudget, browserCommand, openViewportSession, waitForBrowserEndpoint,
-  browserTimeBudgets } = require("./helpers/runtime-browser-process.cjs");
+  browserTimeBudgets, browserNetworkDiagnostics } = require("./helpers/runtime-browser-process.cjs");
+
+test("network failures retain their resource and browser cause without request secrets", () => {
+  const diagnostics = browserNetworkDiagnostics("http://127.0.0.1:43210/fixture?nonce=secret");
+  diagnostics.observe({ method: "Network.requestWillBeSent", params: { requestId: "script", type: "Script",
+    request: { url: "http://user:secret@127.0.0.1:43210/assets/api-mock.js?token=secret#secret",
+      headers: { Authorization: "secret" }, postData: "secret" } } });
+  diagnostics.observe({ method: "Network.responseReceived", params: { requestId: "script", response: {
+    status: 200, headers: { "Set-Cookie": "secret" } } } });
+  diagnostics.observe({ method: "Network.loadingFailed", params: { requestId: "script", errorText: "net::ERR_CONNECTION_RESET",
+    canceled: false, blockedReason: "cors", corsErrorStatus: { corsError: "InvalidAllowOriginValue", failedParameter: "secret" } } });
+  assert.deepEqual(diagnostics.snapshot(), { failures: [{ path: "/assets/api-mock.js", type: "Script", status: 200,
+    error: "net::ERR_CONNECTION_RESET", canceled: false, blocked_reason: "cors", cors_error: "InvalidAllowOriginValue" }],
+    dropped_requests: 0, dropped_failures: 0, observation_errors: 0 });
+  const snapshot = diagnostics.snapshot();
+  snapshot.failures[0].path = "mutated";
+  assert.equal(diagnostics.snapshot().failures[0].path, "/assets/api-mock.js");
+  assert.equal(JSON.stringify(diagnostics.snapshot()).includes("secret"), false);
+});
+
+test("network observations release completed and redirected requests and bound retained failures", () => {
+  const diagnostics = browserNetworkDiagnostics("http://127.0.0.1:43210/fixture");
+  const request = (requestId, url = `http://127.0.0.1:43210/${requestId}.js`) => diagnostics.observe({
+    method: "Network.requestWillBeSent", params: { requestId, type: "Script", request: { url } } });
+  const fail = (requestId) => diagnostics.observe({ method: "Network.loadingFailed",
+    params: { requestId, errorText: "net::ERR_FAILED", canceled: true } });
+  request("complete");
+  diagnostics.observe({ method: "Network.loadingFinished", params: { requestId: "complete" } });
+  request("redirected"); request("redirected", "https://external.invalid/secret");
+  fail("complete"); fail("redirected");
+  assert.equal(diagnostics.snapshot().failures.length, 0);
+  for (let id = 0; id < 257; id++) request(String(id));
+  for (let id = 0; id < 257; id++) fail(String(id));
+  const result = diagnostics.snapshot();
+  assert.equal(result.dropped_requests, 1);
+  assert.equal(result.dropped_failures, 240);
+  assert.equal(result.failures.length, 16);
+  assert.equal(result.failures[0].path, "/241.js");
+  assert.equal(result.failures.at(-1).path, "/256.js");
+  request("long", `http://127.0.0.1:43210/${"a".repeat(1000)}?secret`); fail("long");
+  assert.equal(diagnostics.snapshot().failures.at(-1).path.length, 500);
+});
 
 function controlledTransport(t) {
   t.mock.timers.enable({ apis: ["setTimeout"] });
@@ -45,6 +86,39 @@ function controlledTransport(t) {
   return { sockets, timers, get now() { return now; },
     async advance(milliseconds) { now += milliseconds; t.mock.timers.tick(milliseconds); await nextTurn(); } };
 }
+
+for (const timeout of [false, true]) test(`network diagnostics release their listener on ${timeout ? "command timeout" : "normal close"}`, async (t) => {
+  const transport = controlledTransport(t);
+  const diagnostics = browserNetworkDiagnostics("http://127.0.0.1:43210/fixture");
+  const opening = openViewportSession("ws://controlled.invalid/owned-target", 1000, undefined, diagnostics);
+  const socket = transport.sockets[0]; socket.open();
+  const session = await opening;
+  assert.equal(session.isOpen(), true);
+  const enabling = session.command("Network.enable", {}, 1000);
+  socket.reply({}); await enabling;
+  socket.dispatchEvent(new MessageEvent("message", { data: "invalid diagnostic packet" }));
+  assert.equal(diagnostics.snapshot().observation_errors, 1, "Observer errors must not replace the fixture result");
+  const command = session.command("Runtime.evaluate", {}, 500);
+  if (timeout) {
+    const rejected = assert.rejects(command, /Runtime.evaluate exceeded 500 ms/);
+    await transport.advance(500); await rejected;
+  } else {
+    for (const event of [{ method: "Network.requestWillBeSent", params: { requestId: "module", type: "Script",
+      request: { url: "http://127.0.0.1:43210/assets/module.js?secret" } } },
+    { method: "Network.loadingFailed", params: { requestId: "module", errorText: "net::ERR_EMPTY_RESPONSE" } }]) {
+      socket.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(event) }));
+    }
+    socket.reply({ result: { value: "ready" } });
+    assert.deepEqual(await command, { result: { value: "ready" } });
+    assert.equal(diagnostics.snapshot().failures[0].error, "net::ERR_EMPTY_RESPONSE",
+      "Inspection through the same session must observe network events preceding its reply");
+    session.close();
+  }
+  assert.equal(session.isOpen(), false);
+  assert.equal(socket.closes, 1);
+  assert.equal(socket.listenerCount, 0);
+  assert.equal(transport.timers.size, 0);
+});
 
 test("endpoint, cold CDP handshake and viewport setup consume one startup deadline", async (t) => {
   const transport = controlledTransport(t);
