@@ -23,6 +23,7 @@ const ARCHIVE_SHA: &str = "4f9762f812329a640c8cfa14444c2bb97ecc213b8320bd4c54333
 const SERVER_SHAS: &[&str] = &[
     "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
     "da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe",
+    "ecaa5ebc6e0b08108856703a4aceed7b5cf0ea04d708b82dfc66ef74709a4269",
 ];
 const MAX_FILE: usize = 24 * 1024 * 1024;
 const MAX_PROXY: usize = 4 * 1024 * 1024;
@@ -437,6 +438,25 @@ fn validate_tree(
 
 pub(super) fn inspect(root: &Path, proxy: &[u8]) -> Result<Preparation, String> {
     inspect_release(root, proxy, SERVER_SHAS, RELEASE)
+}
+
+/// A retired owned loader leaves its scripts behind. They cannot answer IPC
+/// without a proxy; external query-only loaders keep their own admission.
+pub(super) fn owned_loader_disabled(root: &Path) -> Result<bool, String> {
+    let win64 = root.join(WIN64);
+    let _pins = pin_chain(&win64)?;
+    if exists(&win64.join("version.dll"))? || exists(&win64.join("dwmapi.dll"))? {
+        return Ok(false);
+    }
+    let owner = match ownership(root, RECEIPT)? {
+        Some(owner) => Some(owner),
+        None => ownership(root, INTENT)?,
+    };
+    let Some(owner) = owner else {
+        return Ok(false);
+    };
+    validate_owner(&owner, RELEASE)?;
+    Ok(true)
 }
 
 fn verified_proxy(win64: &Path, owner: &Ownership) -> Result<bool, String> {

@@ -87,6 +87,26 @@ impl Startup {
         .await
     }
 
+    fn running_details(&self) -> InstanceDetails {
+        let mut details = self.details.clone();
+        details.summary.status = app_core::InstanceStatus::Running;
+        details.active_run = Some(
+            serde_json::from_value(serde_json::json!({
+                "run_id":1, "session_id":"current-run", "pid":123, "log_path":null,
+                "process_count":1, "processes":[{
+                    "run_id":1, "session_id":"current-run", "process_key":"main",
+                    "display_name":"Server", "pid":123, "status":"running",
+                    "process_identity":{"creation_time":1,
+                        "image_path":self.program.root.join("RSDragonwildsServer.exe")},
+                    "started_at":null, "stopped_at":null, "exit_code":null,
+                    "crash_flag":false, "log_path":null, "is_primary":true
+                }]
+            }))
+            .unwrap(),
+        );
+        details
+    }
+
     fn assert_optional_save_log(&self) {
         let log = fs::read_to_string(self.root.join("startup.log")).unwrap();
         assert!(log.contains("手动保存") && log.contains("不可用"), "{log}");
@@ -159,6 +179,26 @@ async fn optional_save_start_preserves_native_launch_after_owned_loader_retireme
         "optional extension blocked native launch: {result:?}"
     );
     fixture.assert_optional_save_log();
+    let log = fs::read_to_string(fixture.root.join("startup.log")).unwrap();
+    assert!(
+        log.contains("玩家查询、手动保存") && log.contains("玩家操作"),
+        "{log}"
+    );
+    let receipt = fs::read(fixture.program.root.join(RECEIPT)).unwrap();
+    let running = fixture.running_details();
+    assert!(commands_dragonwilds_player_query::runtime_loader_disabled(&running).unwrap());
+    assert_eq!(
+        fs::read(fixture.program.root.join(RECEIPT)).unwrap(),
+        receipt
+    );
+    assert!(!fixture.program.proxy().exists());
+
+    // An operator's query-only loader does not inherit the save preparation
+    // result, even when an earlier owned installation remains on disk.
+    let external = fixture.program.root.join(WIN64).join("dwmapi.dll");
+    fs::write(&external, b"operator-query-loader").unwrap();
+    assert!(!commands_dragonwilds_player_query::runtime_loader_disabled(&running).unwrap());
+    assert_eq!(fs::read(external).unwrap(), b"operator-query-loader");
 }
 
 #[tokio::test]
@@ -187,6 +227,11 @@ async fn optional_save_start_preserves_unknown_and_external_loader_launches() {
                 .exists()
         );
         fixture.assert_optional_save_log();
+        assert!(
+            !commands_dragonwilds_player_query::runtime_loader_disabled(&fixture.running_details())
+                .unwrap(),
+            "save preparation must not decide whether an external query loader can answer"
+        );
     }
 }
 

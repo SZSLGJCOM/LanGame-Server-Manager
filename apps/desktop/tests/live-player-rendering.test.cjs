@@ -85,17 +85,18 @@ test("capability and credential states provide distinct actionable Chinese copy"
     ["count-only", "names_unavailable", /已取得在线人数，暂无玩家名称/],
     ["failed-without-rows", "authentication_failed", /玩家查询认证失败/],
     ["failed-without-rows", "query_unavailable", /玩家查询端口未响应/],
-    ["failed-without-rows", "extension_unavailable", /Ficsit Remote Monitoring/]
+    ["failed-without-rows", "extension_unavailable", /Ficsit Remote Monitoring/],
+    ["failed-without-rows", "extension_unavailable", /玩家查询.*手动保存.*玩家操作.*启动日志/, "runescapedragonwilds"]
   ];
-  for (const [kind, code, expected] of cases) {
+  for (const [kind, code, expected, moduleId] of cases) {
     const html = renderToStaticMarkup(React.createElement(LivePlayerState, {
-      error: null, locale: "zh-CN", onOpenSettings() {}, moduleId: code === "extension_unavailable" ? "satisfactory" : undefined,
+      error: null, locale: "zh-CN", onOpenSettings() {}, moduleId: moduleId ?? (code === "extension_unavailable" ? "satisfactory" : undefined),
       presentation: { kind, tableVisible: false }, snapshot: { issue: { code, setting_keys: [], summary: "" } }
     }));
     assert.match(html, expected);
     assert.doesNotMatch(html, /游戏不提供|伪造|fabricate/);
     if (code === "authentication_failed") assert.match(html, /打开配置/);
-    if (code === "extension_unavailable") assert.match(html, /HTTP 自动启动/);
+    if (code === "extension_unavailable" && !moduleId) assert.match(html, /HTTP 自动启动/);
   }
 });
 

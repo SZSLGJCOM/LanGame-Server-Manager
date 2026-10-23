@@ -238,10 +238,10 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             }
         } else {
             sons_backup_snapshot = sons_backup_probe::capture(self, &running).await?;
-            Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;
             Box::pin(gm_tools::verify(self, &running, cycle)).await?;
             Box::pin(theforest_probe::verify(self, &running)).await?;
         }
+        Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;
         diagnostics::report_success(
             "ready",
             details,

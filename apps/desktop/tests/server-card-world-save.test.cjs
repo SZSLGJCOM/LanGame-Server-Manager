@@ -159,6 +159,8 @@ test("card save explains vanilla fallback before dispatch", async () => {
   const button = (await state.ready()).button;
   assert.equal(button.props.disabled, true);
   assert.match(button.props.title, /manual saving is unavailable/i);
+  assert.match(button.props.title, /compatible.*extension.*not prepared/i);
+  assert.match(button.props.title, /startup log/i);
   button.props.onClick(); await settle();
   assert.equal(state.calls.length, 0);
   state.unmount();

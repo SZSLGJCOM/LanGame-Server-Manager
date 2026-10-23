@@ -83,6 +83,25 @@ pub(super) async fn collect_direct_players(
             .await;
         }
         (Source::FileIpc, ModulePlayerListCodec::DragonwildsPlayers) => {
+            match crate::commands::commands_dragonwilds_player_query::runtime_loader_disabled(
+                details,
+            ) {
+                Ok(true) => {
+                    return Err(failure(
+                        RuntimeLivePlayerIssueCode::ExtensionUnavailable,
+                        "The managed Dragonwilds loader is disabled for this run. Player queries, manual saving and extension-based player actions are unavailable; see the startup log.",
+                        false,
+                    ));
+                }
+                Ok(false) => {}
+                Err(message) => {
+                    return Err(failure(
+                        RuntimeLivePlayerIssueCode::ExtensionUnavailable,
+                        &message,
+                        false,
+                    ));
+                }
+            }
             match crate::live_players::dragonwilds_control::is_prepared(details) {
                 Ok(true) => {
                     return crate::live_players::dragonwilds_control::collect(

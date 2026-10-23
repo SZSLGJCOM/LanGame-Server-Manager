@@ -6,7 +6,7 @@ The supported release target is Windows x86_64 with a stable `major.minor.patch`
 
 ## Automated pre-release regression
 
-Use a successful complete-tier result for the exact release candidate before packaging. An automatic push run that already selected and passed the full frontend, Rust and native checks provides that result; retain its run URL and acceptance artifacts instead of dispatching the same checks again. Otherwise run the shared complete tier locally or dispatch the GitHub `CI` workflow with `tier: full`. Reuse requires the same clean source revision, locked dependencies and verification rules; a partial run or later source change does not qualify. The daily regression invokes the same checks; it is not an independent certification of a later commit.
+Candidate builds and CI may run in parallel. Before publication, require a successful complete-tier result for the exact release candidate and acceptance of its actual packages. An automatic push run that already selected and passed the full frontend, Rust and native checks provides that CI result; retain its run URL and acceptance artifacts instead of dispatching the same checks again. Otherwise run the shared complete tier locally or dispatch the GitHub `CI` workflow with `tier: full`. Reuse requires the same clean source revision, locked dependencies and verification rules; a partial run or later source change does not qualify. The daily regression invokes the same checks; it is not an independent certification of a later commit.
 
 ```powershell
 python -B scripts/verify_project.py --tier full --output 'C:\Verification\LanGame-release-candidate'

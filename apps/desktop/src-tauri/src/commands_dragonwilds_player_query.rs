@@ -105,6 +105,32 @@ pub(super) fn owns_compatible_loader(root: &Path) -> Result<bool, String> {
     Ok(files::inspect(root, bundled_files().0)? == files::Preparation::Ready)
 }
 
+/// Player collection has already verified this run's process identity. Inspect
+/// that process's program, without installing or retiring anything while live.
+pub(super) fn runtime_loader_disabled(instance: &InstanceDetails) -> Result<bool, String> {
+    let mut processes = instance
+        .active_run
+        .as_ref()
+        .ok_or("The Dragonwilds server is stopped.")?
+        .processes
+        .iter()
+        .filter(|process| process.is_primary && process.status == "running");
+    let process = processes
+        .next()
+        .ok_or("The Dragonwilds server process is unavailable.")?;
+    if processes.next().is_some() {
+        return Err("The Dragonwilds server process is ambiguous.".into());
+    }
+    let identity = process
+        .process_identity
+        .as_ref()
+        .ok_or("The Dragonwilds process identity is unavailable.")?;
+    let root = crate::live_players::file_ipc::Game::Dragonwilds
+        .install_root(Path::new(&identity.image_path))
+        .map_err(|_| "The Dragonwilds process has no matching program directory.")?;
+    files::owned_loader_disabled(&root)
+}
+
 fn progress(log_path: Option<&Path>, message: &str) -> Result<(), String> {
     if let Some(path) = log_path {
         append_startup_console_line(path, message, "")?;
@@ -149,7 +175,7 @@ pub(super) async fn prepare(
         files::Preparation::UnsupportedBuild => {
             return progress(
                 log_path,
-                "Dragonwilds 玩家查询：当前游戏版本尚未验证加载器兼容性，已跳过自动安装；游戏服务器继续启动。",
+                "Dragonwilds 扩展：当前游戏版本尚未验证加载器兼容性，已跳过自动安装；玩家查询、手动保存和依赖扩展的玩家操作暂不可用，游戏服务器继续原生启动。",
             );
         }
         files::Preparation::NeedsInstall => {}
