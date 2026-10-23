@@ -23,10 +23,12 @@ from scripts.verify_open_source_boundary import (
     is_unapproved_asset_path,
 )
 
-# Reviewed synthetic credentials and embedded console prompts in ca33c10.
+# Reviewed synthetic credentials and embedded console prompts in ca33c10,
+# plus the loopback URL redaction fixture in 6bd28c4.
 # Current fixtures use recognized placeholders. Historical exceptions apply only
 # to these immutable blobs and assigned-secret locations, never other findings.
 SYNTHETIC_FIXTURE_ASSIGNMENTS = {
+    ("apps/desktop/tests/runtime-browser-startup.test.cjs", "82def1fe05dbae1b104a3850a7d700e55b8bebc2"): {10},
     ("apps/desktop/src-tauri/src/steam_workshop_account_sessions_tests.rs", "a485bf8b0e406cd02ed2ee87727a2d9a79eb5b45"): {287},
     ("crates/app-runtime/src/interactive_console_tests.rs", "06624529f340dc9687ebc02b0534beee06cf9e8d"): {100},
     ("crates/app-steamcmd/src/steamcmd_account_bridge_tests.rs", "77ea25a15d1fe4383604702a5918fc20c6b1a943"): {81},
