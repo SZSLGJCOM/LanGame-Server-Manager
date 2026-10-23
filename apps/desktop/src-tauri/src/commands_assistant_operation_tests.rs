@@ -2454,6 +2454,30 @@ async fn palworld_rest_dispatch_uses_declared_actions_and_requires_snapshot_mode
         .await
         .unwrap_err();
     assert!(rejected.contains("live-player service"));
+    let pending =
+        send_instance_runtime_command(app.state::<DesktopState>(), request(Some("save_world")))
+            .await
+            .unwrap_err();
+    assert!(pending.contains("world is still loading"));
+    // A running process alone does not establish save readiness. Supply this
+    // run's native world-ready line before exercising the REST save dispatch.
+    let running = read_instance_details(&storage.paths, &details.summary.id).await?;
+    let log_path = running
+        .active_run
+        .as_ref()
+        .and_then(|run| run.log_path.as_deref())
+        .ok_or("Palworld REST fixture has no active-run log")?;
+    let game_port = running
+        .ports
+        .iter()
+        .find(|binding| binding.name == "game")
+        .ok_or("Palworld REST fixture has no game port")?
+        .port;
+    use std::io::Write;
+    fs::OpenOptions::new()
+        .append(true)
+        .open(log_path)?
+        .write_all(format!("Running Palworld dedicated server on :{game_port}\n").as_bytes())?;
     let saved =
         send_instance_runtime_command(app.state::<DesktopState>(), request(Some("save_world")))
             .await?;

@@ -1198,6 +1198,22 @@ async fn stored_openai_compatible_ai_sends_palworld_gm_command_smoke()
         "palworld-rest",
     )
     .await?;
+    let running = read_instance_details(&storage.paths, &details.summary.id).await?;
+    let log_path = running
+        .active_run
+        .as_ref()
+        .and_then(|run| run.log_path.as_deref())
+        .ok_or("Palworld AI fixture has no active-run log")?;
+    let game_port = running
+        .ports
+        .iter()
+        .find(|binding| binding.name == "game")
+        .ok_or("Palworld AI fixture has no game port")?
+        .port;
+    fs::write(
+        log_path,
+        format!("Running Palworld dedicated server on :{game_port}\n"),
+    )?;
     let output = command_result(
             assistant_execute_operation_inner(
                 None,

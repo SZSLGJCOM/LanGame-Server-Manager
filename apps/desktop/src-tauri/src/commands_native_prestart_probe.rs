@@ -83,6 +83,8 @@ struct RimworldArchiveUpdateProbe {
     executable: PathBuf,
     expected_new: String,
     retained: Vec<(PathBuf, String)>,
+    instance_config: PathBuf,
+    instance_configuration: serde_json::Map<String, Value>,
     native_config: PathBuf,
     configuration: serde_json::Map<String, Value>,
 }
@@ -171,7 +173,7 @@ impl RimworldArchiveUpdateProbe {
         }
         let config =
             seed_probe::checked_path(&fixture, Path::new(&instance.config_file_path), false)?;
-        retained.push((config.clone(), file_sha256(&config)?));
+        let instance_configuration = read_instance_configuration(&config)?;
         let native_config =
             seed_probe::checked_path(&fixture, &program.join("Configs/ServerConfig.json"), false)?;
         let configuration = serde_json::from_slice(&fs::read(&native_config)?)?;
@@ -183,6 +185,8 @@ impl RimworldArchiveUpdateProbe {
             executable,
             expected_new: expected_new.to_ascii_lowercase(),
             retained,
+            instance_config: config,
+            instance_configuration,
             native_config,
             configuration,
         }))
@@ -194,10 +198,16 @@ impl RimworldArchiveUpdateProbe {
                 "native archive update did not install the verified current executable".into(),
             );
         }
-        for (path, digest) in &self.retained {
+        for (index, (path, digest)) in self.retained.iter().enumerate() {
             if file_sha256(path)? != *digest {
-                return Err("native archive update changed retained data or ownership".into());
+                return Err(format!(
+                    "native archive update changed retained data or ownership entry {index}"
+                )
+                .into());
             }
+        }
+        if read_instance_configuration(&self.instance_config)? != self.instance_configuration {
+            return Err("native archive update changed stored instance configuration".into());
         }
         // The upstream server may add newly introduced default fields. Every
         // pre-existing configured value must still be present and unchanged.
@@ -219,6 +229,23 @@ impl RimworldArchiveUpdateProbe {
         );
         Ok(())
     }
+}
+
+fn read_instance_configuration(
+    path: &Path,
+) -> Result<serde_json::Map<String, Value>, Box<dyn std::error::Error>> {
+    let mut configuration: serde_json::Map<String, Value> =
+        serde_json::from_slice(&fs::read(path)?)?;
+    // Startup materialization refreshes this timestamp. Identity, settings,
+    // ports and every other committed field must still match exactly.
+    if configuration
+        .remove("generated_at_unix_ms")
+        .and_then(|value| value.as_u64())
+        .is_none()
+    {
+        return Err("native instance configuration has no valid generation timestamp".into());
+    }
+    Ok(configuration)
 }
 
 fn file_sha256(path: &Path) -> Result<String, std::io::Error> {
@@ -308,4 +335,43 @@ fn prestart_probe_distinguishes_pinned_and_unsupported_sources() {
         verify_events(&entries, "current", "sample", &[outcome]).unwrap();
         assert!(verify_events(&entries, "current", "sample", &["started", "completed"]).is_err());
     }
+}
+
+#[test]
+fn archive_probe_preserves_every_instance_configuration_field_except_generation_time() {
+    let directory = crate::commands::tests::temp_test_dir("archive-config");
+    let path = directory.join("instance.json");
+    let original = json!({
+        "generated_at_unix_ms": 1000,
+        "instance_id": "instance-a",
+        "module_id": "rimworld",
+        "settings": { "server_name": "retained name" },
+        "ports": [{ "name": "game", "protocol": "tcp", "port": 25555 }],
+    });
+    fs::write(&path, serde_json::to_vec(&original).unwrap()).unwrap();
+    let expected = read_instance_configuration(&path).unwrap();
+    let mut refreshed = original.clone();
+    refreshed["generated_at_unix_ms"] = json!(2000);
+    fs::write(&path, serde_json::to_vec(&refreshed).unwrap()).unwrap();
+    assert_eq!(read_instance_configuration(&path).unwrap(), expected);
+    for (field, changed) in [
+        ("instance_id", json!("instance-b")),
+        ("module_id", json!("terraria")),
+        ("settings", json!({ "server_name": "changed name" })),
+        ("ports", json!([])),
+        ("unexpected_field", json!(true)),
+    ] {
+        let mut modified = refreshed.clone();
+        modified[field] = changed;
+        fs::write(&path, serde_json::to_vec(&modified).unwrap()).unwrap();
+        assert_ne!(read_instance_configuration(&path).unwrap(), expected);
+    }
+    for timestamp in [Value::Null, json!("2000")] {
+        let mut invalid = refreshed.clone();
+        invalid["generated_at_unix_ms"] = timestamp;
+        fs::write(&path, serde_json::to_vec(&invalid).unwrap()).unwrap();
+        assert!(read_instance_configuration(&path).is_err());
+    }
+    fs::remove_file(path).unwrap();
+    fs::remove_dir(directory).unwrap();
 }

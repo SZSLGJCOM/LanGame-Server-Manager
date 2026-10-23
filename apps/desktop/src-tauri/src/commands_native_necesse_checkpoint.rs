@@ -175,34 +175,31 @@ async fn query<R: tauri::Runtime>(
     Ok(seed)
 }
 
-#[derive(Default)]
-struct SaveProgress(u8);
-
-impl SaveProgress {
-    fn observe(&mut self, text: &str) -> Result<bool, String> {
-        for line in text.lines().map(native_line) {
-            let next = match line {
-                "> save" => Some((0, 1)),
-                "Starting world save" => Some((1, 2)),
-                "Starting save..." => Some((2, 3)),
-                "Completed world save" => Some((3, 4)),
-                "A save is already in progress"
-                | "Save interrupted by a new save request"
-                | "> stop"
-                | "Completed world save before stopping server" => {
-                    return Err("Necesse rejected, interrupted or replaced the manual save".into());
-                }
-                _ => None,
-            };
-            if let Some((expected, next)) = next {
-                if self.0 != expected {
-                    return Err("Necesse emitted an unattributed or overlapping save".into());
-                }
-                self.0 = next;
+// LogBaseline returns the complete suffix since capture on every poll.
+fn manual_save_completed(text: &str) -> Result<bool, String> {
+    let mut progress = 0;
+    for line in text.lines().map(native_line) {
+        let next = match line {
+            "> save" => Some((0, 1)),
+            "Starting world save" => Some((1, 2)),
+            "Starting save..." => Some((2, 3)),
+            "Completed world save" => Some((3, 4)),
+            "A save is already in progress"
+            | "Save interrupted by a new save request"
+            | "> stop"
+            | "Completed world save before stopping server" => {
+                return Err("Necesse rejected, interrupted or replaced the manual save".into());
             }
+            _ => None,
+        };
+        if let Some((expected, next)) = next {
+            if progress != expected {
+                return Err("Necesse emitted an unattributed or overlapping save".into());
+            }
+            progress = next;
         }
-        Ok(self.0 == 4)
     }
+    Ok(progress == 4)
 }
 
 pub(in super::super) struct Observation {
@@ -243,10 +240,9 @@ impl Observation {
     pub(in super::super) async fn wait(self) -> Result<(), Box<dyn std::error::Error>> {
         worker(move || {
             let mut observation = self;
-            let mut progress = SaveProgress::default();
             while Instant::now() < observation.deadline {
                 observation.target.before_autosave(Duration::ZERO)?;
-                if progress.observe(&observation.target.fresh(&mut observation.baseline)?)? {
+                if manual_save_completed(&observation.target.fresh(&mut observation.baseline)?)? {
                     let after = observation.target.inventory()?;
                     if after.is_empty() || after == observation.before {
                         return Err("Necesse completed without changing its native world family".into());
@@ -349,15 +345,12 @@ mod tests {
 
     #[test]
     fn necesse_requested_save_waits_for_its_native_callback_and_same_world_reload() {
-        let mut progress = SaveProgress::default();
         let started = "\u{1b}[39m[2026-10-23 15:53:51] > save\n[2026-10-23 15:53:51] Starting world save\n[2026-10-23 15:53:51] Starting save...\n";
-        assert!(!progress.observe(started).unwrap());
-        assert!(!progress.observe("").unwrap());
-        assert!(
-            progress
-                .observe("[2026-10-23 15:53:53] Completed world save\n")
-                .unwrap()
-        );
+        assert!(!manual_save_completed("").unwrap());
+        assert!(!manual_save_completed(started).unwrap());
+        assert!(!manual_save_completed(started).unwrap());
+        let completed = format!("{started}[2026-10-23 15:53:53] Completed world save\n");
+        assert!(manual_save_completed(&completed).unwrap());
         for rejected in [
             "A save is already in progress",
             "Save interrupted by a new save request",
@@ -365,15 +358,12 @@ mod tests {
             "Completed world save before stopping server",
             "Starting world save",
         ] {
-            let mut progress = SaveProgress::default();
-            progress.observe(started).unwrap();
-            assert!(progress.observe(rejected).is_err(), "{rejected}");
+            assert!(
+                manual_save_completed(&format!("{started}{rejected}")).is_err(),
+                "{rejected}"
+            );
         }
-        assert!(
-            SaveProgress::default()
-                .observe("Completed world save")
-                .is_err()
-        );
+        assert!(manual_save_completed("Completed world save").is_err());
         let before = "[2026-10-23 15:53:51] World seed: ik4RN\n";
         let fresh = "[2026-10-23 15:54:01] Loading existing world at fixture/data/saves/worlds/world.zip\n[2026-10-23 15:54:01] > worldseed\n[2026-10-23 15:54:01] World seed: ik4RN\n";
         require_loaded(before, fresh).unwrap();
