@@ -246,12 +246,13 @@ try {{
   Copy-RetainedLibraryMarker
   if (Test-Path -LiteralPath $root) {{
     [IO.File]::WriteAllText($phase, 'rollback_pending')
-    Move-Item -LiteralPath $root -Destination $rollback
+    [IO.Directory]::Move($root, $rollback)
   }}
   try {{
-    Move-Item -LiteralPath $stage -Destination $root
+    # Same-volume renames must fail without partially copying into the target.
+    [IO.Directory]::Move($stage, $root)
   }} catch {{
-    if (Test-Path -LiteralPath $rollback) {{ Move-Item -LiteralPath $rollback -Destination $root }}
+    if (Test-Path -LiteralPath $rollback) {{ [IO.Directory]::Move($rollback, $root) }}
     Remove-Item -LiteralPath $phase -Force -ErrorAction SilentlyContinue
     throw
   }}
