@@ -2,6 +2,20 @@ use super::*;
 
 struct Fixture {
     root: PathBuf,
+    cache: PathBuf,
+}
+
+// Independent depot wire records for the standard SHA-1 vector "abc".
+const DEPOT_10: &str = "d017f671230000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0d000000080a10652000280348b8e1fe5317b8811b00000000ab15c432";
+const DEPOT_11: &str = "d017f671230000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0d000000080b10662000280348b8e1fe5317b8811b00000000ab15c432";
+
+fn bytes(hex: &str) -> Vec<u8> {
+    hex.as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect()
 }
 
 impl Fixture {
@@ -13,7 +27,11 @@ impl Fixture {
             r#""AppState" { "appid" "7" "StateFlags" "4" "SharedDepots" { "10" "8" "11" "8" } }"#,
         )
         .unwrap();
-        Self { root }
+        let cache = root.join("depotcache");
+        fs::create_dir(&cache).unwrap();
+        fs::write(cache.join("10_101.manifest"), bytes(DEPOT_10)).unwrap();
+        fs::write(cache.join("11_102.manifest"), bytes(DEPOT_11)).unwrap();
+        Self { root, cache }
     }
 
     fn owner(&self, flags: &str, depots: &str, extra: &str) {
@@ -27,7 +45,7 @@ impl Fixture {
     }
 
     fn inspect(&self) -> io::Result<Vec<u32>> {
-        unfinished_dependencies(&self.root, 7, || Ok(()))
+        unfinished_dependencies(&self.root, &self.cache, 7, || Ok(()))
     }
 }
 
@@ -38,6 +56,40 @@ impl Drop for Fixture {
 }
 
 const DEPOTS: &str = r#""10" { "manifest" "101" } "11" { "manifest" "102" }"#;
+
+#[test]
+fn complete_owner_with_missing_or_invalid_cache_needs_acquisition_repair_only() {
+    let fixture = Fixture::new();
+    fixture.owner("4", DEPOTS, "");
+    let path = fixture.cache.join("10_101.manifest");
+    let mut bad_crc = bytes(DEPOT_10);
+    bad_crc[12] ^= 1;
+    for (case, content) in [
+        ("missing", None),
+        ("CRC", Some(bad_crc)),
+        ("identity", Some(bytes(DEPOT_11))),
+    ] {
+        fs::remove_file(&path).unwrap();
+        if let Some(content) = content {
+            fs::write(&path, content).unwrap();
+        }
+        assert_eq!(fixture.inspect().unwrap(), [8], "{case}");
+        assert!(
+            crate::probe_steam_app_manifest(&fixture.root, 7)
+                .unwrap()
+                .complete,
+            "ordinary state probing must not depend on cached manifests: {case}",
+        );
+        fs::write(&path, bytes(DEPOT_10)).unwrap();
+        assert!(fixture.inspect().unwrap().is_empty());
+    }
+    fs::remove_file(&path).unwrap();
+    fs::create_dir(&path).unwrap();
+    assert_eq!(
+        fixture.inspect().unwrap_err().kind(),
+        io::ErrorKind::InvalidData
+    );
+}
 
 #[test]
 fn shared_dependency_completion_requires_every_declared_depot_and_finished_progress() {
@@ -123,10 +175,11 @@ fn malformed_shared_dependency_metadata_is_rejected_without_treating_it_as_pendi
 
 #[test]
 fn dependency_inspection_checks_cancellation_before_accessing_metadata() {
-    let error = unfinished_dependencies(Path::new("missing"), 7, || {
-        Err(io::Error::new(io::ErrorKind::Interrupted, "cancelled"))
-    })
-    .unwrap_err();
+    let error =
+        unfinished_dependencies(Path::new("missing"), Path::new("missing-cache"), 7, || {
+            Err(io::Error::new(io::ErrorKind::Interrupted, "cancelled"))
+        })
+        .unwrap_err();
     assert_eq!(error.kind(), io::ErrorKind::Interrupted);
 }
 

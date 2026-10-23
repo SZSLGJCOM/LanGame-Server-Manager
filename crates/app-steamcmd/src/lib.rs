@@ -1080,6 +1080,7 @@ fn probe_steam_app_manifest(install_root: &Path, app_id: u32) -> Option<SteamApp
             module_install::shared_dependencies::unfinished_shared_depots(
                 install_root,
                 &app,
+                None,
                 || Ok(()),
             )
         })

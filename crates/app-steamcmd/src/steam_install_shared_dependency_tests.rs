@@ -15,6 +15,12 @@ async fn dependency_fixture(mode: &str) -> Fixture {
 using System;
 using System.IO;
 public static class SharedDependencyInstaller {
+  static void WriteManifest(string name, string hex) {
+    Directory.CreateDirectory("depotcache");
+    byte[] bytes = new byte[hex.Length / 2];
+    for (int i = 0; i < bytes.Length; i++) bytes[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
+    File.WriteAllBytes(Path.Combine("depotcache", name), bytes);
+  }
   public static int Main(string[] args) {
     if (args.Length == 1 && args[0] == "+quit") {
       Console.WriteLine("Steam Console Client (c) Valve Corporation\nLoading Steam API...OK");
@@ -60,10 +66,14 @@ public static class SharedDependencyInstaller {
       new System.Threading.ManualResetEvent(false).WaitOne();
     }
     if (mode != "none" && (mode != "missing" || calls > 1)) {
-      bool complete = mode == "complete" || (calls > 1 && mode != "remainsIncomplete");
+      bool complete = mode == "complete" || mode == "missingManifest" || (calls > 1 && mode != "remainsIncomplete");
       string flags = complete ? "4" : "2";
       string owner = "\"AppState\" { \"appid\" \"1007\" \"StateFlags\" \"" + flags + "\" \"buildid\" \"23\" \"InstalledDepots\" { \"1004\" { \"manifest\" \"10\" } \"1008\" { \"manifest\" \"11\" } } }";
       File.WriteAllText(Path.Combine(root, "steamapps/appmanifest_1007.acf"), owner);
+      if (complete && (mode != "missingManifest" || calls > 1)) {
+        WriteManifest("1004_10.manifest", "d017f671230000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0e00000008ec07100a2000280348b8e1fe5317b8811b00000000ab15c432");
+        WriteManifest("1008_11.manifest", "d017f671230000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0e00000008f007100b2000280348b8e1fe5317b8811b00000000ab15c432");
+      }
     }
     Console.WriteLine("Success! App '42' fully installed.");
     return 0;
@@ -258,10 +268,11 @@ async fn complete_or_absent_shared_dependencies_need_only_the_original_native_co
 }
 
 #[tokio::test]
-async fn incomplete_or_missing_shared_owner_is_validated_once_before_publication() {
+async fn incomplete_shared_owner_or_manifest_is_validated_once_before_publication() {
     for (mode, initial_validate) in [
         ("incomplete", false),
         ("missing", false),
+        ("missingManifest", false),
         ("incomplete", true),
     ] {
         let fixture = dependency_fixture(mode).await;

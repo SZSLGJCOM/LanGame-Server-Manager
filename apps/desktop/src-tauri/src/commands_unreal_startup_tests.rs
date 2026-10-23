@@ -76,8 +76,7 @@ async fn unsupported_unreal_start_still_requires_native_program_files() {
     let operation = state
         .begin_storage_context_operation("invalid Unreal program")
         .unwrap();
-    let (fixture, moria) =
-        Fixture::new("returntomoria", "Moria", "MoriaServer-Win64-Shipping.exe");
+    let (fixture, moria) = Fixture::new("returntomoria", "Moria", "MoriaServer-Win64-Shipping.exe");
     fs::remove_file(
         fixture
             .0

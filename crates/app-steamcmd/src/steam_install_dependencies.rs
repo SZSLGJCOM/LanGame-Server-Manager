@@ -2,9 +2,10 @@
 //! This gate reads installation metadata; package verification still owns hashes.
 use super::*;
 use crate::steam_depot::manifest::{
-    Object, acf_is_complete, decimal, depot_gid, object, parse_acf, parse_acf_app_state, text,
+    Object, acf_is_complete, decimal, depot_gid, manifest_inventory, object, parse_acf,
+    parse_acf_app_state, text,
 };
-use crate::steam_depot::{MAX_ACF, bounded, invalid};
+use crate::steam_depot::{MAX_ACF, MAX_MANIFEST, bounded, invalid};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 
@@ -37,8 +38,9 @@ pub(super) async fn complete_shared_dependencies(
         operation: "completing Steam shared dependencies".into(),
         detail,
     };
+    let cache = Path::new(&steamcmd.root).join("depotcache");
     deadline.check_cancelled()?;
-    let inspected = inspect_dependencies(root, app_id, deadline).await;
+    let inspected = inspect_dependencies(root, &cache, app_id, deadline).await;
     deadline.check_cancelled()?;
     let missing = inspected.map_err(|error| failed(error.to_string()))?;
     if missing.is_empty() {
@@ -66,7 +68,7 @@ pub(super) async fn complete_shared_dependencies(
     )
     .await?;
     crate::steam_app_access::verify_command_result(app_id, account_name, &output)?;
-    let inspected = inspect_dependencies(root, app_id, deadline).await;
+    let inspected = inspect_dependencies(root, &cache, app_id, deadline).await;
     deadline.check_cancelled()?;
     let missing = inspected.map_err(|error| failed(error.to_string()))?;
     if !missing.is_empty() {
@@ -79,15 +81,17 @@ pub(super) async fn complete_shared_dependencies(
 
 async fn inspect_dependencies(
     root: &Path,
+    cache: &Path,
     app_id: u32,
     deadline: InstallDeadline,
 ) -> io::Result<Vec<u32>> {
     let root = root.to_owned();
+    let cache = cache.to_owned();
     let cancellation = InstallCancellation::current();
     // Join the bounded reader before returning, including cancellation. The
     // caller retains the native install lease while this worker observes files.
     tokio::task::spawn_blocking(move || {
-        unfinished_dependencies(&root, app_id, || {
+        unfinished_dependencies(&root, &cache, app_id, || {
             if cancellation
                 .as_ref()
                 .is_some_and(|token| token.is_cancelled())
@@ -108,18 +112,20 @@ async fn inspect_dependencies(
 
 fn unfinished_dependencies(
     root: &Path,
+    cache: &Path,
     app_id: u32,
     check: impl Fn() -> io::Result<()>,
 ) -> io::Result<Vec<u32>> {
     check()?;
     let main = root.join(format!("steamapps/appmanifest_{app_id}.acf"));
     let app = parse_acf(&bounded(&main, MAX_ACF)?, app_id)?;
-    unfinished_shared_depots(root, &app, check)
+    unfinished_shared_depots(root, &app, Some(cache), check)
 }
 
 pub(crate) fn unfinished_shared_depots(
     root: &Path,
     app: &Object,
+    cache: Option<&Path>,
     check: impl Fn() -> io::Result<()>,
 ) -> io::Result<Vec<u32>> {
     check()?;
@@ -156,8 +162,35 @@ pub(crate) fn unfinished_shared_depots(
         let installed = app.get("installeddepots").map(object).transpose()?;
         complete &= installed.is_some();
         for depot in depots {
+            check()?;
             if let Some(details) = installed.and_then(|installed| installed.get(&depot)) {
-                complete &= depot_gid(details)? != 0;
+                let gid = depot_gid(details)?;
+                complete &= gid != 0;
+                // Acquisitions need exact metadata for the subsequent payload
+                // verification. Ordinary state probes do not depend on this cache.
+                if let Some(cache) = cache.filter(|_| gid != 0) {
+                    let path = cache.join(format!("{depot}_{gid}.manifest"));
+                    let bytes = match bounded(&path, MAX_MANIFEST) {
+                        Ok(bytes) => bytes,
+                        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                            complete = false;
+                            continue;
+                        }
+                        Err(error) => {
+                            return Err(io::Error::new(
+                                error.kind(),
+                                format!("Steam depot manifest {}: {error}", path.display()),
+                            ));
+                        }
+                    };
+                    match manifest_inventory(&bytes, decimal(&depot)?, gid) {
+                        Ok(_) => {}
+                        Err(error) if error.kind() == io::ErrorKind::InvalidData => {
+                            complete = false;
+                        }
+                        Err(error) => return Err(error),
+                    }
+                }
             } else {
                 complete = false;
             }
