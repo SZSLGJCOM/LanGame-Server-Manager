@@ -40,14 +40,14 @@ pub struct SpawnResult {
 fn embedded(module: &str) -> Result<install::EmbeddedArkTools, String> {
     match protocol::edition(module)? {
         "ase" => Ok(install::EmbeddedArkTools {
-            plugin: include_bytes!(concat!(env!("OUT_DIR"), "/ark-tools/LgsmArkTools-ase.dll")),
+            plugin: include_bytes!(concat!(env!("OUT_DIR"), "/ark/LgsmArkTools-ase.dll")),
             proxy: None,
         }),
         _ => Ok(install::EmbeddedArkTools {
-            plugin: include_bytes!(concat!(env!("OUT_DIR"), "/ark-tools/LgsmArkTools-asa.dll")),
+            plugin: include_bytes!(concat!(env!("OUT_DIR"), "/ark/LgsmArkTools-asa.dll")),
             proxy: Some(include_bytes!(concat!(
                 env!("OUT_DIR"),
-                "/ark-tools/asa-version.dll"
+                "/ark/asa-version.dll"
             ))),
         }),
     }

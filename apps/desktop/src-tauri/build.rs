@@ -20,7 +20,9 @@ fn main() {
         let output = std::path::PathBuf::from(
             std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
         )
-        .join("ark-tools");
+        // MSVC counts the SDK's unnormalized relative includes against MAX_PATH.
+        // Keep this output leaf short in deeply nested release build directories.
+        .join("ark");
         let mut command = std::process::Command::new("powershell.exe");
         command
             .args([
