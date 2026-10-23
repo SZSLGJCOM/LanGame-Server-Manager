@@ -56,15 +56,15 @@ fn current_user_maintenance_cannot_be_exposed_through_lan() {
         assert_eq!(command.execution, Execution::Runtime, "{name}");
         assert_eq!(command.lan, LanAccess::Denied, "{name}");
     }
-    for name in [
-        "start_instance_process",
-        "read_instance_details_from_storage",
-        "read_dontstarve_world_map",
+    for (name, completion) in [
+        ("start_instance_process", Completion::Owned),
+        ("read_instance_details_from_storage", Completion::Bounded),
+        ("read_dontstarve_world_map", Completion::Bounded),
     ] {
         let command = find(name).unwrap();
         assert_eq!(command.execution, Execution::Runtime, "{name}");
         assert_eq!(command.lan, LanAccess::Allowed, "{name}");
-        assert_eq!(command.completion, Completion::Bounded, "{name}");
+        assert_eq!(command.completion, completion, "{name}");
     }
 }
 

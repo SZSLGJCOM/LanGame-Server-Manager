@@ -3,30 +3,52 @@ use std::future::poll_fn;
 use std::task::Poll;
 
 #[tokio::test]
-async fn owned_mod_install_receipt_outlives_the_ipc_observation_budget() {
-    let (mut reader, mut writer) = tokio::io::duplex(4096);
-    let mut response = Box::pin(receive_response_with_budget(
+async fn owned_install_receipt_outlives_the_ipc_observation_budget() {
+    for command in [
+        "install_module_game",
+        "validate_module_game",
+        "update_instance_program",
+        "create_instance_record",
+        "start_instance_process",
+        "download_steam_workshop_items",
+        "assistant_confirm_operation",
         "install_manual_mod_references",
-        &mut reader,
-        Duration::ZERO,
-    ));
-    assert!(
-        poll_fn(|cx| Poll::Ready(response.as_mut().poll(cx)))
+    ] {
+        let (mut reader, mut writer) = tokio::io::duplex(4096);
+        let mut response = Box::pin(receive_response_with_budget(
+            command,
+            &mut reader,
+            Duration::ZERO,
+        ));
+        assert!(
+            poll_fn(|cx| Poll::Ready(response.as_mut().poll(cx)))
+                .await
+                .is_pending(),
+            "{command}"
+        );
+        tokio::time::timeout(Duration::ZERO, std::future::pending::<()>())
             .await
-            .is_pending()
-    );
-    wire::write_response(
-        &mut writer,
-        &wire::Response {
-            result: Ok(serde_json::json!({"installed":true})),
-        },
-    )
-    .await
-    .unwrap();
-    assert_eq!(
-        response.await.unwrap(),
-        serde_json::json!({"installed":true})
-    );
+            .unwrap_err();
+        assert!(
+            poll_fn(|cx| Poll::Ready(response.as_mut().poll(cx)))
+                .await
+                .is_pending(),
+            "{command}"
+        );
+        wire::write_response(
+            &mut writer,
+            &wire::Response {
+                result: Ok(serde_json::json!({"installed":true})),
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            response.await.unwrap(),
+            serde_json::json!({"installed":true}),
+            "{command}"
+        );
+    }
 
     let (mut reader, _writer) = tokio::io::duplex(4096);
     assert!(

@@ -276,20 +276,29 @@ impl AutomaticPolicyFixture {
     }
 }
 
-struct LocalManifestSource {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum PrestartSourceFailure {
+    Metadata,
+    ArchiveBody,
+}
+
+struct LocalPrestartSource {
     url: String,
     requested: tokio::sync::oneshot::Receiver<()>,
     release: tokio::sync::oneshot::Sender<()>,
     task: tokio::task::JoinHandle<Result<(), String>>,
 }
 
-impl Drop for LocalManifestSource {
+impl Drop for LocalPrestartSource {
     fn drop(&mut self) {
         self.task.abort();
     }
 }
 
-async fn local_manifest_source(hold_response: bool) -> Result<LocalManifestSource, String> {
+async fn local_prestart_source(
+    hold_response: bool,
+    failure: PrestartSourceFailure,
+) -> Result<LocalPrestartSource, String> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -302,46 +311,67 @@ async fn local_manifest_source(hold_response: bool) -> Result<LocalManifestSourc
     let (requested, observed) = tokio::sync::oneshot::channel();
     let (release, released) = tokio::sync::oneshot::channel();
     let task = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.map_err(|error| error.to_string())?;
-        let mut request = Vec::new();
-        while !request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
-            let mut buffer = [0; 1024];
-            let read = stream
-                .read(&mut buffer)
-                .await
-                .map_err(|error| error.to_string())?;
-            if read == 0 || request.len() + read > 8192 {
-                return Err("invalid local metadata request".into());
-            }
-            request.extend_from_slice(&buffer[..read]);
-        }
-        if !request.starts_with(b"GET /manifest.json ") {
-            return Err("unexpected local metadata route".into());
-        }
-        requested
-            .send(())
-            .map_err(|_| "metadata observer dropped".to_owned())?;
-        if hold_response {
-            // The test cancels only after a real request arrives, then releases
-            // this server after the client has acknowledged cleanup.
-            released
-                .await
-                .map_err(|_| "metadata release dropped".to_owned())?;
+        let mut requested = Some(requested);
+        let mut released = Some(released);
+        // The downloader restarts one interrupted body before reporting failure.
+        let attempts = if failure == PrestartSourceFailure::ArchiveBody {
+            2
         } else {
-            let body = "invalid manifest JSON";
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            );
-            stream
-                .write_all(response.as_bytes())
-                .await
-                .map_err(|error| error.to_string())?;
-            stream.shutdown().await.map_err(|error| error.to_string())?;
+            1
+        };
+        for _ in 0..attempts {
+            let (mut stream, _) = listener.accept().await.map_err(|error| error.to_string())?;
+            let mut request = Vec::new();
+            while !request.windows(4).any(|bytes| bytes == b"\r\n\r\n") {
+                let mut buffer = [0; 1024];
+                let read = stream
+                    .read(&mut buffer)
+                    .await
+                    .map_err(|error| error.to_string())?;
+                if read == 0 || request.len() + read > 8192 {
+                    return Err("invalid local prestart request".into());
+                }
+                request.extend_from_slice(&buffer[..read]);
+            }
+            if !request.starts_with(b"GET /manifest.json ") {
+                return Err("unexpected local prestart route".into());
+            }
+            if let Some(requested) = requested.take() {
+                requested
+                    .send(())
+                    .map_err(|_| "prestart observer dropped".to_owned())?;
+            }
+            if hold_response {
+                // The test cancels only after a real request arrives, then releases
+                // this server after the client has acknowledged cleanup.
+                released
+                    .take()
+                    .ok_or("prestart response already released")?
+                    .await
+                    .map_err(|_| "prestart release dropped".to_owned())?;
+            } else {
+                let body = match failure {
+                    PrestartSourceFailure::Metadata => "invalid manifest JSON",
+                    PrestartSourceFailure::ArchiveBody => "partial ZIP body",
+                };
+                let length = if failure == PrestartSourceFailure::ArchiveBody {
+                    100
+                } else {
+                    body.len()
+                };
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Length: {length}\r\nConnection: close\r\n\r\n{body}",
+                );
+                stream
+                    .write_all(response.as_bytes())
+                    .await
+                    .map_err(|error| error.to_string())?;
+                stream.shutdown().await.map_err(|error| error.to_string())?;
+            }
         }
         Ok(())
     });
-    Ok(LocalManifestSource {
+    Ok(LocalPrestartSource {
         url,
         requested: observed,
         release,
@@ -390,10 +420,25 @@ fn mark_program_revision_pending(
 async fn check_automatic_failure_or_cancellation(
     cancel: bool,
     existing: ExistingProgram,
+    failure: PrestartSourceFailure,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let _serial = crate::commands::tests::command_smoke_lock().lock().await;
-    let mut source = local_manifest_source(cancel).await?;
-    let fixture = AutomaticPolicyFixture::new(source.url.clone()).await?;
+    let mut source = local_prestart_source(cancel, failure).await?;
+    let mut fixture = AutomaticPolicyFixture::new(source.url.clone()).await?;
+    if failure == PrestartSourceFailure::ArchiveBody {
+        // Reuse the owned program and its verified original inventory. The next
+        // release is a ZIP, so startup must reach acquisition rather than only a
+        // read-only metadata check. The truncated body can never satisfy its hash.
+        let install = fixture.descriptor.install.as_mut().unwrap();
+        install.source = None;
+        install.minecraft = None;
+        install.download_url_windows = Some(source.url.clone());
+        install.download_integrity_windows = Some(app_core::DownloadIntegritySpec {
+            sha256: "ab".repeat(32),
+            size: 100,
+        });
+        fixture.module.install = Some(install.clone());
+    }
     assert!(app_storage::library_program_is_pristine(
         &fixture.program,
         &fixture.descriptor,
@@ -446,17 +491,17 @@ async fn check_automatic_failure_or_cancellation(
     tokio::time::timeout(Duration::from_secs(5), async {
         tokio::select! {
             biased;
-            observed = &mut source.requested => observed.expect("the real metadata request must arrive"),
+            observed = &mut source.requested => observed.expect("the real prestart request must arrive"),
             result = &mut update => panic!("startup update finished before checking its actual program: {:?}", result.err()),
         }
-    }).await.expect("the default automatic policy must query the local metadata endpoint");
+    }).await.expect("the default automatic policy must query the local endpoint");
     if cancel {
         let job_id = state.app_state.read().unwrap().jobs[0].id.clone();
         super::super::commands_install_progress::cancel_installation_job(state.clone(), job_id)?;
     }
     let result = tokio::time::timeout(Duration::from_secs(5), &mut update)
         .await
-        .expect("failed or cancelled metadata checks must settle");
+        .expect("failed or cancelled startup updates must settle");
     if cancel || existing != ExistingProgram::Verified {
         assert!(
             result.is_err(),
@@ -474,7 +519,7 @@ async fn check_automatic_failure_or_cancellation(
     } else {
         assert!(
             result.is_ok(),
-            "a read-only metadata failure must permit the verified installed program: {:?}",
+            "a source failure before program mutation must permit the verified installed program: {:?}",
             result.as_ref().err(),
         );
         let outcome = result.as_ref().unwrap_or_else(|error| panic!("{error}"));
@@ -505,6 +550,43 @@ async fn check_automatic_failure_or_cancellation(
         jobs[0].warnings.len(),
         usize::from(!cancel && existing == ExistingProgram::Verified)
     );
+    if failure == PrestartSourceFailure::ArchiveBody {
+        if existing != ExistingProgram::Verified {
+            assert!(
+                jobs[0]
+                    .detail
+                    .as_deref()
+                    .unwrap()
+                    .contains("download response was interrupted")
+            );
+        }
+        let revision = app_steamcmd::read_program_install_revision(
+            Path::new(&fixture.storage.settings.servers_root),
+            "minecraft",
+            &fixture.program,
+        );
+        if existing == ExistingProgram::Pending {
+            assert!(matches!(
+                revision,
+                Err(app_steamcmd::SteamCmdError::PackageRevisionPending { .. })
+            ));
+        } else {
+            assert_eq!(
+                revision?, 0,
+                "a failed download must not invalidate the unchanged program"
+            );
+        }
+        assert!(
+            fs::read_dir(fixture.program.parent().unwrap())?.all(|entry| {
+                !entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".lg-")
+            }),
+            "failed download staging must be removed"
+        );
+    }
     assert!(!jobs[0].cancellable);
     assert!(
         read_active_instance_run(&fixture.storage.paths, id)
@@ -545,31 +627,75 @@ async fn check_automatic_failure_or_cancellation(
 #[tokio::test]
 async fn automatic_prestart_metadata_failure_allows_the_verified_installed_program()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(false, ExistingProgram::Verified).await
+    check_automatic_failure_or_cancellation(
+        false,
+        ExistingProgram::Verified,
+        PrestartSourceFailure::Metadata,
+    )
+    .await
 }
 
 #[tokio::test]
 async fn automatic_prestart_cancellation_settles_job_and_releases_program_lease()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(true, ExistingProgram::Verified).await
+    check_automatic_failure_or_cancellation(
+        true,
+        ExistingProgram::Verified,
+        PrestartSourceFailure::Metadata,
+    )
+    .await
 }
 
 #[tokio::test]
 async fn automatic_prestart_metadata_failure_cannot_hide_changed_program_bytes()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(false, ExistingProgram::Changed).await
+    check_automatic_failure_or_cancellation(
+        false,
+        ExistingProgram::Changed,
+        PrestartSourceFailure::Metadata,
+    )
+    .await
 }
 
 #[tokio::test]
 async fn automatic_prestart_metadata_failure_requires_a_verified_program_inventory()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(false, ExistingProgram::MissingInventory).await
+    check_automatic_failure_or_cancellation(
+        false,
+        ExistingProgram::MissingInventory,
+        PrestartSourceFailure::Metadata,
+    )
+    .await
 }
 
 #[tokio::test]
 async fn automatic_prestart_metadata_failure_never_clears_an_interrupted_install_revision()
 -> Result<(), Box<dyn std::error::Error>> {
-    check_automatic_failure_or_cancellation(false, ExistingProgram::Pending).await
+    check_automatic_failure_or_cancellation(
+        false,
+        ExistingProgram::Pending,
+        PrestartSourceFailure::Metadata,
+    )
+    .await
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn automatic_prestart_zip_failure_reuses_only_verified_unchanged_programs()
+-> Result<(), Box<dyn std::error::Error>> {
+    for existing in [
+        ExistingProgram::Verified,
+        ExistingProgram::Changed,
+        ExistingProgram::Pending,
+    ] {
+        check_automatic_failure_or_cancellation(
+            false,
+            existing,
+            PrestartSourceFailure::ArchiveBody,
+        )
+        .await?;
+    }
+    Ok(())
 }
 
 #[tokio::test]

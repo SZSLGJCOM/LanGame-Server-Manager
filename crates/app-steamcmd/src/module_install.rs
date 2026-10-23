@@ -274,8 +274,34 @@ where
     } else {
         String::from("install")
     };
-    // Native installers may write in place or publish a whole replacement.
-    // Invalidate private runtime baselines before either operation can begin.
+    if !minecraft_java && let Some(download_url) = direct_download_url {
+        on_progress(InstallProgressUpdate::stage(
+            InstallPhase::Preparing,
+            format!(
+                "Using direct download payload for {}...",
+                module.summary.name
+            ),
+        ));
+        return install_or_update_module_from_download(
+            DirectDownloadInstallRequest {
+                settings,
+                module,
+                install,
+                process,
+                steam_app_id,
+                operation: &operation,
+                download_url,
+                deadline,
+                revision_key,
+            },
+            &mut on_progress,
+            &mut prepare_fresh_payload,
+        )
+        .await;
+    }
+
+    // In-place installers can change program files immediately. ZIP installers
+    // own this transition at publication, after their isolated payload is ready.
     let revision = begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
     let install_result = async {
         if minecraft_java {
@@ -287,31 +313,6 @@ where
                 &operation,
                 deadline,
                 &mut on_progress,
-            )
-            .await;
-        }
-
-        if let Some(download_url) = direct_download_url {
-            on_progress(InstallProgressUpdate::stage(
-                InstallPhase::Preparing,
-                format!(
-                    "Using direct download payload for {}...",
-                    module.summary.name
-                ),
-            ));
-            return install_or_update_module_from_download(
-                DirectDownloadInstallRequest {
-                    settings,
-                    module,
-                    install,
-                    process,
-                    steam_app_id,
-                    operation: &operation,
-                    download_url,
-                    deadline,
-                },
-                &mut on_progress,
-                &mut prepare_fresh_payload,
             )
             .await;
         }

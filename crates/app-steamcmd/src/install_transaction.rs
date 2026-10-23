@@ -73,6 +73,77 @@ enum PayloadPreparation<'a> {
     Prepared,
 }
 
+const DIRECTORY_RENAME_FUNCTION: &str = r#"
+function Move-InstallDirectory([string]$source, [string]$destination) {
+  if (-not ('LanGameInstallDirectoryIdentity' -as [type])) {
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+public static class LanGameInstallDirectoryIdentity {
+  [StructLayout(LayoutKind.Sequential)] private struct Information {
+    public uint Attributes;
+    public System.Runtime.InteropServices.ComTypes.FILETIME Creation, Access, Write;
+    public uint Volume, SizeHigh, SizeLow, Links, IndexHigh, IndexLow;
+  }
+  [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  private static extern SafeFileHandle CreateFile(string path, uint access, uint sharing, IntPtr security, uint disposition, uint flags, IntPtr template);
+  [DllImport("kernel32.dll", SetLastError=true)]
+  private static extern bool GetFileInformationByHandle(SafeFileHandle file, out Information info);
+  public static string Read(string path) {
+    // Attribute-only inspection shares deletion so it cannot block publication.
+    using (SafeFileHandle handle = CreateFile(path, 0, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero)) {
+      if (handle.IsInvalid) throw new Win32Exception(Marshal.GetLastWin32Error());
+      Information info;
+      if (!GetFileInformationByHandle(handle, out info)) throw new Win32Exception(Marshal.GetLastWin32Error());
+      if ((info.Attributes & 0x410) != 0x10) throw new IOException("Publication source must be a plain directory.");
+      return info.Volume.ToString("X8") + info.IndexHigh.ToString("X8") + info.IndexLow.ToString("X8");
+    }
+  }
+}
+'@
+  }
+  $identity = [LanGameInstallDirectoryIdentity]::Read($source)
+  $timer = [Diagnostics.Stopwatch]::StartNew()
+  $attempts = 0
+  $delay = 25
+  $failure = $null
+  $code = 0
+  while ($true) {
+    if ($null -ne $failure -and $timer.ElapsedMilliseconds -ge 5000) { break }
+    Assert-PlainPathChain $source
+    Assert-PlainPathChain ([IO.Path]::GetDirectoryName($destination))
+    if ([LanGameInstallDirectoryIdentity]::Read($source) -ne $identity) {
+      throw 'Directory publication source changed during the operation.'
+    }
+    if (Test-Path -LiteralPath $destination -ErrorAction Stop) {
+      throw 'Directory publication destination already exists.'
+    }
+    $attempts++
+    try {
+      # Same-volume renames must never partially copy or replace a new target.
+      [IO.Directory]::Move($source, $destination)
+      return
+    } catch {
+      $failure = $_.Exception
+      $native = $failure
+      while ($null -ne $native.InnerException) { $native = $native.InnerException }
+      $code = $native.HResult -band 0xffff
+      $remaining = 5000 - $timer.ElapsedMilliseconds
+      if ($code -notin @(5, 32, 33) -or $remaining -le 0) { break }
+      if ($attempts -eq 1) { Write-Output "Waiting for directory publication contention (Win32 $code)." }
+      Start-Sleep -Milliseconds ([Math]::Min($delay, $remaining))
+      $delay = [Math]::Min($delay * 2, 200)
+    }
+  }
+  throw [IO.IOException]::new(
+    ("Directory publication failed from '{0}' to '{1}' (Win32 {2}; attempts {3}; elapsed {4} ms)." -f $source, $destination, $code, $attempts, $timer.ElapsedMilliseconds),
+    $failure)
+}
+"#;
+
 fn install_publish_script(
     install_root: &Path,
     staging_root: &Path,
@@ -123,6 +194,7 @@ function Assert-PlainTree([string]$path) {{
     foreach ($child in Get-ChildItem -LiteralPath $path -Force) {{ Assert-PlainTree $child.FullName }}
   }}
 }}
+{directory_rename}
 $stage = [IO.Path]::GetFullPath($stage)
 $stagePrefix = $stage.TrimEnd('\') + '\'
 $root = [IO.Path]::GetFullPath($root)
@@ -246,13 +318,16 @@ try {{
   Copy-RetainedLibraryMarker
   if (Test-Path -LiteralPath $root) {{
     [IO.File]::WriteAllText($phase, 'rollback_pending')
-    [IO.Directory]::Move($root, $rollback)
+    try {{ Move-InstallDirectory $root $rollback }} catch {{
+      # A failed atomic rename never acquired rollback ownership.
+      Remove-Item -LiteralPath $phase -Force
+      throw
+    }}
   }}
   try {{
-    # Same-volume renames must fail without partially copying into the target.
-    [IO.Directory]::Move($stage, $root)
+    Move-InstallDirectory $stage $root
   }} catch {{
-    if (Test-Path -LiteralPath $rollback) {{ [IO.Directory]::Move($rollback, $root) }}
+    if (Test-Path -LiteralPath $rollback) {{ Move-InstallDirectory $rollback $root }}
     Remove-Item -LiteralPath $phase -Force -ErrorAction SilentlyContinue
     throw
   }}
@@ -283,6 +358,7 @@ try {{
             .map(|hash| format!("'{hash}'"))
             .unwrap_or_else(|| String::from("$null")),
         library_limit = MAX_RETAINED_LIBRARY_BYTES,
+        directory_rename = DIRECTORY_RENAME_FUNCTION,
     )
 }
 

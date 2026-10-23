@@ -409,7 +409,16 @@ mod admission_tests {
 
     #[tokio::test]
     async fn aggregate_maintenance_finishes_after_the_ipc_observation_deadline() {
+        use std::{future::poll_fn, task::Poll};
+
         for command in [
+            "install_module_game",
+            "validate_module_game",
+            "update_instance_program",
+            "create_instance_record",
+            "start_instance_process",
+            "download_steam_workshop_items",
+            "assistant_confirm_operation",
             "install_manual_mod_references",
             "manage_manual_mod",
             "operate_ark_cluster",
@@ -424,24 +433,32 @@ mod admission_tests {
             "restore_instance_archive",
             "purge_instance_archive",
         ] {
-            let (started, observed) = tokio::sync::oneshot::channel();
             let (finish, completing) = tokio::sync::oneshot::channel();
-            let task = tokio::spawn(complete_dispatch(command, Duration::ZERO, async move {
-                started.send(()).map_err(|_| "No test observer")?;
+            let mut task = Box::pin(complete_dispatch(command, Duration::ZERO, async move {
                 completing.await.map_err(|_| "Maintenance was abandoned")?;
                 Ok(json!({"completed":true}))
             }));
-            observed
+            assert!(
+                poll_fn(|cx| Poll::Ready(task.as_mut().poll(cx)))
+                    .await
+                    .is_pending(),
+                "{command}"
+            );
+            // Expire a timer created after dispatch started before allowing the
+            // operation to finish, so a ready receipt cannot win a timeout race.
+            tokio::time::timeout(Duration::ZERO, std::future::pending::<()>())
                 .await
-                .expect("The real maintenance future must start");
+                .unwrap_err();
+            assert!(
+                poll_fn(|cx| Poll::Ready(task.as_mut().poll(cx)))
+                    .await
+                    .is_pending(),
+                "{command}"
+            );
             finish
                 .send(())
                 .expect("The pending maintenance future must remain owned");
-            assert_eq!(
-                task.await.unwrap().unwrap(),
-                json!({"completed":true}),
-                "{command}"
-            );
+            assert_eq!(task.await.unwrap(), json!({"completed":true}), "{command}");
         }
         assert!(
             complete_dispatch(

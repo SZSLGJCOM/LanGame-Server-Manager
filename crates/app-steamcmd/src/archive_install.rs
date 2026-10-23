@@ -44,6 +44,7 @@ pub(super) struct DirectDownloadInstallRequest<'a> {
     pub(super) operation: &'a str,
     pub(super) download_url: &'a str,
     pub(super) deadline: InstallDeadline,
+    pub(super) revision_key: &'a str,
 }
 
 pub(super) async fn install_or_update_module_from_download<F, C, Fut>(
@@ -65,6 +66,7 @@ where
         operation,
         download_url,
         deadline,
+        revision_key,
     } = request;
     let install_root = PathBuf::from(&settings.games_root).join(&install.shared_game_dir);
     let install_parent = install_root
@@ -185,10 +187,17 @@ where
             &staging_verification,
             &publication_metadata,
         );
-        run_powershell(&publish, Some(install_parent), deadline).await
+        // Downloads, extraction and inventory preparation only touch siblings.
+        // Keep the old revision usable until publication can change its root;
+        // any failure after this point still leaves the generation pending.
+        let revision =
+            begin_game_install_revision(Path::new(&settings.servers_root), revision_key)?;
+        run_powershell(&publish, Some(install_parent), deadline)
+            .await
+            .map(|output| (output, revision))
     }
     .await;
-    let output = match preparation {
+    let (output, revision) = match preparation {
         Ok(output) => output,
         Err(error @ SteamCmdError::InstallProcessCleanupFailed { .. }) => return Err(error),
         Err(error) => {
@@ -280,6 +289,7 @@ where
         .await?;
         return Err(error);
     }
+    complete_game_install_revision(Path::new(&settings.servers_root), revision_key, revision)?;
     // The previous payload remains intact until the newly published payload
     // has passed the same probe used by normal install-state detection.
     schedule_verified_directory_cleanup(vec![rollback_root.clone(), staging_root.clone()]);

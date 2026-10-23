@@ -141,6 +141,8 @@ impl Fixture {
         url: &str,
         progress: &mut impl FnMut(InstallProgressUpdate),
     ) -> Result<ModuleInstallResult, SteamCmdError> {
+        let revision_key =
+            package_revision::program_revision_key(&self.module.summary.id, &self.install_root())?;
         install_or_update_module_from_download(
             DirectDownloadInstallRequest {
                 settings: &self.settings,
@@ -151,6 +153,7 @@ impl Fixture {
                 operation: "install",
                 download_url: url,
                 deadline: test_deadline(),
+                revision_key: &revision_key,
             },
             progress,
             &mut |_| async { Ok(()) },
@@ -272,6 +275,14 @@ async fn retained_archive_reinstall_merges_native_config_and_saves_before_public
                 .is_some_and(|progress| progress.phase == InstallPhase::Verifying)
                 && !has_retained_install_data(&fixture.install_root())
             {
+                assert!(matches!(
+                    read_program_install_revision(
+                        Path::new(&fixture.settings.servers_root),
+                        &fixture.module.summary.id,
+                        &fixture.install_root(),
+                    ),
+                    Err(SteamCmdError::PackageRevisionPending { .. })
+                ));
                 let rollback = fs::read_dir(&fixture.settings.games_root)
                     .unwrap()
                     .map(|entry| entry.unwrap().path())
@@ -296,6 +307,15 @@ async fn retained_archive_reinstall_merges_native_config_and_saves_before_public
         "Original data must remain as rollback through verification"
     );
     assert_eq!(result.install_state, InstallState::Installed);
+    assert_eq!(
+        read_program_install_revision(
+            Path::new(&fixture.settings.servers_root),
+            &fixture.module.summary.id,
+            &fixture.install_root(),
+        )
+        .unwrap(),
+        1
+    );
     fixture.assert_retained(false);
     assert_eq!(
         fs::read(fixture.install_root().join("bin/Server.exe")).unwrap(),
@@ -353,6 +373,15 @@ async fn retained_archive_integrity_failure_never_extracts_or_publishes() {
             "{error}"
         );
         assert!(!extracted, "unverified archive reached extraction");
+        assert_eq!(
+            read_program_install_revision(
+                Path::new(&fixture.settings.servers_root),
+                &fixture.module.summary.id,
+                &fixture.install_root(),
+            )
+            .unwrap(),
+            0
+        );
         fixture.assert_retained(true);
         assert!(!fixture.install_root().join("bin/Server.exe").exists());
         fixture.assert_transaction_clean().await;
@@ -381,6 +410,14 @@ async fn retained_archive_failed_probe_restores_original_data_and_marker() {
         result,
         Err(SteamCmdError::InstallationVerificationFailed { .. })
     ));
+    assert!(matches!(
+        read_program_install_revision(
+            Path::new(&fixture.settings.servers_root),
+            &fixture.module.summary.id,
+            &fixture.install_root(),
+        ),
+        Err(SteamCmdError::PackageRevisionPending { .. })
+    ));
     fixture.assert_retained(true);
     assert!(!fixture.install_root().join("bin").exists());
     fixture.assert_transaction_clean().await;
@@ -407,6 +444,14 @@ async fn retained_archive_cancellation_after_publish_restores_original_data_and_
     assert!(matches!(
         result,
         Err(SteamCmdError::InstallCancelled { .. })
+    ));
+    assert!(matches!(
+        read_program_install_revision(
+            Path::new(&fixture.settings.servers_root),
+            &fixture.module.summary.id,
+            &fixture.install_root(),
+        ),
+        Err(SteamCmdError::PackageRevisionPending { .. })
     ));
     fixture.assert_retained(true);
     assert!(!fixture.install_root().join("bin").exists());

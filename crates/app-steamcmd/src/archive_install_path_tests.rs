@@ -185,3 +185,177 @@ async fn archive_short_transaction_paths_publish_and_preserve_rollback_and_zip_s
         assert!(!paths.staging_root.exists());
     }
 }
+
+fn locked_publication_script(
+    root: &Path,
+    paths: &ArchiveScratchPaths,
+    locked_file: &Path,
+    on_wait: &str,
+) -> String {
+    let publish = crate::install_transaction::prepared_install_publish_script(
+        root,
+        &paths.staging_root,
+        &paths.rollback_root,
+        &paths.publish_phase_path,
+        &paths.staging_root.join("Server.exe"),
+        &Default::default(),
+    );
+    format!(
+        r#"$script:held = [IO.File]::Open({locked_file}, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+$script:waits = 0
+function Start-Sleep([int]$Milliseconds) {{
+  $script:waits++
+  {on_wait}
+  Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds $Milliseconds
+}}
+try {{
+{publish}
+}} finally {{
+  if ($null -ne $script:held) {{ $script:held.Dispose() }}
+  Write-Output "Contention waits: $script:waits"
+}}
+"#,
+        locked_file = ps_literal(locked_file),
+    )
+}
+
+#[tokio::test]
+async fn archive_publication_retries_released_locks_and_restores_after_persistent_locks() {
+    for release in [true, false] {
+        let fixture = Fixture::new();
+        let root = fixture.parent.join("server");
+        let paths = ArchiveScratchPaths::new(&fixture.parent);
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("previous.txt"), b"original program").unwrap();
+        fs::create_dir(&paths.staging_root).unwrap();
+        fs::write(paths.staging_root.join("Server.exe"), b"new program").unwrap();
+        // Release only after a real rename failed. Scheduling speed cannot make
+        // the transient-lock case pass without exercising the retry boundary.
+        let on_wait = if release {
+            "if ($null -ne $script:held) { $script:held.Dispose(); $script:held = $null }"
+        } else {
+            ""
+        };
+        let script = locked_publication_script(
+            &root,
+            &paths,
+            &paths.staging_root.join("Server.exe"),
+            on_wait,
+        );
+        let output = run_powershell(&script, Some(&fixture.parent), deadline())
+            .await
+            .unwrap();
+        let details = output_excerpt(&output.stdout, &output.stderr);
+        assert!(
+            details.contains("Waiting for directory publication contention"),
+            "{details}"
+        );
+        if release {
+            assert!(output.status.success(), "{details}");
+            assert_eq!(fs::read(root.join("Server.exe")).unwrap(), b"new program");
+            assert_eq!(
+                fs::read(paths.rollback_root.join("previous.txt")).unwrap(),
+                b"original program"
+            );
+            assert_eq!(
+                fs::read_to_string(&paths.publish_phase_path).unwrap(),
+                "rollback_pending"
+            );
+        } else {
+            assert!(
+                !output.status.success(),
+                "persistent lock must prevent publication"
+            );
+            assert!(
+                details.contains("Directory publication failed"),
+                "{details}"
+            );
+            assert!(
+                details.contains("attempts") && details.contains("elapsed"),
+                "{details}"
+            );
+            assert_eq!(
+                fs::read(root.join("previous.txt")).unwrap(),
+                b"original program"
+            );
+            assert!(!root.join("Server.exe").exists());
+            assert!(!paths.rollback_root.exists());
+            assert!(!paths.publish_phase_path.exists());
+        }
+    }
+}
+
+#[tokio::test]
+async fn archive_publication_does_not_retry_replaced_sources_or_new_destinations() {
+    for replace_source in [true, false] {
+        let fixture = Fixture::new();
+        let root = fixture.parent.join("server");
+        let displaced = fixture.parent.join("original");
+        let paths = ArchiveScratchPaths::new(&fixture.parent);
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("previous.txt"), b"original program").unwrap();
+        fs::create_dir(&paths.staging_root).unwrap();
+        fs::write(paths.staging_root.join("Server.exe"), b"new program").unwrap();
+        let on_wait = if replace_source {
+            format!(
+                "$script:held.Dispose(); $script:held = $null; \
+                 [IO.Directory]::Move($root, {}); [IO.Directory]::CreateDirectory($root) | Out-Null; \
+                 [IO.File]::WriteAllText((Join-Path $root 'operator.txt'), 'new directory owner')",
+                ps_literal(&displaced),
+            )
+        } else {
+            String::from(
+                "[IO.Directory]::CreateDirectory($rollback) | Out-Null; \
+                 [IO.File]::WriteAllText((Join-Path $rollback 'operator.txt'), 'new directory owner')",
+            )
+        };
+        let script = locked_publication_script(&root, &paths, &root.join("previous.txt"), &on_wait);
+        let output = run_powershell(&script, Some(&fixture.parent), deadline())
+            .await
+            .unwrap();
+        let details = output_excerpt(&output.stdout, &output.stderr);
+        assert!(
+            !output.status.success(),
+            "changed paths must prevent publication"
+        );
+        assert!(details.contains("Contention waits: 1"), "{details}");
+        let (message, old_root, new_root) = if replace_source {
+            ("Directory publication source changed", &displaced, &root)
+        } else {
+            (
+                "Directory publication destination already exists",
+                &root,
+                &paths.rollback_root,
+            )
+        };
+        assert!(details.contains(message), "{details}");
+        assert!(!paths.publish_phase_path.exists());
+        let recovery = crate::install_transaction::recover_install_publication(
+            &root,
+            &paths.staging_root,
+            &paths.rollback_root,
+            &paths.rejected_root,
+            &paths.publish_phase_path,
+            false,
+        )
+        .await;
+        if replace_source {
+            recovery.unwrap();
+        } else {
+            assert!(matches!(
+                recovery,
+                Err(SteamCmdError::InstallRollbackFailed { .. })
+            ));
+        }
+        assert_eq!(
+            fs::read(old_root.join("previous.txt")).unwrap(),
+            b"original program"
+        );
+        assert_eq!(
+            fs::read(new_root.join("operator.txt")).unwrap(),
+            b"new directory owner"
+        );
+        assert!(!root.join("Server.exe").exists());
+        assert!(!paths.rejected_root.exists());
+    }
+}

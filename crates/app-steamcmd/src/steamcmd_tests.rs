@@ -1379,7 +1379,7 @@ fn direct_download_publish_script_keeps_rollback_until_rust_verification() {
         .find("[IO.File]::WriteAllText($phase, 'rollback_pending')")
         .expect("publish phase is recorded");
     let rollback_move = script
-        .find("Move-Item -LiteralPath $root -Destination $rollback")
+        .find("Move-InstallDirectory $root $rollback")
         .expect("current root is retained as rollback");
     assert!(phase_write < rollback_move);
     assert!(!script.contains("Remove-Item -LiteralPath $rollback"));
