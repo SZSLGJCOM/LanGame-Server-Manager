@@ -6,8 +6,10 @@ const { browserStartupBudget, browserCommand, openViewportSession, waitForBrowse
 
 test("network failures retain their resource and browser cause without request secrets", () => {
   const diagnostics = browserNetworkDiagnostics("http://127.0.0.1:43210/fixture?nonce=secret");
+  const requestUrl = new URL("http://user:secret@127.0.0.1:43210/assets/api-mock.js?token=synthetic-fixture");
+  requestUrl.hash = "secret";
   diagnostics.observe({ method: "Network.requestWillBeSent", params: { requestId: "script", type: "Script",
-    request: { url: "http://user:secret@127.0.0.1:43210/assets/api-mock.js?token=secret#secret",
+    request: { url: requestUrl.href,
       headers: { Authorization: "secret" }, postData: "secret" } } });
   diagnostics.observe({ method: "Network.responseReceived", params: { requestId: "script", response: {
     status: 200, headers: { "Set-Cookie": "secret" } } } });
@@ -19,7 +21,7 @@ test("network failures retain their resource and browser cause without request s
   const snapshot = diagnostics.snapshot();
   snapshot.failures[0].path = "mutated";
   assert.equal(diagnostics.snapshot().failures[0].path, "/assets/api-mock.js");
-  assert.equal(JSON.stringify(diagnostics.snapshot()).includes("secret"), false);
+  assert.doesNotMatch(JSON.stringify(diagnostics.snapshot()), /secret|synthetic-fixture/);
 });
 
 test("network observations release completed and redirected requests and bound retained failures", () => {

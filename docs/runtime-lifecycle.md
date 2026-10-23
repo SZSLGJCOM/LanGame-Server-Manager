@@ -26,6 +26,8 @@ React 页面和 hooks 通过 `api.ts` / `api-transport.ts` 调用 Tauri。桌面
 
 扩展降级不能吞掉取消、并发写入或清理失败。下载超时必须先结束对应工作并释放资源，才能继续已验证安全的原生启动。停止操作独立使用模块声明的原生退出方式；如果某个游戏的管理器停服依赖同一扩展，例如 The Forest，应同时显示停服能力受限，不承诺不存在的原生替代。
 
+程序目录发布若遇到目标冲突、阶段记录无效，或未收到发布成功回执且目标与回滚目录同时存在，会保留两者并报告恢复失败，核实归属前不自动覆盖或删除。
+
 ### 保存与停止
 
 保存检查当前运行身份、已加载世界、实际能力和传输配置；旧运行的日志或回执不能授权新运行的保存。列表卡片、维护工作区及定时保存调用同一保存动作。结果区分“已请求”“原生确认完成”和“结果未知”，请求送达不等于存档已写入。未知结果不自动重发有副作用的保存请求。
@@ -63,6 +65,8 @@ Startup checks ownership, conflicting paths, incomplete recovery and installatio
 A failed source check may reuse verified installed bytes with an explicit warning that the latest version is unknown. An incomplete installation, invalid ownership or damaged program blocks startup. An unavailable optional extension permits native startup only when it can be safely disabled. Unknown injected files, failed cleanup and missing runtime prerequisites remain blocking errors. Cancellation and outstanding writes must finish before any fallback proceeds.
 
 Shutdown uses the module's declared exit mechanism independently of optional saving. Where the game has no verified independent mechanism, such as The Forest's managed shutdown, extension failure also limits shutdown capability; the interface must expose that limitation.
+
+Program publication preserves both directories and reports recovery failure when the destination conflicts, phase evidence is invalid, or both target and rollback exist without a successful publication receipt; it does not overwrite or delete them before ownership is established.
 
 ### Saving, shutdown and retained data
 

@@ -327,6 +327,11 @@ try {{
   try {{
     Move-InstallDirectory $stage $root
   }} catch {{
+    if (Test-Path -LiteralPath $root -ErrorAction Stop) {{
+      # The failed atomic rename did not publish this target. Keep both owners.
+      [IO.File]::WriteAllText($phase, 'publication_conflict')
+      throw 'Directory publication target appeared before the staged payload was published; both directories were preserved.'
+    }}
     if (Test-Path -LiteralPath $rollback) {{ Move-InstallDirectory $rollback $root }}
     Remove-Item -LiteralPath $phase -Force -ErrorAction SilentlyContinue
     throw
@@ -391,14 +396,42 @@ pub(super) async fn recover_install_publication(
     publish_phase_path: &Path,
     published_by_operation: bool,
 ) -> Result<(), SteamCmdError> {
-    if rollback_root.exists() && !published_by_operation && !publish_phase_path.exists() {
+    let recovery_refusal = match fs::read(publish_phase_path) {
+        Ok(phase) if phase == b"publication_conflict" => Some(String::from(
+            "publication failed because another target appeared; the target and rollback were preserved",
+        )),
+        Ok(phase) if phase == b"rollback_pending" => None,
+        Ok(_) => Some(format!(
+            "publish phase {} is invalid; the target and rollback were preserved",
+            publish_phase_path.display()
+        )),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            rollback_root.exists().then(|| {
+                format!(
+                    "rollback {} exists without this operation's publish phase marker",
+                    rollback_root.display()
+                )
+            })
+        }
+        Err(error) => Some(format!(
+            "could not read publish phase {}: {error}; the target and rollback were preserved",
+            publish_phase_path.display()
+        )),
+    };
+    // A failed phase write can leave rollback_pending unchanged. Without the
+    // publisher's success receipt, an occupied target is not ours to remove.
+    let recovery_refusal = recovery_refusal.or_else(|| {
+        (!published_by_operation && install_root.exists() && rollback_root.exists()).then(|| {
+            String::from(
+                "publication was not confirmed and both target and rollback exist; both directories were preserved",
+            )
+        })
+    });
+    if let Some(detail) = recovery_refusal {
         await_failed_directory_cleanup(vec![staging_root.to_path_buf()]).await;
         return Err(SteamCmdError::InstallRollbackFailed {
             path: install_root.to_path_buf(),
-            detail: format!(
-                "rollback {} exists without this operation's publish phase marker",
-                rollback_root.display()
-            ),
+            detail,
         });
     }
     let quarantined = match restore_published_directory(

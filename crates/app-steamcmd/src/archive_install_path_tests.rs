@@ -359,3 +359,113 @@ async fn archive_publication_does_not_retry_replaced_sources_or_new_destinations
         assert!(!paths.rejected_root.exists());
     }
 }
+
+#[tokio::test]
+async fn archive_publication_preserves_new_target_even_when_conflict_phase_cannot_be_written() {
+    for block_phase_write in [false, true] {
+        let fixture = Fixture::new();
+        let root = fixture.parent.join("server");
+        let paths = ArchiveScratchPaths::new(&fixture.parent);
+        fs::create_dir(&root).unwrap();
+        fs::write(root.join("previous.txt"), b"original program").unwrap();
+        fs::create_dir(&paths.staging_root).unwrap();
+        fs::write(paths.staging_root.join("Server.exe"), b"new program").unwrap();
+        let mut on_wait = String::from(
+            "[IO.Directory]::CreateDirectory($root) | Out-Null; \
+             [IO.File]::WriteAllText((Join-Path $root 'operator.txt'), 'new directory owner')",
+        );
+        if block_phase_write {
+            // This handle is released when the owned PowerShell process exits.
+            on_wait.push_str(
+                "; $script:phaseHeld = [IO.File]::Open($phase, \
+                 [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)",
+            );
+        }
+        let script = locked_publication_script(
+            &root,
+            &paths,
+            &paths.staging_root.join("Server.exe"),
+            &on_wait,
+        );
+        let output = run_powershell(&script, Some(&fixture.parent), deadline())
+            .await
+            .unwrap();
+        let details = output_excerpt(&output.stdout, &output.stderr);
+        assert!(!output.status.success(), "{details}");
+        assert!(details.contains("Contention waits: 1"), "{details}");
+        assert_eq!(
+            fs::read_to_string(&paths.publish_phase_path).unwrap(),
+            if block_phase_write {
+                "rollback_pending"
+            } else {
+                "publication_conflict"
+            },
+            "{details}"
+        );
+        let assert_preserved = || {
+            assert_eq!(
+                fs::read(paths.rollback_root.join("previous.txt")).unwrap(),
+                b"original program"
+            );
+            assert_eq!(
+                fs::read(root.join("operator.txt")).unwrap(),
+                b"new directory owner"
+            );
+            assert!(!root.join("Server.exe").exists());
+            assert!(!paths.rejected_root.exists());
+        };
+        let recovery = crate::install_transaction::recover_install_publication(
+            &root,
+            &paths.staging_root,
+            &paths.rollback_root,
+            &paths.rejected_root,
+            &paths.publish_phase_path,
+            false,
+        )
+        .await;
+        assert!(matches!(
+            recovery,
+            Err(SteamCmdError::InstallRollbackFailed { .. })
+        ));
+        assert_preserved();
+
+        // Invalid or missing phase evidence must not become authority even when
+        // a caller reports that publication completed.
+        for phase in [Some(b"truncated".as_slice()), Some(b"".as_slice()), None] {
+            if let Some(phase) = phase {
+                fs::write(&paths.publish_phase_path, phase).unwrap();
+            } else {
+                fs::remove_file(&paths.publish_phase_path).unwrap();
+            }
+            let recovery = crate::install_transaction::recover_install_publication(
+                &root,
+                &paths.staging_root,
+                &paths.rollback_root,
+                &paths.rejected_root,
+                &paths.publish_phase_path,
+                true,
+            )
+            .await;
+            assert!(matches!(
+                recovery,
+                Err(SteamCmdError::InstallRollbackFailed { .. })
+            ));
+            assert_preserved();
+        }
+        fs::create_dir(&paths.publish_phase_path).unwrap();
+        let recovery = crate::install_transaction::recover_install_publication(
+            &root,
+            &paths.staging_root,
+            &paths.rollback_root,
+            &paths.rejected_root,
+            &paths.publish_phase_path,
+            true,
+        )
+        .await;
+        assert!(matches!(
+            recovery,
+            Err(SteamCmdError::InstallRollbackFailed { .. })
+        ));
+        assert_preserved();
+    }
+}
