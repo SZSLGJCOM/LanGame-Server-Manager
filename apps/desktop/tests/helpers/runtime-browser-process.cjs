@@ -6,6 +6,7 @@ const { spawn, execFile, execFileSync } = require("node:child_process");
 const { promisify } = require("node:util");
 const { setTimeout: delay } = require("node:timers/promises");
 const { randomUUID } = require("node:crypto");
+const { monitorEventLoopDelay } = require("node:perf_hooks");
 const { after } = require("node:test");
 const { preProcessFile } = require("@typescript/typescript6");
 const { pollBrowserEndpoint } = require("./runtime-browser-endpoint.cjs");
@@ -811,7 +812,18 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
         finishStartupObservation();
       }
     } finally { startupBudget.dispose(); }
-    report = await waitForFixtureReport({ session: viewportSession, url, result, exited, timeoutMs: fixtureTimeoutMs });
+    const fixtureResourceStart = sampleHostResources();
+    const fixtureLoopDelay = monitorEventLoopDelay({ resolution: 20 });
+    fixtureLoopDelay.enable();
+    try {
+      report = await waitForFixtureReport({ session: viewportSession, url, result, exited, timeoutMs: fixtureTimeoutMs });
+    } finally {
+      fixtureLoopDelay.disable();
+      startup.fixture_wait = {
+        ...hostResourceUsage(fixtureResourceStart, sampleHostResources()),
+        node_event_loop_max_delay_ms: fixtureLoopDelay.count > 0 ? fixtureLoopDelay.max / 1e6 : null,
+      };
+    }
     assert.equal(report.status, "passed", report.error || JSON.stringify(report));
     assert.ok(endpoint, "Browser did not publish its isolated DevTools endpoint");
     processIds = await browserProcessSnapshot(endpoint, child.pid);

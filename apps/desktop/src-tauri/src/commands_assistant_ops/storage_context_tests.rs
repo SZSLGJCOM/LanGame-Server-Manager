@@ -50,20 +50,32 @@ async fn assistant_and_player_operations_keep_their_storage_after_environment_ch
 #[tokio::test(flavor = "current_thread")]
 #[ignore = "child entry: changes only its own environment and disposable storage"]
 async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::error::Error>> {
+    let started = std::time::Instant::now();
+    let phase = |name: &str| {
+        eprintln!(
+            "assistant context: {name} ({} ms)",
+            started.elapsed().as_millis()
+        );
+    };
+    phase("initialize owned storage");
     let root = PathBuf::from(std::env::var_os(ROOT_VARIABLE).ok_or("missing child fixture root")?);
     let _owned_environment = ProgramDataEnvGuard::set(&root.join("owned/programdata"));
     let storage = bootstrap_storage()?;
     let app = tauri::test::mock_builder()
         .manage(DesktopState::default())
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
+    phase("initialize owned database");
     ensure_storage_ready(app.state::<DesktopState>()).await?;
+    phase("create Minecraft instance");
     let minecraft = create_context_instance(&app, &storage, "minecraft").await?;
+    phase("create Astroneer instance");
     let astroneer = create_context_instance(&app, &storage, "astroneer").await?;
     let native_save =
         Path::new(&astroneer.saves_path).join("Owned World$2026.10.09-12.00.00.savegame");
     fs::create_dir_all(native_save.parent().unwrap())?;
     fs::write(&native_save, b"original context save")?;
 
+    phase("switch ambient storage");
     let _ambient_environment = ProgramDataEnvGuard::set(&root.join("ambient/programdata"));
     let ambient = bootstrap_storage()?;
     let ambient_settings = fs::read(&ambient.paths.settings_path)?;
@@ -74,6 +86,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
         base_url: "mock://langame-assistant-smoke".into(),
         api_key: "synthetic-test-only".into(),
     };
+    phase("assistant provider request");
     let reply = assistant_run(
         app.state::<DesktopState>(),
         AssistantRunInput {
@@ -88,6 +101,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
 
     // Only the provider is synthetic. Preview, confirmation, optimistic
     // preconditions, configuration rendering and persisted readback are real.
+    phase("assistant preview");
     let preview = assistant_preview_operation_inner(
         app.state::<DesktopState>(),
         AssistantExecuteOperationInput {
@@ -120,6 +134,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
             .ok_or("missing confirmation token")?,
         plan_summary: preview.plan_summary.ok_or("missing plan summary")?,
     };
+    phase("assistant confirmation");
     let output =
         assistant_confirm_operation_inner(app.state::<DesktopState>(), confirmation.clone())
             .await?;
@@ -135,6 +150,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
     let settings: Value = serde_json::from_str(&saved.settings_json)?;
     assert_eq!(settings["max_players"], 24);
 
+    phase("player access mutation");
     let roster_entry = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,Alex";
     let mutation = apply_instance_player_access_mutation(
         app.state::<DesktopState>(),
@@ -164,6 +180,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
     assert_eq!(roster[0]["uuid"], "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11");
     assert_eq!(roster[0]["name"], "Alex");
 
+    phase("stopped server manual action");
     let denied =
         crate::commands::commands_manual_player_actions::execute_instance_manual_player_action(
             app.state::<DesktopState>(),
@@ -178,6 +195,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
         .unwrap_err();
     assert_eq!(denied, "The server is not running.");
 
+    phase("read connection and save catalogs");
     let connections = read_instance_connection_info_from_storage(
         app.state::<DesktopState>(),
         vec![minecraft.summary.id.clone()],
@@ -193,6 +211,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
     assert_eq!(catalog.entries[0].descriptive_name, "Owned World");
     assert_eq!(fs::read(&native_save)?, b"original context save");
 
+    phase("verify retained storage and logs");
     let log = fs::read_to_string(storage.paths.app_log_path())?;
     assert!(log.contains("assistant.run.success"));
     assert!(log.contains("instance.player_access.request"));
@@ -200,6 +219,7 @@ async fn assistant_storage_context_process_fixture() -> Result<(), Box<dyn std::
     assert_eq!(fs::read(&ambient.paths.settings_path)?, ambient_settings);
     assert!(!ambient.paths.database_path.exists());
     assert!(!ambient.paths.app_log_path().exists());
+    phase("fixture assertions complete");
     Ok(())
 }
 
