@@ -2,7 +2,9 @@ use super::*;
 use crate::instance_creation_io::copy_creation_file;
 use crate::instance_isolation::paths::contains;
 use crate::private_runtime_refresh::{hash_file, relative_key};
-use crate::program_library_cleanup::{inspect_tree, library_cleanup_retained_paths};
+use crate::program_library_cleanup::{
+    MAX_TREE_ENTRIES, inspect_tree, library_cleanup_retained_paths,
+};
 
 /// Old manifests remain valid update inputs even without an archive digest.
 /// The digest is evidence for skipping a later download, not an upgrade gate.
@@ -85,12 +87,12 @@ pub fn merge_archive_program_update(
         .map(|(key, hash)| (key.to_ascii_lowercase(), hash))
         .collect::<BTreeMap<_, _>>();
     let retained = retained_paths(&source, descriptor, protected)?;
-    let entries = inspect_tree(&source)?;
+    let entries = inspect_tree(&source, MAX_TREE_ENTRIES)?;
     let original_entries = entries
         .iter()
         .map(|entry| (entry.key.clone(), entry.directory))
         .collect::<BTreeSet<_>>();
-    inspect_tree(&stage)?;
+    inspect_tree(&stage, MAX_TREE_ENTRIES)?;
     let selected = entries
         .iter()
         .filter(|entry| retained.iter().any(|path| contains(path, &entry.path)))
@@ -175,7 +177,7 @@ pub fn merge_archive_program_update(
             ));
         }
     }
-    let current_entries = inspect_tree(&source)?
+    let current_entries = inspect_tree(&source, MAX_TREE_ENTRIES)?
         .into_iter()
         .map(|entry| (entry.key, entry.directory))
         .collect::<BTreeSet<_>>();

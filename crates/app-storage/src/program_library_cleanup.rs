@@ -12,7 +12,7 @@ use crate::private_runtime_refresh::{hash_file, validated_relative_path};
 use crate::{ProgramInstallRecord, ProgramInstallScope, StorageError, StoragePaths};
 
 const MAX_INSTALLATIONS: usize = 4_096;
-const MAX_TREE_ENTRIES: usize = 200_000;
+pub(crate) const MAX_TREE_ENTRIES: usize = 200_000;
 const MAX_TREE_DEPTH: usize = 64;
 const MAX_METADATA_BYTES: u64 = 65_536;
 
@@ -175,7 +175,7 @@ pub fn library_cleanup_retained_paths(
     };
     // Inspect all subtrees first, including unknown and excluded data. A link
     // hidden in a retained directory must not bypass the removal preflight.
-    let entries = inspect_tree(&root)?;
+    let entries = inspect_tree(&root, MAX_TREE_ENTRIES)?;
     let mut retained_keys = BTreeSet::new();
     let mut retained = Vec::new();
     for entry in entries {
@@ -205,7 +205,10 @@ pub(crate) struct TreeEntry {
     pub(crate) directory: bool,
 }
 
-pub(crate) fn inspect_tree(root: &Path) -> Result<Vec<TreeEntry>, StorageError> {
+pub(crate) fn inspect_tree(
+    root: &Path,
+    max_entries: usize,
+) -> Result<Vec<TreeEntry>, StorageError> {
     let mut entries = Vec::new();
     let mut pending = vec![(root.to_owned(), 0usize)];
     let mut visited = 0usize;
@@ -226,7 +229,7 @@ pub(crate) fn inspect_tree(root: &Path) -> Result<Vec<TreeEntry>, StorageError> 
                 source,
             })?;
             visited += 1;
-            if visited > MAX_TREE_ENTRIES {
+            if visited > max_entries {
                 return Err(invalid(
                     root,
                     "library cleanup tree exceeds its entry limit",

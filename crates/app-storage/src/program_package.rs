@@ -409,7 +409,7 @@ pub fn program_package_path_filter(
 ) -> Result<impl Fn(&str) -> bool, StorageError> {
     let exclusions = package_exclusions(descriptor)?;
     let dst = descriptor.summary.id == "dontstarve";
-    Ok(move |path| !excluded(path, &exclusions, dst))
+    Ok(move |path: &str| !excluded(path, &exclusions, dst))
 }
 
 pub(super) fn package_exclusions(
