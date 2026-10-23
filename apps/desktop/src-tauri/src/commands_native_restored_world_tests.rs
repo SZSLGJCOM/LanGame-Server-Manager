@@ -317,7 +317,7 @@ fn restored_world_never_promotes_profiles_without_content_binding() {
         "after_archive_restore",
         "after_program_maintenance",
     ] {
-        for module in ["valheim", "runescapedragonwilds", "vrising"] {
+        for module in ["valheim", "runescapedragonwilds", "vrising", "necesse"] {
             assert!(applies(module, cycle).unwrap());
         }
         for module in [

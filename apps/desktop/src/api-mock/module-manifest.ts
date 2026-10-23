@@ -155,6 +155,9 @@ export function parseMockInstallFromModuleToml(moduleId: string): ModuleDetails[
   const toml = mockModuleTomlById[moduleId];
   const table = toml ? readMockTomlTable(toml, "install") : "";
   const minecraftTable = toml ? readMockTomlTable(toml, "install.minecraft") : "";
+  const integrityTable = toml ? readMockTomlTable(toml, "install.download_integrity_windows") : "";
+  const sha256 = readMockTomlString(integrityTable, "sha256");
+  const size = readMockTomlInteger(integrityTable, "size");
   if (!table && !minecraftTable) {
     return { shared_game_dir: moduleId };
   }
@@ -162,6 +165,7 @@ export function parseMockInstallFromModuleToml(moduleId: string): ModuleDetails[
   return {
     shared_game_dir: readMockTomlString(table, "shared_game_dir") ?? moduleId,
     download_url_windows: readMockTomlString(table, "download_url_windows"),
+    download_integrity_windows: sha256 && size != null ? { sha256, size } : null,
     source: readMockTomlString(table, "source"),
     verification_path: readMockTomlString(table, "verification_path"),
     minecraft: minecraftTable

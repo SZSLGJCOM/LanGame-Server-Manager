@@ -50,6 +50,7 @@ async fn unsupported_unreal_start_keeps_clean_games_native_without_downloading()
             "AbioticFactorServer-Win64-Shipping.exe",
         ),
         ("nightingale", "NWX", "NWXServer-Win64-Shipping.exe"),
+        ("returntomoria", "Moria", "MoriaServer-Win64-Shipping.exe"),
         (
             "conanexiles",
             "ConanSandbox",
@@ -70,13 +71,19 @@ async fn unsupported_unreal_start_keeps_clean_games_native_without_downloading()
 }
 
 #[tokio::test]
-async fn unsupported_unreal_start_preserves_native_stop_and_image_errors() {
+async fn unsupported_unreal_start_still_requires_native_program_files() {
     let state = DesktopState::default();
     let operation = state
         .begin_storage_context_operation("invalid Unreal program")
         .unwrap();
-    let (_fixture, moria) =
+    let (fixture, moria) =
         Fixture::new("returntomoria", "Moria", "MoriaServer-Win64-Shipping.exe");
+    fs::remove_file(
+        fixture
+            .0
+            .join("runtime/Moria/Binaries/Win64/MoriaServer-Win64-Shipping.exe"),
+    )
+    .unwrap();
     assert!(ensure_unreal(&moria, &operation).await.is_err());
     let (fixture, details) = Fixture::new(
         "conanexiles",

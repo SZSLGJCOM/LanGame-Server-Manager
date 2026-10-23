@@ -102,6 +102,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     {
         checkpoint::moria::verify_loaded(runtime, running, cycle).await?;
         checkpoint::terraria::verify_loaded(runtime, running, cycle).await?;
+        checkpoint::necesse::verify_loaded(runtime, running, cycle).await?;
         checkpoint::restored_world::verify_loaded(runtime, running, cycle).await?;
         require_current(runtime, running, &expected).await?;
     }
@@ -125,6 +126,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     let requested_observation = checkpoint::requested::prepare(runtime, running, cycle).await?;
     let moria_observation = checkpoint::moria::prepare(runtime, running, cycle).await?;
     let terraria_observation = checkpoint::terraria::prepare(runtime, running, cycle).await?;
+    let necesse_observation = checkpoint::necesse::prepare(runtime, running, cycle).await?;
     let input = serde_json::from_value(json!({
         "instanceId": running.summary.id,
         "command": action.command_template,
@@ -227,7 +229,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     if checkpoint::enabled()? {
         if matches!(
             running.summary.module_id.as_str(),
-            "runescapedragonwilds" | "vrising" | "returntomoria" | "terraria"
+            "runescapedragonwilds" | "vrising" | "returntomoria" | "terraria" | "necesse"
         ) {
             if result.save_completion != Some(WorldSaveCompletion::Requested) {
                 return Err("Reflected native save must retain its Requested receipt".into());
@@ -242,6 +244,9 @@ pub(super) async fn verify<R: tauri::Runtime>(
                 observation.wait().await?;
                 require_current(runtime, running, &expected).await?;
             } else if let Some(observation) = terraria_observation {
+                observation.wait().await?;
+                require_current(runtime, running, &expected).await?;
+            } else if let Some(observation) = necesse_observation {
                 observation.wait().await?;
                 require_current(runtime, running, &expected).await?;
             } else if cycle == "initial" {

@@ -4,7 +4,19 @@ use app_core::InstallVerificationStage;
 // Independent depot wire fixture for the standard SHA-1 vector "abc". Keep the
 // acquisition pipeline test independent of the manifest parser's constructors.
 const ORIGINAL_DEPOT: &str = "d017f671230000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0d000000080710092000280348b8e1fe5317b8811b00000000ab15c432";
+// Three official files containing "abc": one program file and two game configs.
+const CONFIG_DEPOT: &str = "d017f6718e0000000a210a05782e62696e100318002a14a9993e364706816aba3e25717850c26c9cd0d89d0a400a246d6f64732f6465646963617465645f7365727665725f6d6f64735f73657475702e6c7561100318002a14a9993e364706816aba3e25717850c26c9cd0d89d0a270a0b636f6e6669672e6a736f6e100318002a14a9993e364706816aba3e25717850c26c9cd0d89dbe12481f0e00000008071009200028094891fefbfd0817b8811b00000000ab15c432";
 const ABC_SHA256: &str = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
+fn depot_bytes(value: &str) -> Vec<u8> {
+    value
+        .as_bytes()
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
+        .collect()
+}
 
 fn prepare_steam_acquisition(
     fixture: &mut ProgramBaselineFixture,
@@ -21,15 +33,79 @@ fn prepare_steam_acquisition(
         root.join("steamapps/appmanifest_7.acf"),
         r#""AppState" { "appid" "7" "StateFlags" "4" "buildid" "17" "TargetBuildID" "17" "InstalledDepots" { "7" { "manifest" "9" } } }"#,
     )?;
-    let depot = ORIGINAL_DEPOT
-        .as_bytes()
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), 16).unwrap())
-        .collect::<Vec<_>>();
-    fs::write(steamcmd.join("depotcache/7_9.manifest"), depot)?;
+    fs::write(
+        steamcmd.join("depotcache/7_9.manifest"),
+        depot_bytes(ORIGINAL_DEPOT),
+    )?;
     Ok((root, steamcmd))
+}
+
+#[tokio::test]
+async fn steam_acquisition_pipeline_preserves_declared_configs_outside_the_program_allowlist()
+-> Result<(), Box<dyn std::error::Error>> {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)
+        .unwrap();
+    let modules = discover_modules(workspace.join("modules"))?;
+    for (module_id, config) in [
+        ("dontstarve", "mods/dedicated_server_mods_setup.lua"),
+        ("romestead", "config.json"),
+    ] {
+        let mut fixture = ProgramBaselineFixture::new()?;
+        fixture.descriptor = modules
+            .iter()
+            .find(|module| module.summary.id == module_id)
+            .unwrap()
+            .clone();
+        let (root, steamcmd) = prepare_steam_acquisition(&mut fixture)?;
+        fs::create_dir(root.join("mods"))?;
+        for path in ["mods/dedicated_server_mods_setup.lua", "config.json"] {
+            fs::write(root.join(path), b"abc")?;
+        }
+        fs::write(
+            root.join(config),
+            b"operator settings retained across updates",
+        )?;
+        fs::write(
+            steamcmd.join("depotcache/7_9.manifest"),
+            depot_bytes(CONFIG_DEPOT),
+        )?;
+        let guard = app_steamcmd::acquire_game_install_lifecycle(
+            &fixture.state.install_locks,
+            module_id,
+            std::slice::from_ref(&root),
+        )
+        .await?;
+        let _guard = fixture
+            .recorder()?
+            .finish_steam_acquisition(guard, root.clone(), steamcmd, 7, "17".into(), |_| {})
+            .await?;
+
+        assert_eq!(
+            fs::read(root.join(config))?,
+            b"operator settings retained across updates",
+            "{module_id} operator configuration must remain untouched",
+        );
+        for name in [
+            ".langame-clean-package.json",
+            ".langame-initial-package.json",
+        ] {
+            let inventory: serde_json::Value = serde_json::from_slice(&fs::read(root.join(name))?)?;
+            let files = inventory["files"].as_object().unwrap();
+            assert!(files.get(config).is_none(), "{module_id}: {name}");
+            assert_eq!(files["x.bin"], ABC_SHA256);
+            assert!(files.contains_key("steamapps/appmanifest_7.acf"));
+            assert_eq!(files.len(), 3);
+        }
+        assert!(app_storage::library_program_is_pristine(
+            &root,
+            &fixture.descriptor,
+            None,
+        )?);
+        assert!(!root.join(".langame-program-acquisition.json").exists());
+    }
+    Ok(())
 }
 
 #[tokio::test]

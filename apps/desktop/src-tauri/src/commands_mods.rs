@@ -113,9 +113,9 @@ impl Drop for DownloadedManualModSourcesCleanup {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct ProtectedInstallDataPath {
+pub(super) struct ProtectedInstallDataPath {
     source: String,
-    path: Option<PathBuf>,
+    pub(super) path: Option<PathBuf>,
 }
 
 #[derive(Clone, Copy, serde::Serialize)]
@@ -213,7 +213,7 @@ fn path_is_same_or_within(candidate: &Path, root: &Path) -> bool {
     }
 }
 
-async fn collect_protected_install_data_paths(
+pub(super) async fn collect_protected_install_data_paths(
     paths: &app_storage::StoragePaths,
     descriptor: &ModuleDescriptor,
     install_root: &Path,
@@ -418,6 +418,13 @@ fn reject_unsafe_direct_download_replacement(
         .ok_or_else(|| format!("模块 `{}` 缺少安装声明", descriptor.summary.id))?;
     let install_root = PathBuf::from(&settings.games_root).join(&install.shared_game_dir);
     if !install_root_has_entries(&install_root)? {
+        return Ok(());
+    }
+    if app_storage::archive_program_has_baseline(&install_root, descriptor)
+        .map_err(|error| error.to_string())?
+    {
+        // The common updater rechecks ownership under its lifecycle lease and
+        // merges retained data into the verified stage before publication.
         return Ok(());
     }
     if app_steamcmd::has_retained_install_data(&install_root)

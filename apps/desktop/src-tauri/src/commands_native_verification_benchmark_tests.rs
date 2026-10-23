@@ -114,6 +114,7 @@ fn official_inventory(
     version: &str,
 ) -> TestResult<ProgramBaselineInventory> {
     let mut evidence = VerifiedProgramFiles::default();
+    let include_path = app_storage::program_package_path_filter(descriptor)?;
     let verified = app_steamcmd::verify_installed_steam_package_with_progress(
         root,
         steamcmd,
@@ -122,7 +123,10 @@ fn official_inventory(
             .steam_app_id
             .ok_or("missing Steam app ID")?,
         version,
-        None,
+        app_steamcmd::SteamPackageVerificationOptions {
+            include_path: Some(&include_path),
+            ..Default::default()
+        },
         |_| {},
         |relative, file, digest| {
             evidence

@@ -12,6 +12,8 @@ param(
     [Parameter(ParameterSetName = 'Managed')]
     [switch]$SignUpdates,
     [Parameter(ParameterSetName = 'Managed')]
+    [switch]$FreshTarget,
+    [Parameter(ParameterSetName = 'Managed')]
     [ValidateRange(0, 21600)][int]$WaitTimeoutSeconds = 1800,
     [Parameter(Mandatory = $true, ParameterSetName = 'Export')]
     [ValidateNotNullOrEmpty()]
@@ -224,6 +226,7 @@ if ($BuildManaged) {
         '-SnapshotReceiptPath', $receiptPath, '-SnapshotArtifacts', ($artifacts -join ','),
         '-WaitTimeoutSeconds', [string]$WaitTimeoutSeconds
     )
+    if ($FreshTarget) { $buildArguments += '-FreshTarget' }
     if ($EnableGitHubUpdates) { $buildArguments += '-DesktopUpdatesEnabled' }
     $buildArguments += '--locked'
     $oldStaticVcruntime = [Environment]::GetEnvironmentVariable('STATIC_VCRUNTIME', 'Process')

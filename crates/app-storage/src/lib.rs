@@ -161,11 +161,12 @@ mod program_seed;
 pub use program_detach::detach_instance_program;
 pub use program_seed::{
     CleanLibrarySeed, LibraryProgramAcquisition, ProgramBaselineInventory, VerifiedProgramFiles,
+    archive_program_has_baseline, archive_program_is_current,
     begin_empty_library_program_acquisition, library_program_acquisition_is_trusted,
-    library_program_is_pristine, prepare_clean_library_seed, prepare_clean_library_seed_at,
-    prepare_instance_program_seed_at, read_library_program_acquisition,
-    record_library_program_baseline, record_library_program_baseline_with_progress,
-    record_verified_library_program_baseline,
+    library_program_is_pristine, merge_archive_program_update, prepare_clean_library_seed,
+    prepare_clean_library_seed_at, prepare_instance_program_seed_at, program_package_path_filter,
+    read_library_program_acquisition, record_library_program_baseline,
+    record_library_program_baseline_with_progress, record_verified_library_program_baseline,
     record_verified_library_program_baseline_with_progress, restore_library_program_acquisition,
     retain_published_library_program_baseline,
     retain_published_library_program_baseline_with_progress,

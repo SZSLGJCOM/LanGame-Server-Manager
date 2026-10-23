@@ -12,7 +12,7 @@ pub mod manifest;
 mod verification;
 use manifest::{Object, collect_depots, decimal, depot_gid, insert_depot, object, parse_acf, text};
 pub use verification::{
-    VerifiedSteamPackage, verify_installed_steam_package,
+    SteamPackageVerificationOptions, VerifiedSteamPackage, verify_installed_steam_package,
     verify_installed_steam_package_with_progress,
 };
 
@@ -201,7 +201,12 @@ pub(crate) fn read_inventory(
                 result.missing_manifests.push(path);
                 continue;
             }
-            Err(error) => return Err(error),
+            Err(error) => {
+                return Err(io::Error::new(
+                    error.kind(),
+                    format!("Steam depot manifest {}: {error}", path.display()),
+                ));
+            }
         };
         let (files, directories) = manifest::manifest_inventory(&bytes, depot, gid)?;
         result.directories.extend(directories);

@@ -70,6 +70,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_desktop_update
 
 `-BuildPortable` refuses managed build hosts. Follow that environment's approved build entry instead of bypassing its resource controls.
 
+If the managed host cannot safely reuse a target directory, `-BuildManaged -FreshTarget` requests a new isolated target through the same resource manager. It retains memory admission, storage limits, source snapshots and artifact receipts; it does not stop another build or remove its cache. Use the default reusable target for ordinary builds.
+
 Build the offline companion from the same source version with `-OfflineInstaller`, a separate new `-OutputRoot`, the same signing key, and the same `-EnableGitHubUpdates` setting. This flag changes WebView2 delivery and export names, not the installed application's update channel. An update-enabled offline installation subsequently updates through the small package. Managed builds use `-BuildManaged -SignUpdates` (or `-EnableGitHubUpdates`) and retain a separate immutable configuration receipt for each package; the wrapper can reuse its compilation cache. Do not reuse a receipt for a different bundle configuration or repackage a released target directory outside its managed session.
 
 `build.windows.staticVCRuntime=true` in `tauri.conf.json` is the release CRT policy. The release entry copies this explicit boolean into the captured merge configuration and temporarily clears Tauri's deprecated `STATIC_VCRUNTIME` environment override, restoring the caller's environment on success or failure. New managed receipts bind their CRT setting to that hashed configuration; this records the build input, not proof of the binary's imports.
@@ -176,7 +178,7 @@ References: [Tauri updater and static JSON](https://v2.tauri.app/plugin/updater/
 完整参数与验收要求见上文；以下按实际发布顺序执行：
 
 1. 将 Cargo、npm、Tauri 及对应锁文件版本统一为待发布版本。保留精确候选提交的完整 CI 结果；同一候选已通过完整检查时无需重复运行。
-2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机使用 `-BuildManaged`，签名和更新选项沿用受管发行入口。私钥通过发行环境传入，保留现有 updater 公钥。
+2. 在仓库外的新目录准备 UTF-8 更新说明。普通 Windows 主机使用 `-BuildPortable`；受管主机使用 `-BuildManaged`，签名和更新选项沿用受管发行入口。无法安全复用构建目录时，可加 `-FreshTarget` 申请受管独立目录，仍遵守资源准入与容量限制。私钥通过发行环境传入，保留现有 updater 公钥。
 3. 小包使用 `embedBootstrapper`，缺 WebView2 时从微软联网安装。用独立输出目录加 `-OfflineInstaller` 构建内嵌完整 WebView2 的离线包；两包版本、更新通道与签名密钥一致。
 4. `-EnableGitHubUpdates` 启用 GitHub 更新；`-EnableRegionalUpdates` 同时启用官网地区清单。地区服务、GitCode 附件与匿名读取须先通过[部署验收](../deploy/desktop-updates/README.md)。
 5. 检查实际安装包、两份 updater 签名、微软 WebView2 载荷签名和两个应用可执行文件的运行库依赖。在隔离 Windows 环境执行安装、升级、卸载、数据保留、真实开服和旧版在线更新验收。编译夹具或配置回执不能替代实际安装。

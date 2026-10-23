@@ -9,7 +9,7 @@ use super::commands_module_mutation_locks;
 
 #[path = "commands_library_baseline.rs"]
 mod baseline;
-pub(super) use baseline::LibraryBaselineRecorder;
+pub(super) use baseline::{LibraryBaselineRecorder, run_baseline_worker};
 
 #[path = "commands_program_update.rs"]
 mod update;
@@ -389,13 +389,11 @@ pub(super) async fn update_instance_program_inner(
     let descriptors =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
-    if descriptor
-        .install
-        .as_ref()
-        .is_some_and(|install| install.download_url_windows.is_some())
-    {
+    if descriptor.install.as_ref().is_some_and(|install| {
+        install.download_url_windows.is_some() && install.download_integrity_windows.is_none()
+    }) {
         return Err(String::from(
-            "此游戏使用整包替换安装；为保留实例中的配置和Mod，不能直接覆盖独立程序目录。",
+            "此安装源缺少官方包校验信息，不能安全更新已有程序目录。",
         ));
     }
     let root_text = root.to_string_lossy();

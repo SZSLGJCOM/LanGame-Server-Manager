@@ -54,8 +54,8 @@ impl Candidate {
             instance_id: instance_id.into(),
             module_id: module_id.into(),
             ports: Ports::from_bindings(bindings)?,
-            // The two Forest servers also completed isolated native probes
-            // within a 10 GiB whole-test Job peak each on this workstation.
+            // Only modules with bounded native probe measurements share slots;
+            // unmeasured modules retain exclusive admission.
             exclusive: !matches!(
                 module_id,
                 "terraria"

@@ -25,6 +25,8 @@ pub(super) fn roots(module: &str, saves: &Path) -> Result<Vec<PathBuf>, String> 
         "valheim" => Ok(vec![saves.join("worlds_local")]),
         // Native V Rising rotates compressed autosaves within its versioned world.
         "vrising" => Ok(vec![saves.join("v4")]),
+        // Native ZIP containers and directory worlds stay unchanged as a family.
+        "necesse" => Ok(vec![saves.join("worlds")]),
         // record.json and state must stay together. ServerState selects the same
         // dedicated deploy; logs, crash output and IPC are not persistence input.
         "nightingale" => Ok(vec![
@@ -154,6 +156,7 @@ pub(super) fn require_loaded(module: &str, before: &str, fresh: &str) -> Result<
         // Bind the reloaded world to the last completed native save number.
         "valheim" => valheim_loaded(before, fresh)?,
         "terraria" => return super::terraria::require_loaded(before, fresh),
+        "necesse" => return super::necesse::require_loaded(before, fresh),
         "vrising" => vrising_loaded(before, fresh),
         "theforest" => {
             return Err("The Forest has no verified reload-specific native log observation; world_ready does not prove a checkpoint was loaded".into());

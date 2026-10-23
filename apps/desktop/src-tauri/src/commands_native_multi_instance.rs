@@ -29,14 +29,14 @@ pub(super) async fn run_initial<R: tauri::Runtime>(
         .package
         .cleanup_allowed
         .store(false, Ordering::SeqCst);
-    start_instance_process_after_reconcile(
+    Box::pin(start_instance_process_after_reconcile(
         None,
         runtime.state,
         runtime.storage,
         peer.summary.id.clone(),
         "manual",
         None,
-    )
+    ))
     .await?;
     prestart.verify(runtime.storage, &peer, "concurrent_peer")?;
     let running = read_instance_details(&runtime.storage.paths, &peer.summary.id).await?;

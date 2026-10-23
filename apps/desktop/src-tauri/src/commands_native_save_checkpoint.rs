@@ -11,6 +11,8 @@ use super::super::native_logs as log_cursor;
 pub(super) mod dragon;
 #[path = "commands_native_moria_save_observation.rs"]
 pub(super) mod moria;
+#[path = "commands_native_necesse_checkpoint.rs"]
+pub(super) mod necesse;
 #[path = "commands_native_save_checkpoint_profiles.rs"]
 mod profiles;
 #[path = "commands_native_requested_save_observation.rs"]
@@ -355,6 +357,7 @@ async fn capture_owned(
     }
     terraria::verify_capture(running)?;
     moria::verify_capture(running)?;
+    necesse::verify_capture(running)?;
     let capture_logs = log_paths(
         &fixture,
         profiles::native_logs(&running.summary.module_id, &program, running),
@@ -537,6 +540,7 @@ pub(super) async fn verify<R: tauri::Runtime>(
     running: &InstanceDetails,
 ) -> Result<(), Box<dyn std::error::Error>> {
     terraria::verify_loaded(runtime, running, "restart").await?;
+    necesse::verify_loaded(runtime, running, "restart").await?;
     let (fixture, running) = input(runtime, running)?;
     worker(move || verify_owned(&fixture, &running)).await
 }

@@ -709,6 +709,10 @@ pub(super) fn steamcmd_install_script_lines_with_login(
         steamcmd_script_path(install_root)
     ));
     script_lines.push(super::steamcmd_account::workshop_login_line(account_name));
+    // app_update can accept an installed ACF before its asynchronous app-info
+    // fetch finishes. Resolve this app's refreshed metadata before updating it.
+    script_lines.push(String::from("app_info_update 1"));
+    script_lines.push(format!("app_info_print {steam_app_id}"));
 
     let mut app_update_line = format!("app_update {steam_app_id}");
     if validate {

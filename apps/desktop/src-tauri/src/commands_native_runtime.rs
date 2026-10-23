@@ -85,14 +85,15 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
         let prestart_probe = prestart_probe::PrestartProbe::begin(storage, details, descriptor)?;
         package.cleanup_allowed.store(false, Ordering::SeqCst);
         let start_requested = Instant::now();
-        let started = match start_instance_process_after_reconcile(
+        // Keep the production startup future off the nested native test stack.
+        let started = match Box::pin(start_instance_process_after_reconcile(
             None,
             state,
             storage,
             id.to_owned(),
             "manual",
             preview,
-        )
+        ))
         .await
         {
             Ok(started) => started,

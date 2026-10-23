@@ -120,7 +120,7 @@ pub use retained_install_data::{
     RETAINED_INSTALL_DATA_MARKER, has_retained_install_data, mark_retained_install_data,
 };
 pub use steam_depot::{
-    VerifiedSteamPackage, verify_installed_steam_package,
+    SteamPackageVerificationOptions, VerifiedSteamPackage, verify_installed_steam_package,
     verify_installed_steam_package_with_progress,
 };
 pub use steamcmd_account::{

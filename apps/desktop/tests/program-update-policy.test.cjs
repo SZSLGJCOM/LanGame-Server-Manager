@@ -38,7 +38,7 @@ test("stale policy writes cannot remove a concurrent version pin, while identica
   assert.deepEqual(mergeProgramUpdatePolicy(pinned, before, "pinned"), pinned);
 });
 
-test("automatic updates support Steam and Minecraft but exclude whole-package replacement sources", () => {
+test("automatic updates support Steam, Minecraft and verified archives but reject unverified sources", () => {
   const steam = { summary: { steam_app_id: 343050 }, install: { source: "steamcmd" } };
   assert.equal(supportsProgramUpdates(steam), true);
   assert.equal(supportsProgramUpdates({ summary: {}, install: { source: "minecraft_java" } }), true);
@@ -47,4 +47,6 @@ test("automatic updates support Steam and Minecraft but exclude whole-package re
   for (const download_url_windows of ["https://example.invalid/server.zip", ""]) {
     assert.equal(supportsProgramUpdates({ ...steam, install: { ...steam.install, download_url_windows } }), false);
   }
+  assert.equal(supportsProgramUpdates({ summary: {}, install: { download_url_windows: "https://example.invalid/server.zip",
+    download_integrity_windows: { sha256: "a".repeat(64), size: 100 } } }), true);
 });

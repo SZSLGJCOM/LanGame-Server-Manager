@@ -47,9 +47,12 @@ pub(super) fn should_run_prestart_update(module: &ModuleDetails) -> bool {
 
 pub(super) fn module_supports_automatic_prestart_update(module: &ModuleDetails) -> bool {
     module.install.as_ref().is_some_and(|install| {
-        install.download_url_windows.is_none()
-            && (module.summary.steam_app_id.unwrap_or(0) > 0
-                || matches!(install.source, Some(InstallSource::MinecraftJava)))
+        if install.download_url_windows.is_some() {
+            install.download_integrity_windows.is_some()
+        } else {
+            module.summary.steam_app_id.unwrap_or(0) > 0
+                || matches!(install.source, Some(InstallSource::MinecraftJava))
+        }
     })
 }
 
@@ -126,7 +129,34 @@ pub(super) async fn run_prestart_update_if_needed(
             warnings: Vec::new(),
         });
     }
-    if !should_run_prestart_update(module) {
+    let existing_archive = if !should_run_prestart_update(module)
+        && module.install.as_ref().is_some_and(|install| {
+            install.download_url_windows.is_some() && install.download_integrity_windows.is_some()
+        }) {
+        // An official archive can move its verification file into a new version
+        // directory. The old managed inventory still authorizes an update.
+        let root = PathBuf::from(
+            super::commands_runtime_lifecycle::private_runtime_install_root(instance)?,
+        );
+        let descriptor = descriptor.clone();
+        let module_id = descriptor.summary.id.clone();
+        let cancellation = app_steamcmd::InstallCancellation::new();
+        super::commands_program_storage::run_baseline_worker(
+            reservation.storage_operation(),
+            &cancellation,
+            &module_id,
+            |_| {},
+            move |_, _| {
+                app_storage::archive_program_has_baseline(&root, &descriptor)
+                    .map_err(|error| error.to_string())
+            },
+        )
+        .await
+        .map_err(|error| steamcmd_error_message(&error))?
+    } else {
+        false
+    };
+    if !should_run_prestart_update(module) && !existing_archive {
         let message = if module_supports_automatic_prestart_update(module) {
             "服务器程序尚未完整安装，无法进行启动前更新；请先完成安装。"
         } else {
@@ -182,6 +212,50 @@ pub(super) async fn run_prestart_update_if_needed(
         context: &context,
     };
     let update = async {
+        if descriptor
+            .install
+            .as_ref()
+            .is_some_and(|install| install.download_url_windows.is_some())
+        {
+            let revision = app_steamcmd::read_program_install_revision(
+                &storage.paths.instances_root,
+                &descriptor.summary.id,
+                &root,
+            );
+            match revision {
+                Err(app_steamcmd::SteamCmdError::PackageRevisionPending { .. }) => {}
+                Err(error) => return Err(steamcmd_error_message(&error)),
+                Ok(_) => {
+                    let checked_root = root.clone();
+                    let checked_descriptor = descriptor.clone();
+                    let current = super::commands_program_storage::run_baseline_worker(
+                        reservation.storage_operation(),
+                        cancellation,
+                        &descriptor.summary.id,
+                        |_| {},
+                        move |cancel, _| {
+                            app_storage::archive_program_is_current(
+                                &checked_root,
+                                &checked_descriptor,
+                                Some(cancel),
+                            )
+                            .map_err(|error| error.to_string())
+                        },
+                    )
+                    .await
+                    .map_err(|error| steamcmd_error_message(&error))?;
+                    if current {
+                        return Ok((
+                            PrestartUpdateOutcome {
+                                install_guard,
+                                warnings: Vec::new(),
+                            },
+                            "已确认服务器程序与当前模块发行包一致。".into(),
+                        ));
+                    }
+                }
+            }
+        }
         // A read-only remote comparison avoids mutating an already-current shared
         // Minecraft install, including when another instance is running or pinned.
         match app_steamcmd::current_program_version(

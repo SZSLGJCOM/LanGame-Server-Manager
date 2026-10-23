@@ -70,6 +70,7 @@ fn sample(
     let mut evidence = VerifiedProgramFiles::default();
     let mut official_progress: Option<InstallVerificationProgress> = None;
     let official_started = Instant::now();
+    let include_path = app_storage::program_package_path_filter(descriptor)?;
     let verified = app_steamcmd::verify_installed_steam_package_with_progress(
         source,
         steamcmd,
@@ -78,7 +79,10 @@ fn sample(
             .steam_app_id
             .ok_or("Steam app ID missing")?,
         version,
-        None,
+        app_steamcmd::SteamPackageVerificationOptions {
+            include_path: Some(&include_path),
+            ..Default::default()
+        },
         |progress| official_progress = Some(progress),
         |relative, file, digest| {
             if reuse_current_evidence {

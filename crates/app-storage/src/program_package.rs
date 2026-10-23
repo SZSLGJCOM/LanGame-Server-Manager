@@ -38,6 +38,8 @@ pub(super) struct CleanPackage {
     pub(super) version: u32,
     pub(super) module_id: String,
     pub(super) source: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) archive_sha256: Option<String>,
     pub(super) files: BTreeMap<String, String>,
     pub(super) directories: BTreeSet<String>,
     #[serde(
@@ -47,6 +49,12 @@ pub(super) struct CleanPackage {
     )]
     pub(super) verified_files: BTreeMap<String, CachedVerification>,
 }
+
+#[path = "program_archive_update.rs"]
+mod archive_update;
+pub use archive_update::{
+    archive_program_has_baseline, archive_program_is_current, merge_archive_program_update,
+};
 
 #[path = "program_baseline.rs"]
 mod baseline;
@@ -121,6 +129,7 @@ pub(crate) fn require_initial_package_tree(
 #[derive(Clone)]
 pub(crate) struct CleanCopyInventory {
     pub(crate) module_id: String,
+    pub(crate) archive_sha256: Option<String>,
     pub(crate) package: PackageTree,
 }
 
@@ -132,6 +141,7 @@ pub(crate) fn read_clean_package_copy_inventory(
         .filter(|manifest| module_id.is_none_or(|id| id == manifest.module_id))
         .map(|manifest| CleanCopyInventory {
             module_id: manifest.module_id.clone(),
+            archive_sha256: manifest.archive_sha256.clone(),
             package: into_package_tree(manifest),
         }))
 }
@@ -144,6 +154,7 @@ pub(crate) fn write_clean_package_copy_inventory(
         version: 1,
         module_id: inventory.module_id.clone(),
         source: "official_clean_install".into(),
+        archive_sha256: inventory.archive_sha256.clone(),
         files: inventory.package.files.clone(),
         directories: inventory.package.directories.clone(),
         verified_files: BTreeMap::new(),
@@ -391,6 +402,16 @@ fn verify_package(
         .map(into_package_tree))
 }
 
+/// Select program paths before source verification using the same rules as the
+/// clean copy inventory. User configuration, saves and Mods are not payload.
+pub fn program_package_path_filter(
+    descriptor: &ModuleDescriptor,
+) -> Result<impl Fn(&str) -> bool, StorageError> {
+    let exclusions = package_exclusions(descriptor)?;
+    let dst = descriptor.summary.id == "dontstarve";
+    Ok(move |path| !excluded(path, &exclusions, dst))
+}
+
 pub(super) fn package_exclusions(
     descriptor: &ModuleDescriptor,
 ) -> Result<BTreeSet<String>, StorageError> {
@@ -537,6 +558,14 @@ pub(super) fn validate_manifest(manifest: &CleanPackage, root: &Path) -> Result<
     }) {
         return Err(invalid(root, "invalid clean package SHA-256"));
     }
+    if manifest.archive_sha256.as_ref().is_some_and(|hash| {
+        hash.len() != 64
+            || !hash
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    }) {
+        return Err(invalid(root, "invalid archive package SHA-256"));
+    }
     Ok(())
 }
 
@@ -583,6 +612,8 @@ pub(super) fn encode_manifest(
             version: u32,
             module_id: &'a str,
             source: &'a str,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            archive_sha256: &'a Option<String>,
             files: &'a BTreeMap<String, String>,
             directories: &'a BTreeSet<String>,
         }
@@ -591,6 +622,7 @@ pub(super) fn encode_manifest(
             version: manifest.version,
             module_id: &manifest.module_id,
             source: &manifest.source,
+            archive_sha256: &manifest.archive_sha256,
             files: &manifest.files,
             directories: &manifest.directories,
         })?;

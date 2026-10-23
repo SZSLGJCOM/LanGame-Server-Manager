@@ -175,7 +175,7 @@ pub fn library_cleanup_retained_paths(
     };
     // Inspect all subtrees first, including unknown and excluded data. A link
     // hidden in a retained directory must not bypass the removal preflight.
-    let entries = inspect_tree(&root, MAX_TREE_ENTRIES)?;
+    let entries = inspect_tree(&root)?;
     let mut retained_keys = BTreeSet::new();
     let mut retained = Vec::new();
     for entry in entries {
@@ -199,13 +199,13 @@ pub fn library_cleanup_retained_paths(
     Ok(Some(retained))
 }
 
-struct TreeEntry {
-    path: PathBuf,
-    key: PathBuf,
-    directory: bool,
+pub(crate) struct TreeEntry {
+    pub(crate) path: PathBuf,
+    pub(crate) key: PathBuf,
+    pub(crate) directory: bool,
 }
 
-fn inspect_tree(root: &Path, limit: usize) -> Result<Vec<TreeEntry>, StorageError> {
+pub(crate) fn inspect_tree(root: &Path) -> Result<Vec<TreeEntry>, StorageError> {
     let mut entries = Vec::new();
     let mut pending = vec![(root.to_owned(), 0usize)];
     let mut visited = 0usize;
@@ -226,7 +226,7 @@ fn inspect_tree(root: &Path, limit: usize) -> Result<Vec<TreeEntry>, StorageErro
                 source,
             })?;
             visited += 1;
-            if visited > limit {
+            if visited > MAX_TREE_ENTRIES {
                 return Err(invalid(
                     root,
                     "library cleanup tree exceeds its entry limit",

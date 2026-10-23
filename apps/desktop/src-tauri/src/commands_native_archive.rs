@@ -277,13 +277,10 @@ pub(super) async fn delete_restored<R: tauri::Runtime>(
     let library = app_storage::read_library_program_install(paths, &previous.summary.module_id)
         .await?
         .ok_or("native deletion has no registered library")?;
-    let library_files = if library.install_root.is_dir() {
-        Some(super::inventory::program_files(
-            runtime.descriptor,
-            &library.install_root,
-        )?)
+    let library_files = if library.install_state == app_core::InstallState::Installed {
+        super::inventory::program_files(runtime.descriptor, &library.install_root)?
     } else {
-        None
+        save_inventory(&library.install_root)?
     };
     let deleted = Box::pin(super::delete_instance_record(
         runtime.app.clone(),
@@ -311,10 +308,13 @@ pub(super) async fn delete_restored<R: tauri::Runtime>(
                 .into(),
         );
     }
-    if let Some(expected) = library_files
-        && super::inventory::program_files(runtime.descriptor, &after.install_root)? != expected
-    {
-        return Err("native deletion changed retained library program bytes".into());
+    let after_files = if after.install_state == app_core::InstallState::Installed {
+        super::inventory::program_files(runtime.descriptor, &after.install_root)?
+    } else {
+        save_inventory(&after.install_root)?
+    };
+    if after_files != library_files {
+        return Err("native deletion changed retained library program or data bytes".into());
     }
     let listed = management::list_instance_archives((*state).clone()).await?;
     if listed
@@ -397,16 +397,8 @@ pub(super) async fn verify_retirement_with_library<R: tauri::Runtime>(
     let library_files = super::inventory::program_files(runtime.descriptor, &library.install_root)?;
     let details = app_storage::read_instance_details(paths, &created.summary.id).await?;
     let root = super::creation::instance_root(&details)?.to_owned();
-    let saves = super::seed_probe::checked_path(
-        &runtime.package.root,
-        Path::new(&details.saves_path),
-        true,
-    )?;
-    if !saves.starts_with(std::fs::canonicalize(&root)?) {
-        return Err("native retirement sentinel requires instance-owned saves".into());
-    }
-    let sentinel = saves.join("retirement-world.fixture");
-    std::fs::write(&sentinel, b"disposable retirement world")?;
+    let sentinel =
+        prepare_retirement_sentinel(&runtime.package.root, &root, Path::new(&details.saves_path))?;
     let backup = app_storage::create_instance_backup(paths, &created.summary.id).await?;
     let archived =
         super::archive_instance_record(runtime.app.clone(), created.summary.id.clone()).await?;
@@ -488,6 +480,56 @@ pub(super) async fn verify_retirement_with_library<R: tauri::Runtime>(
         "NATIVE_LIFECYCLE module={module_id} phase=permanent_delete library=installed peer=preserved owned_files=removed"
     );
     Ok(())
+}
+
+fn prepare_retirement_sentinel(
+    fixture: &Path,
+    instance: &Path,
+    saves: &Path,
+) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    use crate::commands::commands_managed_save_control::guard_pin_directories;
+    use std::path::Component;
+
+    if !saves.is_absolute()
+        || saves
+            .components()
+            .any(|part| matches!(part, Component::CurDir | Component::ParentDir))
+    {
+        return Err("native retirement saves require an ordinary absolute path".into());
+    }
+    let instance = super::seed_probe::checked_path(fixture, instance, true)?;
+    let mut existing = saves;
+    let mut missing = Vec::new();
+    loop {
+        match std::fs::symlink_metadata(existing) {
+            Ok(_) => break,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                missing.push(
+                    existing
+                        .file_name()
+                        .ok_or("retirement saves have no parent")?
+                        .to_owned(),
+                );
+                existing = existing.parent().ok_or("retirement saves have no parent")?;
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+    let mut current = super::seed_probe::checked_path(fixture, existing, true)?;
+    if !current.starts_with(&instance) {
+        return Err("native retirement sentinel requires instance-owned saves".into());
+    }
+    // Some games create their world directory only on first launch. This
+    // unstarted retirement fixture writes its own sentinel under pinned roots.
+    let mut pins = vec![guard_pin_directories(&current)?];
+    for name in missing.into_iter().rev() {
+        current.push(name);
+        std::fs::create_dir(&current)?;
+        pins.push(guard_pin_directories(&current)?);
+    }
+    let sentinel = current.join("retirement-world.fixture");
+    std::fs::write(&sentinel, b"disposable retirement world")?;
+    Ok(sentinel)
 }
 
 #[test]

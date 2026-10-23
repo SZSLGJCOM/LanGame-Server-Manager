@@ -8,6 +8,9 @@ mod verification;
 #[path = "program_baseline_evidence_tests.rs"]
 mod evidence;
 
+#[path = "program_archive_update_tests.rs"]
+mod archive_update;
+
 struct Fixture {
     root: PathBuf,
     descriptor: ModuleDescriptor,

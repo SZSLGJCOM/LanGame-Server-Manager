@@ -74,6 +74,12 @@ pub fn record_library_program_baseline_with_progress(
         version: 1,
         module_id: descriptor.summary.id.clone(),
         source: "official_clean_install".into(),
+        archive_sha256: descriptor
+            .install
+            .as_ref()
+            .filter(|install| install.download_url_windows.is_some())
+            .and_then(|install| install.download_integrity_windows.as_ref())
+            .map(|integrity| integrity.sha256.clone()),
         files: package.files,
         directories: package.directories,
         verified_files,
@@ -118,6 +124,7 @@ pub fn record_verified_library_program_baseline_with_progress(
         version: 1,
         module_id: descriptor.summary.id.clone(),
         source: "official_clean_install".into(),
+        archive_sha256: None,
         files,
         directories,
         verified_files: BTreeMap::new(),
@@ -163,13 +170,14 @@ fn publish_baseline(
             }
         }
     }
-    // The full acquisition inventory proves that shipped default configuration
-    // is original. The filtered manifest remains the only source for copies.
+    // Fresh archives may include original shipped defaults; Steam verification
+    // already excludes mutable configuration. Only the clean manifest feeds copies.
     validate_manifest(&initial, root)?;
     let manifest = CleanPackage {
         version: 1,
         module_id: descriptor.summary.id.clone(),
         source: "official_clean_install".into(),
+        archive_sha256: initial.archive_sha256.clone(),
         files: initial
             .files
             .iter()

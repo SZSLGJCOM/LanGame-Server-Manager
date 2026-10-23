@@ -185,7 +185,20 @@ async function run() {
 
   moduleDetails = { ...supportedModule, install: { ...supportedModule.install!, download_url_windows: "https://example.invalid/server.zip" } };
   await render();
-  check(!fixture.querySelector("select") && fixture.textContent?.includes("此安装源需手动维护"), "Whole-package source incorrectly advertises automatic updates");
+  check(!fixture.querySelector("select") && fixture.textContent?.includes("此安装源需手动维护"), "Unverified archive source incorrectly advertises automatic updates");
+  for (const moduleId of ["rimworld", "terraria"]) {
+    moduleDetails = await readModuleDetails(moduleId);
+    details = { ...details, summary: { ...details.summary, module_id: moduleId } };
+    await render();
+    check(moduleDetails.install?.download_integrity_windows && !select<HTMLSelectElement>("select").disabled,
+      `${moduleId} official archive cannot change its update policy`);
+    const policy = select<HTMLSelectElement>("select").value === "pinned" ? "automatic" : "pinned";
+    await change(policy); await save();
+    check(JSON.parse(details.settings_json).program_update.policy === policy
+      && JSON.parse(details.settings_json).server_name === "Concurrent name",
+      `${moduleId} archive policy did not persist or changed game settings`); checks++;
+  }
+  details = { ...details, summary: { ...details.summary, module_id: source.summary.module_id } };
   moduleDetails = null; await render();
   check(fixture.textContent?.includes("正在读取安装源"), "Loading source is not represented"); checks++;
 

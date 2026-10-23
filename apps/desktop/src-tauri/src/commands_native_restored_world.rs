@@ -38,7 +38,7 @@ fn applies(module: &str, cycle: &str) -> Result<bool, String> {
         return Ok(false);
     }
     match module {
-        "valheim" | "runescapedragonwilds" | "vrising" => Ok(true),
+        "valheim" | "runescapedragonwilds" | "vrising" | "necesse" => Ok(true),
         _ => Err(format!(
             "{module}: restored-world acceptance has no verified native saved-content identity; readiness alone is insufficient"
         )),

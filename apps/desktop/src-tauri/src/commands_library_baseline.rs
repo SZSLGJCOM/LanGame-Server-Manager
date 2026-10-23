@@ -29,6 +29,26 @@ impl LibraryBaselineRecorder {
         root: PathBuf,
         on_progress: impl FnMut(InstallVerificationProgress),
     ) -> Result<(), app_steamcmd::SteamCmdError> {
+        self.prepare_payload(root, None, on_progress).await
+    }
+
+    pub(in crate::commands) async fn prepare_archive_replacement(
+        &self,
+        root: PathBuf,
+        source: PathBuf,
+        protected: Vec<PathBuf>,
+        on_progress: impl FnMut(InstallVerificationProgress),
+    ) -> Result<(), app_steamcmd::SteamCmdError> {
+        self.prepare_payload(root, Some((source, protected)), on_progress)
+            .await
+    }
+
+    async fn prepare_payload(
+        &self,
+        root: PathBuf,
+        replacement: Option<(PathBuf, Vec<PathBuf>)>,
+        on_progress: impl FnMut(InstallVerificationProgress),
+    ) -> Result<(), app_steamcmd::SteamCmdError> {
         let descriptor = self.descriptor.clone();
         run_baseline_worker(
             &self.operation,
@@ -43,7 +63,18 @@ impl LibraryBaselineRecorder {
                     Some(cancellation),
                     progress,
                 )
-                .map_err(|error| error.to_string())
+                .map_err(|error| error.to_string())?;
+                if let Some((source, protected)) = replacement {
+                    app_storage::merge_archive_program_update(
+                        &source,
+                        &root,
+                        &descriptor,
+                        &protected,
+                        Some(cancellation),
+                    )
+                    .map_err(|error| error.to_string())?;
+                }
+                Ok(())
             },
         )
         .await?;
@@ -135,12 +166,17 @@ impl LibraryBaselineRecorder {
             on_progress,
             move |cancellation, progress| {
                 let mut evidence = app_storage::VerifiedProgramFiles::default();
+                let include_path = app_storage::program_package_path_filter(&descriptor)
+                    .map_err(|error| error.to_string())?;
                 let verified = app_steamcmd::verify_installed_steam_package_with_progress(
                     &root,
                     &steamcmd,
                     app_id,
                     &version,
-                    Some(cancellation),
+                    app_steamcmd::SteamPackageVerificationOptions {
+                        cancellation: Some(cancellation),
+                        include_path: Some(&include_path),
+                    },
                     &mut *progress,
                     |relative, file, digest| {
                         evidence
@@ -176,7 +212,7 @@ impl Drop for CancelBaselineOnDrop {
     }
 }
 
-async fn run_baseline_worker<T, F>(
+pub(in crate::commands) async fn run_baseline_worker<T, F>(
     operation: &StorageContextOperationGuard,
     installation: &app_steamcmd::InstallCancellation,
     module_id: &str,

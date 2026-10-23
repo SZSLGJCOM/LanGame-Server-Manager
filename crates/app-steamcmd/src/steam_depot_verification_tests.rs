@@ -155,10 +155,9 @@ fn missing_exact_depot_and_incomplete_or_changed_builds_are_rejected() {
     );
     fs::write(&acf, Fixture::acf("", "17", "4")).unwrap();
     fs::remove_file(fixture.steamcmd.join("depotcache/7_9.manifest")).unwrap();
-    assert_eq!(
-        fixture.verify().unwrap_err().kind(),
-        io::ErrorKind::NotFound
-    );
+    let error = fixture.verify().unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::NotFound);
+    assert!(error.to_string().contains("7_9.manifest"));
 }
 
 #[test]
@@ -250,7 +249,7 @@ fn measured_progress_counts_only_the_exact_official_files() {
         &fixture.steamcmd,
         7,
         "17",
-        None,
+        SteamPackageVerificationOptions::default(),
         |progress| reports.push(progress),
         |relative, file, digest| {
             assert_eq!(
@@ -305,7 +304,7 @@ fn failed_official_hash_cannot_produce_evidence_or_completion() {
             &fixture.steamcmd,
             7,
             "17",
-            None,
+            SteamPackageVerificationOptions::default(),
             |progress| reports.push(progress),
             |_, _, _| {
                 observations += 1;
@@ -330,7 +329,7 @@ fn evidence_callback_errors_and_progress_cancellation_stop_publication() {
         &fixture.steamcmd,
         7,
         "17",
-        None,
+        SteamPackageVerificationOptions::default(),
         |_| {},
         |_, _, _| Err(io::Error::other("evidence unavailable")),
     )
@@ -343,7 +342,10 @@ fn evidence_callback_errors_and_progress_cancellation_stop_publication() {
         &fixture.steamcmd,
         7,
         "17",
-        Some(&signal),
+        SteamPackageVerificationOptions {
+            cancellation: Some(&signal),
+            ..Default::default()
+        },
         |_| signal.store(true, Ordering::Release),
         |_, _, _| {
             observed = true;

@@ -324,12 +324,45 @@ fn steamcmd_install_script_for_windows_modules_forces_windows_depots() {
         runtime: app_core::ModuleRuntimeSpec::default(),
     };
 
-    let script_lines =
-        steamcmd_install_script_lines(&module, 4_019_830, Path::new("D:/Games/Dragonwilds"), true);
-
-    assert!(script_lines.contains(&String::from("@sSteamCmdForcePlatformType windows")));
-    assert!(script_lines.contains(&String::from("@sSteamCmdForcePlatformBitness 64")));
-    assert!(script_lines.contains(&String::from("app_update 4019830 validate")));
+    for (account, login) in [
+        (None, "login anonymous"),
+        (Some("operator"), "login operator"),
+    ] {
+        for validate in [false, true] {
+            let install_root = Path::new("D:/Games/Dragonwilds");
+            let script_lines = if account.is_none() {
+                steamcmd_install_script_lines(&module, 4_019_830, install_root, validate)
+            } else {
+                module_install::steamcmd_install_script_lines_with_login(
+                    &module,
+                    4_019_830,
+                    install_root,
+                    validate,
+                    account,
+                )
+            };
+            let update = if validate {
+                "app_update 4019830 validate"
+            } else {
+                "app_update 4019830"
+            };
+            assert_eq!(
+                script_lines,
+                [
+                    "@ShutdownOnFailedCommand 1",
+                    "@NoPromptForPassword 1",
+                    "@sSteamCmdForcePlatformType windows",
+                    "@sSteamCmdForcePlatformBitness 64",
+                    "force_install_dir \"D:/Games/Dragonwilds\"",
+                    login,
+                    "app_info_update 1",
+                    "app_info_print 4019830",
+                    update,
+                    "quit",
+                ],
+            );
+        }
+    }
 }
 
 #[test]

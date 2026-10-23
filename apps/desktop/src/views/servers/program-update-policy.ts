@@ -18,8 +18,10 @@ export function readProgramUpdatePolicy(settings: SettingsObject): ProgramUpdate
 }
 
 export function supportsProgramUpdates(module: ModuleDetails): boolean {
-  return Boolean(module.install && module.install.download_url_windows == null
-    && ((module.summary.steam_app_id ?? 0) > 0 || module.install.source === "minecraft_java"));
+  const install = module.install;
+  if (!install) return false;
+  return install.download_url_windows != null ? install.download_integrity_windows != null
+    : (module.summary.steam_app_id ?? 0) > 0 || install.source === "minecraft_java";
 }
 
 export function mergeProgramUpdatePolicy(

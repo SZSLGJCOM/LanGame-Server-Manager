@@ -20,6 +20,15 @@ pub struct VerifiedSteamPackage {
     pub directories: BTreeSet<String>,
 }
 
+#[derive(Default)]
+pub struct SteamPackageVerificationOptions<'a> {
+    pub cancellation: Option<&'a AtomicBool>,
+    /// Select depot paths using the consumer's program-package ownership rules.
+    /// Excluded files remain untouched and never enter the verified inventory.
+    /// App manifests and their build/depot metadata are always verified.
+    pub include_path: Option<&'a dyn Fn(&str) -> bool>,
+}
+
 /// Call after successful native installation/validation, while retaining the
 /// installation lifecycle lease through baseline publication and persistence.
 /// Cached depot CRC/SHA1 checks are integrity checks, not signature verification.
@@ -37,7 +46,10 @@ pub fn verify_installed_steam_package(
         steamcmd,
         app_id,
         expected_version,
-        cancellation,
+        SteamPackageVerificationOptions {
+            cancellation,
+            ..Default::default()
+        },
         |_| {},
         |_, _, _| Ok(()),
     )
@@ -50,10 +62,11 @@ pub fn verify_installed_steam_package_with_progress(
     steamcmd: &Path,
     app_id: u32,
     expected_version: &str,
-    cancellation: Option<&AtomicBool>,
+    options: SteamPackageVerificationOptions<'_>,
     mut on_progress: impl FnMut(InstallVerificationProgress),
     mut on_verified_file: impl FnMut(&str, &File, &str) -> io::Result<()>,
 ) -> io::Result<VerifiedSteamPackage> {
+    let cancellation = options.cancellation;
     cancelled(cancellation)?;
     let canonical_root = checked_root(root)?;
     let root = canonical_root.as_path();
@@ -63,7 +76,11 @@ pub fn verify_installed_steam_package_with_progress(
             "Steam certification requires an app ID and build ID",
         ));
     }
-    let expected = read_inventory(root, steamcmd, app_id, true, true, cancellation)?;
+    let mut expected = read_inventory(root, steamcmd, app_id, true, true, cancellation)?;
+    if let Some(include) = options.include_path {
+        expected.files.retain(|path, _| include(path));
+        expected.directories.retain(|path| include(path));
+    }
     let main = format!("steamapps/appmanifest_{app_id}.acf");
     let app = parse_acf(
         expected

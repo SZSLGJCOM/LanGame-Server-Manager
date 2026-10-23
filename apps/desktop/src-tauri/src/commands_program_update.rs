@@ -87,6 +87,55 @@ where
     let library = owner
         .as_ref()
         .is_none_or(|record| record.scope == app_storage::ProgramInstallScope::Library);
+    let replacing_archive = !source_was_empty
+        && descriptor
+            .install
+            .as_ref()
+            .is_some_and(|install| install.download_url_windows.is_some())
+        && !app_steamcmd::has_retained_install_data(root);
+    let replacement = if replacing_archive {
+        if owner.is_none() {
+            return Err(metadata_error(
+                "Existing archive installation has no managed program owner.".into(),
+            ));
+        }
+        let checked_root = root.to_owned();
+        let checked_descriptor = descriptor.clone();
+        let has_baseline = run_baseline_worker(
+            operation,
+            cancellation,
+            &descriptor.summary.id,
+            |_| {},
+            move |_, _| {
+                app_storage::archive_program_has_baseline(&checked_root, &checked_descriptor)
+                    .map_err(|error| error.to_string())
+            },
+        )
+        .await?;
+        if !has_baseline {
+            return Err(metadata_error("Archive update requires its original verified package inventory. Preserve this directory and install into a separate empty directory before migrating saves and configuration.".into()));
+        }
+        let protected = super::super::commands_mods::collect_protected_install_data_paths(
+            &storage.paths,
+            descriptor,
+            root,
+        )
+        .await
+        .map_err(metadata_error)?;
+        let paths = protected
+            .into_iter()
+            .map(|item| {
+                item.path.ok_or_else(|| {
+                    metadata_error(
+                        "Protected data cannot be separated from the program directory.".into(),
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Some((root.to_owned(), paths))
+    } else {
+        None
+    };
     let steam_app_id = descriptor
         .summary
         .steam_app_id
@@ -142,13 +191,25 @@ where
                 report_program_install_progress(&on_progress, started_at, update);
             },
             prepare_fresh_payload: |root| {
-                baseline.prepare_fresh_payload(root, |progress| {
-                    report_program_install_progress(
-                        &on_progress,
-                        started_at,
-                        verification_install_progress(progress),
-                    );
-                })
+                let replacement = replacement.clone();
+                let baseline = &baseline;
+                let on_progress = &on_progress;
+                async move {
+                    let progress = |progress| {
+                        report_program_install_progress(
+                            on_progress,
+                            started_at,
+                            verification_install_progress(progress),
+                        );
+                    };
+                    if let Some((source, protected)) = replacement {
+                        baseline
+                            .prepare_archive_replacement(root, source, protected, progress)
+                            .await
+                    } else {
+                        baseline.prepare_fresh_payload(root, progress).await
+                    }
+                }
             },
         },
     )

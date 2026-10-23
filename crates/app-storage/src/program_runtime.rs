@@ -68,6 +68,54 @@ pub(crate) fn previous_exclusive_instance(
     Ok(usage.instance_id)
 }
 
+/// Updating program bytes must retain the identity used by existing bindings.
+pub(crate) fn program_update_metadata_paths(
+    root: &Path,
+    module_id: &str,
+) -> Result<Vec<PathBuf>, StorageError> {
+    let mut paths = Vec::new();
+    let identity_path = root.join(PROGRAM_IDENTITY);
+    let identity = if binding_exists(&identity_path)? {
+        let identity: ProgramIdentity = read_record(&identity_path)?;
+        if identity.version != 1 || identity.module_id != module_id || identity.id.is_empty() {
+            return Err(invalid(
+                root,
+                "program identity does not match the updated module",
+            ));
+        }
+        paths.push(identity_path);
+        Some(identity)
+    } else {
+        None
+    };
+    let usage = root.join(crate::program_exclusive::PROGRAM_USAGE);
+    if binding_exists(&usage)? {
+        previous_exclusive_instance(root, module_id)?;
+        paths.push(usage);
+    }
+    for name in [EXCLUSIVE_RUNTIME_BINDING, SHARED_RUNTIME_BINDING] {
+        let path = root.join(name);
+        if !binding_exists(&path)? {
+            continue;
+        }
+        let binding: SharedProgramBinding = read_record(&path)?;
+        if binding.version != 1
+            || binding.module_id != module_id
+            || identity
+                .as_ref()
+                .is_none_or(|identity| binding.program_id != identity.id)
+            || normalize_path(&binding.program_root)? != normalize_path(root)?
+        {
+            return Err(invalid(
+                &path,
+                "program binding does not match the updated installation",
+            ));
+        }
+        paths.push(path);
+    }
+    Ok(paths)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct SharedProgramBinding {
     version: u32,

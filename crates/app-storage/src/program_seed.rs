@@ -29,9 +29,10 @@ use package::{
     write_manifest,
 };
 pub use package::{
-    ProgramBaselineInventory, VerifiedProgramFiles, library_program_is_pristine,
-    record_library_program_baseline, record_library_program_baseline_with_progress,
-    record_verified_library_program_baseline,
+    ProgramBaselineInventory, VerifiedProgramFiles, archive_program_has_baseline,
+    archive_program_is_current, library_program_is_pristine, merge_archive_program_update,
+    program_package_path_filter, record_library_program_baseline,
+    record_library_program_baseline_with_progress, record_verified_library_program_baseline,
     record_verified_library_program_baseline_with_progress,
     retain_published_library_program_baseline,
     retain_published_library_program_baseline_with_progress,
