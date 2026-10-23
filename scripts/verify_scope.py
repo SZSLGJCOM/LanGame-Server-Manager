@@ -16,8 +16,6 @@ else:
 ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = ROOT / "apps/desktop"
 PARALLEL_PACKAGES = ("app-core", "app-modules", "app-knowledge")
-# These predate the *-browser.test.cjs convention. Runner unit tests remain quick.
-BROWSER_EXCEPTIONS = {"knowledge-settings.test.cjs", "runtime-browser-navigation.test.cjs"}
 FRONTEND_FULL_PREFIXES = (
     "apps/desktop/src-tauri/", "apps/desktop/scripts/",
     "crates/app-core/", "modules/", "migrations/",
@@ -84,7 +82,7 @@ FRONTEND_FEATURE_PATHS = {
 
 
 def is_browser_test(path: Path) -> bool:
-    return path.name.endswith("-browser.test.cjs") or path.name in BROWSER_EXCEPTIONS
+    return path.name.endswith("-browser.test.cjs")
 
 
 def shared_risk(paths: list[str]) -> bool:

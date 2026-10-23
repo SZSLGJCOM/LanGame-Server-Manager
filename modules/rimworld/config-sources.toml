@@ -1,6 +1,13 @@
 status = "best_effort_verified"
-last_verified = "2026-09-28"
-notes = "Official latest release 26.8.31.1 and tagged source verified on 2026-09-28. The published Server-win-x64.zip digest/size match the previously downloaded analysis archive; no game process was launched for this update. RTServer.exe uses UseClientSave and SHA256 PasswordConfig.json. Retired whitelist settings/files remain preserved and formerly restricted instances require a password before starting. Semantic review on 2026-09-30 checked all 117 fields against tagged 26.8.31.1 server source and read-only metadata/IL from the official RTClient and RTShared assemblies. Corrected market pricing, client-save choice, browser/telemetry dependency, road movement difficulty, silver costs/rewards, millisecond timers, map preview and custom-scenario behavior. Scenario cooldown is stored but not consumed by this release. Preserved native types/defaults; client gameplay was not launched."
+last_verified = "2026-10-23"
+notes = "Official release 26.10.20.1 (1) package integrity and tagged server-source changes were verified on 2026-10-23. The executable, configuration and save paths, password object and existing console commands remain compatible. New ServerImageURL is optional and IPBans.json is stored under the already retained Assets root. The official archive contains a self-contained RTServer.exe targeting .NET 10. The 117-field semantic inventory remains dated to the 26.8.31.1 review below; this update does not relabel that historical evidence or claim a player-join test. Retired whitelist settings/files remain preserved and formerly restricted instances require a password before starting."
+
+[[sources]]
+id = "release_review_20261023"
+kind = "release"
+path = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.20.1_(1)"
+authority = "official_release_archive_and_tagged_source"
+description = "Downloaded Server-win-x64.zip matches the official release asset size 31766123 and SHA256 ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d. It contains only RTServer.exe. Compared the tagged server source with 26.8.31.1: existing configuration, password and native console contracts remain; ServerImageURL and Assets/IPBans.json are additions. The tagged LICENSE remains CC BY-NC-ND 4.0; the installer downloads the unmodified upstream package. No new game process was launched for this source review."
 
 [[sources]]
 id = "configuration_review_20260930"
@@ -14,7 +21,7 @@ id = "rimworld_together_latest_release_api"
 kind = "release"
 path = "https://api.github.com/repos/RimWorld-Together/Rimworld-Together/releases/latest"
 authority = "official_github_release_api"
-description = "Resolved on 2026-09-28 to tag 26.8.31.1, published 2026-08-31T16:55:38Z, draft false, prerelease false; Server-win-x64.zip size 29443247, SHA256 f16c703f1e3e4e6de0f4877d8ae502a817c85482681956aa01e8a4b619bab68c."
+description = "Resolved on 2026-10-23 to tag 26.10.20.1_(1), published 2026-10-21T12:32:55Z, draft false, prerelease false; Server-win-x64.zip size 31766123, SHA256 ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d."
 
 [[sources]]
 id = "rimworld_together_release_26_6_23_1"

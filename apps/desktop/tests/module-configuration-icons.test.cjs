@@ -333,7 +333,10 @@ test("runtime icons decorate only DST world fields without changing labels, sett
   const fieldIcons = Object.fromEntries(original.fields.map((field) => [field.key, PNG]));
   const decorated = parseGuidedSettingsSchema(moduleDetails, "en-US", undefined, { fieldIcons });
   const worldSections = new Set(["mastergen", "mastersettings", "cavesgen", "cavessettings"]);
-  assert.equal(decorated.fields.filter((field) => field.icon).length, 280);
+  assert.deepEqual(
+    decorated.fields.filter((field) => field.icon).map((field) => field.key),
+    original.fields.filter((field) => worldSections.has(field.sectionId)).map((field) => field.key)
+  );
   for (const field of decorated.fields) {
     const baseline = original.fields.find((candidate) => candidate.key === field.key);
     assert.equal(field.icon, worldSections.has(field.sectionId) ? PNG : null, field.key);

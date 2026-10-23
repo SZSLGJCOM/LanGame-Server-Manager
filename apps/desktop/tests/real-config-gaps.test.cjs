@@ -1033,10 +1033,18 @@ test("Conan Exiles mod workflow declares Workshop ids and modlist materializatio
   assert.match(materializer, /files\.apply\(vec!\[prepare_conan_modlist\(context\)\?\]\)/);
 });
 
-test("Don't Starve Together records the current validated package and installed mod documentation", () => {
+test("Don't Starve Together keeps the current native inventory separate from dated package evidence", () => {
   const ledger = read(path.join(dontStarveRoot, "config-sources.toml"));
+  const inventory = JSON.parse(read(path.join(dontStarveRoot, "world-options.json")));
+  const currentPackage = ledger.split("[[sources]]").find((source) =>
+    source.includes('id = "installed_package_world_options"'));
+  const verifiedDate = /^last_verified = "(\d{4}-\d{2}-\d{2})"\r?$/m.exec(ledger)?.[1];
 
-  assert.match(ledger, /last_verified = "2026-09-19"/);
+  assert.ok(currentPackage, "the current native inventory has package provenance");
+  assert.ok(verifiedDate, "package verification has an explicit date");
+  assert.ok(currentPackage.includes(verifiedDate));
+  assert.ok(currentPackage.includes(`game ${inventory.gameVersion}`));
+  assert.ok(currentPackage.includes(`scripts.zip SHA-256 ${inventory.scriptsSha256}`));
   assert.match(ledger, /id = "installed_package_masteroption_inheritance"/);
   assert.match(ledger, /Caves has 86 independent options plus 34 inherited values/);
   assert.match(ledger, /id = "installed_package_location_defaults"/);

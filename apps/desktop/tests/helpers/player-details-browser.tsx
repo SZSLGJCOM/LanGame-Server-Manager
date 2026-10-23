@@ -34,7 +34,7 @@ addEventListener("error", (event) => errors.push(event.message));
 addEventListener("unhandledrejection", (event) => errors.push(String(event.reason)));
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
-const player: RuntimeLivePlayerEntry = { player_key: "observed-player", display_name: "测试玩家 <PAMD>",
+const player: RuntimeLivePlayerEntry = { player_key: "observed-player", display_name: "测试玩家 <fixture>",
   identifiers: [], available_action_ids: [], ping_ms: null, session_started_at_unix_ms: null, role: null, attributes: [] };
 const action: ModulePlayerActionDetails = { id: "kick", kind: "kick", label: "Kick", label_zh_cn: "踢出玩家",
   target_required: true, destructive: true, command_template: "kick {{target}}" };

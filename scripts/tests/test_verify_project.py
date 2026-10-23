@@ -68,7 +68,8 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertNotIn("apps/desktop/tests/asa-mod-controls-browser.test.cjs", expected)
 
     def test_non_browser_changes_do_not_create_a_browser_run(self):
-        self.assertEqual(frontend_selection(["README.md", "apps/desktop/tests/runtime-browser-process.test.cjs"]), [])
+        self.assertEqual(frontend_selection(["README.md", "apps/desktop/tests/runtime-browser-process.test.cjs",
+                                             "apps/desktop/tests/knowledge-settings.test.cjs"]), [])
 
     def test_risky_boundaries_run_full_before_release(self):
         for path in ("crates/app-storage/src/backups.rs", "crates/app-runtime/src/lib.rs",
@@ -88,7 +89,7 @@ class VerificationSelectionTests(unittest.TestCase):
                 self.assertEqual(full_scopes([path]), (True, False, False))
         for path in ("apps/desktop/src/views/servers/BackupTable.tsx",
                      "apps/desktop/tests/runtime-reliability-browser.test.cjs",
-                     "apps/desktop/tests/knowledge-settings.test.cjs"):
+                     "apps/desktop/tests/knowledge-settings-browser.test.cjs"):
             with self.subTest(path=path):
                 self.assertEqual(full_scopes([path]), (False, False, False))
                 self.assertTrue(frontend_selection([path]))
@@ -140,8 +141,9 @@ class VerificationSelectionTests(unittest.TestCase):
         self.assertEqual(quick | browser, actual)
         self.assertFalse(quick & browser)
         self.assertIn(str(Path("tests/desktop-main-pages-browser.test.cjs")), browser)
-        self.assertIn(str(Path("tests/knowledge-settings.test.cjs")), browser)
-        self.assertIn(str(Path("tests/runtime-browser-navigation.test.cjs")), browser)
+        self.assertIn(str(Path("tests/knowledge-settings-browser.test.cjs")), browser)
+        self.assertIn(str(Path("tests/runtime-navigation-browser.test.cjs")), browser)
+        self.assertIn(str(Path("tests/knowledge-settings.test.cjs")), quick)
         self.assertIn(str(Path("tests/runtime-browser-process.test.cjs")), quick)
         self.assertIn(str(Path("tests/browser-fixture-preparation.test.cjs")), quick)
         self.assertIn(str(Path("tests/api-transport.test.cjs")), quick)

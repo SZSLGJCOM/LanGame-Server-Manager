@@ -6,7 +6,7 @@
   "executable_sha256": "b627639ce4a3f8c940fe90afa1d36ed59db3ff9ced24e935890eb7c99b04d5bf",
   "dll_sha256": "49e57a91f01c7378999e04219b6462c41ddebc2188b15b2026704c5216f673dc",
   "manager_build_input_sha256": "a90e760d2d7a5ad7145982185587e19c600a24fd826a1d2391350ef4f907b2ec",
-  "environment": "Windows x64, pamd, installed production-mode manager candidate 0.1.3, real Steam client and owned independent server",
+  "environment": "Windows x64, installed production-mode manager candidate 0.1.3, real Steam client and owned independent server",
   "entry_points": ["execute_instance_player_action", "execute_instance_manual_player_action"],
   "verified_actions": ["kick", "ban", "unban"],
   "observations": {

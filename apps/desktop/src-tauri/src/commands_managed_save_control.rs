@@ -240,19 +240,46 @@ async fn ensure_installed<L: crate::state::StorageContextTaskLease>(
         return Ok(false);
     }
     let install_details = details.clone();
-    spawn_blocking_storage_context_task(operation, move || -> Result<(), String> {
+    let outcome = spawn_blocking_storage_context_task(operation, move || {
         process::ensure_instance_scope(&install_details, &runtime, game, None)?;
         if let Some(archive) = archive {
             redloader::install(&runtime, &archive)?;
         } else if game.module == "sonsoftheforest" {
             redloader::adopt_complete_release(&runtime)?;
         }
-        payload::install(&runtime, game, false)?;
-        Ok(())
+        let outcome = payload::install(&runtime, game, false)?;
+        finish_optional_installation(&install_details, &runtime, game, outcome)
     })
     .await
     .map_err(|_| "Native save preparation worker failed.")??;
-    Ok(true)
+    match outcome {
+        payload::InstallOutcome::Ready => Ok(true),
+        payload::InstallOutcome::Unavailable(issue) => {
+            super::commands_runtime_supervision::append_desktop_app_log(
+                storage,
+                "warn",
+                "instance.save_extension.unavailable",
+                "Optional save extension could not be compiled; its inactive state was verified before native startup",
+                serde_json::json!({"instance_id": details.summary.id, "module_id": details.summary.module_id, "extension_issue": issue}),
+            );
+            Ok(false)
+        }
+    }
+}
+
+fn finish_optional_installation(
+    details: &InstanceDetails,
+    runtime: &Path,
+    game: Profile,
+    outcome: payload::InstallOutcome,
+) -> Result<payload::InstallOutcome, String> {
+    if matches!(outcome, payload::InstallOutcome::Unavailable(_)) {
+        // Compilation never publishes. Recheck the actual instance entry before
+        // retiring a prior payload, including Barotrauma's config-side process.
+        process::ensure_instance_scope(details, runtime, game, None)?;
+        payload::deactivate_owned(runtime, game)?;
+    }
+    Ok(outcome)
 }
 
 /// Reuse an intact reviewed loader without network access. The fixed release
@@ -418,7 +445,9 @@ pub(super) fn startup_environment(
     let runtime = root(details)?;
     validate_inherited_environment(game)?;
     process::ensure_instance_scope(details, &runtime, game, None)?;
-    payload::install(&runtime, game, true)?;
+    if let payload::InstallOutcome::Unavailable(issue) = payload::install(&runtime, game, true)? {
+        return Err(issue);
+    }
     let directory = runtime.join(DIRECTORY);
     let _pin = io::pin_directory(&directory)?;
     process::ensure_instance_scope(details, &runtime, game, None)?;

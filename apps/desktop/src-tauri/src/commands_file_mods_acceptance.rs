@@ -117,7 +117,7 @@ async fn isolated_valheim_thunderstore_file_mod_lifecycle() -> support::Result {
     let id = initial.summary.id.clone();
     let cleanup = NativeCleanup {
         state: &state,
-        instance_id: id.clone(),
+        instance_ids: vec![id.clone()],
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let mut settings: serde_json::Map<String, Value> =

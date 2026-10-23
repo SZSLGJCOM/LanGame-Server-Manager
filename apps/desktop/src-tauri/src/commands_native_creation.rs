@@ -10,6 +10,7 @@ pub(super) enum Acquisition {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum InstanceMode {
     Default,
+    IndependentPair,
     SecondPrivate,
     SharedPair,
 }
@@ -43,6 +44,7 @@ impl CreationMode {
         };
         let instances = match instances {
             None => InstanceMode::Default,
+            Some("independent_pair") => InstanceMode::IndependentPair,
             Some("second_private") => InstanceMode::SecondPrivate,
             Some("shared_pair") if shared => InstanceMode::SharedPair,
             Some("shared_pair") => {
@@ -118,7 +120,9 @@ impl CreationMode {
         };
         let program_mode = match self.instances {
             InstanceMode::Default => None,
-            InstanceMode::SecondPrivate => Some(InstanceProgramMode::Independent),
+            InstanceMode::IndependentPair | InstanceMode::SecondPrivate => {
+                Some(InstanceProgramMode::Independent)
+            }
             InstanceMode::SharedPair => Some(InstanceProgramMode::Shared),
         };
         let first_official = self.acquisition == Acquisition::Official
@@ -303,7 +307,9 @@ impl CreationMode {
             InstanceMode::SharedPair if first_root != second_root => {
                 return Err("native shared pair did not reuse one program root".into());
             }
-            InstanceMode::SecondPrivate if first_root == second_root => {
+            InstanceMode::IndependentPair | InstanceMode::SecondPrivate
+                if first_root == second_root =>
+            {
                 return Err("native independent pair shares its program root".into());
             }
             _ => {}

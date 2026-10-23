@@ -145,7 +145,7 @@ fn dst_regeneration_deletes_world_saves_and_keeps_configuration() {
     std::fs::remove_dir_all(&root).unwrap();
 }
 
-/// Mirrors the PAMD instance layout: the save directories are resolved from the
+/// The managed instance layout resolves save directories from the
 /// instance's config file (`<instance>/config/clusters/main/<Shard>/save`), never
 /// from `saves_path` or another cluster.
 #[test]

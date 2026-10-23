@@ -711,6 +711,7 @@ export const EN_US_EXTRA_MESSAGES = {
   "servers.list.results": "{count} of {total} instances",
   "servers.details.selectTitle": "Select an instance",
   "library.catalog.emptyHint": "Try a different game name or AppID.",
+  "servers.backups.stopBeforeBackup": "Stop the server normally before creating a consistent save backup. Sending a save request does not make its files safe to copy.",
   "servers.backups.policySave": "Save policy",
   "servers.backups.policySaving": "Saving policy…",
   "servers.backups.policySaved": "Policy saved",

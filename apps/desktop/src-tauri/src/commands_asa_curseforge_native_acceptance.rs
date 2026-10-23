@@ -161,7 +161,7 @@ async fn run_acceptance(
     let mut firewall_cleanup = None;
     let cleanup = NativeCleanup {
         state: &state,
-        instance_id: id.clone(),
+        instance_ids: vec![id.clone()],
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let result: AcceptanceResult<()> = Box::pin(async {

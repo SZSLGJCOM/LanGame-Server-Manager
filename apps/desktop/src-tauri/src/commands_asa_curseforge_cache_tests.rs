@@ -475,7 +475,7 @@ fn sanitized_pamd_native_cache_matches_published_fingerprints_and_exact_content(
             .mods
             .iter()
             .find(|item| item.project_id == project_id)
-            .expect("required PAMD Mod evidence is missing");
+            .expect("required sanitized Mod cache evidence is missing");
         assert_eq!(item.file_id, file_id);
         assert_eq!(item.module_fingerprints.get(module), Some(&fingerprint));
         assert_eq!(item.files.len(), 6);

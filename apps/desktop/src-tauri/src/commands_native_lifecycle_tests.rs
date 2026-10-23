@@ -45,6 +45,8 @@ mod manual_save_probe;
 #[cfg(windows)]
 #[path = "commands_native_moria_shutdown_control.rs"]
 mod moria_shutdown_control;
+#[path = "commands_native_multi_instance.rs"]
+mod multi_instance;
 #[path = "commands_native_log_readiness.rs"]
 mod native_logs;
 #[path = "commands_native_package.rs"]
@@ -85,7 +87,7 @@ fn moria_console_exit_helper_entry() {
 
 struct NativeCleanup<'a> {
     state: &'a DesktopState,
-    instance_id: String,
+    instance_ids: Vec<String>,
     cleanup_allowed: Arc<AtomicBool>,
 }
 
@@ -95,9 +97,10 @@ impl Drop for NativeCleanup<'_> {
             self.cleanup_allowed.store(false, Ordering::SeqCst);
             return;
         };
-        let stopped = supervisor
-            .take_running_for_stop(&self.instance_id)
-            .map(|mut running| match stop_managed_instance(&mut running) {
+        let previously_allowed = self.cleanup_allowed.load(Ordering::SeqCst);
+        let mut stopped = Vec::with_capacity(self.instance_ids.len());
+        for instance_id in &self.instance_ids {
+            stopped.push(supervisor.take_running_for_stop(instance_id).map(|mut running| match stop_managed_instance(&mut running) {
                 Ok(processes) => {
                     for process in processes.iter().take(8) {
                         let code = process.exit_code.map(|value| format!("0x{:08X}", value as u32));
@@ -113,16 +116,25 @@ impl Drop for NativeCleanup<'_> {
                     true
                 }
                 Err(_) => false,
-            });
+            }));
+        }
         // A failed startup may have never published a supervisor entry. Its
         // absence alone cannot establish that every spawned child was stopped.
-        if let Some(stopped) = stopped {
-            self.cleanup_allowed.store(stopped, Ordering::SeqCst);
-        }
+        self.cleanup_allowed.store(
+            cleanup_confirmed(&stopped, previously_allowed),
+            Ordering::SeqCst,
+        );
         if !self.cleanup_allowed.load(Ordering::SeqCst) {
             eprintln!("NATIVE_LIFECYCLE cleanup=process_stop_failed");
         }
     }
+}
+
+fn cleanup_confirmed(stopped: &[Option<bool>], previously_allowed: bool) -> bool {
+    stopped.iter().all(|result| match result {
+        Some(stopped) => *stopped,
+        None => previously_allowed,
+    })
 }
 
 #[test]
@@ -131,10 +143,32 @@ fn native_cleanup_does_not_assume_failed_start_was_stopped() {
     let cleanup_allowed = Arc::new(AtomicBool::new(false));
     drop(NativeCleanup {
         state: &state,
-        instance_id: "not-published-start".into(),
+        instance_ids: vec!["not-published-start".into()],
         cleanup_allowed: Arc::clone(&cleanup_allowed),
     });
     assert!(!cleanup_allowed.load(Ordering::SeqCst));
+}
+
+#[test]
+fn native_pair_cleanup_requires_both_owned_process_trees_to_finish() {
+    assert!(cleanup_confirmed(&[Some(true), Some(true)], false));
+    for stopped in [
+        [Some(false), Some(true)],
+        [Some(true), Some(false)],
+        [None, Some(true)],
+        [Some(true), None],
+    ] {
+        assert!(!cleanup_confirmed(&stopped, false));
+    }
+    assert!(cleanup_confirmed(&[None, None], true));
+    assert!(!cleanup_confirmed(&[Some(false), None], true));
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum NativeScope {
+    FullLifecycle,
+    StartStop,
+    TwoInstanceLifecycle,
 }
 
 #[tokio::test(flavor = "current_thread")]
@@ -146,11 +180,42 @@ async fn native_package_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
     for (module_id, source) in cases {
         let started = Instant::now();
         println!("NATIVE_CATALOG module={module_id} phase=begin");
-        Box::pin(run_native_package(module_id.clone(), source, false)).await?;
+        Box::pin(run_native_package(
+            module_id.clone(),
+            source,
+            NativeScope::FullLifecycle,
+        ))
+        .await?;
         println!(
             "NATIVE_CATALOG module={module_id} phase=passed elapsed_ms={}",
             started.elapsed().as_millis()
         );
+    }
+    Ok(())
+}
+
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "opt-in: two isolated Terraria, Valheim or Minecraft instances; peer stays running through the primary start/save/stop cycle, then both follow production lifecycle cleanup"]
+async fn native_two_instance_lifecycle() -> Result<(), Box<dyn std::error::Error>> {
+    let _guard = command_smoke_lock().lock().await;
+    let descriptors = discover_modules(workspace_root().join("modules"))?;
+    for (module_id, source) in catalog::from_env(&descriptors)? {
+        if !matches!(module_id.as_str(), "terraria" | "valheim" | "minecraft") {
+            return Err(
+                "native simultaneous lifecycle supports Terraria, Valheim and Minecraft".into(),
+            );
+        }
+        if std::env::var("LANGAME_NATIVE_MANUAL_SAVE").as_deref() != Ok("true") {
+            return Err(
+                "native simultaneous lifecycle requires LANGAME_NATIVE_MANUAL_SAVE=true".into(),
+            );
+        }
+        Box::pin(run_native_package(
+            module_id,
+            source,
+            NativeScope::TwoInstanceLifecycle,
+        ))
+        .await?;
     }
     Ok(())
 }
@@ -161,7 +226,12 @@ async fn native_start_stop() -> Result<(), Box<dyn std::error::Error>> {
     let _guard = command_smoke_lock().lock().await;
     let descriptors = discover_modules(workspace_root().join("modules"))?;
     for (module_id, source) in catalog::from_env(&descriptors)? {
-        Box::pin(run_native_package(module_id, source, true)).await?;
+        Box::pin(run_native_package(
+            module_id,
+            source,
+            NativeScope::StartStop,
+        ))
+        .await?;
     }
     Ok(())
 }
@@ -182,7 +252,12 @@ async fn native_moria_no_loader_shutdown_control() -> Result<(), Box<dyn std::er
         );
     }
     for (module_id, source) in selected {
-        Box::pin(run_native_package(module_id, source, true)).await?;
+        Box::pin(run_native_package(
+            module_id,
+            source,
+            NativeScope::StartStop,
+        ))
+        .await?;
     }
     Ok(())
 }
@@ -205,7 +280,12 @@ async fn native_manual_save() -> Result<(), Box<dyn std::error::Error>> {
         if module_id == "squad" {
             return Err("Squad has no persistent-world manual save action".into());
         }
-        Box::pin(run_native_package(module_id, source, true)).await?;
+        Box::pin(run_native_package(
+            module_id,
+            source,
+            NativeScope::StartStop,
+        ))
+        .await?;
     }
     Ok(())
 }
@@ -226,7 +306,12 @@ async fn native_no_client_save_guard() -> Result<(), Box<dyn std::error::Error>>
                 "Native no-client acceptance requires its explicit closed-module opt-in".into(),
             );
         }
-        Box::pin(run_native_package(module_id, source, true)).await?;
+        Box::pin(run_native_package(
+            module_id,
+            source,
+            NativeScope::StartStop,
+        ))
+        .await?;
     }
     Ok(())
 }
@@ -242,7 +327,12 @@ async fn native_game_tools() -> Result<(), Box<dyn std::error::Error>> {
     for (module_id, source) in catalog::from_env(&descriptors)? {
         let started = Instant::now();
         println!("NATIVE_GM_CATALOG module={module_id} phase=begin");
-        Box::pin(run_native_package(module_id.clone(), source, true)).await?;
+        Box::pin(run_native_package(
+            module_id.clone(),
+            source,
+            NativeScope::StartStop,
+        ))
+        .await?;
         println!(
             "NATIVE_GM_CATALOG module={module_id} phase=passed elapsed_ms={}",
             started.elapsed().as_millis()
@@ -254,12 +344,23 @@ async fn native_game_tools() -> Result<(), Box<dyn std::error::Error>> {
 async fn run_native_package(
     module_id: String,
     source: PathBuf,
-    cycle_only: bool,
+    scope: NativeScope,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let cycle_only = scope == NativeScope::StartStop;
     let observation_seconds = diagnostics::observation_seconds()?;
     let descriptors = discover_modules(workspace_root().join("modules"))?;
     let descriptor = find_descriptor(&descriptors, &module_id)?;
     let creation_mode = creation::CreationMode::from_env(descriptor)?;
+    if scope == NativeScope::TwoInstanceLifecycle
+        && !matches!(
+            creation_mode.instances,
+            creation::InstanceMode::IndependentPair | creation::InstanceMode::SharedPair
+        )
+    {
+        return Err(
+            "native simultaneous lifecycle requires independent_pair or shared_pair".into(),
+        );
+    }
     let maintenance_mode = maintenance::ProgramMaintenance::from_env(&creation_mode)?;
     if cycle_only
         && (creation_mode.acquisition != creation::Acquisition::LocalPackage
@@ -398,7 +499,7 @@ async fn run_native_package(
         .build(tauri::test::mock_context(tauri::test::noop_assets()))?;
     let state = app.state::<DesktopState>();
     let mut seed_probe = None;
-    let first_instance = if creation_mode.instances != creation::InstanceMode::Default {
+    let mut first_instance = if creation_mode.instances != creation::InstanceMode::Default {
         let first = creation_mode
             .create(state.clone(), &storage, descriptor, &package, "peer")
             .await?;
@@ -437,7 +538,14 @@ async fn run_native_package(
     )?;
     let cleanup = NativeCleanup {
         state: &state,
-        instance_id: id.clone(),
+        instance_ids: std::iter::once(id.clone())
+            .chain(
+                first_instance
+                    .as_ref()
+                    .filter(|_| scope == NativeScope::TwoInstanceLifecycle)
+                    .map(|(peer, ..)| peer.summary.id.clone()),
+            )
+            .collect(),
         cleanup_allowed: Arc::clone(&package.cleanup_allowed),
     };
     let mut settings: serde_json::Map<String, Value> =
@@ -585,7 +693,27 @@ async fn run_native_package(
     // Keep independent lifecycle phases out of this long fixture's state. A
     // cycle includes production startup and observation futures; embedding two
     // cycles exhausted the default Windows test stack in the native run.
-    let first_run = Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?;
+    let first_run = if scope == NativeScope::TwoInstanceLifecycle {
+        let (peer, ..) = first_instance
+            .as_ref()
+            .ok_or("native simultaneous lifecycle has no peer")?;
+        let (run_id, peer) = Box::pin(multi_instance::run_initial(
+            &runtime,
+            &details,
+            peer,
+            observation_seconds,
+        ))
+        .await?;
+        first_instance = Some((
+            peer.clone(),
+            fs::read(&peer.config_file_path)?,
+            save_inventory(Path::new(&peer.saves_path))?,
+            inventory::program_files(descriptor, &creation::program_root(&peer)?)?,
+        ));
+        run_id
+    } else {
+        Box::pin(runtime.run_cycle(&details, "initial", observation_seconds)).await?
+    };
     let stopped_config = fs::read(&details.config_file_path)?;
     let reloaded = read_instance_details_from_storage(state.clone(), id.clone()).await?;
     settings_readback::verify_stopped(&details, &reloaded, &effective_install_root)?;
@@ -795,7 +923,7 @@ async fn run_native_package(
             || inventory::program_files(descriptor, &creation::program_root(&first)?)? != programs
         {
             return Err(
-                "native lifecycle changed its unstarted peer's program, configuration or saves"
+                "native lifecycle changed its retained peer's program, configuration or saves"
                     .into(),
             );
         }

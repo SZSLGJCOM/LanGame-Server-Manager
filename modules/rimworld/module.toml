@@ -6,12 +6,12 @@ supported_platforms = ["windows"]
 
 [install]
 shared_game_dir = "rimworld"
-download_url_windows = "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.8.31.1/Server-win-x64.zip"
+download_url_windows = "https://github.com/RimWorld-Together/Rimworld-Together/releases/download/26.10.20.1_%281%29/Server-win-x64.zip"
 verification_path = "RTServer.exe"
 
 [install.download_integrity_windows]
-sha256 = "f16c703f1e3e4e6de0f4877d8ae502a817c85482681956aa01e8a4b619bab68c"
-size = 29443247
+sha256 = "ebffcd587bac87405d8d5f2e671d8fce0d5db3a0872a3d14699395ece512790d"
+size = 31766123
 
 [process]
 executable = "RTServer.exe"
@@ -21,7 +21,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "RimWorld Together 26.8.31.1 ships RTServer.exe. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched. Players use the RimWorld Together client mod 3005289691."
+host_notes = "RimWorld Together 26.10.20.1 (1) ships RTServer.exe. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched. Players use the matching RimWorld Together client mod 3005289691."
 
 [[default_ports]]
 name = "game"
@@ -138,7 +138,7 @@ target_required = true
 process_key = "main"
 destructive = true
 
-# RTServer 26.8.31.1 CMD_Modlist prints Configs/ModConfig.json required and
+# RTServer CMD_Modlist prints Configs/ModConfig.json required and
 # optional Mods; CMD_ToggleModBypass flips and saves AllowAllMods.
 [[runtime.player_actions]]
 id = "list_mods"
@@ -170,7 +170,7 @@ transport = "console_ctrl_c"
 command = "CTRL_C"
 wait_after_ms = 8000
 
-# Release 26.8.31.1 Server-win-x64.zip contains RTServer.exe; these roots are generated at runtime.
+# Server-win-x64.zip contains RTServer.exe; these roots are generated at runtime.
 [storage]
 runtime_copy_exclusions = ["Assets", "Configs", "Logs", "Backups"]
 saves_path_template = "{{paths.install_root}}/Assets"
@@ -179,8 +179,8 @@ retained_paths = ["Configs"]
 [player_management]
 status = "runtime_actions"
 planned_surface = "managed_terminal_console_and_json_rosters"
-reason = "RimWorld Together RTServer.exe accepts list, banlist, kick, ban, pardon, op, and deop through managed stdin. The latest release replaced whitelist controls with a server password; historical roster files are retained without exposing obsolete commands."
-verification = "Command names and native configuration were checked against official release 26.8.31.1 source. No latest-package game process or player-join test is claimed. Validate managed stdin and password admission with matching client/server builds before claiming runtime verification."
+reason = "RimWorld Together RTServer.exe accepts list, banlist, kick, ban, pardon, op, and deop through managed stdin. Server passwords control admission; historical whitelist files are retained without exposing obsolete commands."
+verification = "Release 26.10.20.1 (1) archive integrity, executable layout, configuration paths, password object and existing console commands were checked against the official package and tagged source. No latest-package game process or player-join test is claimed. Validate managed stdin and password admission with matching client/server builds before claiming runtime verification."
 
 [[runtime.port_roles]]
 role = "player"

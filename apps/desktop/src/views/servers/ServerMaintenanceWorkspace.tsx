@@ -137,9 +137,7 @@ export function ServerMaintenanceWorkspace(props: ServerMaintenanceWorkspaceProp
               <MaintenanceToolbar label={t("servers.maintenance.backupHistory")}>
                 <MaintenanceAction icon="plus" className="secondary-button" label={t("servers.details.backupNow")}
                   disabledReason={readOnly ? t("servers.archives.workspace.restoreForMaintenance") : backupNeedsStop
-                    ? t("servers.backups.stopBeforeBackup", undefined, locale === "zh-CN"
-                      ? "请先正常停服，再创建一致的存档备份。已发送保存请求不代表文件可安全复制。"
-                      : "Stop the server normally before creating a consistent save backup. Sending a save request does not make its files safe to copy.") : null}
+                    ? t("servers.backups.stopBeforeBackup") : null}
                   disabled={!props.onCreateBackup}
                   onClick={() => { if (!readOnly && !backupNeedsStop) props.onCreateBackup?.(props.details.summary.id); }} />
                 <MaintenanceChip icon="clock" label={t("servers.maintenance.backupPolicy")} className="server-backup-policy-card">

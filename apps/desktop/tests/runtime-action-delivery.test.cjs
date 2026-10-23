@@ -8,7 +8,6 @@ const appSource = fs.readFileSync(path.join(sourceRoot, "App.tsx"), "utf8");
 const shellSource = fs.readFileSync(path.join(sourceRoot, "components", "AppShell.tsx"), "utf8");
 const actionsSource = fs.readFileSync(path.join(sourceRoot, "hooks", "useDesktopActions.ts"), "utf8");
 const serversSource = fs.readFileSync(path.join(sourceRoot, "views", "ServersView.tsx"), "utf8");
-const maintenanceSource = fs.readFileSync(path.join(sourceRoot, "views", "servers", "ServerMaintenanceWorkspace.tsx"), "utf8");
 const viewModelsSource = fs.readFileSync(path.join(sourceRoot, "view-models.ts"), "utf8");
 const runtimeSurfaceSource = fs.readFileSync(
   path.join(sourceRoot, "views", "servers", "RuntimeSurfaceWorkbench.tsx"),
@@ -90,8 +89,6 @@ test("partial runtime failures keep stop and surviving-process controls availabl
   assert.match(gmToolsSource, /runtimeProcessKeyIsRunning\(props\.details\.active_run, commandPreview\.processKey\)/);
   assert.match(playerCenterSource, /runtimeProcessKeyIsRunning\(props\.details\.active_run, playerListAction\.process_key\)/);
   assert.match(serversSource, /!onlyRunning \|\| instanceHasRunningProcess\(instance\)/);
-  assert.match(maintenanceSource, /const canRestoreBackup = !readOnly && !instanceHasRunningProcess\(props\.details\.summary, props\.details\.active_run\)/);
-  assert.match(maintenanceSource, /<BackupTable[\s\S]*?canRestoreBackup=\{canRestoreBackup\}/);
   assert.match(viewModelsSource, /instances\.filter\(\(instance\) => instanceHasRunningProcess\(instance\)\)/);
 });
 

@@ -93,6 +93,7 @@ test("archived instances keep both entries read-only and never list live files",
   assert.equal(view.named("saves", "SaveSlotTable").length, 0);
   assert.equal(view.named("backups", "ArkClusterSnapshotSection").length, 0);
   assert.ok(view.named("saves", "SavePolicyEditor").every((element) => element.props.readOnly === true));
+  assert.equal(view.named("backups", "BackupTable")[0].props.canRestoreBackup, false);
 });
 
 test("backup restore is enabled only for writable stopped instances with a restore handler", () => {
@@ -119,20 +120,27 @@ test("backup restore is enabled only for writable stopped instances with a resto
   }
 });
 
-test("manual backups require a stopped instance even while runtime status is transitioning", () => {
-  for (const [status, activeRun, expectedDisabled] of [
-    ["stopped", null, false], ["running", null, true], ["starting", null, true], ["stopping", null, true],
-    ["stopped", { processes: [{ status: "running", process_key: "server" }] }, true]
+test("backup and restore controls require no active or unresolved runtime", () => {
+  for (const [status, activeRun, activeProcessCount, expectedDisabled] of [
+    ["stopped", null, 0, false], ["error", null, 0, false],
+    ["running", null, 0, true], ["starting", null, 0, true], ["stopping", null, 0, true],
+    ["error", null, 1, true],
+    ["error", { processes: [{ status: "running", process_key: "server" }] }, 0, true],
+    ["stopped", { processes: [] }, 0, true]
   ]) {
+    const backupRequests = [];
     const view = maintenance("minecraft", {
-      details: { summary: { id: "fixture", module_id: "minecraft", status, active_process_count: 0 },
+      details: { summary: { id: "fixture", module_id: "minecraft", status, active_process_count: activeProcessCount },
         active_run: activeRun, config_file_path: "D:/fixture/config/instance.json", backup_uses_declared_saves_path: true },
-      onCreateBackup: () => {}
+      onCreateBackup: (id) => backupRequests.push(id)
     });
     const action = view.named("backups", "MaintenanceAction").find((element) => element.props.label === "servers.details.backupNow");
     assert.ok(action);
     const markup = renderToStaticMarkup(action);
     assert.equal(/<button\b[^>]*\bdisabled(?:=|\s|>)/.test(markup), expectedDisabled, status);
+    action.props.onClick();
+    assert.deepEqual(backupRequests, expectedDisabled ? [] : ["fixture"], status);
+    assert.equal(view.named("backups", "BackupTable")[0].props.canRestoreBackup, !expectedDisabled, status);
   }
 });
 

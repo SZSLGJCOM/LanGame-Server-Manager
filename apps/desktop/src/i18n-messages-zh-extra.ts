@@ -524,6 +524,7 @@ export const ZH_CN_EXTRA_MESSAGES: MessageCatalog = {
   "servers.mods.lifecycle.unsupported": "非 MOD",
   "servers.mods.lifecycle.client-only": "仅客户端",
 
+  "servers.backups.stopBeforeBackup": "请先正常停服，再创建一致的存档备份。已发送保存请求不代表文件可安全复制。",
   "servers.backups.policySave": "保存策略",
   "servers.backups.policySaving": "正在保存…",
   "servers.backups.policySaved": "策略已保存",

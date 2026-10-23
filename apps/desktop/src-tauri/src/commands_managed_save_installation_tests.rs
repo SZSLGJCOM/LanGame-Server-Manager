@@ -231,81 +231,6 @@ async fn unsupported_managed_start_preserves_conflicts_before_retiring_any_file(
     }
 }
 
-#[test]
-fn compiler_response_preserves_long_reference_lists_and_quoted_unicode_paths() {
-    let game = profile("vrising").unwrap();
-    let root = PathBuf::from(format!(
-        "C:/operator games/存档/{}/runtime",
-        "x".repeat(140)
-    ));
-    let references = (0..200)
-        .map(|index| {
-            (
-                root.join(format!("dotnet/System.Reference{index}.dll")),
-                "fixed hash".into(),
-            )
-        })
-        .collect::<Vec<_>>();
-    let scratch = PathBuf::from("C:/compiler output/保存");
-    let bytes = compiler_response(
-        Path::new("C:/Windows/Framework/csc.exe"),
-        &scratch,
-        game,
-        &references,
-    )
-    .unwrap();
-    assert!(bytes.len() > 32767);
-    let text = std::str::from_utf8(&bytes).unwrap();
-    assert!(text.starts_with('\u{feff}'));
-    assert!(
-        !text.contains("/noconfig"),
-        "Framework csc requires this option on its command line"
-    );
-    for (reference, _) in references {
-        assert!(text.contains(&format!("/reference:\"{}\"\r\n", reference.display())));
-    }
-    assert!(text.contains(&format!(
-        "/out:\"{}\"\r\n",
-        scratch.join("save.dll").display()
-    )));
-    assert!(text.contains(&format!(
-        "\"{}\"\r\n",
-        scratch.join("NativeSave.cs").display()
-    )));
-    assert!(text.ends_with(&format!(
-        "\"{}\"\r\n",
-        scratch.join("NativeSave.cs").display()
-    )));
-    let sons = compiler_response(
-        Path::new("C:/Windows/Framework/csc.exe"),
-        &scratch,
-        profile("sonsoftheforest").unwrap(),
-        &[],
-    )
-    .unwrap();
-    let sons = std::str::from_utf8(&sons).unwrap();
-    assert!(sons.ends_with(&format!(
-        "\"{}\"\r\n",
-        scratch.join("SonsSaveCompletion.cs").display()
-    )));
-}
-
-#[test]
-fn compiler_response_rejects_path_characters_that_could_inject_options() {
-    for path in [
-        "C:/path\n/unsafe.cs",
-        "C:/path\r/unsafe.cs",
-        "C:/path\"unsafe.cs",
-        "C:/path\0unsafe.cs",
-    ] {
-        assert!(compiler_path(Path::new(path)).is_err(), "{path:?}");
-    }
-    assert_eq!(
-        compiler_path(Path::new("C:/operator # notes/存档.dll")).unwrap(),
-        "\"C:/operator # notes/存档.dll\""
-    );
-}
-
 fn fixture(module: &str) -> (Fixture, Profile) {
     let root = Fixture::new();
     let game = profile(module).unwrap();
@@ -315,6 +240,82 @@ fn fixture(module: &str) -> (Fixture, Profile) {
     std::fs::create_dir(root.0.join("user-world")).unwrap();
     std::fs::write(root.0.join("user-world/persistent.sav"), b"existing world").unwrap();
     (root, game)
+}
+
+fn unavailable_compiler(root: &Path) -> InstallOutcome {
+    let error = compiler::run(
+        &mut std::process::Command::new(root.join("missing-csc.exe")),
+        std::time::Duration::from_secs(1),
+    )
+    .unwrap_err();
+    match error {
+        compiler::CompileFailure::Unavailable(issue) => InstallOutcome::Unavailable(issue),
+        compiler::CompileFailure::Local(issue) => {
+            panic!("unexpected compiler safety error: {issue}")
+        }
+    }
+}
+
+#[test]
+fn unavailable_compiler_retires_only_owned_scan_entries_before_native_start() {
+    for module in ["corekeeper", "vrising", "sonsoftheforest", "barotrauma"] {
+        let fixture = Fixture::new();
+        let (_, details) = fixture.unsupported_instance(module);
+        let runtime = fixture.0.join("runtime");
+        let game = profile(module).unwrap();
+        publish_payload(&runtime, game, b"previous plugin".to_vec()).unwrap();
+        let receipt = std::fs::read(runtime.join(OWNER)).unwrap();
+        let world = runtime.join("world.sav");
+        let foreign = runtime.join("operator-mod.dll");
+        std::fs::write(&world, b"saved world").unwrap();
+        std::fs::write(&foreign, b"operator mod").unwrap();
+
+        for _ in 0..2 {
+            let outcome = super::super::finish_optional_installation(
+                &details,
+                &runtime,
+                game,
+                unavailable_compiler(&runtime),
+            )
+            .unwrap();
+            assert!(matches!(outcome, InstallOutcome::Unavailable(_)));
+            for relative in paths(game) {
+                assert!(!runtime.join(relative).exists(), "{module}: {relative}");
+            }
+            assert_eq!(std::fs::read(runtime.join(OWNER)).unwrap(), receipt);
+            assert_eq!(std::fs::read(&world).unwrap(), b"saved world");
+            assert_eq!(std::fs::read(&foreign).unwrap(), b"operator mod");
+        }
+        publish_payload(&runtime, game, b"next compiled plugin".to_vec()).unwrap();
+        verify_prepared(&runtime, game).unwrap();
+    }
+}
+
+#[test]
+fn unavailable_compiler_does_not_authorize_removing_a_modified_save_plugin() {
+    let fixture = Fixture::new();
+    let (_, details) = fixture.unsupported_instance("corekeeper");
+    let runtime = fixture.0.join("runtime");
+    let game = profile("corekeeper").unwrap();
+    publish_payload(&runtime, game, b"previous plugin".to_vec()).unwrap();
+    std::fs::write(runtime.join(game.plugin), b"operator modification").unwrap();
+    let before = owned_paths(game)
+        .into_iter()
+        .chain([OWNER])
+        .map(|path| (path, std::fs::read(runtime.join(path)).ok()))
+        .collect::<Vec<_>>();
+    assert!(
+        super::super::finish_optional_installation(
+            &details,
+            &runtime,
+            game,
+            unavailable_compiler(&runtime),
+        )
+        .is_err()
+    );
+    for (path, bytes) in before {
+        assert_eq!(std::fs::read(runtime.join(path)).ok(), bytes);
+    }
 }
 
 #[test]

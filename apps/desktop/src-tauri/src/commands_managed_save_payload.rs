@@ -1,11 +1,8 @@
 use super::{DIRECTORY, OWNER, Ownership, Profile, io, redloader};
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    path::{Path, PathBuf},
-    process::{Command, Stdio},
-    time::{Duration, Instant},
-};
+use std::{collections::BTreeMap, fs::File, path::Path};
+
+#[path = "commands_managed_save_compiler.rs"]
+mod compiler;
 
 const PROTOCOL: &str = include_str!("../../../../modules/corekeeper/control/SaveProtocol.cs");
 const FILES: &str = include_str!("../../../../modules/corekeeper/control/SaveFiles.cs");
@@ -358,7 +355,13 @@ pub(super) fn verify_prepared(root: &Path, game: Profile) -> Result<Vec<File>, S
     Ok(pins)
 }
 
-pub(super) fn install(root: &Path, game: Profile, refresh: bool) -> Result<(), String> {
+#[derive(Debug)]
+pub(super) enum InstallOutcome {
+    Ready,
+    Unavailable(String),
+}
+
+pub(super) fn install(root: &Path, game: Profile, refresh: bool) -> Result<InstallOutcome, String> {
     let _root = io::pin_directories(root)?;
     super::process::ensure_scope(root, game, None)?;
     verify_native(root, game)?;
@@ -382,10 +385,16 @@ pub(super) fn install(root: &Path, game: Profile, refresh: bool) -> Result<(), S
             && owner.files.len() == paths(game).len()
     }) && paths(game).into_iter().all(|p| root.join(p).is_file())
     {
-        return verify_prepared(root, game).map(|_| ());
+        return verify_prepared(root, game).map(|_| InstallOutcome::Ready);
     }
-    let plugin = compile(root, game)?;
-    publish_payload(root, game, plugin)
+    let plugin = match compiler::compile(root, game) {
+        Ok(plugin) => plugin,
+        Err(compiler::CompileFailure::Unavailable(issue)) => {
+            return Ok(InstallOutcome::Unavailable(issue));
+        }
+        Err(compiler::CompileFailure::Local(issue)) => return Err(issue),
+    };
+    publish_payload(root, game, plugin).map(|_| InstallOutcome::Ready)
 }
 
 pub(super) fn publish_payload(root: &Path, game: Profile, plugin: Vec<u8>) -> Result<(), String> {
@@ -464,268 +473,6 @@ fn publish_payload_with(
         &serde_json::to_vec(&owner).map_err(|e| e.to_string())?,
     )?;
     verify_prepared(root, game).map(|_| ())
-}
-
-struct Scratch(PathBuf);
-impl Scratch {
-    fn new() -> Result<Self, String> {
-        let path = std::env::temp_dir().join(format!(
-            "langame-native-save-{}",
-            uuid::Uuid::new_v4().simple()
-        ));
-        std::fs::create_dir(&path).map_err(|_| "Cannot create the save compiler workspace.")?;
-        Ok(Self(path))
-    }
-}
-impl Drop for Scratch {
-    fn drop(&mut self) {
-        for name in [
-            "SaveProtocol.cs",
-            "SaveFiles.cs",
-            "NativeSave.cs",
-            "SonsSaveCompletion.cs",
-            "CoreKeeperSaveNative.cs",
-            "0Harmony.dll",
-            "manifest.json",
-            "save.dll",
-            "compiler.txt",
-            "compiler.rsp",
-        ] {
-            let _ = std::fs::remove_file(self.0.join(name));
-        }
-        let _ = std::fs::remove_dir(&self.0);
-    }
-}
-
-fn compile(root: &Path, game: Profile) -> Result<Vec<u8>, String> {
-    let scratch = Scratch::new()?;
-    for (name, text) in [
-        ("SaveProtocol.cs", PROTOCOL),
-        ("SaveFiles.cs", FILES),
-        ("NativeSave.cs", source(game)),
-        ("manifest.json", SONS_MANIFEST),
-    ] {
-        std::fs::write(scratch.0.join(name), text)
-            .map_err(|_| "Cannot stage the fixed save extension source.")?;
-    }
-    for (name, text) in extra_sources(game) {
-        std::fs::write(scratch.0.join(name), text)
-            .map_err(|_| "Cannot stage the native save completion source.")?;
-    }
-    let references = references(root, game)?;
-    let mut pins = Vec::new();
-    for (reference, expected) in &references {
-        pins.extend(io::pin_directories(
-            reference.parent().ok_or("Invalid compiler reference")?,
-        )?);
-        let (pin, bytes) = io::pin_regular(reference, 64 * 1024 * 1024)?;
-        if io::digest(&bytes) != *expected {
-            return Err(
-                "The fixed compiler reference was changed; no extension was compiled.".into(),
-            );
-        }
-        pins.push(pin);
-    }
-    let compiler = PathBuf::from(
-        std::env::var_os("WINDIR")
-            .ok_or("Native save preparation requires Windows Framework csc.")?,
-    )
-    .join("Microsoft.NET/Framework64/v4.0.30319/csc.exe");
-    let output = File::create(scratch.0.join("compiler.txt"))
-        .map_err(|_| "Cannot create the save compiler diagnostic file.")?;
-    let response = compiler_response(&compiler, &scratch.0, game, &references)?;
-    let response_file = scratch.0.join("compiler.rsp");
-    std::fs::write(&response_file, response)
-        .map_err(|error| format!("Cannot stage the fixed save compiler response file: {error}"))?;
-    let mut command = Command::new(&compiler);
-    // IL2CPP SDKs have hundreds of references. Keeping them in the response
-    // file avoids Windows' 32,767-character process command-line limit. This
-    // option itself must stay on the command line (Framework warning CS2023).
-    command
-        .arg("/noconfig")
-        .arg(format!("@{}", response_file.display()));
-    command
-        .stdin(Stdio::null())
-        .stdout(Stdio::from(output.try_clone().map_err(|e| e.to_string())?))
-        .stderr(Stdio::from(output));
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        command.creation_flags(0x08000000);
-    }
-    let mut child = command.spawn().map_err(|error| {
-        format!("Cannot start Windows Framework csc for the fixed save extension: {error}")
-    })?;
-    let deadline = Instant::now() + Duration::from_secs(30);
-    let status = loop {
-        if let Some(status) = child.try_wait().map_err(|e| e.to_string())? {
-            break status;
-        }
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err("The save extension compiler exceeded 30 seconds.".into());
-        }
-        std::thread::sleep(Duration::from_millis(20));
-    };
-    let diagnostics = io::read_regular(&scratch.0.join("compiler.txt"), 65536)?;
-    if !diagnostics.is_empty() {
-        eprintln!(
-            "native-save compiler: {}",
-            String::from_utf8_lossy(&diagnostics)
-        );
-    }
-    if !status.success() {
-        return Err("The fixed save extension did not compile against this loader SDK; no plugin was installed. See the application compiler diagnostics.".into());
-    }
-    io::read_regular(&scratch.0.join("save.dll"), 1024 * 1024)
-}
-
-fn compiler_path(path: &Path) -> Result<String, String> {
-    let text = path
-        .to_str()
-        .ok_or("The save compiler path is not valid Unicode.")?;
-    if text
-        .chars()
-        .any(|character| character == '"' || character.is_control())
-    {
-        return Err("The save compiler path contains an invalid response-file character.".into());
-    }
-    Ok(format!("\"{text}\""))
-}
-
-fn compiler_response(
-    compiler: &Path,
-    scratch: &Path,
-    game: Profile,
-    references: &[(PathBuf, String)],
-) -> Result<Vec<u8>, String> {
-    let mut arguments = [
-        "/nologo",
-        "/target:library",
-        "/langversion:5",
-        "/warnaserror+",
-    ]
-    .map(str::to_owned)
-    .to_vec();
-    if matches!(game.module, "vrising" | "sonsoftheforest") {
-        arguments.push("/nostdlib+".into());
-        arguments.push("/warnaserror-:1701".into());
-    } else {
-        for name in ["System.dll", "System.Core.dll"] {
-            arguments.push(format!(
-                "/reference:{}",
-                compiler_path(
-                    &compiler
-                        .parent()
-                        .ok_or("Invalid Framework compiler path")?
-                        .join(name)
-                )?
-            ));
-        }
-    }
-    arguments.push(format!(
-        "/out:{}",
-        compiler_path(&scratch.join("save.dll"))?
-    ));
-    for (reference, _) in references {
-        arguments.push(format!("/reference:{}", compiler_path(reference)?));
-    }
-    if game.module == "sonsoftheforest" {
-        arguments.push(format!(
-            "/resource:{},LanGame.Sons.manifest.json",
-            compiler_path(&scratch.join("manifest.json"))?
-        ));
-    }
-    for name in ["SaveProtocol.cs", "SaveFiles.cs", "NativeSave.cs"] {
-        arguments.push(compiler_path(&scratch.join(name))?);
-    }
-    for (name, _) in extra_sources(game) {
-        arguments.push(compiler_path(&scratch.join(name))?);
-    }
-    Ok(format!("\u{feff}{}\r\n", arguments.join("\r\n")).into_bytes())
-}
-
-fn references(root: &Path, game: Profile) -> Result<Vec<(PathBuf, String)>, String> {
-    if game.module == "barotrauma" {
-        return Ok(Vec::new());
-    }
-    if game.module == "corekeeper" {
-        let files = corekeeper_native_files(root, game)?;
-        return Ok([
-            ("PugMod.SDK.Runtime.dll", files[1].1),
-            (
-                "UnityEngine.CoreModule.dll",
-                "d184eb633e67cd97d5a0eb0faf3a8f05bdfe17e56c3cef5595cf15c685030aa6",
-            ),
-            (
-                "netstandard.dll",
-                "6ae62e082dc494a2433984177f60ca4db5fae69b1f360a8b33754172b310b8c5",
-            ),
-        ]
-        .into_iter()
-        .map(|(name, hash)| {
-            (
-                root.join("CoreKeeperServer_Data/Managed").join(name),
-                hash.into(),
-            )
-        })
-        .collect());
-    }
-    let (runtime, sdk) = if game.module == "vrising" {
-        ("dotnet", "BepInEx/core")
-    } else {
-        ("_Redloader/dotnet", "_Redloader/net6")
-    };
-    let mut references = Vec::new();
-    let files: BTreeMap<String, String> = if game.module == "vrising" {
-        #[derive(serde::Deserialize)]
-        struct Loader {
-            files: BTreeMap<String, String>,
-        }
-        serde_json::from_str::<Loader>(include_str!("../assets/mod-loaders/vrising.json"))
-            .map_err(|_| "Invalid reviewed V Rising loader manifest.")?
-            .files
-    } else {
-        redloader::files()?
-    };
-    for (path, hash) in &files {
-        let relative = Path::new(path);
-        let Some(name) = relative.file_name().and_then(|v| v.to_str()) else {
-            continue;
-        };
-        if relative.parent() == Some(Path::new(runtime))
-            && name.ends_with(".dll")
-            && !name.ends_with(".Native.dll")
-            && (name.starts_with("System.")
-                || ["mscorlib.dll", "netstandard.dll", "Microsoft.CSharp.dll"].contains(&name))
-        {
-            references.push((root.join(path), hash.clone()));
-        }
-    }
-    let libraries: &[&str] = if game.module == "vrising" {
-        &[
-            "BepInEx.Core.dll",
-            "BepInEx.Unity.IL2CPP.dll",
-            "0Harmony.dll",
-            "Il2CppInterop.Runtime.dll",
-            "Il2CppInterop.Common.dll",
-        ]
-    } else {
-        &["RedLoader.dll", "SonsSdk.dll", "0Harmony.dll"]
-    };
-    for name in libraries {
-        let relative = format!("{sdk}/{name}");
-        references.push((
-            root.join(&relative),
-            files
-                .get(&relative)
-                .ok_or("The fixed loader SDK is incomplete.")?
-                .clone(),
-        ));
-    }
-    references.sort();
-    Ok(references)
 }
 
 #[cfg(all(test, windows))]
