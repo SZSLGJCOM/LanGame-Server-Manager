@@ -447,7 +447,7 @@ pub(super) fn startup_environment(
     )?;
     Ok(Some((
         "LGSM_VALHEIM_CONTROL_ROOT".into(),
-        directory.to_string_lossy().into_owned(),
+        super::commands_managed_save_control::managed_startup_path(&directory),
     )))
 }
 

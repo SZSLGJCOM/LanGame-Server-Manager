@@ -206,6 +206,132 @@ fn managed_startup_hooks_preserve_existing_plan_hooks_including_windows_key_alia
     );
 }
 
+#[cfg(windows)]
+#[test]
+fn managed_startup_paths_reach_real_managed_file_boundaries() {
+    let fixture = Fixture::new();
+    let canonical = fs::canonicalize(&fixture.0).unwrap();
+    assert!(canonical.to_str().unwrap().starts_with(r"\\?\"));
+    let compatible = super::managed_startup_path(&canonical);
+    for path in [
+        r"\\?\UNC\server\share\control",
+        r"\\?\C:\operator games\trailing .",
+        r"\\?\C:\operator games\COM1.dll",
+    ] {
+        assert_eq!(super::managed_startup_path(Path::new(path)), path);
+    }
+    let framework = app_runtime::windows_system_directory()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("Microsoft.NET/Framework64/v4.0.30319");
+    let executable = fixture.0.join("ManagedPathProbe.exe");
+    let mut arguments = vec![
+        "/nologo".to_owned(),
+        "/noconfig".to_owned(),
+        "/langversion:5".to_owned(),
+        "/warnaserror+".to_owned(),
+        "/target:exe".to_owned(),
+        format!("/out:{}", executable.display()),
+    ];
+    for assembly in [
+        "System.dll",
+        "System.Core.dll",
+        "System.Runtime.Serialization.dll",
+        "System.Xml.dll",
+    ] {
+        arguments.push(format!("/reference:{}", framework.join(assembly).display()));
+    }
+    for (name, source) in [
+        (
+            "SaveFiles.cs",
+            include_str!("../../../../modules/corekeeper/control/SaveFiles.cs"),
+        ),
+        (
+            "SaveProtocol.cs",
+            include_str!("../../../../modules/corekeeper/control/SaveProtocol.cs"),
+        ),
+        (
+            "ControlFiles.cs",
+            include_str!("../../../../modules/valheim/control/ControlFiles.cs"),
+        ),
+        (
+            "ControlProtocol.cs",
+            include_str!("../../../../modules/valheim/control/ControlProtocol.cs"),
+        ),
+        (
+            "NativeAccessPins.cs",
+            include_str!("../../../../modules/valheim/control/NativeAccessPins.cs"),
+        ),
+        (
+            "ValheimNativeControl.cs",
+            include_str!("../../../../modules/valheim/control/ValheimNativeControl.cs"),
+        ),
+        (
+            "ValheimWorldSave.cs",
+            include_str!("../../../../modules/valheim/control/ValheimWorldSave.cs"),
+        ),
+        (
+            "ManagedPathProbe.cs",
+            r#"
+using System;
+using LanGame.SaveControl;
+using Lgsm.Valheim.Control;
+class ManagedPathProbe {
+    static int Main(string[] args) {
+        try {
+            int rejected = 0;
+            try { using (new SaveFiles(args[0])) { } }
+            catch (SaveFailure error) {
+                if (error.Code != "invalid_control_root") throw;
+                rejected++;
+            }
+            try { using (new ControlFiles(args[0])) { } }
+            catch (ControlFailure error) {
+                if (error.Code != "invalid_control_root") throw;
+                rejected++;
+            }
+            if (rejected != 2) throw new Exception("Verbatim roots bypassed the managed boundary");
+            using (new SaveFiles(args[1])) { }
+            using (new ControlFiles(args[1])) { }
+            Console.WriteLine("2 verbatim roots rejected; 2 equivalent local roots accepted");
+            return 0;
+        } catch (Exception error) { Console.Error.WriteLine(error); return 1; }
+    }
+}
+"#,
+        ),
+    ] {
+        let path = fixture.0.join(name);
+        fs::write(&path, source).unwrap();
+        arguments.push(path.to_string_lossy().into_owned());
+    }
+    let compiled = app_runtime::capture_windows_utility(
+        &framework.join("csc.exe"),
+        &arguments.iter().map(String::as_str).collect::<Vec<_>>(),
+        Duration::from_secs(30),
+    )
+    .unwrap();
+    assert!(
+        compiled.status.success(),
+        "{}\n{}",
+        String::from_utf8_lossy(&compiled.stdout),
+        String::from_utf8_lossy(&compiled.stderr)
+    );
+    let observed = app_runtime::capture_windows_utility(
+        &executable,
+        &[canonical.to_str().unwrap(), &compatible],
+        Duration::from_secs(30),
+    )
+    .unwrap();
+    assert!(
+        observed.status.success(),
+        "{}\n{}",
+        String::from_utf8_lossy(&observed.stdout),
+        String::from_utf8_lossy(&observed.stderr)
+    );
+}
+
 fn packet(nonce: &str, status: &str, issue: &str) -> Vec<u8> {
     format!("LGSM_SAVE_1\nmodule=corekeeper\nrun={}\nnonce={nonce}\npid=42\nstatus={status}\nissue={issue}\n","a".repeat(32)).into_bytes()
 }

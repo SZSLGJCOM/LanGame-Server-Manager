@@ -427,6 +427,12 @@ fn report_unavailable_loader(storage: &StorageBootstrap, details: &InstanceDetai
     );
 }
 
+pub(super) fn managed_startup_path(path: &Path) -> String {
+    // Storage keeps canonical paths for identity checks. Managed loaders need
+    // ordinary drive paths; retain verbatim paths when conversion changes meaning.
+    dunce::simplified(path).to_string_lossy().into_owned()
+}
+
 /// Called after automatic preparation while all startup leases remain held.
 pub(super) fn startup_environment(
     details: &InstanceDetails,
@@ -464,9 +470,9 @@ pub(super) fn startup_environment(
     Ok(vec![(
         game.environment.into(),
         if game.environment == "DOTNET_STARTUP_HOOKS" {
-            runtime.join(game.plugin).to_string_lossy().into_owned()
+            managed_startup_path(&runtime.join(game.plugin))
         } else {
-            directory.to_string_lossy().into_owned()
+            managed_startup_path(&directory)
         },
     )])
 }
