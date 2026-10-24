@@ -86,8 +86,9 @@ function Run-Cleanup([string]$Mode, [int]$ExpectedExit, [switch]$Update) {
 }
 
 # Original package fixtures from Git blobs 742dbcfe3cb8d900bd4e4392c836c2fbf9554488
-# and ead1b2943558012dcc065011e11c43a6f598a79d; CI reads these checked-in inputs.
-# Both line endings were distributed by earlier Windows builds.
+# ead1b2943558012dcc065011e11c43a6f598a79d and f6d02a49e26067da4f4207bfda2fefab0c829772.
+# CI reads these checked-in inputs.
+# Exercise both LF and CRLF representations of the original package bytes.
 $retired = @(
     @{
         Relative = 'modules\enshrouded\config-fixtures\2026-09-30-native_ban_contract_build_23178631.json'
@@ -104,6 +105,14 @@ $retired = @(
         Fixture = 'terraria.json'
         LFLength = 1093
         CRLFLength = 1144
+    },
+    @{
+        Relative = 'modules\romestead\templates\start-romestead.bat.hbs'
+        LF = 'febb34e9c83d6ee13c4876d6b718a0447d6b744c4133401aed94e5ef1b21a7d0'
+        CRLF = 'dec610b49b2bdc0b71edd8f2ccb42a342ad480fe3a945e8c0581850b36f0cc8a'
+        Fixture = 'romestead-start.bat.hbs'
+        LFLength = 209
+        CRLFLength = 216
     }
 )
 
