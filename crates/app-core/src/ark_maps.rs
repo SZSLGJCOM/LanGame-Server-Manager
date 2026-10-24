@@ -269,8 +269,12 @@ pub fn project_process(
             .is_empty()
     {
         let primary = primary_saves_dir(&instance.summary.id, Path::new(&instance.saves_path));
-        settings["cluster_directory"] =
-            Value::String(primary.join("cluster").to_string_lossy().into_owned());
+        let directory = primary.join("cluster");
+        // Generated defaults enter the same launch contract as explicit paths.
+        // Keep storage identity canonical; shorten only an equivalent spelling.
+        #[cfg(windows)]
+        let directory = dunce::simplified(&directory);
+        settings["cluster_directory"] = Value::String(directory.to_string_lossy().into_owned());
     }
     if key != "main" {
         // IDs may share prefixes; only the exact native bindings belong to

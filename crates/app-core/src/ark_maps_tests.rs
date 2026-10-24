@@ -186,6 +186,50 @@ fn main_preserves_existing_save_and_cluster_directory() {
     );
 }
 
+#[cfg(windows)]
+#[test]
+fn canonical_save_roots_produce_valid_default_cluster_paths() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let mut instance = fixture(edition);
+        instance.saves_path = r"\\?\C:\ARK Worlds\ShooterGame\Saved".into();
+        let original_settings = instance.settings_json.clone();
+        for key in ["main", "map-desert"] {
+            let projected = project_process(&instance, Some(key)).unwrap();
+            let settings: Value = serde_json::from_str(&projected.settings_json).unwrap();
+            let directory = settings["cluster_directory"].as_str().unwrap();
+            let resolved = crate::ark_cluster::resolve_cluster_directory(
+                settings["cluster_id"].as_str().unwrap(),
+                directory,
+                Path::new(&instance.saves_path),
+            )
+            .expect("an owned canonical save root must not fail launch validation");
+            assert_eq!(
+                resolved.unwrap(),
+                Path::new(r"C:\ARK Worlds\ShooterGame\Saved\ark-owned\cluster")
+            );
+            assert_eq!(projected.saves_path, instance.saves_path);
+        }
+        assert_eq!(instance.settings_json, original_settings);
+
+        let mut settings: Value = serde_json::from_str(&instance.settings_json).unwrap();
+        settings["cluster_directory"] = json!(r"\\?\C:\operator cluster");
+        instance.settings_json = settings.to_string();
+        let projected = project_process(&instance, None).unwrap();
+        let settings: Value = serde_json::from_str(&projected.settings_json).unwrap();
+        let directory = settings["cluster_directory"].as_str().unwrap();
+        assert_eq!(directory, r"\\?\C:\operator cluster");
+        assert!(
+            crate::ark_cluster::resolve_cluster_directory(
+                settings["cluster_id"].as_str().unwrap(),
+                directory,
+                Path::new(&instance.saves_path)
+            )
+            .is_err(),
+            "explicit device paths must retain the existing rejection"
+        );
+    }
+}
+
 #[test]
 fn pauses_keep_reserved_ports_and_resume_identity() {
     let instance = fixture("arksurvivalevolved");
