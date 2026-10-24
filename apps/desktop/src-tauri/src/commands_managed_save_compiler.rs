@@ -211,7 +211,9 @@ fn stop(child: &mut Child) -> Result<(), CompileFailure> {
 }
 
 fn compiler_path(path: &Path) -> Result<String, String> {
-    let text = path
+    // Framework csc rejects verbatim paths even when the pinned file exists.
+    // Simplify only equivalent paths at this process boundary, not the I/O guards.
+    let text = dunce::simplified(path)
         .to_str()
         .ok_or("The save compiler path is not valid Unicode.")?;
     if text
@@ -510,6 +512,68 @@ mod tests {
         assert_eq!(
             compiler_path(Path::new("C:/operator # notes/存档.dll")).unwrap(),
             "\"C:/operator # notes/存档.dll\""
+        );
+        #[cfg(windows)]
+        {
+            assert_eq!(
+                compiler_path(Path::new(r"\\?\C:\operator games\存档.dll")).unwrap(),
+                "\"C:\\operator games\\存档.dll\""
+            );
+            for path in [
+                r"\\?\C:\operator games\trailing .",
+                r"\\?\C:\operator games\COM1.dll",
+                r"\\?\UNC\server\share\file.dll",
+            ] {
+                assert_eq!(
+                    compiler_path(Path::new(path)).unwrap(),
+                    format!("\"{path}\"")
+                );
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn compiler_response_accepts_canonical_windows_reference_paths() {
+        use std::os::windows::process::CommandExt;
+
+        let compiler = PathBuf::from(std::env::var_os("WINDIR").unwrap())
+            .join("Microsoft.NET/Framework64/v4.0.30319/csc.exe");
+        let reference =
+            std::fs::canonicalize(compiler.parent().unwrap().join("System.Xml.dll")).unwrap();
+        assert!(reference.to_string_lossy().starts_with(r"\\?\"));
+        let scratch = Scratch::new().unwrap();
+        for (name, text) in [
+            ("SaveProtocol.cs", ""),
+            ("SaveFiles.cs", ""),
+            (
+                "NativeSave.cs",
+                "public class NativeSave { public System.Xml.XmlElement Value; }",
+            ),
+        ] {
+            std::fs::write(scratch.0.join(name), text).unwrap();
+        }
+        let response = compiler_response(
+            &compiler,
+            &std::fs::canonicalize(&scratch.0).unwrap(),
+            profile("barotrauma").unwrap(),
+            &[(reference, String::new())],
+        )
+        .unwrap();
+        let response_file = scratch.0.join("compiler.rsp");
+        std::fs::write(&response_file, response).unwrap();
+        let mut command = Command::new(compiler);
+        command
+            .args(["/noconfig", &format!("@{}", response_file.display())])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .creation_flags(0x08000000);
+        run(&mut command, Duration::from_secs(30)).unwrap();
+        assert!(
+            io::read_regular(&scratch.0.join("save.dll"), 1024 * 1024)
+                .unwrap()
+                .starts_with(b"MZ")
         );
     }
 }
