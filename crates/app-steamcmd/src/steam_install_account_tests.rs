@@ -23,6 +23,7 @@ async fn install_with_account(
             validate: false,
             cancellation: &cancellation,
             account_name,
+            retained_paths: &[],
         },
         ModuleInstallCallbacks {
             on_progress: |_| {},

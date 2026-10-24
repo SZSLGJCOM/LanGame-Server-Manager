@@ -7,6 +7,10 @@ use app_core::InstallPhase;
 #[path = "steam_install_dependencies.rs"]
 pub(super) mod shared_dependencies;
 
+#[path = "steam_install_preservation.rs"]
+mod preservation;
+use preservation::PreservedSteamData;
+
 /// Observers for installation progress and a verified, isolated payload before
 /// retained operator data is merged. In-place installations never invoke the
 /// payload callback. It may persist package metadata, but must not move the tree.
@@ -25,6 +29,10 @@ pub struct SteamModuleInstallRequest<'a> {
     pub validate: bool,
     pub cancellation: &'a InstallCancellation,
     pub account_name: Option<&'a str>,
+    /// Existing declared operator data inside this target. Callers with a module
+    /// descriptor must supply its authoritative storage exclusions and resolved
+    /// instance paths. Fresh, isolated acquisition targets use an empty slice.
+    pub retained_paths: &'a [PathBuf],
 }
 
 /// Installs to one explicitly selected program directory while the caller owns
@@ -83,6 +91,7 @@ where
             validate,
             cancellation,
             account_name: None,
+            retained_paths: &[],
         },
         callbacks,
     )
@@ -109,6 +118,7 @@ where
         validate,
         cancellation,
         account_name,
+        retained_paths,
     } = request;
     let account_name = account_name
         .map(normalize_workshop_account_name)
@@ -125,6 +135,7 @@ where
                 guard,
                 revision_key: &revision_key,
                 account_name: account_name.as_deref(),
+                retained_paths,
             },
             InstallDeadline::new("game server install or validation", MODULE_INSTALL_TIMEOUT),
             std::time::Instant::now(),
@@ -172,6 +183,7 @@ struct InstallLifecycle<'a> {
     guard: &'a GameInstallLifecycleGuard,
     revision_key: &'a str,
     account_name: Option<&'a str>,
+    retained_paths: &'a [PathBuf],
 }
 
 async fn install_module<F, C, Fut>(
@@ -196,6 +208,7 @@ where
         guard: game_guard,
         revision_key,
         account_name,
+        retained_paths,
     } = lifecycle;
     let mut on_progress = |mut update: InstallProgressUpdate| {
         if let Some(progress) = update.install_progress.as_mut() {
@@ -323,8 +336,23 @@ where
             format!("SteamCMD ready: {}", steamcmd.executable_path),
         ));
 
+        if !has_retained_install_data(&install_root) && !retained_paths.is_empty() {
+            on_progress(InstallProgressUpdate::stage(InstallPhase::Preparing,
+                "Preserving existing server configuration, saves and mods..."));
+        }
+        let preserved = PreservedSteamData::prepare(
+            preservation::journal_directory(&module.summary.id, &install_root)?,
+            &install_root,
+            &module.summary.id,
+            retained_paths,
+            game_guard,
+            deadline,
+        ).await?;
         let mut retained =
             RetainedSteamInstall::prepare(&install_root, module, before.install_state)?;
+        if let Some(preserved) = &preserved {
+            preserved.native_started()?;
+        }
         let acquisition_root = retained
             .as_ref()
             .map(|retained| &retained.stage)
@@ -622,6 +650,26 @@ where
             Ok((after, excerpt))
         }
         .await;
+        if !matches!(&install_result, Err(SteamCmdError::InstallProcessCleanupFailed { .. }))
+            && let Some(preserved) = preserved
+        {
+            on_progress(InstallProgressUpdate::stage(InstallPhase::Verifying,
+                "Restoring preserved server configuration, saves and mods..."));
+            match preserved.finish(install_result.is_ok(), game_guard).await {
+                Ok(Some(history)) => on_progress(InstallProgressUpdate::stage(
+                    InstallPhase::Verifying,
+                    format!("Restored preserved operator data. Differing files written during the update were retained for review at {}.", history.display()),
+                )),
+                Ok(None) => {},
+                Err(error) => return Err(SteamCmdError::InstallRollbackFailed {
+                    path: install_root.clone(),
+                    detail: match &install_result {
+                        Ok(_) => error.to_string(),
+                        Err(native) => format!("{native}; {error}"),
+                    },
+                }),
+            }
+        }
         if let Err(error) = &install_result
             && !matches!(error, SteamCmdError::InstallProcessCleanupFailed { .. })
             && let Some(retained) = retained.as_ref()

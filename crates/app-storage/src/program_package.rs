@@ -412,6 +412,38 @@ pub fn program_package_path_filter(
     Ok(move |path: &str| !excluded(path, &exclusions, dst))
 }
 
+/// Existing operator data protected during an in-place program update. This
+/// shares the clean-package exclusions, including DST Workshop directories;
+/// manager inventory/ownership files are not user data or replacement payload.
+/// Call under the program lifecycle lease from a blocking filesystem worker.
+pub fn program_update_retained_paths(
+    root: &Path,
+    descriptor: &ModuleDescriptor,
+) -> Result<Vec<PathBuf>, StorageError> {
+    let exclusions = package_exclusions(descriptor)?;
+    let dst = descriptor.summary.id == "dontstarve";
+    let mut retained = Vec::new();
+    if !root.try_exists().map_err(|source| StorageError::ReadPath {
+        path: root.to_owned(),
+        source,
+    })? {
+        return Ok(retained);
+    }
+    for entry in crate::program_library_cleanup::inspect_tree(
+        root,
+        crate::program_library_cleanup::MAX_TREE_ENTRIES,
+    )? {
+        let key = entry.key.to_string_lossy().replace('\\', "/");
+        if !metadata_path(&key)
+            && excluded(&key, &exclusions, dst)
+            && !retained.iter().any(|parent| entry.path.starts_with(parent))
+        {
+            retained.push(entry.path);
+        }
+    }
+    Ok(retained)
+}
+
 pub(super) fn package_exclusions(
     descriptor: &ModuleDescriptor,
 ) -> Result<BTreeSet<String>, StorageError> {

@@ -535,7 +535,10 @@ pub enum SteamCmdError {
 /// Callers must finish all filesystem and persistence work for one game-file
 /// lifecycle transition before dropping this guard.
 #[must_use = "dropping this guard releases the game install lifecycle lock"]
-pub struct GameInstallLifecycleGuard(ResourceLocks, std::collections::BTreeSet<String>);
+pub struct GameInstallLifecycleGuard(
+    std::sync::Arc<ResourceLocks>,
+    std::collections::BTreeSet<String>,
+);
 
 pub async fn acquire_game_install_lifecycle(
     lock_context: &InstallLockContext,
@@ -556,7 +559,9 @@ async fn acquire_game_lifecycle(
     deadline: InstallDeadline,
 ) -> Result<GameInstallLifecycleGuard, SteamCmdError> {
     Ok(GameInstallLifecycleGuard(
-        ResourceLocks::acquire(lock_context, &[module_id], roots, deadline).await?,
+        std::sync::Arc::new(
+            ResourceLocks::acquire(lock_context, &[module_id], roots, deadline).await?,
+        ),
         std::iter::once(module_id.to_owned()).collect(),
     ))
 }
@@ -580,7 +585,9 @@ pub async fn acquire_game_install_lifecycles(
         GAME_INSTALL_LIFECYCLE_TIMEOUT,
     );
     Ok(GameInstallLifecycleGuard(
-        ResourceLocks::acquire(lock_context, &modules, &roots, deadline).await?,
+        std::sync::Arc::new(
+            ResourceLocks::acquire(lock_context, &modules, &roots, deadline).await?,
+        ),
         modules.into_iter().map(str::to_owned).collect(),
     ))
 }

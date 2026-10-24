@@ -105,6 +105,49 @@ fn put(root: &Path, relative: &str, bytes: &[u8]) {
     fs::write(path, bytes).unwrap();
 }
 
+#[test]
+fn steam_update_retention_uses_package_exclusions_and_dst_workshop_data() {
+    let mut fixture = Fixture::new();
+    fixture.descriptor.summary.id = "dontstarve".into();
+    fixture.descriptor.storage.runtime_copy_exclusions =
+        vec!["mods/dedicated_server_mods_setup.lua".into()];
+    fixture.descriptor.storage.retained_paths = vec!["config.json".into()];
+    let root = fixture.source();
+    for path in [
+        "config.json",
+        "Saved/world/save",
+        "mods/dedicated_server_mods_setup.lua",
+        "mods/workshop-123/modmain.lua",
+        "steamapps/workshop/content/42/mod.bin",
+        ".langame-clean-package.json",
+    ] {
+        put(&root, path, b"operator data");
+    }
+    put(&root, "mods/native.lua", b"official program");
+    let paths = program_update_retained_paths(&root, &fixture.descriptor).unwrap();
+    for retained in [
+        "config.json",
+        "Saved",
+        "mods/dedicated_server_mods_setup.lua",
+        "mods/workshop-123",
+        "steamapps/workshop",
+    ] {
+        assert!(
+            paths.contains(&root.join(retained)),
+            "missing retained path: {retained}"
+        );
+    }
+    assert_eq!(paths.len(), 5);
+    let package = program_package_path_filter(&fixture.descriptor).unwrap();
+    assert!(!package("mods/workshop-123/modmain.lua"));
+    assert!(package("mods/native.lua"));
+    assert!(
+        !paths
+            .iter()
+            .any(|path| path.ends_with(".langame-clean-package.json"))
+    );
+}
+
 #[tokio::test]
 async fn registered_library_seed_does_not_require_archive_catalog_admission() {
     let fixture = Fixture::new();

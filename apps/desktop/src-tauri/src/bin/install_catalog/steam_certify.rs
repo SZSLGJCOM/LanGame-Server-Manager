@@ -1,5 +1,6 @@
 //! Officially validate and certify an existing Steam tree without allocating,
-//! moving or cleaning a package. Any non-package content blocks certification.
+//! moving or cleaning a package. Declared operator data is preserved and never
+//! certified as official payload; other non-package content blocks certification.
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -7,9 +8,9 @@ use std::path::{Path, PathBuf};
 use app_core::{AppSettings, InstallState, ModuleDetails};
 use app_modules::ModuleDescriptor;
 use app_steamcmd::{
-    InstallCancellation, InstallLockContext, RETAINED_INSTALL_DATA_MARKER,
-    acquire_game_install_lifecycle, install_or_update_module_at_with_progress_and_cancellation,
-    probe_module_install_state_with_override,
+    InstallCancellation, InstallLockContext, ModuleInstallCallbacks, RETAINED_INSTALL_DATA_MARKER,
+    SteamModuleInstallRequest, acquire_game_install_lifecycle,
+    install_or_update_module_at_with_login_and_callbacks, probe_module_install_state_with_override,
 };
 use app_storage::{
     GameInstallSyncRecord, StoragePaths, list_instance_archives, list_instances,
@@ -203,16 +204,32 @@ async fn certify_owned(
     };
     emit(json!({"event":"certification_started", "module_id":module_id, "root":root}));
     let cancellation = InstallCancellation::new();
-    Box::pin(install_or_update_module_at_with_progress_and_cancellation(
-        settings,
-        &module,
-        &root,
-        &guard,
-        true,
-        &cancellation,
-        |update| {
-            emit(json!({"event":"progress", "module_id":module_id,
+    let worker_root = root.clone();
+    let worker_descriptor = descriptor.clone();
+    let (guard, retained_paths) = tokio::task::spawn_blocking(move || {
+        let result = app_storage::program_update_retained_paths(&worker_root, &worker_descriptor);
+        (guard, result)
+    })
+    .await
+    .map_err(|error| error.to_string())?;
+    let retained_paths = retained_paths.map_err(|error| error.to_string())?;
+    Box::pin(install_or_update_module_at_with_login_and_callbacks(
+        SteamModuleInstallRequest {
+            settings,
+            module: &module,
+            install_root: &root,
+            guard: &guard,
+            validate: true,
+            cancellation: &cancellation,
+            account_name: None,
+            retained_paths: &retained_paths,
+        },
+        ModuleInstallCallbacks {
+            on_progress: |update: app_steamcmd::InstallProgressUpdate| {
+                emit(json!({"event":"progress", "module_id":module_id,
             "percent":update.progress_percent, "detail":update.detail}))
+            },
+            prepare_fresh_payload: |_| async { Ok(()) },
         },
     ))
     .await
@@ -238,12 +255,14 @@ async fn certify_owned(
     let worker_root = root.clone();
     let worker_steamcmd = paths.steamcmd_root.clone();
     let worker_module = module_id.clone();
+    let worker_descriptor = descriptor.clone();
     // A cancelled waiter cannot release the lease while hashing continues.
     let (guard, verified) = tokio::task::spawn_blocking(move || {
         let result = steam_inspect::verify_for_certification(
             &worker_root,
             &worker_steamcmd,
             app_id,
+            &worker_descriptor,
             |mut event| {
                 event["module_id"] = json!(worker_module);
                 event["root"] = json!(worker_root);

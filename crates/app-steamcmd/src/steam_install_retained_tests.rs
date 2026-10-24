@@ -12,6 +12,9 @@ mod manifest_recovery_tests;
 #[path = "steam_install_account_tests.rs"]
 mod account_tests;
 
+#[path = "steam_install_preservation_tests.rs"]
+mod preservation_tests;
+
 struct Fixture {
     root: PathBuf,
     settings: AppSettings,
@@ -111,6 +114,8 @@ public static class Installer {
     File.WriteAllText("destination.txt", root);
     Directory.CreateDirectory(Path.Combine(root, "ServerConfig"));
     File.WriteAllText(Path.Combine(root, "ServerConfig/Server.cfg"), "depot defaults");
+    Directory.CreateDirectory(Path.Combine(root, "mods"));
+    File.WriteAllText(Path.Combine(root, "mods/dedicated_server_mods_setup.lua"), "depot mod defaults");
     if (File.Exists("fail")) return 9;
     Directory.CreateDirectory(Path.Combine(root, "bin"));
     File.WriteAllText(Path.Combine(root, "bin/Server.exe"), "server payload");
@@ -166,14 +171,25 @@ public static class Installer {
             std::slice::from_ref(&target),
         )
         .await?;
-        install_or_update_module_at_with_progress_and_cancellation(
-            &self.settings,
-            &self.module,
-            &target,
-            &guard,
-            false,
-            cancellation,
-            progress,
+        install_or_update_module_at_with_login_and_callbacks(
+            SteamModuleInstallRequest {
+                settings: &self.settings,
+                module: &self.module,
+                install_root: &target,
+                guard: &guard,
+                validate: false,
+                cancellation,
+                account_name: None,
+                retained_paths: &[
+                    target.join("ServerConfig"),
+                    target.join("world.sav"),
+                    target.join("mods"),
+                ],
+            },
+            ModuleInstallCallbacks {
+                on_progress: progress,
+                prepare_fresh_payload: |_| async { Ok(()) },
+            },
         )
         .await
     }
@@ -217,6 +233,41 @@ impl Drop for Fixture {
 
 fn test_deadline() -> InstallDeadline {
     InstallDeadline::new("retained Steam fixture", Duration::from_secs(30))
+}
+
+#[tokio::test]
+async fn installed_steam_update_preserves_config_and_mods_without_reinstalling() {
+    let fixture = Fixture::new().await;
+    let root = fixture.install_root();
+    fs::remove_file(root.join(".langame-uninstalled")).unwrap();
+    fs::create_dir_all(root.join("bin")).unwrap();
+    fs::write(root.join("bin/Server.exe"), b"old server payload").unwrap();
+    fs::create_dir_all(root.join("mods")).unwrap();
+    fs::write(
+        root.join("mods/dedicated_server_mods_setup.lua"),
+        b"operator mods",
+    )
+    .unwrap();
+    let result = fixture.install(|_| {}).await.unwrap();
+    assert_eq!(result.install_state, InstallState::Installed);
+    assert_eq!(result.operation, "update");
+    assert_eq!(
+        fs::read(root.join("bin/Server.exe")).unwrap(),
+        b"server payload"
+    );
+    fixture.assert_retained(false);
+    assert_eq!(
+        fs::read(root.join("mods/dedicated_server_mods_setup.lua")).unwrap(),
+        b"operator mods"
+    );
+    assert_eq!(
+        fs::canonicalize(
+            fs::read_to_string(Path::new(&fixture.settings.steamcmd_root).join("destination.txt"))
+                .unwrap()
+        )
+        .unwrap(),
+        fs::canonicalize(root).unwrap()
+    );
 }
 
 #[tokio::test]

@@ -27,7 +27,7 @@ impl Fixture {
     }
     fn inspect(&self, expected: &Inventory, mode: Inspection) -> (bool, Vec<Value>) {
         let mut events = Vec::new();
-        let result = inspect(&self.root, 7, expected, mode, false, |event| {
+        let result = inspect(&self.root, 7, expected, mode, false, &[], |event| {
             events.push(event)
         });
         (result.is_ok(), events)
@@ -68,6 +68,63 @@ fn verification_reads_official_bytes_without_creating_any_metadata() {
     assert_eq!(
         fs::metadata(&fixture.root).unwrap().modified().unwrap(),
         root_before
+    );
+}
+
+#[test]
+fn certification_preserves_declared_data_without_certifying_it_as_official_bytes() {
+    let fixture = Fixture::new();
+    fs::create_dir(fixture.root.join("mods")).unwrap();
+    fs::write(fixture.root.join("mods/server.lua"), b"operator mods").unwrap();
+    fs::write(fixture.root.join("config.json"), b"operator settings").unwrap();
+    let mut expected = fixture.inventory();
+    expected.files.insert(
+        "config.json".into(),
+        Entry {
+            size: 3,
+            sha1: "a9993e364706816aba3e25717850c26c9cd0d89d".into(),
+        },
+    );
+    let retained = vec!["config.json".into(), "mods/server.lua".into()];
+    let mut events = Vec::new();
+    inspect(
+        &fixture.root,
+        7,
+        &expected,
+        Inspection::Verify,
+        true,
+        &retained,
+        |event| events.push(event),
+    )
+    .unwrap();
+    assert_eq!(summary(&events)["expected_files"], 1);
+    assert_eq!(summary(&events)["matched_files"], 1);
+    assert!(
+        events
+            .iter()
+            .any(|event| event["event"] == "inspection_retained_data"
+                && event["used_as_evidence"] == false)
+    );
+    fs::write(fixture.root.join("unknown.dll"), b"unknown program").unwrap();
+    assert!(
+        inspect(
+            &fixture.root,
+            7,
+            &expected,
+            Inspection::Verify,
+            true,
+            &retained,
+            |_| {}
+        )
+        .is_err()
+    );
+    assert_eq!(
+        fs::read(fixture.root.join("config.json")).unwrap(),
+        b"operator settings"
+    );
+    assert_eq!(
+        fs::read(fixture.root.join("mods/server.lua")).unwrap(),
+        b"operator mods"
     );
 }
 
@@ -177,6 +234,7 @@ fn certification_retries_ignore_only_plain_baselines_and_never_trust_their_conte
             &fixture.inventory(),
             Inspection::Verify,
             true,
+            &[],
             |_| {},
         )
     };

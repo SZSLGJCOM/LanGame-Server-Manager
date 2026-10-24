@@ -173,6 +173,7 @@ async fn install_with_dependencies_and_account(
             validate,
             cancellation: &cancellation,
             account_name,
+            retained_paths: &[],
         },
         ModuleInstallCallbacks {
             on_progress: |update: InstallProgressUpdate| {

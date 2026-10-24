@@ -136,7 +136,7 @@ where
     } else {
         None
     };
-    let steam_app_id = descriptor
+    let steam_source = descriptor
         .summary
         .steam_app_id
         .filter(|id| *id != 0)
@@ -145,8 +145,45 @@ where
                 .install
                 .as_ref()
                 .is_some_and(|install| install.download_url_windows.is_none())
-        })
-        .filter(|_| library);
+        });
+    let retained_paths = if steam_source.is_some() && !source_was_empty {
+        let resolved = super::super::commands_mods::collect_protected_install_data_paths(
+            &storage.paths,
+            descriptor,
+            root,
+        )
+        .await
+        .map_err(metadata_error)?;
+        let mut paths = resolved
+            .into_iter()
+            .map(|item| {
+                item.path.ok_or_else(|| {
+                    metadata_error(
+                        "Protected data cannot be separated from the program directory.".into(),
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let checked_root = root.to_owned();
+        let checked_descriptor = descriptor.clone();
+        paths.extend(
+            run_baseline_worker(
+                operation,
+                cancellation,
+                &descriptor.summary.id,
+                |_| {},
+                move |_, _| {
+                    app_storage::program_update_retained_paths(&checked_root, &checked_descriptor)
+                        .map_err(|error| error.to_string())
+                },
+            )
+            .await?,
+        );
+        paths
+    } else {
+        Vec::new()
+    };
+    let steam_app_id = steam_source.filter(|_| library);
     if steam_app_id.is_some() && source_was_empty {
         // Keep acquisition ownership from the first attempt, including failures
         // after Steam has already written part of the server payload.
@@ -185,6 +222,7 @@ where
             ),
             cancellation,
             account_name,
+            retained_paths: &retained_paths,
         },
         app_steamcmd::ModuleInstallCallbacks {
             on_progress: |update| {

@@ -82,7 +82,7 @@ pub(super) fn run(
         "root":root, "hash_payload":mode == Inspection::Verify}));
     let expected =
         inventory_for_inspection(&root, Path::new(&settings.steamcmd_root), app_id, false)?;
-    inspect(&root, app_id, &expected, mode, false, |mut event| {
+    inspect(&root, app_id, &expected, mode, false, &[], |mut event| {
         event["module_id"] = json!(module_id);
         event["root"] = json!(root);
         emit(event);
@@ -95,12 +95,30 @@ pub(super) fn verify_for_certification(
     root: &Path,
     steamcmd: &Path,
     app_id: u32,
+    descriptor: &ModuleDescriptor,
     emit: impl FnMut(Value),
 ) -> io::Result<()> {
     // Only the certify caller, after its own successful official validation,
     // may use this observation as part of establishing a clean baseline.
     let expected = inventory_for_inspection(root, steamcmd, app_id, true)?;
-    inspect(root, app_id, &expected, Inspection::Verify, true, emit)
+    let retained = app_storage::program_update_retained_paths(root, descriptor)
+        .map_err(invalid)?
+        .into_iter()
+        .map(|path| {
+            path.strip_prefix(root)
+                .map(|path| path.to_string_lossy().replace('\\', "/"))
+                .map_err(invalid)
+        })
+        .collect::<io::Result<Vec<_>>>()?;
+    inspect(
+        root,
+        app_id,
+        &expected,
+        Inspection::Verify,
+        true,
+        &retained,
+        emit,
+    )
 }
 
 /// Inspect unknown directories as well before permitting the native installer.
@@ -113,6 +131,7 @@ pub(super) fn ensure_plain_tree(root: &Path) -> io::Result<()> {
         &Inventory::default(),
         None,
         false,
+        &[],
         &mut summary,
         &mut |_| {},
     )?;
@@ -130,8 +149,26 @@ fn inspect(
     expected: &Inventory,
     mode: Inspection,
     allow_baseline_metadata: bool,
+    retained: &[String],
     mut emit: impl FnMut(Value),
 ) -> io::Result<()> {
+    let mut expected = Inventory {
+        files: expected.files.clone(),
+        overlapping_files: expected.overlapping_files.clone(),
+        directories: expected.directories.clone(),
+        acfs: expected.acfs.clone(),
+        missing_manifests: expected.missing_manifests.clone(),
+        missing_depots: expected.missing_depots,
+    };
+    expected
+        .files
+        .retain(|key, _| !retained_path(key, retained));
+    expected
+        .overlapping_files
+        .retain(|key, _| !retained_path(key, retained));
+    expected
+        .directories
+        .retain(|key| !retained_path(key, retained));
     let mut summary = Summary {
         manifest_complete: expected.missing_manifests.is_empty() && !expected.files.is_empty(),
         expected_files: expected.files.len(),
@@ -223,9 +260,10 @@ fn inspect(
     }
     inspect_tree(
         root,
-        expected,
+        &expected,
         Some(app_id),
         allow_baseline_metadata,
+        retained,
         &mut summary,
         &mut emit,
     )?;
@@ -328,6 +366,7 @@ fn inspect_tree(
     expected: &Inventory,
     steam_app_id: Option<u32>,
     allow_baseline_metadata: bool,
+    retained: &[String],
     summary: &mut Summary,
     emit: &mut impl FnMut(Value),
 ) -> io::Result<()> {
@@ -342,6 +381,13 @@ fn inspect_tree(
         .iter()
         .map(|path| folded(path))
         .collect();
+    for root in retained {
+        for parent in Path::new(root).ancestors().skip(1) {
+            if !parent.as_os_str().is_empty() {
+                allowed_dirs.insert(folded(&parent.to_string_lossy().replace('\\', "/")));
+            }
+        }
+    }
     for relative in expected
         .files
         .keys()
@@ -401,6 +447,13 @@ fn inspect_tree(
                 );
                 continue;
             }
+            if !is_link && retained_path(&name, retained) {
+                emit(
+                    json!({"event":"inspection_retained_data", "relative_path":name,
+                    "used_as_evidence":false}),
+                );
+                continue;
+            }
             let known = if directory {
                 allowed_dirs.contains(&folded(&name))
             } else {
@@ -433,6 +486,14 @@ fn inspect_tree(
         }
     }
     Ok(())
+}
+
+fn retained_path(path: &str, retained: &[String]) -> bool {
+    let path = folded(path);
+    retained.iter().any(|root| {
+        let root = folded(root);
+        path == root || path.starts_with(&(root + "/"))
+    })
 }
 
 #[cfg(test)]

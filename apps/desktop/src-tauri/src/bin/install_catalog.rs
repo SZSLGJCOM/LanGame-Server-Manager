@@ -14,9 +14,10 @@ use std::path::{Component, Path, PathBuf};
 use app_core::{InstallState, ModuleDetails};
 use app_modules::{ModuleDescriptor, discover_modules};
 use app_steamcmd::{
-    GameInstallLifecycleGuard, InstallCancellation, InstallLockContext,
-    acquire_game_install_lifecycle, install_or_update_module_at_with_progress_and_cancellation,
-    probe_module_install_state, steamcmd_status,
+    GameInstallLifecycleGuard, InstallCancellation, InstallLockContext, ModuleInstallCallbacks,
+    SteamModuleInstallRequest, acquire_game_install_lifecycle,
+    install_or_update_module_at_with_login_and_callbacks, probe_module_install_state,
+    steamcmd_status,
 };
 use app_storage::{
     GameInstallSyncRecord, ProgramInstallScope, StoragePaths,
@@ -499,16 +500,32 @@ async fn run_catalog() -> Result<(), Box<dyn Error>> {
         // The installer composes SteamCMD preparation, HTTP and game providers.
         // Store that large nested future separately instead of embedding it in
         // the catalog future and repeatedly moving it through runtime entry.
-        let install = Box::pin(install_or_update_module_at_with_progress_and_cancellation(
-            &settings,
-            &module,
-            &root,
-            &guard,
-            true,
-            &cancellation,
-            |update| {
-                emit(json!({"event":"progress", "module_id":id,
+        let worker_root = root.clone();
+        let worker_descriptor = descriptor.clone();
+        let (guard, retained_paths) = tokio::task::spawn_blocking(move || {
+            let result =
+                app_storage::program_update_retained_paths(&worker_root, &worker_descriptor);
+            (guard, result)
+        })
+        .await?;
+        let retained_paths = retained_paths?;
+        let install = Box::pin(install_or_update_module_at_with_login_and_callbacks(
+            SteamModuleInstallRequest {
+                settings: &settings,
+                module: &module,
+                install_root: &root,
+                guard: &guard,
+                validate: true,
+                cancellation: &cancellation,
+                account_name: None,
+                retained_paths: &retained_paths,
+            },
+            ModuleInstallCallbacks {
+                on_progress: |update: app_steamcmd::InstallProgressUpdate| {
+                    emit(json!({"event":"progress", "module_id":id,
                 "percent":update.progress_percent, "detail":update.detail}));
+                },
+                prepare_fresh_payload: |_| async { Ok(()) },
             },
         ));
         emit(json!({"event":"future_layout", "module_id":id,
