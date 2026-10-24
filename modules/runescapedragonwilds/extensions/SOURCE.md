@@ -23,6 +23,8 @@
 
 ## 加载器来源
 
+Steam build `26161880` 的 Shipping SHA-256 为 `210adebb1d4971c3a85b5210783c7b861eea9e153bf884a460840f43e96321ba`。与 build `26087591` 的 `ecaa5ebc6e0b08108856703a4aceed7b5cf0ea04d708b82dfc66ef74709a4269` 相比，两份 Jagex 签名映像的节布局、导入和导出一致，可执行代码仅有返回构建号的常量从 `252835` 改为 `254097`，其余差异限于构建与签名元数据。加载器仍按完整映像哈希准入，不在运行时忽略这些字段或推断未知版本兼容。静态差分不替代当前名单、原生保存完成及重启读回验收，也不扩展上述原生封禁桥的版本范围。
+
 UE4SS 核心固定为 `3.0.1-1125-g527a483b`，源码 commit 为 `527a483b63b4dd0104fe1ca1a3934a06b87fcfb2`。下载官方固定资产 [UE4SS_v3.0.1-1125-g527a483b.zip](https://github.com/UE4SS-RE/RE-UE4SS/releases/download/experimental/UE4SS_v3.0.1-1125-g527a483b.zip)后必须核对下表中的 SHA-256；下载链接本身不能替代哈希核对。该 ZIP 的 SHA-256 已与 [GitHub Release API 资产 546250363](https://api.github.com/repos/UE4SS-RE/RE-UE4SS/releases/assets/546250363) 的 `digest` 核对，大小为 8,718,500 字节：
 
 | 文件 | SHA-256 |

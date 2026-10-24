@@ -24,6 +24,7 @@ const SERVER_SHAS: &[&str] = &[
     "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
     "da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe",
     "ecaa5ebc6e0b08108856703a4aceed7b5cf0ea04d708b82dfc66ef74709a4269",
+    "210adebb1d4971c3a85b5210783c7b861eea9e153bf884a460840f43e96321ba",
 ];
 const MAX_FILE: usize = 24 * 1024 * 1024;
 const MAX_PROXY: usize = 4 * 1024 * 1024;
