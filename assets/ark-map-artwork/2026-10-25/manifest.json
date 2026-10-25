@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 1,
+  "catalogVerifiedOn": "2026-10-25",
+  "catalogSha256": "713629081a85010e201437fa5c13b8cd628325582cc056f49f3161fc655871a3",
+  "imageCount": 19,
+  "imageBytes": 30481377,
+  "images": [
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "Gen2",
+      "image": "Genesis_Part_2_Map.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0,
+        "maxX": 100,
+        "minY": 0,
+        "maxY": 100
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Genesis:_Part_2?oldid=548215",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Genesis_Part_2_Map.jpg",
+      "size": 2111812,
+      "sha256": "9059904fce44211652ce98148c3dc7e1510d474f0cfa7b37aa4ac9b8a265abe6",
+      "sourceURL": "https://ark.wiki.gg/images/Genesis_Part_2_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Genesis_Part_2_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Genesis_Part_2_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Genesis_Part_2_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "TheIsland",
+      "image": "The_Island_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 7.2,
+        "maxX": 92.8,
+        "minY": 7.2,
+        "maxY": 92.8
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/The_Island?oldid=548222",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/The_Island_Topographic_Map.jpg",
+      "size": 215021,
+      "sha256": "55e2b99e2c6b39c0332460304a5827c078164a1319c58c4d70f349719cf25965",
+      "sourceURL": "https://ark.wiki.gg/images/The_Island_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:The_Island_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/The_Island_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/The_Island_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "ScorchedEarth_P",
+      "image": "Scorched_Earth_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 7.2,
+        "maxX": 92.8,
+        "minY": 7.2,
+        "maxY": 92.8
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Scorched_Earth?oldid=548219",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Scorched_Earth_Topographic_Map.jpg",
+      "size": 118339,
+      "sha256": "43d6c3a4e5ac96ad1779158892c492d86650ccce576ccb5f16515f8f6317e9b7",
+      "sourceURL": "https://ark.wiki.gg/images/Scorched_Earth_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Scorched_Earth_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Scorched_Earth_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Scorched_Earth_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "TheCenter",
+      "image": "The_Center_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 1.0,
+        "maxX": 104.5,
+        "minY": -2.5,
+        "maxY": 101.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/The_Center?oldid=564602",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg",
+      "size": 278075,
+      "sha256": "bb94b36a0494749b62af288085fb19f9454a8b122974a35a9b281c6b4a6de694",
+      "sourceURL": "https://ark.wiki.gg/images/The_Center_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:The_Center_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "Ragnarok",
+      "image": "Ragnarok_Ocean_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Ragnarok?oldid=548218",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Ragnarok_Ocean_Topographic_Map.jpg",
+      "size": 166396,
+      "sha256": "281de05c8263282617275f318800c94acc6e3e43f62ae1deddded9b9b0437d36",
+      "sourceURL": "https://ark.wiki.gg/images/Ragnarok_Ocean_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Ragnarok_Ocean_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Ragnarok_Ocean_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Ragnarok_Ocean_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "Aberration_P",
+      "image": "Aberration_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Aberration?oldid=571822",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Aberration_Topographic_Map.jpg",
+      "size": 134337,
+      "sha256": "48d64aad2b5e2f9e880af449b8fe1da2ac1c973716ca9f8be132f978c69a50f8",
+      "sourceURL": "https://ark.wiki.gg/images/Aberration_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Aberration_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Aberration_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Aberration_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "Extinction",
+      "image": "Extinction_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 7.2,
+        "maxX": 92.8,
+        "minY": 7.2,
+        "maxY": 92.8
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Extinction?oldid=548208",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Extinction_Topographic_Map.jpg",
+      "size": 405703,
+      "sha256": "4f9f4e0c27de54a20e82bf9817b131778e560104581580e09c3798c3a065668b",
+      "sourceURL": "https://ark.wiki.gg/images/Extinction_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Extinction_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Extinction_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Extinction_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "Valguero_P",
+      "image": "Valguero_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 0.1,
+        "maxX": 99.9,
+        "minY": 0.1,
+        "maxY": 99.9
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Valguero?oldid=548225",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Valguero_Topographic_Map.jpg",
+      "size": 492516,
+      "sha256": "2496b196d8517dac6211c97be7f75bd911be476f2eab94979b4457eece16f6e3",
+      "sourceURL": "https://ark.wiki.gg/images/Valguero_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Valguero_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Valguero_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Valguero_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "CrystalIsles",
+      "image": "Crystal_Isles_Topographic_Map.jpg",
+      "width": 1024,
+      "height": 1024,
+      "bounds": {
+        "minX": 14.0,
+        "maxX": 87.0,
+        "minY": 10.5,
+        "maxY": 86.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Crystal_Isles?oldid=548207",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Crystal_Isles_Topographic_Map.jpg",
+      "size": 466155,
+      "sha256": "30a4c8d304a52938de1818e1bd891df1df35a3a08499e6b873542af82d2add66",
+      "sourceURL": "https://ark.wiki.gg/images/Crystal_Isles_Topographic_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Crystal_Isles_Topographic_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Crystal_Isles_Topographic_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Crystal_Isles_Topographic_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalevolved",
+      "mapName": "LostIsland",
+      "image": "Lost_Island_Map.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Lost_Island?oldid=550034",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Lost_Island_Map.jpg",
+      "size": 6379537,
+      "sha256": "104cba48f310725e8a56ad9eafbe064d724ef46e08e3fceb5fd93ce076859fe5",
+      "sourceURL": "https://ark.wiki.gg/images/Lost_Island_Map.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Lost_Island_Map.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Lost_Island_Map.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Lost_Island_Map.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "TheIsland_WP",
+      "image": "The_Island_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Exploration/The_Island/ASA?oldid=600695",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/The_Island_map_ASA.jpg",
+      "size": 800837,
+      "sha256": "c5938891e42e0d639dd1f2732236769f935bae827684e262871ded0d08524d50",
+      "sourceURL": "https://ark.wiki.gg/images/The_Island_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:The_Island_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/The_Island_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/The_Island_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "ScorchedEarth_WP",
+      "image": "Scorched_Earth_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Scorched_Earth/ASA?oldid=548220",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Scorched_Earth_map_ASA.jpg",
+      "size": 610489,
+      "sha256": "5d5c1ce1f9c8b36cd5ebb0fc3f196181242592a0d1da8429826ef6006cf0f60c",
+      "sourceURL": "https://ark.wiki.gg/images/Scorched_Earth_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Scorched_Earth_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Scorched_Earth_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Scorched_Earth_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "TheCenter_WP",
+      "image": "The_Center_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Exploration/The_Center/ASA?oldid=600715",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/The_Center_map_ASA.jpg",
+      "size": 395432,
+      "sha256": "591c54c198bdc5f2899f716d52a9095f0bebc5fcb4485a1def14b1314b480bd1",
+      "sourceURL": "https://ark.wiki.gg/images/The_Center_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:The_Center_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/The_Center_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/The_Center_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "Ragnarok_WP",
+      "image": "Ragnarok_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Exploration/Ragnarok/ASA?oldid=601034",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Ragnarok_map_ASA.jpg",
+      "size": 1441759,
+      "sha256": "a9c7ea7e60d0ccc2117e3867bc010174b90b4c75c32049a98d91312d63144283",
+      "sourceURL": "https://ark.wiki.gg/images/Ragnarok_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Ragnarok_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Ragnarok_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Ragnarok_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "Aberration_WP",
+      "image": "Aberration_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Creature_Spawns/Aberration/ASA?oldid=577520",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Aberration_map_ASA.jpg",
+      "size": 1946048,
+      "sha256": "56f8b34f5f014cdf6fa7b4593fe5ebfafc227d1022f53e3b16ce368059a20913",
+      "sourceURL": "https://ark.wiki.gg/images/Aberration_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Aberration_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Aberration_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Aberration_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "Extinction_WP",
+      "image": "Extinction_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Creature_Spawns/Extinction/ASA?oldid=577523",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Extinction_map_ASA.jpg",
+      "size": 2185005,
+      "sha256": "ba2898f380595597fd45c4dabe5309061ff492430b2f748c3373c85aa3dd3caf",
+      "sourceURL": "https://ark.wiki.gg/images/Extinction_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Extinction_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Extinction_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Extinction_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "Valguero_WP",
+      "image": "Valguero_map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Creature_Spawns/Valguero/ASA?oldid=577529",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Valguero_map_ASA.jpg",
+      "size": 2332856,
+      "sha256": "7c82e6435a84bf39e7870f6059706d64409fa2e0b4a0d6264b29a7ca6e80786d",
+      "sourceURL": "https://ark.wiki.gg/images/Valguero_map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Valguero_map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Valguero_map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Valguero_map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "Astraeos_WP",
+      "image": "Astraeos_Map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Creature_Spawns/Astraeos/ASA?oldid=595099",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Astraeos_Map_ASA.jpg",
+      "size": 6868999,
+      "sha256": "6d8b4b1589f50846b26e56c8fd165f5015a949afd02af46e1ddddef79e9fa08e",
+      "sourceURL": "https://ark.wiki.gg/images/Astraeos_Map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Astraeos_Map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Astraeos_Map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Astraeos_Map_ASA.jpg?ref=main"
+      }
+    },
+    {
+      "edition": "arksurvivalascended",
+      "mapName": "LostColony_WP",
+      "image": "Lost_Colony_Map_ASA.jpg",
+      "width": 2048,
+      "height": 2048,
+      "bounds": {
+        "minX": 0.0,
+        "maxX": 100.0,
+        "minY": 0.0,
+        "maxY": 100.0
+      },
+      "coordinateSource": "https://ark.wiki.gg/wiki/Data:Maps/Resources/Lost_Colony/ASA?oldid=593948",
+      "relativePath": "assets/ark-map-artwork/2026-10-25/Lost_Colony_Map_ASA.jpg",
+      "size": 3132061,
+      "sha256": "5b0ac6bbb822f8c592a8eb656c9f5b0d3a9880c83aff3efd243255910af2eefa",
+      "sourceURL": "https://ark.wiki.gg/images/Lost_Colony_Map_ASA.jpg",
+      "licenseSourceURL": "https://ark.wiki.gg/wiki/File:Lost_Colony_Map_ASA.jpg",
+      "mirrors": {
+        "github": "https://raw.githubusercontent.com/SZSLGJCOM/LanGame-Server-Manager/master/assets/ark-map-artwork/2026-10-25/Lost_Colony_Map_ASA.jpg",
+        "gitcode": "https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/Lost_Colony_Map_ASA.jpg?ref=main"
+      }
+    }
+  ]
+}
