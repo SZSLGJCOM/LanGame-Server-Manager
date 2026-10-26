@@ -120,9 +120,52 @@ impl Group {
     }
 }
 
-pub(crate) fn media_identity(input: &str, purpose: &str) -> Option<String> {
-    let (key, _) = candidates(policy(), input)?;
-    let group = policy().groups.iter().find(|group| group.id == key)?;
+pub(crate) struct MediaIdentity {
+    pub key: String,
+    pub image_sha256: Option<String>,
+    pub cache_immutable: bool,
+}
+
+pub(crate) fn media_identity(input: &str, purpose: &str) -> Option<MediaIdentity> {
+    media_identity_for(policy(), input, purpose)
+}
+
+fn media_identity_for(policy: &Policy, input: &str, purpose: &str) -> Option<MediaIdentity> {
+    let (key, _) = candidates(policy, input)?;
+    if let Some(resource) = policy
+        .exact_resources
+        .iter()
+        .find(|resource| resource.id == key)
+    {
+        if !resource.purposes.iter().any(|value| value == purpose) {
+            return None;
+        }
+        return match &resource.sha256 {
+            Some(hash) if purpose == "image" && valid_sha256(hash) => Some(MediaIdentity {
+                // Mirrors can use unrelated paths. Include the frozen digest so
+                // a later policy revision cannot reuse bytes from an old version.
+                key: format!(
+                    "exact:{}:sha256:{hash}{}",
+                    resource.id,
+                    if resource.cache_immutable {
+                        ":immutable"
+                    } else {
+                        ""
+                    }
+                ),
+                image_sha256: Some(hash.clone()),
+                cache_immutable: resource.cache_immutable,
+            }),
+            Some(_) => None,
+            None if resource.cache_immutable => None,
+            None => Some(MediaIdentity {
+                key: format!("exact:{}", resource.id),
+                image_sha256: None,
+                cache_immutable: false,
+            }),
+        };
+    }
+    let group = policy.groups.iter().find(|group| group.id == key)?;
     if !group.purposes.iter().any(|value| value == purpose) {
         return None;
     }
@@ -151,20 +194,39 @@ pub(crate) fn media_identity(input: &str, purpose: &str) -> Option<String> {
     if !query.is_empty() {
         url.query_pairs_mut().extend_pairs(query);
     }
-    Some(format!(
-        "{}:{}{}",
-        group.id,
-        url.path(),
-        url.query()
-            .map(|query| format!("?{query}"))
-            .unwrap_or_default()
-    ))
+    Some(MediaIdentity {
+        key: format!(
+            "{}:{}{}",
+            group.id,
+            url.path(),
+            url.query()
+                .map(|query| format!("?{query}"))
+                .unwrap_or_default()
+        ),
+        image_sha256: None,
+        cache_immutable: false,
+    })
 }
 
 #[derive(Deserialize)]
 struct Resource {
     id: String,
     urls: Vec<String>,
+    #[serde(default)]
+    purposes: Vec<String>,
+    #[serde(default)]
+    sha256: Option<String>,
+    // Explicit application resource download, not ordinary HTTP cache storage.
+    // Admission requires a frozen image digest and partitions its cache identity.
+    #[serde(default, rename = "cacheImmutable")]
+    cache_immutable: bool,
+}
+
+fn valid_sha256(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 struct Health {
@@ -347,3 +409,7 @@ mod tests;
 
 #[cfg(test)]
 mod store_description_tests;
+
+#[cfg(test)]
+#[path = "policy/media_tests.rs"]
+mod media_tests;

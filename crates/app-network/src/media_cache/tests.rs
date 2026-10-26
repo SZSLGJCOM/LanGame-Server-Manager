@@ -5,6 +5,78 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 mod fixtures;
 use fixtures::*;
 
+#[path = "pinned_image_tests.rs"]
+mod pinned_image_tests;
+#[path = "live_image_tests.rs"]
+mod live_image_tests;
+
+#[test]
+fn ark_wiki_artwork_cache_accepts_only_reviewed_images() {
+    let source = "https://ark.wiki.gg/images/The_Island_map_ASA.jpg";
+    assert_eq!(
+        media_cache_identity(source, MediaKind::Image).as_deref(),
+        Some("ark-wiki-map-artwork:/images/The_Island_map_ASA.jpg")
+    );
+    assert_eq!(
+        official_url_candidates(source, SourcePreference::ChinaFirst),
+        vec![source.to_string()]
+    );
+    assert!(media_cache_identity(source, MediaKind::Video).is_none());
+    for rejected in [
+        "https://ark.wiki.gg/images/unreviewed.jpg",
+        "https://ark.wiki.gg/api.php",
+        "https://ark.wiki.gg/images/The_Island_map_ASA.jpg?token=private",
+        "https://ark.wiki.gg/images/The_Island_map_ASA.jpg#fragment",
+        "http://ark.wiki.gg/images/The_Island_map_ASA.jpg",
+        "https://ark.wiki.gg:8443/images/The_Island_map_ASA.jpg",
+        "https://other.wiki.gg/images/The_Island_map_ASA.jpg",
+    ] {
+        assert!(media_cache_identity(rejected, MediaKind::Image).is_none());
+    }
+}
+
+#[tokio::test]
+#[ignore = "opt-in: downloads two public ARK Wiki images into a disposable media cache"]
+async fn ark_wiki_artwork_live_fetch_survives_cache_reopen() {
+    let root = Directory::new();
+    for source in [
+        "https://ark.wiki.gg/images/The_Island_map_ASA.jpg",
+        "https://ark.wiki.gg/images/The_Island_Topographic_Map.jpg",
+    ] {
+        let cache = MediaCache::new(root.0.clone());
+        let first = cache
+            .respond(
+                source,
+                MediaKind::Image,
+                SourcePreference::ChinaFirst,
+                None,
+                false,
+            )
+            .await
+            .expect("the reviewed public Wiki image must download through the real cache client");
+        assert_eq!(first.status, 200);
+        assert!(first.body.starts_with(&[0xff, 0xd8, 0xff]));
+        drop(cache);
+        let reopened = MediaCache::new(root.0.clone());
+        let second = reopened
+            .respond(
+                source,
+                MediaKind::Image,
+                SourcePreference::ChinaFirst,
+                None,
+                false,
+            )
+            .await
+            .expect("the image must remain available after the cache is reopened");
+        assert_eq!(header(&second, "X-LanGame-Media-Cache"), Some("hit"));
+        assert_eq!(first.body, second.body);
+        println!(
+            "ARK Wiki cached and reopened: {source}, {} bytes",
+            first.body.len()
+        );
+    }
+}
+
 #[path = "cache_tests.rs"]
 mod cache_tests;
 #[path = "edge_tests.rs"]

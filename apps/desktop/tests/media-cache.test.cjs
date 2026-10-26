@@ -4,6 +4,24 @@ const { cacheEnvironment, deferred } = require("./media-cache-test-support.cjs")
 const image = "https://shared.akamai.steamstatic.com/steam/apps/1/cache.jpg?t=1";
 const video = "https://video.akamai.steamstatic.com/store_trailers/1/cache.mp4";
 
+test("verified single-origin ARK artwork uses the existing cache without admitting arbitrary Wiki URLs", async () => {
+  const source = "https://ark.wiki.gg/images/The_Island_map_ASA.jpg";
+  for (const tauri of [true, false]) {
+    const env = cacheEnvironment({ tauri });
+    const resolve = env.cache.createMediaCacheResolver("image", "zh-CN");
+    const cached = await resolve(source);
+    assert.notEqual(cached, source);
+    assert.equal(tauri ? new URL(cached).hostname : cached, tauri ? "lgsm-media.localhost" : "/__langame/media/opaque-fixture");
+    assert.equal(await resolve(source), cached);
+    for (const denied of [source + "?token=private", "https://ark.wiki.gg/images/unreviewed.png", "https://ark.wiki.gg/api.php", source.replace("https:", "http:")]) {
+      assert.equal(await resolve(denied), denied);
+    }
+    assert.equal(env.calls.length, tauri ? 0 : 1);
+    resolve.disable(source);
+    assert.equal(await resolve(source), source);
+  }
+});
+
 test("Tauri image and HLS cache URLs contain only official media identity, kind and locale without an IPC registration", async () => {
   const env = cacheEnvironment({ tauri: true });
   for (const [source, kind, locale] of [[image, "image", "zh-CN"], [video.replace("mp4", "m3u8"), "hls", "zh-CN"]]) {

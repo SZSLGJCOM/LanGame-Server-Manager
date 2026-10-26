@@ -215,7 +215,12 @@ pub(super) fn resolver(bases: Vec<String>) -> Arc<Resolver> {
         if preference == SourcePreference::ChinaFirst {
             candidates.reverse();
         }
-        Some((suffix, candidates))
+        Some(ResolvedMedia {
+            identity: suffix,
+            sources: candidates,
+            image_sha256: None,
+            cache_immutable: false,
+        })
     })
 }
 pub(super) fn cache(

@@ -17,7 +17,7 @@
     "world_file": {
       "type": "string",
       "title": "World Save File",
-      "description": "File name inside this instance's managed saves folder. Use a .wld file name only, not a full path. On the supported vanilla 1.4.5.8 server, manual Save in Maintenance or the server card updates this native world file and verifies the requested write and Terraria's rolling backups before reporting completion; this does not create a LanGame backup archive.",
+      "description": "File name inside this instance's managed saves folder. Use a .wld file name only, not a full path. Manual Save sends the native save command; successful delivery does not confirm disk completion or create a LanGame backup archive.",
       "default": "world.wld",
       "pattern": "^[^\\\\\\/]+\\.wld$",
       "x-lsgm-section": "room",
@@ -224,7 +224,7 @@
     "server_runtime": {
       "type": "string",
       "title": "Server Runtime",
-      "description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0. LanGame checks it before launch and prepares the verified official runtime when missing; Windows may request elevation. Starting the supported vanilla 1.4.5.8 server automatically prepares its save observer; Maintenance also offers preparation while stopped. Confirmed manual save applies to that vanilla build only. tModLoader keeps its existing launch and console behavior and does not load the vanilla observer. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
+      "description": "Vanilla Terraria on Windows requires Microsoft XNA Framework Redistributable 4.0. LanGame checks it before launch and prepares the verified official runtime when missing; Windows may request elevation. Choose tModLoader only after preparing this instance's tModLoader runtime and .tmod files.",
       "default": "vanilla",
       "enum": [
         "vanilla",

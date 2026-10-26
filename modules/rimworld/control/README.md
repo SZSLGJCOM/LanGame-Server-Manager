@@ -5,6 +5,12 @@ provides `forcesave <username>`; this is not a first-party RimWorld dedicated
 server API. The public `save_world` action remains `rimworld_save`/`save` as a
 closed manager operation.
 
+The pinned 26.10.20.1 (1) release targets **RimWorld 1.7 unstable** and its
+matching Together client mod. Upstream moved subsequent releases to 1.7 in
+[26.10.20.1](https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.20.1);
+players staying on 1.6 need the upstream 1.6 release instead. A current Together
+package is not evidence of compatibility with a different RimWorld branch.
+
 The manager uses the current managed stdin/log channel to query `list` and
 `deeplist`, rejects a server with no connected clients, and submits one native
 `forcesave` command per validated registered username. RimWorld Together itself

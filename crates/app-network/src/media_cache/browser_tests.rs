@@ -24,7 +24,12 @@ fn create_cache(root: PathBuf, base: String) -> MediaCache {
         root,
         Arc::new(move |url, kind, _| {
             if let Some(identity) = allowed.lock().unwrap().get(url) {
-                return Some((identity.clone(), vec![url.to_string()]));
+                return Some(ResolvedMedia {
+                    identity: identity.clone(),
+                    sources: vec![url.to_string()],
+                    image_sha256: None,
+                    cache_immutable: false,
+                });
             }
             let identity = media_cache_identity(url, kind)?;
             let parsed = reqwest::Url::parse(url).ok()?;
@@ -38,7 +43,12 @@ fn create_cache(root: PathBuf, base: String) -> MediaCache {
                 .lock()
                 .unwrap()
                 .insert(upstream.clone(), identity.clone());
-            Some((identity, vec![upstream]))
+            Some(ResolvedMedia {
+                identity,
+                sources: vec![upstream],
+                image_sha256: None,
+                cache_immutable: false,
+            })
         }),
         Arc::new(|| {
             SystemTime::now()

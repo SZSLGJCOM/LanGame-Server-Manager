@@ -59,6 +59,42 @@ fn descriptor(edition: &str) -> ModuleDescriptor {
 }
 
 #[test]
+fn ark_map_tools_bind_the_selected_port_process_and_current_run() {
+    for edition in ["arksurvivalevolved", "arksurvivalascended"] {
+        let mut source = instance(edition);
+        let selected =
+            super::super::commands_ark_map::selected_target(&source, "map-scorched", 2).unwrap();
+        assert_eq!(
+            selected
+                .ports
+                .iter()
+                .find(|port| port.name == "rcon")
+                .unwrap()
+                .port,
+            27030
+        );
+        let run = selected.active_run.unwrap();
+        assert_eq!(run.processes.len(), 1);
+        assert_eq!(run.processes[0].process_key, "map-scorched");
+        assert_eq!(run.pid, Some(102));
+        assert!(
+            super::super::commands_ark_map::selected_target(&source, "map-scorched", 1).is_err()
+        );
+        assert!(super::super::commands_ark_map::selected_target(&source, "map-paused", 1).is_err());
+        assert!(super::super::commands_ark_map::selected_target(&source, "", 1).is_err());
+        source.active_run.as_mut().unwrap().processes[1].status = "stopped".into();
+        assert!(
+            super::super::commands_ark_map::selected_target(&source, "map-scorched", 2).is_err()
+        );
+        source.active_run.as_mut().unwrap().processes[1].status = "running".into();
+        source.active_run.as_mut().unwrap().processes[1].run_id = 3;
+        assert!(
+            super::super::commands_ark_map::selected_target(&source, "map-scorched", 2).is_err()
+        );
+    }
+}
+
+#[test]
 fn ark_map_launches_share_program_and_keep_owned_identity_and_distinct_native_paths() {
     for edition in ["arksurvivalevolved", "arksurvivalascended"] {
         let mut instance = instance(edition);

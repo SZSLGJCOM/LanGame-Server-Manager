@@ -32,7 +32,15 @@ pub(super) fn parse(text: &str, output: &mut ListBuilder<'_>) -> Result<(), Stri
             super::validate_field(line)?;
             continue;
         }
+        // 10.6.3 includes Party ID before Squad ID and Vehicle after Role. Consume
+        // these display fields in their native positions, never as action IDs.
         let (rest, role) = take_last(line, " | Role: ")?;
+        let (role, has_vehicle) = if let Some((role, vehicle)) = role.rsplit_once(" | Vehicle: ") {
+            super::validate_field(vehicle)?;
+            (role, true)
+        } else {
+            (role, false)
+        };
         let (rest, leader) = take_last(rest, " | Is Leader: ")?;
         if leader != "True" && leader != "False" {
             return Err(String::from(
@@ -40,6 +48,13 @@ pub(super) fn parse(text: &str, output: &mut ListBuilder<'_>) -> Result<(), Stri
             ));
         }
         let (rest, squad) = take_last(rest, " | Squad ID: ")?;
+        let rest = if has_vehicle {
+            let (rest, party) = take_last(rest, " | Party ID: ")?;
+            super::validate_field(party)?;
+            rest
+        } else {
+            rest
+        };
         let (rest, team) = take_last(rest, " | Team ID: ")?;
         if (squad != "N/A" && !decimal(squad)) || (team != "N/A" && !decimal(team)) {
             return Err(String::from(

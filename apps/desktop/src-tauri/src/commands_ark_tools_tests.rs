@@ -395,6 +395,8 @@ async fn ark_tools_interrupted_install_prevents_normal_server_start()
 fn spawn_input() -> protocol::SpawnInput {
     protocol::SpawnInput {
         instance_id: "fixture".into(),
+        process_key: "main".into(),
+        run_id: 1,
         request_id: "0123456789abcdef0123456789abcdef".into(),
         creature: "Rex_Character_BP_C".into(),
         level: 150,

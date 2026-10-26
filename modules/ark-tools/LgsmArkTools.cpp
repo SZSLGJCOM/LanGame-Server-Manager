@@ -117,6 +117,8 @@ AShooterPlayerController* Owner(UWorld* world, std::uint32_t player_id) {
     return nullptr;
 }
 
+#include "PlayerMap.h"
+
 Json InspectDino(const std::string& id, APrimalDinoCharacter* dino) {
     if (!dino || dino->IsDead()) return Error(id, "entity_not_found");
 #ifdef LGSM_ASA
@@ -201,6 +203,7 @@ void Execute(RCONClientConnection* connection, RCONPacket* packet, UWorld* world
         for (std::string arg; stream >> arg;) args.push_back(std::move(arg));
         if (args.empty()) throw std::invalid_argument("command");
         action = args[0] == "LgsmArkTools.Status" ? "status" :
+                 args[0] == "LgsmArkTools.Players" ? "players" :
                  args[0] == "LgsmArkTools.Spawn" ? "spawn" : "inspect";
         if (args.size() < 2 || args[1].size() != 32 || args[1].find_first_not_of("0123456789abcdefABCDEF") != std::string::npos)
             throw std::invalid_argument("requestId");
@@ -209,6 +212,8 @@ void Execute(RCONClientConnection* connection, RCONPacket* packet, UWorld* world
             result = {{"version", 1}, {"edition", Edition}, {"ok", world != nullptr}, {"requestId", id}};
         } else {
             if (!world) result = Error(id, "world_not_ready");
+            else if (args[0] == "LgsmArkTools.Players" && args.size() == 2)
+                result = PlayerMap(world, id);
             else if (args[0] == "LgsmArkTools.Inspect" && args.size() == 4)
                 result = InspectDino(id, APrimalDinoCharacter::FindDinoWithID(world, UInt(args[2]), UInt(args[3])));
             else if (args[0] == "LgsmArkTools.Spawn") {
@@ -232,17 +237,31 @@ void Execute(RCONClientConnection* connection, RCONPacket* packet, UWorld* world
         result = Error(id, "native_operation_failed");
     }
     result["action"] = action;
-    const auto response = "LGSM_ARK_TOOLS " + result.dump();
-    FString text(response.c_str());
-    connection->SendMessageW(packet->Id, 0, &text);
+    // The two SDKs use different narrow-string -> FString conversions. ASCII
+    // JSON with Unicode escapes preserves player names through both engines.
+    auto response = "LGSM_ARK_TOOLS " + result.dump(-1, ' ', true, Json::error_handler_t::replace) + "\n";
+    if (response.size() > 400 * 1024) {
+        result = Error(id, "response_limit_exceeded");
+        result["action"] = action;
+        response = "LGSM_ARK_TOOLS " + result.dump() + "\n";
+    }
+    // Source RCON has bounded frames. Keep one JSON envelope, split only at
+    // UTF-8 boundaries, and fit the host's 64-frame completion budget.
+    for (std::size_t offset = 0; offset < response.size();) {
+        auto end = (std::min)(offset + 8192, response.size());
+        while (end < response.size() && (static_cast<unsigned char>(response[end]) & 0xc0) == 0x80) --end;
+        FString text(response.substr(offset, end - offset).c_str());
+        connection->SendMessageW(packet->Id, 0, &text);
+        offset = end;
+    }
 }
 
 void Load() {
-    for (const auto* command : {"LgsmArkTools.Status", "LgsmArkTools.Spawn", "LgsmArkTools.Inspect"})
+    for (const auto* command : {"LgsmArkTools.Status", "LgsmArkTools.Spawn", "LgsmArkTools.Inspect", "LgsmArkTools.Players"})
         ServerApi::GetCommands().AddRconCommand(command, Execute);
 }
 void Unload() {
-    for (const auto* command : {"LgsmArkTools.Status", "LgsmArkTools.Spawn", "LgsmArkTools.Inspect"})
+    for (const auto* command : {"LgsmArkTools.Status", "LgsmArkTools.Spawn", "LgsmArkTools.Inspect", "LgsmArkTools.Players"})
         ServerApi::GetCommands().RemoveRconCommand(command);
 }
 }

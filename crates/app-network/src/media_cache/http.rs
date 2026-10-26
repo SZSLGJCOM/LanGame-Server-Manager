@@ -15,6 +15,8 @@ pub(super) struct Context<'a> {
     pub identity: &'a str,
     pub key: &'a str,
     pub kind: MediaKind,
+    pub image_sha256: Option<&'a str>,
+    pub cache_immutable: bool,
     pub preference: SourcePreference,
     pub deadline: Instant,
 }
@@ -33,8 +35,11 @@ impl Context<'_> {
         (self.cache.inner.clock)()
     }
     pub fn allowed(&self, url: &str) -> bool {
-        (self.cache.inner.resolve)(url, self.kind, self.preference)
-            .is_some_and(|(identity, _)| identity == self.identity)
+        (self.cache.inner.resolve)(url, self.kind, self.preference).is_some_and(|resource| {
+            resource.identity == self.identity
+                && resource.image_sha256.as_deref() == self.image_sha256
+                && resource.cache_immutable == self.cache_immutable
+        })
     }
     pub fn source_deadline(&self, remaining_sources: usize) -> Instant {
         (Instant::now()
@@ -74,6 +79,11 @@ impl Context<'_> {
         head: bool,
         pinned: bool,
     ) -> Result<Reply, MediaCacheError> {
+        let image_sha256 = self.image_sha256.filter(|_| self.kind == MediaKind::Image);
+        // A HEAD success must not publish metadata for unverified bytes. Pinned
+        // images are small bounded objects, so verify a GET and discard its body
+        // when the caller requested headers only.
+        let request_head = head && image_sha256.is_none();
         let mut url = reqwest::Url::parse(source).map_err(|_| MediaCacheError::Rejected)?;
         for redirect in 0..=3 {
             if !self.allowed(url.as_str()) {
@@ -81,7 +91,14 @@ impl Context<'_> {
             }
             let mut request = self
                 .client
-                .request(if head { Method::HEAD } else { Method::GET }, url.clone())
+                .request(
+                    if request_head {
+                        Method::HEAD
+                    } else {
+                        Method::GET
+                    },
+                    url.clone(),
+                )
                 .header(header::ACCEPT_ENCODING, "identity");
             if let Some(range) = range {
                 request = request.header(header::RANGE, range);
@@ -124,13 +141,19 @@ impl Context<'_> {
                     .and_then(|value| value.to_str().ok())
                     .filter(|value| value.len() <= 128)
                     .map(str::to_string);
+                if status == 403
+                    && !response.headers().contains_key(header::RETRY_AFTER)
+                    && image_sha256.is_some()
+                {
+                    return Err(MediaCacheError::PinnedImageForbidden);
+                }
                 return Err(MediaCacheError::Http {
                     status,
                     retry_after,
                 });
             }
             let headers = Headers::read(response.headers());
-            let length = response.content_length();
+            let mut length = response.content_length();
             let content_range = response
                 .headers()
                 .get(header::CONTENT_RANGE)
@@ -138,7 +161,7 @@ impl Context<'_> {
                 .filter(|value| value.len() <= 128)
                 .map(str::to_string);
             let mut body = Vec::new();
-            if !head && matches!(status, 200 | 206) {
+            if !request_head && matches!(status, 200 | 206) {
                 if length.is_some_and(|length| length > OBJECT_LIMIT as u64) {
                     return Err(MediaCacheError::TooLarge);
                 }
@@ -157,9 +180,18 @@ impl Context<'_> {
                         "truncated media body".into(),
                     ));
                 }
+                if let Some(expected) = image_sha256 {
+                    if super::store::digest(&body) != expected {
+                        return Err(MediaCacheError::InvalidResponse(
+                            "image does not match its frozen SHA-256".into(),
+                        ));
+                    }
+                    length = Some(body.len() as u64);
+                }
                 let content_type = headers.content_type.split(';').next().unwrap_or_default();
                 let acceptable = if self.kind == MediaKind::Image {
                     content_type.starts_with("image/")
+                        || image_sha256.is_some() && content_type == "application/octet-stream"
                 } else {
                     content_type.starts_with("video/")
                         || content_type.starts_with("audio/")

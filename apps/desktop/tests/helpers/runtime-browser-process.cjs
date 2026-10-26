@@ -737,8 +737,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
                 let event;
                 try { event = JSON.parse(body); } catch { response.writeHead(400).end(); return; }
                 if (!event || typeof event !== "object" || Array.isArray(event)
-                  || Object.keys(event).some((key) => !["type", "x", "y"].includes(key))
-                  || !["move", "click"].includes(event.type)
+                  || Object.keys(event).some((key) => !["type", "x", "y", "deltaY"].includes(key))
+                  || !["move", "click", "wheel"].includes(event.type)
+                  || (event.type === "wheel" ? !Number.isFinite(event.deltaY) || Math.abs(event.deltaY) > 1200 : event.deltaY !== undefined)
                   || ![event.x, event.y].every((value) => Number.isFinite(value) && value >= 0 && value <= 4096)) {
                   response.writeHead(400).end(); return;
                 }
@@ -746,6 +747,9 @@ async function runBrowserFixture({ fixturePath = "runtime-browser.html", keyboar
                   const page = await pageEndpoint();
                   const params = { x: event.x, y: event.y, pointerType: "mouse" };
                   await browserCommand(page, "Input.dispatchMouseEvent", { ...params, type: "mouseMoved", button: "none" });
+                  if (event.type === "wheel") await browserCommand(page, "Input.dispatchMouseEvent", {
+                    ...params, type: "mouseWheel", deltaX: 0, deltaY: event.deltaY,
+                  });
                   if (event.type === "click") {
                     await browserCommand(page, "Input.dispatchMouseEvent", {
                       ...params, type: "mousePressed", button: "left", buttons: 1, clickCount: 1,

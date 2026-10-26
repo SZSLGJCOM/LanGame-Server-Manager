@@ -7,7 +7,9 @@ export function loadMediaImage(
   sources: readonly string[],
   onLoad: (image: HTMLImageElement, source: string) => void,
   onUnavailable: () => void,
-  locale: LocaleCode = readPreferredLocale()
+  locale: LocaleCode = readPreferredLocale(),
+  options: { crossOrigin?: "anonymous" | null; acceptImage?: (image: HTMLImageElement) => boolean;
+    canLoadDirectly?: (source: string) => boolean } = {}
 ): () => void {
   const candidates = preferredMediaSources(sources, Date.now(), locale);
   const resolveSource = createMediaCacheResolver("image", locale);
@@ -35,12 +37,17 @@ export function loadMediaImage(
     }
     void resolveSource(source).then((url) => {
       if (disposed || generation !== attempt) return;
+      // Some sources require native cache integrity checks before display.
+      if (url === source && options.canLoadDirectly && !options.canLoadDirectly(source)) { load(index + 1); return; }
       const image = new Image();
       activeImage = image;
-      image.crossOrigin = "anonymous";
+      // Textures need CORS for canvas/WebGL; display-only SVG artwork may use
+      // a public image origin which does not expose CORS response headers.
+      if (options.crossOrigin !== null) image.crossOrigin = "anonymous";
       image.referrerPolicy = "no-referrer";
       image.onload = () => {
         if (disposed || activeImage !== image) return;
+        if (options.acceptImage && !options.acceptImage(image)) { failed(); return; }
         clearTimeout(timer);
         image.onload = null;
         image.onerror = null;

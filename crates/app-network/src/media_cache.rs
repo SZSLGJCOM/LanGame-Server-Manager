@@ -52,6 +52,7 @@ pub fn media_cache_identity(url: &str, kind: MediaKind) -> Option<String> {
             "video"
         },
     )
+    .map(|identity| identity.key)
 }
 
 #[derive(Debug)]
@@ -81,6 +82,8 @@ pub enum MediaCacheError {
         status: u16,
         retry_after: Option<String>,
     },
+    #[error("hash-pinned public image origin returned HTTP 403")]
+    PinnedImageForbidden,
     #[error("media transport failed: {0}")]
     Network(reqwest::Error),
     #[error("invalid media response: {0}")]
@@ -92,7 +95,7 @@ pub enum MediaCacheError {
 impl MediaCacheError {
     pub fn status_code(&self) -> u16 {
         match self {
-            Self::Rejected => 403,
+            Self::Rejected | Self::PinnedImageForbidden => 403,
             Self::Range => 416,
             Self::TooLarge => 413,
             Self::GenerationChanged => 409,
@@ -114,7 +117,10 @@ impl MediaCacheError {
     fn fallback(&self) -> bool {
         matches!(
             self,
-            Self::Network(_) | Self::Timeout | Self::InvalidResponse(_)
+            Self::Network(_)
+                | Self::Timeout
+                | Self::InvalidResponse(_)
+                | Self::PinnedImageForbidden
         ) || matches!(
             self,
             Self::Http {
@@ -125,8 +131,14 @@ impl MediaCacheError {
     }
 }
 
-type Resolver =
-    dyn Fn(&str, MediaKind, SourcePreference) -> Option<(String, Vec<String>)> + Send + Sync;
+struct ResolvedMedia {
+    identity: String,
+    sources: Vec<String>,
+    image_sha256: Option<String>,
+    cache_immutable: bool,
+}
+
+type Resolver = dyn Fn(&str, MediaKind, SourcePreference) -> Option<ResolvedMedia> + Send + Sync;
 type Clock = dyn Fn() -> u64 + Send + Sync;
 
 struct Inner {
@@ -158,10 +170,20 @@ impl MediaCache {
                 admitted: Semaphore::new(64),
                 workers: Semaphore::new(4),
                 resolve: Arc::new(|url, kind, preference| {
-                    Some((
-                        media_cache_identity(url, kind)?,
-                        official_url_candidates(url, preference),
-                    ))
+                    let identity = crate::policy::media_identity(
+                        url,
+                        if kind == MediaKind::Image {
+                            "image"
+                        } else {
+                            "video"
+                        },
+                    )?;
+                    Some(ResolvedMedia {
+                        identity: identity.key,
+                        sources: official_url_candidates(url, preference),
+                        image_sha256: identity.image_sha256,
+                        cache_immutable: identity.cache_immutable,
+                    })
                 }),
                 clock: Arc::new(|| {
                     SystemTime::now()
@@ -183,8 +205,12 @@ impl MediaCache {
         range: Option<&str>,
         head: bool,
     ) -> Result<MediaResponse, MediaCacheError> {
-        let (identity, sources) =
-            (self.inner.resolve)(url, kind, preference).ok_or(MediaCacheError::Rejected)?;
+        let ResolvedMedia {
+            identity,
+            sources,
+            image_sha256,
+            cache_immutable,
+        } = (self.inner.resolve)(url, kind, preference).ok_or(MediaCacheError::Rejected)?;
         let requested_range = range.map(ranges::RequestedRange::parse).transpose()?;
         if kind == MediaKind::Image && requested_range.is_some() {
             return Err(MediaCacheError::Range);
@@ -243,6 +269,8 @@ impl MediaCache {
                 identity: &identity,
                 key: &key,
                 kind,
+                image_sha256: image_sha256.as_deref(),
+                cache_immutable,
                 preference,
                 deadline,
             };

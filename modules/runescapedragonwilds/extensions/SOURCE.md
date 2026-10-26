@@ -8,18 +8,39 @@
 
 原生桥只从游戏当前 `KnownPlayerList` 复制身份，调用已核对的原生管理及名单持久化路径，不修改玩家权限，不通过客户端 RPC 冒充管理员。桥的 `dispatched` 仅说明调用完成；生产 Lua 继续核对内存/INI 标志，封禁还要求账号离线。当前接口和内部布局只对固定 Shipping SHA-256 有效，升级必须重新验证，不扫描猜测新地址。手动保存独立调用游戏反射接口，见 [保存契约](../control/LgsmPlayerControl/SAVE.md)。历史构造用例不能代替真实玩家断连验收。
 
-封禁桥的两个版本配置直接由完整 Shipping 哈希选择：
+封禁桥的版本配置直接由完整 Shipping 哈希选择：
 
 | Steam build | Shipping SHA-256 |
 | --- | --- |
 | `25811348` | `89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed` |
 | `25991736` | `da1761a644a9d9b19da0c2da86ad98c7c4ce8ff265f710bf1897e3b007d2dcbe` |
+| `26161880` | `210adebb1d4971c3a85b5210783c7b861eea9e153bf884a460840f43e96321ba` |
 
-新版配置来自两个实际 PE 的限定差分：身份工厂、封禁、解封、名单持久化的完整调用体，以及 MatchmakingSubsystem、原生会话状态构造器和 `KnownPlayerList` 访问体，在代码与数据地址重定位外保持原有参数、引用计数和字段布局。新版名单持久化中的两个 image-base 分发表也分别核对，不按统一地址增量推算。独立检查以只读、不可执行的 PE 映射核验两版全部五个入口前缀及未知哈希拒绝。此项是静态兼容证据；新版隔离合成账号的封禁、解封及重启持久化仍需实服验收，不能替代真人断连或认证测试。
+build `25991736` 的配置来自两个实际 PE 的限定差分：身份工厂、封禁、解封、名单持久化的完整调用体，以及 MatchmakingSubsystem、原生会话状态构造器和 `KnownPlayerList` 访问体，在代码与数据地址重定位外保持原有参数、引用计数和字段布局。该版名单持久化中的两个 image-base 分发表也分别核对，不按统一地址增量推算。独立检查以只读、不可执行的 PE 映射核验两版全部五个入口前缀及未知哈希拒绝。此项是静态兼容证据；该版隔离合成账号的封禁、解封及重启持久化仍需实服验收，不能替代真人断连或认证测试。
 
 同一隔离副本只启用冻结生产控制脚本和原生桥，两次不同请求取得完整空名单，`boot_id` 一致，每次只读原生 probe 均为 ready。布局修正后的生产脚本 SHA-256 为 `d39a41375193abdfd1040b202815ff70edd26e33f8950f540b08a193b520aa6e`；本次独立 MSVC 构建的桥 SHA-256 为 `7ed776ff6724389adbab6caec50d19637eaeddafd97cdec33a7476b494b14e99`。应用内嵌构建可能产生不同 PE 哈希，安装按本次构建记录校验。
 
 桥放在 `LgsmPlayerControl/native/`，Lua 用 `package.loadlib` 显式加载。[固定 UE4SS 源码](https://github.com/UE4SS-RE/RE-UE4SS/blob/527a483b63b4dd0104fe1ca1a3934a06b87fcfb2/UE4SS/src/UE4SSProgram.cpp#L1227)仅因 `dlls` 目录存在就将其识别为另一种 C++ Mod；这种 Mod 要求独立生命周期导出。原生桥不使用这个插件 ABI，不能放入 `dlls`，即使留下空目录也会错误尝试安装。修正布局后的隔离生产启动已确认无此生命周期和安装失败日志。
+
+### 2026-10-25：build 26161880 原生配置
+
+本次只读检查已安装的 app `4019830`：ACF 的 `buildid` 与 `TargetBuildID` 均为 `26161880`，`StateFlags=4`、`UpdateResult=0`；Shipping 大小为 `205138592` 字节，完整 SHA-256 与上表一致。原生桥原先只认识前两版，因而在加载器允许当前版本后仍返回 `module_fingerprint`。本次按当前 PE 的真实入口和调用契约补充独立配置，没有降低哈希或入口字节校验。
+
+| 当前 PE 契约 | RVA |
+| --- | --- |
+| 已知玩家身份工厂 | `0x59a4920` |
+| 封禁 / 解封 | `0x5d56e90` / `0x5d547a0` |
+| KnownPlayerList 更新 / SaveBans | `0x596d860` / `0x5d55440` |
+| Matchmaker / Settings 类全局 | `0xbb35eb0` / `0xbb21af0` |
+| Matchmaker / 原生状态虚表 | `0x9dfe2c0` / `0xa0e2cd0` |
+
+完整调用体和原生包装调用方确认：工厂仍接受 `RCX=KnownPlayer`、`RDX=16-byte sret`，复制身份与 `FString`；封禁和解封仍分别接收原有参数，并消费一次拥有的共享引用。类注册、构造器和初始化调用方确认对象大小为 `0x730`、`0x108`、`0x3d0`，子系统 `+0x6c8` 为状态对象、`UObject.Outer +0x20` 与状态 `+8` 指向同一 GameInstance。`GetWorld` 仍通过 `+0x30` 和 `+0x2c0` 取世界，反射属性描述中的世界所属 GameInstance 偏移为 `0x228`。状态会话前置检查仍使用 `+0x388`、`+0x398`。
+
+`KnownPlayerList` 仍位于 Settings `+0xd0`，条目步长为 `88`，封禁标志为条目 `+0x41`。SaveBans 从状态 `+0x298` 的名单生成更新，再由原生路径在标志变化时调用 `SaveConfig`；封禁的离线分支仍需桥显式调用 SaveBans。两个名单 variant 分发表分别位于 `0x92fc038`（共享身份复制）和 `0x9028430`（释放），均按当前指令和目标函数核对。此次未取得旧 Shipping 映像，没有把历史差分结论当作本次逐字节比较结果，也未扩展 build `26087591` 的原生桥范围。
+
+回归入口为 [`control/tests`](../control/tests/CMakeLists.txt)，构建目标 `native_profile_tests`，唯一运行参数为当前 Shipping 程序的绝对路径。测试直接编译生产桥的准入和字节检查，以 `SEC_IMAGE_NO_EXECUTE` 只读映射当前文件，核对实际调用目标、类与虚表绑定、布局锚点，以及未知哈希和入口字节变更的拒绝。原代码先失败于 `build_26161880_rejected_by_native_bridge`，加入本配置后通过。MSVC `19.51.36257.0`、Windows SDK `10.0.26100.0` 的 x64 Release 测试与实际 DLL 构建均退出 `0`，保留 `/W4 /WX /guard:cf`。
+
+这是当前包的静态适配与构建证据。本次未执行游戏代码、启动服务器或写入真实安装包及实例；build `26161880` 的封禁、解封、重启持久化和真实玩家断连仍待隔离实服验收。
 
 ## 加载器来源
 

@@ -656,9 +656,9 @@
     "sandbox_code": {
       "type": "string",
       "title": "Sandbox Code",
-      "description": "Paste the code copied from the in-game Sandbox Options screen. Version 3.0 uses this code for difficulty, pacing, loot, zombie behavior, blood moon, and related sandbox rules.",
+      "description": "Paste a code from the Sandbox Options screen of the matching game version. Current codes start with A followed by complete three-letter option groups; A alone uses native defaults. Recheck custom codes after a game update because option meanings can change.",
       "default": "AAAJABJACJADJARFBNC",
-      "pattern": "^[A-Z]+$",
+      "pattern": "^A(?:[A-Z]{3})*$",
       "x-lsgm-section": "world",
       "x-lsgm-order": 204,
       "x-lsgm-source": "serverconfig_xml",

@@ -6,9 +6,11 @@ import { ConfigurationActionHelp, ConfigurationHelp } from "../settings/Configur
 import { describeError } from "../../app-state";
 import { selectLocaleText, useI18n } from "../../i18n";
 import { getArkGmCreatureOptions, localizeArkCatalogName, parseArkEnabledModIds, searchArkGmCreatureOptions, type ArkCustomCreatureEntry } from "./gm-tools";
+import type { ArkMapPlayer } from "../../ark-world-map";
 import "./ark-creature-spawner.css";
 
-interface Props { instanceId: string; moduleId: string; status: string; settingsJson: string }
+interface Props { instanceId: string; moduleId: string; status: string; settingsJson: string; processKey: string;
+  runId: number | null; runtimeRunning?: boolean; selectedPlayer?: ArkMapPlayer | null }
 // These base-game asset paths are shared by ASE and ASA. Other classes can be
 // resolved from the loaded world's registry or supplied as a full asset path.
 const BASE_CLASSES: Record<string, string> = {
@@ -27,10 +29,10 @@ function savedCreatures(id: string): ArkCustomCreatureEntry[] {
   } catch { return []; }
 }
 
-export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson }: Props) {
+export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson, processKey, runId, runtimeRunning, selectedPlayer }: Props) {
   const { locale } = useI18n();
   const text = (zh: string, en: string) => selectLocaleText(locale, zh, en);
-  const scope = useMemo(() => ({ instanceId }), [instanceId]);
+  const scope = useMemo(() => ({ instanceId, processKey, runId, status, runtimeRunning }), [instanceId, processKey, runId, status, runtimeRunning]);
   const current = useRef<typeof scope | null>(scope);
   const statusRequest = useRef(0);
   current.current = scope;
@@ -45,13 +47,14 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
   const [coordinates, setCoordinates] = useState({ x: "", y: "", z: "" });
   const [tamed, setTamed] = useState(false);
   const [playerId, setPlayerId] = useState("");
+  const [sourcePlayerId, setSourcePlayerId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [custom, setCustom] = useState(() => savedCreatures(instanceId));
   const [savedLabel, setSavedLabel] = useState("");
   const [savedModId, setSavedModId] = useState("");
   const [page, setPage] = useState(0);
   const host = arkToolsHostAvailable();
-  const running = status.toLowerCase() === "running";
+  const running = runtimeRunning ?? status.toLowerCase() === "running";
   const stopped = status.toLowerCase() === "stopped";
   const enabledMods = useMemo(() => parseArkEnabledModIds(moduleId, settingsJson), [moduleId, settingsJson]);
   const matches = useMemo(() => searchArkGmCreatureOptions(search, getArkGmCreatureOptions().length), [search]);
@@ -64,13 +67,21 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
         && typeof settings.admin_password === "string" && Boolean(settings.admin_password.trim());
     } catch { return false; }
   }, [settingsJson]);
+  useEffect(() => setResult(null), [scope]);
 
   useEffect(() => {
     setCustom(savedCreatures(instanceId)); setCoordinates({ x: "", y: "", z: "" });
     setCreature("Rex_Character_BP_C"); setSearch(""); setPage(0); setSavedLabel(""); setSavedModId(""); setPlayerId("");
     setTamed(false); setLevel("150");
     setResult(null);
-  }, [instanceId]);
+    setSourcePlayerId(null);
+  }, [instanceId, processKey, runId]);
+  useEffect(() => {
+    if (sourcePlayerId !== null && selectedPlayer?.playerId === sourcePlayerId && selectedPlayer.x !== null && selectedPlayer.y !== null && selectedPlayer.z !== null) {
+      setCoordinates({ x: String(selectedPlayer.x), y: String(selectedPlayer.y), z: String(selectedPlayer.z) });
+      setPlayerId(String(selectedPlayer.playerId));
+    }
+  }, [sourcePlayerId, selectedPlayer]);
 
   function saveCreature() {
     const classId = creature.trim();
@@ -88,7 +99,7 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
     const request = ++statusRequest.current;
     setChecking(true);
     try {
-      const value = await readArkToolsStatus(instanceId);
+      const value = await readArkToolsStatus(instanceId, processKey);
       if (current.current === token && statusRequest.current === request) { setExtension(value); setError(null); }
     } catch (reason) { if (current.current === token && statusRequest.current === request) { setExtension(null); setError(describeError(reason)); } }
     finally { if (current.current === token && statusRequest.current === request) setChecking(false); }
@@ -115,11 +126,11 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
 
   async function spawn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pending.current || !running || !extension?.connected || !configured) return;
+    if (pending.current || !running || !runId || !extension?.connected || !configured || stalePlayer) return;
     const token = scope;
     pending.current = true; setBusy(true); setError(null); setResult(null);
     try {
-      const value = await spawnArkCreature({ instanceId, requestId: crypto.randomUUID().replace(/-/g, ""),
+      const value = await spawnArkCreature({ instanceId, processKey, runId, requestId: crypto.randomUUID().replace(/-/g, ""),
         creature: BASE_CLASSES[creature.trim()] ?? creature.trim(), level: Number(level),
         x: Number(coordinates.x), y: Number(coordinates.y), z: Number(coordinates.z), tamed, playerId: tamed ? Number(playerId) : 0 });
       if (current.current === token) setResult(value);
@@ -127,6 +138,7 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
     finally { pending.current = false; if (current.current) setBusy(false); }
   }
 
+  const stalePlayer = sourcePlayerId !== null && (selectedPlayer?.playerId !== sourcePlayerId || selectedPlayer.x === null);
   const disabled = busy || checking || !host;
   return <section className="ark-creature-spawner" aria-label={text("生成方舟生物", "Spawn ARK creature")}>
     <div className="ark-creature-spawner__status">
@@ -146,18 +158,25 @@ export function ArkCreatureSpawner({ instanceId, moduleId, status, settingsJson 
     {extension?.issue ? <p className="ark-creature-spawner__note" role="status">{extension.issue}</p> : null}
     <form onSubmit={event => void spawn(event)}>
       <fieldset disabled={busy}>
+        <button type="button" className="secondary-button ark-map-use-player" disabled={!selectedPlayer || selectedPlayer.x === null}
+          onClick={() => { if (selectedPlayer && selectedPlayer.x !== null && selectedPlayer.y !== null && selectedPlayer.z !== null) {
+            setCoordinates({ x: String(selectedPlayer.x), y: String(selectedPlayer.y), z: String(selectedPlayer.z) });
+            setPlayerId(String(selectedPlayer.playerId)); setSourcePlayerId(selectedPlayer.playerId);
+          } }}>{selectedPlayer ? text(`使用所选玩家的位置和 PlayerID · ${selectedPlayer.name || selectedPlayer.playerId}`, `Use selected position and PlayerID · ${selectedPlayer.name || selectedPlayer.playerId}`)
+            : text("选择实时玩家可填入坐标与 PlayerID", "Select a live player to fill coordinates and PlayerID")}</button>
+        {stalePlayer ? <ActivityNotice tone="warning">{text("所选玩家数据已过期或无角色坐标，请重新选择或手动输入。", "Selected player data is stale or has no coordinates. Select again or enter values manually.")}</ActivityNotice> : null}
         <label className="gmt-field"><span>{text("查找生物", "Find creature")}</span><input className="gmt-text-input" type="search" value={search} placeholder={text("输入名称或类名", "Search names or classes")} onChange={e => { setSearch(e.target.value); setPage(0); }} /></label>
         <div className="ark-creature-spawner__catalog-nav"><span>{text(`匹配 ${matches.length} 种生物`, `${matches.length} matching creatures`)}</span><button type="button" className="secondary-button" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>{text("上一页", "Previous")}</button><span>{safePage + 1}/{pageCount}</span><button type="button" className="secondary-button" disabled={safePage + 1 === pageCount} onClick={() => setPage(safePage + 1)}>{text("下一页", "Next")}</button></div>
         <div className="ark-creature-spawner__choices">{options.map(option => <button key={option.value} type="button" className="secondary-button" aria-pressed={creature === option.value} onClick={() => setCreature(option.value)}>{localizeArkCatalogName(option, locale)} <small>{option.value}</small></button>)}</div>
         <ConfigurationHelp description={text("当前地图未加载的生物需要完整 /Game/…_C 类路径；Mod 生物需先安装并启用对应 Mod。", "Creatures not loaded by this map need a full /Game/…_C class path. Mod creatures require the corresponding installed and enabled mod.")}>{(help) => <label className="gmt-field" ref={help.anchorRef} {...help.interactionProps}><span>{text("生物类名或完整路径", "Creature class or full path")}</span><input className="gmt-text-input" required maxLength={300} value={creature} onChange={e => setCreature(e.target.value)} /></label>}</ConfigurationHelp>
         <div className="ark-creature-spawner__saved"><label className="gmt-field"><span>{text("收藏名称", "Saved name")}</span><input className="gmt-text-input" value={savedLabel} maxLength={120} onChange={e => setSavedLabel(e.target.value)} /></label>{enabledMods.length ? <label className="gmt-field"><span>Mod</span><select className="gmt-select" value={savedModId} onChange={e => setSavedModId(e.target.value)}><option value="">{text("不关联 Mod", "No mod tag")}</option>{enabledMods.map(id => <option key={id} value={id}>{id}</option>)}</select></label> : null}<button type="button" className="secondary-button" onClick={saveCreature}>{text("收藏生物", "Save creature")}</button></div>
         {custom.length ? <div className="ark-creature-spawner__choices">{custom.map(entry => <button key={entry.classId} type="button" className="secondary-button" onClick={() => setCreature(entry.classId)}>{entry.label || entry.classId}<small>{entry.classId}{entry.modId ? ` · Mod ${entry.modId}` : ""}</small></button>)}</div> : null}
-        <ConfigurationHelp description={text("使用游戏世界 X/Y/Z 坐标（厘米），不是地图经纬度。请填写已知安全位置。", "Use game-world X/Y/Z coordinates in centimeters, not map latitude/longitude. Enter a known safe position.")}>{(help) => <div className="ark-creature-spawner__coordinates" ref={help.anchorRef} {...help.interactionProps}>{(["x", "y", "z"] as const).map(axis => <label className="gmt-field" key={axis}><span>{text("世界坐标", "World coordinate")} {axis.toUpperCase()}</span><input className="gmt-text-input" type="number" required min={-10000000} max={10000000} step="any" value={coordinates[axis]} onChange={e => setCoordinates(previous => ({ ...previous, [axis]: e.target.value }))} /></label>)}</div>}</ConfigurationHelp>
+        <ConfigurationHelp description={text("使用游戏世界 X/Y/Z 坐标（厘米），不是地图经纬度。请填写已知安全位置。", "Use game-world X/Y/Z coordinates in centimeters, not map latitude/longitude. Enter a known safe position.")}>{(help) => <div className="ark-creature-spawner__coordinates" ref={help.anchorRef} {...help.interactionProps}>{(["x", "y", "z"] as const).map(axis => <label className="gmt-field" key={axis}><span>{text("世界坐标", "World coordinate")} {axis.toUpperCase()}</span><input className="gmt-text-input" type="number" required min={-10000000} max={10000000} step="any" value={coordinates[axis]} onChange={e => { setSourcePlayerId(null); setCoordinates(previous => ({ ...previous, [axis]: e.target.value })); }} /></label>)}</div>}</ConfigurationHelp>
         <div className="ark-creature-spawner__coordinates"><label className="gmt-field"><span>{text("基础等级", "Base level")}</span><input className="gmt-text-input" type="number" required min={1} max={5000} step={1} value={level} onChange={e => setLevel(e.target.value)} /></label>
           <label className="gmt-field"><span>{text("生成状态", "Creature state")}</span><select className="gmt-select" value={String(tamed)} onChange={e => setTamed(e.target.value === "true")}><option value="false">{text("野生", "Wild")}</option><option value="true">{text("驯服并归属玩家", "Tamed, owned by player")}</option></select></label>
-          {tamed ? <label className="gmt-field"><span>{text("在线玩家的游戏内 ID", "Online in-game Player ID")}</span><input className="gmt-text-input" required type="number" min={1} max={4294967295} step={1} value={playerId} onChange={e => setPlayerId(e.target.value)} /></label> : null}</div>
-        <ConfigurationActionHelp reason={!host || busy || checking ? null : !running ? text("请先启动实例。", "Start the instance first.") : !configured ? text("请先启用 RCON 并设置管理员密码。", "Enable RCON and configure the admin password first.") : !extension?.connected ? text("服务端扩展未连接。", "Server extension is not connected.") : null}>
-        <button type="submit" className="primary-button" disabled={disabled || !running || !configured || !extension?.connected}>{busy ? text("正在生成并核验…", "Spawning and verifying…") : text("生成生物", "Spawn creature")}</button></ConfigurationActionHelp>
+          {tamed ? <label className="gmt-field"><span>{text("在线玩家的游戏内 ID", "Online in-game Player ID")}</span><input className="gmt-text-input" required type="number" min={1} max={4294967295} step={1} value={playerId} onChange={e => { setSourcePlayerId(null); setPlayerId(e.target.value); }} /></label> : null}</div>
+        <ConfigurationActionHelp reason={!host || busy || checking ? null : !running || !runId ? text("请先启动当前地图。", "Start the selected map first.") : stalePlayer ? text("请重新选择实时玩家或手动输入。", "Select a live player again or enter values manually.") : !configured ? text("请先启用 RCON 并设置管理员密码。", "Enable RCON and configure the admin password first.") : !extension?.connected ? text("服务端扩展未连接。", "Server extension is not connected.") : null}>
+        <button type="submit" className="primary-button" disabled={disabled || !running || !runId || stalePlayer || !configured || !extension?.connected}>{busy ? text("正在生成并核验…", "Spawning and verifying…") : text("生成生物", "Spawn creature")}</button></ConfigurationActionHelp>
       </fieldset>
     </form>
     <ActivityNotice tone="error">{error ?? ""}</ActivityNotice>

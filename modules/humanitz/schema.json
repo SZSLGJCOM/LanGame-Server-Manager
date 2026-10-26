@@ -218,6 +218,18 @@
       "x-lsgm-source-key": "WeaponBreak",
       "x-lsgm-source-surface": "config_file"
     },
+    "weapon_durability_multiplier": {
+      "type": ["number", "null"],
+      "default": null,
+      "minimum": 0,
+      "title": "Weapon Durability Loss Multiplier",
+      "description": "Scales weapon durability loss: 1 is normal, 2 is twice as fast, and 0.5 is half as fast. Leave blank to preserve the current native value; the packaged default is 1. Clearing a saved override keeps its last native value. Weapon breakage remains a separate setting.",
+      "x-lsgm-section": "world",
+      "x-lsgm-order": 241,
+      "x-lsgm-source": "humanitz_reference_build_26172878",
+      "x-lsgm-source-key": "WeaponDurabilityMulti",
+      "x-lsgm-source-surface": "config_file"
+    },
     "vital_drain": {
       "type": "integer",
       "default": 1,
@@ -310,6 +322,19 @@
       "x-lsgm-order": 300,
       "x-lsgm-source": "game_server_settings",
       "x-lsgm-source-key": "MultiplayerSleep",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "headshot_only_mode": {
+      "type": "string",
+      "default": "preserve",
+      "enum": ["preserve", "enabled", "disabled"],
+      "enum_labels": ["Keep native setting", "Enabled", "Disabled"],
+      "title": "Headshot Only Mode",
+      "description": "Enable or disable headshot only mode. Keep native setting leaves the current native value unchanged; new servers use the packaged default, disabled. Returning to Keep native setting does not undo a previously saved value.",
+      "x-lsgm-section": "difficulty",
+      "x-lsgm-order": 299,
+      "x-lsgm-source": "humanitz_reference_build_26172878",
+      "x-lsgm-source-key": "HeadshotOnlyMode",
       "x-lsgm-source-surface": "config_file"
     },
     "zombie_difficulty_health": {
@@ -522,6 +547,18 @@
       "x-lsgm-order": 640,
       "x-lsgm-source": "game_server_settings",
       "x-lsgm-source-key": "PickupCleanup",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "backpack_cleanup_days": {
+      "type": ["integer", "null"],
+      "default": null,
+      "minimum": 0,
+      "title": "Dropped Backpack Cleanup (Game Days)",
+      "description": "Game days before player-dropped backpacks that remain unequipped are purged. Leave blank to preserve the current native value; the packaged default is 0. Clearing a saved override keeps its last native value. This is separate from dropped pickup cleanup.",
+      "x-lsgm-section": "loot",
+      "x-lsgm-order": 641,
+      "x-lsgm-source": "humanitz_reference_build_26172878",
+      "x-lsgm-source-key": "BackpackCleanup",
       "x-lsgm-source-surface": "config_file"
     },
     "zombie_respawn_minutes": {
@@ -1006,8 +1043,8 @@
       "type": "integer",
       "default": 14,
       "minimum": 0,
-      "title": "Recycle Car Days",
-      "description": "RecycleCar from [World Settings]; real days before claimed cars recycle, 0 disables.",
+      "title": "Vehicle Ownership Expiry (Real Days)",
+      "description": "Real days since the owner's last login before vehicle ownership expires. The packaged default is 14; 0 disables car recycling.",
       "x-lsgm-section": "vehicles",
       "x-lsgm-order": 606,
       "x-lsgm-source": "game_server_settings",

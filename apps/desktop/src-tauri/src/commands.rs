@@ -104,6 +104,8 @@ use crate::runtime_transport::{
 pub(crate) mod commands_ark_cluster_backups;
 #[path = "commands_ark_clusters.rs"]
 pub(crate) mod commands_ark_clusters;
+#[path = "commands_ark_map.rs"]
+pub(crate) mod commands_ark_map;
 #[path = "commands_ark_map_availability.rs"]
 pub(crate) mod commands_ark_map_availability;
 #[path = "commands_ark_tools.rs"]

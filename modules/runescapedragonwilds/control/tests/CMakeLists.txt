@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.22)
+project(DragonwildsNativeProfileTests LANGUAGES CXX)
+if(NOT WIN32 OR NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "Dragonwilds profile checks require Windows x64 MSVC")
+endif()
+add_executable(native_profile_tests native_profile_tests.cpp)
+target_compile_features(native_profile_tests PRIVATE cxx_std_23)
+target_compile_definitions(native_profile_tests PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_options(native_profile_tests PRIVATE /W4 /WX /utf-8 /guard:cf)
+target_link_options(native_profile_tests PRIVATE /guard:cf)
+target_link_libraries(native_profile_tests PRIVATE bcrypt)
+set_target_properties(native_profile_tests PROPERTIES
+    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")

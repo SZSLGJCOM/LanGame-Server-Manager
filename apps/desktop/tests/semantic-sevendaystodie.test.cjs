@@ -9,7 +9,7 @@ for (const extension of [".ts", ".tsx"]) {
   };
 }
 require.extensions[".css"] = (module) => module._compile("", module.filename);
-const { parseGuidedSettingsSchema } = require("../src/views/settings/guided-settings.ts");
+const { parseGuidedSettingsSchema, validateGuidedSettingsObject } = require("../src/views/settings/guided-settings.ts");
 const { buildConfigurationWorkspaceModel, resolveConfigurationSectionId } = require("../src/views/settings/configuration-workspace-model.ts");
 function modelFor(id) {
   const schema = parseGuidedSettingsSchema({
@@ -22,6 +22,22 @@ function modelFor(id) {
 function fieldSections(model) {
   return Object.fromEntries(model.items.map((item) => [item.fieldKey, item.sectionId]));
 }
+
+test("7 Days rejects sandbox codes the native decoder would ignore or truncate", () => {
+  const schema = parseGuidedSettingsSchema({
+    summary: { id: "sevendaystodie", name: "7 Days to Die" },
+    schema_json: fs.readFileSync(path.resolve(__dirname, "../../../modules/sevendaystodie/schema.json"), "utf8")
+  });
+  const issuesFor = (sandbox_code) => validateGuidedSettingsObject(schema, { sandbox_code })
+    .filter((issue) => issue.fieldKey === "sandbox_code");
+  // Current build 25661908 uses version A and two-letter keys + one-letter values.
+  for (const code of ["A", "AAAJABJACJADJARFBNC", "AAAJ"]) {
+    assert.deepEqual(issuesFor(code), [], code);
+  }
+  for (const code of ["B", "BAAJ", "AA", "AAA", "AAAJZ", "AAAJZZ", "AAAJ1"]) {
+    assert.ok(issuesFor(code).some((issue) => issue.reason === "pattern"), code);
+  }
+});
 
 test("7 Days to Die separates room identity, native access policy and remote services", () => {
   const model = modelFor("sevendaystodie");

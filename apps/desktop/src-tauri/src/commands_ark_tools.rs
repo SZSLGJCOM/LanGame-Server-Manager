@@ -11,6 +11,7 @@ pub use protocol::SpawnInput;
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InstanceInput {
     pub instance_id: String,
+    pub process_key: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -32,6 +33,8 @@ pub struct ToolsStatus {
 #[serde(rename_all = "camelCase")]
 pub struct SpawnResult {
     pub instance_id: String,
+    pub process_key: String,
+    pub run_id: i64,
     pub request_id: String,
     pub creature: protocol::Creature,
 }
@@ -58,7 +61,10 @@ fn embedded(_module: &str) -> Result<install::EmbeddedArkTools, String> {
     Err("ARK creature extensions require a Windows server host.".into())
 }
 
-async fn instance(storage: &StorageBootstrap, id: &str) -> Result<InstanceDetails, String> {
+pub(super) async fn instance(
+    storage: &StorageBootstrap,
+    id: &str,
+) -> Result<InstanceDetails, String> {
     let details = read_instance_details(&storage.paths, id)
         .await
         .map_err(|e| e.to_string())?;
@@ -124,7 +130,7 @@ pub(super) fn has_owned_asa_framework_for_start(root: &Path) -> Result<bool, Str
     install::has_owned_asa_framework(root, embedded("arksurvivalascended")?)
 }
 
-async fn ensure_endpoint(details: &InstanceDetails) -> Result<(), String> {
+pub(super) async fn ensure_endpoint(details: &InstanceDetails) -> Result<(), String> {
     let port = details
         .ports
         .iter()
@@ -185,7 +191,7 @@ pub(super) fn rcon_endpoint_covers(
         && (target.is_loopback() || interfaces.iter().any(|ip| ip.to_canonical() == target))
 }
 
-async fn dispatch(details: &InstanceDetails, command: &str) -> Result<String, String> {
+pub(super) async fn dispatch(details: &InstanceDetails, command: &str) -> Result<String, String> {
     dispatch_source_rcon_command(
         details,
         command,
@@ -229,8 +235,20 @@ pub async fn read_ark_tools_status(
         });
     }
     let connected = async {
-        ensure_endpoint(&details).await?;
-        handshake(&details).await
+        let process_key = input.process_key.as_deref().unwrap_or("main");
+        let run = details
+            .active_run
+            .as_ref()
+            .ok_or("ARK server is not running.")?;
+        let run_id = run
+            .processes
+            .iter()
+            .find(|process| process.process_key == process_key)
+            .map(|process| process.run_id)
+            .unwrap_or(run.run_id);
+        let target = super::commands_ark_map::selected_target(&details, process_key, run_id)?;
+        ensure_endpoint(&target).await?;
+        handshake(&target).await
     }
     .await;
     Ok(ToolsStatus {
@@ -309,6 +327,8 @@ pub async fn spawn_ark_creature(
     reconcile_runtime_state(&state).await?;
     let guard = state.acquire_instance_mutation(&input.instance_id).await;
     let details = instance(&storage, &input.instance_id).await?;
+    let details =
+        super::commands_ark_map::selected_target(&details, &input.process_key, input.run_id)?;
     ensure_endpoint(&details).await?;
     // Retain ownership through both the mutation and independent read-back, even
     // if the IPC waiter disappears. Never automatically resend a mutation.
@@ -326,6 +346,6 @@ pub async fn spawn_ark_creature(
             .map_err(|error| format!("生物 {}:{} 已返回，但与请求不一致；请勿重复生成。{error}", inspected.id1, inspected.id2))?;
         append_desktop_app_log(&storage, "info", "instance.ark_creature.spawned", "ARK creature generated and independently read back",
             json!({"instance_id":input.instance_id,"request_id":input.request_id,"id1":inspected.id1,"id2":inspected.id2,"class":inspected.class_name,"level":inspected.level}));
-        Ok(SpawnResult { instance_id: input.instance_id, request_id: input.request_id, creature: inspected })
+        Ok(SpawnResult { instance_id: input.instance_id, process_key: input.process_key, run_id: input.run_id, request_id: input.request_id, creature: inspected })
     }).await.map_err(|e| format!("ARK creature generation task failed: {e}"))?
 }

@@ -357,7 +357,7 @@ export const ZH_CN_SEVEN_DAYS_TO_DIE_MESSAGES: MessageCatalog = {
   "settings.schema.sevendaystodie.max_chunk_age.title": "区块重置时长（天）",
   "settings.schema.sevendaystodie.max_chunk_age.description": "区块自上次被访问后经过的游戏天数。若该区块未被领地或附近床铺保护，服务器会在达到阈值后重置它。设为 -1 可关闭基于年龄的重置。",
   "settings.schema.sevendaystodie.save_data_limit.title": "存档数据上限（MB）",
-  "settings.schema.sevendaystodie.sandbox_code.description": "粘贴从《七日杀》3.0 游戏内“沙盒选项”页面复制的代码；该代码控制难度、节奏、战利品、僵尸行为、血月及相关规则。",
+  "settings.schema.sevendaystodie.sandbox_code.description": "粘贴与服务器版本一致的游戏内“沙盒选项”代码。当前格式以 A 开头，后接完整的三字母选项组；单独的 A 使用游戏默认规则。更新游戏后请重新核对自定义代码，选项含义可能变化。",
   "settings.schema.sevendaystodie.sandbox_code.title": "沙盒代码",
   "settings.schema.sevendaystodie.save_data_limit.description": "每个存档游戏每次允许占用的最大磁盘容量（MB）。到达上限后，服务器可能重置存档区块以释放空间。设为 -1 可关闭限制。",
   "settings.schema.sevendaystodie.max_queued_mesh_layers.title": "待生成网格层上限",

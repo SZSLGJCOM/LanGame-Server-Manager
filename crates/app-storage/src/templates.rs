@@ -162,6 +162,7 @@ fn render_module_templates_with_writer(
 ) -> Result<(), StorageError> {
     if input.module_id == "humanitz" {
         crate::player_access_normalization::validate_humanitz_rosters(input.settings)?;
+        templates_render_humanitz::validate_optional_world_settings(input.settings)?;
     }
     if input.module_id == "enshrouded" {
         crate::settings_validation::validate_enshrouded_settings(input.settings)?;
@@ -1340,8 +1341,14 @@ fn lookup_unturned_template_token(settings: &Map<String, Value>, path: &str) -> 
     }
 }
 
+#[path = "templates_render_humanitz.rs"]
+mod templates_render_humanitz;
+
 fn lookup_humanitz_template_token(settings: &Map<String, Value>, path: &str) -> Option<String> {
     match path {
+        "optional_world_settings_lines" => Some(
+            templates_render_humanitz::render_optional_world_settings(settings),
+        ),
         "admin_list_lines" => render_humanitz_net_id_lines(settings, "admin_steam_ids"),
         "reserved_player_lines" => {
             render_humanitz_net_id_lines(settings, "reserved_player_steam_ids")

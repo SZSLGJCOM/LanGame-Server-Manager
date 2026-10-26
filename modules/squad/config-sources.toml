@@ -1,6 +1,13 @@
 status = "best_effort_verified"
-last_verified = "2026-07-13"
-notes = "SteamCMD anonymous app_update 403240 validate succeeded against the validated package on 2026-07-13. The public manifest reports Squad Dedicated Server buildid 23797339, TargetBuildID 23797339, SizeOnDisk 14558146773, and depots 1004/403241/1123920. The current Server.cfg has 36 keys and Rcon.cfg has 7 keys; their key sets exactly match the typed LanGame templates, including AllowFireteamLayersInRotation added by the official 10.3 release. The validated package also includes Admins.cfg, LayerVoting.cfg, LayerVotingLowPlayers.cfg, LayerVotingNight.cfg, LayerRotation.cfg, LevelRotation.cfg, ServerMessages.cfg, MOTD.cfg, VoteConfig.cfg, and related exclusion/list files, each exposed through a managed native or raw-file surface."
+last_verified = "2026-10-25"
+notes = "Read-only review of installed app 403240 build 26005357, v10.6.3.694944.3212, confirms Server.cfg has 36 keys and Rcon.cfg has seven, exactly matching the typed templates. The clean-package-matching executable adds Party ID and Vehicle fields to ListPlayers; the parser consumes their native positions while keeping Steam/EOS action targets. This static review and synthetic parser regression do not establish a live populated roster, player join, moderation or lifecycle result. Earlier July configuration validation and September/October runtime observations remain separately dated below."
+
+[[sources]]
+id = "list_players_build_26005357"
+kind = "documentation"
+path = "runtime-fixtures/2026-10-25-list-players-build-26005357.json"
+authority = "installed_official_binary_read_only_format_string_analysis"
+description = "The official 10.6.3 executable contains the active-player format with Party ID between Team ID and Squad ID, and Vehicle after Role. The previous parser merged Party ID into Team ID and rejected populated responses. The regression uses the exact native field order with synthetic identities and values; no populated server response was captured. Configuration key inventories are unchanged."
 
 [[sources]]
 id = "native_stdout_build_25295557"

@@ -1,6 +1,13 @@
 status = "best_effort_verified"
-last_verified = "2026-10-23"
+last_verified = "2026-10-25"
 notes = "Official release 26.10.20.1 (1) package integrity and tagged server-source changes were verified on 2026-10-23. The executable, configuration and save paths, password object and existing console commands remain compatible. New ServerImageURL is optional and IPBans.json is stored under the already retained Assets root. The official archive contains a self-contained RTServer.exe targeting .NET 10. The 117-field semantic inventory remains dated to the 26.8.31.1 review below; this update does not relabel that historical evidence or claim a player-join test. Retired whitelist settings/files remain preserved and formerly restricted instances require a password before starting."
+
+[[sources]]
+id = "release_game_version_20261025"
+kind = "release"
+path = "https://github.com/RimWorld-Together/Rimworld-Together/releases/tag/26.10.20.1"
+authority = "upstream_maintainer_release_notes_and_read_only_package_hash_comparison"
+description = "Release 26.10.20.1 explicitly targets RimWorld unstable 1.7 and states future releases target 1.7 while 1.6 becomes legacy. The pinned follow-up 26.10.20.1_(1) therefore requires the matching 1.7 Together client mod; a 1.6 client needs the upstream 1.6 release. The installed RTServer.exe SHA256 871abd0df922baddf26437cec48676c01bbc4ca7cac2c077a6c773662a25c7bc matches its clean-package inventory. This is community-maintained server software, and no client join was tested."
 
 [[sources]]
 id = "release_review_20261023"

@@ -208,6 +208,24 @@ pub(super) fn dispatch<'a>(
                 .await?,
             )
         })),
+        "read_ark_map" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_ark_map::read_ark_map(
+                    app.state::<DesktopState>(),
+                    input(args)?,
+                )
+                .await?,
+            )
+        })),
+        "send_ark_map_gm_command" => Some(Box::pin(async move {
+            to_json(
+                crate::commands::commands_ark_map::send_ark_map_gm_command(
+                    app.state::<DesktopState>(),
+                    input(args)?,
+                )
+                .await?,
+            )
+        })),
         "read_knowledge_status" => Some(Box::pin(async move {
             to_json(
                 crate::commands_knowledge::read_knowledge_status(app.state::<DesktopState>())

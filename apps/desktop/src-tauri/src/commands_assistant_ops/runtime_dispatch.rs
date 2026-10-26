@@ -534,6 +534,7 @@ struct RuntimeCommandDispatchContext<'a> {
     redact_audit_payload: bool,
     reconcile_before_dispatch: bool,
     stdin_dispatch_budget: Option<RuntimeStdinDispatchBudget>,
+    verify_ark_map_endpoint: bool,
 }
 
 impl RuntimeCommandDispatchContext<'_> {
@@ -546,6 +547,7 @@ impl RuntimeCommandDispatchContext<'_> {
             redact_audit_payload: false,
             reconcile_before_dispatch: true,
             stdin_dispatch_budget: None,
+            verify_ark_map_endpoint: false,
         }
     }
 }
@@ -574,6 +576,24 @@ pub(super) async fn send_assistant_runtime_command(
         RuntimeCommandDispatchContext {
             expected_run_id: expected.active_run.as_ref().map(|run| run.run_id),
             expected_instance: Some(expected),
+            ..RuntimeCommandDispatchContext::external_request()
+        },
+    ))
+    .await
+}
+
+pub(super) async fn send_ark_map_runtime_command(
+    state: tauri::State<'_, DesktopState>,
+    input: InstanceRuntimeCommandInput,
+    expected: &InstanceDetails,
+) -> Result<InstanceRuntimeCommandResult, String> {
+    Box::pin(send_instance_runtime_command_inner(
+        &state,
+        input,
+        RuntimeCommandDispatchContext {
+            expected_run_id: expected.active_run.as_ref().map(|run| run.run_id),
+            expected_instance: Some(expected),
+            verify_ark_map_endpoint: true,
             ..RuntimeCommandDispatchContext::external_request()
         },
     ))
@@ -655,6 +675,7 @@ async fn dispatch_declared_runtime_action_with_budget(
             redact_audit_payload: true,
             reconcile_before_dispatch: false,
             stdin_dispatch_budget,
+            verify_ark_map_endpoint: false,
         },
     ))
     .await
@@ -724,6 +745,7 @@ async fn send_instance_runtime_command_inner(
         redact_audit_payload,
         reconcile_before_dispatch,
         stdin_dispatch_budget,
+        verify_ark_map_endpoint,
     } = context;
     let InstanceRuntimeCommandInput {
         instance_id,
@@ -1026,10 +1048,28 @@ async fn send_instance_runtime_command_inner(
             )
             .await;
         }
-        let projected = crate::commands::commands_runtime_ark::project_running_command(
+        let mut projected = crate::commands::commands_runtime_ark::project_running_command(
             details,
             process_key.as_deref(),
         )?;
+        if verify_ark_map_endpoint {
+            let key = process_key
+                .as_deref()
+                .ok_or("ARK map tool requires a selected process.")?;
+            let run_id = details
+                .active_run
+                .as_ref()
+                .and_then(|run| {
+                    run.processes
+                        .iter()
+                        .find(|process| process.process_key == key)
+                })
+                .map(|process| process.run_id)
+                .ok_or("ARK map process is no longer running.")?;
+            let target = crate::commands::commands_ark_map::selected_target(details, key, run_id)?;
+            crate::commands::commands_ark_tools::ensure_endpoint(&target).await?;
+            projected = Some(target);
+        }
         let result_process_key = if projected.is_some() {
             process_key.clone().unwrap_or_else(|| String::from("main"))
         } else {

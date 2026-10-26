@@ -6,18 +6,44 @@ pub(super) async fn verify<R: tauri::Runtime>(
     running: &InstanceDetails,
 ) -> Result<(), Box<dyn std::error::Error>> {
     require_fixture(runtime, running)?;
+    let run_id = running
+        .active_run
+        .as_ref()
+        .and_then(|run| {
+            run.processes
+                .iter()
+                .find(|process| process.process_key == "main")
+        })
+        .map(|process| process.run_id)
+        .ok_or("Native ARK main process is missing")?;
     let status = tools::read_ark_tools_status(
         runtime.state.clone(),
         InstanceInput {
             instance_id: running.summary.id.clone(),
+            process_key: Some("main".into()),
         },
     )
     .await?;
     if !status.connected {
         return Err(format!("Native ARK extension handshake failed: {:?}", status.issue).into());
     }
+    crate::commands::commands_ark_map::read_ark_map(
+        runtime.state.clone(),
+        crate::commands::commands_ark_map::MapInput {
+            instance_id: running.summary.id.clone(),
+            process_key: "main".into(),
+            run_id,
+        },
+    )
+    .await?;
+    println!(
+        "NATIVE_ARK_MAP module={} phase=snapshot_validated evidence=native_world",
+        running.summary.module_id
+    );
     let request = |class: &str, level: u32, tamed: bool, player_id: u32| SpawnInput {
         instance_id: running.summary.id.clone(),
+        process_key: "main".into(),
+        run_id,
         request_id: uuid::Uuid::new_v4().simple().to_string(),
         creature: class.into(),
         level,

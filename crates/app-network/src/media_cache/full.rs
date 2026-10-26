@@ -1,4 +1,9 @@
-use super::{MediaCacheError, MediaResponse, http::Context, meta::Entry, response};
+use super::{
+    MediaCacheError, MediaResponse,
+    http::Context,
+    meta::{Entry, Freshness},
+    response,
+};
 
 pub(super) async fn respond(
     context: &Context<'_>,
@@ -7,11 +12,17 @@ pub(super) async fn respond(
     head: bool,
 ) -> Result<MediaResponse, MediaCacheError> {
     let mut cached = None;
-    if let Some(entry) = &old
-        && let Some(blob) = &entry.full
-    {
-        cached = context.store.read(blob).await?;
-        if cached.is_none() {
+    if let Some(entry) = &old {
+        if let Some(blob) = &entry.full
+            && context
+                .image_sha256
+                .is_none_or(|expected| blob.sha256 == expected)
+        {
+            cached = context.store.read(blob).await?;
+        }
+        // A disk object's self-consistent metadata is not the authority for a
+        // frozen resource. Metadata-only HEAD entries cannot prove its bytes.
+        if (entry.full.is_some() || context.image_sha256.is_some()) && cached.is_none() {
             context.store.remove(context.key).await?;
             old = None;
         }
@@ -83,13 +94,23 @@ pub(super) async fn respond(
                 } else {
                     reply.body.len() as u64
                 };
-                let entry = Entry::new(reply.url.clone(), reply.headers, total, context.now());
+                let mut entry = Entry::new(reply.url.clone(), reply.headers, total, context.now());
+                if context.cache_immutable {
+                    // Explicitly downloaded assets use their reviewed digest as
+                    // their version. HTTP API no-store headers still describe the
+                    // response, but do not govern this opt-in bounded asset store.
+                    entry.freshness = Freshness {
+                        expires_at: u64::MAX,
+                        no_store: false,
+                        stale_allowed: true,
+                    };
+                }
                 let entry = context
                     .store
                     .put(
                         context.key,
                         entry,
-                        if head {
+                        if head && context.image_sha256.is_none() {
                             Vec::new()
                         } else {
                             vec![(None, reply.body.clone())]

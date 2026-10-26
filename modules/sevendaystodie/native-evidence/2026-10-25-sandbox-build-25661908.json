@@ -1,0 +1,38 @@
+{
+  "module_id": "sevendaystodie",
+  "verified_at": "2026-10-25",
+  "status": "static_native_contract_verified",
+  "steam_app_id": 294420,
+  "build_id": "25661908",
+  "native_version": "V3.3.0 (b18)",
+  "config": {
+    "relative_path": "serverconfig.xml",
+    "sha256": "21dd90603e12c2aa88c73edf4d1c44ee1bc60358b94275259c4aa24970a8d879",
+    "clean_package_hash_matches": true,
+    "native_property_count": 68,
+    "missing_template_properties": [],
+    "additional_template_properties": ["UserDataFolder"],
+    "sandbox_code": "AAAJABJACJADJARFBNC"
+  },
+  "assembly": {
+    "relative_path": "7DaysToDieServer_Data/Managed/Assembly-CSharp.dll",
+    "sha256": "d2e0d1431291cbd5808fc4f088d1ed33b6d01758d1f82d33151e70928fdae479",
+    "inspected_type": "SandboxOptions.SandboxOptionManager",
+    "version_header": "A",
+    "option_group_length": 3,
+    "option_key_length": 2,
+    "alphabet": "A-Z",
+    "header_only_uses_native_defaults": true,
+    "wrong_header_resets_defaults_and_returns_false": true,
+    "trailing_incomplete_group_is_ignored": true
+  },
+  "default_code_decoded": [
+    {"group": "AAJ", "option": "RangedDamage", "value_index": 9, "value": 1.5},
+    {"group": "ABJ", "option": "MeleeDamage", "value_index": 9, "value": 1.5},
+    {"group": "ACJ", "option": "BlockDamage", "value_index": 9, "value": 1.5},
+    {"group": "ADJ", "option": "TerrainDamage", "value_index": 9, "value": 1.5},
+    {"group": "ARF", "option": "IncomingDamage", "value_index": 5, "value": 0.75},
+    {"group": "BNC", "option": "AISmellMode", "value_index": 2, "value": 2}
+  ],
+  "scope": "Read-only manifest, original configuration and managed-assembly inspection. No game assembly was executed and no server, client, instance, gameplay or save test was run. The schema validates framing; it does not promise that arbitrary option indices are meaningful for every game version."
+}

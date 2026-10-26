@@ -357,7 +357,7 @@ export const EN_US_SEVEN_DAYS_TO_DIE_MESSAGES: MessageCatalog = {
   "settings.schema.sevendaystodie.max_chunk_age.title": "Chunk Reset Age (Days)",
   "settings.schema.sevendaystodie.max_chunk_age.description": "In-game days since a chunk was last visited before the server may reset it if it is not protected by a claim or nearby bedroll. Use -1 to disable age-based chunk reset.",
   "settings.schema.sevendaystodie.save_data_limit.title": "Save Data Limit (MB)",
-  "settings.schema.sevendaystodie.sandbox_code.description": "Paste the code copied from the 7 Days to Die 3.0 Sandbox Options screen. It controls difficulty, pacing, loot, zombie behavior, blood moons, and related rules.",
+  "settings.schema.sevendaystodie.sandbox_code.description": "Paste a code from the Sandbox Options screen of the matching game version. Current codes start with A followed by complete three-letter option groups; A alone uses native defaults. Recheck custom codes after updating the game because option meanings can change.",
   "settings.schema.sevendaystodie.sandbox_code.title": "Sandbox Code",
   "settings.schema.sevendaystodie.save_data_limit.description": "Maximum disk allowance per saved game in megabytes. The server may reset saved chunks to free space when the limit is reached. Use -1 to disable the limit.",
   "settings.schema.sevendaystodie.max_queued_mesh_layers.title": "Queued Mesh Layer Cap",

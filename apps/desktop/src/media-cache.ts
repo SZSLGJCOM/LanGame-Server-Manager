@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { registerMediaCacheSource } from "./api";
-import { officialMediaCandidates } from "./official-media-sources";
+import { isOfficialMediaUrl, officialMediaCandidates } from "./official-media-sources";
 import type { LocaleCode } from "./i18n-config";
 
 export type MediaKind = "image" | "video" | "hls";
@@ -11,7 +11,7 @@ function cacheCandidates(source: string, kind: MediaKind): string[] {
 }
 
 export async function resolveMediaCacheSource(source: string, kind: MediaKind, locale: LocaleCode): Promise<string> {
-  if (cacheCandidates(source, kind).length < 2) return source;
+  if (!isOfficialMediaUrl(source, kind === "image" ? "image" : "video")) return source;
   const desktop = isTauri();
   if (desktop && kind !== "video") return `http://lgsm-media.localhost/?url=${encodeURIComponent(source)}&kind=${kind}&locale=${locale}`;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -39,8 +39,7 @@ export function createMediaCacheResolver(kind: MediaKind, locale: LocaleCode) {
   const disabled = new Set<string>();
   const resourceKey = (source: string) => cacheCandidates(source, kind).sort().join("\u0000");
   const resolve = async (source: string): Promise<string> => {
-    const candidates = cacheCandidates(source, kind);
-    if (candidates.length < 2) return source;
+    if (!isOfficialMediaUrl(source, kind === "image" ? "image" : "video")) return source;
     const key = resourceKey(source);
     if (disabled.has(key)) return source;
     let pending = attempted.get(key);

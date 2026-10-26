@@ -75,12 +75,19 @@ fn bundled_policy_has_bounded_official_groups_and_primary_evidence() {
                 .groups
                 .iter()
                 .any(|group| group.origins.contains(origin))
+                || policy
+                    .exact_resources
+                    .iter()
+                    .any(|resource| resource.urls.iter().any(|value| {
+                        Url::parse(value)
+                            .is_ok_and(|url| url.origin().ascii_serialization() == *origin)
+                    }))
         );
     }
     let mut ids = std::collections::HashSet::new();
     for group in &policy.groups {
         assert!(ids.insert(&group.id));
-        assert!((2..=8).contains(&group.origins.len()));
+        assert!((1..=8).contains(&group.origins.len()));
         assert!(!group.path_prefixes.is_empty() || !group.exact_paths.is_empty());
         assert!(
             group
@@ -112,6 +119,19 @@ fn bundled_policy_has_bounded_official_groups_and_primary_evidence() {
     for resource in &policy.exact_resources {
         assert!(ids.insert(&resource.id));
         assert!((2..=8).contains(&resource.urls.len()));
+        if let Some(hash) = &resource.sha256 {
+            assert!(valid_sha256(hash));
+            assert_eq!(resource.purposes, ["image"]);
+        }
+        if resource.cache_immutable {
+            assert!(
+                resource
+                    .sha256
+                    .as_ref()
+                    .is_some_and(|hash| valid_sha256(hash))
+            );
+            assert_eq!(resource.purposes, ["image"]);
+        }
         assert!(
             resource
                 .urls

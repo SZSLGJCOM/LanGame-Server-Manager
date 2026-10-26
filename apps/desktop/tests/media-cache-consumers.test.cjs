@@ -90,6 +90,80 @@ test("cancelled texture registration cannot create an image or a later fallback"
   await flush();
 });
 
+test("display-only Wiki artwork can use its public direct fallback without requiring canvas CORS", async () => {
+  const env = cacheEnvironment({ register: async () => null });
+  const timers = clock(), images = [];
+  const Image = class extends ImageFixture { constructor() { super(); images.push(this); } };
+  const { loadMediaImage } = loadSource("load-media-image.ts", { "./media-cache": env.cache }, { Image, ...timers });
+  const source = "https://ark.wiki.gg/images/The_Island_map_ASA.jpg";
+  let loaded = false;
+  const cleanup = loadMediaImage([source], () => { loaded = true; }, () => assert.fail("unexpected failure"), "en-US", { crossOrigin: null });
+  await flush();
+  assert.equal(images[0].src, source);
+  assert.equal(images[0].crossOrigin, undefined);
+  assert.equal(images[0].referrerPolicy, "no-referrer");
+  images[0].emit("load");
+  assert.equal(loaded, true);
+  cleanup();
+  assert.equal(timers.pending.size, 0);
+});
+
+test("image validation rejects a decoded but wrong-sized source and only reports success for the valid alternate", async () => {
+  media.forgetMediaSourcePreferences();
+  const env = cacheEnvironment({ register: async () => null });
+  const timers = clock(), images = [], loaded = [];
+  const Image = class extends ImageFixture { constructor() { super(); images.push(this); } };
+  const { loadMediaImage } = loadSource("load-media-image.ts", { "./media-cache": env.cache }, { Image, ...timers });
+  let unavailable = 0;
+  const cleanup = loadMediaImage(imageSources(), (value, source) => loaded.push(source), () => unavailable++, "zh-CN", {
+    acceptImage: value => value.naturalWidth === 2048 && value.naturalHeight === 2048
+  });
+  await flush();
+  assert.equal(new URL(images[0].src).hostname, "shared.cdn.steamchina.queniuam.com");
+  Object.assign(images[0], { naturalWidth: 1024, naturalHeight: 1024 }); images[0].emit("load");
+  await flush();
+  assert.deepEqual(loaded, [], "A decodable error picture must not count as a successful map");
+  assert.equal(images.length, 2, "A wrong-sized map advances to the next source");
+  assert.equal(images[1].src, image);
+  Object.assign(images[1], { naturalWidth: 2048, naturalHeight: 2048 }); images[1].emit("load");
+  assert.deepEqual(loaded, [image]); assert.equal(unavailable, 0);
+  cleanup(); assert.equal(timers.pending.size, 0);
+});
+
+test("all invalid map sources exhaust a bounded list before reporting unavailable", async () => {
+  media.forgetMediaSourcePreferences();
+  const env = cacheEnvironment({ register: async () => null });
+  const timers = clock(), images = [];
+  const Image = class extends ImageFixture { constructor() { super(); images.push(this); } };
+  const { loadMediaImage } = loadSource("load-media-image.ts", { "./media-cache": env.cache }, { Image, ...timers });
+  let unavailable = 0;
+  const cleanup = loadMediaImage(imageSources(), () => assert.fail("Invalid art loaded"), () => unavailable++, "en-US", { acceptImage: () => false });
+  for (let index = 0; index < imageSources().length; index++) {
+    await flush(); assert.equal(unavailable, 0); images[index].emit("load");
+  }
+  await flush(); assert.equal(unavailable, 1); assert.equal(images.length, imageSources().length);
+  cleanup(); assert.equal(timers.pending.size, 0);
+});
+
+test("integrity-protected artwork cannot bypass cache verification through an unverified direct image", async () => {
+  media.forgetMediaSourcePreferences();
+  const env = cacheEnvironment();
+  const timers = clock(), images = [];
+  const Image = class extends ImageFixture { constructor() { super(); images.push(this); } };
+  const { loadMediaImage } = loadSource("load-media-image.ts", { "./media-cache": env.cache }, { Image, ...timers });
+  const wiki = "https://ark.wiki.gg/images/The_Island_map_ASA.jpg";
+  const cleanup = loadMediaImage([...imageSources(), wiki], () => {}, () => assert.fail("Unexpected failure"), "zh-CN", {
+    canLoadDirectly: source => source === wiki
+  });
+  await flush(); images[0].emit("error"); await flush(); await flush();
+  assert.equal(images.length, 2, "The alternate original image uses its own cache after verified mirrors fail");
+  assert.equal(env.calls.length, 2);
+  assert.equal(env.calls[1][0], wiki);
+  images[1].emit("error"); await flush();
+  assert.equal(images[2].src, wiki, "Only the original Wiki source allows a display-only direct fallback");
+  cleanup(); assert.equal(timers.pending.size, 0);
+});
+
 test("rich text waits for cache URLs and obsolete bindings never restore a direct or cached source", async () => {
   media.forgetMediaSourcePreferences();
   const pending = [];

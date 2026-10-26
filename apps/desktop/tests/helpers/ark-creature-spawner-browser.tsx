@@ -25,14 +25,14 @@ let holdStatus = false;
 const statusReplies: Array<(value: ArkToolsStatus) => void> = [];
 let mode: "response" | "invalid" | "failure" | "deferred" = "response";
 let resolveSpawn: ((result: ArkSpawnResult) => void) | undefined;
-let props = { instanceId: "ark-a", moduleId: "arksurvivalascended", status: "Stopped",
+let props = { instanceId: "ark-a", moduleId: "arksurvivalascended", status: "Stopped", processKey: "main", runId: 7,
   settingsJson: JSON.stringify({ rcon_enabled: true, admin_password: "fixture-admin-password", mod_ids_csv: "123456" }) };
 const spawnCalls: ArkSpawnInput[] = [];
 const installs: Array<{ instanceId: string; allowMatchingSymbolsDownload: boolean }> = [];
 let clipboardCalls = 0;
 
 function result(input: ArkSpawnInput): ArkSpawnResult {
-  return { instanceId: input.instanceId, requestId: input.requestId, creature: {
+  return { instanceId: input.instanceId, processKey: input.processKey, runId: input.runId, requestId: input.requestId, creature: {
     id1: 123, id2: 456, className: "Rex_Character_BP_C", level: input.level, team: input.tamed ? 1000 : 1,
     x: input.x, y: input.y, z: input.z, tamed: input.tamed
   } };

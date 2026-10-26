@@ -1,7 +1,7 @@
 id = "rimworld"
 name = "RimWorld Together Server"
 version = "0.1.0"
-description = "Dedicated server module for RimWorld Together using the official server release package."
+description = "RimWorld Together community server for RimWorld 1.7 unstable with the matching Together client mod."
 supported_platforms = ["windows"]
 
 [install]
@@ -21,7 +21,7 @@ args_template = [
 working_directory_template = "{{paths.install_root}}"
 window_policy = "background"
 host_surface = "managed_terminal"
-host_notes = "RimWorld Together 26.10.20.1 (1) ships RTServer.exe. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched. Players use the matching RimWorld Together client mod 3005289691."
+host_notes = "RimWorld Together 26.10.20.1 (1) targets RimWorld 1.7 unstable and requires the matching Together client mod 3005289691; RimWorld 1.6 requires the upstream 1.6 release. This community server is maintained separately from RimWorld. LanGame renders ServerConfig.json and a SHA256 PasswordConfig.json while preserving existing passwords when unset. Retired whitelist files remain untouched."
 
 [[default_ports]]
 name = "game"
@@ -37,7 +37,7 @@ supports_collections = false
 provider = "steam"
 label = "Steam Workshop"
 url = "https://steamcommunity.com/sharedfiles/filedetails/?id=3005289691"
-install_note = "Players need the RimWorld Together client mod, Steam Workshop item 3005289691, plus its current Workshop dependencies. The dedicated server itself is installed from the official RimWorld Together GitHub release archive."
+install_note = "This server release targets RimWorld 1.7 unstable. Players need the matching RimWorld Together client mod, Steam Workshop item 3005289691, plus its current dependencies. RimWorld 1.6 requires the upstream 1.6 release. The community server is installed from the RimWorld Together maintainers' unmodified GitHub release archive."
 
 [runtime.player_query]
 protocol = "none"

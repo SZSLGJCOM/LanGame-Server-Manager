@@ -252,6 +252,7 @@ async function run() {
   let resolveSpawn: ((result: ArkSpawnResult) => void) | undefined;
   Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { input?: ArkSpawnInput }) => {
     if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, connected: true, issue: null });
+    if (command === "read_ark_map") return Promise.resolve({ ...args.input, mapName: "TheIsland", sampledAtUnixMs: Date.now(), projection: null, players: [], artwork: null });
     if (command === "spawn_ark_creature" && args.input) {
       spawnInput = args.input;
       return new Promise<ArkSpawnResult>(resolve => { resolveSpawn = resolve; });
@@ -263,7 +264,7 @@ async function run() {
     const selected = viewProps.selectedDetails!;
     viewProps.selectedDetails = { ...selected, summary: { ...selected.summary, status: "Running", active_process_count: 1 },
       settings_json: JSON.stringify({ rcon_enabled: true, admin_password: "fixture-admin-password" }),
-      active_run: { run_id: 1, processes: [{ process_key: "main", status: "Running" }] } };
+      active_run: { run_id: 1, processes: [{ process_key: "main", run_id: 1, status: "Running" }] } };
     render();
   });
   await act(async () => { tab("gm").click(); });
@@ -287,7 +288,7 @@ async function run() {
   check(spawnButton().disabled, "Returning to Tools must retain the pending native operation"); checks++;
   await act(async () => { tab("runtime").click(); });
   const request = spawnInput as ArkSpawnInput;
-  await act(async () => resolveSpawn!({ instanceId: request.instanceId, requestId: request.requestId, creature: {
+  await act(async () => resolveSpawn!({ instanceId: request.instanceId, processKey: request.processKey, runId: request.runId, requestId: request.requestId, creature: {
     id1: 501, id2: 902, className: "Rex_Character_BP_C", level: request.level, team: 1,
     x: request.x, y: request.y, z: request.z, tamed: request.tamed
   } }));

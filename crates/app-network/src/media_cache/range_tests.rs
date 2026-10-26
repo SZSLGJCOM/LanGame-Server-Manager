@@ -167,13 +167,15 @@ async fn range_health_tracks_upstream_failures_without_reviving_sources_on_disk_
         if origin != official_origin && origin != local_origin {
             return None;
         }
-        Some((
-            url.path().to_string(),
-            vec![
+        Some(ResolvedMedia {
+            identity: url.path().to_string(),
+            sources: vec![
                 format!("{official_origin}{}", url.path()),
                 format!("{local_origin}{}", url.path()),
             ],
-        ))
+            image_sha256: None,
+            cache_immutable: false,
+        })
     });
     let mut cache = cache(&root, resolve, &clock);
     let client = reqwest::Client::builder()

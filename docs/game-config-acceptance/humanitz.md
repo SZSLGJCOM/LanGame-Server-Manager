@@ -160,3 +160,68 @@
   }
 }
 ```
+
+## `2026-10-25-humanitz_reference_build_26172878.json`
+
+- Evidence: `best_effort_verified` at `2026-10-25` (build `Installed official Steam app 2728330 build 26172878; shipped REF_GameServerSettings.ini Version=39, SHA256 1508efa4657cea1024d504a1850a7813e767a4f5f510391535e752de56b8cceb. Read-only reference inspection and isolated configuration rendering; no native server launch or gameplay acceptance.`)
+- Sources: `humanitz_reference_build_26172878`
+- Coverage: editable `3`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "[World Settings]\nBackpackCleanup=0\nWeaponDurabilityMulti=1\nHeadshotOnlyMode=false\nRecycleCar=14\nWeaponBreak=true\nUnknownFutureSetting=keep\n",
+      "path": "HumanitZServer/GameServerSettings.ini",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "backpack_cleanup_days": 7,
+  "headshot_only_mode": "enabled",
+  "recycle_car_days": 21,
+  "weapon_break": false,
+  "weapon_durability_multiplier": 0.5
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "keys": {
+        "World Settings.BackpackCleanup": "7",
+        "World Settings.HeadshotOnlyMode": "true",
+        "World Settings.RecycleCar": "21",
+        "World Settings.UnknownFutureSetting": "keep",
+        "World Settings.WeaponBreak": "false",
+        "World Settings.WeaponDurabilityMulti": "0.5"
+      },
+      "path": "HumanitZServer/GameServerSettings.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-log",
+      "-MULTIHOME=0.0.0.0",
+      "-port=7777",
+      "-queryport=27015",
+      "-steamservername=HumanitZ Server",
+      "-NoCrashDialog"
+    ],
+    "executable_suffix": "HumanitZServer.exe"
+  }
+}
+```

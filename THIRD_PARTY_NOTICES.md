@@ -13,6 +13,7 @@ Installed resource copies use `THIRD_PARTY_LICENSES-RUST.txt`, `THIRD_PARTY_LICE
 | Inter 4.1 fonts | Source and frontend bundle, with `fonts/inter/OFL.txt` | Retain OFL and attribution; verify the exact files against the asset ledger. |
 | Project icons and Minecraft fallback illustration | Source and frontend/icon build inputs | Separate terms in `NOTICE`; project creation does not transfer third-party game or trademark rights. |
 | Remote game covers, screenshots and trailers | URL records in source; fetched and cached during use | Public availability and an approved network origin do not establish permission for display, caching, LAN delivery or commercial use. |
+| ARK map artwork | Reviewed images in versioned GitHub/GitCode resource directories with notices; fetched and cached during use | Each image retains its file-page source link; game artwork, fair-use and public-domain notices differ by file. Images are not embedded in the frontend or installers. |
 | Game knowledge pages | Source metadata in modules; text retrieved into local runtime storage | Publisher terms apply to copying and reuse; access controls and robots signals do not establish complete copyright permission. |
 | IBM model | Downloaded on demand with license and attribution | Apache-2.0 as declared for the pinned model; weights are not in the repository. |
 | ONNX Runtime and MSVC CRT | Embedded during Windows build, then extracted with their notices | Separate native-component licenses and redistribution conditions apply. |
@@ -39,6 +40,14 @@ The complete raw page and description fields are excluded from the public snapsh
 The public `scripts/audit_ark_official_settings.py` tool therefore requires the raw wikitext as an explicit local argument and verifies its pinned SHA-256 digest before processing it. The source URL and expected digest are printed in the command help; the tool does not download or redistribute the page. Project-authored English and Chinese field help is maintained in [`scripts/ark_field_descriptions.json`](scripts/ark_field_descriptions.json). Refresh that help with `python -B scripts/apply_ark_official_crosswalk.py --descriptions-only`, then regenerate its catalogs with `node apps/desktop/scripts/generate_i18n_schema_catalogs.cjs --module arksurvivalascended --module arksurvivalevolved`.
 
 The repository's LanGame Source-Available License 1.0 applies to project-authored code and original portions of those records only. It does not replace the upstream license or grant rights in upstream text, game names, or trademarks. Its restrictions on commercial use and independent modified releases do not override rights independently granted for covered material under CC BY-NC-SA. Redistributors should review the upstream terms for their intended use, including applicable attribution, noncommercial and share-alike conditions.
+
+## ARK Wiki map artwork
+
+The map workbench's catalog is [`apps/desktop/src/data/ark-map-artwork.json`](apps/desktop/src/data/ark-map-artwork.json), verified on 2026-10-25. Each entry identifies the exact image filename and a pinned `Data:Maps` revision supplying its GPS bounds. Image source pages are `https://ark.wiki.gg/wiki/File:` followed by the recorded filename; the workbench links to that file page beside the image. Only the catalog URLs and coordinate facts are included in the application; the original images are retrieved into the runtime media cache.
+
+The 19 reviewed images are also published in the project's versioned GitHub and GitCode resource directories. Their `NOTICE.md` and `manifest.json` retain per-file provenance. The client pins mirror commits and SHA-256 digests; images are downloaded on demand and are not embedded in the frontend or installer. See [`docs/ark-map-artwork-distribution.md`](docs/ark-map-artwork-distribution.md) for the published revisions. Mirroring does not transfer rights or apply the project code license to the artwork.
+
+Wiki text licensing must not be assumed to license every image. Most reviewed files are marked `Copyright Game` and retain Studio Wildcard's game-material copyright. [Ragnarok Ocean Topographic Map](https://ark.wiki.gg/wiki/File:Ragnarok_Ocean_Topographic_Map.jpg?oldid=533709) is marked `Copyright fairuse`. [The Center Topographic Map](https://ark.wiki.gg/wiki/File:The_Center_Topographic_Map.jpg?oldid=533708) uses the Wiki's [`Copyright self`](https://ark.wiki.gg/wiki/Template:Copyright_self) public-domain declaration. The UI uses the neutral source label “ARK Wiki” rather than assigning one copyright owner or license to all files. The linked file pages preserve the applicable source and rights notices; runtime retrieval does not relicense their contents under the LanGame project license.
 
 ## Return to Moria configuration facts
 
@@ -99,6 +108,7 @@ For each registry dependency, the Rust inventory provides a version-specific sou
 | Inter 4.1 字体 | 随源码和前端包分发，附 `fonts/inter/OFL.txt` | 保留 OFL 和署名，实际文件须与素材台账一致。 |
 | 项目图标和 Minecraft 回退插图 | 随源码及前端/图标构建输入分发 | 分别适用 `NOTICE`；项目自行制作不代表取得第三方游戏或商标权。 |
 | 远程游戏封面、截图和预告片 | 源码记录 URL，使用时获取并缓存 | 地址公开、网络来源经过核验，不代表已获展示、缓存、局域网提供或商用许可。 |
+| ARK 地图底图 | GitHub/GitCode 版本化资源目录保留图片及来源声明，使用时下载并缓存 | 各文件保留原图文件页与版权说明；项目代码许可证不覆盖这些图片，前端和安装包不内嵌底图。 |
 | 游戏知识页面 | 模块提供来源元数据，正文获取到本地运行数据 | 复制和使用受发布者条款约束；访问控制和 robots 信号不能替代完整版权依据。 |
 | IBM 模型 | 按需下载，附许可与归属 | 固定模型按发布方声明适用 Apache-2.0，权重不在仓库内。 |
 | ONNX Runtime 与 MSVC CRT | Windows 构建时内嵌，运行时连同声明释放 | 分别适用原生组件许可证及再分发条件。 |

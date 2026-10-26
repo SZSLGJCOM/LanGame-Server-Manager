@@ -131,6 +131,61 @@ fn squad_retains_spectators_and_binds_stable_platform_ids() {
         &["kick_player"],
     );
     assert!(readonly.entries[1].available_action_ids.is_empty());
+    let named_like_field = SQUAD.replace("Squad, 北境", "Builder | Vehicle: North");
+    let list = decoded(
+        ModulePlayerListCodec::SquadListPlayers,
+        &named_like_field,
+        &[],
+    );
+    assert_eq!(list.entries[0].display_name, "Builder | Vehicle: North");
+}
+
+#[test]
+fn squad_10_6_projects_players_with_party_and_vehicle_fields() {
+    // Field order is from the official 10.6.3 build 26005357 format string.
+    // Names, identities and field values are synthetic, not a client capture.
+    let response = "----- Active Players -----\n\
+ID: 0 | Online IDs: EOS: 00000000000000000000000000000001 steam: 76561190000000001 | Name: Driver, 北境 | Team ID: 1 | Party ID: 27 | Squad ID: 3 | Is Leader: True | Role: USA_Crewman | Vehicle: BP_M1A2\n\
+ID: 4 | Online IDs: EOS: 00000000000000000000000000000002 | Name: Spectator | Team ID: N/A | Party ID: N/A | Squad ID: N/A | Is Leader: False | Role:  | Vehicle: N/A\n\
+----- Recently Disconnected Players [Max of 15] -----";
+    let list = decoded(
+        ModulePlayerListCodec::SquadListPlayers,
+        response,
+        &["kick_player", "ban_player"],
+    );
+    assert_eq!(list.current_players, Some(2));
+    assert_eq!(list.entries[0].display_name, "Driver, 北境");
+    assert_eq!(list.entries[0].role.as_deref(), Some("USA_Crewman"));
+    assert_eq!(list.entries[0].attributes[0].value, "1");
+    assert_eq!(list.entries[0].attributes[1].value, "3");
+    assert_eq!(list.entries[1].role, None);
+    assert_eq!(
+        list.bindings[&(list.entries[0].player_key.clone(), "kick_player".to_owned())],
+        "76561190000000001"
+    );
+    assert_eq!(
+        list.bindings[&(list.entries[1].player_key.clone(), "ban_player".to_owned())],
+        "00000000000000000000000000000002"
+    );
+    for invalid in [
+        response.replace(" | Party ID: 27", ""),
+        response.replace(" | Team ID: 1", " | Team ID: invalid"),
+        response.replace(
+            " | Vehicle: BP_M1A2",
+            &format!(" | Vehicle: {}", "x".repeat(257)),
+        ),
+    ] {
+        assert!(
+            parse(
+                ModulePlayerListCodec::SquadListPlayers,
+                &invalid,
+                "request",
+                NOW,
+                &[]
+            )
+            .is_err()
+        );
+    }
 }
 
 #[test]

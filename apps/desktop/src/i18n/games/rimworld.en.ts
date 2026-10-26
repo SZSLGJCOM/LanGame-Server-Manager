@@ -257,7 +257,7 @@ export const EN_US_RIMWORLD_MESSAGES: MessageCatalog = {
   "settings.schema.rimworld.sync_local_save.title": "Allow Client Saves",
   "settings.schema.rimworld.sync_local_save.description": "Allows a player to use their local save when connecting. When disabled, the server requires its own saved copy.",
   "rimworld.settings.sections.runtime": "Runtime",
-  "rimworld.settings.sections.runtimeDescription": "Console verbosity, chat mirroring, and save synchronization.",
+  "rimworld.settings.sections.runtimeDescription": "This Together release requires RimWorld 1.7 unstable and the matching client mod. RimWorld 1.6 requires the upstream 1.6 release. Configure console output and save synchronization below.",
   "rimworld.settings.groups.runtime.title": "Runtime",
   "rimworld.settings.groups.runtime.description": "Server process and save behavior.",
   "rimworld.settings.sections.network": "Network",

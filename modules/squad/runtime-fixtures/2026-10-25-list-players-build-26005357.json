@@ -1,0 +1,26 @@
+{
+  "module_id": "squad",
+  "verified_at": "2026-10-25",
+  "status": "static_native_contract_verified",
+  "steam_app_id": 403240,
+  "build_id": "26005357",
+  "native_version": "v10.6.3.694944.3212",
+  "binary": {
+    "relative_path": "SquadGame/Binaries/Win64/SquadGameServer.exe",
+    "sha256": "b8dc0681f53745708d065796650f5e64756fb2ba60d497e7d916f612dca2f42e",
+    "clean_package_hash_matches": true
+  },
+  "list_players": {
+    "active_row_format": "ID: %i | Online IDs: %s | Name: %s | Team ID: %s | Party ID: %s | Squad ID: %s | Is Leader: %s | Role: %s | Vehicle: %s",
+    "active_row_utf16le_file_offset": 157486064,
+    "disconnected_header": "----- Recently Disconnected Players [Max of 15] -----",
+    "disconnected_row_format": "ID: %i | Online IDs: %s | Since Disconnect: %02dm.%02ds | Name: %s"
+  },
+  "configuration": {
+    "server_cfg_key_count": 36,
+    "rcon_cfg_key_count": 7,
+    "template_key_sets_match": true
+  },
+  "regression": "squad_10_6_projects_players_with_party_and_vehicle_fields",
+  "scope": "Read-only manifest, original configuration and native-binary string inspection. Parser fixtures retain the native field order but use synthetic names, identities and values. No server/client was started, no populated RCON response was captured and no player action or lifecycle was tested."
+}

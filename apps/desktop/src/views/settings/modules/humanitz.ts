@@ -36,7 +36,7 @@ const HUMANITZ_SECTIONS: GuidedSettingsSection[] = [
   {
     id: "vehicles",
     title: "Vehicles",
-    description: "Vehicle decay, caps, respawn, and ambient damage behavior."
+    description: "Vehicle claim limits and ownership expiry since the owner's last login."
   },
   {
     id: "advanced",
@@ -111,6 +111,7 @@ const HUMANITZ_GROUP_SPECS: Record<string, HumanitzGroupSpec[]> = {
         "logout_timer_seconds",
         "territory_enabled",
         "weapon_break",
+        "weapon_durability_multiplier",
         "vital_drain",
         "multiplayer_sleep",
         "food_decay_multiplier",
@@ -151,6 +152,7 @@ const HUMANITZ_GROUP_SPECS: Record<string, HumanitzGroupSpec[]> = {
       description: "Zombie and hostile human difficulty plus population multipliers.",
       layoutClass: "humanitz-threat-scaling",
       keys: [
+        "headshot_only_mode",
         "zombie_difficulty_health",
         "zombie_difficulty_speed",
         "zombie_difficulty_damage",
@@ -198,7 +200,8 @@ const HUMANITZ_GROUP_SPECS: Record<string, HumanitzGroupSpec[]> = {
         "loot_respawn",
         "loot_respawn_minutes",
         "pickup_respawn_minutes",
-        "pickup_cleanup_days"
+        "pickup_cleanup_days",
+        "backpack_cleanup_days"
       ]
     }
   ],

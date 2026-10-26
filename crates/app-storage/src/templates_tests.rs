@@ -13,6 +13,9 @@ mod dragonwilds_platform;
 #[path = "templates_enshrouded_bans_tests.rs"]
 mod enshrouded_bans;
 
+#[path = "templates_humanitz_tests.rs"]
+mod humanitz;
+
 static TEST_ROOT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 fn unique_test_root() -> PathBuf {

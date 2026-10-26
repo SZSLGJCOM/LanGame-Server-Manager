@@ -24,7 +24,7 @@ struct NativeProfile {
     NativeCode factory, ban, unban, known_players, save_bans;
     uintptr_t matchmaker_class, settings_class, matchmaker_vtable, state_vtable;
 };
-constexpr std::array<NativeProfile, 2> NATIVE_PROFILES{{
+constexpr std::array<NativeProfile, 3> NATIVE_PROFILES{{
     { // Steam build 25811348.
         "89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed",
         {0x59a24c0, "48895c240848896c2410488974241848897c242041564883"},
@@ -42,6 +42,15 @@ constexpr std::array<NativeProfile, 2> NATIVE_PROFILES{{
         {0x596c310, "405741544155415641574883ec30488bb9d00000004532f6"},
         {0x5d53530, "405553574155488d6c24d84881ec28010000488b05f701a7"},
         0xbb2feb0, 0xbb1baf0, 0x9dfa140, 0xa0de0b0,
+    },
+    { // Steam build 26161880; independently reviewed call sites and constructors.
+        "210adebb1d4971c3a85b5210783c7b861eea9e153bf884a460840f43e96321ba",
+        {0x59a4920, "48895c240848896c2410488974241848897c242041564883"},
+        {0x5d56e90, "4055534154488d6c24e04881ec20010000488b059828a705"},
+        {0x5d547a0, "48895c241848896c2420565741564881ec90000000488b05"},
+        {0x596d860, "405741544155415641574883ec30488bb9d00000004532f6"},
+        {0x5d55440, "405553574155488d6c24d84881ec28010000488b05e742a7"},
+        0xbb35eb0, 0xbb21af0, 0x9dfe2c0, 0xa0e2cd0,
     },
 }};
 const NativeProfile* native_profile(std::string_view shipping_hash) {
@@ -266,7 +275,7 @@ const char* dispatch(const Image& image, const Request& request) {
     require(readable(state, 0x3d0) && read<uintptr_t>(state) == image.base + profile.state_vtable, "native_state_layout");
     require(game_instance && read<uintptr_t>(state + 8) == game_instance, "native_state_owner");
     require(read<uintptr_t>(state + 0x388) && read<uintptr_t>(state + 0x398), "native_session_unready");
-    // Both reviewed GameInstance::GetWorld bodies perform these exact loads:
+    // The reviewed GameInstance::GetWorld bodies perform these exact loads:
     // GameInstance + 0x30 -> FWorldContext; FWorldContext + 0x2c0 -> UWorld.
     auto context = read<uintptr_t>(game_instance + 0x30);
     auto world = read<uintptr_t>(context + 0x2c0);

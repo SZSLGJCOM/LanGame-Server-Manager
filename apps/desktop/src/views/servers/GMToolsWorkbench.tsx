@@ -29,6 +29,7 @@ import {
 import { GmExecutionNotice } from "./GmExecutionNotice";
 import { gmToolConfigurationIssue, useGmToolExecution } from "./gm-tool-execution";
 import { ArkCreatureSpawner } from "./ArkCreatureSpawner";
+import { ArkWorldMapWorkbench, type ArkMapToolContext } from "./ArkWorldMapWorkbench";
 import { DST_GM_PANELS, DstWorldMapWorkbench } from "./DstWorldMapWorkbench";
 import { GmToolsNavigation } from "./GmToolsNavigation";
 import "./gm-tool-execution.css";
@@ -276,6 +277,14 @@ function arkCatalogSearchPlaceholder(kind: ArkCatalogKind, t: TranslateFn): stri
 }
 
 export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
+  return isArkModule(props.details.summary.module_id)
+    ? <section className="gmt-workbench gmt-ark-map-workbench"><ArkWorldMapWorkbench details={props.details}>
+      {context => <GMToolsForm details={props.details} arkContext={context} />}
+    </ArkWorldMapWorkbench></section>
+    : <GMToolsForm {...props} />;
+}
+
+function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolContext }) {
   const { locale, t } = useI18n();
   const navigationId = useId();
   const navigationToggle = useRef<HTMLButtonElement>(null);
@@ -290,7 +299,9 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
   const [valuesByToolId, setValuesByToolId] = useState<Record<string, Record<string, string>>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackTone, setFeedbackTone] = useState<"error" | "warning" | "success" | "info">("info");
-  const execution = useGmToolExecution(props.details.summary.id, sendInstanceGmCommand, describeError);
+  const [playerFromMap, setPlayerFromMap] = useState<number | null>(null);
+  const [resultScope, setResultScope] = useState<string | null>(null);
+  const execution = useGmToolExecution(props.details.summary.id, props.arkContext?.send ?? sendInstanceGmCommand, describeError);
   const sendingToolId = execution.sendingToolId;
 
   useEffect(() => {
@@ -300,6 +311,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
     setArkCatalogSearchByField({});
     setNavigationOpen(false);
   }, [firstToolId, moduleId, props.details.settings_json, props.details.summary.id]);
+  useEffect(() => { setValuesByToolId({}); setPlayerFromMap(null); setFeedback(null); }, [props.arkContext?.scopeKey]);
 
   const activeTool = catalog?.tools.find((tool) => tool.id === activeToolId) ?? catalog?.tools[0] ?? null;
   const dstPanel = DST_GM_PANELS.find(panel => panel === activeToolId) ?? DST_GM_PANELS[0];
@@ -313,10 +325,13 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
     ? activeTool.fields.filter((field) => isFieldVisible(field, toolValues))
     : [];
   const instanceRunning = instanceHasRunningProcess(props.details.summary, props.details.active_run);
-  const commandTargetRunning = commandPreview?.processKey
+  const commandTargetRunning = props.arkContext ? props.arkContext.running && Boolean(props.arkContext.scope) : commandPreview?.processKey
     ? runtimeProcessKeyIsRunning(props.details.active_run, commandPreview.processKey)
     : instanceRunning;
-  const availabilityIssue = commandPreview?.error
+  const availabilityIssue = (visibleActiveFields.some(field => field.key === "playerId") && playerFromMap !== null
+    && (!props.arkContext?.live || props.arkContext.selectedPlayer?.playerId !== playerFromMap)
+    ? selectLocaleText(locale, "所选玩家位置已过期或已离开，请重新选取或手动输入玩家 ID。", "The selected player is stale or has left. Select again or enter a player ID manually.") : null)
+    || commandPreview?.error
     || (commandPreview ? gmToolConfigurationIssue(props.details, commandPreview, locale) : null)
     || (!commandTargetRunning
     ? commandPreview?.processKey && instanceRunning
@@ -326,6 +341,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
     : null);
 
   function updateField(tool: GmToolDefinition, field: GmToolField, value: string) {
+    if (field.key === "playerId") setPlayerFromMap(null);
     setValuesByToolId((current) => ({
       ...current,
       [tool.id]: {
@@ -363,6 +379,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
     }
 
     setFeedback(null);
+    setResultScope(props.arkContext?.scopeKey ?? null);
     await execution.run(activeTool.id, commandPreview);
   }
 
@@ -394,6 +411,10 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
         </aside>
         <div ref={content} className="configuration-workspace__main" data-configuration-scroll-owner>
           <div className="configuration-workspace__content">
+        {props.arkContext ? <label className="ark-map-tool-picker"><span>{t("servers.gmTools.actions", undefined, "GM actions")}</span>
+          <select className="gmt-select" value={activeTool?.id ?? ""} onChange={event => { setActiveToolId(event.target.value); setFeedback(null); }}>
+            {catalog.tools.map(tool => <option key={tool.id} value={tool.id}>{localizedToolTitle(t, tool)}</option>)}
+          </select></label> : null}
         {isArkModule(moduleId) ? (
           <div hidden={activeTool?.id !== "ark_spawn_creature"}>
             <ArkCreatureSpawner
@@ -401,6 +422,10 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
               moduleId={moduleId}
               status={props.details.summary.status}
               settingsJson={props.details.settings_json}
+              processKey={props.arkContext?.scope?.processKey ?? "main"}
+              runId={props.arkContext?.scope?.runId ?? null}
+              runtimeRunning={props.arkContext?.running}
+              selectedPlayer={props.arkContext?.selectedPlayer ?? null}
             />
           </div>
         ) : null}
@@ -418,6 +443,14 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
                 <p className="gmt-form-desc">{localizedToolDescription(t, activeTool)}</p>
               </div>
             </div>
+
+            {props.arkContext && visibleActiveFields.some(field => field.key === "playerId") ? <button type="button"
+              className="secondary-button ark-map-use-player" disabled={!props.arkContext.selectedPlayer}
+              onClick={() => { const player = props.arkContext?.selectedPlayer, field = activeTool.fields.find(field => field.key === "playerId");
+                if (player && field) { updateField(activeTool, field, String(player.playerId)); setPlayerFromMap(player.playerId); } }}>
+              {props.arkContext.selectedPlayer ? selectLocaleText(locale, `使用所选玩家 · ${props.arkContext.selectedPlayer.name || props.arkContext.selectedPlayer.playerId}`,
+                `Use selected player · ${props.arkContext.selectedPlayer.name || props.arkContext.selectedPlayer.playerId}`)
+                : selectLocaleText(locale, "在地图或名单中选择在线玩家", "Select a live player on the map or roster")}</button> : null}
 
             {visibleActiveFields.length > 0 ? (
               <div className={fieldGridClassName(moduleId, activeTool)}>
@@ -559,7 +592,7 @@ export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
               )}
               </ConfigurationActionHelp>
             </div>
-            {execution.result ? <GmExecutionNotice result={execution.result} /> : null}
+            {execution.result && (!props.arkContext || resultScope === props.arkContext.scopeKey) ? <GmExecutionNotice result={execution.result} /> : null}
           </form>
         ) : (
           <div className="gmt-form gmt-empty-tool">

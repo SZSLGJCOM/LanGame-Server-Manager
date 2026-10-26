@@ -1,6 +1,32 @@
 status = "best_effort_verified"
-last_verified = "2026-07-13"
-notes = "SteamCMD anonymous app_update 2728330 installed public build 23914958 on 2026-07-13 (StateFlags 4, UpdateResult 0). The HumanitZ 1.09A package ships REF_GameServerSettings.ini Version=39 and documents WelcomeMessage.txt, the F_ReservedSlots.txt reserved-slot roster. LanGame renders the current typed defaults and roster files. Current native evidence excludes obsolete optional and third-party vehicle controls; historical verification status remains best-effort. settings_extra and extra_launch_args remain available for version-specific keys."
+last_verified = "2026-10-25"
+notes = "Read-only reference review on 2026-10-25 found installed official app 2728330 build 26172878 (HumanitZ 1.1B), still REF Version=39. The new BackpackCleanup, WeaponDurabilityMulti and HeadshotOnlyMode keys have optional controls that preserve existing native values until explicitly set; the current RecycleCar comment measures ownership expiry from last login. This reference and isolated rendering evidence does not renew native runtime or RCON acceptance. Historical SteamCMD installation on 2026-07-13 used build 23914958, and runtime observations below remain bound to that older build. Existing roster and retired-key evidence retains its original scope. settings_extra and extra_launch_args remain available for version-specific keys."
+
+[[sources]]
+id = "humanitz_reference_build_26172878"
+kind = "config_file"
+path = "HumanitZServer/REF_GameServerSettings.ini; steamapps/appmanifest_2728330.acf"
+authority = "read_only_installed_official_dedicated_server_reference"
+description = "Read on 2026-10-25 without updating or starting the server: manifest StateFlags=4, buildid=TargetBuildID=26172878; reference Version=39, SHA256 1508efa4657cea1024d504a1850a7813e767a4f5f510391535e752de56b8cceb. Lines 166-173 introduce BackpackCleanup=0 (in-game days for player-dropped backpacks that stay unequipped), WeaponDurabilityMulti=1 (durability-loss multiplier, explicitly documenting 0.5), and HeadshotOnlyMode=false. The reference repeats RecycleCar=14 with identical values at lines 142 and 169; the latter comment measures real days since last login until ownership loss. This is one native key: preserve the existing recycle_car_days value and emit it once. WeaponBreak remains independent. The three new controls omit native assignments while unset; clearing an override preserves its last native value. Explicit typed values and matching World Settings extras cannot both own a key. Reference inspection and isolated render/reconcile tests do not prove current native gameplay, RCON, or lifecycle behavior."
+url = "https://steamcommunity.com/games/1766060/announcements/detail/669505930872755180"
+
+[[items]]
+source = "humanitz_reference_build_26172878"
+key = "BackpackCleanup"
+schema_key = "backpack_cleanup_days"
+surface = "config_file"
+
+[[items]]
+source = "humanitz_reference_build_26172878"
+key = "WeaponDurabilityMulti"
+schema_key = "weapon_durability_multiplier"
+surface = "config_file"
+
+[[items]]
+source = "humanitz_reference_build_26172878"
+key = "HeadshotOnlyMode"
+schema_key = "headshot_only_mode"
+surface = "config_file"
 
 [[sources]]
 id = "steamcmd_anonymous_app_2728330"

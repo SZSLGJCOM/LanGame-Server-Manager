@@ -119,6 +119,8 @@ register_commands! {
     (read_ark_tools_status, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (prepare_ark_tools, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
     (spawn_ark_creature, [crate::commands::commands_ark_tools], Runtime, Denied, Bounded),
+    (read_ark_map, [crate::commands::commands_ark_map], Runtime, Denied, Bounded),
+    (send_ark_map_gm_command, [crate::commands::commands_ark_map], Runtime, Denied, Bounded),
     (read_instance_live_players, [crate::commands::commands_live_players], Runtime, Allowed, Bounded),
     (read_instance_dragonwilds_bans, [crate::commands::commands_dragonwilds_bans], Runtime, Allowed, Bounded),
     (read_instance_native_bans, [crate::commands::commands_native_bans], Runtime, Allowed, Bounded),

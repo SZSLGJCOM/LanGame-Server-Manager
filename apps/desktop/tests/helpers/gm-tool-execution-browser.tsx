@@ -22,7 +22,7 @@ addEventListener("unhandledrejection", (event) => errors.push(String(event.reaso
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
 let checks = 0;
-type Request = { instanceId: string; command: string; processKey?: string | null; transport?: string };
+type Request = { instanceId: string; command: string; processKey?: string | null; runId?: number; transport?: string };
 const calls: Request[] = [];
 const deferred: Array<{ request: Request; resolve: (result: InstanceRuntimeCommandResult) => void }> = [];
 let mode: "deferred" | "pending" | "partial" | "response" = "response";
@@ -38,7 +38,8 @@ function response(request: Request, text = "Unknown command: native diagnostic",
 // forms, builders, API envelope and async execution lifecycle run unchanged.
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: { invoke: (command: string, args: { input?: Request }) => {
   if (command === "read_ark_tools_status") return Promise.resolve({ installed: true, connected: true, issue: null });
-  if (command !== "send_instance_gm_command" || !args.input) throw new Error(`Unexpected IPC: ${command}`);
+  if (command === "read_ark_map") return Promise.resolve({ ...args.input, mapName: "TheIsland", sampledAtUnixMs: Date.now(), projection: null, players: [], artwork: null });
+  if (!["send_instance_gm_command", "send_ark_map_gm_command"].includes(command) || !args.input) throw new Error(`Unexpected IPC: ${command}`);
   const request = args.input;
   calls.push(request);
   if (mode === "deferred") return new Promise<InstanceRuntimeCommandResult>((resolve) => deferred.push({ request, resolve }));
@@ -86,7 +87,7 @@ async function input(id: string, value: string) {
 async function moduleDetails(moduleId: string, id: string, running = true) {
   await render({ ...details, summary: { ...details.summary, id, module_id: moduleId,
     status: running ? "Running" : "Stopped", active_process_count: running ? 1 : 0 },
-    active_run: running ? { run_id: 1, processes: [{ process_key: "main", status: "Running" },
+    active_run: running ? { run_id: 1, processes: [{ process_key: "main", run_id: 1, status: "Running" },
       { process_key: "master", status: "Running" }, { process_key: "caves", status: "Stopped" }] } : null });
 }
 async function run() {
@@ -117,8 +118,8 @@ async function run() {
   check(button().disabled && fixture.textContent?.includes("RCON TCP 端口"), "Missing RCON port must have a useful explanation");
   await render(configured);
   await submit();
-  check(calls.length === 1 && calls[0].command === "SetTimeOfDay 12:00" && calls[0].transport === "source_rcon",
-    "Real ARK time form must dispatch its builder command through the production API envelope");
+  check(calls.length === 1 && calls[0].command === "SetTimeOfDay 12:00" && calls[0].processKey === "main" && calls[0].runId === 1,
+    "Real ARK time form must dispatch its builder command through the map/run-bound API envelope");
   check(element(resultSelector).textContent?.includes("Unknown command: native diagnostic")
     && element(resultSelector).textContent?.includes(calls[0].command),
     "Native game rejection text must retain its command identity");

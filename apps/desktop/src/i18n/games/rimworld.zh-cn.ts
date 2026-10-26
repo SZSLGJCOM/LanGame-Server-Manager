@@ -257,7 +257,7 @@ export const ZH_CN_RIMWORLD_MESSAGES: MessageCatalog = {
   "settings.schema.rimworld.sync_local_save.title": "允许使用客户端存档",
   "settings.schema.rimworld.sync_local_save.description": "允许玩家连接时使用本地存档；关闭后要求使用服务器保存的副本。",
   "rimworld.settings.sections.runtime": "运行设置",
-  "rimworld.settings.sections.runtimeDescription": "控制台日志级别、聊天镜像与存档同步。",
+  "rimworld.settings.sections.runtimeDescription": "当前 Together 服务端面向 RimWorld 1.7 测试分支（unstable），玩家需使用匹配的客户端 Mod；RimWorld 1.6 需使用上游的 1.6 版本。下方可设置控制台输出与存档同步。",
   "rimworld.settings.groups.runtime.title": "运行设置",
   "rimworld.settings.groups.runtime.description": "服务器进程与存档行为。",
   "rimworld.settings.sections.network": "网络",

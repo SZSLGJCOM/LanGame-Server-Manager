@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SpawnInput {
     pub instance_id: String,
+    pub process_key: String,
+    pub run_id: i64,
     pub request_id: String,
     pub creature: String,
     pub level: u32,
@@ -101,8 +103,14 @@ pub fn spawn_command(input: &SpawnInput) -> Result<String, String> {
     Ok(command)
 }
 
-fn reply(text: &str, module: &str, action: &str, request_id: &str) -> Result<Reply, String> {
-    if text.len() > 8192 {
+fn reply(
+    text: &str,
+    module: &str,
+    action: &str,
+    request_id: &str,
+    maximum_bytes: usize,
+) -> Result<Reply, String> {
+    if text.len() > maximum_bytes {
         return Err("ARK tool response exceeds the limit.".into());
     }
     // ARK may surround the plugin's response with its generic RCON acknowledgement.
@@ -137,7 +145,15 @@ fn reply(text: &str, module: &str, action: &str, request_id: &str) -> Result<Rep
 }
 
 pub fn status(text: &str, module: &str, request_id: &str) -> Result<(), String> {
-    reply(text, module, "status", request_id).map(|_| ())
+    reply(text, module, "status", request_id, 8192).map(|_| ())
+}
+
+pub(crate) fn player_snapshot_payload(
+    text: &str,
+    module: &str,
+    request_id: &str,
+) -> Result<serde_json::Value, String> {
+    reply(text, module, "players", request_id, 512 * 1024).map(|value| value.entity)
 }
 
 pub fn creature(
@@ -146,8 +162,9 @@ pub fn creature(
     action: &str,
     request_id: &str,
 ) -> Result<Creature, String> {
-    let value: Creature = serde_json::from_value(reply(text, module, action, request_id)?.entity)
-        .map_err(|e| format!("Invalid ARK creature record: {e}"))?;
+    let value: Creature =
+        serde_json::from_value(reply(text, module, action, request_id, 8192)?.entity)
+            .map_err(|e| format!("Invalid ARK creature record: {e}"))?;
     if (value.id1 == 0 && value.id2 == 0)
         || value.class_name.is_empty()
         || value.class_name.len() > 300
@@ -192,6 +209,8 @@ mod tests {
     fn input() -> SpawnInput {
         SpawnInput {
             instance_id: "fixture".into(),
+            process_key: "main".into(),
+            run_id: 1,
             request_id: "0123456789abcdef0123456789abcdef".into(),
             creature: "Rex_Character_BP_C".into(),
             level: 150,

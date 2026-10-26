@@ -257,6 +257,9 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("humanitz", "reserved_player_lines"): {"reserved_player_steam_ids"},
     ("humanitz", "banned_player_lines"): {"banned_player_steam_ids"},
     ("humanitz", "settings_extra_lines"): {"settings_extra"},
+    ("humanitz", "optional_world_settings_lines"): {
+        "backpack_cleanup_days", "weapon_durability_multiplier", "headshot_only_mode",
+    },
     ("sonsoftheforest", "owner_whitelist_lines"): {"owner_whitelist_steam_ids"},
     ("theforest", "allow_cheats_on_off"): {"allow_cheats"},
     ("theforest", "building_destruction_on_off"): {"building_destruction"},
