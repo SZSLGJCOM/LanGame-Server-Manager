@@ -56,3 +56,23 @@ test("a restored document cannot reject current reads after an unobserved servic
   assert.deepEqual(restored.lines, ["owned old line"]);
   assert.equal(restored.snapshot_revision, undefined);
 });
+
+test("pending startup history has its own operation identity before a run exists", () => {
+  const cache = createRuntimeConsoleHistoryCache();
+  const pending = scope({ runId: null, processKey: null, source: "startup", startupStartedAtUnixMs: 100 });
+  cache.write(pending, document(["startup before instance navigation"]));
+  assert.deepEqual(cache.read(pending)?.lines, ["startup before instance navigation"]);
+  assert.equal(cache.read({ ...pending, instanceId: "two" }), null);
+  assert.equal(cache.read({ ...pending, startupStartedAtUnixMs: 101 }), null);
+  assert.equal(cache.read(scope()), null);
+  const diagnostic = { instanceId: "one", processKey: "main", runId: null, logPath: "", message: "owned diagnostic" };
+  cache.write(pending, { ...document([]), source_path: null, startup_stream_diagnostic: diagnostic });
+  diagnostic.message = "foreign input mutation";
+  const restored = cache.read(pending);
+  assert.equal(restored.startup_stream_diagnostic.message, "owned diagnostic");
+  restored.startup_stream_diagnostic.message = "foreign read mutation";
+  assert.equal(cache.read(pending).startup_stream_diagnostic.message, "owned diagnostic");
+  cache.write(pending, { ...document([]), source_path: null,
+    startup_stream_diagnostic: { ...diagnostic, message: "x".repeat(3 * 1024 * 1024) } });
+  assert.equal(cache.read(pending), null, "diagnostic metadata shares the original byte budget");
+});

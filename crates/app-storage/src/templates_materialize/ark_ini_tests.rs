@@ -206,6 +206,38 @@ fn ark_ini_raw_extra_overrides_managed_sequence_without_losing_duplicates() {
 }
 
 #[test]
+fn asa_variant_packs_preserve_raw_ini_override_until_it_is_cleared() {
+    let fixture = Fixture::new("arksurvivalascended");
+    for settings in [
+        json!({
+            "game_user_settings_extra": "[ServerSettings]\nAllowVariantDinoPacks=true\n",
+        }),
+        json!({
+            "allow_variant_dino_packs": false,
+            "game_user_settings_extra": "[ServerSettings]\nAllowVariantDinoPacks=true\n",
+        }),
+    ] {
+        fixture.write(&settings).unwrap().commit();
+        for directory in [&fixture.config, &fixture.live] {
+            let gus = fs::read_to_string(directory.join("GameUserSettings.ini")).unwrap();
+            assert_eq!(gus.matches("AllowVariantDinoPacks=").count(), 1, "{gus}");
+            assert!(gus.contains("AllowVariantDinoPacks=true"), "{gus}");
+            assert!(!gus.contains("AllowVariantDinoPacks=false"), "{gus}");
+        }
+    }
+
+    fixture
+        .write(&json!({"allow_variant_dino_packs": false}))
+        .unwrap()
+        .commit();
+    for directory in [&fixture.config, &fixture.live] {
+        let gus = fs::read_to_string(directory.join("GameUserSettings.ini")).unwrap();
+        assert_eq!(gus.matches("AllowVariantDinoPacks=").count(), 1, "{gus}");
+        assert!(gus.contains("AllowVariantDinoPacks=false"), "{gus}");
+    }
+}
+
+#[test]
 fn ark_ini_failed_pending_save_restores_config_and_live_bytes() {
     let fixture = Fixture::new("arksurvivalevolved");
     fixture

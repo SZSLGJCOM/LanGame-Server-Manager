@@ -5,7 +5,7 @@
 | module | status | schema fields | ledger items | exclusions | sources |
 | --- | --- | ---: | ---: | ---: | ---: |
 | `abioticfactor` | exhaustive_verified | 59 | 59 | 12 | 14 |
-| `arksurvivalascended` | best_effort_verified | 276 | 288 | 315 | 36 |
+| `arksurvivalascended` | best_effort_verified | 277 | 289 | 315 | 37 |
 | `arksurvivalevolved` | exhaustive_verified | 375 | 414 | 137 | 35 |
 | `astroneer` | best_effort_verified | 19 | 19 | 6 | 18 |
 | `barotrauma` | best_effort_verified | 125 | 125 | 4 | 34 |

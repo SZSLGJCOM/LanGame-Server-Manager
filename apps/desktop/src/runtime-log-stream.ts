@@ -23,6 +23,36 @@ export interface RuntimeLogStartupBoundary {
   previousLogPaths: ReadonlySet<string>;
 }
 
+export interface RuntimeLogStreamDiagnostic {
+  instanceId: string;
+  processKey: string | null;
+  runId: number | null;
+  logPath: string;
+  message: string;
+}
+
+export function runtimeLogEventMatchesStartup(event: RuntimeLogStreamEvent, boundary: RuntimeLogStartupBoundary): boolean {
+  return event.instance_id === boundary.instanceId
+    && !boundary.previousLogPaths.has(normalizeRuntimeLogPath(event.log_path))
+    && event.emitted_at_unix_ms >= boundary.startedAtUnixMs;
+}
+
+export function retainRuntimeLogStreamDiagnostic(
+  current: RuntimeLogStreamDiagnostic | null,
+  event: RuntimeLogStreamEvent
+): RuntimeLogStreamDiagnostic | null {
+  if (typeof event.stream_error === "string") {
+    return { instanceId: event.instance_id, processKey: event.process_key ?? null, runId: event.run_id ?? null,
+      logPath: normalizeRuntimeLogPath(event.log_path),
+      message: event.stream_error || "Console stream reported an unspecified error." };
+  }
+  if (current && event.instance_id === current.instanceId
+    && (event.process_key ?? null) === current.processKey && (event.run_id ?? null) === current.runId
+    && normalizeRuntimeLogPath(event.log_path) === current.logPath
+    && (event.lines.length > 0 || event.snapshot) && !event.snapshot?.read_error) return null;
+  return current;
+}
+
 export function collectRuntimeLogPaths(
   details: InstanceDetails | null,
   runtime: InstanceRuntimeOverview | null
@@ -74,9 +104,7 @@ export function appendRuntimeLogStreamEvent(
 
   const eventPath = normalizeRuntimeLogPath(event.log_path);
   const boundary = options.startupBoundary;
-  if (boundary?.instanceId === options.instanceId && (
-    boundary.previousLogPaths.has(eventPath) || event.emitted_at_unix_ms < boundary.startedAtUnixMs
-  )) {
+  if (boundary?.instanceId === options.instanceId && !runtimeLogEventMatchesStartup(event, boundary)) {
     return snapshot;
   }
   const selectedPath =

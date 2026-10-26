@@ -2,6 +2,43 @@ use super::*;
 use serde_json::json;
 
 #[test]
+fn asa_variant_packs_keep_the_official_false_default_and_explicit_override() {
+    let schema: Value = serde_json::from_str(include_str!(
+        "../../../modules/arksurvivalascended/schema.json"
+    ))
+    .unwrap();
+    let property = &schema["properties"]["allow_variant_dino_packs"];
+    assert_eq!(property["type"], "boolean");
+    assert_eq!(property["default"], false);
+    let defaults = Map::from_iter([(
+        "allow_variant_dino_packs".into(),
+        property["default"].clone(),
+    )]);
+
+    for (settings, expected) in [
+        (json!({}), "AllowVariantDinoPacks=false\n"),
+        (
+            json!({"allow_variant_dino_packs": true}),
+            "AllowVariantDinoPacks=true\n",
+        ),
+        (
+            json!({"allow_variant_dino_packs": false}),
+            "AllowVariantDinoPacks=false\n",
+        ),
+        (json!({"allow_variant_dino_packs": null}), ""),
+    ] {
+        assert_eq!(
+            render_ark_native_ini_lines(
+                settings.as_object().unwrap(),
+                &defaults,
+                ARK_ASA_PATCH_GUS_SERVER_SETTINGS,
+            ),
+            expected,
+        );
+    }
+}
+
+#[test]
 fn asa_platform_template_override_is_optional_and_preserves_explicit_false() {
     let schema: Value = serde_json::from_str(include_str!(
         "../../../modules/arksurvivalascended/schema.json"

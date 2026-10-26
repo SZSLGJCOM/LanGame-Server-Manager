@@ -186,8 +186,10 @@
 ```json
 {
   "backpack_cleanup_days": 7,
+  "extra_launch_args": "-NoCrashDialog",
   "headshot_only_mode": "enabled",
   "recycle_car_days": 21,
+  "server_name": "HumanitZ Server",
   "weapon_break": false,
   "weapon_durability_multiplier": 0.5
 }

@@ -56,6 +56,30 @@ class ArkOfficialRepositoryContractTests(unittest.TestCase):
     def test_live_repository_proves_every_native_mapping(self) -> None:
         self.assertEqual(verify_repository(REPORT, ROOT), [])
 
+    def test_variant_pack_refresh_retains_the_independent_patch_mapping(self) -> None:
+        schema = json.loads(
+            (ROOT / "modules/arksurvivalascended/schema.json").read_text(encoding="utf-8")
+        )
+        key = "allow_variant_dino_packs"
+        self.assertIn(key, applicator.EDITION_SCHEMA_EXTRAS["asa"])
+        self.assertNotIn(key, applicator.EDITION_SCHEMA_EXTRAS["ase"])
+        rows = applicator.rust_extra_ini_tables("asa", schema)
+        self.assertIn(
+            '    ("AllowVariantDinoPacks", "allow_variant_dino_packs", false, false, false),',
+            rows["ARK_ASA_PATCH_GUS_SERVER_SETTINGS"],
+        )
+
+    def test_variant_pack_patch_requires_native_output_evidence(self) -> None:
+        def remove_native_output(edition: str, contract: dict[str, object]) -> None:
+            if edition == "asa":
+                for fixture in contract["fixtures"]:
+                    if "asa_server_patch_notes_v94_7" in fixture.get("evidence", {}).get("source_ids", []):
+                        fixture["expected"]["files"] = []
+
+        failures = verify_repository(REPORT, ROOT, remove_native_output)
+        self.assertTrue(any("AllowVariantDinoPacks: patch materialization fragment is missing" in failure
+                            for failure in failures))
+
     def test_native_refresh_preserves_reviewed_semantic_section(self) -> None:
         item = {
             "raw_name": "CraftXPMultiplier",

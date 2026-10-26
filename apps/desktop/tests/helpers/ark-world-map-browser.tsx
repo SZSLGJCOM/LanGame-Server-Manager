@@ -2,7 +2,7 @@ import { prepareBrowserLocaleCatalogs } from "./browser-locale-catalogs";
 import React, { act, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { invokeMock } from "../../src/api-mock";
-import { I18nProvider } from "../../src/i18n";
+import { I18nProvider, useI18n, type LocaleCode } from "../../src/i18n";
 import type { BootstrapResponse, InstanceDetails, InstanceRuntimeCommandResult } from "../../src/types";
 import type { ArkMapScope, ArkMapSnapshot } from "../../src/ark-world-map";
 import type { ArkSpawnInput } from "../../src/api-ark-tools";
@@ -22,6 +22,8 @@ addEventListener("unhandledrejection", event => errors.push(String(event.reason)
 const originalError = console.error;
 console.error = (...args) => { errors.push(args.map(String).join(" ")); originalError(...args); };
 let checks = 0, details: InstanceDetails, hidden = false, installed = true;
+let changeLocale: ((locale: LocaleCode) => void) | undefined;
+function LocaleControl() { changeLocale = useI18n().setLocale; return null; }
 let mode: "live" | "deferred" | "stale" | "raw" | "empty" | "error" | "older" = "live";
 let activeMaps = 0, maximumMaps = 0, holdCommand = false, statusCalls = 0;
 const mapCalls: ArkMapScope[] = [], commands: Array<ArkMapScope & { command: string }> = [], spawns: ArkSpawnInput[] = [];
@@ -69,7 +71,7 @@ async function input(node: HTMLInputElement | HTMLTextAreaElement | HTMLSelectEl
   const proto = node instanceof HTMLSelectElement ? HTMLSelectElement.prototype : node instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   await act(async () => { Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(node, value); node.dispatchEvent(new Event(node instanceof HTMLSelectElement ? "change" : "input", { bubbles: true })); });
 }
-async function render() { await act(async () => root.render(<StrictMode><I18nProvider><main style={{ padding: 16, height: "100vh", boxSizing: "border-box" }}>
+async function render() { await act(async () => root.render(<StrictMode><I18nProvider><LocaleControl /><main style={{ padding: 16, height: "100vh", boxSizing: "border-box" }}>
   <GMToolsWorkbench details={details} /></main></I18nProvider></StrictMode>)); }
 async function switchMap(value: string) { await input(element<HTMLSelectElement>('.ark-map-toolbar select'), value); }
 async function tool(value: string) { await input(element<HTMLSelectElement>('.ark-map-tool-picker select'), value); }
@@ -216,7 +218,11 @@ async function run() {
   mode = 'live'; await restartMain(15); await settle(live, 'Final live map');
   await click(element('.ark-map-roster-list button')); await tool('ark_spawn_creature');
   await click(element('.ark-creature-spawner .ark-map-use-player'));
-  await input(element<HTMLSelectElement>('.ark-creature-spawner__coordinates select'), 'true');
+  const creatureList = element('.ark-creature-spawner .gmt-ark-catalog-results').getBoundingClientRect();
+  const creatureAction = element('.ark-creature-spawner button[type="submit"]').getBoundingClientRect();
+  check(creatureList.height >= 52 && creatureList.bottom < creatureAction.top && creatureAction.bottom <= innerHeight - 16,
+    `The creature catalog and fixed actions also fit inside the map rail: ${JSON.stringify({ catalog: creatureList.toJSON(), action: creatureAction.toJSON(), details: element<HTMLDetailsElement>('.ark-creature-spawner .ark-spawn-options').open })}`);
+  await input(element<HTMLSelectElement>('.ark-creature-spawner__parameters select'), 'true');
   await click(element('.ark-creature-spawner button[type="submit"]'));
   check(spawns.length === 1 && spawns[0].processKey === 'main' && spawns[0].runId === 15 && spawns[0].playerId === 123
     && spawns[0].x === -90000 && spawns[0].y === 60000 && spawns[0].z === 900, 'Selected native player supplies confirmed spawn position and independent PlayerID');
@@ -232,14 +238,48 @@ async function run() {
   details = { ...details, active_run: { ...details.active_run!, processes: details.active_run!.processes!.map(p => p.process_key === 'main' ? { ...p, status: 'Running' } : p) } };
   await render(); await settle(live, 'Restarted selected map must refresh before selection');
   await click(element('.ark-map-roster-list button')); await click(element('.gmt-form .ark-map-use-player'));
-  await input(element<HTMLInputElement>('.gmt-ark-catalog-search'), 'stone');
+  const firstItem = element('.gmt-form .gmt-ark-catalog-option').getAttribute('title');
+  await click(element('.gmt-form .gmt-ark-catalog-page-btn:last-child'));
+  check(element('.gmt-form .gmt-ark-catalog-option').getAttribute('title') !== firstItem,
+    'Pagination browses another real catalog page without scrolling the rail');
+  await input(element<HTMLInputElement>('.gmt-form .gmt-ark-catalog-search'), 'stone');
+  await click(element('.gmt-form .gmt-ark-catalog-option'));
+  check(element<HTMLInputElement>('#gm-ark_give_item_to_player-blueprintPath-input').value.includes('PrimalItemResource_Stone'),
+    'The compact item row still selects its real blueprint path');
+  const settingsToggle = element('.gmt-form .ark-spawn-options summary');
+  await click(settingsToggle);
+  await input(element<HTMLSelectElement>('#gm-ark_give_item_to_player-itemMode-input'), 'number');
+  await input(element<HTMLInputElement>('.gmt-form .gmt-ark-catalog-search'), 'stone');
+  await click(element('.gmt-form .gmt-ark-catalog-option'));
+  check(element<HTMLInputElement>('#gm-ark_give_item_to_player-itemId-input').value === '8',
+    'Numeric mode retains the canonical numeric item identity');
+  await input(element<HTMLInputElement>('#gm-ark_give_item_to_player-quantity-input'), '2');
+  await input(element<HTMLInputElement>('#gm-ark_give_item_to_player-quality-input'), '3');
+  await click(settingsToggle);
+  await click(element('.gmt-form button[type="submit"]'));
+  check(commands.at(-1)?.command === 'GiveItemNumToPlayer 123 8 2 3 0', 'The pinned action uses the selected item, quantity, quality and player');
+  await act(async () => changeLocale!('en-US'));
+  await settle(() => element('.gmt-form .gmt-ark-catalog-option-name').textContent === 'Stone', 'English catalog labels');
+  const englishSend = element('.gmt-form button[type="submit"]').getBoundingClientRect();
+  check(englishSend.bottom <= innerHeight - 16 && document.documentElement.scrollWidth <= innerWidth + 1,
+    'English controls retain the fixed action position without horizontal overflow');
+  await act(async () => changeLocale!('zh-CN'));
+  await settle(() => element('.gmt-form .gmt-ark-catalog-option-name').textContent === '石头', 'Chinese catalog labels');
   element<HTMLElement>('.ark-map-rail').scrollTop = 0;
   const mapBox = element('.ark-map-canvas').getBoundingClientRect(), railBox = element('.ark-map-rail').getBoundingClientRect();
+  const sendBox = element('.gmt-form button[type="submit"]').getBoundingClientRect();
+  check(sendBox.top >= railBox.top && sendBox.bottom <= railBox.bottom + 1,
+    'The item action stays visible at the bottom of the rail without scrolling through the catalog');
+  const catalogBox = element('.gmt-form .gmt-ark-catalog-results').getBoundingClientRect();
+  check(catalogBox.height > 50 && catalogBox.bottom <= sendBox.top,
+    `Item results use the available area above the pinned actions: ${JSON.stringify({ catalog: catalogBox.toJSON(), send: sendBox.toJSON(), rail: railBox.toJSON() })}`);
+  check(element('.gmt-form .gmt-ark-catalog-option').getBoundingClientRect().height <= 28,
+    'The catalog uses compact single-line rows matching the DST picker');
   const marker = element<SVGCircleElement>('.ark-map-player circle'), label = element<SVGTextElement>('.ark-map-player text');
   const matrix = label.getScreenCTM()!, screenScale = Math.hypot(matrix.a, matrix.b);
   check(Number(label.getAttribute('font-size')) * screenScale >= 12.5 && marker.getBoundingClientRect().width >= 11.5,
     'Player labels and markers retain readable CSS pixel sizes at either viewport');
-  const itemName = element<HTMLElement>('.gmt-ark-catalog-option-name');
+  const itemName = element<HTMLElement>('.gmt-form .gmt-ark-catalog-option-name');
   check(itemName.textContent === '石头' && itemName.getBoundingClientRect().width >= 70,
     'The narrow tool rail retains readable localized item names rather than squeezing them behind blueprint codes');
   check(mapBox.width > 300 && mapBox.height > 400 && railBox.width >= 280 && mapBox.right <= railBox.left, 'Map and tool rail occupy distinct usable regions');

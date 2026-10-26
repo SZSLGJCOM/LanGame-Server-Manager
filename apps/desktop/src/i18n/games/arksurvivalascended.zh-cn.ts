@@ -9,6 +9,8 @@ export const ZH_CN_ARK_SURVIVAL_ASCENDED_MESSAGES: MessageCatalog = {
   ...ZH_CN_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_2,
   ...buildArkFieldLabelMessages("arksurvivalascended"),
   ...buildArkFieldHelpMessages("arksurvivalascended", "zh-CN"),
+  "settings.schema.arksurvivalascended.allow_variant_dino_packs.title": "允许生物变体组成同一群体",
+  "settings.schema.arksurvivalascended.allow_variant_dino_packs.description": "允许同一种生物的不同变体（如迅猛龙与畸变迅猛龙）互相计入群体（Pack/Gang）。默认关闭。",
   "settings.schema.arksurvivalascended.ark_mod_map_overrides.title": "MOD 生效地图",
   "settings.schema.arksurvivalascended.ark_mod_map_overrides.description": "默认继承共用 MOD 配置。在「我的 Mod」选中当前 MOD，可同时勾选多张生效地图；其他 MOD 继续继承。参数范围单独设置，地图间差异可能影响跨服兼容性。",
   "settings.schema.arksurvivalascended.additional_maps.description": "从同一套服务端程序运行更多地图。每张启用的地图都有独立 CMD、端口和存档；各地图共用服务器设置和跨服传输数据，MOD 默认共用，也可针对当前 MOD 多选生效地图。",

@@ -7,6 +7,8 @@ export const EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES: MessageCatalog = {
   ...EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_1,
   ...EN_US_ARK_SURVIVAL_ASCENDED_MESSAGES_PART_2,
   ...buildArkFieldHelpMessages("arksurvivalascended", "en-US"),
+  "settings.schema.arksurvivalascended.allow_variant_dino_packs.title": "Allow Creature Variants In Packs",
+  "settings.schema.arksurvivalascended.allow_variant_dino_packs.description": "Allow variants of the same creature, such as Raptors and Aberrant Raptors, to count towards each other's pack or gang. Disabled by default.",
   "settings.schema.arksurvivalascended.ark_mod_map_overrides.title": "Mod map selection",
   "settings.schema.arksurvivalascended.ark_mod_map_overrides.description": "Mods inherit shared defaults. Select a Mod in My Mods and choose multiple enabled maps; other Mods keep inheriting. Parameter targets are separate. Differences may affect cross-server transfers.",
   "settings.schema.arksurvivalascended.additional_maps.description": "Run more maps from this installation. Each enabled map has its own CMD, ports and saved world; maps share server settings and cluster transfers, with shared Mod defaults and optional map selections for each Mod.",

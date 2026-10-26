@@ -106,6 +106,7 @@ EDITION_SCHEMA_EXTRAS = {
     "asa": {
         "admin_account_ids",
         "cluster_directory",
+        "allow_variant_dino_packs",
         "anchored_vessel_check_radius",
         "custom_launch_flags",
         "exclusive_join_list",
@@ -170,7 +171,11 @@ def rust_extra_ini_tables(
     rows: list[str] = []
     for key in sorted(EDITION_SCHEMA_EXTRAS[edition]):
         prop = schema["properties"].get(key, {})
-        if prop.get("x-lsgm-source") not in {"game_user_settings", "asa_server_patch_notes_v93_19"}:
+        if prop.get("x-lsgm-source") not in {
+            "game_user_settings",
+            "asa_server_patch_notes_v93_19",
+            "asa_server_patch_notes_v94_7",
+        }:
             continue
         source_key = str(prop.get("x-lsgm-source-key", ""))
         if not source_key.startswith("ServerSettings."):

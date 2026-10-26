@@ -1329,22 +1329,34 @@ test("SCUM 1.3.1.1 package and current ServerSettings.ini keys are recorded", ()
   );
 });
 
-test("7 Days to Die anonymous package validate records first-party XML and launch wrapper", () => {
+test("7 Days to Die preserves historical package evidence and current first-party XML coverage", () => {
   const ledger = read(path.join(sevenDaysToDieRoot, "config-sources.toml"));
+  const packageEvidence = JSON.parse(read(path.join(
+    sevenDaysToDieRoot, "config-fixtures", "2026-08-10-steamcmd_anonymous_app_294420.json"
+  ))).evidence;
+  const currentInventory = JSON.parse(read(path.join(
+    sevenDaysToDieRoot, "native-evidence", "2026-10-25-sandbox-build-25661908.json"
+  )));
   const schema = JSON.parse(read(path.join(sevenDaysToDieRoot, "schema.json")));
   const template = read(path.join(sevenDaysToDieRoot, "templates", "serverconfig.xml.hbs"));
   const settingsDefinition = read(path.join(repoRoot, "apps", "desktop", "src", "views", "settings", "modules", "sevendaystodie.ts"));
   const mockSettings = read(path.join(repoRoot, "apps", "desktop", "src", "api-mock", "module-settings.ts"));
 
-  assert.match(ledger, /last_verified = "2026-08-10"/);
+  assert.equal(packageEvidence.verified_at, "2026-08-10");
+  assert.equal(packageEvidence.build, "SteamCMD app 294420 build 24392395 / V2.6 b14");
+  assert.ok(packageEvidence.source_ids.includes("steamcmd_anonymous_app_294420"));
   assert.match(ledger, /steamcmd_anonymous_app_294420/);
   assert.match(ledger, /app_update 294420 validate/);
-  assert.match(ledger, /build 24392395/);
+  assert.match(ledger, /public buildid 24392395, TargetBuildID 24392395/);
   assert.match(ledger, /SizeOnDisk 17683442531/);
   assert.match(ledger, /V2\.6/);
   assert.match(ledger, /installed_serverconfig_xml/);
   assert.match(ledger, /serverconfig\.xml/);
-  assert.match(ledger, /recorded serverconfig\.xml inventory contains 69 property names/);
+  assert.equal(currentInventory.build_id, "25661908");
+  assert.equal(currentInventory.status, "static_native_contract_verified");
+  assert.equal(currentInventory.config.native_property_count, 68);
+  assert.deepEqual(currentInventory.config.missing_template_properties, []);
+  assert.deepEqual(currentInventory.config.additional_template_properties, ["UserDataFolder"]);
   assert.match(ledger, /official V3\.0 release notes[^\n]+introduce SandboxCode/);
   assert.match(ledger, /This documentation check does not establish the currently installed game version\./);
   assert.match(ledger, /https:\/\/7-days-to-die\.zendesk\.com\/hc\/en-us\/articles\/50318172509972-V3-0-Dead-Hot-Summer-Release-Note/);
@@ -1464,17 +1476,29 @@ test("V Rising anonymous package validate records installed StreamingAssets sett
 });
 
 
-test("Squad anonymous package validate records installed ServerConfig templates", () => {
+test("Squad preserves historical package evidence and current ServerConfig templates", () => {
   const ledger = read(path.join(squadRoot, "config-sources.toml"));
+  const packageEvidence = JSON.parse(read(path.join(
+    squadRoot, "config-fixtures", "2026-07-13-steamcmd_anonymous_app_403240.json"
+  ))).evidence;
+  const currentInventory = JSON.parse(read(path.join(
+    squadRoot, "runtime-fixtures", "2026-10-25-list-players-build-26005357.json"
+  )));
   const serverTemplate = read(path.join(squadRoot, "templates", "Server.cfg.hbs"));
   const rconTemplate = read(path.join(squadRoot, "templates", "Rcon.cfg.hbs"));
 
-  assert.match(ledger, /last_verified = "2026-07-13"/);
+  assert.equal(packageEvidence.verified_at, "2026-07-13");
+  assert.equal(packageEvidence.build, "SteamCMD app 403240 build 23797339");
+  assert.ok(packageEvidence.source_ids.includes("steamcmd_anonymous_app_403240"));
   assert.match(ledger, /steamcmd_anonymous_app_403240/);
   assert.match(ledger, /app_update 403240 validate/);
   assert.match(ledger, /buildid 23797339/);
   assert.match(ledger, /SizeOnDisk 14558146773/);
-  assert.match(ledger, /Server\.cfg has 36 keys and Rcon\.cfg has 7 keys/);
+  assert.equal(currentInventory.build_id, "26005357");
+  assert.equal(currentInventory.status, "static_native_contract_verified");
+  assert.equal(currentInventory.configuration.server_cfg_key_count, 36);
+  assert.equal(currentInventory.configuration.rcon_cfg_key_count, 7);
+  assert.equal(currentInventory.configuration.template_key_sets_match, true);
   assert.match(ledger, /SquadGame\/ServerConfig\/Server\.cfg/);
   assert.match(ledger, /SquadGame\/ServerConfig\/Rcon\.cfg/);
   assert.match(ledger, /SquadGame\/ServerConfig\/Admins\.cfg/);

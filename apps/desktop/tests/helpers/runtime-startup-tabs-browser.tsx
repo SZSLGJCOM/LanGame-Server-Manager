@@ -77,16 +77,19 @@ async function run() {
   check(original, "Browser mock must provide a Minecraft instance");
   const instance = { ...original, status: "Stopped" as const, active_process_count: 0 };
   const details = { ...await readInstanceDetails(instance.id), summary: instance, active_run: null };
+  const other = { ...instance, id: "fixture-tabs-b", name: "Startup navigation B" };
+  const otherDetails = { ...details, summary: other };
   const moduleDetails = await readModuleDetails(instance.module_id);
   const runtime = { ...await readInstanceRuntime(instance.id), recent_runs: [],
     log_tail: snapshot("fixture/tabs-previous.log", ["PREVIOUS_RUN_OUTPUT"]) };
   let retained = runtime.log_tail;
   let finishStart: (() => void) | undefined;
+  let failStart: ((error: Error) => void) | undefined;
   Object.assign(globalThis, { isTauri: true });
   mockIPC((command, args) => command === "read_instance_log_document_from_storage" ? retained
     : invokeMock(command, args as Record<string, unknown>));
   const props: ComponentProps<typeof ServersView> = {
-    aiSettings: createDefaultAiSettings(), assistantCanRun: false, bindAddressCandidates: [], instances: [instance],
+    aiSettings: createDefaultAiSettings(), assistantCanRun: false, bindAddressCandidates: [], instances: [instance, other],
     moduleInstallations: { [instance.module_id]: { installState: "Installed", hasManagedInstallSource: true } },
     instanceLaunchPlans: {}, instanceLaunchFailures: {}, section: "overview", onWorkspaceSectionChange: noOperation,
     selectedInstanceId: instance.id, selectedDetails: details, selectedBackups: [], selectedModuleDetails: moduleDetails,
@@ -95,7 +98,7 @@ async function run() {
     onStart: async id => {
       check(id === instance.id, "Start targeted the wrong instance");
       starts++;
-      await new Promise<void>(resolve => { finishStart = resolve; });
+      await new Promise<void>((resolve, reject) => { finishStart = resolve; failStart = reject; });
     },
     onStop: noOperation, onInstallModule: async () => {}, onOpenModuleLibrary: noOperation,
     onCreateInstance: noOperation, onPickDirectory: async () => null,
@@ -127,7 +130,7 @@ async function run() {
   await tab("settings");
   await settleUntil(() => Boolean(fixture.querySelector(".server-detail-scroll--settings .configuration-workspace")),
     "The actual configuration workspace did not mount");
-  check(consoleNode() === startupConsole && runtimeListenerCount() === 2 && consoleNode()!.getClientRects().length === 0,
+  check(consoleNode() === startupConsole && runtimeListenerCount() === 4 && consoleNode()!.getClientRects().length === 0,
     "Selecting configuration during startup must hide the console while retaining its event subscriptions");
   await act(async () => { emit(["WHILE_CONFIGURATION_OPEN_PROGRESS"]); });
   await tab("runtime");
@@ -139,7 +142,7 @@ async function run() {
   await tab("maintenance");
   await settleUntil(() => Boolean(fixture.querySelector(".server-detail-scroll--maintenance .configuration-workspace")),
     "The actual maintenance workspace did not mount");
-  check(consoleNode() === startupConsole && runtimeListenerCount() === 2 && consoleNode()!.getClientRects().length === 0,
+  check(consoleNode() === startupConsole && runtimeListenerCount() === 4 && consoleNode()!.getClientRects().length === 0,
     "Selecting maintenance during startup must hide the console while retaining its event subscriptions");
   await act(async () => { emit(["WHILE_MAINTENANCE_OPEN_PROGRESS"]); });
   await tab("runtime");
@@ -149,12 +152,49 @@ async function run() {
     "Returning from maintenance lost the startup transcript or output emitted in another tab");
   scenarios++;
 
+  const beforeAway = retained;
+  retained = snapshot("fixture/tabs-b.log", ["INSTANCE_B_ONLY"]);
+  await act(async () => {
+    props.selectedInstanceId = other.id;
+    props.selectedDetails = otherDetails;
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+  });
+  await settleUntil(() => text().includes("INSTANCE_B_ONLY"), "Selecting B did not replace A's detail workspace");
+  check(consoleNode() !== startupConsole && !text().includes("BEFORE_LEAVING_STARTUP_PROGRESS"),
+    "The pending A page must unmount rather than remain hidden beneath B");
+  await act(async () => {
+    emit(["A_PROGRESS_WHILE_B_SELECTED"]);
+    bridge.emit({ instance_id: instance.id, log_path: "fixture/tabs-startup.log", lines: [],
+      byte_offset: 100, emitted_at_unix_ms: Date.now(), stream_error: "A_OFF_PAGE_READER_FAILED" });
+    bridge.emit({ instance_id: instance.id, process_key: "caves", log_path: "fixture/tabs-caves.log",
+      lines: ["A_CAVES_WHILE_B_SELECTED"], byte_offset: 101, emitted_at_unix_ms: Date.now() });
+  });
+  check(text().includes("INSTANCE_B_ONLY") && !text().includes("A_PROGRESS_WHILE_B_SELECTED") && !text().includes("A_OFF_PAGE_READER_FAILED"),
+    "A's operation-owned capture must not publish into B's visible console");
+  retained = beforeAway;
+  await act(async () => {
+    props.selectedInstanceId = instance.id;
+    props.selectedDetails = details;
+    props.runtime = runtime;
+    render();
+  });
+  check(text().includes("BEFORE_LEAVING_STARTUP_PROGRESS") && text().includes("WHILE_CONFIGURATION_OPEN_PROGRESS")
+    && text().includes("A_PROGRESS_WHILE_B_SELECTED") && text().includes("[caves] A_CAVES_WHILE_B_SELECTED")
+    && !text().includes("INSTANCE_B_ONLY"),
+    "A to B to A lost startup history or output emitted while A's page was absent");
+  check(text().includes("A_OFF_PAGE_READER_FAILED"), "Returning to A lost its off-page metadata-only stream diagnostic");
+  await act(async () => { emit(["A_READER_RECOVERED"]); });
+  check(text().includes("A_READER_RECOVERED") && !text().includes("A_OFF_PAGE_READER_FAILED"),
+    "A same-source healthy event did not clear the recovered reader diagnostic");
+  scenarios++;
+
   await tab("maintenance");
-  check(runtimeListenerCount() === 2, "Pending startup must still own its listeners before completion");
+  check(runtimeListenerCount() === 4, "Pending startup must still own page and operation listeners before completion");
   retained = snapshot("fixture/tabs-startup.log", ["STARTUP_COMPLETE"]);
   await act(async () => {
     const running = { ...instance, status: "Running" as const, active_process_count: 1 };
-    props.instances = [running];
+    props.instances = [running, other];
     props.selectedDetails = { ...details, summary: running };
     props.runtime = { ...runtime, log_tail: retained };
     render();
@@ -164,6 +204,54 @@ async function run() {
     "Completing startup outside the runtime tab must unmount the hidden console and release its subscriptions");
   check(fixture.querySelector('.server-detail-tabs [id$="-maintenance"][aria-selected="true"]'),
     "Completing startup unexpectedly changed the user's selected tab");
+  scenarios++;
+
+  await act(async () => {
+    props.instances = [instance, other];
+    props.selectedDetails = details;
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+  });
+  await tab("runtime");
+  finishStart = undefined;
+  await click(".server-list-card-primary-action");
+  await settleUntil(() => Boolean(finishStart), "The second start did not reach its operation");
+  await act(async () => { bridge.emit({ instance_id: instance.id, log_path: "fixture/failed-startup.log",
+    lines: ["FAILED_STARTUP_ONLY"], byte_offset: 1, emitted_at_unix_ms: Date.now() }); });
+  check(text().includes("FAILED_STARTUP_ONLY") && !text().includes("A_PROGRESS_WHILE_B_SELECTED"),
+    "A new startup must not restore its previous operation's aggregate");
+  retained = snapshot("fixture/tabs-b.log", ["INSTANCE_B_ONLY"]);
+  await act(async () => {
+    props.selectedInstanceId = other.id;
+    props.selectedDetails = otherDetails;
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+    failStart!(new Error("Fixture startup failure"));
+  });
+  await settleUntil(() => runtimeListenerCount() === 2, "Failed off-page startup did not release its operation capture");
+  retained = snapshot("fixture/after-failure.log", ["AFTER_FAILURE_RETAINED"]);
+  await act(async () => {
+    props.selectedInstanceId = instance.id;
+    props.selectedDetails = details;
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+  });
+  await settleUntil(() => text().includes("AFTER_FAILURE_RETAINED"), "Returning after failure did not read its retained document");
+  check(!text().includes("FAILED_STARTUP_ONLY"), "A failed operation revived its startup cache");
+  scenarios++;
+
+  retained = snapshot("fixture/new-known-run.log", ["NEW_KNOWN_RUN_ONLY"]);
+  await act(async () => {
+    const running = { ...instance, status: "Running" as const, active_process_count: 1 };
+    props.instances = [running, other];
+    props.selectedDetails = { ...details, summary: running, active_run: { run_id: 99,
+      log_path: retained.source_path, processes: [{ run_id: 99, process_key: "main", display_name: "Main",
+        pid: 99, status: "Running", is_primary: true, log_path: retained.source_path }] } };
+    props.runtime = { ...runtime, log_tail: retained };
+    render();
+  });
+  await settleUntil(() => text().includes("NEW_KNOWN_RUN_ONLY"), "A current run did not replace the failed startup scope");
+  check(!/FAILED_STARTUP_ONLY|BEFORE_LEAVING_STARTUP_PROGRESS/.test(text()), "Current run history mixed with an old startup");
   scenarios++;
 
   await act(async () => { root.render(null); });

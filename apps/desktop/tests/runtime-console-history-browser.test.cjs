@@ -6,7 +6,7 @@ test("runtime console retains live history across polls and recovers after a res
   const report = await runBrowserFixture({ fixturePath: "runtime-console-history-browser.html", keyboard: true,
     viewport: { width: 1280, height: 900 }, screenshotPath: process.env.LANGAME_RUNTIME_HISTORY_SCREENSHOT });
   assert.equal(report.status, "passed", report.error);
-  assert.equal(report.scenarios, 30);
+  assert.equal(report.scenarios, 32);
   assert.deepEqual(report.blocked_command_states, ["module-unavailable", "instance-stopped", "dispatch-unavailable"]);
   assert.deepEqual(report.browser_errors, []);
   assert.equal(report.browser_exited, true);

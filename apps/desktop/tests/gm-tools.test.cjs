@@ -134,7 +134,6 @@ test("ARK GM tools merge equivalent spawn and item actions into compact forms", 
   const giveItem = catalog?.tools.find((tool) => tool.id === "ark_give_item_to_player");
   const zhMessages = fs.readFileSync(path.join(desktopRoot, "src", "i18n-messages-zh-extra.ts"), "utf8");
   const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
 
   assert.equal(catalog?.tools.some((tool) => tool.id === "ark_spawn_tamed_dino"), false);
   assert.equal(catalog?.tools.some((tool) => tool.id === "ark_spawn_wild_creature"), false);
@@ -153,7 +152,7 @@ test("ARK GM tools merge equivalent spawn and item actions into compact forms", 
   assert.match(source, /instanceId=\{props\.details\.summary\.id\}/);
   assert.match(source, /settingsJson=\{props\.details\.settings_json\}/);
   assert.doesNotMatch(source, /navigator\.clipboard|client_console/);
-  assert.match(css, /\.gmt-fields-grid--ark-give-item/);
+  assert.match(source, /<ArkItemSpawnPanel/);
 });
 
 test("ARK GM pickers expose broad built-in creature and player item catalogs", () => {
@@ -184,14 +183,14 @@ test("ARK GM pickers expose broad built-in creature and player item catalogs", (
 
 test("ARK GM workbench uses compact paginated pickers for large built-in catalogs", () => {
   const source = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "GMToolsWorkbench.tsx"), "utf8");
-  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "workbench", "operations", "gm-tools.css"), "utf8");
+  const picker = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ArkCatalogPicker.tsx"), "utf8");
+  const css = fs.readFileSync(path.join(desktopRoot, "src", "views", "servers", "ark-catalog-picker.css"), "utf8");
 
   assert.match(source, /ArkCreatureSpawner/);
-  assert.match(source, /searchArkGmItemOptions/);
-  assert.match(source, /isArkCatalogField/);
-  assert.match(source, /gmt-ark-catalog-assist/);
-  assert.match(source, /ARK_CATALOG_SEARCH_RESULT_LIMIT = 12/);
-  assert.match(source, /!isArkCatalogField\(moduleId, field\)/);
+  assert.match(source, /<ArkItemSpawnPanel/);
+  assert.match(picker, /searchArkGmItemOptions/);
+  assert.match(picker, /gmt-ark-catalog-assist/);
+  assert.match(picker, /ResizeObserver/);
   assert.match(css, /\.gmt-ark-catalog-assist/);
   assert.match(css, /\.gmt-ark-catalog-page-btn/);
 });

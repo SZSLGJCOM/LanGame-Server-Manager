@@ -85,6 +85,20 @@ description = "Reverified 2026-09-07. SupplyCrateLootQualityMultiplier support i
 url = "https://github.com/thommcgrath/Beacon/tree/94cf4d4258aae0f5190781cddfe24a327c149503/Project/Modules/Game%20Support/ArkSA/Configs"
 
 [[sources]]
+id = "asa_server_patch_notes_v94_7"
+kind = "documentation"
+path = "GameUserSettings.ini:[ServerSettings]"
+authority = "studio_wildcard_official_server_patch_notes"
+url = "https://survivetheark.com/index.php?/forums/topic/773786-asa-server-patch-notes-server-v947-updated-10062026/"
+description = "Reviewed 2026-10-26. The official v94.7 server release dated 2026-09-30 introduces AllowVariantDinoPacks=false in GameUserSettings.ini [ServerSettings], with an explicit false default. Enabling it allows variants of the same creature to count towards each other's pack or gang. The separate current materialization fixture covers native INI output; this does not renew historical native game-server acceptance or the pinned July wiki crosswalk."
+
+[[items]]
+source = "asa_server_patch_notes_v94_7"
+key = "ServerSettings.AllowVariantDinoPacks"
+schema_key = "allow_variant_dino_packs"
+surface = "config_file"
+
+[[sources]]
 id = "ark_official_server_configuration_2026_07_13"
 kind = "documentation"
 path = "docs/game-config-acceptance/sources/ark-server-configuration-2026-07-13.wikitext"

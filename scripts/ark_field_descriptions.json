@@ -8,6 +8,10 @@
       "en": "Loads administrator account IDs from a web resource in place of AllowedCheaterAccountIDs.txt. UpdateAllowedCheatersInterval controls how often the server checks that resource.",
       "zh-CN": "从指定网页资源读取管理员账号 ID，替代 AllowedCheaterAccountIDs.txt。UpdateAllowedCheatersInterval 决定服务器检查该资源更新的频率。"
     },
+    "allow_variant_dino_packs": {
+      "en": "Allow variants of the same creature, such as Raptors and Aberrant Raptors, to count towards each other's pack or gang. Disabled by default.",
+      "zh-CN": "允许同一种生物的不同变体（如迅猛龙与畸变迅猛龙）互相计入群体（Pack/Gang）。默认关闭。"
+    },
     "always_tick_dedicated_skeletal_meshes": {
       "en": "Keeps creature skeletal animations updating on the server, including idle creatures. This disables the optimization that skips those updates when server frame rates are low.",
       "zh-CN": "让专用服务器持续更新生物的骨骼动画，包括处于空闲状态的生物。启用后不再使用服务器低帧率时跳过这类更新的优化。"

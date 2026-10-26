@@ -33,6 +33,8 @@
     "excluded": []
   },
   "settings": {
+    "server_name": "HumanitZ Server",
+    "extra_launch_args": "-NoCrashDialog",
     "backpack_cleanup_days": 7,
     "weapon_durability_multiplier": 0.5,
     "headshot_only_mode": "enabled",

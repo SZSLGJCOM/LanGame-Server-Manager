@@ -1,19 +1,18 @@
-.ark-creature-spawner { display: grid; gap: 16px; min-width: 0; }
-.ark-creature-spawner__status { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.ark-creature-spawner { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; flex: 1; }
+.ark-creature-spawner__status { flex: none; color: var(--shell-muted); font-size: var(--text-meta); }
 .ark-creature-spawner__status p { margin: 0; }
-.ark-creature-spawner fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; min-width: 0; }
+.ark-creature-spawner > .shell-activity-notice { flex: none; }
+.ark-creature-spawner > form, .ark-creature-spawner fieldset { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-width: 0; min-height: 0; }
+.ark-creature-spawner fieldset { border: 0; padding: 0; margin: 0; }
+.ark-creature-spawner fieldset > .gmt-ark-catalog-assist { flex: 1 1 0; }
+.ark-creature-spawner__advanced { display: grid; gap: 10px; padding-block: 8px; }
 .ark-creature-spawner__coordinates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .ark-creature-spawner__choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .ark-creature-spawner__choices button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; overflow-wrap: anywhere; }
 .ark-creature-spawner__choices small { opacity: .7; }
-.ark-creature-spawner__install, .ark-creature-spawner__result { display: grid; gap: 8px; }
-.ark-creature-spawner__result p { margin: 0; overflow-wrap: anywhere; }
-.ark-creature-spawner__error { color: var(--danger, #be4040); white-space: pre-wrap; overflow-wrap: anywhere; }
-.ark-creature-spawner__catalog-nav, .ark-creature-spawner__saved { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.ark-creature-spawner__catalog-nav > span:first-child { margin-right: auto; }
+.ark-creature-spawner__saved { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .ark-creature-spawner__saved > .gmt-field { flex: 1; min-width: 140px; }
 .ark-creature-spawner__saved > button { align-self: end; }
 .ark-creature-spawner .gmt-field > span { display: block; margin-bottom: 6px; color: var(--shell-muted); }
-.ark-creature-spawner__note { margin: 0; font-size: var(--text-secondary); line-height: var(--leading-body); color: var(--shell-muted); }
-.ark-creature-spawner button[type="submit"] { justify-self: start; }
+.ark-creature-spawner__note { flex: none; max-height: 72px; overflow: auto; margin: 0; font-size: var(--text-meta); line-height: var(--leading-body); color: var(--shell-muted); }
 .ark-creature-spawner__choices [aria-pressed="true"] { border-color: var(--shell-text); }

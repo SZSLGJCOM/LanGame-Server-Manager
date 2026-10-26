@@ -13,15 +13,8 @@ import {
 } from "../../runtime-action-state";
 import {
   buildGmToolCommand,
-  getArkGmItemOptions,
-  getArkGmNumericItemOptions,
   getGmToolCatalog,
   getInitialGmToolValues,
-  localizeArkCatalogCategory,
-  localizeArkCatalogName,
-  searchArkGmItemOptions,
-  searchArkGmNumericItemOptions,
-  type ArkGmItemOption,
   type GmToolDefinition,
   type GmToolField,
   type GmToolFieldOption
@@ -29,6 +22,7 @@ import {
 import { GmExecutionNotice } from "./GmExecutionNotice";
 import { gmToolConfigurationIssue, useGmToolExecution } from "./gm-tool-execution";
 import { ArkCreatureSpawner } from "./ArkCreatureSpawner";
+import { ArkItemSpawnPanel } from "./ArkItemSpawnPanel";
 import { ArkWorldMapWorkbench, type ArkMapToolContext } from "./ArkWorldMapWorkbench";
 import { DST_GM_PANELS, DstWorldMapWorkbench } from "./DstWorldMapWorkbench";
 import { GmToolsNavigation } from "./GmToolsNavigation";
@@ -37,10 +31,6 @@ import "./gm-tool-execution.css";
 interface GMToolsWorkbenchProps {
   details: InstanceDetails;
 }
-
-const ARK_CATALOG_SEARCH_RESULT_LIMIT = 12;
-const ARK_ITEM_TOTAL_COUNT = getArkGmItemOptions().length;
-const ARK_NUMERIC_ITEM_TOTAL_COUNT = getArkGmNumericItemOptions().length;
 
 function localizedFieldPlaceholder(t: TranslateFn, field: GmToolField): string {
   const fallback = field.placeholder ?? "";
@@ -83,28 +73,14 @@ function isArkModule(moduleId: string): boolean {
   return normalized === "arksurvivalascended" || normalized === "arksurvivalevolved";
 }
 
-function isArkItemCatalogField(moduleId: string, field: GmToolField): boolean {
-  return isArkModule(moduleId) && (field.key === "blueprintPath" || field.key === "itemId");
-}
-
-function isArkCatalogField(moduleId: string, field: GmToolField): boolean {
-  return isArkItemCatalogField(moduleId, field);
-}
-
-
-function shouldUseFieldDatalist(moduleId: string, field: GmToolField): boolean {
-  return Boolean(field.options?.length) && !isArkCatalogField(moduleId, field);
-}
-
-function fieldClassName(moduleId: string, field: GmToolField): string {
-  const isFullWidth = field.type === "textarea" || isArkCatalogField(moduleId, field);
+function fieldClassName(field: GmToolField): string {
+  const isFullWidth = field.type === "textarea";
   const classes = [
     "gmt-field",
     field.key === "blueprintPath" ? "gmt-field--blueprint-path" : "",
     field.key === "lines" ? "gmt-field--lines" : "",
     isFullWidth ? "gmt-field--full" : "",
     field.type === "checkbox" ? "gmt-field--checkbox" : "",
-    isArkCatalogField(moduleId, field) ? "gmt-field--ark-catalog" : "",
     "settings-schema-field",
     isFullWidth ? "settings-schema-field--full" : ""
   ];
@@ -118,163 +94,6 @@ function isFieldVisible(field: GmToolField, values: Record<string, string>): boo
   return field.visibleWhen.values.includes(values[field.visibleWhen.field] ?? "");
 }
 
-function fieldGridClassName(moduleId: string, tool: GmToolDefinition): string {
-  const classes = ["gmt-fields-grid", "settings-schema-grid"];
-  if (isArkModule(moduleId) && tool.id === "ark_give_item_to_player") {
-    classes.push("gmt-fields-grid--ark-give-item");
-  }
-  return classes.join(" ");
-}
-
-type ArkCatalogKind = "blueprint" | "number";
-type ArkCatalogOption = ArkGmItemOption;
-
-interface ArkCatalogPickerAssistProps {
-  kind: ArkCatalogKind;
-  locale: string;
-  onPick: (value: string) => void;
-  onQueryChange: (query: string) => void;
-  query: string;
-  t: TranslateFn;
-  value: string;
-}
-
-function ArkCatalogPickerAssist(props: ArkCatalogPickerAssistProps) {
-  const [pageIndex, setPageIndex] = useState(0);
-  const activeQuery = props.query.trim();
-  const allResults = useMemo(
-    () => searchArkCatalogOptions(props.kind, activeQuery),
-    [activeQuery, props.kind]
-  );
-  const totalCount = arkCatalogTotalCount(props.kind);
-  const pageCount = Math.max(1, Math.ceil(allResults.length / ARK_CATALOG_SEARCH_RESULT_LIMIT));
-  const safePageIndex = Math.min(pageIndex, pageCount - 1);
-  const pageStart = safePageIndex * ARK_CATALOG_SEARCH_RESULT_LIMIT;
-  const results = allResults.slice(pageStart, pageStart + ARK_CATALOG_SEARCH_RESULT_LIMIT);
-  const visibleStart = allResults.length > 0 ? pageStart + 1 : 0;
-  const visibleEnd = pageStart + results.length;
-  const canGoPrevious = safePageIndex > 0;
-  const canGoNext = safePageIndex < pageCount - 1;
-  const activeValue = props.value.trim();
-
-  useEffect(() => {
-    setPageIndex(0);
-  }, [activeQuery, props.kind]);
-
-  useEffect(() => {
-    setPageIndex((current) => Math.min(current, pageCount - 1));
-  }, [pageCount]);
-
-  return (
-    <div className="gmt-ark-catalog-assist">
-      <div className="gmt-ark-catalog-toolbar">
-        <input
-          className="gmt-text-input gmt-ark-catalog-search"
-          value={props.query}
-          placeholder={arkCatalogSearchPlaceholder(props.kind, props.t)}
-          onChange={(event) => props.onQueryChange(event.target.value)}
-        />
-        <div className="gmt-ark-catalog-status">
-          {activeValue ? (
-            <span className="gmt-ark-catalog-current" title={activeValue}>
-              <span>{props.t("servers.gmTools.arkCatalogCurrent", undefined, "Current")}</span>
-              <code>{activeValue}</code>
-            </span>
-          ) : null}
-          <div className="gmt-ark-catalog-pager" aria-label={props.t("servers.gmTools.arkCatalogPager", undefined, "ARK catalog pages")}>
-            <button
-              type="button"
-              className="gmt-ark-catalog-page-btn"
-              disabled={!canGoPrevious}
-              title={props.t("servers.gmTools.arkCatalogPreviousPage", undefined, "Previous page")}
-              onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
-            >
-              <ShellIcon name="chevron-left" className="gmt-ark-catalog-page-icon" />
-            </button>
-            <span className="gmt-ark-catalog-page-label">{safePageIndex + 1}/{pageCount}</span>
-            <button
-              type="button"
-              className="gmt-ark-catalog-page-btn"
-              disabled={!canGoNext}
-              title={props.t("servers.gmTools.arkCatalogNextPage", undefined, "Next page")}
-              onClick={() => setPageIndex((current) => Math.min(pageCount - 1, current + 1))}
-            >
-              <ShellIcon name="chevron-right" className="gmt-ark-catalog-page-icon" />
-            </button>
-          </div>
-          <span className="gmt-ark-catalog-count">
-            {props.t(
-              "servers.gmTools.arkCatalogResultCount",
-              { start: visibleStart, end: visibleEnd, matches: allResults.length, total: totalCount },
-              allResults.length === totalCount
-                ? `${visibleStart}-${visibleEnd} / ${totalCount}`
-                : `${visibleStart}-${visibleEnd} / ${allResults.length} (${totalCount})`
-            )}
-          </span>
-        </div>
-      </div>
-
-      {results.length > 0 ? (
-        <div className="gmt-ark-catalog-results" role="listbox">
-          {results.map((option) => {
-            const optionValue = arkCatalogOptionValue(option, props.kind);
-            const optionName = localizeArkCatalogName(option, props.locale);
-            const optionCategory = localizeArkCatalogCategory(option, props.locale);
-            return (
-              <button
-                key={`${optionValue}:${option.name}`}
-                type="button"
-                className={optionValue === activeValue ? "gmt-ark-catalog-option gmt-ark-catalog-option--active" : "gmt-ark-catalog-option"}
-                title={`${optionName} / ${optionCategory} / ${arkCatalogOptionCode(option, props.kind)}`}
-                aria-pressed={optionValue === activeValue}
-                onClick={() => props.onPick(optionValue)}
-              >
-                <span className="gmt-ark-catalog-option-name">{optionName}</span>
-                <span className="gmt-ark-catalog-option-meta">
-                  <span>{optionCategory}</span>
-                  <code>{arkCatalogOptionCode(option, props.kind)}</code>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="gmt-ark-catalog-empty">
-          {props.t("servers.gmTools.arkCatalogNoResults", undefined, "No matching ARK entry")}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function searchArkCatalogOptions(kind: ArkCatalogKind, query: string): ArkCatalogOption[] {
-  if (kind === "number") {
-    return searchArkGmNumericItemOptions(query, ARK_NUMERIC_ITEM_TOTAL_COUNT);
-  }
-  return searchArkGmItemOptions(query, ARK_ITEM_TOTAL_COUNT);
-}
-
-function arkCatalogTotalCount(kind: ArkCatalogKind): number {
-  if (kind === "number") {
-    return ARK_NUMERIC_ITEM_TOTAL_COUNT;
-  }
-  return ARK_ITEM_TOTAL_COUNT;
-}
-
-function arkCatalogOptionValue(option: ArkCatalogOption, kind: ArkCatalogKind): string {
-  return kind === "number" ? option.itemId : option.blueprintPath;
-}
-
-function arkCatalogOptionCode(option: ArkCatalogOption, kind: ArkCatalogKind): string {
-  return kind === "number" ? `#${option.itemId}` : option.gfiCode;
-}
-
-function arkCatalogSearchPlaceholder(kind: ArkCatalogKind, t: TranslateFn): string {
-  if (kind === "number") {
-    return t("servers.gmTools.arkItemNumberSearchPlaceholder", undefined, "Search numeric item ID");
-  }
-  return t("servers.gmTools.arkItemSearchPlaceholder", undefined, "Search item, GFI, or blueprint");
-}
 
 export function GMToolsWorkbench(props: GMToolsWorkbenchProps) {
   return isArkModule(props.details.summary.module_id)
@@ -411,12 +230,12 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
         </aside>
         <div ref={content} className="configuration-workspace__main" data-configuration-scroll-owner>
           <div className="configuration-workspace__content">
-        {props.arkContext ? <label className="ark-map-tool-picker"><span>{t("servers.gmTools.actions", undefined, "GM actions")}</span>
-          <select className="gmt-select" value={activeTool?.id ?? ""} onChange={event => { setActiveToolId(event.target.value); setFeedback(null); }}>
+        {props.arkContext ? <label className="ark-map-tool-picker">
+          <select className="gmt-select" aria-label={t("servers.gmTools.actions", undefined, "GM actions")} value={activeTool?.id ?? ""} onChange={event => { setActiveToolId(event.target.value); setFeedback(null); }}>
             {catalog.tools.map(tool => <option key={tool.id} value={tool.id}>{localizedToolTitle(t, tool)}</option>)}
           </select></label> : null}
         {isArkModule(moduleId) ? (
-          <div hidden={activeTool?.id !== "ark_spawn_creature"}>
+          <div className="ark-creature-tool" hidden={activeTool?.id !== "ark_spawn_creature"}>
             <ArkCreatureSpawner
               instanceId={props.details.summary.id}
               moduleId={moduleId}
@@ -429,7 +248,17 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
             />
           </div>
         ) : null}
-        {dontStarve ? <DstWorldMapWorkbench details={props.details} panel={dstPanel} /> : activeTool?.id === "ark_spawn_creature" ? null : activeTool ? (
+        {dontStarve ? <DstWorldMapWorkbench details={props.details} panel={dstPanel} /> : activeTool?.id === "ark_spawn_creature" ? null
+          : props.arkContext && activeTool?.id === "ark_give_item_to_player" ? <ArkItemSpawnPanel tool={activeTool} values={toolValues}
+            query={arkCatalogSearchByField[toolValues.itemMode ?? "blueprint"] ?? ""}
+            onQueryChange={query => setArkCatalogSearchByField(current => ({ ...current, [toolValues.itemMode ?? "blueprint"]: query }))}
+            update={(field, value) => updateField(activeTool, field, value)} selectedPlayer={props.arkContext.selectedPlayer}
+            onUsePlayer={() => { const player = props.arkContext?.selectedPlayer, field = activeTool.fields.find(value => value.key === "playerId");
+              if (player && field) { updateField(activeTool, field, String(player.playerId)); setPlayerFromMap(player.playerId); } }}
+            busy={execution.busy} sending={sendingToolId === activeTool.id} issue={availabilityIssue} onSubmit={() => void sendActiveTool()}
+            feedback={feedback ? <ActivityNotice tone={feedbackTone} onDismiss={() => setFeedback(null)}>{feedback}</ActivityNotice> : null}
+            result={execution.result && resultScope === props.arkContext.scopeKey ? <GmExecutionNotice result={execution.result} /> : null} />
+          : activeTool ? (
           <form
             className="gmt-form"
             onSubmit={(event) => {
@@ -453,17 +282,16 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
                 : selectLocaleText(locale, "在地图或名单中选择在线玩家", "Select a live player on the map or roster")}</button> : null}
 
             {visibleActiveFields.length > 0 ? (
-              <div className={fieldGridClassName(moduleId, activeTool)}>
+              <div className="gmt-fields-grid settings-schema-grid">
                 {visibleActiveFields.map((field) => {
                   const inputId = fieldInputId(activeTool, field);
                   const datalistId = fieldListId(activeTool, field);
-                  const fieldStateKey = `${activeTool.id}:${field.key}`;
                   const fieldOptions = field.options ?? [];
-                  const useDatalist = shouldUseFieldDatalist(moduleId, field);
-                                  return (
+                  const useDatalist = Boolean(field.options?.length);
+                  return (
                   <div
                     key={field.key}
-                    className={`${fieldClassName(moduleId, field)}`}
+                    className={fieldClassName(field)}
                   >
                     {field.type === "checkbox" ? null : (
                       <label htmlFor={inputId} className="gmt-field-label detail-label">{localizedFieldLabel(t, activeTool, field)}</label>
@@ -525,19 +353,6 @@ function GMToolsForm(props: GMToolsWorkbenchProps & { arkContext?: ArkMapToolCon
                               </option>
                             ))}
                           </datalist>
-                        ) : null}
-                        {isArkItemCatalogField(moduleId, field) ? (
-                          <ArkCatalogPickerAssist
-                            kind={field.key === "itemId" ? "number" : "blueprint"}
-                            locale={locale}
-                            query={arkCatalogSearchByField[fieldStateKey] ?? ""}
-                            onQueryChange={(query) => {
-                              setArkCatalogSearchByField((current) => ({ ...current, [fieldStateKey]: query }));
-                            }}
-                            onPick={(value) => updateField(activeTool, field, value)}
-                            t={t}
-                            value={toolValues[field.key] ?? ""}
-                          />
                         ) : null}
                       </>
                     )}

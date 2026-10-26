@@ -68,7 +68,7 @@ async function render(next: InstanceDetails) {
   if (details.summary.module_id.startsWith("arksurvival")) await choose("ark_set_time");
 }
 const button = () => element<HTMLButtonElement>('.gmt-form button[type="submit"]');
-const resultSelector = ".gmt-form > .shell-activity-notice";
+const resultSelector = ".gmt-form .shell-activity-notice";
 async function submit() { await act(async () => { button().click(); }); }
 async function choose(toolId: string) {
   const index = getGmToolCatalog(details.summary.module_id)!.tools.findIndex((tool) => tool.id === toolId);

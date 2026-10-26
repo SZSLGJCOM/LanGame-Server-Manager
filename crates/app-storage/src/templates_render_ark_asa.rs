@@ -220,6 +220,7 @@ pub(crate) const ARK_ASA_GAME_INI: &[ArkIniSetting] = &[
 
 #[rustfmt::skip]
 pub(crate) const ARK_ASA_PATCH_GUS_SERVER_SETTINGS: &[ArkIniSetting] = &[
+    ("AllowVariantDinoPacks", "allow_variant_dino_packs", false, false, false),
     ("AnchoredVesselCheckRadius", "anchored_vessel_check_radius", false, false, false),
     ("MaxAnchoredVesselsInRange", "max_anchored_vessels_in_range", false, false, false),
     ("NeedsPowerToActivateAquaticCompartments", "needs_power_to_activate_aquatic_compartments", false, false, false),

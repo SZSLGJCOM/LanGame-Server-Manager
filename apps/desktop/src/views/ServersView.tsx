@@ -53,6 +53,7 @@ import { useSteamWorkshopAccount } from "./servers/useSteamWorkshopAccount";
 import type { SteamInstallationAccountContext } from "../steam-installation-account";
 import { moduleRequiresSteamCmd } from "../module-installation-dependency";
 import { collectRuntimeLogPaths, type RuntimeLogStartupBoundary } from "../runtime-log-stream";
+import { beginRuntimeConsoleStartupCapture } from "../runtime-console-startup-history";
 import {
   ConfigurationWorkspace, GMToolsWorkbench, ModWorkbench, PlayerCenterWorkbench, ServerMaintenanceWorkspace
 } from "./servers/DeferredServerWorkspaces";
@@ -306,6 +307,11 @@ export function ServersView(props: ServersViewProps) {
   const listConnections = useInstanceConnections(readableInstances, selectedRetirement ? null : props.selectedDetails);
   const runtimeActionGate = useRef(new Set<string>());
   const runtimeStartupBoundaries = useRef(new Map<string, RuntimeLogStartupBoundary>());
+  const runtimeStartupCaptures = useRef(new Map<string, ReturnType<typeof beginRuntimeConsoleStartupCapture>>());
+  useEffect(() => () => {
+    for (const capture of runtimeStartupCaptures.current.values()) capture.dispose();
+    runtimeStartupCaptures.current.clear();
+  }, []);
   const detailPanelId = useId();
   const [requestedDetailTab, setActiveDetailTab] = useState<ServerDetailTab>("runtime");
   const [requestedArchiveDetailTab, setArchiveDetailTab] = useState<ServerDetailTab>("runtime");
@@ -384,10 +390,15 @@ export function ServersView(props: ServersViewProps) {
       const selected = props.selectedDetails?.summary.id === instanceId;
       // Capture before settings/preflight awaits: native output may arrive before
       // the runtime tab mounts, and the previous producer may still be draining.
-      runtimeStartupBoundaries.current.set(instanceId, {
+      const boundary: RuntimeLogStartupBoundary = {
         instanceId, startedAtUnixMs: Date.now(),
         previousLogPaths: collectRuntimeLogPaths(selected ? props.selectedDetails : null, selected ? props.runtime : null)
-      });
+      };
+      runtimeStartupBoundaries.current.set(instanceId, boundary);
+      const moduleId = props.instances.find(instance => instance.id === instanceId)?.module_id;
+      if (moduleId) runtimeStartupCaptures.current.set(instanceId, beginRuntimeConsoleStartupCapture(
+        moduleId, boundary
+      ));
     }
     props.onActivity(message(intent === "start" ? "activity.startingServer" : "activity.stoppingServer", { id: instanceId }));
     const pendingAction = pendingRuntimeActionForIntent(intent);
@@ -395,6 +406,7 @@ export function ServersView(props: ServersViewProps) {
 
     try {
       if (intent === "start") {
+        await runtimeStartupCaptures.current.get(instanceId)?.ready;
         let expectedWorldStart: DstWorldStartPreview | undefined;
         const instance = props.instances.find((item) => item.id === instanceId);
         if (instance?.module_id === "dontstarve") {
@@ -428,6 +440,8 @@ export function ServersView(props: ServersViewProps) {
         : message("dst.start.error.prepare", { message: describeError(error) }, { tone: "error" }));
     } finally {
       runtimeActionGate.current.delete(instanceId);
+      runtimeStartupCaptures.current.get(instanceId)?.dispose();
+      runtimeStartupCaptures.current.delete(instanceId);
       runtimeStartupBoundaries.current.delete(instanceId);
       setRuntimeActionsByInstanceId((current) => {
         if (current[instanceId] !== pendingAction) {

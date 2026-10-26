@@ -7,6 +7,7 @@ import { bootstrapApp, readInstanceDetails, readInstanceRuntime, readModuleDetai
 import { invokeMock } from "../../src/api-mock";
 import { RuntimeSurfaceWorkbench } from "../../src/views/servers/RuntimeSurfaceWorkbench";
 import { bridge } from "./runtime-browser-events";
+import { beginRuntimeConsoleStartupCapture } from "../../src/runtime-console-startup-history";
 import type { InstanceRuntimeCommandResult, LogTailSnapshot, RuntimeCommandDispatchOptions } from "../../src/types";
 import "../../src/app.css";
 
@@ -93,7 +94,7 @@ async function run() {
     } };
   let showingRuntime = true;
   const render = () => root.render(<StrictMode><I18nProvider>{showingRuntime
-    ? <RuntimeSurfaceWorkbench {...props} /> : <div>Other instance page</div>}</I18nProvider></StrictMode>);
+    ? <RuntimeSurfaceWorkbench key={props.details.summary.id} {...props} /> : <div>Other instance page</div>}</I18nProvider></StrictMode>);
   await act(async () => { await prepareBrowserLocaleCatalogs(); render(); });
   await settleUntil(() => text().includes("BOOT_000"), "Initial snapshot is missing");
   checkAtBottom("Opening an instance must reveal its latest retained output");
@@ -269,6 +270,33 @@ async function run() {
   await settleUntil(() => text().includes("WHILE_AWAY_049"), "Returning to runtime did not recover output written while away");
   check(text().includes("NATIVE_INITIAL_000") && !text().includes("WRONG_MANAGED_SOURCE_EVENT"),
     "Navigation recovery mixed sources or lost earlier retained output");
+  scenarios++;
+
+  const steadyA = { ...props };
+  const steadyADocument = retained;
+  retained = snapshot("fixture/steady-b.log", ["STEADY_B_ONLY"]);
+  props.details = { ...props.details, summary: { ...props.details.summary, id: "fixture-steady-b" },
+    active_run: { ...props.details.active_run!, run_id: 142, log_path: retained.source_path,
+      processes: [{ ...props.details.active_run!.processes![0], run_id: 142, log_path: retained.source_path }] } };
+  props.runtime = { ...props.runtime!, log_tail: retained };
+  await act(async () => { render(); });
+  await settleUntil(() => text().includes("STEADY_B_ONLY"), "Instance B did not load its own console");
+  check(!text().includes("NATIVE_INITIAL_000"), "Instance A history leaked into instance B");
+  const retiredBStream = bridge.entries.filter(entry => entry.name === "runtime-log-stream").at(-1)!;
+  retained = snapshot(steadyADocument.source_path!, [...steadyADocument.lines, "STEADY_A_WHILE_AWAY"]);
+  Object.assign(props, steadyA, { runtime: { ...steadyA.runtime!, log_tail: snapshot(retained.source_path!, retained.lines.slice(-32)) } });
+  holdRead = true;
+  releaseRead = undefined;
+  await act(async () => { render(); });
+  await settleUntil(() => Boolean(releaseRead), "Returning from B did not reload A's current document");
+  check(text().includes("NATIVE_INITIAL_000") && text().includes("CURRENT_NATIVE_SOURCE_EVENT") && !text().includes("STEADY_B_ONLY"),
+    "A to B to A lost owned steady-state history before readback");
+  await act(async () => { retiredBStream.deliver({ instance_id: props.details.summary.id, log_path: retained.source_path,
+    lines: ["RETIRED_B_CALLBACK"], byte_offset: 50, emitted_at_unix_ms: Date.now() }); });
+  check(!text().includes("RETIRED_B_CALLBACK"), "A retired B subscription wrote into the remounted A console");
+  holdRead = false;
+  await act(async () => { releaseRead!(); });
+  await settleUntil(() => text().includes("STEADY_A_WHILE_AWAY"), "A did not recover output written while B was selected");
   scenarios++;
 
   const submit = async (response: Partial<InstanceRuntimeCommandResult>, command: string) => {
@@ -464,6 +492,8 @@ async function run() {
   props.startupPending = true;
   props.startupBoundary = { instanceId: props.details.summary.id, startedAtUnixMs: startupTime,
     previousLogPaths: new Set([retained.source_path]) };
+  const startupCapture = beginRuntimeConsoleStartupCapture(props.details.summary.module_id, props.startupBoundary);
+  await startupCapture.ready;
   await act(async () => { render(); });
   await act(async () => {
     bridge.emit({ instance_id: props.details.summary.id, log_path: retained.source_path,
@@ -476,6 +506,37 @@ async function run() {
     lines: [], byte_offset: 0, emitted_at_unix_ms: startupTime + 1, stream_error: "CURRENT_STARTUP_DIAGNOSTIC" }); });
   check(text().includes("CURRENT_STARTUP_DIAGNOSTIC"), "The current startup's diagnostic must remain visible");
   scenarios++;
+  await act(async () => {
+    bridge.emit({ instance_id: props.details.summary.id, process_key: "master", log_path: "fixture/a-startup-master.log",
+      lines: ["STARTUP_A_MASTER"], byte_offset: 1, emitted_at_unix_ms: startupTime + 2 });
+    bridge.emit({ instance_id: props.details.summary.id, process_key: "caves", log_path: "fixture/a-startup-caves.log",
+      lines: ["STARTUP_A_CAVES"], byte_offset: 1, emitted_at_unix_ms: startupTime + 3 });
+  });
+  check(text().includes("[master] STARTUP_A_MASTER") && text().includes("[caves] STARTUP_A_CAVES"),
+    "Startup regression requires both owned shard streams");
+  const startupA = { ...props };
+  retained = snapshot("fixture/startup-b.log", ["STARTUP_B_ONLY"]);
+  props.details = { ...props.details, summary: { ...props.details.summary, id: "fixture-startup-b" },
+    active_run: { ...props.details.active_run!, run_id: 144, log_path: retained.source_path,
+      processes: [{ ...props.details.active_run!.processes![0], run_id: 144, log_path: retained.source_path }] } };
+  props.runtime = { ...props.runtime!, log_tail: retained };
+  props.startupPending = false;
+  props.startupBoundary = undefined;
+  await act(async () => { render(); });
+  await settleUntil(() => text().includes("STARTUP_B_ONLY"), "B did not mount while A was starting");
+  check(!text().includes("STARTUP_A_MASTER"), "A startup history leaked into B");
+  Object.assign(props, startupA);
+  await act(async () => { render(); });
+  check(text().includes("[master] STARTUP_A_MASTER") && text().includes("[caves] STARTUP_A_CAVES") && !text().includes("STARTUP_B_ONLY"),
+    "A to B to A discarded the pending startup's owned shard history");
+  check(text().includes("CURRENT_STARTUP_DIAGNOSTIC"),
+    "A to B to A discarded a metadata-only startup diagnostic");
+  await act(async () => { bridge.emit({ instance_id: props.details.summary.id, log_path: "fixture/new-startup.log",
+    lines: ["STARTUP_STREAM_RECOVERED"], byte_offset: 2, emitted_at_unix_ms: startupTime + 4 }); });
+  check(text().includes("STARTUP_STREAM_RECOVERED") && !text().includes("CURRENT_STARTUP_DIAGNOSTIC"),
+    "A healthy response from the same producer did not clear the restored startup diagnostic");
+  scenarios++;
+  startupCapture.dispose();
   await act(async () => { root.unmount(); });
   check(errors.length === 0, `Unexpected browser errors: ${errors.join("; ")}`);
   return { status: "passed", scenarios, reads, blocked_command_states: blockedCommandStates, browser_errors: errors };

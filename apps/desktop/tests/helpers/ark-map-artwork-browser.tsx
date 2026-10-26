@@ -126,6 +126,16 @@ async function run() {
   await render('TheIsland', 'arksurvivalevolved'); await settle(() => imageName() === 'The_Island_Topographic_Map.jpg', 'Restore a mapped edition');
   await render('TheIsland_WP', 'arksurvivalascended'); await settle(() => imageName() === 'The_Island_map_ASA.jpg', 'Final ASA terrain');
   await act(async () => element<HTMLButtonElement>('.ark-map-roster-list button').click());
+  await act(async () => {
+    const picker = element<HTMLSelectElement>('.ark-map-tool-picker select');
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!.call(picker, 'ark_give_item_to_player');
+    picker.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await act(async () => element<HTMLButtonElement>('.gmt-form .ark-map-use-player').click());
+  const actionBox = element('.gmt-form button[type="submit"]').getBoundingClientRect();
+  const listBox = element('.gmt-form .gmt-ark-catalog-results').getBoundingClientRect();
+  check(listBox.height >= 52 && listBox.bottom < actionBox.top && actionBox.bottom <= innerHeight - 16,
+    'Real artwork remains visible beside the compact catalog and fixed item actions');
   check(document.documentElement.scrollWidth <= innerWidth + 1, 'Artwork and source link have no horizontal overflow');
   check(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
   return { status: 'passed', checks, browser_errors: errors, artwork_evidence: evidence.real ? 'downloaded-wiki-images' : 'controlled-image-boundary', image_requests: requested.length };

@@ -1,0 +1,31 @@
+.gmt-ark-catalog-assist { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; min-width: 0; min-height: 0; }
+.gmt-ark-catalog-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
+.gmt-ark-catalog-search { width: 100%; min-width: 0; box-sizing: border-box; }
+.gmt-ark-catalog-status { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.gmt-ark-catalog-current { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--shell-muted); font-size: var(--text-meta); }
+.gmt-ark-catalog-pager { display: inline-flex; align-items: center; flex: none; height: 24px; margin-left: auto; overflow: hidden; border: 1px solid var(--shell-line); border-radius: 999px; color: var(--shell-muted); }
+.gmt-ark-catalog-page-btn { display: inline-grid; place-items: center; width: 24px; height: 22px; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.gmt-ark-catalog-page-btn:disabled { opacity: .36; cursor: default; }
+.gmt-ark-catalog-page-btn:not(:disabled):hover { color: var(--shell-focus); }
+.gmt-ark-catalog-page-btn svg { width: 13px; height: 13px; }
+.gmt-ark-catalog-page-label { min-width: 40px; padding: 0 4px; font-size: var(--text-meta); text-align: center; font-variant-numeric: tabular-nums; }
+.gmt-ark-catalog-results { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: 26px; align-content: start; gap: 2px; min-height: 0; overflow: hidden; }
+.gmt-ark-catalog-option { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; font: inherit; font-size: var(--text-meta); text-align: left; cursor: pointer; }
+.gmt-ark-catalog-option:hover, .gmt-ark-catalog-option--active { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+.gmt-ark-catalog-option-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 24px; }
+.gmt-ark-catalog-option code { flex: 0 1 48%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 24px; color: var(--shell-muted); }
+.gmt-ark-catalog-empty { margin: 0; color: var(--shell-muted); font-size: var(--text-meta); }
+.ark-spawn-dock { display: grid; flex: none; gap: 8px; min-width: 0; border-top: 1px solid var(--shell-line); padding-top: 8px; }
+.ark-spawn-options { min-width: 0; font-size: var(--text-meta); }
+.ark-spawn-options > summary { cursor: pointer; color: var(--shell-muted); }
+.ark-spawn-options[open] { max-height: 180px; overflow: auto; }
+.ark-spawn-options > .gmt-fields-grid { padding-block: 8px; }
+.ark-spawn-tool-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.secondary-button.ark-spawn-tool, .primary-button.ark-spawn-tool, .ark-spawn-setting { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 54px; padding: 6px 3px; border-radius: 8px; font-size: var(--text-meta); }
+.ark-spawn-tool svg { width: 18px; height: 18px; flex: none; }
+.ark-spawn-tool > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ark-spawn-tool[aria-pressed="true"] { border-color: var(--shell-focus); background: var(--shell-focus-soft); }
+.ark-spawn-setting { border: 1px solid var(--border); background: var(--theme-card-surface); color: var(--shell-muted); box-sizing: border-box; }
+.ark-spawn-setting input, .ark-spawn-setting select { width: 100%; min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--shell-text, inherit); font: inherit; text-align: center; font-variant-numeric: tabular-nums; outline-offset: 2px; }
+.ark-spawn-tool-grid .configuration-action-help { display: flex; min-width: 0; }
+.ark-spawn-tool-grid .configuration-action-help > button { width: 100%; }

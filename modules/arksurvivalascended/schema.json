@@ -1266,6 +1266,17 @@
       "x-lsgm-source-surface": "config_file",
       "minimum": 0
     },
+    "allow_variant_dino_packs": {
+      "type": "boolean",
+      "title": "Allow Creature Variants In Packs",
+      "description": "Allow variants of the same creature, such as Raptors and Aberrant Raptors, to count towards each other's pack or gang. Disabled by default.",
+      "default": false,
+      "x-lsgm-section": "balance",
+      "x-lsgm-order": 618,
+      "x-lsgm-source": "asa_server_patch_notes_v94_7",
+      "x-lsgm-source-key": "ServerSettings.AllowVariantDinoPacks",
+      "x-lsgm-source-surface": "config_file"
+    },
     "structure_resistance_multiplier": {
       "type": "number",
       "title": "Structure Resistance Multiplier",

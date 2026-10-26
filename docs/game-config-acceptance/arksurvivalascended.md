@@ -1078,3 +1078,63 @@
   }
 }
 ```
+
+## `2026-10-26-asa_server_patch_notes_v94_7.json`
+
+- Evidence: `best_effort_verified` at `2026-10-26` (build `Studio Wildcard official v94.7 server release (2026-09-30); deterministic native output contract only, no new game-server run`)
+- Sources: `asa_server_patch_notes_v94_7`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "admin_password": "fixture-admin-password",
+  "allow_variant_dino_packs": true,
+  "server_name": "LanGame ASA variant pack configuration",
+  "server_password": "fixture-server-password"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "fragments": [
+        "[ServerSettings]",
+        "AllowVariantDinoPacks=true"
+      ],
+      "path": "GameUserSettings.ini",
+      "root": "config"
+    },
+    {
+      "format": "ini",
+      "keys": {
+        "ServerSettings.AllowVariantDinoPacks": "true"
+      },
+      "path": "ShooterGame/Saved/Config/WindowsServer/GameUserSettings.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "TheIsland_WP?AltSaveDirectoryName=acceptance-arksurvivalascended?QueryPort=27015?MaxPlayers=30?SessionName=LanGame ASA variant pack configuration?RCONEnabled=true?RCONPort=27020",
+      "-port=7777",
+      "-QueryPort=27015",
+      "-WinLiveMaxPlayers=30",
+      "-NullRHI",
+      "-Unattended",
+      "-NoSplash",
+      "-abslog={{paths.logs_dir}}/ark-ascended-server.log",
+      "-servergamelog",
+      "-servergamelogincludetribelogs",
+      "-ServerRCONOutputTribeLogs",
+      "-NoTransferFromFiltering"
+    ],
+    "executable_suffix": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe"
+  }
+}
+```

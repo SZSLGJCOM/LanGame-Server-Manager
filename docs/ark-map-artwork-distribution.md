@@ -27,8 +27,8 @@
 
 ```powershell
 python -B scripts/prepare_ark_map_artwork.py `
-  --images-dir 'D:\LanGameTemp\artifacts\ark-auto-artwork-20261025\render-images' `
-  --output-dir 'D:\LanGameTemp\artifacts\ark-regional-artwork-20261025\publication-package'
+  --images-dir 'C:\ReleaseStaging\ark-map-artwork\images' `
+  --output-dir 'C:\ReleaseStaging\ark-map-artwork\publication-package'
 ```
 
 再次准备时指定另一个新的输出目录；工具拒绝覆盖，即使既有目录为空。`--catalog` 可以显式选择另一份经过审核的清单，默认读取源码中的权威清单。

@@ -59,13 +59,13 @@ function element<T extends HTMLElement = HTMLElement>(selector: string): T {
   const node = fixture.querySelector<T>(selector); if (!node) throw new Error(`Missing ${selector}`); return node;
 }
 function namedButton(name: string) {
-  const button = Array.from(fixture.querySelectorAll<HTMLButtonElement>("button")).find(node => node.textContent?.trim() === name);
+  const button = Array.from(fixture.querySelectorAll<HTMLButtonElement>("button")).find(node => (node.getAttribute('aria-label') || node.textContent?.trim()) === name);
   if (!button) throw new Error(`Missing button ${name}; rendered: ${fixture.textContent}`); return button;
 }
 async function click(node: HTMLElement) { await act(async () => { node.click(); }); }
 async function render(next: Partial<typeof props> = {}) {
   props = { ...props, ...next };
-  await act(async () => root.render(<StrictMode><I18nProvider><main style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
+  await act(async () => root.render(<StrictMode><I18nProvider><main style={{ padding: 24, maxWidth: 1000, margin: "0 auto", height: '100vh', boxSizing: 'border-box', display: 'flex' }}>
     <ArkCreatureSpawner {...props} /></main></I18nProvider></StrictMode>));
   const deadline = performance.now() + 5000;
   while (!fixture.querySelector(".ark-creature-spawner")) {
@@ -90,6 +90,24 @@ async function run() {
   await act(prepareBrowserLocaleCatalogs);
   await render();
   check(!namedButton("安装服务端扩展").disabled, "Stopped runtime must permit installation");
+  check(!element('.ark-creature-spawner__status').textContent?.includes('首次使用'), 'First-use instructions live in action help instead of the status line');
+  const installAnchor = namedButton('安装服务端扩展').closest<HTMLElement>('.configuration-action-help')!;
+  await act(async () => installAnchor.focus());
+  const tooltipUntil = performance.now() + 3000;
+  while (!document.querySelector('.configuration-field-help-tooltip.is-visible')) {
+    if (performance.now() > tooltipUntil) throw new Error('Install help did not open on keyboard focus');
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 15)); });
+  }
+  check(document.querySelector('.configuration-field-help-tooltip.is-visible')?.textContent?.includes('停服时安装')
+    && document.querySelector('.configuration-field-help-tooltip.is-visible')?.textContent?.includes('cdn.pelayori.com'),
+    'The install button bubble retains the stopped prerequisite and ASA download disclosure');
+  await act(async () => installAnchor.blur());
+  await render({ status: 'Running' });
+  check(namedButton('安装服务端扩展').disabled, 'The compact install action still rejects a running instance');
+  const runningAnchor = namedButton('安装服务端扩展').closest<HTMLElement>('.configuration-action-help')!;
+  const reason = document.getElementById(runningAnchor.getAttribute('aria-describedby')!);
+  check(reason?.textContent?.includes('请先停止实例'), 'The disabled action explains how to enable installation');
+  await render({ status: 'Stopped' });
   await click(namedButton("安装服务端扩展"));
   check(installs.length === 1 && installs[0].instanceId === "ark-a" && installs[0].allowMatchingSymbolsDownload,
     "Installation must pass the reviewed native request");
@@ -100,7 +118,7 @@ async function run() {
   await click(submit());
   check(spawnCalls.length === 0 && !element<HTMLFormElement>("form").checkValidity(), "Empty world coordinates must never dispatch");
   await input(element<HTMLInputElement>('input[type="search"]'), "rex");
-  check(Array.from(fixture.querySelectorAll(".ark-creature-spawner__choices button")).some(node => node.textContent?.includes("霸王龙")),
+  check(Array.from(fixture.querySelectorAll(".gmt-ark-catalog-option")).some(node => node.textContent?.includes("霸王龙")),
     "Real creature search must show translated names");
   await input(element<HTMLInputElement>(".ark-creature-spawner__saved input"), "回归测试霸王龙");
   await click(namedButton("收藏生物"));
@@ -114,7 +132,7 @@ async function run() {
   check(/^[a-f0-9]{32}$/.test(spawnCalls[0].requestId), "Spawn requests must have a unique correlation ID");
   check(element(resultSelector).textContent?.includes("ID 123:456"), "Native entity identity must be visible");
   check(clipboardCalls === 0, "One-click spawning must never copy an in-game command");
-  await input(element<HTMLSelectElement>(".ark-creature-spawner__coordinates select"), "true");
+  await input(element<HTMLSelectElement>(".ark-creature-spawner__parameters select"), "true");
   await click(submit());
   check(spawnCalls.length === 1, "Tamed creatures must require an online player ID");
   await input(element<HTMLInputElement>('input[max="4294967295"]'), "12345");
@@ -149,12 +167,16 @@ async function run() {
   holdStatus = false;
   await render({ settingsJson: JSON.stringify({ ...JSON.parse(props.settingsJson), status_revision: 3 }) });
   mode = "response";
-  await input(element<HTMLSelectElement>(".ark-creature-spawner__coordinates select"), "false");
+  await input(element<HTMLSelectElement>(".ark-creature-spawner__parameters select"), "false");
   await coordinates();
   await input(element<HTMLInputElement>('input[type="search"]'), "rex");
   await click(submit());
   const feedback = element(resultSelector);
-  feedback.scrollIntoView({ block: "nearest" });
+  await act(async () => { element<HTMLDetailsElement>('.ark-spawn-options').open = false; element<HTMLInputElement>('.gmt-ark-catalog-search').focus(); });
+  const catalogBox = element('.gmt-ark-catalog-results').getBoundingClientRect();
+  const actionBox = submit().getBoundingClientRect();
+  check(catalogBox.height >= 52 && catalogBox.bottom <= actionBox.top && actionBox.bottom <= innerHeight,
+    `Creature catalog and bottom actions fit independently: ${JSON.stringify({ catalog: catalogBox.toJSON(), action: actionBox.toJSON(), form: element('form').getBoundingClientRect().toJSON(), fieldset: element('fieldset').getBoundingClientRect().toJSON() })}`);
   check(feedback.textContent?.includes("已生成并读回确认") && feedback.textContent?.includes("ID 123:456"), "Verified result must remain inspectable");
   check(document.documentElement.scrollWidth <= innerWidth + 1, "ARK spawning must not overflow horizontally");
   check(errors.length === 0, `Browser errors: ${errors.join("; ")}`);

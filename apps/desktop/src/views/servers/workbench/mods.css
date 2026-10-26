@@ -231,10 +231,11 @@
 }
 
 .mw-mod-card {
+  --mw-mod-thumb-size: 108px;
   position: relative;
   display: grid;
-  grid-template-columns: 108px minmax(0, 1fr);
-  min-height: 108px;
+  grid-template-columns: var(--mw-mod-thumb-size) minmax(0, 1fr);
+  min-height: var(--mw-mod-thumb-size);
   border-radius: 9px;
   border: 1px solid color-mix(in srgb, var(--shell-line) 58%, transparent);
   background: color-mix(in srgb, var(--theme-card-muted) 84%, transparent);
@@ -313,8 +314,10 @@
   position: relative;
   display: block;
   width: 100%;
-  height: 100%;
-  min-height: 108px;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  align-self: start;
   overflow: hidden;
   background: color-mix(in srgb, var(--theme-card-elevated) 90%, transparent);
   border: none;
@@ -343,12 +346,15 @@
 }
 
 .mw-mod-quick-action {
+  --mw-mod-quick-action-size: 27px;
+  --mw-mod-quick-action-inset: 7px;
   position: absolute;
   z-index: 3;
-  left: 74px;
-  bottom: 7px;
-  width: 27px;
-  height: 27px;
+  /* Content can make the card taller; keep this action on its square thumbnail. */
+  left: calc(var(--mw-mod-thumb-size) - var(--mw-mod-quick-action-size) - var(--mw-mod-quick-action-inset));
+  top: calc(var(--mw-mod-thumb-size) - var(--mw-mod-quick-action-size) - var(--mw-mod-quick-action-inset));
+  width: var(--mw-mod-quick-action-size);
+  height: var(--mw-mod-quick-action-size);
   display: grid;
   place-items: center;
   padding: 0;
@@ -1950,8 +1956,10 @@ button.mw-store-detail-metric {
   display: grid;
   place-items: center;
   width: 92px;
-  height: 100%;
-  min-height: 92px;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  align-self: start;
   overflow: hidden;
   background: color-mix(in srgb, var(--theme-card-elevated) 90%, transparent);
 }
@@ -1960,6 +1968,8 @@ button.mw-store-detail-metric {
   display: block;
   width: 100%;
   height: 100%;
+  /* Portrait images must not enlarge the grid track's automatic minimum height. */
+  min-height: 0;
   object-fit: cover;
 }
 

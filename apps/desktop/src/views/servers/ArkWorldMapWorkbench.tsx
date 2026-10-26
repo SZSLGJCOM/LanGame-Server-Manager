@@ -84,10 +84,11 @@ export function ArkWorldMapWorkbench({ details, children }: Props) {
         <div className="ark-map-roster-heading"><strong>{text("在线玩家", "Online players")} · {snapshot?.players.length ?? 0}</strong>
           <span>{snapshot ? new Date(snapshot.sampledAtUnixMs).toLocaleTimeString(locale) : "—"}</span></div>
         <div className="ark-map-roster-list">{snapshot?.players.length ? snapshot.players.map(player => <button type="button" key={player.playerId}
-          disabled={!map.live} aria-pressed={selectedId === player.playerId} onClick={() => choose(player)}>
+          disabled={!map.live} aria-pressed={selectedId === player.playerId} onClick={() => choose(player)}
+          title={`${player.name || player.playerId} · PlayerID ${player.playerId}${player.x === null ? ` · ${text("无角色坐标", "no character coordinates")}` : ""}`}>
           <strong>{player.name || `Player ${player.playerId}`}</strong><span>PlayerID {player.playerId}{player.x === null ? ` · ${text("无角色坐标", "no character coordinates")}` : ""}</span>
         </button>) : <p>{status}</p>}</div>
-        {selected ? <div className="ark-map-selected"><span>{selected.name || selected.playerId} · PlayerID {selected.playerId}</span>
+        {selected ? <div className="ark-map-selected"><span title={selected.accountId || undefined}>{selected.name || selected.playerId} · PlayerID {selected.playerId}</span>
           <small>{selected.accountId ? `${text("平台账号", "Platform account")} ${selected.accountId}` : text("无平台账号", "No platform account")}</small>
           <div><button type="button" className="secondary-button" disabled={!livePlayer || livePlayer.x === null} aria-pressed={following}
             onClick={() => setFollowing(value => !value)}>{following ? text("停止跟随", "Stop following") : text("跟随玩家", "Follow player")}</button>

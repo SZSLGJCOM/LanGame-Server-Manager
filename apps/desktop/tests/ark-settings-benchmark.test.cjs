@@ -260,6 +260,11 @@ test("ARK edition contracts retain native value types and evidence-backed ranges
   assert.equal(asaProperties.supply_crate_loot_quality_multiplier.default, undefined);
   assert.equal(asaProperties.supply_crate_loot_quality_multiplier.minimum, undefined);
   assert.equal(asaProperties.supply_crate_loot_quality_multiplier.maximum, undefined);
+  assert.equal(aseProperties.allow_variant_dino_packs, undefined);
+  assert.equal(asaProperties.allow_variant_dino_packs.type, "boolean");
+  assert.equal(asaProperties.allow_variant_dino_packs.default, false);
+  assert.equal(asaProperties.allow_variant_dino_packs["x-lsgm-section"], "balance");
+  assert.equal(asaProperties.allow_variant_dino_packs["x-lsgm-source"], "asa_server_patch_notes_v94_7");
 });
 
 test("ARK controls render project-authored bilingual help while independent help remains available", () => {
@@ -275,7 +280,8 @@ test("ARK controls render project-authored bilingual help while independent help
     const t = (key, params, fallback) => String(catalog[key] ?? fallback ?? key).replace(
       /\{\s*([\w.]+)\s*\}/g, (match, name) => params?.[name] == null ? match : String(params[name])
     );
-    for (const [moduleId, key] of [["arksurvivalevolved", "crossplay"], ["arksurvivalascended", "always_tick_dedicated_skeletal_meshes"]]) {
+    for (const [moduleId, key] of [["arksurvivalevolved", "crossplay"], ["arksurvivalascended", "always_tick_dedicated_skeletal_meshes"],
+      ["arksurvivalascended", "allow_variant_dino_packs"]]) {
       const current = schema(moduleId);
       const expected = authoredHelp[moduleId][key][locale === "en-US" ? "en" : locale];
       assert.equal(current.properties[key].description, authoredHelp[moduleId][key].en);
@@ -302,7 +308,10 @@ test("ARK controls render project-authored bilingual help while independent help
       assert.match(html, /type="checkbox"/);
       assert.match(html, /role="tooltip"/);
       assert.match(html, /aria-describedby="[^"]+-description"/);
-      assert.ok(html.includes(expected.split(/[。.]/u)[0]), "Rendered help must explain the setting");
+      const expectedHelpHtml = renderToStaticMarkup(React.createElement(
+        React.Fragment, null, expected.split(/[。.]/u)[0]
+      ));
+      assert.ok(html.includes(expectedHelpHtml), "Rendered help must explain the setting");
       assert.doesNotMatch(html, /undefined|<span\b[^>]*>\s*<\/span>/);
       const cluster = parsed.fields.find((entry) => entry.key === "cluster_id");
       assert.ok(cluster?.description?.includes(locale === "zh-CN" ? "共享集群目录" : "shared cluster directory"),

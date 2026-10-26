@@ -28,7 +28,8 @@ export const ARK_ASA_RULE_GROUPS: Record<string, ArkGroupSpec[]> = {
         "use_singleplayer_settings",
         "show_creative_mode",
         "use_dino_level_up_animations",
-        "prevent_mate_boost"
+        "prevent_mate_boost",
+        "allow_variant_dino_packs"
       ]
     },
     {

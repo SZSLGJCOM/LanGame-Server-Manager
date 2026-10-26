@@ -5,7 +5,7 @@ import { describeError } from "../../app-state";
 import { moduleRequiresSteamCmd } from "../../module-installation-dependency";
 import { readInstanceLogDocument } from "../../api";
 import { createRuntimeLogRefresh } from "../../runtime-log-refresh";
-import { runtimeConsoleHistory } from "../../runtime-console-history";
+import { runtimeConsoleHistory, runtimeConsoleStartupHistoryScope } from "../../runtime-console-history";
 import { formatInstancePanelError, type InstancePanelLoadState } from "../../instance-panel-loader";
 import { selectLocaleText, useI18n, type TranslateFn } from "../../i18n";
 import {
@@ -13,10 +13,12 @@ import {
   collectRuntimeLogPaths,
   normalizeRuntimeLogPath,
   retainRuntimeLogHistory,
+  retainRuntimeLogStreamDiagnostic,
   retainNewestRuntimeGameDocument,
   RUNTIME_LOG_STREAM_EVENT,
   RUNTIME_SERVICE_EVENTS_RESET,
   type RuntimeLogStreamEvent,
+  type RuntimeLogStreamDiagnostic,
   type RuntimeLogStartupBoundary
 } from "../../runtime-log-stream";
 import { ShellIcon } from "../../components/ShellIcon";
@@ -253,7 +255,8 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const [processLogLoading, setProcessLogLoading] = useState(false);
   const [processLogError, setProcessLogError] = useState<{ scope: string; message: string } | null>(null);
   const [processLogRetryGeneration, setProcessLogRetryGeneration] = useState(0);
-  const [streamError, setStreamError] = useState<string | null>(null);
+  const [streamDiagnostic, setStreamDiagnostic] = useState<RuntimeLogStreamDiagnostic | null>(null);
+  const streamError = streamDiagnostic?.message ?? null;
   const [commandFeedback, setCommandFeedback] = useState<string | null>(null);
   const [commandPending, setCommandPending] = useState(false);
   const logRefreshRef = useRef<ReturnType<typeof createRuntimeLogRefresh<LogTailSnapshot>> | null>(null);
@@ -288,6 +291,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     setLiveLogSnapshot(null);
     setProcessLogLoading(false);
     setProcessLogError(null);
+    setStreamDiagnostic(null);
     setSuppressingWindows(false);
     setConsoleCopyState("idle");
     setCommandFeedback(null);
@@ -347,13 +351,21 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
   const historyScope = useMemo(() => ({ instanceId: props.details.summary.id, moduleId: props.details.summary.module_id,
     processKey: selectedConsoleTab?.processKey ?? null, runId: selectedConsoleRunId, source: ark ? arkLogSource : "default" }),
   [props.details.summary.id, props.details.summary.module_id, selectedConsoleTab?.processKey, selectedConsoleRunId, ark, arkLogSource]);
+  const startupHistoryScope = useMemo(() => startupPending && props.startupBoundary?.instanceId === props.details.summary.id
+    ? runtimeConsoleStartupHistoryScope(props.details.summary.module_id, props.startupBoundary) : null,
+  [startupPending, props.startupBoundary, props.details.summary.id, props.details.summary.module_id]);
   useEffect(() => {
-    if (startupPending) return;
+    if (startupPending) {
+      const cached = !readOnly && startupHistoryScope ? runtimeConsoleHistory.read(startupHistoryScope) : null;
+      setLiveLogSnapshot(cached);
+      setStreamDiagnostic(cached?.startup_stream_diagnostic ?? null);
+      return;
+    }
     const cached = readOnly ? null : runtimeConsoleHistory.read(historyScope);
     setProcessLogSnapshot(cached);
     setProcessLogReadScope(cached ? selectedLogReadScope : "");
     setLiveLogSnapshot(cached);
-  }, [selectedLogReadScope, historyScope, readOnly, startupPending]);
+  }, [selectedLogReadScope, historyScope, readOnly, startupPending, startupHistoryScope]);
   const selectedProcessLog = processLogReadScope === selectedLogReadScope ? processLogSnapshot : null;
   const selectedProcessLogError = processLogError?.scope === selectedLogReadScope ? processLogError.message : null;
   const selectedConsoleIsPrimary = Boolean(selectedConsoleTab?.isPrimary);
@@ -518,8 +530,10 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       ])
     } };
     observedLogPathsRef.current.paths.clear();
-    setLiveLogSnapshot(null);
-  }, [props.details.summary.id, startupPending, props.startupBoundary]);
+    setLiveLogSnapshot(runtimeConsoleHistory.read(runtimeConsoleStartupHistoryScope(
+      props.details.summary.module_id, startupBoundaryRef.current.value
+    )));
+  }, [props.details.summary.id, props.details.summary.module_id, startupPending, props.startupBoundary]);
 
   useEffect(() => {
     if (readOnly) return;
@@ -543,7 +557,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
     }
 
     let disposed = false;
-    setStreamError(null);
+    setStreamDiagnostic(startupHistoryScope ? runtimeConsoleHistory.read(startupHistoryScope)?.startup_stream_diagnostic ?? null : null);
     const unlisten = listen<RuntimeLogStreamEvent>(RUNTIME_LOG_STREAM_EVENT, (event) => {
       if (disposed) {
         return;
@@ -566,9 +580,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
         boundary.previousLogPaths.has(normalizeRuntimeLogPath(event.payload.log_path))
         || event.payload.emitted_at_unix_ms < boundary.startedAtUnixMs
       )) return;
-      if (typeof event.payload.stream_error === "string") {
-        setStreamError(event.payload.stream_error || "Console stream reported an unspecified error.");
-      }
+      setStreamDiagnostic(current => retainRuntimeLogStreamDiagnostic(current, event.payload));
       if (!startupPending && !event.payload.snapshot) {
         // The retained file may already contain this delayed batch. There is no
         // snapshot byte range/event identity with which to prove an append safe.
@@ -595,7 +607,9 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
         }
       ));
     }).catch((error: unknown) => {
-      if (!disposed) setStreamError(describeError(error));
+      if (!disposed) setStreamDiagnostic({ instanceId: props.details.summary.id,
+        processKey: selectedConsoleTab?.processKey ?? null, runId: selectedConsoleRunId,
+        logPath: normalizeRuntimeLogPath(runtimeLogSubscriptionPath), message: describeError(error) });
       console.warn("Runtime log subscription failed; periodic log refresh remains available.", error);
       return null;
     });
@@ -607,7 +621,7 @@ function GameRuntimeSurfaceWorkbench(props: RuntimeSurfaceWorkbenchProps) {
       });
     };
   }, [props.details.summary.id, readOnly, startupPending, runtimeLogSubscriptionPath, props.startupBoundary, processLogRetryGeneration,
-    selectedGameLog, selectedConsoleRunId, selectedConsoleTab?.processKey]);
+    selectedGameLog, selectedConsoleRunId, selectedConsoleTab?.processKey, startupHistoryScope]);
 
   useEffect(() => {
     if (readOnly || !isTauri()) return;

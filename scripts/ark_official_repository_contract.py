@@ -41,6 +41,7 @@ INI_TOKENS = {
     "Game.ini:[/script/shootergame.shootergamemode]": "additional_game_ini",
 }
 ASA_PATCH_GUS_ROWS = [
+    ("AllowVariantDinoPacks", "allow_variant_dino_packs", False, False, False),
     ("AnchoredVesselCheckRadius", "anchored_vessel_check_radius", False, False, False),
     ("MaxAnchoredVesselsInRange", "max_anchored_vessels_in_range", False, False, False),
     (
