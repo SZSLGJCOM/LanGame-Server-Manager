@@ -14,11 +14,11 @@
 .ark-map-player:focus-visible circle { stroke: white; }
 .ark-map-controls { position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 5px; padding: 3px; background: #101c26e8; border-radius: 6px; }
 .ark-map-controls button { min-height: 28px; padding: 3px 9px; }
-.ark-map-controls span { min-width: 42px; color: #c4d3dc; text-align: center; font-size: 12px; }
-.ark-map-caption { position: absolute; left: 14px; bottom: 43px; display: grid; gap: 3px; padding: 6px 8px; border-radius: 4px; background: #101c26d0; color: #d2e3ed; font-size: 12px; pointer-events: none; }
-.ark-map-caption strong { font-size: 18px; color: white; }
-.ark-map-state { position: absolute; left: 12px; bottom: 12px; right: 12px; background: #101c26e6; padding: 5px 8px; border-radius: 4px; color: #bdd1dd; font-size: 12px; }
-.ark-map-source { position: absolute; right: 10px; top: 12px; max-width: 40%; color: #d0e0e8; background: #101c26d0; font-size: 10px; padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ark-map-controls span { min-width: 42px; color: #c4d3dc; text-align: center; font-size: var(--text-meta); }
+.ark-map-caption { position: absolute; left: 14px; bottom: 43px; display: grid; gap: 3px; padding: 6px 8px; border-radius: 4px; background: #101c26d0; color: #d2e3ed; font-size: var(--text-meta); pointer-events: none; }
+.ark-map-caption strong { font-size: var(--text-section-title); color: white; }
+.ark-map-state { position: absolute; left: 12px; bottom: 12px; right: 12px; background: #101c26e6; padding: 5px 8px; border-radius: 4px; color: #bdd1dd; font-size: var(--text-meta); }
+.ark-map-source { position: absolute; right: 10px; top: 12px; max-width: 40%; color: #d0e0e8; background: #101c26d0; font-size: var(--text-meta); padding: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ark-map-source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .ark-map-source span { display: block; white-space: normal; }
 .ark-map-rail { min-width: 0; min-height: 0; overflow: hidden; overscroll-behavior: contain; padding: 10px 12px 12px 0; display: flex; flex-direction: column; gap: 8px; }

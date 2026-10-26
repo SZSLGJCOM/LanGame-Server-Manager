@@ -24,8 +24,7 @@ import {
   RUNTIME_VIEW_POLL_MS,
   SYSTEM_VIEW_BACKGROUND_POLL_MS,
   SYSTEM_VIEW_POLL_MS,
-  type RuntimeRefreshIssue,
-  type SelectedInstancePanelData
+  type RuntimeRefreshIssue
 } from "./app-state";
 import { message, resolveUiMessage, type UiMessage } from "./app-ui";
 import { mergeBootstrapSnapshot } from "./bootstrap-snapshot";
@@ -159,7 +158,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
   const [activity, setActivity] = useState<UiMessage>(message("activity.loadingDesktop"));
   const [libraryTaskPolling, setLibraryTaskPolling] = useState(false);
   const [runtimeRefreshMode, setRuntimeRefreshMode] = useState<"live" | "throttled">("live");
-  const [, setRuntimeLastUpdatedAt] = useState<number | null>(null);
   const [runtimeRefreshIssue, setRuntimeRefreshIssue] = useState<RuntimeRefreshIssue | null>(null);
   const [runtimeAutoRefreshPaused, setRuntimeAutoRefreshPaused] = useState(false);
   const [systemRefreshIssue, setSystemRefreshIssue] = useState<RuntimeRefreshIssue | null>(null);
@@ -610,7 +608,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
   }
 
   function markRuntimeRefreshed() {
-    setRuntimeLastUpdatedAt(Date.now());
     setRuntimeRefreshIssue(null);
     setRuntimeAutoRefreshPaused(false);
   }
@@ -645,11 +642,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     if (next.logDocument) setSelectedLogDocument(next.logDocument);
     if (next.launchPlan !== undefined) setSelectedLaunchPlan(next.launchPlan);
     if (next.launchPlanError !== undefined) setSelectedLaunchPlanError(next.launchPlanError);
-  }
-
-  function replaceSelectedInstancePanel(next: SelectedInstancePanelData) {
-    applySelectedInstancePanel(next);
-    markRuntimeRefreshed();
   }
 
   const handleRuntimeRefreshModeChange = useEffectEvent((mode: "live" | "throttled") => {
@@ -690,9 +682,9 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
   });
 
   const handleSelectedPanelLoaded = useEffectEvent((instanceId: string, payload: InstancePanelPatch) => {
-    if (retirement.isPending(instanceId) || selectedInstanceCursor.current() !== instanceId) return;
+    if (retirement.isPending(instanceId) || !getCurrentBootstrap().state.instances.some((instance) => instance.id === instanceId)) return;
     cacheInstancePanel(instanceId, payload);
-    applySelectedInstancePanel(payload);
+    if (selectedInstanceCursor.current() === instanceId) applySelectedInstancePanel(payload);
   });
 
   const handleSelectedPanelProgress = useEffectEvent((state: InstancePanelLoadState) => {
@@ -1480,7 +1472,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     retirement,
     refreshInstallationState,
     bindAddressCandidates,
-    cacheInstancePanel,
     clearSelectedInstancePanel,
     getCurrentInstanceId: () => selectedInstanceCursor.current(),
     instanceBackupsById,
@@ -1488,7 +1479,9 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     markRuntimeRefreshed,
     modules,
     openInstanceView,
-    replaceSelectedInstancePanel,
+    onPanelLoaded: handleSelectedPanelLoaded,
+    onPanelProgress: handleSelectedPanelProgress,
+    onPanelSettled: handleSelectedPanelSettled,
     reloadBootstrap,
     selectedInstanceId,
     setActivity,

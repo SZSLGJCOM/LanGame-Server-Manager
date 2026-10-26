@@ -1,5 +1,5 @@
 use super::*;
-use crate::{build_launch_plan, build_launch_plan_with_override};
+use crate::build_launch_plan_with_override;
 use app_core::{InstanceDetails, InstanceStatus, InstanceSummary, ModuleDetails};
 use std::path::PathBuf;
 
@@ -125,7 +125,7 @@ fn romestead_portable_runtime_follows_configured_tools_across_launch_roots() {
         write_runtime_config(root, "8.0.0");
         fs::write(root.join("Server.exe"), b"fixture").unwrap();
         let plan = if root == &fixture.install {
-            build_launch_plan(&fixture.settings, &module, &instance).unwrap()
+            build_launch_plan_with_override(&fixture.settings, &module, &instance, None).unwrap()
         } else {
             build_launch_plan_with_override(&fixture.settings, &module, &instance, root.to_str())
                 .unwrap()

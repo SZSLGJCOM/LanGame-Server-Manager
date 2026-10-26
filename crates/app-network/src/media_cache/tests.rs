@@ -5,10 +5,10 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 mod fixtures;
 use fixtures::*;
 
-#[path = "pinned_image_tests.rs"]
-mod pinned_image_tests;
 #[path = "live_image_tests.rs"]
 mod live_image_tests;
+#[path = "pinned_image_tests.rs"]
+mod pinned_image_tests;
 
 #[test]
 fn ark_wiki_artwork_cache_accepts_only_reviewed_images() {

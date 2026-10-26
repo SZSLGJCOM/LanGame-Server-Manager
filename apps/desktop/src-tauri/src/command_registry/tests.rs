@@ -91,3 +91,19 @@ fn dst_world_regeneration_completes_under_runtime_ownership() {
         Completion::Owned
     );
 }
+
+#[test]
+fn installation_and_save_mutations_keep_completion_ownership() {
+    for name in [
+        "ensure_steamcmd_ready",
+        "create_instance_backup",
+        "delete_instance_backup",
+        "restore_instance_backup",
+        "import_dontstarve_world_data",
+    ] {
+        let command = find(name).unwrap();
+        assert_eq!(command.execution, Execution::Runtime, "{name}");
+        assert_eq!(command.lan, LanAccess::Allowed, "{name}");
+        assert_eq!(command.completion, Completion::Owned, "{name}");
+    }
+}

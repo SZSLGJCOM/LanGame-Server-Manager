@@ -385,13 +385,14 @@ fn validate_fixture_launch_plan(
             ports: module.default_ports.clone(),
             active_run: None,
         };
-        let plan = build_launch_plan(&settings, &module_details, &instance).map_err(|error| {
-            format!(
-                "failed to build launch plan for {} at {}: {error}",
-                module.summary.id,
-                fixture_path.display()
-            )
-        })?;
+        let plan = build_launch_plan_with_override(&settings, &module_details, &instance, None)
+            .map_err(|error| {
+                format!(
+                    "failed to build launch plan for {} at {}: {error}",
+                    module.summary.id,
+                    fixture_path.display()
+                )
+            })?;
         if let Some(issue) = plan
             .validation_issues
             .iter()

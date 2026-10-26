@@ -87,7 +87,7 @@ function actions(owner) {
     "../server-start-error": { readModuleNotReadyError: () => null, serverStartFailureMessage: (error) => ({ error: error.message }),
       serverStartSuccessMessage: (_result, id) => ({ key: "activity.serverStartSent", params: { id } }) },
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => owner },
-    "../install-state-presentation": {}, "../instance-panel-refresh": {}
+    "../install-state-presentation": {}, "../instance-panel-loader": {}
   };
   const exports = {};
   vm.runInNewContext(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), {

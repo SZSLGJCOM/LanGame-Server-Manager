@@ -1,13 +1,14 @@
 Third-Party Asset Redistribution Ledger
 =======================================
 
-Approved entries: Inter 4.1 variable UI fonts (see below).
+Licensed build assets: Inter 4.1 variable UI fonts (see below).
+Reference game media: versioned ARK map artwork (see below).
 
-Approval applies only to the exact files listed below. This file does not
+Registrations apply only to the exact files listed below. This file does not
 infer permission from public availability, a download URL, a game
 installation, or an upstream product relationship.
 
-Before an asset can be listed here, its entry must identify all of the
+Each licensed build asset entry must identify all of the
 following:
 
 * exact repository path;
@@ -17,9 +18,10 @@ following:
 * required attribution or notice text; and
 * date on which the evidence was verified.
 
-Unknown, unverified, or proprietary assets must remain outside a public
-snapshot. Product names and trademarks remain the property of their respective
-owners.
+Unlisted assets remain outside a public snapshot. Reference game media is
+recorded separately from licensed build assets and retains its upstream rights
+notices; listing it does not grant a license or certify legal clearance.
+Product names and trademarks remain the property of their respective owners.
 
 Inter 4.1 variable UI fonts
 --------------------------
@@ -75,3 +77,20 @@ or add it to an installer on the strength of the network allowlist.
 The separately licensed Minecraft fallback illustration is recorded in NOTICE.
 Its reported in-house/AI creation does not license third-party game elements.
 Neither that record nor this ledger declares all game media cleared for release.
+
+ARK map reference media
+-----------------------
+
+The 19 JPEG files below assets/ark-map-artwork/2026-10-25/ are reference media
+for the ARK workbench. Their exact paths, original image URLs, source file-page
+links, dimensions and SHA-256 are recorded in that directory's manifest.json.
+Retain assets/ark-map-artwork/2026-10-25/NOTICE.md with every selected image.
+The publication checker pins each image and that notice to their recorded bytes.
+
+The images retain their original rights holders and file-page notices, including
+game-artwork copyright, fair-use statements and public-domain declarations.
+They are not first-party LanGame artwork, are not covered by the project's code
+license, and are not embedded in the application or its installers. The client
+loads the versioned resources on demand, with ARK Wiki as a fallback. This ledger
+records provenance and distribution identity; it does not establish that every
+downstream use, including commercial redistribution, has been licensed.

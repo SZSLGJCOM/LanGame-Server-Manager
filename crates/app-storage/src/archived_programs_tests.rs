@@ -199,9 +199,14 @@ async fn archived_only_program_seeds_without_acquisition_and_preserves_every_arc
     assert_eq!(sources[0].archive_id, fixture.archive_id);
     assert_eq!(sources[0].install_root, fixture.archive.join("runtime"));
     assert_eq!(sources[0].current_version.as_deref(), Some("build-17"));
-    let seed = crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None)
-        .await
-        .unwrap();
+    let seed = crate::prepare_clean_library_seed_at(
+        &fixture.paths,
+        &fixture.descriptor,
+        &fixture.paths.games_root.join("fixture"),
+        None,
+    )
+    .await
+    .unwrap();
     assert!(!seed.requires_validation);
     assert_eq!(seed.current_version.as_deref(), Some("build-17"));
     assert_eq!(
@@ -234,9 +239,14 @@ async fn changed_archived_payload_is_never_certified_and_its_original_bytes_are_
     )
     .unwrap();
     let before = tree_snapshot(&fixture.archive).unwrap();
-    let seed = crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None)
-        .await
-        .unwrap();
+    let seed = crate::prepare_clean_library_seed_at(
+        &fixture.paths,
+        &fixture.descriptor,
+        &fixture.paths.games_root.join("fixture"),
+        None,
+    )
+    .await
+    .unwrap();
     assert!(seed.requires_validation);
     assert!(seed.current_version.is_none());
     assert!(!seed.install_root.join("server.bin").exists());
@@ -255,9 +265,14 @@ async fn archived_program_without_an_official_manifest_remains_unproven() {
     let fixture = Fixture::new().await;
     fs::remove_file(fixture.archive.join("runtime/.langame-clean-package.json")).unwrap();
     let before = tree_snapshot(&fixture.archive).unwrap();
-    let seed = crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None)
-        .await
-        .unwrap();
+    let seed = crate::prepare_clean_library_seed_at(
+        &fixture.paths,
+        &fixture.descriptor,
+        &fixture.paths.games_root.join("fixture"),
+        None,
+    )
+    .await
+    .unwrap();
     assert!(seed.requires_validation);
     assert!(seed.current_version.is_none());
     assert!(!seed.install_root.join("server.bin").exists());
@@ -314,9 +329,14 @@ async fn a_live_independent_program_keeps_priority_over_an_archived_build() {
     pool.close().await;
     // A usable private source must not touch the unrelated archive catalog.
     let _inventory = inventory_lock(&fixture.paths).unwrap();
-    let seed = crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None)
-        .await
-        .unwrap();
+    let seed = crate::prepare_clean_library_seed_at(
+        &fixture.paths,
+        &fixture.descriptor,
+        &fixture.paths.games_root.join("fixture"),
+        None,
+    )
+    .await
+    .unwrap();
     assert!(!seed.requires_validation);
     assert_eq!(seed.current_version.as_deref(), Some("build-18"));
     assert_eq!(
@@ -486,7 +506,13 @@ async fn archive_source_lease_survives_cancellation_of_a_seed_waiter() {
     let descriptor = fixture.descriptor.clone();
     let token = Arc::clone(&cancellation);
     let worker = tokio::spawn(async move {
-        crate::prepare_clean_library_seed(&paths, &descriptor, Some(token)).await
+        crate::prepare_clean_library_seed_at(
+            &paths,
+            &descriptor,
+            &paths.games_root.join("fixture"),
+            Some(token),
+        )
+        .await
     });
     pause.reached().await;
     worker.abort();

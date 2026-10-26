@@ -48,12 +48,6 @@ export interface PlayerCenterState {
   instanceId: string;
   selectedPlayerKey: string | null;
   snapshot: RuntimeLivePlayerSnapshot | null;
-  requestGeneration: number;
-}
-
-export interface PlayerCenterRequestToken {
-  instanceId: string;
-  generation: number;
 }
 
 export interface PlayerCenterViewModel {
@@ -109,8 +103,7 @@ export function createPlayerCenterState(input: CreatePlayerCenterStateInput): Pl
   return {
     instanceId: input.instanceId,
     selectedPlayerKey: null,
-    snapshot,
-    requestGeneration: 0
+    snapshot
   };
 }
 
@@ -126,8 +119,7 @@ export function reducePlayerCenterState(
       return {
         instanceId: event.instanceId,
         selectedPlayerKey: null,
-        snapshot: nextSnapshot,
-        requestGeneration: state.requestGeneration + 1
+        snapshot: nextSnapshot
       };
     }
     case "player-selected": {
@@ -150,42 +142,6 @@ export function reducePlayerCenterState(
         selectedPlayerKey: reconcileSelectedPlayerKey(event.snapshot, state.selectedPlayerKey)
       };
   }
-}
-
-export function beginPlayerCenterRequest(state: PlayerCenterState): {
-  state: PlayerCenterState;
-  token: PlayerCenterRequestToken;
-} {
-  const generation = state.requestGeneration + 1;
-  return {
-    state: {
-      ...state,
-      requestGeneration: generation
-    },
-    token: {
-      instanceId: state.instanceId,
-      generation
-    }
-  };
-}
-
-export function completePlayerCenterRequest(
-  state: PlayerCenterState,
-  token: PlayerCenterRequestToken,
-  snapshot: RuntimeLivePlayerSnapshot
-): PlayerCenterState {
-  if (
-    token.generation !== state.requestGeneration
-    || token.instanceId !== state.instanceId
-    || snapshot.instance_id !== state.instanceId
-  ) {
-    return state;
-  }
-
-  return reducePlayerCenterState(state, {
-    type: "snapshot-received",
-    snapshot
-  });
 }
 
 function hasFutureExpiry(snapshot: RuntimeLivePlayerSnapshot, now: number): boolean {

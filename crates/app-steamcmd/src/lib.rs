@@ -659,18 +659,6 @@ impl GameInstallLifecycleGuard {
 #[must_use = "dropping this guard releases the SteamCMD runtime locks"]
 pub struct SteamCmdLifecycleGuard(ResourceLocks);
 
-pub async fn acquire_steamcmd_lifecycle(
-    lock_context: &InstallLockContext,
-    settings: &AppSettings,
-) -> Result<SteamCmdLifecycleGuard, SteamCmdError> {
-    acquire_steamcmd_operation(
-        lock_context,
-        settings,
-        InstallDeadline::new("SteamCMD lifecycle change", GAME_INSTALL_LIFECYCLE_TIMEOUT),
-    )
-    .await
-}
-
 async fn acquire_steamcmd_operation(
     lock_context: &InstallLockContext,
     settings: &AppSettings,
@@ -1205,35 +1193,6 @@ fn parse_quoted_key_value_line(line: &str) -> Option<(String, String)> {
     } else {
         None
     }
-}
-
-/// The caller retains the lifecycle lease across dependency checks, downloading
-/// and deployment so an archive cannot begin relying on files being replaced.
-pub async fn download_workshop_items_with_progress<F>(
-    settings: &AppSettings,
-    consumer_app_id: u32,
-    install_root: &Path,
-    ids: &[String],
-    guard: &GameInstallLifecycleGuard,
-    steamcmd_guard: &SteamCmdLifecycleGuard,
-    on_progress: F,
-) -> Result<SteamWorkshopDownloadResult, SteamCmdError>
-where
-    F: FnMut(InstallProgressUpdate),
-{
-    download_workshop_items_with_login_and_progress(
-        settings,
-        SteamWorkshopDownloadRequest {
-            consumer_app_id,
-            install_root,
-            ids,
-            account_name: None,
-        },
-        guard,
-        steamcmd_guard,
-        on_progress,
-    )
-    .await
 }
 
 pub struct SteamWorkshopDownloadRequest<'a> {

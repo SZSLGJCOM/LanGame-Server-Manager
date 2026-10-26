@@ -85,12 +85,12 @@ RSDWTools/Dev Kit 仅用于发现可观察的游戏 API 线索。本实现不复
 
 隔离的 Steam 专服 build `25811348`，Windows depot `4019831`、manifest `201953044557705869`，Shipping 可执行文件 SHA-256 为 `89ed65335a46db067a361d35ae4e6be80857a4c1f2453510600d632879dfbeed`，UE 版本为 `5.6.1-248854`。沿用上表中的官方 `1125` 核心，按本目录脚本重建代理，未升级加载器或修改生产 Lua：
 
-- 本轮代理 SHA-256 为 `cdd3cf56d2af50dc35deef48e0fef4e3d56e922e0262d209d86d368c86351d6f`，大小 448,512 字节；32 个固定源码均通过 SHA-256 与 Git blob 校验，构建退出码为 0。17 个导出名称及序号与本机已验签的 `version.dll` 相符，依赖仍仅为 `KERNEL32.dll`、`USER32.dll` 和 `SHELL32.dll`。
+- 复验代理 SHA-256 为 `cdd3cf56d2af50dc35deef48e0fef4e3d56e922e0262d209d86d368c86351d6f`，大小 448,512 字节；32 个固定源码均通过 SHA-256 与 Git blob 校验，构建退出码为 0。17 个导出名称及序号与本机已验签的 `version.dll` 相符，依赖仍仅为 `KERNEL32.dll`、`USER32.dll` 和 `SHELL32.dll`。
 - 生产 `LgsmPlayerQuery/Scripts/main.lua` 的 SHA-256 为 `0bda4f9149c9ff8a6c2f3c8854165bea1f77c0c0bfab8fb65f7987f71485d3e4`，与仓库原脚本逐字节一致。
 - 原生测试 `isolated_dragonwilds_bootstrap_reads_two_current_empty_snapshots_and_rejects_stopped_process` 通过生产 `spawn_launch_plan` 启动 `RSDragonwildsServer.exe` 并确认进程归属；两个不同请求标识分别取得 `complete=true`、`current_players=0`、`players=[]` 的当前响应，均通过 Rust 严格解析。停止受控进程树后，读取器拒绝旧 PID。
-- 本轮该测试通过 1 项、失败 0 项，测试进程退出码 0、用时 8.08 秒；收尾核对所属进程残留为 0，临时盘符映射已移除。
+- 该复验通过 1 项、失败 0 项，测试进程退出码 0、用时 8.08 秒；收尾核对所属进程残留为 0，临时盘符映射已移除。
 
-本轮证据限于新版加载器和当前空名单通道，不代表桌面实例启停、自动保存、备份、全部设置或任一客户端已验收。没有进行真实多人加入、退出、重连、账号认证或服主权限测试。下面的 28 个 Lua 构造用例和重启观测属于 2026-09-08 的历史结果，本轮未重跑。机器记录以 `evidence.json` 的 `revalidations` 数组保存，本轮未记录具体请求标识或 `boot_id`。
+2026-10-15 的复验证据限于新版加载器和当前空名单通道，不代表桌面实例启停、自动保存、备份、全部设置或任一客户端已验收。没有进行真实多人加入、退出、重连、账号认证或服主权限测试。下面的 28 个 Lua 构造用例和重启观测属于 2026-09-08 的历史结果，2026-10-15 未重跑。机器记录以 `evidence.json` 的 `revalidations` 数组保存，该次复验未记录具体请求标识或 `boot_id`。
 
 ### 2026-09-08：历史验证
 

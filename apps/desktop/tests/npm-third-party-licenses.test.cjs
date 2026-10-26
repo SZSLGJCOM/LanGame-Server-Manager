@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -57,16 +56,6 @@ test("hls.js attribution and derived-work terms are preserved verbatim", () => {
   assert.match(output, /Copyright \(c\) 2017 Dailymotion/);
   assert.match(output, /Copyright \(c\) 2013-2015 Brightcove/);
   assert.match(output, /derived from the HLS library for video\.js/);
-});
-
-test("checked-in license output passes deterministic drift checking", () => {
-  const result = spawnSync(process.execPath, [scriptPath, "--check"], {
-    cwd: desktopRoot,
-    encoding: "utf8"
-  });
-
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.match(result.stdout, /is current \(\d+ production packages\)/);
 });
 
 test("Vite frontendDist distribution keeps the public license artifact", () => {

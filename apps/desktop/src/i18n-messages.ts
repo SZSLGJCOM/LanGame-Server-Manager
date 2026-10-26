@@ -231,6 +231,7 @@ const baseEnUs: MessageCatalog = {
   "activity.settingsSaved": "Settings saved: {name}",
   "activity.saveSettingsFailed": "Failed to save settings: {message}",
   "activity.settingsRefreshFailed": "Settings were saved, but the view could not refresh: {message}",
+  "activity.operationRefreshFailed": "{message} The view could not refresh: {refreshMessage}",
   "activity.settingsBaselineMissing": "The current server settings are not loaded. Reload the server and retry.",
   "activity.playerAccessRefreshFailed": "Player access was updated, but the view could not refresh: {message}",
   "activity.backingUpSaves": "Creating save backup for {id}...",

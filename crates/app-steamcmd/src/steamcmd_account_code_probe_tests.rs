@@ -349,9 +349,13 @@ async fn probe(root: &Path, source: &Path, report: &mut Report) -> Result<(), &'
         steamcmd_root: root.to_string_lossy().into_owned(),
         ..AppSettings::default()
     };
-    let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &settings)
-        .await
-        .map_err(|_| "isolated_lock_failed")?;
+    let guard = acquire_steamcmd_operation(
+        test_install_lock_context(),
+        &settings,
+        InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+    )
+    .await
+    .map_err(|_| "isolated_lock_failed")?;
     let bridge = crate::steamcmd_update_bridge::UpdateBridge::for_managed_root(
         root,
         InstallDeadline::new("isolated code probe", Duration::from_secs(90)),

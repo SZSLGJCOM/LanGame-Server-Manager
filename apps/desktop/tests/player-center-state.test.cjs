@@ -13,8 +13,6 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
 };
 
 const {
-  beginPlayerCenterRequest,
-  completePlayerCenterRequest,
   createPlayerCenterState,
   deriveLivePlayerPresentation,
   derivePlayerCenterViewModel,
@@ -203,42 +201,6 @@ test("selection is scoped by player_key and clears when a replacement snapshot r
     playerKey: duplicateName
   });
   assert.equal(state.selectedPlayerKey, null, "display names are never accepted as row identity");
-});
-
-test("instance and request generations reject obsolete snapshot completions", () => {
-  let state = createPlayerCenterState({ instanceId: "server-a" });
-  const older = beginPlayerCenterRequest(state);
-  state = older.state;
-  const newer = beginPlayerCenterRequest(state);
-  state = newer.state;
-
-  const unchanged = completePlayerCenterRequest(
-    state,
-    older.token,
-    snapshot({ snapshot_id: "older" })
-  );
-  assert.equal(unchanged.snapshot, null);
-
-  state = completePlayerCenterRequest(
-    unchanged,
-    newer.token,
-    snapshot({ snapshot_id: "newer" })
-  );
-  assert.equal(state.snapshot.snapshot_id, "newer");
-
-  const pendingA = beginPlayerCenterRequest(state);
-  state = reducePlayerCenterState(pendingA.state, {
-    type: "instance-changed",
-    instanceId: "server-b"
-  });
-  state = completePlayerCenterRequest(
-    state,
-    pendingA.token,
-    snapshot({ snapshot_id: "late-a" })
-  );
-  assert.equal(state.instanceId, "server-b");
-  assert.equal(state.snapshot, null);
-  assert.equal(state.selectedPlayerKey, null);
 });
 
 test("fresh authoritative snapshots schedule exactly one expiry refresh", async () => {

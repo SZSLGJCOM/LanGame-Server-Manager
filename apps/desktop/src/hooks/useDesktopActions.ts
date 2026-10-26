@@ -28,9 +28,7 @@ import {
 } from "../api";
 import {
   describeError,
-  loadInstancePanelData,
-  resolveSelectedId,
-  type SelectedInstancePanelData
+  resolveSelectedId
 } from "../app-state";
 import { message, programCleanupDetails, type UiMessage } from "../app-ui";
 import { useSteamCmdActions, type SteamCmdActionOptions } from "./useSteamCmdActions";
@@ -38,7 +36,7 @@ import { isInstallationCancelled } from "../installation-cancellation";
 import { runSteamInstallationWithAccount, type SteamInstallationAccountContext } from "../steam-installation-account";
 import { useI18n } from "../i18n";
 import { formatInstallState } from "../install-state-presentation";
-import { refreshInstancePanelForCurrentSelection } from "../instance-panel-refresh";
+import { instancePanelReader, type InstancePanelLoadState, type InstancePanelPatch } from "../instance-panel-loader";
 import type { InstallationSnapshot } from "../library-installation-refresh";
 import { readModuleNotReadyError, serverStartFailureMessage, serverStartSuccessMessage } from "../server-start-error";
 import { useInstanceSettingsSaveCoordinator } from "../views/settings/InstanceSettingsSaveContext";
@@ -50,8 +48,10 @@ import type {
   DstWorldStartPreview,
   ExecuteInstancePlayerActionInput,
   ExecuteInstancePlayerActionResult,
+  InstanceBackupRestoreResult,
   InstanceBackupResult,
   InstanceDetails,
+  InstanceProvisioning,
   InstancePlayerAccessMutationInput,
   InstancePlayerAccessMutationResult,
   InstanceRuntimeOverview,
@@ -61,6 +61,7 @@ import type {
   SaveInstanceSettingsOptions,
   RuntimeWindowSuppressionResult,
   ServerWorkspaceSection,
+  StartInstanceResult,
   UpdateInstanceInput,
 } from "../types";
 
@@ -188,7 +189,6 @@ export function useLibraryActions(options: LibraryActionOptions) {
 interface InstanceActionOptions extends SharedActionOptions {
   retirement: ReturnType<typeof useInstanceRetirement>;
   bindAddressCandidates: BindAddressCandidate[];
-  cacheInstancePanel: (instanceId: string, payload: SelectedInstancePanelData) => void;
   clearSelectedInstancePanel: () => void;
   getCurrentInstanceId: () => string | null;
   instanceBackupsById: Partial<Record<string, InstanceBackupResult[]>>;
@@ -196,7 +196,9 @@ interface InstanceActionOptions extends SharedActionOptions {
   markRuntimeRefreshed: () => void;
   modules: ModuleSummary[];
   openInstanceView: (section: ServerWorkspaceSection, instanceId: string) => void;
-  replaceSelectedInstancePanel: (payload: SelectedInstancePanelData) => void;
+  onPanelLoaded: (instanceId: string, payload: InstancePanelPatch) => void;
+  onPanelProgress: (state: InstancePanelLoadState) => void;
+  onPanelSettled: (state: InstancePanelLoadState) => void;
   selectedInstanceId: string | null;
   setInstanceBackupsById: Setter<Partial<Record<string, InstanceBackupResult[]>>>;
   setInstanceDetailsById: Setter<Partial<Record<string, InstanceDetails>>>;
@@ -211,15 +213,42 @@ export function useInstanceActions(options: InstanceActionOptions) {
   const creationRequests = useRef(new Map<string, { promise: Promise<void>; startedAt: number }>());
   const [creatingModuleIds, setCreatingModuleIds] = useState<ReadonlySet<string>>(() => new Set());
 
+  function reportOperationRefreshFailure(completed: UiMessage, error: unknown) {
+    options.setActivity(message("activity.operationRefreshFailed", {
+      message: t(completed.key, completed.params, completed.fallback),
+      refreshMessage: describeError(error)
+    }, { tone: "warning", runtimeStartNotice: completed.runtimeStartNotice }));
+  }
+
   async function refreshInstancePanelAfterMutation(instanceId: string, refreshBootstrap = true) {
-    const panelPromise = loadInstancePanelData(instanceId);
-    await refreshInstancePanelForCurrentSelection(instanceId, () => panelPromise, {
-      getCurrentInstanceId: options.getCurrentInstanceId,
-      cacheInstancePanel: options.cacheInstancePanel,
-      replaceSelectedInstancePanel: options.replaceSelectedInstancePanel,
-      reloadBootstrap: refreshBootstrap ? () => options.reloadBootstrap() : undefined
-    });
-    return panelPromise;
+    const controller = new AbortController();
+    let panel: InstancePanelPatch = {};
+    // A poll started before persistence cannot acknowledge the mutation. Reuse
+    // its native slot, then read fresh state through the same bounded reader.
+    instancePanelReader.invalidate(instanceId);
+    try {
+      const state = await instancePanelReader.load(instanceId, {
+        signal: controller.signal,
+        onUpdate: (patch) => {
+          panel = { ...panel, ...patch };
+          options.onPanelLoaded(instanceId, patch);
+        },
+        onProgress: options.onPanelProgress
+      });
+      options.onPanelSettled(state);
+      const errors = Object.values(state.errors).filter((error): error is string => Boolean(error));
+      if (refreshBootstrap) {
+        try {
+          await options.reloadBootstrap();
+        } catch (error) {
+          errors.push(describeError(error));
+        }
+      }
+      if (errors.length) throw new Error(errors.join("\n"));
+      return panel;
+    } finally {
+      controller.abort();
+    }
   }
 
   function summarizeWindowSuppressionResult(result: RuntimeWindowSuppressionResult) {
@@ -300,15 +329,22 @@ export function useInstanceActions(options: InstanceActionOptions) {
     // a remounted library panel share the original creation request.
     const creation = Promise.resolve().then(async () => {
       options.setActivity(message("activity.creatingServer", { moduleId: input.module_id, name: input.name }));
+      let provisioning: InstanceProvisioning;
       try {
-        const provisioning = await createInstance(input);
-        await options.reloadBootstrap({ moduleId: input.module_id, instanceId: provisioning.summary.id });
-        options.openInstanceView("settings", provisioning.summary.id);
-        options.setActivity(message("activity.serverCreated", { name: provisioning.summary.name }));
+        provisioning = await createInstance(input);
       } catch (error) {
         options.setActivity(isInstallationCancelled(error)
           ? message("activity.serverCreationCancelled")
           : message("activity.createServerFailed", { message: describeError(error) }));
+        return;
+      }
+      const completed = message("activity.serverCreated", { name: provisioning.summary.name });
+      try {
+        await options.reloadBootstrap({ moduleId: input.module_id, instanceId: provisioning.summary.id });
+        options.openInstanceView("settings", provisioning.summary.id);
+        options.setActivity(completed);
+      } catch (error) {
+        reportOperationRefreshFailure(completed, error);
       }
     });
     creationRequests.current.set(input.module_id, { promise: creation, startedAt: Date.now() });
@@ -323,15 +359,11 @@ export function useInstanceActions(options: InstanceActionOptions) {
 
   async function handleStartServer(instanceId: string, expectedWorldStart?: DstWorldStartPreview) {
     options.setActivity(message("activity.startingServer", { id: instanceId }));
+    let result: StartInstanceResult;
     try {
       await settingsSaveCoordinator.flush(instanceId);
-      const result = expectedWorldStart
+      result = expectedWorldStart
         ? await startInstance(instanceId, expectedWorldStart) : await startInstance(instanceId);
-      await options.reloadBootstrap({ instanceId });
-      options.setSelectedInstanceId(instanceId);
-      options.markRuntimeRefreshed();
-      options.setActivity(serverStartSuccessMessage(result, instanceId));
-      return true;
     } catch (error) {
       const errorMessage = describeError(error);
       options.setActivity({ ...serverStartFailureMessage(error), tone: "error" });
@@ -349,22 +381,38 @@ export function useInstanceActions(options: InstanceActionOptions) {
       }
       return false;
     }
+    const completed = serverStartSuccessMessage(result, instanceId);
+    try {
+      await options.reloadBootstrap({ instanceId });
+      options.setSelectedInstanceId(instanceId);
+      options.markRuntimeRefreshed();
+      options.setActivity(completed);
+    } catch (error) {
+      reportOperationRefreshFailure(completed, error);
+    }
+    return true;
   }
 
   async function handleStopServer(instanceId: string) {
     options.setActivity(message("activity.stoppingServer", { id: instanceId }));
     try {
       await stopInstance(instanceId);
-      await options.reloadBootstrap({ instanceId });
-      options.setSelectedInstanceId(instanceId);
-      options.markRuntimeRefreshed();
-      options.setActivity(message("activity.serverStopSent", { id: instanceId }));
     } catch (error) {
       const errorMessage = describeError(error);
       options.setActivity(message("activity.stopServerFailed", { message: errorMessage }, { tone: "error" }));
       void logFrontendEvent("error", "instance.stop.frontend_failed", errorMessage, { instanceId }).catch(
         () => undefined
       );
+      return;
+    }
+    const completed = message("activity.serverStopSent", { id: instanceId });
+    try {
+      await options.reloadBootstrap({ instanceId });
+      options.setSelectedInstanceId(instanceId);
+      options.markRuntimeRefreshed();
+      options.setActivity(completed);
+    } catch (error) {
+      reportOperationRefreshFailure(completed, error);
     }
   }
 
@@ -450,7 +498,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
     try {
       const panel = await refreshInstancePanelAfterMutation(input.id);
       if (!saveOptions.silent) {
-        options.setActivity(message("activity.settingsSaved", { name: panel.details.summary.name }));
+        options.setActivity(message("activity.settingsSaved", { name: panel.details?.summary.name ?? savedDetails.summary.name }));
       }
     } catch (error) {
       const savedSignature = settingsSignature(savedDetails);
@@ -501,7 +549,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
 
     try {
       const panel = await refreshInstancePanelAfterMutation(input.instanceId);
-      options.setActivity(message("activity.settingsSaved", { name: panel.details.summary.name }));
+      options.setActivity(message("activity.settingsSaved", { name: panel.details?.summary.name ?? input.instanceId }));
     } catch (error) {
       options.setActivity(message("activity.playerAccessRefreshFailed", { message: describeError(error) }));
     }
@@ -511,11 +559,8 @@ export function useInstanceActions(options: InstanceActionOptions) {
   async function handleExecutePlayerAction(
     input: ExecuteInstancePlayerActionInput
   ): Promise<ExecuteInstancePlayerActionResult> {
-    let actionCompleted = false;
     try {
-      const result = await executeInstancePlayerAction(input);
-      actionCompleted = true;
-      return result;
+      return await executeInstancePlayerAction(input);
     } finally {
       // A command can be sent before native roster readback fails. Always reload
       // authoritative details, but preserve that original action failure.
@@ -523,9 +568,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
         await refreshInstancePanelAfterMutation(input.instance_id);
       } catch (error) {
         options.setActivity(message("activity.playerAccessRefreshFailed", { message: describeError(error) }));
-        if (actionCompleted) {
-          throw new Error(t("servers.playerCenter.member.refreshFailed", { error: describeError(error) }));
-        }
       }
     }
   }
@@ -551,16 +593,9 @@ export function useInstanceActions(options: InstanceActionOptions) {
       );
     }
 
+    let result: InstanceRuntimeCommandResult;
     try {
-      const result = await sendInstanceRuntimeCommand(instanceId, trimmedCommand, processKey ?? null, dispatchOptions);
-      await refreshInstancePanelAfterMutation(instanceId, !dispatchOptions.silent);
-
-      if (!dispatchOptions.silent) {
-        options.setActivity(
-          message("activity.runtimeCommandSent", { target: result.display_name })
-        );
-      }
-      return result;
+      result = await sendInstanceRuntimeCommand(instanceId, trimmedCommand, processKey ?? null, dispatchOptions);
     } catch (error) {
       const messageText = describeError(error);
       if (!dispatchOptions.silent) {
@@ -573,61 +608,85 @@ export function useInstanceActions(options: InstanceActionOptions) {
       }
       return null;
     }
+
+    try {
+      await refreshInstancePanelAfterMutation(instanceId, !dispatchOptions.silent);
+    } catch (error) {
+      if (!dispatchOptions.silent) {
+        options.setActivity(message("activity.refreshServersFailed", { message: describeError(error) }, { tone: "error" }));
+      }
+      // The dispatch receipt remains authoritative even when subsequent view
+      // reads fail. Reporting a send failure could prompt a duplicate command.
+      return result;
+    }
+    if (!dispatchOptions.silent) {
+      options.setActivity(message("activity.runtimeCommandSent", { target: result.display_name }));
+    }
+    return result;
   }
 
   async function handleSuppressRuntimeWindows(instanceId: string) {
     options.setActivity(message("activity.runtimeWindowsSuppressStarted"));
 
+    let result: RuntimeWindowSuppressionResult;
     try {
-      const result = await suppressInstanceRuntimeWindows(instanceId);
-      await refreshInstancePanelAfterMutation(instanceId);
-      options.setActivity(
-        message("activity.runtimeWindowsSuppressSucceeded", { result: summarizeWindowSuppressionResult(result) })
-      );
+      result = await suppressInstanceRuntimeWindows(instanceId);
     } catch (error) {
       options.setActivity(
         message("activity.runtimeWindowsSuppressFailed", { message: describeError(error) })
       );
+      return;
+    }
+    const completed = message("activity.runtimeWindowsSuppressSucceeded", { result: summarizeWindowSuppressionResult(result) });
+    try {
+      await refreshInstancePanelAfterMutation(instanceId);
+      options.setActivity(completed);
+    } catch (error) {
+      reportOperationRefreshFailure(completed, error);
     }
   }
 
   async function handleCreateBackup(instanceId: string) {
     options.setActivity(message("activity.backingUpSaves", { id: instanceId }));
+    let result: InstanceBackupResult;
     try {
-      const result = await createInstanceBackup(instanceId);
+      result = await createInstanceBackup(instanceId);
+    } catch (error) {
+      options.setActivity(message("activity.instanceBackupFailed", { message: describeError(error) }));
+      return;
+    }
+    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupCreated", { name, path: result.backup_path, count: result.file_count });
+    try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       cacheBackups(instanceId, backups);
-      options.setActivity(
-        message("activity.instanceBackupCreated", {
-          name: details.summary.name,
-          path: result.backup_path,
-          count: result.file_count
-        })
-      );
+      options.setActivity(completed(details.summary.name));
     } catch (error) {
-      options.setActivity(message("activity.instanceBackupFailed", { message: describeError(error) }));
+      reportOperationRefreshFailure(completed(), error);
     }
   }
 
   async function handleRestoreBackup(instanceId: string, backupId: string) {
     options.setActivity(message("activity.restoringBackup", { id: instanceId }));
+    let result: InstanceBackupRestoreResult;
     try {
-      const result = await restoreInstanceBackup(instanceId, backupId);
+      result = await restoreInstanceBackup(instanceId, backupId);
+    } catch (error) {
+      options.setActivity(message("activity.instanceBackupRestoreFailed", { message: describeError(error) }));
+      return;
+    }
+    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupRestored", { name, backupId: result.backup_id, safeguardId: result.safeguard_backup_id });
+    try {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       cacheBackups(instanceId, backups);
-      options.setActivity(
-        message("activity.instanceBackupRestored", {
-          name: details.summary.name,
-          backupId: result.backup_id,
-          safeguardId: result.safeguard_backup_id
-        })
-      );
+      options.setActivity(completed(details.summary.name));
     } catch (error) {
-      options.setActivity(message("activity.instanceBackupRestoreFailed", { message: describeError(error) }));
+      reportOperationRefreshFailure(completed(), error);
     }
   }
 
@@ -644,41 +703,46 @@ export function useInstanceActions(options: InstanceActionOptions) {
     }
 
     options.setActivity(message("activity.renamingBackup", { id: instanceId }));
+    let result: InstanceBackupResult;
     try {
-      const result = await renameInstanceBackup(instanceId, backup.backup_id, nextDisplayName || null);
-      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
-      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
-      const backups = await listInstanceBackups(instanceId);
-      cacheBackups(instanceId, backups);
-      options.setActivity(
-        message("activity.instanceBackupRenamed", {
-          name: details.summary.name,
-          backupName: backupLabel(result)
-        })
-      );
-      return true;
+      result = await renameInstanceBackup(instanceId, backup.backup_id, nextDisplayName || null);
     } catch (error) {
       options.setActivity(message("activity.instanceBackupRenameFailed", { message: describeError(error) }));
       return false;
     }
-  }
-
-  async function handleDeleteBackup(instanceId: string, backup: InstanceBackupResult) {
-    options.setActivity(message("activity.deletingBackup", { id: instanceId }));
+    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupRenamed", { name, backupName: backupLabel(result) });
     try {
-      const result = await deleteInstanceBackup(instanceId, backup.backup_id);
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
       cacheBackups(instanceId, backups);
-      options.setActivity(
-        message("activity.instanceBackupDeleted", {
-          name: details.summary.name,
-          backupName: backupLabel(result)
-        })
-      );
+      options.setActivity(completed(details.summary.name));
+    } catch (error) {
+      reportOperationRefreshFailure(completed(), error);
+    }
+    return true;
+  }
+
+  async function handleDeleteBackup(instanceId: string, backup: InstanceBackupResult) {
+    options.setActivity(message("activity.deletingBackup", { id: instanceId }));
+    let result: InstanceBackupResult;
+    try {
+      result = await deleteInstanceBackup(instanceId, backup.backup_id);
     } catch (error) {
       options.setActivity(message("activity.instanceBackupDeleteFailed", { message: describeError(error) }));
+      return;
+    }
+    const completed = (name = options.instanceDetailsById[instanceId]?.summary.name ?? instanceId) =>
+      message("activity.instanceBackupDeleted", { name, backupName: backupLabel(result) });
+    try {
+      const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
+      options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
+      const backups = await listInstanceBackups(instanceId);
+      cacheBackups(instanceId, backups);
+      options.setActivity(completed(details.summary.name));
+    } catch (error) {
+      reportOperationRefreshFailure(completed(), error);
     }
   }
 

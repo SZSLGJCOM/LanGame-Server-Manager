@@ -120,7 +120,7 @@ use performance_policy::{
     available_logical_cpu_count, balanced_instance_affinity_mask, half_affinity_mask,
 };
 pub use performance_policy::{
-    resolve_runtime_performance_policy, resolve_runtime_performance_policy_for_instance,
+    resolve_runtime_performance_policy_for_instance,
     resolve_runtime_performance_policy_with_preview_for_instance,
 };
 use process_environment::{SpawnCommand, validate_environment};
@@ -611,14 +611,6 @@ impl Drop for WindowsSpawnedChild {
             }
         }
     }
-}
-
-pub fn build_launch_plan(
-    settings: &AppSettings,
-    module: &ModuleDetails,
-    instance: &InstanceDetails,
-) -> Result<LaunchPlan, LaunchPlanError> {
-    build_launch_plan_with_override(settings, module, instance, None)
 }
 
 pub fn build_launch_plan_with_override(

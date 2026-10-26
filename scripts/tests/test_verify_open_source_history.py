@@ -19,6 +19,45 @@ from scripts.verify_open_source_history import (
 
 
 class OpenSourceHistoryScannerTests(unittest.TestCase):
+    def test_historical_documentation_example_exception_is_bound_to_exact_bytes_and_path(self) -> None:
+        path = Path("docs/example.md")
+        payload = b"Example: D:" + b"\\LanGameTemp\\example\n"
+        blob = lambda content: hashlib.sha1(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest()
+        with patch("scripts.verify_open_source_history.HISTORICAL_DOCUMENTATION_PATH_EXAMPLES", {(path.as_posix(), blob(payload)): {1}}):
+            self.assertEqual(_scan_file_version(HistoricalFileVersion("fixture", path, blob(payload)), payload, frozenset()), ())
+            for changed_path, changed_payload in ((Path("docs/other.md"), payload), (path, payload + b"changed")):
+                findings = _scan_file_version(HistoricalFileVersion("fixture", changed_path, blob(changed_payload)), changed_payload, frozenset())
+                self.assertIn("developer-machine-path", {item.rule for item in findings})
+
+    def test_later_notice_cannot_hide_an_earlier_reference_map_without_attribution(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        image = Path("assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg")
+        notice = Path("assets/ark-map-artwork/2026-10-25/NOTICE.md")
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            self._initialize_repository(repository)
+            (repository / image).parent.mkdir(parents=True)
+            (repository / image).write_bytes((root / image).read_bytes())
+            missing_notice_commit = self._commit_all(repository, "reference map without notice")
+            (repository / notice).write_bytes((root / notice).read_bytes())
+            self._commit_all(repository, "restore rights notice")
+            findings = scan_reachable_history(repository).findings
+            self.assertEqual(
+                [(item.commit, item.path.as_posix(), item.rule) for item in findings],
+                [(missing_notice_commit, notice.as_posix(), "historical-reference-media-notice")],
+            )
+
+    def test_reference_media_registration_does_not_allow_replaced_or_unlisted_images(self) -> None:
+        path = Path("assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg")
+        payload = b"reviewed-reference-media\0"
+        version = HistoricalFileVersion("fixture", path, "fixture")
+        with patch("scripts.verify_open_source_history.REFERENCE_MEDIA_SHA256", {path.as_posix(): hashlib.sha256(payload).hexdigest()}):
+            self.assertEqual(_scan_file_version(version, payload, frozenset()), ())
+            replaced = _scan_file_version(version, payload + b"changed", frozenset())
+            self.assertIn("historical-reference-media-integrity", {item.rule for item in replaced})
+        unlisted = HistoricalFileVersion("fixture", Path("assets/ark-map-artwork/2026-10-25/Unlisted_Map.jpg"), "fixture")
+        self.assertIn("historical-media", {item.rule for item in _scan_file_version(unlisted, payload, frozenset())})
+
     def test_reviewed_assignment_exception_cannot_hide_changed_or_relocated_content(self) -> None:
         path = Path("tests/console_tests.rs")
         payload = b'let ' + b'password' + b' = "HistoricalSyntheticPassword";\n'

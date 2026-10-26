@@ -97,11 +97,11 @@ async function run() {
     const [activity, setActivity] = useState<UiMessage | null>(null);
     const [name, setName] = useState("合作世界");
     actions = useInstanceActions({
-      bindAddressCandidates: [], cacheInstancePanel: noOperation, clearSelectedInstancePanel: noOperation,
+      bindAddressCandidates: [], clearSelectedInstancePanel: noOperation,
       getCurrentInstanceId: () => null, instanceBackupsById: {}, instanceDetailsById: {},
       markRuntimeRefreshed: noOperation, modules: [selected],
       openInstanceView: (section, id) => { check(section === "settings", "Created instance must open settings"); opened.push(id); },
-      replaceSelectedInstancePanel: noOperation, selectedInstanceId: null,
+      onPanelLoaded: noOperation, onPanelProgress: noOperation, onPanelSettled: noOperation, selectedInstanceId: null,
       setInstanceBackupsById: noOperation, setInstanceDetailsById: noOperation, setInstanceRuntimesById: noOperation,
       setSelectedInstanceBackups: noOperation, setSelectedInstanceDetails: noOperation, setActivity,
       setBootstrap: noOperation, setSelectedModuleId: noOperation, setSelectedInstanceId: noOperation,

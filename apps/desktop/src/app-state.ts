@@ -1,13 +1,5 @@
-import {
-  readInstanceDetails,
-  readInstanceLogDocument,
-  readInstanceRuntime,
-  readInstanceRuntimeWindowSnapshot,
-  listInstanceBackups,
-  previewInstanceLaunch
-} from "./api";
+import { previewInstanceLaunch } from "./api";
 import type {
-  BackgroundJob,
   BootstrapResponse,
   InstanceBackupResult,
   InstanceDetails,
@@ -134,11 +126,6 @@ export function isActiveJobStatus(status: string | null | undefined): boolean {
   return normalized === "pending" || normalized === "running";
 }
 
-export function isLibraryJob(job: BackgroundJob): boolean {
-  const kind = String(job.kind).toLowerCase();
-  return kind === "downloadgame" || kind === "validategame" || kind === "uninstallgame" || kind === "installsteamcmd";
-}
-
 export function resolveRuntimeRefreshMode(): "live" | "throttled" {
   if (typeof document === "undefined") {
     return "live";
@@ -158,24 +145,4 @@ export async function loadLaunchPlanPreview(
   } catch (error) {
     return { launchPlan: null, launchPlanError: describeError(error) };
   }
-}
-
-export async function loadInstancePanelData(instanceId: string): Promise<SelectedInstancePanelData> {
-  const [details, backups, runtime, runtimeWindows, logDocument, launchPreview] = await Promise.all([
-    readInstanceDetails(instanceId),
-    listInstanceBackups(instanceId),
-    readInstanceRuntime(instanceId),
-    readInstanceRuntimeWindowSnapshot(instanceId),
-    readInstanceLogDocument(instanceId, 400).catch(() => null),
-    loadLaunchPlanPreview(instanceId)
-  ]);
-  return {
-    details,
-    backups,
-    runtime,
-    runtimeWindows,
-    logDocument: resolveLogDocument(runtime, logDocument),
-    launchPlan: launchPreview.launchPlan,
-    launchPlanError: launchPreview.launchPlanError
-  };
 }

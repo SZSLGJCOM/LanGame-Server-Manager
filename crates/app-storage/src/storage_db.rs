@@ -737,56 +737,6 @@ pub async fn resolve_module_install_root(
     result
 }
 
-async fn read_game_install_last_verified_unix_ms_from_connection(
-    connection: &mut sqlx::SqliteConnection,
-    module_id: &str,
-    install_root: &str,
-) -> Result<Option<u128>, StorageError> {
-    let Some(install_id) = crate::program_install_records::resolve_library_install_id(
-        connection,
-        module_id,
-        Path::new(install_root),
-    )
-    .await?
-    else {
-        return Ok(None);
-    };
-    let timestamp_ms = sqlx::query_scalar::<_, i64>(
-        r#"
-        SELECT CAST(strftime('%s', last_verified_at) AS INTEGER) * 1000
-        FROM game_installs
-        WHERE id = ?1
-          AND install_state = 'installed'
-          AND scope = 'library'
-          AND last_verified_at IS NOT NULL
-        "#,
-    )
-    .bind(install_id)
-    .fetch_optional(connection)
-    .await?;
-
-    Ok(timestamp_ms.and_then(|value| u128::try_from(value).ok()))
-}
-
-pub async fn read_game_install_last_verified_unix_ms(
-    paths: &StoragePaths,
-    module_id: &str,
-    install_root: &str,
-) -> Result<Option<u128>, StorageError> {
-    let pool = connect_pool(paths).await?;
-    let result = async {
-        let mut connection = pool.acquire().await?;
-        read_game_install_last_verified_unix_ms_from_connection(
-            &mut connection,
-            module_id,
-            install_root,
-        )
-        .await
-    }
-    .await;
-    pool.close().await;
-    result
-}
 pub(crate) fn install_state_to_db_value(install_state: &InstallState) -> &'static str {
     match install_state {
         InstallState::NotInstalled => "not_installed",

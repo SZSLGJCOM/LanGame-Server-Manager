@@ -28,7 +28,8 @@ fn runtime_performance_policy_uses_module_defaults_and_instance_overrides() {
         }
     });
 
-    let policy = resolve_runtime_performance_policy(&module_policy, &settings);
+    let policy =
+        resolve_runtime_performance_policy_for_instance(&module_policy, &settings, "instance");
 
     assert_eq!(policy.priority_class, RuntimePriorityClass::High);
     assert_eq!(policy.cpu_affinity_mask, Some(0xF0));
@@ -48,7 +49,8 @@ fn runtime_performance_policy_keeps_module_values_without_instance_overrides() {
         resource_limits: Default::default(),
     };
 
-    let policy = resolve_runtime_performance_policy(&module_policy, &Value::Null);
+    let policy =
+        resolve_runtime_performance_policy_for_instance(&module_policy, &Value::Null, "instance");
 
     assert_eq!(policy.priority_class, RuntimePriorityClass::BelowNormal);
     assert_eq!(policy.cpu_affinity_mask, Some(0b1010));
@@ -332,8 +334,8 @@ fn rust_launch_flags_expand_with_explicit_security_opt_out() {
         active_run: None,
     };
 
-    let launch_plan =
-        build_launch_plan(&settings, &module, &instance).expect("build rust launch plan");
+    let launch_plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+        .expect("build rust launch plan");
     assert_eq!(
         launch_plan.args,
         vec![
@@ -359,7 +361,7 @@ fn rust_launch_flags_expand_with_explicit_security_opt_out() {
             serde_json::from_str(&instance.settings_json).expect("settings");
         values["secure"] = value;
         explicit_instance.settings_json = values.to_string();
-        let plan = build_launch_plan(&settings, &module, &explicit_instance)
+        let plan = build_launch_plan_with_override(&settings, &module, &explicit_instance, None)
             .expect("build launch plan with explicit security setting");
         assert_eq!(
             plan.args.iter().filter(|arg| *arg == "-insecure").count(),
@@ -471,7 +473,8 @@ fn build_launch_plan_resolves_paths_and_settings_tokens() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
 
     assert_eq!(launch_plan.install_root, install_root.to_string_lossy());
     assert!(
@@ -581,8 +584,8 @@ fn build_launch_plan_keeps_explicit_java_runtime_path() {
 
     for executable in ["jre64/bin/java.exe", r"jre64\bin\java.exe"] {
         module.process.as_mut().expect("process").executable = String::from(executable);
-        let plan =
-            build_launch_plan(&settings, &module, &instance).expect("build missing Java plan");
+        let plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("build missing Java plan");
         assert_eq!(PathBuf::from(&plan.executable_path), expected_java);
         assert!(!plan.executable_exists);
         assert!(!plan.ready_to_launch);
@@ -594,7 +597,8 @@ fn build_launch_plan_keeps_explicit_java_runtime_path() {
     std::fs::create_dir_all(expected_java.parent().expect("bundled Java parent"))
         .expect("create bundled runtime");
     std::fs::write(&expected_java, []).expect("write bundled Java executable");
-    let plan = build_launch_plan(&settings, &module, &instance).expect("build restored Java plan");
+    let plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+        .expect("build restored Java plan");
     assert_eq!(PathBuf::from(&plan.executable_path), expected_java);
     assert!(plan.executable_exists);
     assert!(plan.ready_to_launch);
@@ -602,7 +606,8 @@ fn build_launch_plan_keeps_explicit_java_runtime_path() {
 
     for executable in ["java", "java.exe"] {
         module.process.as_mut().expect("process").executable = String::from(executable);
-        let plan = build_launch_plan(&settings, &module, &instance).expect("build bare Java plan");
+        let plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("build bare Java plan");
         assert_eq!(
             PathBuf::from(&plan.executable_path),
             runtime_root.join(executable)
@@ -690,7 +695,8 @@ fn build_launch_plan_falls_back_to_matching_executable_name() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert!(launch_plan.executable_exists);
     assert!(
         launch_plan
@@ -792,7 +798,8 @@ fn build_launch_plan_ignores_steamapps_downloading_executable_fallback() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
 
     assert!(!launch_plan.executable_exists);
     assert_eq!(
@@ -1171,7 +1178,8 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert!(launch_plan.executable_exists);
 
     #[cfg(windows)]
@@ -1220,8 +1228,8 @@ fn build_launch_plan_prefers_platform_specific_executable_directory() {
         process.executable = String::from("{{terraria.server_executable}}");
         process.args_template = vec![String::from("{{terraria.launch_args}}")];
         process.working_directory_template = Some(String::from("{{terraria.working_directory}}"));
-        let templated_plan =
-            build_launch_plan(&settings, &module, &instance).expect("template plan");
+        let templated_plan = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("template plan");
         assert_eq!(
             PathBuf::from(&templated_plan.executable_path),
             windows_executable
@@ -1325,7 +1333,8 @@ fn terraria_tmodloader_runtime_uses_instance_scoped_entrypoint_and_save_director
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
 
     assert_eq!(
         PathBuf::from(&launch_plan.executable_path),
@@ -1431,7 +1440,8 @@ fn build_launch_plan_resolves_working_directory_template() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(
         launch_plan.working_directory,
         config_path
@@ -1555,7 +1565,8 @@ fn build_launch_plan_filters_empty_palworld_args_and_launches_direct_binary() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(PathBuf::from(&launch_plan.executable_path), executable_path);
     assert_eq!(
         PathBuf::from(&launch_plan.working_directory),
@@ -1579,7 +1590,8 @@ fn build_launch_plan_filters_empty_palworld_args_and_launches_direct_binary() {
         serde_json::from_str(&api_instance.settings_json).expect("parse Palworld settings");
     api_settings["gamedata_api_enabled"] = serde_json::json!(true);
     api_instance.settings_json = api_settings.to_string();
-    let api_plan = build_launch_plan(&settings, &module, &api_instance).expect("build API plan");
+    let api_plan = build_launch_plan_with_override(&settings, &module, &api_instance, None)
+        .expect("build API plan");
     assert_eq!(
         api_plan
             .args
@@ -1723,7 +1735,8 @@ fn build_launch_plan_resolves_valheim_crossplay_flag() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(PathBuf::from(&launch_plan.executable_path), executable_path);
     assert_eq!(PathBuf::from(&launch_plan.working_directory), install_root);
     assert_eq!(
@@ -1850,7 +1863,8 @@ fn build_launch_plan_expands_valheim_world_tuning_tokens() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(
         launch_plan.args,
         vec![
@@ -1969,7 +1983,8 @@ fn build_launch_plan_expands_unturned_advanced_launch_tokens() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(
         launch_plan.args,
         vec![
@@ -2084,7 +2099,8 @@ fn build_launch_plan_expands_satisfactory_custom_launch_flags() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(
         PathBuf::from(&launch_plan.environment["USERPROFILE"]),
         temp_root.join("instances/satisfactory-1/data/profile")
@@ -2107,8 +2123,8 @@ fn build_launch_plan_expands_satisfactory_custom_launch_flags() {
         .expect("process")
         .environment_template
         .insert("USERPROFILE".into(), "{{paths.unknown}}/profile".into());
-    let invalid =
-        build_launch_plan(&settings, &module, &instance).expect("invalid environment plan");
+    let invalid = build_launch_plan_with_override(&settings, &module, &instance, None)
+        .expect("invalid environment plan");
     assert!(!invalid.ready_to_launch);
     assert!(
         invalid
@@ -2274,7 +2290,8 @@ fn build_launch_plan_blocks_unresolved_arguments_for_an_installed_server() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(launch_plan.args, vec![String::from("{{settings.missing}}")]);
     assert!(launch_plan.executable_exists);
     assert!(!launch_plan.ready_to_launch);
@@ -2364,7 +2381,8 @@ fn build_launch_plan_resolves_caves_alias_port() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert_eq!(
         launch_plan.args,
         vec![String::from("-port"), String::from("11000")]
@@ -2662,7 +2680,8 @@ fn build_launch_plan_supports_necesse_direct_java_entrypoint() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert!(launch_plan.executable_exists);
     assert!(launch_plan.ready_to_launch);
     assert!(launch_plan.validation_issues.is_empty());
@@ -2692,7 +2711,8 @@ fn build_launch_plan_supports_necesse_direct_java_entrypoint() {
 
     instance.settings_json = String::from(r#"{ "owner_name": "" }"#);
     let launch_plan_without_owner =
-        build_launch_plan(&settings, &module, &instance).expect("build plan without owner");
+        build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("build plan without owner");
     assert!(
         !launch_plan_without_owner
             .args
@@ -2779,7 +2799,8 @@ fn build_launch_plan_reports_missing_executable() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert!(!launch_plan.executable_exists);
     assert!(!launch_plan.ready_to_launch);
     assert!(launch_plan.validation_issues.iter().any(|issue| {
@@ -2893,7 +2914,8 @@ fn build_launch_plan_reports_unavailable_udp_port() {
         active_run: None,
     };
 
-    let launch_plan = build_launch_plan(&settings, &module, &instance).expect("build plan");
+    let launch_plan =
+        build_launch_plan_with_override(&settings, &module, &instance, None).expect("build plan");
     assert!(!launch_plan.ready_to_launch);
     assert!(launch_plan.validation_issues.iter().any(|issue| {
         issue.code == "port_binding_unavailable"

@@ -31,7 +31,7 @@ function loadActions(api) {
     "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../install-state-presentation": {},
-    "../instance-panel-refresh": {},
+    "../instance-panel-loader": {},
     "../server-start-error": {},
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => {} }) }
   };

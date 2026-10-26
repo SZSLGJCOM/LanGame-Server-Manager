@@ -6,6 +6,9 @@ use std::time::Instant;
 #[path = "lan_host_reliability_tests.rs"]
 mod reliability;
 
+#[path = "lan_host_operation_admission_tests.rs"]
+mod operation_admission;
+
 #[test]
 fn module_details_inventory_option_requires_boolean_and_preserves_full_default() {
     let decode = |args: &Value| {

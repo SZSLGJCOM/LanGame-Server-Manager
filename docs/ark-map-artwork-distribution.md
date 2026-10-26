@@ -4,7 +4,7 @@
 
 ## 已发布资源
 
-2026-10-25 经用户授权发布 19 张原始 JPEG（30,481,377 字节）及 README、NOTICE、manifest，两端均完成 22 个文件的匿名回读和逐文件 SHA-256 校验。原始图片已独立完成真实解码与尺寸核对，远端字节与这些已解码原图一致。
+版本化资源目录包含 19 张原始 JPEG（30,481,377 字节）及 README、NOTICE、manifest。清单记录逐图 SHA-256、尺寸、坐标来源和原始文件页；客户端按这些固定字节身份校验下载。
 
 - [GitHub 资源目录](https://github.com/SZSLGJCOM/LanGame-Server-Manager/tree/36836ffe1dc0688e29bcae4abe64e39fe42beba8/assets/ark-map-artwork/2026-10-25/)：提交 `36836ffe1dc0688e29bcae4abe64e39fe42beba8`。
 - [GitCode 资源清单](https://api.gitcode.com/api/v5/repos/SZSLGJCOM/LanGame-Server-Manager-Releases/raw/assets/ark-map-artwork/2026-10-25/manifest.json?ref=4d0b496715e04cffc3d1e94a9ee38215788504c4)：完整批次提交 `4d0b496715e04cffc3d1e94a9ee38215788504c4`。
@@ -62,7 +62,7 @@ publication-package/
 
 图片不由项目源码许可证覆盖。各文件页的游戏素材版权、fair-use 或公有领域标记可能不同；`NOTICE.md` 中性保留原图和文件页链接，不统一宣称某个作者或许可证，也不授予新的使用权。准备包不等于取得再分发许可。
 
-发布须在明确授权范围内，并依据逐图文件页说明保留适用条件。本批已取得用户的公开发布授权。保留 README、NOTICE、manifest 和来源信息；不能把工具生成的候选状态改成“已验证发布”来替代真实上传和验证。
+依据逐图文件页说明保留适用条件，以及 README、NOTICE、manifest 和来源信息。维护者对托管操作的批准不代表获得上游素材授权；准备工具和哈希校验也不裁定再分发权利。
 
 发布后，必须从两端逐图匿名下载并核对原始 SHA-256、大小、真实格式与尺寸，确认内容不是登录页、错误页或占位图，才能启用相应镜像。界面按语言选择首选来源，失败换备用来源，缓存仍不可用时回到网格；这部分由应用的受控媒体下载与缓存实现。
 

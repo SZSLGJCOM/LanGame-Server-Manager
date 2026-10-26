@@ -15,9 +15,7 @@ require.extensions[".ts"] = function compileTypeScript(module, filename) {
 
 const {
   filterLibraryCatalogModules,
-  resolveLibraryCatalogAlignmentScrollLeft,
-  resolveLibraryCatalogFocusId,
-  resolveLibraryCatalogPageFocusId
+  resolveLibraryCatalogAlignmentScrollLeft
 } = require(path.join(desktopRoot, "src", "views", "library", "library-catalog-model.ts"));
 const {
   canConfirmLibraryCatalogPointerSelection,
@@ -109,24 +107,6 @@ test("library catalog search matches game metadata without changing catalog orde
 test("library catalog keeps an ordinary empty result after storage is ready", () => {
   assert.deepEqual(filterLibraryCatalogModules([], "", resolveStoreEntry), []);
   assert.deepEqual(filterLibraryCatalogModules(modules, "missing-game", resolveStoreEntry), []);
-});
-
-test("library catalog focus restores a visible remembered game and falls back deterministically", () => {
-  assert.equal(resolveLibraryCatalogFocusId(modules, "terraria", "minecraft"), "terraria");
-  assert.equal(resolveLibraryCatalogFocusId(modules, "missing", "palworld"), "palworld");
-  assert.equal(resolveLibraryCatalogFocusId(modules, null, null), "minecraft");
-  assert.equal(resolveLibraryCatalogFocusId([], "terraria", "minecraft"), null);
-});
-
-test("horizontal rail page navigation retains one overlap card and clamps at its edges", () => {
-  const manyModules = Array.from({ length: 8 }, (_, index) => moduleSummary(`game-${index + 1}`));
-
-  assert.equal(resolveLibraryCatalogPageFocusId(manyModules, "game-1", "right", 4), "game-4");
-  assert.equal(resolveLibraryCatalogPageFocusId(manyModules, "game-4", "right", 4), "game-7");
-  assert.equal(resolveLibraryCatalogPageFocusId(manyModules, "game-7", "right", 4), "game-8");
-  assert.equal(resolveLibraryCatalogPageFocusId(manyModules, "game-7", "left", 4), "game-4");
-  assert.equal(resolveLibraryCatalogPageFocusId(manyModules, "game-4", "left", 4), "game-1");
-  assert.equal(resolveLibraryCatalogPageFocusId([], "game-2", "right", 4), null);
 });
 
 test("horizontal rail alignment leaves safe cards still and moves only enough to reveal clipped cards", () => {

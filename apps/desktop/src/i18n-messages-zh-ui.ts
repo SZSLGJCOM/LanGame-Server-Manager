@@ -392,6 +392,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "activity.runtimeWindowsSuppressSucceeded": "{result}",
   "activity.saveSettingsFailed": "保存设置失败：{message}",
   "activity.settingsRefreshFailed": "设置已保存，但界面刷新失败：{message}",
+  "activity.operationRefreshFailed": "{message} 界面刷新失败：{refreshMessage}",
   "activity.settingsBaselineMissing": "当前服务器设置尚未载入，请刷新服务器后重试。",
   "activity.playerAccessRefreshFailed": "玩家访问规则已更新，但界面刷新失败：{message}",
   "activity.savingSettings": "正在保存 {id} 的设置...",

@@ -54,7 +54,8 @@ fn generated_entrypoints_are_preparable_only_when_their_source_program_exists() 
             active_run: None,
         };
 
-        let missing = build_launch_plan(&settings, &module, &instance).expect("missing source");
+        let missing = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("missing source");
         assert!(!missing.ready_to_launch, "{module_id}");
         assert!(missing.validation_issues.iter().any(|issue| {
             issue.code == "launch_executable_missing" && issue.severity == "error"
@@ -63,8 +64,9 @@ fn generated_entrypoints_are_preparable_only_when_their_source_program_exists() 
         fs::write(install_root.join(source_name), []).expect("create source program fixture");
         if module_id == "barotrauma" {
             for directory in ["Content", "Data"] {
-                let incomplete = build_launch_plan(&settings, &module, &instance)
-                    .expect("incomplete server package");
+                let incomplete =
+                    build_launch_plan_with_override(&settings, &module, &instance, None)
+                        .expect("incomplete server package");
                 assert!(!incomplete.ready_to_launch, "missing {directory}");
                 fs::create_dir_all(install_root.join(directory)).expect("create required content");
             }
@@ -75,12 +77,12 @@ fn generated_entrypoints_are_preparable_only_when_their_source_program_exists() 
                 .join("instance.json")
                 .to_string_lossy()
                 .into_owned();
-            let overlap = build_launch_plan(&settings, &module, &overlapping)
+            let overlap = build_launch_plan_with_override(&settings, &module, &overlapping, None)
                 .expect("overlapping runtime roots");
             assert!(!overlap.ready_to_launch);
         }
-        let preparable =
-            build_launch_plan(&settings, &module, &instance).expect("installed source");
+        let preparable = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("installed source");
         assert!(preparable.ready_to_launch, "{module_id}");
         assert!(
             !preparable.executable_exists,
@@ -94,7 +96,8 @@ fn generated_entrypoints_are_preparable_only_when_their_source_program_exists() 
         assert_eq!(preparable.validation_issues[0].severity, "info");
 
         module.process.as_mut().expect("process").executable = String::from("custom-server.exe");
-        let custom = build_launch_plan(&settings, &module, &instance).expect("custom executable");
+        let custom = build_launch_plan_with_override(&settings, &module, &instance, None)
+            .expect("custom executable");
         assert!(!custom.ready_to_launch);
         assert!(
             !custom

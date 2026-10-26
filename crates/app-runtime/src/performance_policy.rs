@@ -1,12 +1,5 @@
 use super::*;
 
-pub fn resolve_runtime_performance_policy(
-    module_policy: &RuntimePerformancePolicy,
-    settings: &Value,
-) -> RuntimePerformancePolicy {
-    resolve_runtime_performance_policy_for_instance(module_policy, settings, "")
-}
-
 pub fn resolve_runtime_performance_policy_for_instance(
     module_policy: &RuntimePerformancePolicy,
     settings: &Value,

@@ -1182,16 +1182,6 @@ test("maintenance keeps storage, policy and broadcast in its section navigation 
   assert.doesNotMatch(operationsCss, /\.server-backup-panel\b/);
 });
 
-test("manual backup creation reloads the backend-pruned backup list", () => {
-  const actionsSource = readSource("apps", "desktop", "src", "hooks", "useDesktopActions.ts");
-  const createBackupBody = actionsSource.match(/async function handleCreateBackup\(instanceId: string\) \{[\s\S]*?\n  async function handleRestoreBackup/);
-
-  assert.ok(createBackupBody, "handleCreateBackup should be present");
-  assert.match(createBackupBody[0], /const result = await createInstanceBackup\(instanceId\);/);
-  assert.match(createBackupBody[0], /const backups = await listInstanceBackups\(instanceId\);/);
-  assert.doesNotMatch(createBackupBody[0], /currentBackups/);
-});
-
 test("server list instance cards do not use per-game cover overrides", () => {
   const moduleArt = readSource("apps", "desktop", "src", "module-art.ts");
 

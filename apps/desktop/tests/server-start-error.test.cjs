@@ -87,7 +87,7 @@ test("start rejection refreshes installation state, keeps the localized error an
     "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
     "../install-state-presentation": {},
-    "../instance-panel-refresh": {},
+    "../instance-panel-loader": {},
     "../server-start-error": errors,
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => {} }) }
   };
@@ -128,7 +128,7 @@ test("ASA query rejection stays localized and never reports startup success", as
     "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
     "../installation-cancellation": {}, "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
-    "../install-state-presentation": {}, "../instance-panel-refresh": {}, "../server-start-error": errors,
+    "../install-state-presentation": {}, "../instance-panel-loader": {}, "../server-start-error": errors,
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => {} }) }
   };
   const exports = {};
@@ -171,7 +171,7 @@ for (const [code, provider, itemIds, activityKey] of [
     "./useSteamCmdActions": { useSteamCmdActions: () => assert.fail("instance actions must not start library hooks") },
     "../installation-cancellation": {}, "../steam-installation-account": {},
     "../i18n": { useI18n: () => ({ t: (key) => key }) },
-    "../install-state-presentation": {}, "../instance-panel-refresh": {}, "../server-start-error": errors,
+    "../install-state-presentation": {}, "../instance-panel-loader": {}, "../server-start-error": errors,
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => { order.push(["flush"]); } }) }
   };
   const exports = {};

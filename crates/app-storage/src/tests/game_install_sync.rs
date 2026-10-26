@@ -1,3 +1,14 @@
+async fn stored_install_verification(paths: &StoragePaths, install_id: i64) -> Option<String> {
+    let pool = connect_pool(paths).await.unwrap();
+    let verified = sqlx::query_scalar("SELECT last_verified_at FROM game_installs WHERE id = ?1")
+        .bind(install_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+    verified
+}
+
 #[tokio::test]
 async fn creation_preserves_the_library_record_and_registers_exclusive_instance_ownership() {
     let root = unique_test_root();
@@ -123,11 +134,7 @@ async fn sync_game_install_path_aliases_keep_one_owner_and_verification_history(
         .await
         .unwrap()
         .unwrap();
-    let verified =
-        read_game_install_last_verified_unix_ms(&paths, "dontstarve", &record.install_root)
-            .await
-            .unwrap()
-            .unwrap();
+    let verified = stored_install_verification(&paths, before.id).await.unwrap();
     let aliases = vec![install_root.join(".").to_string_lossy().into_owned()];
     #[cfg(windows)]
     let aliases = {
@@ -153,10 +160,8 @@ async fn sync_game_install_path_aliases_keep_one_owner_and_verification_history(
         assert_eq!(after.id, before.id);
         assert_eq!(after.current_version.as_deref(), Some("after"));
         assert_eq!(
-            read_game_install_last_verified_unix_ms(&paths, "dontstarve", &record.install_root,)
-                .await
-                .unwrap(),
-            Some(verified)
+            stored_install_verification(&paths, after.id).await,
+            Some(verified.clone())
         );
     }
     let pool = connect_pool(&paths).await.unwrap();
@@ -276,7 +281,7 @@ async fn sync_game_install_path_aliases_reject_foreign_or_ambiguous_ownership() 
 }
 
 #[tokio::test]
-async fn read_game_install_last_verified_unix_ms_returns_verified_install_timestamp() {
+async fn sync_game_installs_records_requested_verification() {
     let root = unique_test_root();
     let paths = test_paths(&root);
     let descriptor = test_descriptor(&root);
@@ -303,18 +308,17 @@ async fn read_game_install_last_verified_unix_ms_returns_verified_install_timest
     .await
     .unwrap();
 
-    let last_verified_ms =
-        read_game_install_last_verified_unix_ms(&paths, "dontstarve", &install_root_text)
-            .await
-            .unwrap();
-
-    assert!(last_verified_ms.is_some());
+    let install = crate::read_program_install_owner(&paths, &install_root)
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(stored_install_verification(&paths, install.id).await.is_some());
 
     cleanup_root(&root);
 }
 
 #[tokio::test]
-async fn read_game_install_last_verified_unix_ms_ignores_unverified_installs() {
+async fn sync_game_installs_keeps_unverified_install_without_a_timestamp() {
     let root = unique_test_root();
     let paths = test_paths(&root);
     let descriptor = test_descriptor(&root);
@@ -341,12 +345,11 @@ async fn read_game_install_last_verified_unix_ms_ignores_unverified_installs() {
     .await
     .unwrap();
 
-    let last_verified_ms =
-        read_game_install_last_verified_unix_ms(&paths, "dontstarve", &install_root_text)
-            .await
-            .unwrap();
-
-    assert_eq!(last_verified_ms, None);
+    let install = crate::read_program_install_owner(&paths, &install_root)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(stored_install_verification(&paths, install.id).await, None);
 
     cleanup_root(&root);
 }

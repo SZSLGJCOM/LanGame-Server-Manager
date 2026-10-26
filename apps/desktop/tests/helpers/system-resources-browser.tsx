@@ -23,7 +23,7 @@ const noOperation = () => {};
 const gib = 1024 ** 3;
 const scenarios = ["normal", "unknown", "stale", "staleUpdating", "unknownUpdating", "freshUpdating", "memoryPressure", "diskPressure", "diskWatch", "networkWithoutLink", "hardwareFallback", "hardwareUnmatched"] as const;
 type Scenario = typeof scenarios[number];
-type FixtureConfig = { locale: "zh-CN" | "en-US"; theme: "dark" | "light"; captureScenario: Scenario };
+type FixtureConfig = { locale: "zh-CN" | "en-US"; theme: "dark" | "light"; captureScenario: Scenario; captureOnly?: boolean };
 let checks = 0;
 let activeScenario: Scenario | "initializing" = "initializing";
 let phase = "bootstrap";
@@ -295,7 +295,7 @@ async function mount() {
     ? { normal: "正常", unknown: "数据不足", stale: "数据过期", updating: "更新中…", pressure: "紧张", watch: "需关注", memory: /内存|提交/, disk: /磁盘|卷/ }
     : { normal: "Normal", unknown: "Incomplete", stale: "Stale", updating: "Updating…", pressure: "Critical", watch: "Attention", memory: /memory|commit/i, disk: /disk|volume|free space/i };
   const observed: Partial<Record<Scenario, { state: string; reason: string }>> = {};
-  for (const scenario of scenarios) {
+  for (const scenario of config.captureOnly ? [config.captureScenario] : scenarios) {
     const renderedSnapshot = await render(scenario);
     const updating = scenario === "staleUpdating" || scenario === "unknownUpdating";
     const expected = updating ? labels.updating : scenario === "memoryPressure" || scenario === "diskPressure" ? labels.pressure
@@ -388,34 +388,36 @@ async function mount() {
     }
     checks++;
   }
-  await render("normal");
-  phase = "mouse selection";
-  const cpu = element<HTMLButtonElement>(".system-core-metric--cpu");
-  await act(async () => { cpu.click(); });
-  check(cpu.getAttribute("aria-pressed") === "true", "Mouse selection must pin CPU");
-  check(text(".system-core-center-state") === (config.locale === "zh-CN" ? "锁定" : "LOCKED"),
-    "Pinned selections must retain their state indicator");
-  check(text(".system-core-center-value") === "30%", "Pinned CPU must show its measured value");
-  await act(async () => { cpu.click(); });
-  check(cpu.getAttribute("aria-pressed") === "false", "Selecting CPU twice must release it");
-  check(document.querySelectorAll(".system-top-metric").length === 4, "All four resource cards must remain available");
-  const diskCard = element<HTMLButtonElement>(".system-top-metric--disk");
-  await act(async () => { diskCard.click(); });
-  check(element(".system-core-metric--disk").getAttribute("aria-pressed") === "true",
-    "Selecting a resource card must pin the corresponding dial channel");
-  await act(async () => { diskCard.click(); });
-  checks++;
-  phase = "keyboard selection";
-  await act(async () => { cpu.focus(); });
-  await key("Tab");
-  const memory = element<HTMLButtonElement>(".system-core-metric--memory");
-  check(document.activeElement === memory, "Keyboard Tab must reach the memory channel");
-  await key("Enter");
-  check(memory.getAttribute("aria-pressed") === "true", "Keyboard Enter must pin the focused channel");
-  await key("Escape");
-  check(memory.getAttribute("aria-pressed") === "false", "Escape must release a pinned channel");
-  await act(async () => { memory.blur(); });
-  checks++;
+  if (!config.captureOnly) {
+    await render("normal");
+    phase = "mouse selection";
+    const cpu = element<HTMLButtonElement>(".system-core-metric--cpu");
+    await act(async () => { cpu.click(); });
+    check(cpu.getAttribute("aria-pressed") === "true", "Mouse selection must pin CPU");
+    check(text(".system-core-center-state") === (config.locale === "zh-CN" ? "锁定" : "LOCKED"),
+      "Pinned selections must retain their state indicator");
+    check(text(".system-core-center-value") === "30%", "Pinned CPU must show its measured value");
+    await act(async () => { cpu.click(); });
+    check(cpu.getAttribute("aria-pressed") === "false", "Selecting CPU twice must release it");
+    check(document.querySelectorAll(".system-top-metric").length === 4, "All four resource cards must remain available");
+    const diskCard = element<HTMLButtonElement>(".system-top-metric--disk");
+    await act(async () => { diskCard.click(); });
+    check(element(".system-core-metric--disk").getAttribute("aria-pressed") === "true",
+      "Selecting a resource card must pin the corresponding dial channel");
+    await act(async () => { diskCard.click(); });
+    checks++;
+    phase = "keyboard selection";
+    await act(async () => { cpu.focus(); });
+    await key("Tab");
+    const memory = element<HTMLButtonElement>(".system-core-metric--memory");
+    check(document.activeElement === memory, "Keyboard Tab must reach the memory channel");
+    await key("Enter");
+    check(memory.getAttribute("aria-pressed") === "true", "Keyboard Enter must pin the focused channel");
+    await key("Escape");
+    check(memory.getAttribute("aria-pressed") === "false", "Escape must release a pinned channel");
+    await act(async () => { memory.blur(); });
+    checks++;
+  }
   await render(config.captureScenario);
   phase = "static capacity footer";
   const headroom = element(".system-resource-headroom");
@@ -437,7 +439,7 @@ async function mount() {
   check(browserErrors.length === 0, `Unexpected browser errors: ${browserErrors.join("; ")}`);
   checks++;
   return { status: "passed", checks, ...config, scenarios: observed, layout,
-    interaction: { mouse_selection: true, keyboard_selection: true, escape_release: true },
+    interaction: config.captureOnly ? null : { mouse_selection: true, keyboard_selection: true, escape_release: true },
     data_source: "synthetic snapshots rendered by production SystemView", browser_errors: browserErrors };
 }
 

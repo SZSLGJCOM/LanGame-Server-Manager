@@ -436,6 +436,6 @@ test("curated dedicated-server candidates are wired without exposing unverified 
 test("excluded legacy or permission-gated server families stay out of active module profiles", () => {
   const moduleIds = new Set(readModuleIds());
   for (const moduleId of excludedServerFamilies) {
-    assert.equal(moduleIds.has(moduleId), false, `${moduleId} should not be counted in the 34-module target`);
+    assert.equal(moduleIds.has(moduleId), false, `${moduleId} must not appear in the active module catalog`);
   }
 });

@@ -28,7 +28,7 @@ from scripts.export_public_snapshot import (
 from scripts.open_source_product_policy import scan_product_payload
 from scripts.project_license_policy import verify_project_license
 from scripts.publication_source_io import SourceReadError, read_source_payload, source_is_present
-from scripts.third_party_asset_policy import verify_third_party_asset_bytes
+from scripts.third_party_asset_policy import THIRD_PARTY_REFERENCE_MEDIA, verify_third_party_asset_bytes
 
 
 SENSITIVE_SUFFIXES = frozenset(
@@ -188,6 +188,7 @@ def is_unapproved_asset_path(path: Path) -> bool:
         path.suffix.casefold() in ASSET_AND_BINARY_SUFFIXES
         and path.as_posix() not in FIRST_PARTY_ASSET_ALLOWLIST
         and path.as_posix() not in THIRD_PARTY_ASSET_LICENSES
+        and path.as_posix() not in THIRD_PARTY_REFERENCE_MEDIA
     )
 
 

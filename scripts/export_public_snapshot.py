@@ -41,6 +41,7 @@ from scripts.verify_no_tracked_secrets import scan_paths
 from scripts.open_source_product_policy import scan_product_surfaces
 from scripts.third_party_asset_policy import (
     THIRD_PARTY_ASSET_LICENSES,
+    THIRD_PARTY_REFERENCE_MEDIA,
     verify_third_party_asset_bytes,
 )
 
@@ -610,6 +611,7 @@ def exclusion_reason(relative_path: Path, ignored_paths: frozenset[str]) -> str 
     if (
         normalized_path in FIRST_PARTY_ASSET_ALLOWLIST
         or normalized_path in THIRD_PARTY_ASSET_LICENSES
+        or normalized_path in THIRD_PARTY_REFERENCE_MEDIA
     ):
         return None
     if lowercase_name in LOCAL_INSTRUCTION_FILENAMES or any(

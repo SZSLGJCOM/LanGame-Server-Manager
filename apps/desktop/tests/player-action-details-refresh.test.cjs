@@ -1,28 +1,6 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const path = require("node:path");
 const test = require("node:test");
-const vm = require("node:vm");
-const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
-
-function deferred() {
-  let resolve;
-  let reject;
-  const promise = new Promise((accept, fail) => { resolve = accept; reject = fail; });
-  return { promise, resolve, reject };
-}
-
-function loadModule(relativePath, dependencies = {}) {
-  const filename = path.join(__dirname, "../src", relativePath);
-  const exports = {};
-  vm.runInNewContext(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), {
-    exports, require: (id) => {
-      assert.ok(Object.hasOwn(dependencies, id), `unexpected dependency ${id}`);
-      return dependencies[id];
-    }
-  }, { filename });
-  return exports;
-}
+const { deferred, instanceActionFixture } = require("./helpers/instance-action-fixture.cjs");
 
 function harness() {
   const command = deferred();
@@ -31,43 +9,28 @@ function harness() {
   const input = { instance_id: "a", snapshot_id: "snapshot-a", player_key: "alice", action_id: "ban_player" };
   const result = { action_id: "ban_player", status: "sent", executed_at_unix_ms: 1, summary: "sent" };
   const refreshed = { details: { summary: { id: "a" }, settings_json: '{"blacklist_entries":[{"platform":"Steam","userid":"76561198000000001"}]}' } };
-  const state = { selectedId: "a", selected: null, cache: {}, refreshes: [], activity: null, bootstrapRefreshes: 0 };
-  const dependencies = {
-    react: { useRef: (value) => ({ current: value }), useState: (initial) => [typeof initial === "function" ? initial() : initial, () => {}] },
-    "../api": { executeInstancePlayerAction: (value) => { assert.deepEqual(value, input); return command.promise; } },
-    "../app-state": { describeError: (error) => error.message, loadInstancePanelData: (id) => {
-      state.refreshes.push(id); refreshStarted.resolve(); return panel.promise;
-    } },
-    "../app-ui": { message: (key, params) => ({ key, params }) },
-    "./useSteamCmdActions": {}, "../installation-cancellation": {}, "../install-state-presentation": {}, "../server-start-error": {},
-    "../steam-installation-account": {},
-    "../i18n": { useI18n: () => ({ t: (key, params) => `${key}: ${params.error}` }) },
-    "../instance-panel-refresh": loadModule("instance-panel-refresh.ts"),
-    "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({}) }
-  };
-  const actions = loadModule("hooks/useDesktopActions.ts", dependencies).useInstanceActions({
-    getCurrentInstanceId: () => state.selectedId,
-    cacheInstancePanel: (id, value) => { state.cache[id] = value; },
-    replaceSelectedInstancePanel: (value) => { state.selected = value; },
-    reloadBootstrap: async () => { state.bootstrapRefreshes++; },
-    setActivity: (value) => { state.activity = value; }
-  });
-  return { state, command, panel, refreshStarted, result, refreshed, execute: () => actions.handleExecutePlayerAction(input) };
+  const h = instanceActionFixture({ api: {
+    executeInstancePlayerAction: (value) => { assert.deepEqual(value, input); return command.promise; },
+    readInstanceDetails: () => { refreshStarted.resolve(); return panel.promise.then((value) => value.details); }
+  } });
+  return { ...h, command, panel, refreshStarted, result, refreshed,
+    execute: () => h.actions.handleExecutePlayerAction(input) };
 }
 
 test("online action waits for authoritative details and publishes the newly persisted roster", async () => {
   const h = harness();
   let completed = false;
   const pending = h.execute().then((result) => { completed = true; return result; });
-  assert.deepEqual(h.state.refreshes, []);
+  assert.equal(h.state.calls.length, 1);
+  assert.equal(h.state.calls[0].name, "executeInstancePlayerAction");
   h.command.resolve(h.result);
   await h.refreshStarted.promise;
   assert.equal(completed, false);
-  assert.deepEqual(h.state.refreshes, ["a"]);
+  assert.deepEqual(h.state.calls.find((call) => call.name === "readInstanceDetails").args, ["a"]);
   h.panel.resolve(h.refreshed);
   assert.equal(await pending, h.result);
-  assert.equal(h.state.selected, h.refreshed);
-  assert.equal(h.state.cache.a, h.refreshed);
+  assert.equal(h.state.selected.details, h.refreshed.details);
+  assert.equal(h.state.cache.a.details, h.refreshed.details);
   assert.equal(h.state.bootstrapRefreshes, 1);
 });
 
@@ -81,7 +44,7 @@ test("online action refresh caches its original instance without replacing a lat
   h.state.selected = otherPanel;
   h.panel.resolve(h.refreshed);
   await pending;
-  assert.equal(h.state.cache.a, h.refreshed);
+  assert.equal(h.state.cache.a.details, h.refreshed.details);
   assert.equal(h.state.selected, otherPanel);
 });
 
@@ -93,7 +56,7 @@ test("native readback failure still refreshes authoritative details and preserve
   await h.refreshStarted.promise;
   h.panel.resolve(h.refreshed);
   await assert.rejects(pending, (error) => error === failure);
-  assert.equal(h.state.selected, h.refreshed);
+  assert.equal(h.state.selected.details, h.refreshed.details);
 });
 
 test("a second refresh failure cannot replace the original player action failure", async () => {
@@ -104,16 +67,17 @@ test("a second refresh failure cannot replace the original player action failure
   await h.refreshStarted.promise;
   h.panel.reject(new Error("Details unavailable"));
   await assert.rejects(pending, (error) => error === failure);
-  assert.equal(h.state.activity.key, "activity.playerAccessRefreshFailed");
-  assert.equal(h.state.activity.params.message, "Details unavailable");
+  assert.equal(h.state.activity.at(-1).key, "activity.playerAccessRefreshFailed");
+  assert.equal(h.state.activity.at(-1).params.message, "Details unavailable");
 });
 
-test("successful dispatch with failed details refresh reports partial failure instead of success", async () => {
+test("successful dispatch keeps its receipt while failed details refresh stays separately visible", async () => {
   const h = harness();
   const pending = h.execute();
   h.command.resolve(h.result);
   await h.refreshStarted.promise;
   h.panel.reject(new Error("Details unavailable"));
-  await assert.rejects(pending, /servers\.playerCenter\.member\.refreshFailed: Details unavailable/);
-  assert.equal(h.state.activity.key, "activity.playerAccessRefreshFailed");
+  assert.equal(await pending, h.result);
+  assert.equal(h.state.activity.at(-1).key, "activity.playerAccessRefreshFailed");
+  assert.equal(h.state.activity.at(-1).params.message, "Details unavailable");
 });

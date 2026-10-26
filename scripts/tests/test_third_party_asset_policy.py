@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import subprocess
 import tempfile
 import unittest
@@ -12,9 +13,12 @@ from scripts.export_public_snapshot import (
     write_snapshot_from_head,
 )
 from scripts.third_party_asset_policy import (
+    ARK_MAP_ARTWORK_NOTICE,
     INTER_LICENSE_PATH,
     THIRD_PARTY_ASSET_LICENSES,
     THIRD_PARTY_ASSET_SHA256,
+    THIRD_PARTY_REFERENCE_MEDIA,
+    REFERENCE_MEDIA_SHA256,
     verify_third_party_asset_bytes,
 )
 
@@ -36,6 +40,33 @@ def change_last_byte(path: Path) -> None:
 
 
 class ThirdPartyAssetPolicyTests(unittest.TestCase):
+    def test_reference_maps_match_the_catalog_and_keep_their_separate_rights_notice(self):
+        selected = tuple(Path(path) for path in REFERENCE_MEDIA_SHA256)
+        manifest = json.loads((REPOSITORY_ROOT / "assets/ark-map-artwork/2026-10-25/manifest.json").read_text())
+        self.assertEqual({item["relativePath"] for item in manifest["images"]}, THIRD_PARTY_REFERENCE_MEDIA)
+        self.assertEqual(
+            {item["relativePath"]: item["sha256"] for item in manifest["images"]},
+            {path: REFERENCE_MEDIA_SHA256[path] for path in THIRD_PARTY_REFERENCE_MEDIA},
+        )
+        self.assertEqual(verify_third_party_asset_bytes(REPOSITORY_ROOT, selected), [])
+        scan_snapshot_files(REPOSITORY_ROOT, selected)
+        without_notice = tuple(path for path in selected if path.as_posix() != ARK_MAP_ARTWORK_NOTICE)
+        with self.assertRaisesRegex(SnapshotError, "third-party-asset-notice"):
+            scan_snapshot_files(REPOSITORY_ROOT, without_notice)
+
+    def test_replaced_reference_map_is_rejected_without_reclassifying_it_as_project_artwork(self):
+        image = Path("assets/ark-map-artwork/2026-10-25/The_Center_Topographic_Map.jpg")
+        selected = (image, Path(ARK_MAP_ARTWORK_NOTICE))
+        self.assertNotIn(image.as_posix(), THIRD_PARTY_ASSET_LICENSES)
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory)
+            for path in selected:
+                (repository / path).parent.mkdir(parents=True, exist_ok=True)
+                (repository / path).write_bytes((REPOSITORY_ROOT / path).read_bytes())
+            change_last_byte(repository / image)
+            with self.assertRaisesRegex(SnapshotError, "third-party-asset-integrity"):
+                scan_snapshot_files(repository, selected)
+
     def test_current_reviewed_files_pass_the_shared_check_and_snapshot_scan(self):
         self.assertEqual(verify_third_party_asset_bytes(REPOSITORY_ROOT, REVIEWED_PATHS), [])
         scan_snapshot_files(REPOSITORY_ROOT, REVIEWED_PATHS)

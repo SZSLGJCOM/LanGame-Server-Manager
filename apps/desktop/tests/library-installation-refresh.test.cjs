@@ -325,7 +325,7 @@ function loadDesktopActions(api) {
     "../install-state-presentation": { formatInstallState: (value) => value },
     "../installation-cancellation": require("../src/installation-cancellation.ts"),
     "../steam-installation-account": require("../src/steam-installation-account.ts"),
-    "../instance-panel-refresh": {},
+    "../instance-panel-loader": {},
     "../server-start-error": require("../src/server-start-error.ts"),
     "../library-installation-refresh": {},
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({ flush: async () => {} }) }

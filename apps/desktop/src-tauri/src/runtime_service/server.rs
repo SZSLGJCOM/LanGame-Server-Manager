@@ -414,6 +414,11 @@ mod admission_tests {
         for command in [
             "install_module_game",
             "validate_module_game",
+            "ensure_steamcmd_ready",
+            "create_instance_backup",
+            "delete_instance_backup",
+            "restore_instance_backup",
+            "import_dontstarve_world_data",
             "update_instance_program",
             "create_instance_record",
             "start_instance_process",

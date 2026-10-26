@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 from dataclasses import dataclass
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -16,6 +17,7 @@ if str(REPOSITORY_ROOT) not in sys.path:
 
 from scripts.open_source_product_policy import scan_product_payload
 from scripts.verify_no_tracked_secrets import scan_payload
+from scripts.third_party_asset_policy import ARK_MAP_ARTWORK_NOTICE, REFERENCE_MEDIA_SHA256, THIRD_PARTY_REFERENCE_MEDIA
 from scripts.verify_open_source_boundary import (
     DEVELOPER_MACHINE_PATH,
     ignored_tracked_paths,
@@ -34,6 +36,12 @@ SYNTHETIC_FIXTURE_ASSIGNMENTS = {
     ("crates/app-steamcmd/src/steamcmd_account_bridge_tests.rs", "77ea25a15d1fe4383604702a5918fc20c6b1a943"): {81},
     ("crates/app-steamcmd/src/steamcmd_account_session_tests.rs", "491c0bc06d77359ee4d69e934954ab9401e3e716"): {20, 94, 479},
     ("crates/app-storage/src/native_bans_tests.rs", "13fc79752771f262e3287237c4b261d7562b9ab2"): {411},
+}
+
+# Two non-secret scratch paths in a superseded documentation command example.
+# Current documentation uses portable paths; changed blobs receive no exception.
+HISTORICAL_DOCUMENTATION_PATH_EXAMPLES = {
+    ("docs/ark-map-artwork-distribution.md", "4fb5d2764ec2809a941ee519d84cb4ec70809450"): {30, 31},
 }
 
 
@@ -119,12 +127,17 @@ def _tree_file_versions(
 
 def _unique_file_versions(
     repository_root: Path, commits: tuple[str, ...]
-) -> tuple[HistoricalFileVersion, ...]:
+) -> tuple[tuple[HistoricalFileVersion, ...], set[HistoryFinding]]:
     versions: dict[tuple[str, Path], HistoricalFileVersion] = {}
+    findings: set[HistoryFinding] = set()
     for commit in commits:
-        for version in _tree_file_versions(repository_root, commit):
+        tree = _tree_file_versions(repository_root, commit)
+        tree_paths = {version.path.as_posix() for version in tree}
+        if tree_paths & THIRD_PARTY_REFERENCE_MEDIA and ARK_MAP_ARTWORK_NOTICE not in tree_paths:
+            findings.add(HistoryFinding(commit, Path(ARK_MAP_ARTWORK_NOTICE), 0, "historical-reference-media-notice"))
+        for version in tree:
             versions.setdefault((version.object_id, version.path), version)
-    return tuple(versions.values())
+    return tuple(versions.values()), findings
 
 
 def _history_messages(
@@ -256,6 +269,8 @@ def _scan_file_version(
 
     if is_unapproved_asset_path(path):
         findings.append(HistoryFinding(version.commit, path, 0, "historical-media"))
+    if normalized_path in REFERENCE_MEDIA_SHA256 and hashlib.sha256(payload).hexdigest() != REFERENCE_MEDIA_SHA256[normalized_path]:
+        findings.append(HistoryFinding(version.commit, path, 0, "historical-reference-media-integrity"))
 
     for product_finding in scan_product_payload(path, payload):
         findings.append(
@@ -268,13 +283,15 @@ def _scan_file_version(
         )
 
     if b"\0" not in payload:
-        machine_path = DEVELOPER_MACHINE_PATH.search(payload)
-        if machine_path is not None:
+        for machine_path in DEVELOPER_MACHINE_PATH.finditer(payload):
+            line = payload.count(b"\n", 0, machine_path.start()) + 1
+            if line in HISTORICAL_DOCUMENTATION_PATH_EXAMPLES.get((normalized_path, version.object_id), ()):
+                continue
             findings.append(
                 HistoryFinding(
                     version.commit,
                     path,
-                    payload.count(b"\n", 0, machine_path.start()) + 1,
+                    line,
                     "developer-machine-path",
                 )
             )
@@ -297,14 +314,13 @@ def _scan_file_version(
 def scan_reachable_history(repository_root: Path = REPOSITORY_ROOT) -> HistoryScanResult:
     repository_root = repository_root.resolve()
     commits = _reachable_commits(repository_root)
-    versions = _unique_file_versions(repository_root, commits)
+    versions, findings = _unique_file_versions(repository_root, commits)
     paths = tuple({version.path for version in versions})
     ignored_paths = ignored_tracked_paths(repository_root, paths)
     versions_by_object: dict[str, list[HistoricalFileVersion]] = defaultdict(list)
     for version in versions:
         versions_by_object[version.object_id].append(version)
 
-    findings: set[HistoryFinding] = set()
     for object_id, name, payload in _history_messages(repository_root, commits):
         findings.update(_scan_history_message(object_id, name, payload))
     with GitBlobReader(repository_root) as reader:

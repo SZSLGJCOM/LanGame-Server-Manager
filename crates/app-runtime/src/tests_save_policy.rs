@@ -93,7 +93,7 @@ fn save_policy_launch_plan(
         ports: module.default_ports.clone(),
         active_run: None,
     };
-    let plan = build_launch_plan(&settings, &details, &instance).unwrap();
+    let plan = build_launch_plan_with_override(&settings, &details, &instance, None).unwrap();
     assert!(
         !plan
             .validation_issues

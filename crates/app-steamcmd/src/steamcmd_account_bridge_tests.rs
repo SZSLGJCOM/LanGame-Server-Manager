@@ -136,9 +136,13 @@ public static class AccountBridgeFixture {
         fs::write(native.join("package/steam_cmd_win64.manifest"), format!(
             "\"win64\" {{ \"version\" \"987654321\" \"steamcmd_win64\" {{ \"file\" \"steamcmd_win64.zip.hash\" \"size\" \"12\" \"sha2\" \"{}\" \"IsBootstrapperPackage\" \"1\" }} }}\r\n", "a".repeat(64),
         )).unwrap();
-        let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &settings)
-            .await
-            .unwrap();
+        let guard = acquire_steamcmd_operation(
+            test_install_lock_context(),
+            &settings,
+            InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+        )
+        .await
+        .unwrap();
         let mut command = Command::new(&executable);
         command.arg("+quit").current_dir(native);
         let verified = run_command_capture(command, deadline()).await.unwrap();
@@ -308,9 +312,13 @@ public static class AccountBridgeFixture {
     }
 
     async fn assert_closed(&self, endpoint: &str) {
-        let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &self.settings)
-            .await
-            .unwrap();
+        let guard = acquire_steamcmd_operation(
+            test_install_lock_context(),
+            &self.settings,
+            InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+        )
+        .await
+        .unwrap();
         let client = reqwest::Client::builder()
             .no_proxy()
             .timeout(Duration::from_secs(1))

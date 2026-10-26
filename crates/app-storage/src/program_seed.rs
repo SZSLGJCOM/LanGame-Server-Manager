@@ -74,15 +74,6 @@ struct SelectedSeed {
     _archive_lease: Option<crate::instance_settings_lock::InstanceSettingsLock>,
 }
 
-pub async fn prepare_clean_library_seed(
-    paths: &StoragePaths,
-    descriptor: &ModuleDescriptor,
-    cancellation: Option<Arc<AtomicBool>>,
-) -> Result<CleanLibrarySeed, StorageError> {
-    let target = library_target(paths, descriptor)?;
-    prepare_clean_library_seed_at(paths, descriptor, &target, cancellation).await
-}
-
 /// The caller selects the registered library location and holds its lifecycle
 /// lease through seed publication and installation. Custom locations are valid,
 /// but an instance-owned directory can never become a library seed target.
@@ -164,23 +155,6 @@ impl Drop for CancelOnDrop {
             flag.store(true, Ordering::Release);
         }
     }
-}
-
-fn library_target(
-    paths: &StoragePaths,
-    descriptor: &ModuleDescriptor,
-) -> Result<PathBuf, StorageError> {
-    let install = descriptor
-        .install
-        .as_ref()
-        .ok_or_else(|| invalid(&paths.games_root, "module has no install specification"))?;
-    let relative = checked_relative(&install.shared_game_dir.replace('\\', "/"))?;
-    let root = normalize_path(&paths.games_root)?;
-    let target = normalize_path(&root.join(relative))?;
-    if !contains(&root, &target) || root == target {
-        return Err(invalid(&target, "invalid library target"));
-    }
-    Ok(target)
 }
 
 fn validate_seed_target(paths: &StoragePaths, target: &Path) -> Result<PathBuf, StorageError> {

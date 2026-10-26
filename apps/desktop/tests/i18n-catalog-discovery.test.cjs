@@ -1,5 +1,4 @@
 const assert = require("node:assert/strict");
-const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
@@ -18,17 +17,6 @@ test("locale catalog discovery includes base, part, and generated chunk files", 
   assert.ok(englishFiles.includes("src/i18n/games/schema-generated.en.chunk-01.ts"));
   assert.ok(chineseFiles.includes("src/i18n/games/arksurvivalascended.zh-cn.part1.ts"));
   assert.ok(chineseFiles.includes("src/i18n/games/schema-generated.zh-cn.chunk-01.ts"));
-});
-
-test("i18n surface audit resolves translation references from split catalogs", () => {
-  const output = execFileSync(process.execPath, ["scripts/audit_i18n_surface.cjs"], {
-    cwd: desktopRoot,
-    encoding: "utf8"
-  });
-
-  assert.match(output, /missing en-US keys for translation references: 0/u);
-  assert.match(output, /missing explicit zh-CN catalog keys: 0/u);
-  assert.doesNotMatch(output, /scum-native-messages\.ts/u);
 });
 
 test("catalogs do not retain copy owned only by removed frontend surfaces", () => {

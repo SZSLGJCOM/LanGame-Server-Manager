@@ -26,8 +26,10 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use subtle::ConstantTimeEq;
 use tauri::Manager;
+use tokio::sync::Semaphore;
 
 use crate::assistant::{AssistantRunInput, AssistantSecretDescriptor};
+use crate::command_registry::{self, Completion, LanAccess};
 use crate::commands::{
     self, AssistantConfirmOperationInput, AssistantRequestInput, GenerateInstanceBroadcastInput,
     SendInstanceBroadcastInput,
@@ -51,6 +53,9 @@ const MAX_REQUEST_BODY_BYTES: usize = 16 * 1024 * 1024;
 const CONNECTION_TIMEOUT: Duration = Duration::from_secs(15);
 const CONNECTION_READ_POLL_INTERVAL: Duration = Duration::from_millis(100);
 const LAN_HOST_WORKER_COUNT: usize = 4;
+// These requests retain their worker through publication and recovery. Leave
+// two workers for bounded commands and file responses while that work settles.
+const LAN_HOST_MAX_OWNED_REQUESTS: usize = 2;
 const LAN_HOST_QUEUE_CAPACITY: usize = 16;
 const LAN_HOST_POLL_INTERVAL: Duration = Duration::from_millis(25);
 const OVERLOAD_RESPONSE_TIMEOUT: Duration = Duration::from_millis(100);
@@ -263,6 +268,7 @@ fn run_lan_host(
             .load(Ordering::SeqCst)
     });
     let handler_shutdown_check = Arc::clone(&shutdown_check);
+    let owned_operation_slots = Arc::new(Semaphore::new(LAN_HOST_MAX_OWNED_REQUESTS));
     let handler: ConnectionHandler = Arc::new(move |stream| {
         handle_connection(
             stream,
@@ -270,6 +276,7 @@ fn run_lan_host(
             Arc::clone(&dist_dir),
             Arc::clone(&access),
             Arc::clone(&handler_shutdown_check),
+            Arc::clone(&owned_operation_slots),
         )
     });
 
@@ -446,6 +453,7 @@ fn handle_connection(
     dist_dir: Arc<PathBuf>,
     access: Arc<LanHostAccess>,
     shutdown_check: ShutdownCheck,
+    owned_operation_slots: Arc<Semaphore>,
 ) -> Result<(), String> {
     stream
         .set_read_timeout(Some(CONNECTION_READ_POLL_INTERVAL))
@@ -465,11 +473,14 @@ fn handle_connection(
     if request.path.split('?').next() == Some("/__langame/api") {
         return handle_api_request(
             &mut stream,
-            app_handle,
             request,
             access,
             &shutdown_check,
             request_deadline,
+            &owned_operation_slots,
+            |command, args| {
+                tauri::async_runtime::block_on(dispatch_command(&app_handle, command, args))
+            },
         );
     }
 
@@ -494,11 +505,12 @@ fn handle_connection(
 
 fn handle_api_request(
     stream: &mut TcpStream,
-    app_handle: tauri::AppHandle,
     request: HttpRequestHead,
     access: Arc<LanHostAccess>,
     shutdown_check: &ShutdownCheck,
     request_deadline: Instant,
+    owned_operation_slots: &Arc<Semaphore>,
+    dispatch: impl FnOnce(&str, Value) -> Result<Value, String>,
 ) -> Result<(), String> {
     let Some(content_length) = preflight_api_request(stream, &request, &access, shutdown_check)?
     else {
@@ -522,7 +534,30 @@ fn handle_api_request(
         .and_then(Value::as_str)
         .ok_or_else(|| String::from("LAN API payload is missing command"))?;
     let args = payload.get("args").cloned().unwrap_or_else(|| json!({}));
-    let result = tauri::async_runtime::block_on(dispatch_command(&app_handle, command, args));
+    let _owned_operation = if command_registry::find(command).is_some_and(|registered| {
+        registered.lan == LanAccess::Allowed && registered.completion == Completion::Owned
+    }) {
+        match Arc::clone(owned_operation_slots).try_acquire_owned() {
+            Ok(slot) => Some(slot),
+            Err(_) => {
+                write_json_response(
+                    stream,
+                    503,
+                    json!({
+                        "ok": false,
+                        "error": "LAN host is busy; no operation was started. Wait until an active task finishes.",
+                    }),
+                    ResponseWritePolicy::connection(shutdown_check),
+                )?;
+                return Ok(());
+            }
+        }
+    } else {
+        None
+    };
+    // An accepted operation keeps its permit until its actual result and bounded
+    // response finish. A client disconnect cannot abandon or replay the work.
+    let result = dispatch(command, args);
 
     match result {
         Ok(value) => write_json_response(

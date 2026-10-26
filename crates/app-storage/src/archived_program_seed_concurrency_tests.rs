@@ -63,7 +63,13 @@ async fn archived_seed_copy_blocks_its_source_but_allows_unrelated_archive_lifec
     let paths = fixture.paths.clone();
     let descriptor = fixture.descriptor.clone();
     let worker = tokio::spawn(async move {
-        crate::prepare_clean_library_seed(&paths, &descriptor, Some(cancellation)).await
+        crate::prepare_clean_library_seed_at(
+            &paths,
+            &descriptor,
+            &paths.games_root.join("fixture"),
+            Some(cancellation),
+        )
+        .await
     });
     pause.reached().await;
     assert!(matches!(
@@ -111,7 +117,13 @@ async fn archived_seed_reports_a_busy_source_without_publishing_an_empty_seed() 
         crate::instance_archive::program_source_mutation_lock(&fixture.paths, &fixture.archive_id)
             .unwrap();
     assert!(matches!(
-        crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None).await,
+        crate::prepare_clean_library_seed_at(
+            &fixture.paths,
+            &fixture.descriptor,
+            &fixture.paths.games_root.join("fixture"),
+            None
+        )
+        .await,
         Err(StorageError::InstanceSettingsLocked { .. })
     ));
     assert!(!fixture.paths.games_root.join("fixture").exists());
@@ -122,9 +134,14 @@ async fn archived_seed_can_start_while_unrelated_archive_catalog_mutation_is_adm
     let fixture = Fixture::new().await;
     let before = tree_snapshot(&fixture.archive).unwrap();
     let _inventory = inventory_lock(&fixture.paths).unwrap();
-    let seed = crate::prepare_clean_library_seed(&fixture.paths, &fixture.descriptor, None)
-        .await
-        .unwrap();
+    let seed = crate::prepare_clean_library_seed_at(
+        &fixture.paths,
+        &fixture.descriptor,
+        &fixture.paths.games_root.join("fixture"),
+        None,
+    )
+    .await
+    .unwrap();
     assert!(!seed.requires_validation);
     assert_eq!(seed.current_version.as_deref(), Some("build-17"));
     assert_eq!(

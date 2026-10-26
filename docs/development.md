@@ -32,6 +32,10 @@ Windows 正式运行时，React 页面与 hooks 通过 `api.ts` / `api-transport
 
 产品命令在 `apps/desktop/src-tauri/src/command_registry.rs` 统一声明 Tauri 注册、执行进程、LAN 访问权限和完成策略。参数解码仍由各传输适配层负责；runtime service 的内部控制消息不进入产品命令表。修改 IPC 时同步核对前端参数和实际适配器，契约检查核对登记与适配器的双向覆盖。客户端顶层命令参数使用 Tauri 的 camelCase，不重复发送 snake_case 别名；嵌套 `input` 遵循对应 Rust Serde 数据类型的命名，不能递归改名。桌面进程归属和仅限命名管道访问是不同边界，命令登记不能混合这两种含义。
 
+LAN 入口最多同时接受两个 `Owned` 长操作，为取消、状态与静态资源保留工作线程；超额请求在执行业务前返回 503。已接收的工作持有准入许可直到真实完成，客户端断连不会中断提交或触发重放。普通读取和网络调用沿用各自时限，这不是所有 LAN 命令的统一执行超时。
+
+实例面板的轮询与操作后刷新共用 `InstancePanelReader`，按详情、运行状态、备份等部分更新并独立报告错误。操作是否成功由命令结果决定；后续读取失败提示刷新问题，不能把已经完成的启动、保存或管理命令改报失败。迟到结果只更新仍存在的对应实例，不覆盖新的选择或退休中的实例。
+
 存储就绪缓存保存数据库文件身份。运行概览与实例详情共用一次局部数据库读取，数据库阶段在成功及错误路径都显式关闭连接，再读取配置、分析日志和查询玩家。保留数据库替换检测、前置就绪检查、事务和恢复语义；连接创建次数减少不能替代实际耗时测量。
 
 生产运行期命令通过 `DesktopState::bootstrap_storage` 或调用方捕获的存储上下文访问数据，不再从进程环境重新定位数据根。运行时固定初始用户定位根，由其中保存的数据位置指向选中的数据目录；定位根与数据目录不能互换。每次重新进入存储时仍校验已保存的位置并读取当前设置，不能缓存解析后的路径来跳过数据目录、设置或数据库缺失检查。
@@ -219,6 +223,10 @@ Every instance passes `commands_runtime_environment` after game updates and befo
 Real official-package installation, loading and portable preparation use the opt-in [Windows Sandbox acceptance workflow](runtime-prerequisite-validation.md#english); ordinary unit tests do not perform these system installations.
 
 Product commands declare Tauri registration, execution ownership, LAN access and completion policy in `apps/desktop/src-tauri/src/command_registry.rs`. Transport adapters retain argument decoding; internal runtime-service control messages stay outside the product registry. For IPC changes, check frontend arguments and the actual adapters together; contract checks verify registration coverage in both directions. Clients use Tauri camelCase for top-level arguments without sending duplicate snake_case aliases. Nested `input` follows its Rust Serde type; do not rename fields recursively. Desktop-process ownership and named-pipe-only authorization are separate command boundaries.
+
+LAN admits at most two `Owned` long operations at once, leaving workers for cancellation, status and static resources. Additional long requests receive HTTP 503 before business execution. Accepted work retains its permit until completion even if the client disconnects. Other reads and network calls retain their own budgets; this is not a universal LAN execution timeout.
+
+Polling and mutation readback share `InstancePanelReader`, with independent progress and errors for details, runtime, backups and other parts. The command receipt determines operation success; a later refresh failure must not turn a completed start, save or management command into a reported failure. Late results update only their still-existing instance and cannot overwrite a newer selection or an instance being retired.
 
 Storage readiness caches database file identity. The combined runtime overview and instance-details read uses one operation-local database connection, explicitly closed on success and error before configuration reads, log analysis and player queries. Preserve database-replacement detection, readiness checks before reconciliation, transactions and recovery semantics. Fewer connection creations do not establish a measured latency improvement.
 

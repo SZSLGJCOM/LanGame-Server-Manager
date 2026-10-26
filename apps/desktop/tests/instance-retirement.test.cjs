@@ -70,7 +70,7 @@ function harness(kind) {
     "../i18n": { useI18n: () => ({ t: (key, params) => `${key}: ${JSON.stringify(params)}` }) },
     "./useSteamCmdActions": {}, "../installation-cancellation": {}, "../install-state-presentation": {},
     "../steam-installation-account": {},
-    "../instance-panel-refresh": {}, "../server-start-error": {},
+    "../instance-panel-loader": {}, "../server-start-error": {},
     "../views/settings/InstanceSettingsSaveContext": { useInstanceSettingsSaveCoordinator: () => ({}) }
   }).useInstanceActions({
     retirement,

@@ -107,9 +107,13 @@ public static class ReverificationFixture {
         ).unwrap();
         // Seed the prior record through the real +quit verifier, never by
         // assuming that a leftover executable is a verified installation.
-        let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &settings)
-            .await
-            .unwrap();
+        let guard = acquire_steamcmd_operation(
+            test_install_lock_context(),
+            &settings,
+            InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+        )
+        .await
+        .unwrap();
         let status = managed_steamcmd_status(&settings);
         let mut reporter = PrepareReporter::new(|_| {});
         warm_up_steamcmd(&status, deadline(), &mut reporter)
@@ -150,11 +154,14 @@ public static class ReverificationFixture {
         )
         .await?;
         let steamcmd = game.acquire_steamcmd(&self.settings).await?;
-        download_workshop_items_with_progress(
+        download_workshop_items_with_login_and_progress(
             &self.settings,
-            1_623_730,
-            &target,
-            &["3816899969".into()],
+            SteamWorkshopDownloadRequest {
+                consumer_app_id: 1_623_730,
+                install_root: &target,
+                ids: &["3816899969".into()],
+                account_name: None,
+            },
             &game,
             &steamcmd,
             |_| {},
@@ -322,9 +329,13 @@ async fn failed_or_incomplete_reverification_never_refreshes_a_stale_record() {
     let fixture = Fixture::new().await;
     fixture.stale(b"native runtime self-update");
     let old_record = fixture.record();
-    let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &fixture.settings)
-        .await
-        .unwrap();
+    let guard = acquire_steamcmd_operation(
+        test_install_lock_context(),
+        &fixture.settings,
+        InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+    )
+    .await
+    .unwrap();
     for mode in ["missing-api", "exit-failure"] {
         fs::write(fixture.native().join("verify-mode"), mode).unwrap();
         assert!(matches!(
@@ -346,9 +357,13 @@ async fn cancelled_or_timed_out_reverification_keeps_the_old_record_unready() {
     let fixture = Fixture::new().await;
     fixture.stale(b"native runtime self-update");
     let old_record = fixture.record();
-    let guard = acquire_steamcmd_lifecycle(test_install_lock_context(), &fixture.settings)
-        .await
-        .unwrap();
+    let guard = acquire_steamcmd_operation(
+        test_install_lock_context(),
+        &fixture.settings,
+        InstallDeadline::new("SteamCMD test lifecycle", GAME_INSTALL_LIFECYCLE_TIMEOUT),
+    )
+    .await
+    .unwrap();
     let cancellation = InstallCancellation::new();
     cancellation.cancel();
     assert!(matches!(
