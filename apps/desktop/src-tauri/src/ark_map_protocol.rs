@@ -45,8 +45,8 @@ pub fn snapshot(
             "ARK player snapshot belongs to a different map or exceeds 512 players.".into(),
         );
     }
-    if let Some(projection) = &value.projection {
-        if [
+    if let Some(projection) = &value.projection
+        && ([
             projection.min_x,
             projection.max_x,
             projection.min_y,
@@ -55,10 +55,9 @@ pub fn snapshot(
         .iter()
         .any(|v| !v.is_finite() || v.abs() > 10_000_000.0)
             || projection.max_x <= projection.min_x
-            || projection.max_y <= projection.min_y
-        {
-            return Err("Invalid ARK map projection.".into());
-        }
+            || projection.max_y <= projection.min_y)
+    {
+        return Err("Invalid ARK map projection.".into());
     }
     let mut ids = HashSet::new();
     for player in &value.players {

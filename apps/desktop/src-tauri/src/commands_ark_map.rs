@@ -70,13 +70,13 @@ pub(super) fn selected_target(
     }
     let mut target = commands_runtime_ark::project_running_command(details, Some(process_key))?
         .ok_or("This instance is not an ARK server.")?;
-    if let Some(run) = target.active_run.as_mut() {
-        if !run.processes.is_empty() {
-            run.processes
-                .retain(|process| process.process_key == process_key);
-            run.pid = run.processes.first().and_then(|process| process.pid);
-            run.process_count = run.processes.len();
-        }
+    if let Some(run) = target.active_run.as_mut()
+        && !run.processes.is_empty()
+    {
+        run.processes
+            .retain(|process| process.process_key == process_key);
+        run.pid = run.processes.first().and_then(|process| process.pid);
+        run.process_count = run.processes.len();
     }
     Ok(target)
 }
