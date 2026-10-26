@@ -1130,16 +1130,16 @@ Authors metadata / 作者元数据: Matt Mastracci <matthew@mastracci.com>
 Legal text / 法律文本: a8ad31b1c3f40dca5a84119351b8fa8ddc868edd77fad8a8ebf6d8f2d16fa4ae — checksum-verified crate file ctor-1.0.13/LICENSE-APACHE
 Legal text / 法律文本: bccaa8b6c09f94e81f06696e179dbe058464bbdfbc823b6d49cada1d71e84ac3 — checksum-verified crate file ctor-1.0.13/LICENSE-MIT
 --------------------------------------------------------------------------------
-Package / 软件包: ctutils@0.4.3
+Package / 软件包: ctutils@0.4.4
 Declared license / 声明许可证: Apache-2.0 OR MIT
 Selected reviewed terms / 选用审计条款: packaged upstream texts
-Archive SHA-256: 03bb0e1cc970d482d121d9a1744999169b69a07470b3d644a7894e53fcaf4574
-Source archive / 源码归档: https://static.crates.io/crates/ctutils/ctutils-0.4.3.crate
+Archive SHA-256: 12218662ccac37d9714f2191252553d67585b97df8c839cbe49e0bde278dc865
+Source archive / 源码归档: https://static.crates.io/crates/ctutils/ctutils-0.4.4.crate
 Repository / 仓库: https://github.com/RustCrypto/utils
-VCS commit / 版本提交: 3c5aa70180232b57a485a14269adf1380d1807c1
+VCS commit / 版本提交: a993c0ba50db6510d8db15a6219572de65115438
 Authors metadata / 作者元数据: RustCrypto Developers
-Legal text / 法律文本: 91585c36e4fb9ab4ca0d3dfac5d66d3c0c62cc51f640a0e1196542daf2267eae — checksum-verified crate file ctutils-0.4.3/LICENSE-MIT
-Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file ctutils-0.4.3/LICENSE-APACHE
+Legal text / 法律文本: 91585c36e4fb9ab4ca0d3dfac5d66d3c0c62cc51f640a0e1196542daf2267eae — checksum-verified crate file ctutils-0.4.4/LICENSE-MIT
+Legal text / 法律文本: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 — checksum-verified crate file ctutils-0.4.4/LICENSE-APACHE
 --------------------------------------------------------------------------------
 Package / 软件包: daachorse@3.0.3
 Declared license / 声明许可证: MIT OR Apache-2.0
@@ -22020,7 +22020,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: 91585c36e4fb9ab4ca0d3dfac5d66d3c0c62cc51f640a0e1196542daf2267eae
-Source / 来源: checksum-verified crate file ctutils-0.4.3/LICENSE-MIT
+Source / 来源: checksum-verified crate file ctutils-0.4.4/LICENSE-MIT
 --------------------------------------------------------------------------------
 Copyright (c) 2025-2026 The RustCrypto Project Developers
 
@@ -28694,7 +28694,7 @@ SOFTWARE.
 
 Text SHA-256 / 文本 SHA-256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
 Source / 来源: checksum-verified crate file cmov-0.5.4/LICENSE-APACHE
-Source / 来源: checksum-verified crate file ctutils-0.4.3/LICENSE-APACHE
+Source / 来源: checksum-verified crate file ctutils-0.4.4/LICENSE-APACHE
 Source / 来源: checksum-verified crate file embed_plist-1.2.2/LICENSE-APACHE
 Source / 来源: checksum-verified crate file encoding_rs-0.8.42/LICENSE-APACHE
 Source / 来源: checksum-verified crate file lru-slab-0.1.3/LICENSE-APACHE
