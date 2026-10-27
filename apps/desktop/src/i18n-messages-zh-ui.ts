@@ -270,6 +270,7 @@ export const ZH_CN_UI_MESSAGES: MessageCatalog = {
   "runtime.health.startingTasks": "进程正在运行，仍在执行启动任务。",
   "runtime.health.retrySignal": "服务器正在运行，但最近的日志中出现了警告或重试信号。",
   "runtime.health.abioticWorldCorrupt": "非生物因素检测到世界存档损坏，专用服务器无法安全地继续运行。",
+  "runtime.health.abioticOfficialModsFailed": "非生物因素的官方 Mod 初始化失败，服务端已拒绝启动。请在本次运行日志中检查 Mod、目录、网络或认证错误。",
   "runtime.health.abioticSessionPublished": "非生物因素已上线，并发布了供玩家加入的会话短码。",
   "runtime.health.abioticLoadingMap": "非生物因素已完成世界校验，正在加载主设施地图。",
   "runtime.health.abioticListening": "非生物因素正在监听连接并准备游戏会话。",

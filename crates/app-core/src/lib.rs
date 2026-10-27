@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+pub mod abiotic_output;
 mod live_players;
 pub mod maintenance_schedule;
 pub use live_players::*;

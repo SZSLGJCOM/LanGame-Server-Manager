@@ -29,6 +29,7 @@ args_template = [
   "{{abioticfactor.use_local_ips_flag}}",
   "{{abioticfactor.use_perf_threads_flag}}",
   "{{abioticfactor.no_async_loading_thread_flag}}",
+  "{{abioticfactor.mod_args}}",
 ]
 working_directory_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64"
 window_policy = "background"
@@ -81,18 +82,20 @@ command = "CTRL_C"
 wait_after_ms = 10000
 
 [storage]
-runtime_copy_exclusions = ["AbioticFactor/Saved", "AbioticFactor/Binaries/Win64/ue4ss/Mods", "langame_world_save"]
+runtime_copy_exclusions = ["AbioticFactor/Saved", "AbioticFactor/Mods", "AbioticFactor/Binaries/Win64/ue4ss/Mods", "langame_world_save"]
 saves_path_template = "{{paths.install_root}}/AbioticFactor/Saved/SaveGames/Server/Worlds/{{settings.world_save_name}}"
 retained_paths = [
   "AbioticFactor/Saved/Config/WindowsServer/LanGame",
   "AbioticFactor/Saved/SaveGames/Server/LanGame",
+  "AbioticFactor/Saved/mod.io",
+  "AbioticFactor/Mods",
 ]
 
 [mods.source]
 provider = "nexus"
-label = "Abiotic Factor UE4SS mods"
+label = "Abiotic Factor unofficial UE4SS mods"
 url = "https://www.nexusmods.com/abioticfactor"
-install_note = "Clicking Start automatically prepares the reviewed UE4SS loader, dedicated-server proxy and save extension in this instance's private server directory. This importer stages UE4SS mod payloads; follow each mod page for Content/Paks placement and compatibility requirements. Existing conflicting loader files are preserved and reported."
+install_note = "This importer manages unofficial UE4SS Mods. Official mod.io Mods use the Official Mods section in Configuration. UE4SS and the native save extension are prepared only for verified game builds; unknown builds preserve operator Mods and disable the owned loader. Follow each unofficial Mod's compatibility and Content/Paks instructions."
 
 [mods.manual_staging]
 target_template = "{{paths.install_root}}/AbioticFactor/Binaries/Win64/ue4ss/Mods"

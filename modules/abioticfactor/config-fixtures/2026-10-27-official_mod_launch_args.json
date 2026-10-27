@@ -1,0 +1,98 @@
+{
+  "fixture_version": 1,
+  "module_id": "abioticfactor",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-27",
+    "build": "Official developer 1.5.0.31459 documentation; deterministic output only, no native server or mod.io account run",
+    "source_ids": [
+      "official_mod_launch_args",
+      "official_mod_support_1_5"
+    ]
+  },
+  "coverage": {
+    "editable": 8,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "official_mod_launch_args.-Mods",
+      "official_mod_launch_args.-ModioToken",
+      "official_mod_launch_args.-ModsDir",
+      "official_mod_launch_args.-ModInstallTimeout",
+      "official_mod_launch_args.-OverrideModWarnings",
+      "official_mod_launch_args.-SideloadMods",
+      "official_mod_launch_args.-SideloadModsPath",
+      "official_mod_support_1_5.AllowLocalOnlyMods"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "瀑布实验室 α",
+    "world_save_name": "Cascade",
+    "max_server_players": 24,
+    "server_password": "",
+    "admin_password": "acceptance-admin",
+    "moderator_steam_ids": "76561198011111111\n76561198022222222\n76561198011111111",
+    "lan_only": false,
+    "platform_limited": "PC",
+    "use_local_ips": true,
+    "game_difficulty": 1,
+    "hardcore_mode": true,
+    "day_night_cycle_speed_multiplier": 3,
+    "disable_async_loading_thread": true,
+    "use_perf_threads": true,
+    "apocalyptic_abilities": true,
+    "maximize_enemy_spawns": true,
+    "enemy_deployable_damage_multiplier": 0,
+    "mod_ids": "6472275;6472552;6472275",
+    "modio_token": "fixture-modio-token",
+    "mods_directory": "AbioticFactor/Saved/mod.io-curated",
+    "mod_install_timeout_seconds": 1200,
+    "override_mod_warnings": true,
+    "allow_local_only_mods": false
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "AbioticFactor/Saved/Config/WindowsServer/LanGame/acceptance-abioticfactor-SandboxSettings.ini",
+        "format": "ini",
+        "keys": {
+          "SandboxSettings.AllowLocalOnlyMods": "False"
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe",
+      "arguments": [
+        "-log",
+        "-stdout",
+        "-FullStdOutLogOutput",
+        "-PORT=7777",
+        "-QueryPort=27015",
+        "-MaxServerPlayers=24",
+        "-WorldSaveName=Cascade",
+        "-SandboxIniPath=Config/WindowsServer/LanGame/acceptance-abioticfactor-SandboxSettings.ini",
+        "-AdminIniPath=SaveGames/Server/LanGame/acceptance-abioticfactor-Admin.ini",
+        "-SteamServerName=瀑布实验室 α",
+        "-AdminPassword=acceptance-admin",
+        "-PlatformLimited=PC",
+        "-UseLocalIPs",
+        "-useperfthreads",
+        "-DisableAsyncLoadingThread",
+        "-Mods=6472275;6472552",
+        "-ModioToken=fixture-modio-token",
+        "-ModsDir={{paths.install_root}}/AbioticFactor/Saved/mod.io-curated",
+        "-ModInstallTimeout=1200",
+        "-OverrideModWarnings"
+      ]
+    }
+  }
+}

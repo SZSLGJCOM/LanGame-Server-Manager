@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "steam_app_id": 2857200,
+  "steam_build_id": "26092453",
+  "evidence_classification": "official_package_static_contract",
+  "executable_path": "AbioticFactor/Binaries/Win64/AbioticFactorServer-Win64-Shipping.exe",
+  "executable_size": 142251520,
+  "executable_sha256": "3ee1c8d170138fb3842dbde128813dabe9ec3cbabf5865b00d2fe45670b6be91",
+  "pdb_guid": "705106BF-5384-E32D-4A1A-C96EB49D4250",
+  "pdb_age": 1,
+  "factory": {
+    "reflected_path": "/Script/AbioticFactor.SaveCurrentWorld:SaveCurrentWorld",
+    "function_flags": "0x04022401",
+    "parameters": [
+      { "name": "WorldContextObject", "kind": "ObjectProperty" },
+      { "name": "ReturnValue", "kind": "ObjectProperty" }
+    ],
+    "native_signature": "USaveCurrentWorld* USaveCurrentWorld::SaveCurrentWorld(const UObject*)"
+  },
+  "activation": {
+    "reflected_path": "/Script/Engine.BlueprintAsyncActionBase:Activate",
+    "function_flags": "0x04020402",
+    "parameters": [],
+    "native_override": "void USaveCurrentWorld::Activate()"
+  },
+  "scope": "Official anonymous SteamCMD validate and public build metadata identify the package. The bundled PDB and PE function tables retain the factory flags, two object properties and base Activate contract used by the reflection-based adapter. Runtime still checks world, queue, signature, identity and deadline before one invocation. This static fixture does not establish a ready-world save, persistence or client join."
+}

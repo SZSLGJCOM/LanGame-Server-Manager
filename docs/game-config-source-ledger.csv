@@ -1,12 +1,12 @@
 module,status,schema_fields,ledger_items,exclusions,sources
-abioticfactor,exhaustive_verified,59,59,12,14
+abioticfactor,best_effort_verified,67,67,12,16
 arksurvivalascended,best_effort_verified,277,289,315,37
 arksurvivalevolved,exhaustive_verified,375,414,137,35
 astroneer,best_effort_verified,19,19,6,18
 barotrauma,best_effort_verified,125,125,4,34
 conanexiles,best_effort_verified,305,305,47,33
 corekeeper,verified_with_direct_connection,15,24,19,24
-dontstarve,best_effort_verified,333,333,32,25
+dontstarve,best_effort_verified,335,335,32,26
 enshrouded,best_effort_verified,75,75,9,25
 humanitz,best_effort_verified,98,98,27,30
 minecraft,exhaustive_verified,73,73,5,20

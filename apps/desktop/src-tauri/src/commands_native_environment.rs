@@ -11,6 +11,10 @@ pub(super) struct NativeEnvironment {
 impl NativeEnvironment {
     pub(super) fn set(root: &Path) -> Result<Self, std::io::Error> {
         let profile = root.join("profile");
+        // A fresh Windows process can expand FOLDERID_LocalAppData through
+        // USERPROFILE. mod.io queries it without KF_FLAG_CREATE and reports
+        // UnableToCreateFolder before initialization if this directory is absent.
+        fs::create_dir_all(profile.join("AppData/Local"))?;
         let assignments = [
             ("APPDATA", profile.join("AppData/Roaming")),
             ("USERPROFILE", profile.clone()),

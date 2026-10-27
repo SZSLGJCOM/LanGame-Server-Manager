@@ -75,7 +75,9 @@ pub async fn preview_instance_launch(
     let descriptors =
         discover_modules(&storage.paths.modules_root).map_err(|error| error.to_string())?;
     let descriptor = find_descriptor(&descriptors, &instance.summary.module_id)?;
-    build_instance_launch_preview(&storage.settings, descriptor, &instance)
+    let mut preview = build_instance_launch_preview(&storage.settings, descriptor, &instance)?;
+    app_core::abiotic_output::redact_abiotic_launch_preview(&mut preview);
+    Ok(preview)
 }
 
 pub(super) fn build_instance_launch_preview(
@@ -1377,7 +1379,7 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
             );
         }
     }
-    Ok(StartInstanceResult {
+    let mut result = StartInstanceResult {
         warnings: start_warnings,
         summary,
         run_id: primary_process.run_id,
@@ -1389,7 +1391,9 @@ pub(super) async fn start_instance_process_after_reconcile_reserved(
         processes: started_processes,
         launch_plans,
         startup_schedule,
-    })
+    };
+    app_core::abiotic_output::redact_abiotic_start_result(&mut result);
+    Ok(result)
 }
 
 async fn materialize_runtime_start_configuration(

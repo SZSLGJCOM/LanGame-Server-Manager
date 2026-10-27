@@ -769,6 +769,7 @@ pub fn build_launch_plan_with_override(
         &settings_value,
         &instance.ports,
     ));
+    validation_issues.extend(collect_abioticfactor_mod_path_issues(&context));
     if let Err(error) = validate_environment(&environment, module.runtime.requires_admin) {
         validation_issues.push(LaunchValidationIssue {
             code: String::from("launch_environment_invalid"),
@@ -842,6 +843,9 @@ fn collect_module_launch_setting_issues(
     }
     if module_id == "dontstarve" {
         return collect_dontstarve_launch_setting_issues(settings, ports);
+    }
+    if module_id == "abioticfactor" {
+        return collect_abioticfactor_launch_setting_issues(settings);
     }
     let (field, managed_options): (&str, &[&str]) = match module_id {
         "rust" => (

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "steam_build_id": "26092453",
+  "evidence_classification": "official_package_static_contract",
+  "executable_sha256": "3ee1c8d170138fb3842dbde128813dabe9ec3cbabf5865b00d2fe45670b6be91",
+  "matching_pdb_guid": "705106BF-5384-E32D-4A1A-C96EB49D4250",
+  "matching_pdb_age": 1,
+  "windows_command_line": {
+    "get_command_line_w_call_rva": "0x38c0fbb",
+    "command_line_set_call_rva": "0x38c2f89",
+    "unchanged_buffer_copy_rva": "0x102d126"
+  },
+  "mod_path_parser": {
+    "sideload_path_parse_call_rva": "0x4929d12",
+    "download_path_parse_call_rvas": ["0x492cdfa", "0x4930454"],
+    "function": "FParse::Value(FCommandLine::Get(), key, FString&, true, nullptr)",
+    "skip_quoted_parameter_name_rva": "0x105babe",
+    "quoted_value_branch_rva": "0x105bb57",
+    "unquoted_delimiter_table_rva": "0x61b67b8",
+    "unquoted_delimiters": ",) \r\n\t"
+  },
+  "scope": "The current package preserves raw Windows argument quotes. Quoting an entire Mod path option hides its name; unquoted values stop at the delimiter table. These two Mod directory fields require quoted values while retaining their canonical argv values. The separate room/credential trace records additional verified consumers and literal backslash behavior. This static trace does not establish Mod download or mounting."
+}

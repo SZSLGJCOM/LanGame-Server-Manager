@@ -179,6 +179,7 @@ test("credential acquisition links cover only fields with official external reso
     }
   }
   assert.deepEqual(linked, {
+    "abioticfactor.modio_token": "https://mod.io/me/access#tokens",
     "dontstarve.cluster_token": "https://accounts.klei.com/account/game/servers?game=DontStarveTogether",
     "projectzomboid.discord_token": "https://discord.com/developers/applications/select/bot",
     "theforest.steam_account_token": "https://steamcommunity.com/dev/managegameservers",

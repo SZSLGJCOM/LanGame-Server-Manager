@@ -5,6 +5,17 @@ mod launch_templates_ark;
 pub(super) use launch_templates_ark::collect_ark_cluster_launch_issues;
 use launch_templates_ark::*;
 
+#[path = "launch_templates_abiotic.rs"]
+mod launch_templates_abiotic;
+pub(super) use launch_templates_abiotic::{
+    collect_abioticfactor_launch_setting_issues, collect_abioticfactor_mod_path_issues,
+};
+use launch_templates_abiotic::{render_abioticfactor_mod_args, render_abioticfactor_password_flag};
+
+#[cfg(test)]
+#[path = "launch_templates_abiotic_command_line_tests.rs"]
+mod abiotic_command_line_tests;
+
 pub(super) struct TemplateContext<'a> {
     pub(super) instance: &'a InstanceDetails,
     pub(super) settings: &'a Value,
@@ -333,6 +344,14 @@ pub(super) fn render_dontstarve_launch_args(settings: &Value) -> Vec<String> {
     if lookup_json_bool(settings, "allow_ioopenwrite_sandbox_escape").unwrap_or(false) {
         args.push(String::from("-allow_ioopenwrite_sandbox_escape"));
     }
+    if lookup_json_bool(settings, "allow_persistentstorage_read_sandbox_escape").unwrap_or(false) {
+        args.push(String::from("-allow_persistentstorage_read_sandbox_escape"));
+    }
+    if lookup_json_bool(settings, "allow_persistentstorage_write_sandbox_escape").unwrap_or(false) {
+        args.push(String::from(
+            "-allow_persistentstorage_write_sandbox_escape",
+        ));
+    }
     args
 }
 
@@ -579,6 +598,7 @@ pub(super) fn lookup_abioticfactor_launch_token(
     path: &str,
 ) -> Option<String> {
     match path {
+        "mod_args" => Some(render_abioticfactor_mod_args(context).join("\n")),
         "sandbox_ini_flag" => Some(format!(
             "-SandboxIniPath=Config/WindowsServer/LanGame/{}-SandboxSettings.ini",
             context.instance.summary.id
@@ -587,12 +607,12 @@ pub(super) fn lookup_abioticfactor_launch_token(
             "-AdminIniPath=SaveGames/Server/LanGame/{}-Admin.ini",
             context.instance.summary.id
         )),
-        "server_password_flag" => Some(render_launch_flag_with_value(
+        "server_password_flag" => Some(render_abioticfactor_password_flag(
             context.settings,
             "server_password",
             "-ServerPassword=",
         )),
-        "admin_password_flag" => Some(render_launch_flag_with_value(
+        "admin_password_flag" => Some(render_abioticfactor_password_flag(
             context.settings,
             "admin_password",
             "-AdminPassword=",
@@ -1090,18 +1110,6 @@ pub(super) fn render_optional_launch_flag(settings: &Value, path: &str, flag: &s
         String::from(flag)
     } else {
         String::new()
-    }
-}
-
-pub(super) fn render_launch_flag_with_value(settings: &Value, path: &str, prefix: &str) -> String {
-    let Some(value) = lookup_json_text(settings, path) else {
-        return String::new();
-    };
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        String::new()
-    } else {
-        format!("{prefix}{trimmed}")
     }
 }
 
@@ -1769,6 +1777,29 @@ pub(super) fn quote_launch_argument(executable: &Path, argument: &str) -> String
         // entire option hides its key from ASA's parser; quote only its value.
         // Native FParse also stops unquoted values at commas and parentheses.
         return format!("{key}={}", quote_command_segment_with_mode(value, true));
+    }
+    let abiotic = executable
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.eq_ignore_ascii_case("AbioticFactorServer-Win64-Shipping.exe"));
+    if abiotic
+        && let Some((key, value)) = argument.split_once('=')
+        && [
+            "-ModsDir",
+            "-SideloadModsPath",
+            "-SteamServerName",
+            "-WorldSaveName",
+            "-ServerPassword",
+            "-AdminPassword",
+        ]
+        .iter()
+        .any(|candidate| key.eq_ignore_ascii_case(candidate))
+    {
+        // These verified FParse::Value consumers read the raw command line.
+        // Quotes delimit only the value; backslashes are literal, including
+        // before its closing quote. Validation rejects embedded double quotes.
+        // CRT escaping would change passwords that end with a backslash.
+        return format!("{key}=\"{value}\"");
     }
     quote_command_segment(argument)
 }

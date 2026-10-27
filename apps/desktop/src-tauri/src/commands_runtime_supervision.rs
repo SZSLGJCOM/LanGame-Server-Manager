@@ -330,6 +330,10 @@ fn restored_process_identity_matches(
 }
 
 #[cfg(test)]
+#[path = "commands_dst_sandbox_launch_tests.rs"]
+mod dst_sandbox_launch_tests;
+
+#[cfg(test)]
 mod process_identity_tests {
     use super::*;
 
@@ -1535,6 +1539,9 @@ pub(super) struct StartupVerificationContext<'a> {
     pub(super) asa_session: &'a mut super::commands_asa_startup_budget::StartupSession,
 }
 
+#[path = "commands_abiotic_mod_startup.rs"]
+mod abiotic_mod_startup;
+
 enum ListenerStartupBudget<'a> {
     Standard(super::commands_asa_startup_budget::StartupBudget<'a>),
     Vrising(vrising_startup::StartupBudget<'a>),
@@ -1615,7 +1622,30 @@ pub(super) async fn verify_spawned_process_bind_address(
         .iter()
         .map(|port| port.port)
         .collect::<Vec<_>>();
-    let timeout = Duration::from_millis(policy.startup_timeout_ms);
+    let normal_timeout = Duration::from_millis(policy.startup_timeout_ms);
+    let timeout = spawned_processes
+        .iter()
+        .try_fold(normal_timeout, |timeout, (plan, _)| {
+            abiotic_mod_startup::listener_timeout(
+                &instance.summary.module_id,
+                &plan.launch_plan.args,
+                normal_timeout,
+            )
+            .map(|candidate| timeout.max(candidate))
+        })?;
+    if timeout != normal_timeout
+        && let Some((plan, _)) = spawned_processes.first()
+    {
+        let _ = append_startup_console_line(
+            &plan.log_path,
+            &format!(
+                "Abiotic Factor startup allows {} seconds in total for configured Mod downloads and server listeners (including the existing {} second listener budget). Download completion is not inferred from log text.",
+                timeout.as_secs(),
+                normal_timeout.as_secs()
+            ),
+            "",
+        );
+    }
     let started_at = Instant::now();
     let mut startup_budget = if let Some(session) = vrising_session {
         ListenerStartupBudget::Vrising(vrising_startup::StartupBudget::prepare(

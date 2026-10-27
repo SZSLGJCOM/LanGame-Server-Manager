@@ -266,6 +266,28 @@
       "x-lsgm-source-key": "-allow_ioopenwrite_sandbox_escape",
       "x-lsgm-source-surface": "launch_arg"
     },
+    "allow_persistentstorage_read_sandbox_escape": {
+      "type": "boolean",
+      "title": "Allow Mods to read cluster files",
+      "description": "Allows trusted Mods to read files in the cluster folder through persistent storage. Applies to every shard and is disabled by default.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 905,
+      "x-lsgm-source": "hotfix_760178_persistentstorage_sandbox",
+      "x-lsgm-source-key": "-allow_persistentstorage_read_sandbox_escape",
+      "x-lsgm-source-surface": "launch_arg"
+    },
+    "allow_persistentstorage_write_sandbox_escape": {
+      "type": "boolean",
+      "title": "Allow Mods to write cluster files",
+      "description": "Allows trusted Mods to write files in the cluster folder through persistent storage. Applies to every shard and is disabled by default.",
+      "default": false,
+      "x-lsgm-section": "access",
+      "x-lsgm-order": 906,
+      "x-lsgm-source": "hotfix_760178_persistentstorage_sandbox",
+      "x-lsgm-source-key": "-allow_persistentstorage_write_sandbox_escape",
+      "x-lsgm-source-surface": "launch_arg"
+    },
     "master_settings_preset": {
       "type": "string",
       "title": "World settings preset",

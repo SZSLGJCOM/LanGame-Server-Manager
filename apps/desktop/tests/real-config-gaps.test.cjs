@@ -1396,7 +1396,7 @@ test("7 Days to Die preserves historical package evidence and current first-part
 test("Abiotic Factor records current sandbox options and the original package evidence", () => {
   const ledger = read(path.join(abioticFactorRoot, "config-sources.toml"));
 
-  assert.match(ledger, /last_verified = "2026-09-08"/);
+  assert.match(ledger, /last_verified = "2026-10-27"/);
   assert.match(ledger, /steamcmd_anonymous_app_2857200/);
   assert.match(ledger, /app_update 2857200 validate/);
   assert.match(ledger, /Success! App '2857200' fully installed/);
@@ -1431,7 +1431,7 @@ test("Abiotic Factor UE4SS server mods stage into the Win64 ue4ss Mods directory
   const moduleToml = read(path.join(abioticFactorRoot, "module.toml"));
 
   assert.match(moduleToml, /\[mods\.source\][\s\S]*provider = "nexus"/);
-  assert.match(moduleToml, /\[mods\.source\][\s\S]*label = "Abiotic Factor UE4SS mods"/);
+  assert.match(moduleToml, /\[mods\.source\][\s\S]*label = "Abiotic Factor unofficial UE4SS mods"/);
   assert.match(moduleToml, /url = "https:\/\/www\.nexusmods\.com\/abioticfactor"/);
   assert.match(
     moduleToml,

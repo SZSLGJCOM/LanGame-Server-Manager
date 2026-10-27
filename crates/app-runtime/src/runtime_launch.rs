@@ -1,5 +1,9 @@
 use super::*;
 
+#[cfg(any(windows, test))]
+#[path = "abiotic_output_writer.rs"]
+mod abiotic_output_writer;
+
 pub fn spawn_launch_plan(
     plan: &LaunchPlan,
     log_path: impl AsRef<Path>,
@@ -33,6 +37,20 @@ fn spawn(
     writer: Option<Box<dyn std::io::Write + Send>>,
     resource_group: Option<&RuntimeResourceGroup>,
 ) -> Result<SpawnedProcess, RuntimeProcessError> {
+    let modio_tokens = if plan.module_id == "abioticfactor" {
+        app_core::abiotic_output::modio_tokens_from_args(&plan.args)
+    } else {
+        Vec::new()
+    };
+    if !modio_tokens.is_empty() && (plan.requires_admin || !cfg!(windows)) {
+        return Err(RuntimeProcessError::SpawnProcess {
+            path: plan.executable_path.clone(),
+            source: std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                "Abiotic token-protected output requires a non-elevated Windows launch.",
+            ),
+        });
+    }
     let limits = &plan.performance_policy.resource_limits;
     let resources_valid = limits.validate().and_then(|()| {
         if limits.enabled() && (plan.requires_admin || !cfg!(windows)) {
@@ -106,6 +124,18 @@ fn spawn(
     let mut output = None;
     #[cfg(windows)]
     let spawn_result = (|| -> std::io::Result<_> {
+        let writer: Option<Box<dyn std::io::Write + Send>> = if modio_tokens.is_empty() {
+            writer
+        } else {
+            let sink = match writer {
+                Some(writer) => writer,
+                None => Box::new(open_file()?),
+            };
+            Some(Box::new(abiotic_output_writer::ModioTokenWriter::new(
+                sink,
+                modio_tokens,
+            )))
+        };
         if matches!(plan.host_surface, ProcessHostSurface::ManagedPseudoConsole) {
             if plan.requires_admin {
                 return Err(std::io::Error::new(

@@ -729,6 +729,7 @@ export const EN_US_EXTRA_MESSAGES = {
   "runtime.health.startingTasks": "The process is running and still working through startup tasks.",
   "runtime.health.retrySignal": "The server is running, but the recent log contains a warning or retry signal.",
   "runtime.health.abioticWorldCorrupt": "Abiotic Factor detected world save corruption and the dedicated server is not safe to keep online.",
+  "runtime.health.abioticOfficialModsFailed": "Abiotic Factor refused to start because its official Mods could not be initialized. Check the current run log for the Mod, directory, network or authentication error.",
   "runtime.health.abioticSessionPublished": "Abiotic Factor is online and has published a session short code for players to join.",
   "runtime.health.abioticLoadingMap": "Abiotic Factor is through world validation and is loading the main facility map.",
   "runtime.health.abioticListening": "Abiotic Factor is listening and preparing its game session.",

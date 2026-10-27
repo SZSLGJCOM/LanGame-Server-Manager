@@ -797,3 +797,55 @@
   }
 }
 ```
+
+## `2026-10-27-hotfix_760178_persistentstorage_sandbox.json`
+
+- Evidence: `best_effort_verified` at `2026-10-27` (build `Klei Hotfix 760178 official release notes: independent optional dedicated-server flags for persistent-storage read and write access to files in the cluster folder. This fixture verifies exact generated launch arguments with both new permissions enabled and the earlier ioopenwrite permission disabled. It does not claim a native package, running server, Mod or client acceptance check.`)
+- Sources: `hotfix_760178_persistentstorage_sandbox`
+- Coverage: editable `2`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "allow_ioopenwrite_sandbox_escape": false,
+  "allow_persistentstorage_read_sandbox_escape": true,
+  "allow_persistentstorage_write_sandbox_escape": true,
+  "enable_caves": true,
+  "offline_cluster": true
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [],
+  "launch": {
+    "arguments": [
+      "-persistent_storage_root",
+      "{{paths.config_dir}}",
+      "-conf_dir",
+      "clusters",
+      "-cluster",
+      "main",
+      "-shard",
+      "Master",
+      "-ugc_directory",
+      "{{paths.data_dir}}/ugc/Master",
+      "-console",
+      "-bind_ip",
+      "0.0.0.0",
+      "-port",
+      "10999",
+      "-backup_log_count",
+      "100",
+      "-backup_log_period",
+      "86400",
+      "-allow_persistentstorage_read_sandbox_escape",
+      "-allow_persistentstorage_write_sandbox_escape"
+    ],
+    "executable_suffix": "bin64/dontstarve_dedicated_server_nullrenderer_x64.exe"
+  }
+}
+```

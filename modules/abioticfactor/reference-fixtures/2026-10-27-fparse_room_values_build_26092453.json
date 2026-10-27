@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "steam_build_id": "26092453",
+  "evidence_classification": "official_package_static_contract",
+  "executable_sha256": "3ee1c8d170138fb3842dbde128813dabe9ec3cbabf5865b00d2fe45670b6be91",
+  "matching_pdb_guid": "705106BF-5384-E32D-4A1A-C96EB49D4250",
+  "matching_pdb_age": 1,
+  "function": "FParse::Value(FCommandLine::Get(), key, FString&, true, nullptr)",
+  "parser_rvas": {
+    "string_overload": "0x105b740",
+    "buffer_overload": "0x105b9f0",
+    "skip_quoted_parameter_name": "0x105babe",
+    "toggle_quote_for_every_literal_double_quote": "0x105bafa",
+    "quoted_value_branch": "0x105bb57",
+    "quoted_value_first_quote_search_wcsstr": "0x105bb6b",
+    "value_copy_memcpy": "0x105bc57",
+    "unquoted_delimiter_table": "0x61b67b8"
+  },
+  "literal_contract": {
+    "unquoted_delimiters": ",) \r\n\t",
+    "key_scanner_backslash_escape": false,
+    "quoted_value_backslash_decode": false,
+    "quoted_value_end": "The first literal double quote; the bytes before it are copied without CRT unescaping.",
+    "trailing_backslash": "Copied literally. A closing quote after a backslash still toggles the key scanner out of quoted mode, so later parameters remain visible.",
+    "embedded_double_quote": "Not reliably representable. The four room/credential settings are rejected by launch validation and the configuration UI rather than shortened or stripped."
+  },
+  "verified_fields": [
+    {
+      "setting_key": "server_name",
+      "argument": "-SteamServerName",
+      "consumers": [
+        {"symbol": "FOnlineSessionSteam::GetCustomDedicatedServerName", "entry_rva": "0x3958560", "parse_call_rva": "0x3958590"},
+        {"symbol": "UCreateSessionCallbackProxyAdvanced::Activate", "entry_rva": "0x398afd0", "parse_call_rva": "0x398b360", "true_value_assignment_rva": "0x398b026"}
+      ]
+    },
+    {
+      "setting_key": "world_save_name",
+      "argument": "-WorldSaveName",
+      "consumers": [{"symbol": "UAbioticGameInstance::Init", "entry_rva": "0x4963d60", "parse_call_rva": "0x49641ff"}]
+    },
+    {
+      "setting_key": "server_password",
+      "argument": "-ServerPassword",
+      "consumers": [{"symbol": "UAbioticGameInstance::Init", "entry_rva": "0x4963d60", "parse_call_rva": "0x4964283"}]
+    },
+    {
+      "setting_key": "admin_password",
+      "argument": "-AdminPassword",
+      "consumers": [{"symbol": "UAbioticGameInstance::Init", "entry_rva": "0x4963d60", "parse_call_rva": "0x49642c5"}]
+    }
+  ],
+  "generated_ini_fields": {
+    "sandbox_parse_call_rva": "0x496d4fb",
+    "admin_parse_call_rva": "0x48c6de5",
+    "scope": "The current INI arguments contain generated ASCII instance IDs in relative paths. They are safe in their current generation domain and were not added to the serializer allowlist."
+  },
+  "scope": "The four verified room/credential fields join ModsDir and SideloadModsPath in Abiotic's value-only raw quoting allowlist. Password values retain whitespace and trailing backslashes; explicit world names must be one non-empty Windows directory component. Missing world settings retain the existing schema default source; stored empty names are rejected without rewriting or moving their data. Other executables, ARK and unverified options keep their existing serialization. The independent parser reference tests derive expectations from these native instructions; they do not execute the game or establish a client join."
+}

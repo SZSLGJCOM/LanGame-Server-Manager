@@ -20,6 +20,7 @@ impl Profile {
                 .then_some("d076d5d223360f133e365ef37901ff9789eb68186a8f6d66494038f4864684b2"));
         }
         match (self.id, actual) {
+            ("abioticfactor", "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f") => Ok(None),
             ("conanexiles", "d0ea317e7e037e68454414f12828d5995cc9e519b9c34eda264be1954d352b14") => {
                 Ok(Some("2eec9aa9aa443fb476db583cfdc5044285ccc246df0a60e93155fb37e14324b6"))
             }
@@ -33,7 +34,7 @@ impl Profile {
                 "abioticfactor",
                 "AbioticFactor",
                 "AbioticFactorServer-Win64-Shipping.exe",
-                "2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f",
+                "3ee1c8d170138fb3842dbde128813dabe9ec3cbabf5865b00d2fe45670b6be91",
                 "version.dll",
             ),
             "returntomoria" => (

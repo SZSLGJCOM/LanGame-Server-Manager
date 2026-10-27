@@ -18,6 +18,7 @@ pub(super) struct NativeRuntime<'a, 's, R: tauri::Runtime> {
     pub offline_dst: bool,
     pub elevated_fixture: bool,
     pub satisfactory_world: Option<&'a NativeWorld>,
+    pub satisfactory_frm: Option<&'a satisfactory_frm::Fixture>,
 }
 
 impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
@@ -188,6 +189,9 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
                 if let Some(world) = self.satisfactory_world {
                     Box::pin(world.prepare(state, &running, cycle)).await?;
                 }
+                if let Some(frm) = self.satisfactory_frm {
+                    Box::pin(frm.verify(self, &running, cycle)).await?;
+                }
                 Ok(())
             }
             .await;
@@ -241,7 +245,29 @@ impl<R: tauri::Runtime> NativeRuntime<'_, '_, R> {
             Box::pin(gm_tools::verify(self, &running, cycle)).await?;
             Box::pin(theforest_probe::verify(self, &running)).await?;
         }
-        Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await?;
+        if let Err(error) =
+            Box::pin(player_counts::verify(self.app, state, descriptor, &running)).await
+        {
+            // These paths belong to the newly started generation. Reading all
+            // fixture console files could mix the initial and restart logs.
+            let logs = started
+                .processes
+                .iter()
+                .take(8)
+                .map(|process| app_storage::read_log_path_snapshot(process.log_path.clone(), 80))
+                .collect::<Vec<_>>();
+            print_native_failure(
+                &format!("player_count_{cycle}"),
+                &error,
+                &logs,
+                settings,
+                &package.root,
+            );
+            return Err(
+                "native player-count verification failed; bounded redacted diagnostics printed above"
+                    .into(),
+            );
+        }
         diagnostics::report_success(
             "ready",
             details,

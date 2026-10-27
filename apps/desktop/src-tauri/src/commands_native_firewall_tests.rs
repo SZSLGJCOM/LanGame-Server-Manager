@@ -3,17 +3,39 @@ use super::*;
 #[test]
 fn native_elevation_requires_scum_and_explicit_acknowledgement() {
     assert_eq!(
-        elevated_fixture_allowed("scum", false, Some("true")),
+        elevated_fixture_allowed("scum", false, Some("true"), None),
         Ok(false)
     );
     assert_eq!(
-        elevated_fixture_allowed("scum", true, Some("true")),
+        elevated_fixture_allowed("scum", true, Some("true"), None),
         Ok(true)
     );
     for acknowledgement in [None, Some("false"), Some("1")] {
-        assert!(elevated_fixture_allowed("scum", true, acknowledgement).is_err());
+        assert!(elevated_fixture_allowed("scum", true, acknowledgement, None).is_err());
     }
-    assert!(elevated_fixture_allowed("squad", true, Some("true")).is_err());
+    assert!(elevated_fixture_allowed("squad", true, Some("true"), None).is_err());
+}
+
+#[test]
+fn abiotic_elevation_requires_its_own_isolated_acknowledgement() {
+    assert_eq!(
+        elevated_fixture_allowed("abioticfactor", false, None, None),
+        Ok(false)
+    );
+    for acknowledgement in [None, Some("false"), Some("1"), Some("TRUE"), Some("")] {
+        assert!(elevated_fixture_allowed("abioticfactor", true, None, acknowledgement).is_err());
+    }
+    assert_eq!(
+        elevated_fixture_allowed("abioticfactor", true, None, Some("true")),
+        Ok(true)
+    );
+    // Each module reads only its own acknowledgement slot. A SCUM opt-in must
+    // never authorize Abiotic, nor may the isolated Abiotic opt-in authorize SCUM.
+    assert!(elevated_fixture_allowed("abioticfactor", true, Some("true"), None).is_err());
+    assert!(elevated_fixture_allowed("scum", true, None, Some("true")).is_err());
+    for module in ["squad", "satisfactory", "dontstarve", "unknown"] {
+        assert!(elevated_fixture_allowed(module, true, Some("true"), Some("true")).is_err());
+    }
 }
 
 #[test]

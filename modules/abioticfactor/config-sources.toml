@@ -1,6 +1,6 @@
-status = "exhaustive_verified"
-last_verified = "2026-09-08"
-notes = "The official launch-parameter and sandbox-option documentation was reviewed on 2026-09-08 against the current schema. ApocalypticAbilities and MaximizeEnemySpawns are now included with the documented false defaults; the exclusions tied to the July package have been removed. Their generated native INI values are covered by the current acceptance fixture; individual gameplay effects have not been verified. The July SteamCMD package record remains historical installation evidence. Installed build 24343458 boots and returns complete A2S_INFO/A2S_PLAYER responses. A controlled run changing only LANOnly from true to false restored Steam queries while UseLocalIPs stayed true; the original LAN-only configuration was restored afterward. LAN discovery uses the game-native port 14001. Admin.ini moderator entries remain separate from read-only online player names."
+status = "best_effort_verified"
+last_verified = "2026-10-27"
+notes = "Official 1.5.0.31459 Mod support was reviewed on 2026-10-27: seven launch controls and AllowLocalOnlyMods are modeled from the developer wiki updated 2026-10-26. Generated launch/INI fixtures cover all new controls. Build26092453 completed two isolated host startup/no-client save-rejection cycles and a separate explicitly acknowledged elevated Windows Sandbox anonymous Mod6472552 download/mount/start/stop probe on 2026-10-27. The SDK selected Windows file8379971 (203851 bytes), mounted one Mod, reached native readiness and exited0; installed payload hashes are recorded in reference-fixtures/2026-10-27-native_mod_probe_build_26092453.json. Anonymous data used the guest Public temporary cache, outside the instance tree; the token-backed Saved/mod.io default is a separate mode. Token authentication/persistent caching, sideload loading, dependency resolution, ordinary-permission SDK operation, client gameplay and ready-world persistence are not established by that probe. Existing UE4SS build admission and historical runtime evidence keep their original scope. The official launch-parameter and sandbox-option documentation was reviewed on 2026-09-08 against the current schema. ApocalypticAbilities and MaximizeEnemySpawns are now included with the documented false defaults; the exclusions tied to the July package have been removed. Their generated native INI values are covered by the current acceptance fixture; individual gameplay effects have not been verified. The July SteamCMD package record remains historical installation evidence. Installed build 24343458 boots and returns complete A2S_INFO/A2S_PLAYER responses. A controlled run changing only LANOnly from true to false restored Steam queries while UseLocalIPs stayed true; the original LAN-only configuration was restored afterward. LAN discovery uses the game-native port 14001. Admin.ini moderator entries remain separate from read-only online player names."
 
 [[sources]]
 id = "steamcmd_anonymous_app_2857200"
@@ -518,3 +518,67 @@ kind = "documentation"
 path = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Sandbox-Options"
 authority = "first_party_documentation_and_installed_package_semantic_review"
 description = "Semantic review on 2026-09-30 of 58 active configuration fields in both languages. Continence depletion increases toilet frequency. The furniture stacking count is independent of global structural strength; zero removes the stacking limit. IronMode is a starting job that requires Hardcore. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[sources]]
+id = "official_mod_launch_args"
+kind = "launch_arg"
+path = "AbioticFactorServer-Win64-Shipping.exe"
+authority = "official_developer_1_5_dedicated_server_wiki"
+description = "Reviewed 2026-10-27 against the 2026-10-26 14:22:35 UTC developer wiki revision. Official Mods use semicolon-delimited mod.io IDs. A personal token enables persistent downloads, automatic dependency downloads and ModsDir; absent a token the game re-downloads at every startup. Download timeout defaults to 900 seconds. Native defaults are AbioticFactor/Saved/mod.io and AbioticFactor/Mods. Sideloading skips downloads but still requires IDs. LanGame scopes configurable paths to the instance-owned Saved and Mods trees, rejects link/reparse directories, and preserves the separate unofficial UE4SS importer. A 2026-10-27 isolated elevated Windows Sandbox probe anonymously downloaded public Mod6472552 (SDK-selected Windows file8379971,203851 bytes), mounted one Mod and passed production startup/normal stop. Its installed payload hashes and exact scope are recorded in reference-fixtures/2026-10-27-native_mod_probe_build_26092453.json. No real mod.io account credential was used; persistent token-backed caching and sideload loading remain unverified."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Launch-Parameters#mods"
+
+[[sources]]
+id = "official_mod_support_1_5"
+kind = "documentation"
+path = "SandboxSettings.ini [SandboxSettings]"
+authority = "official_developer_1_5_patch_notes_and_sandbox_options"
+description = "Community Update 5 / 1.5.0.31459 adds official mod.io support; current developer Sandbox Options documents AllowLocalOnlyMods=True for players joining with local-only cosmetic Mods. Earlier source inventory and native probes remain historical. New fixtures check True/False native INI output, not gameplay behavior. New built-in Mod support does not establish compatibility of unofficial UE4SS payloads."
+url = "https://github.com/DFJacob/AbioticFactorDedicatedServer/wiki/Technical-%E2%80%90-Sandbox-Options"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-Mods"
+schema_key = "mod_ids"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-ModioToken"
+schema_key = "modio_token"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-ModsDir"
+schema_key = "mods_directory"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-ModInstallTimeout"
+schema_key = "mod_install_timeout_seconds"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-OverrideModWarnings"
+schema_key = "override_mod_warnings"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-SideloadMods"
+schema_key = "sideload_mods"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_launch_args"
+key = "-SideloadModsPath"
+schema_key = "sideload_mods_path"
+surface = "launch_arg"
+
+[[items]]
+source = "official_mod_support_1_5"
+key = "AllowLocalOnlyMods"
+schema_key = "allow_local_only_mods"
+surface = "config_file"

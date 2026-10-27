@@ -2,6 +2,7 @@ use app_core::{InstanceDetails, InstanceStatus, ModulePlayerCountSource, Runtime
 use app_modules::ModuleDescriptor;
 
 use crate::commands::{commands_global_player_counts, commands_player_counts};
+use crate::live_players::cache::LivePlayerCacheKey;
 use crate::live_players::service::build_cache_key;
 use crate::state::DesktopState;
 
@@ -25,11 +26,27 @@ pub(super) async fn verify<R: tauri::Runtime>(
         "NATIVE_PLAYER_COUNT module={} phase=collect",
         descriptor.summary.id
     );
+    let key = build_cache_key(running, descriptor);
+    // Record whether this run already had a snapshot before the explicit
+    // acceptance read. Do not refresh again or change the production cache TTL.
+    let cache_before = cache_diagnostic(state, key.as_ref());
     let collected = commands_player_counts::collect_player_list_count(state, id)
         .await
-        .map_err(|_| "native production player-list count collection failed")?;
+        .map_err(|error| {
+            format!(
+                "native production player-list count collection failed: detail={error:?} cache_before={cache_before} cache_after={}",
+                cache_diagnostic(state, key.as_ref()),
+            )
+        })?;
     if collected.query.status != "ready" {
-        return Err("native production player-list count is not ready".into());
+        // The caller prints this context through the existing bounded native
+        // diagnostic redactor, then returns a generic error to the test runner.
+        return Err(format!(
+            "native production player-list count is not ready: query_status={:?} query_summary={:?} cache_before={cache_before} cache_after={}",
+            collected.query.status,
+            collected.query.summary,
+            cache_diagnostic(state, key.as_ref()),
+        ));
     }
     let players = collected
         .current_players
@@ -75,6 +92,28 @@ pub(super) async fn verify<R: tauri::Runtime>(
         global.queryable_instances,
     );
     Ok(())
+}
+
+fn cache_diagnostic(state: &DesktopState, key: Option<&LivePlayerCacheKey>) -> serde_json::Value {
+    let Some(key) = key else {
+        return serde_json::json!({ "key_available": false });
+    };
+    let Some(snapshot) = state.live_player_registry.read(key) else {
+        return serde_json::json!({ "run_id": key.run_id, "present": false });
+    };
+    // Player rows, account identifiers, action bindings, and the security
+    // fingerprint are deliberately excluded from diagnostic metadata.
+    serde_json::json!({
+        "run_id": key.run_id,
+        "present": true,
+        "status": snapshot.status,
+        "complete": snapshot.complete,
+        "truncated": snapshot.truncated,
+        "stale": snapshot.stale,
+        "observed_at_unix_ms": snapshot.observed_at_unix_ms,
+        "expires_at_unix_ms": snapshot.expires_at_unix_ms,
+        "issue_code": snapshot.issue.as_ref().map(|issue| format!("{:?}", issue.code)),
+    })
 }
 
 fn require_authoritative_snapshot(

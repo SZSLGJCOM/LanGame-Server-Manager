@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "module_id": "dontstarve",
+  "evidence_classification": "isolated_native_probe",
+  "verified_on": "2026-10-27",
+  "steam_build_id": "26230508",
+  "game_version": "760178",
+  "scripts_sha256": "32e70a4425ed6df8f06bd2c4e5e473c82d00a5c4897a3a1a8dd07062417f568f",
+  "source_identity_sha256": "e12aa3b4a28d3e42cd89095e6a632020035a518b2e46f9f0faa02abed33f2a0b",
+  "test_binary_sha256": "774cc0f2d4ee3fcfbcb3cdfadc06c279bb5c932ef67dfca2b6710f4ce36ba0fb",
+  "settings": {
+    "allow_persistentstorage_read_sandbox_escape": true,
+    "allow_persistentstorage_write_sandbox_escape": true,
+    "allow_ioopen_sandbox_escape": false,
+    "offline_lan": true,
+    "program_update_policy": "pinned",
+    "shards": ["Master", "Caves"]
+  },
+  "cycles": [
+    { "cycle": "initial", "native_readiness": "passed", "manual_save_completion": "requested", "player_collector": "ready", "overview": "ready", "global_count": "ready", "current_players": 0, "complete": true, "stale": false, "same_run": true, "exit_codes": [0, 0] },
+    { "cycle": "restart", "native_readiness": "passed", "manual_save_completion": "requested", "player_collector": "ready", "overview": "ready", "global_count": "ready", "current_players": 0, "complete": true, "stale": false, "same_run": true, "exit_codes": [0, 0] }
+  ],
+  "restart_regression": {
+    "before": "The special DST stop finalizer left the previous run's roster active. A new run was rejected before its player query reached the game, returning an invalidated snapshot.",
+    "fix": "The confirmed DST stop finalizer invalidates the instance roster and private action bindings, matching the generic stop path.",
+    "targeted_regressions_passed": 37,
+    "in_flight_old_response_rejection_retained": true
+  },
+  "cleanup": "Both shards exited0 on both runs, active run cleared and owned process trees finished; original instances and packages were not modified.",
+  "scope": "Fixed-package offline LAN operation with empty native rosters. No online account session, populated player identities, Islands/Volcano native run or independent saved-content readback was asserted."
+}

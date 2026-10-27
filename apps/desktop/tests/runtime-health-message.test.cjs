@@ -24,6 +24,25 @@ function healthFor(code, summary, params = {}, status = "warning") {
   return { status, summary, reason: { code, params }, matched_line: "[12:00] RAW engine diagnostic" };
 }
 
+test("Abiotic official Mod startup refusals surface an error with bilingual feedback", () => {
+  const details = { summary: { module_id: "abioticfactor", status: "Running" } };
+  for (const line of [
+    "LogAbiotic: Error: Refusing to start with an incorrect mod set. Fix the errors above, or pass -OverrideModWarnings to start with the mods that did mount.",
+    "LogAbiotic: Error: Failed to install and initialize mods, the server cannot start. Dedicated Server will shut down in 5 minutes."
+  ]) {
+    const health = buildMockRuntimeHealth(details, { lines: [line, "LogGlobalStatus: UEngine::LoadMap Load map complete /Game/Maps/ServerEntry"] });
+    assert.equal(health.status, "error");
+    assert.equal(health.reason.code, "abiotic_official_mods_failed");
+    assert.equal(health.matched_line, line);
+    assert.match(localizeRuntimeHealthSummary(health, "zh-CN", translator("zh-CN")), /官方 Mod.*拒绝启动/);
+    assert.match(localizeRuntimeHealthSummary(health, "en-US", translator("en-US")), /refused to start/);
+  }
+  const ready = buildMockRuntimeHealth(details, {
+    lines: ["LogAbiotic: Error: Server mod setup finished with 1 errors, 1 mods mounted:", "Session short code: current-session"]
+  });
+  assert.equal(ready.status, "ready", "partial Mod warnings alone do not prove a startup refusal");
+});
+
 test("Abiotic listening and map loading remain startup states in the UI", () => {
   const details = { summary: { module_id: "abioticfactor", status: "Running" } };
   for (const line of ["Listening on port 7777", "Load map complete", "Dedicated server is now loading the main map"]) {

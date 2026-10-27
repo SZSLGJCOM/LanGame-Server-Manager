@@ -69,6 +69,19 @@ export function buildMockRuntimeHealth(
       };
     }
 
+    const abioticModFailureLine = findMatchingLogLine(lines, [
+      "refusing to start with an incorrect mod set.",
+      "failed to install and initialize mods, the server cannot start."
+    ]);
+    if (abioticModFailureLine) {
+      return {
+        status: "error",
+        summary: "Abiotic Factor refused to start because its official Mods could not be initialized. Check the current run log for the Mod, directory, network or authentication error.",
+        reason: { code: "abiotic_official_mods_failed", params: {} },
+        matched_line: abioticModFailureLine
+      };
+    }
+
     const abioticReadyLine = findMatchingLogLine(lines, abioticReadyPatterns);
     if (abioticReadyLine) {
       return {

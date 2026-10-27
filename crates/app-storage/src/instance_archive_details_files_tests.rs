@@ -109,6 +109,62 @@ async fn archive_details_preview_reads_policies_history_log_and_backups_without_
 }
 
 #[tokio::test]
+async fn archive_details_preview_redacts_historical_modio_tokens_without_changing_retained_bytes() {
+    let fixture = Fixture::new().await;
+    let original = concat!(
+        "LogInit: -ModioToken=synthetic-archived-token-one -Port=7777\n",
+        "Session creation completed\n",
+        "LogInit: -mOdIoToKeN=\"synthetic-archived-token-two\"\n",
+        "Saved world successfully\n"
+    );
+    fs::write(fixture.instance_root.join("logs/last.log"), original).unwrap();
+    let pool = connect_pool(&fixture.paths).await.unwrap();
+    sqlx::query("UPDATE instance_runs SET log_path=?1 WHERE id=29")
+        .bind(
+            fixture
+                .instance_root
+                .join("logs/last.log")
+                .to_string_lossy()
+                .as_ref(),
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+    let archived = fixture.archive().await.unwrap();
+    let root = Path::new(archived.archived_instance_root.as_ref().unwrap());
+    let before = crate::test_file_snapshot::tree_snapshot(root).unwrap();
+    let journal_before = journal(&fixture.paths, &archived.archive_id).await;
+    let details = read_instance_archive_details(&fixture.paths, &archived.archive_id)
+        .await
+        .unwrap();
+    assert_eq!(details.log.relative_path.as_deref(), Some("logs/last.log"));
+    assert_eq!(
+        details.log.text,
+        concat!(
+            "LogInit: -ModioToken=[REDACTED] -Port=7777\n",
+            "Session creation completed\n",
+            "LogInit: -mOdIoToKeN=\"[REDACTED]\"\n",
+            "Saved world successfully\n"
+        )
+    );
+    assert!(!details.log.truncated);
+    assert!(details.log.issues.is_empty());
+    assert_eq!(
+        fs::read_to_string(root.join("logs/last.log")).unwrap(),
+        original
+    );
+    assert_eq!(
+        crate::test_file_snapshot::tree_snapshot(root).unwrap(),
+        before
+    );
+    assert_eq!(
+        journal(&fixture.paths, &archived.archive_id).await,
+        journal_before
+    );
+}
+
+#[tokio::test]
 async fn archive_details_preview_keeps_configuration_when_log_or_backup_is_invalid() {
     let fixture = Fixture::new().await;
     let outside = fixture.root.join("outside.log");

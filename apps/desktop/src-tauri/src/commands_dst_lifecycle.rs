@@ -336,6 +336,9 @@ pub(in crate::commands) async fn finish_confirmed_stop(
     instance_id: &str,
     active: &ActiveInstanceRun,
 ) -> Result<Vec<app_core::StoppedProcess>, String> {
+    // DST bypasses the generic stop finalizer. Revoke this run's roster and
+    // action bindings too, so its cache lease cannot reject the next run.
+    state.live_player_registry.invalidate_instance(instance_id);
     let managed = state
         .runtime_supervisor
         .lock()

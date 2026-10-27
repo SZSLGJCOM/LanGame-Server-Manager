@@ -82,12 +82,12 @@ test("exact-build acceptance fixtures exist for all Unreal large-config modules"
   }
 });
 
-test("Abiotic Factor maps all 59 documented settings with 12 explicit exclusions", () => {
+test("Abiotic Factor maps all 67 documented settings while retaining historical native evidence", () => {
   const schema = readJson(modulePath("abioticfactor", "schema.json"));
   const { ledger, items, exclusions } = ledgerTables("abioticfactor");
-  assert.match(ledger, /^status = "exhaustive_verified"/);
-  assert.equal(Object.keys(schema.properties).length, 59);
-  assert.equal(items.length, 59);
+  assert.match(ledger, /^status = "best_effort_verified"/);
+  assert.equal(Object.keys(schema.properties).length, 67);
+  assert.equal(items.length, 67);
   assert.equal(exclusions.length, 12);
   for (const key of ["-stdout", "-FullStdOutLogOutput"]) {
     assert.ok(exclusions.some((entry) => entry.source === "launch_args" && entry.key === key),
@@ -97,6 +97,8 @@ test("Abiotic Factor maps all 59 documented settings with 12 explicit exclusions
   assert.equal(items.filter((item) => item.source === "sandbox_settings").length, 48);
   assert.equal(items.filter((item) => item.source === "admin_ini").length, 1);
   assert.equal(items.filter((item) => item.source === "launch_args").length, 10);
+  assert.equal(items.filter((item) => item.source === "official_mod_launch_args").length, 7);
+  assert.equal(items.filter((item) => item.source === "official_mod_support_1_5").length, 1);
 });
 
 test("Conan exact first-run INI keys are individually mapped or explicitly excluded", () => {

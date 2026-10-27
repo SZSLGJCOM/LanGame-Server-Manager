@@ -560,6 +560,35 @@ fn game_profiles_use_the_native_verified_import_proxies() {
     assert!(supported("abioticfactor"));
 }
 
+#[test]
+fn abiotic_modding_update_admits_the_reviewed_image_and_rejects_image_changes() {
+    let evidence: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../modules/abioticfactor/reference-fixtures/2026-10-27-save_factory_build_26092453.json"
+    ))
+    .unwrap();
+    let current = evidence["executable_sha256"].as_str().unwrap();
+    let profile = Profile::get("abioticfactor").unwrap();
+    assert_eq!(profile.verify_game_image(current).unwrap(), None);
+    let mut changed = current.as_bytes().to_vec();
+    changed[0] = if changed[0] == b'0' { b'1' } else { b'0' };
+    assert!(
+        profile
+            .verify_game_image(std::str::from_utf8(&changed).unwrap())
+            .is_err()
+    );
+    assert!(
+        profile
+            .verify_game_image(&current[..current.len() - 1])
+            .is_err()
+    );
+    assert_eq!(
+        profile
+            .verify_game_image("2563f8d798c8277400acd28eefde604c0ac7d77601627296211af48b30dba25f")
+            .unwrap(),
+        None
+    );
+}
+
 #[tokio::test]
 async fn native_save_games_reject_unneeded_ue4ss_preparation() {
     let fixture = Fixture::new();

@@ -146,6 +146,10 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     ("abioticfactor", "lan_only_flag"): {"lan_only"},
     ("abioticfactor", "moderator_lines"): {"moderator_steam_ids"},
     ("abioticfactor", "multihome_flag"): set(),
+    ("abioticfactor", "mod_args"): {
+        "mod_ids", "modio_token", "mods_directory", "mod_install_timeout_seconds",
+        "override_mod_warnings", "sideload_mods", "sideload_mods_path",
+    },
     ("abioticfactor", "no_async_loading_thread_flag"): {"disable_async_loading_thread"},
     ("abioticfactor", "platform_limited_flag"): {"platform_limited"},
     ("abioticfactor", "sandbox_ini_flag"): set(),
@@ -167,6 +171,8 @@ DERIVED_TOKEN_SETTING_COVERAGE: dict[tuple[str, str], set[str]] = {
     },
     ("dontstarve", "launch_args"): {
         "allow_ioopenwrite_sandbox_escape",
+        "allow_persistentstorage_read_sandbox_escape",
+        "allow_persistentstorage_write_sandbox_escape",
         "backup_log_count",
         "backup_log_period",
         "disable_data_collection",

@@ -6,20 +6,27 @@ use std::time::Duration;
 use app_core::InstanceDetails;
 use app_platform_win::{WindowsFirewallRuleSpec, build_instance_firewall_rule_specs};
 
-/// Only the explicitly acknowledged SCUM fixture may run elevated. Its unique
-/// instance rules are checked absent before launch and removed after shutdown.
+/// SCUM and isolated Abiotic fixtures have separate explicit acknowledgements.
+/// Their unique instance rules are checked absent before launch and removed
+/// after shutdown. Other modules and unacknowledged elevated runs stay denied.
 pub(in crate::commands::tests) fn elevated_fixture_allowed(
     module_id: &str,
     elevated: bool,
-    acknowledgement: Option<&str>,
+    scum_acknowledgement: Option<&str>,
+    abiotic_isolated_acknowledgement: Option<&str>,
 ) -> Result<bool, &'static str> {
     if !elevated {
         return Ok(false);
     }
-    if module_id == "scum" && acknowledgement == Some("true") {
+    let acknowledgement = match module_id {
+        "scum" => scum_acknowledgement,
+        "abioticfactor" => abiotic_isolated_acknowledgement,
+        _ => None,
+    };
+    if acknowledgement == Some("true") {
         return Ok(true);
     }
-    Err("elevated native fixture requires explicit SCUM acknowledgement")
+    Err("elevated native fixture requires its explicit SCUM or isolated Abiotic acknowledgement")
 }
 
 pub(in crate::commands::tests) struct NativeFirewall {
@@ -37,8 +44,12 @@ impl NativeFirewall {
         let config = Path::new(&instance.config_file_path)
             .canonicalize()
             .map_err(|error| error.to_string())?;
-        if instance.summary.module_id != "scum" || !config.starts_with(&root) {
-            return Err("elevated firewall fixture must own a SCUM instance".into());
+        if !matches!(
+            instance.summary.module_id.as_str(),
+            "scum" | "abioticfactor"
+        ) || !config.starts_with(&root)
+        {
+            return Err("elevated firewall fixture must own a SCUM or Abiotic instance".into());
         }
         let specs = build_instance_firewall_rule_specs(
             &instance.summary.id,

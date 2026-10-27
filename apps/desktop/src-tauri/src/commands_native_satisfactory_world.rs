@@ -311,12 +311,45 @@ impl NativeWorld {
             self.accepted(&result)?;
         }
         self.loaded(state, details).await?;
+        if std::env::var("LANGAME_NATIVE_SATISFACTORY_FRM").as_deref() == Ok("true") {
+            self.verify_https_authorization(state, details, cycle)
+                .await?;
+        }
         self.phase
             .lock()
             .map_err(|_| "The native Satisfactory fixture lifecycle lock failed.")?
             .ready(cycle)?;
         println!(
             "NATIVE_SATISFACTORY_WORLD cycle={cycle} fixture_only=true native_world_loaded=true credentials=owned_system_store content_readback=not_claimed"
+        );
+        Ok(())
+    }
+
+    async fn verify_https_authorization(
+        &self,
+        state: &tauri::State<'_, DesktopState>,
+        details: &InstanceDetails,
+        cycle: &str,
+    ) -> Result<(), String> {
+        self.current(state, details).await?;
+        let endpoint = super::context::resolve(state, details)?
+            .ok_or("Satisfactory native HTTPS authentication has no owned endpoint")?;
+        let api = super::api::Api::new(endpoint)?;
+        // EnumerateSessions is a read requiring native administrator access.
+        // Keep its negative cases separate from NativeWorld's authenticated
+        // read/create/save/load path, and never expose this fixture's credentials.
+        for token in [None, Some("synthetic-test-only")] {
+            if !matches!(
+                api.call("EnumerateSessions", serde_json::json!({}), token, false)
+                    .await,
+                Err(super::api::ApiError::Authentication)
+            ) {
+                return Err("The claimed native Satisfactory HTTPS API did not reject an anonymous or invalid-token session read".into());
+            }
+        }
+        self.current(state, details).await?;
+        println!(
+            "NATIVE_SATISFACTORY_AUTH cycle={cycle} anonymous_read=rejected invalid_token_read=rejected positive_authorization=separate_native_world_operations insecure_local_access=false"
         );
         Ok(())
     }

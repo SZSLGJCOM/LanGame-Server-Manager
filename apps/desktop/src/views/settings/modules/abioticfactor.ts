@@ -1,9 +1,13 @@
 import type { TranslateFn } from "../../../i18n";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
 import type { GuidedFieldCopy, GuidedSettingsField, GuidedSettingsSection } from "../settings-schema";
+import { validateAbioticModField } from "./abioticfactor-mods";
+import { AbioticOfficialModSource } from "./AbioticOfficialModSource";
 
 const STEAM64_PATTERN = /^\d{17}$/;
-const WORLD_SAVE_NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+const NATIVE_LAUNCH_VALUE_KEYS = new Set(["server_name", "world_save_name", "server_password", "admin_password"]);
+const INVALID_WORLD_SAVE_NAME_PATTERN = /[\x00-\x1f\x7f<>:"/\\|?*]|[. ]$/;
+const RESERVED_WORLD_SAVE_NAME_PATTERN = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 
 
 function parseDelimitedEntries(value: unknown): string[] {
@@ -55,6 +59,12 @@ function groupFields(
 
 function buildAbioticSections(t: TranslateFn): GuidedSettingsSection[] {
   return [
+    {
+      id: "official-mods",
+      title: t("abiotic.settings.sections.officialMods", undefined, "Official Mods"),
+      description: t("abiotic.settings.sections.officialModsDescription", undefined,
+        "Configure official mod.io Mods. The native server downloads them at startup; unofficial UE4SS Mods keep their existing Mods workspace.")
+    },
     {
       id: "network",
       title: t("abiotic.settings.sections.network", undefined, "Network"),
@@ -134,6 +144,24 @@ function buildAbioticFieldGroups(
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
 
   const groupSpecs: Record<string, Array<Omit<SettingsModuleFieldGroup, "fields"> & { keys: string[] }>> = {
+    "official-mods": [
+      {
+        id: "official-mod-list",
+        title: t("abiotic.settings.groups.officialMods", undefined, "Official Mod selection"),
+        description: t("abiotic.settings.groups.officialModsDescription", undefined,
+          "Find numeric IDs on mod.io, then save their load order. Downloads and dependency resolution run in the game at the next startup."),
+        layoutClass: "advanced-launch",
+        keys: ["mod_ids", "modio_token", "allow_local_only_mods"]
+      },
+      {
+        id: "official-mod-loading",
+        title: t("abiotic.settings.groups.officialModLoading", undefined, "Download and local packages"),
+        description: t("abiotic.settings.groups.officialModLoadingDescription", undefined,
+          "Directories belong to this instance. Predownloaded native Mod packages and unofficial UE4SS payloads use separate locations."),
+        layoutClass: "advanced-launch",
+        keys: ["mods_directory", "mod_install_timeout_seconds", "override_mod_warnings", "sideload_mods", "sideload_mods_path"]
+      }
+    ],
     access: [
       {
         id: "credentials",
@@ -318,6 +346,18 @@ function getAbioticEnumOptionLabel(fieldKey: string, value: unknown, t: Translat
 
 export const abioticFactorSettingsDefinition: SettingsModuleDefinition = {
   id: "abioticfactor",
+  fieldPresentationOverrides: {
+    mod_ids: { behavior: "multiline" },
+    modio_token: { behavior: "secret", resourceUrl: "https://mod.io/me/access#tokens" }
+  },
+  specializedRenderers: {
+    "abiotic-official-mod-source": {
+      kind: "module-addon",
+      placement: "before-fields",
+      sectionId: "official-mods",
+      Renderer: AbioticOfficialModSource
+    }
+  },
   getSections: buildAbioticSections,
   buildFieldGroups(sectionId, fields, _locale, t) {
     return buildAbioticFieldGroups(sectionId, fields, t);
@@ -325,6 +365,12 @@ export const abioticFactorSettingsDefinition: SettingsModuleDefinition = {
   getFieldCopy: (key, t) => getAbioticFieldCopy(key, t),
   getEnumOptionLabel: (fieldKey, value, _locale, t) => getAbioticEnumOptionLabel(fieldKey, value, t),
   getFieldValidationMessage({ field, value, settings, t }) {
+    if (NATIVE_LAUNCH_VALUE_KEYS.has(field.key) && typeof value === "string" && value.includes('"')) {
+      return t("abiotic.settings.validation.launchDoubleQuote", undefined,
+        "Double quotes cannot be passed to Abiotic Factor in this setting. Remove the double quote before starting.");
+    }
+    const modIssue = validateAbioticModField(field.key, value, settings, t);
+    if (modIssue) return modIssue;
 
     if (field.key === "moderator_steam_ids") {
       const invalidEntries = parseDelimitedEntries(value).filter((entry) => !STEAM64_PATTERN.test(entry));
@@ -341,18 +387,19 @@ export const abioticFactorSettingsDefinition: SettingsModuleDefinition = {
     }
 
     if (field.key === "world_save_name") {
-      const text = typeof value === "string" ? value.trim() : "";
-      if (text.length === 0 || WORLD_SAVE_NAME_PATTERN.test(text)) {
+      if (typeof value !== "string") return undefined;
+      if (value.length > 0 && !INVALID_WORLD_SAVE_NAME_PATTERN.test(value) && !RESERVED_WORLD_SAVE_NAME_PATTERN.test(value)) {
         return undefined;
       }
 
-      return t("abiotic.settings.groups.worldSaveNamesShouldStartWithALetterOrNumberAndOnlyUseLettersNumbersUnderscoresO", undefined, "World save names should start with a letter or number and only use letters, numbers, underscores, or hyphens.");
+      return t("abiotic.settings.validation.worldSaveName", undefined,
+        "Use a single non-empty Windows folder name, such as the instance ID. Do not use path separators, reserved names, or a trailing dot or space.");
     }
 
     if (field.key === "admin_password") {
-      const adminPassword = typeof value === "string" ? value.trim() : "";
+      const adminPassword = typeof value === "string" ? value : "";
       const serverPassword =
-        typeof settings.server_password === "string" ? settings.server_password.trim() : "";
+        typeof settings.server_password === "string" ? settings.server_password : "";
 
       if (adminPassword.length > 0 && adminPassword === serverPassword) {
         return t("abiotic.settings.groups.useADifferentAdminPasswordSoTheJoinGateAndTheOperatorLaneStaySeparate", undefined, "Use a different admin password so the join gate and the operator lane stay separate.");

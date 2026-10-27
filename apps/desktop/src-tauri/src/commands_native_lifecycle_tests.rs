@@ -59,6 +59,8 @@ mod prestart_probe;
 mod readiness;
 #[path = "commands_native_runtime.rs"]
 mod runtime;
+#[path = "commands_native_satisfactory_frm.rs"]
+mod satisfactory_frm;
 #[path = "commands_native_save_failure_probe.rs"]
 mod save_failure_probe;
 #[path = "commands_native_save_guard_probe.rs"]
@@ -381,6 +383,9 @@ async fn run_native_package(
         std::env::var("LANGAME_NATIVE_ALLOW_ELEVATED_SCUM")
             .ok()
             .as_deref(),
+        std::env::var("LANGAME_NATIVE_ABIOTIC_ELEVATED_ISOLATED")
+            .ok()
+            .as_deref(),
     )?;
     let offline_dst = module_id == "dontstarve"
         && std::env::var("LANGAME_NATIVE_DST_OFFLINE_LAN").as_deref() == Ok("true");
@@ -408,6 +413,7 @@ async fn run_native_package(
         }
     }
     let source = source.canonicalize()?;
+    let satisfactory_frm = satisfactory_frm::Fixture::from_env(&module_id, &source)?;
     let excluded = match descriptor.storage.saves_path_template.as_deref() {
         Some(template) if template.contains("paths.install_root") => {
             let data = app_storage::install_save_directory_prefix(template, &source)
@@ -610,6 +616,9 @@ async fn run_native_package(
         },
     )
     .await?;
+    if let Some(frm) = &satisfactory_frm {
+        frm.stage(&details, &effective_install_root, &package.root)?;
+    }
     let saves_before_start = save_inventory(Path::new(&details.saves_path))?;
     if elevated_fixture {
         firewall_cleanup = Some(firewall::NativeFirewall::prepare(&details, &package.root)?);
@@ -626,6 +635,7 @@ async fn run_native_package(
         offline_dst,
         elevated_fixture,
         satisfactory_world: satisfactory_world.as_ref(),
+        satisfactory_frm: satisfactory_frm.as_ref(),
     };
     #[cfg(windows)]
     if std::env::var("LANGAME_NATIVE_MORIA_NO_LOADER_CONTROL").as_deref() == Ok("true") {

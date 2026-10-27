@@ -1097,6 +1097,23 @@ fn analyze_abiotic_factor_runtime_health(lines: &[String]) -> Option<app_core::R
         });
     }
 
+    if let Some(line) = find_latest_matching_log_line(
+        lines,
+        &[
+            "refusing to start with an incorrect mod set.",
+            "failed to install and initialize mods, the server cannot start.",
+        ],
+    ) {
+        return Some(app_core::RuntimeHealth {
+            status: String::from("error"),
+            summary: String::from(
+                "Abiotic Factor refused to start because its official Mods could not be initialized. Check the current run log for the Mod, directory, network or authentication error.",
+            ),
+            reason: runtime_health_reason("abiotic_official_mods_failed", &[]),
+            matched_line: Some(line),
+        });
+    }
+
     if let Some(line) = find_latest_matching_log_line(lines, &["session short code:"]) {
         return Some(app_core::RuntimeHealth {
             status: String::from("ready"),
@@ -2444,7 +2461,13 @@ fn read_log_snapshot(source_path: Option<String>, max_lines: usize) -> LogTailSn
 
     LogTailSnapshot {
         source_path: Some(source_path),
-        lines: lines.into_iter().skip(start_index).collect(),
+        // Keep raw file offsets, truncation and line counts independent of the
+        // displayed credential length. Native files themselves remain untouched.
+        lines: lines
+            .into_iter()
+            .skip(start_index)
+            .map(|line| app_core::abiotic_output::redact_modio_token_text(&line))
+            .collect(),
         total_lines,
         truncated,
         read_error: crate::managed_console_log::failure_summary_for_path(&path),
@@ -2454,6 +2477,10 @@ fn read_log_snapshot(source_path: Option<String>, max_lines: usize) -> LogTailSn
 pub fn read_log_path_snapshot(source_path: String, max_lines: usize) -> LogTailSnapshot {
     read_log_snapshot(Some(source_path), max_lines.max(1))
 }
+
+#[cfg(test)]
+#[path = "runtime_abiotic_output_tests.rs"]
+mod abiotic_output_tests;
 
 fn read_log_tail_window(path: &Path, max_lines: usize) -> Result<(String, bool), std::io::Error> {
     if let Some(segments) = crate::managed_console_log::open_log_segments(path)? {

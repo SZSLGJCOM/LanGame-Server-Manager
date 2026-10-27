@@ -2,7 +2,7 @@
   "fixture_version": 1,
   "module_id": "abioticfactor",
   "evidence": {
-    "status": "exhaustive_verified",
+    "status": "best_effort_verified",
     "verified_at": "2026-09-08",
     "build": "Official Sandbox Options; installed dedicated-server build 24343458",
     "source_ids": [

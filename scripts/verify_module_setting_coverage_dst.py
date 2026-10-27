@@ -29,6 +29,8 @@ LAUNCH_SETTING_FLAGS = {
     "backup_log_period": "-backup_log_period",
     "friends_only": "-fo",
     "allow_ioopenwrite_sandbox_escape": "-allow_ioopenwrite_sandbox_escape",
+    "allow_persistentstorage_read_sandbox_escape": "-allow_persistentstorage_read_sandbox_escape",
+    "allow_persistentstorage_write_sandbox_escape": "-allow_persistentstorage_write_sandbox_escape",
 }
 DST_NATIVE_SHARDS = ("master", "caves", "islands", "volcano")
 

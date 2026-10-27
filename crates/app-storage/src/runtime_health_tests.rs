@@ -138,6 +138,43 @@ fn runtime_health_regression_abiotic_loading_map_is_not_ready() {
 }
 
 #[test]
+fn abiotic_official_mod_refusal_overrides_map_loading_without_rejecting_partial_warnings() {
+    // Captured from public build26092453 before any download: Modio20746
+    // caused the game to refuse startup, followed by an ordinary map-load line.
+    for line in [
+        "LogAbiotic: Error: Refusing to start with an incorrect mod set. Fix the errors above, or pass -OverrideModWarnings to start with the mods that did mount.",
+        "LogAbiotic: Error: Failed to install and initialize mods, the server cannot start. Dedicated Server will shut down in 5 minutes.",
+    ] {
+        for status in [InstanceStatus::Starting, InstanceStatus::Running] {
+            let health = analyze_runtime_health(
+                "abioticfactor",
+                &status,
+                &log_snapshot(&[
+                    line,
+                    "LogGlobalStatus: UEngine::LoadMap Load map complete /Game/Maps/ServerEntry",
+                ]),
+                None,
+                &[],
+            );
+            assert_eq!(health.status, "error");
+            assert_eq!(health.reason.code, "abiotic_official_mods_failed");
+            assert_eq!(health.matched_line.as_deref(), Some(line));
+        }
+    }
+    let health = analyze_runtime_health(
+        "abioticfactor",
+        &InstanceStatus::Running,
+        &log_snapshot(&[
+            "LogAbiotic: Error: Server mod setup finished with 1 errors, 1 mods mounted:",
+            "Session short code: current-session",
+        ]),
+        None,
+        &[],
+    );
+    assert_eq!(health.status, "ready");
+}
+
+#[test]
 fn runtime_health_regression_corekeeper_requires_world_initialization() {
     let listening = "Listening on ip:0.0.0.0:27039";
     for line in [listening, "Listening on port 27039", "timescale = 0.5"] {

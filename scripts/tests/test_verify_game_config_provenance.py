@@ -207,7 +207,7 @@ class GameConfigProvenanceVerifierTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertFalse(provenance.contains_local_absolute_path(value))
 
-    def test_committed_reports_match_fresh_render_and_abiotic_factor_has_59_items(self) -> None:
+    def test_committed_reports_match_fresh_render_and_abiotic_factor_has_67_items(self) -> None:
         failures, summaries = provenance.collect_summaries(provenance.MODULES_DIR)
         expected = {
             "game-config-source-ledger.csv": provenance.render_csv_report(summaries),
@@ -217,7 +217,7 @@ class GameConfigProvenanceVerifierTests(unittest.TestCase):
 
         self.assertEqual(failures, [])
         self.assertEqual(provenance.check_reports(provenance.DOCS_DIR, expected), [])
-        self.assertEqual((abiotic.schema_fields, abiotic.ledger_items), (59, 59))
+        self.assertEqual((abiotic.schema_fields, abiotic.ledger_items), (67, 67))
 
 
 if __name__ == "__main__":

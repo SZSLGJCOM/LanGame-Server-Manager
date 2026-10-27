@@ -66,7 +66,9 @@ pub(super) fn read_log(
     match read() {
         Ok((relative, text, truncated)) => {
             result.relative_path = Some(relative);
-            result.text = text;
+            // Historical output may predate the managed stdout filter. Redact
+            // only the public preview, preserving the retained file and budget.
+            result.text = app_core::abiotic_output::redact_modio_token_text(&text);
             result.truncated = truncated;
         }
         Err(error) => result.issues.push(error),

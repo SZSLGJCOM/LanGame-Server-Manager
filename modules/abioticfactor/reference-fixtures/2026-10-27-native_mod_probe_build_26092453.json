@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "module_id": "abioticfactor",
+  "evidence_classification": "isolated_native_probe",
+  "verified_on": "2026-10-27",
+  "steam_build_id": "26092453",
+  "game_version": "1.5.0.31459",
+  "executable_sha256": "3ee1c8d170138fb3842dbde128813dabe9ec3cbabf5865b00d2fe45670b6be91",
+  "source_identity_sha256": "fc987a8bc86faf813709b2132fde765f7348aa6fc56389a8be6b184725c10e98",
+  "test_binary_sha256": "a0baca06c386e9db2a8c91f887586df51746b25f2a373761743d197f5f102154",
+  "environment": "Disposable Windows Sandbox with explicit isolated elevation acknowledgement; live host instances and user profiles were not mapped",
+  "settings": {
+    "mod_ids": ["6472552"],
+    "modio_account_token_supplied": false,
+    "mod_install_timeout_seconds": 120,
+    "override_mod_warnings": false,
+    "sideload_mods": false,
+    "lan_only": true,
+    "program_update_policy": "pinned"
+  },
+  "download": {
+    "platform_selected_by_native_sdk": "Windows",
+    "file_id": "8379971",
+    "received_bytes": 203851,
+    "expected_bytes": 203851,
+    "installed_event_status": 0,
+    "preseeded_mod_files": 0,
+    "archive_sha256": null,
+    "archive_note": "The SDK removed its archive before capture. Installed payload bytes were independently captured and hashed. The separately reviewed 119454-byte WindowsServer file8379976 was not preinstalled and is not this download."
+  },
+  "installed_payloads": [
+    { "path": "Content/Paks/Windows/TraderHologramZVmLMAbioticFactor-Windows.pak", "bytes": 9944, "sha256": "22fd33204dfcec7e3952cb616ab3caf898a99b312a769afedded4dda9e2da06d" },
+    { "path": "Content/Paks/Windows/TraderHologramZVmLMAbioticFactor-Windows.ucas", "bytes": 456144, "sha256": "d4b8bcbc2d70f2a12831d67d7d22a1e1bedb34efbb8c19c70ab33cbeb63628bd" },
+    { "path": "Content/Paks/Windows/TraderHologramZVmLMAbioticFactor-Windows.utoc", "bytes": 2223, "sha256": "bca98a6c98ab641b8323f3c44986c623b61f9792120a4b2051fb25b7378639aa" },
+    { "path": "TraderHologramZVmLM.uplugin", "bytes": 467, "sha256": "a487c9c95d6a5eb1ef1477b9828e70435fa26b004c89d9dd7362b9d1c3b3487a" }
+  ],
+  "observed": {
+    "sdk_initialization_complete": true,
+    "mod_initialization_error_20746": false,
+    "native_game_log_marker": "Server mods ready, 1 mounted.",
+    "mounted_mod_count": 1,
+    "native_readiness_passed": true,
+    "normal_stop_exit_code": 0,
+    "native_test_exit_code": 0,
+    "owned_processes_after_stop": 0,
+    "instance_firewall_rules_after_cleanup": 0,
+    "source_and_package_hashes_unchanged": true,
+    "guest_reclaimed": true
+  },
+  "scope": "Anonymous download, mount and one production start/stop. Token-backed persistent caching, sideloading, dependency resolution, ordinary-permission SDK operation, client gameplay and ready-world persistence were not established by this probe. Separate host runs covered two no-client startup/save-rejection cycles."
+}

@@ -1,6 +1,9 @@
 use super::*;
 use app_storage::StoragePaths;
 
+#[path = "commands_dst_player_cache_tests.rs"]
+mod player_cache_tests;
+
 #[tokio::test]
 async fn dst_save_probe_skips_existing_managed_output_before_and_after_rotation() {
     use app_storage::managed_console_log::ManagedConsoleLog;
