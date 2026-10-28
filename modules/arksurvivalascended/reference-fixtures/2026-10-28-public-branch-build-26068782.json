@@ -1,0 +1,21 @@
+{
+  "steam_app_id": 2430930,
+  "branch": "public",
+  "public_build_id": "26068782",
+  "reviewed_on": "2026-10-28",
+  "depot_manifests": {
+    "1004": "7604377918839582995",
+    "2430931": "5862040015439121854"
+  },
+  "installed_executable_relative_path": "ShooterGame/Binaries/Win64/ArkAscendedServer.exe",
+  "executable_size": 196939880,
+  "executable_sha256": "d80e6f4f8d30e3d8e91a1c52896118662d4c53ad23b5a3aa183cdc9fbf34f45b",
+  "scope": "Fresh anonymous official Steam app_info_update/app_info_print metadata; public build and both public depot manifests match the retained installed package. No server or customer world was started or updated; patch-note text availability remains independent.",
+  "installed_executable_matches_retained_clean_package": true,
+  "publisher_release_scope": {
+    "source": "https://steamcommunity.com/games/2399830/announcements/detail/693149828915402453",
+    "published_on": "2026-10-24",
+    "ue_5_8_channel": "public_test_realm",
+    "stable_channel_not_inferred_from_roadmap": true
+  }
+}

@@ -1,6 +1,29 @@
 status = "best_effort_verified"
-last_verified = "2026-09-30"
-notes = "Barotrauma Dedicated Server app 1026340 public build 23799137 is v1.13.4.0. The 106 root and 18 campaign XML attributes are cross-checked against the installed package and official v1.13.4.0 release source ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e. All 125 managed fields have reviewed types, English/Chinese semantics and section ownership. Closed enums follow the release source; new numeric limits follow property setters, while UI-only slider ranges do not restrict native configuration. XML spelling alone is not used to infer types. Per-admin command lists remain an explicit permission-surface exclusion. The 2026-09-30 semantic recheck retains the full 125-field explicit metadata review against v1.13.4.0 source/build 23799137: native float types, clamping, enum values, units and bilingual labels are explicit; mod/admin owners remain outside configuration. Fractional XML regressions and five frontend contracts cover the corrected types, bounds, labels and grouping. No new live server probe was performed in this recheck."
+last_verified = "2026-10-28"
+notes = "Current package admission additionally covers 1.13.5.0 build 26144270, reviewed separately in the 2026-10-28 release and native-contract sources. The historical configuration inventory uses Barotrauma Dedicated Server app 1026340 public build 23799137 / v1.13.4.0. The 106 root and 18 campaign XML attributes are cross-checked against the installed package and official v1.13.4.0 release source ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e. All 125 managed fields have reviewed types, English/Chinese semantics and section ownership. Closed enums follow the release source; new numeric limits follow property setters, while UI-only slider ranges do not restrict native configuration. XML spelling alone is not used to infer types. Per-admin command lists remain an explicit permission-surface exclusion. The 2026-09-30 semantic recheck retains the full 125-field explicit metadata review against v1.13.4.0 source/build 23799137: native float types, clamping, enum values, units and bilingual labels are explicit; mod/admin owners remain outside configuration. Fractional XML regressions and five frontend contracts cover the corrected types, bounds, labels and grouping. No new live server probe was performed in this recheck."
+
+[[sources]]
+id = "security_release_1_13_5_0_20261028"
+kind = "release"
+path = "Steam app 1026340 public build 26144270; DedicatedServer 1.13.5.0"
+authority = "official_release_notes_and_anonymous_steamcmd_validated_package"
+url = "https://steamcommunity.com/games/602960/announcements/detail/685268529568554108"
+description = "The official 2026-10-27 security patch disables EOS crossplay and fixes malicious-client exploits including campaign-save corruption. A separate anonymous SteamCMD installation completed app_update 1026340 validate on 2026-10-28 with StateFlags 4, UpdateResult 0, buildid and TargetBuildID 26144270. The dedicated assembly reports version 1.13.5.0 and informational revision 0a9af9a7f0efeef46d63a4fe80103b4446a21dee. User installations were not updated. The public source commit 8e24b8991f7b282b8e471afd1c0960e5a51766bd adds XML sanitization and save-path validation without changing the ServerSettings or campaign-settings source inventories."
+
+[[sources]]
+id = "native_save_contract_build_26144270"
+kind = "documentation"
+path = "runtime-fixtures/2026-10-28-security-patch-native-save.json; control/NativeBuildTests.cs; control/tests/Run.ps1"
+authority = "actual_official_package_reflection_il_comparison_and_real_file_admission_tests"
+url = "https://github.com/FakeFishGames/Barotrauma/commit/8e24b8991f7b282b8e471afd1c0960e5a51766bd"
+description = "The 1.13.5.0 and retained 1.13.4.0 packages have complete separately admitted DedicatedServer.dll/BarotraumaCore.dll tuples. Production C# verification accepts both real packages and rejects both mixed pairs plus an unknown program; Rust selection has the matching regression. Actual reflection confirms the task queue, task delegate/constructor, Done/Mre and save-guard member contract. Metadata-token-resolved IL, with only the game assembly version normalized, matches for CrossThread.ProcessTasks, SaveUtil.SaveGame/CompressDirectory/CompressStringToFile, GameSession.Save, MultiPlayerCampaign.Save and IO.File.Open. SafeXML.SaveSafe adds StripInvalidCharacters before the unchanged write/error path; GameSession.Save still passes throwExceptions=true and maxRetries=0. Synthetic production-boundary tests continue to verify no-campaign/live-round/pending-switch refusal, once-only checkpoint dispatch and unknown outcomes for swallowed I/O failure. This static and deterministic review is separate from package-specific native lifecycle evidence."
+
+[[sources]]
+id = "native_campaign_save_build_26144270"
+kind = "runtime_probe"
+path = "runtime-fixtures/2026-10-28-security-patch-native-save.json; control/README.md"
+authority = "isolated_production_native_checkpoint_failure_save_and_restart_acceptance"
+description = "On 2026-10-28 a fresh zero-player 1.13.5.0 campaign passed two production startup/save/normal-stop runs and native campaign loading in the new process. Holding the primary against writes produced a real native compression sharing failure and a fresh nonce/run/PID-correlated unknown response; the primary SHA-256 stayed unchanged and that request was not retried. After lock release both formal requests confirmed native checkpoint completion; both stops exited 0 without crash flags and fixture cleanup passed. No client, player progress, power-loss durability or exact pre-shutdown checkpoint restoration is claimed."
 
 [[sources]]
 id = "server_settings"

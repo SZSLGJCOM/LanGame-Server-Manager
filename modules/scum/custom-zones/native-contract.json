@@ -1,0 +1,68 @@
+{
+  "module_id": "scum",
+  "verified_on": "2026-10-28",
+  "steam_app_id": 3792580,
+  "build_id": "25803875",
+  "game_version": "1.3.4.2.161892",
+  "executable_relative_path": "SCUM/Binaries/Win64/SCUMServer.exe",
+  "executable_sha256": "070fcad918ba04eb9797db29674cadbd6691427b936fe354bca23b008c8c9971",
+  "database_relative_path": "SCUM/Saved/SaveFiles/SCUM.db",
+  "database_user_version": 73,
+  "official_source": "https://steamcommunity.com/games/513710/announcements/detail/675133527946166822",
+  "native_registry": {
+    "source_actor": 5,
+    "pairs_channel_receiver_handling": [
+      [
+        5,
+        1,
+        1
+      ],
+      [
+        4,
+        1,
+        1
+      ],
+      [
+        6,
+        11,
+        1
+      ],
+      [
+        5,
+        11,
+        1
+      ],
+      [
+        4,
+        11,
+        1
+      ]
+    ]
+  },
+  "encoding": {
+    "bits_per_slot": 2,
+    "ignore": 0,
+    "allow": 1,
+    "block": 2,
+    "editable_slots": [
+      2,
+      3,
+      4
+    ],
+    "editable_mask_hex": "0x3f0"
+  },
+  "observation": "A newly created disposable private world loaded UCustomZoneRegistry. Its default global DamageChannelsVsHandlingMethod array was inspected without mutation. Native encoder/decoder and enumerations were inspected read-only. The observation process was explicitly reclaimed after readback; normal shutdown, client joins and combat effects were not validated.",
+  "tests_scope": "Five synthetic schema-73 SQLite regressions cover three-slot updates, unrelated world/unknown-bit retention, WAL-only data in the pre-change backup, stale/replaced/readonly/corrupt/unknown-layout rejection and no-op writes. A separate real native world copy passed the public stopped-instance read/write API, exact executable gate, committed reload and pre-change backup readback; original DB/WAL bytes stayed unchanged. Backups omit only the reconstructable SCUM.db-shm index and retain the main database, WAL and unrelated sidecars. No user database was used; client combat and a new SCUM server lifecycle were not assessed.",
+  "native_database_roundtrip": {
+    "test": "scum_custom_zones::tests::native_schema_roundtrip_on_owned_copy",
+    "test_binary_sha256": "5b82dc41d587a7213287b875f98ad2fd5fe4dacc1b642ce21605f496eec03a2e",
+    "source": "Previously created disposable schema-73 native world; original main database and WAL preserved byte-for-byte",
+    "configurations": 2,
+    "public_read_write_api": "passed",
+    "native_image_gate": "passed",
+    "pre_change_backup_readback": "passed",
+    "selected_rules_and_other_configurations_readback": "passed",
+    "game_server_started": false,
+    "client_combat_assessed": false
+  }
+}

@@ -336,6 +336,19 @@
       "x-lsgm-source-key": "Performance.ServerFPS",
       "x-lsgm-source-surface": "config_file"
     },
+    "server_worker_threads": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "title": "Server Worker Threads",
+      "description": "Optional maximum worker CPU threads. Leave unset to preserve existing launch arguments or the native default 4; the game may use fewer threads when the CPU has fewer available. Set this control or -NumServerWorkerThreads in extra launch arguments, never both. Applies on the next server start.",
+      "x-lsgm-section": "advanced",
+      "x-lsgm-order": 815,
+      "x-lsgm-source": "official_patch_1_6_7",
+      "x-lsgm-source-key": "-NumServerWorkerThreads",
+      "x-lsgm-source-surface": "launch_arg"
+    },
     "loaded_area_limit": {
       "type": "integer",
       "default": 12,

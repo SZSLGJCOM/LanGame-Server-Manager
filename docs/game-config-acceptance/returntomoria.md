@@ -123,3 +123,43 @@
   }
 }
 ```
+
+## `2026-10-28-official_patch_1_6_7.json`
+
+- Evidence: `best_effort_verified` at `2026-10-28` (build `Official 1.6.7 worker-thread flag and deterministic launch/config rendering; no server execution`)
+- Sources: `official_patch_1_6_7`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "extra_launch_args": "-log",
+  "server_name": "Worker thread acceptance",
+  "server_worker_threads": 2
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "ini",
+      "keys": {
+        "World.Name": "\"Worker thread acceptance\""
+      },
+      "path": "MoriaServerConfig.ini",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-NumServerWorkerThreads=2",
+      "-log"
+    ],
+    "executable_suffix": "MoriaServer.exe"
+  }
+}
+```

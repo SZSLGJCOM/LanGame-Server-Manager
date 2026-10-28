@@ -27,6 +27,19 @@
       "x-lsgm-source-key": "Description",
       "x-lsgm-source-surface": "config_file"
     },
+    "server_image_url": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "string",
+      "title": "Server Image URL",
+      "description": "Optional HTTP or HTTPS image URL included in the server browser entry. Leave unset to preserve an existing native URL; save an empty value to remove it.",
+      "maxLength": 2048,
+      "pattern": "^(?:$|https?://[^\\s\\x00-\\x1F\\x7F-\\x9F]+)$",
+      "x-lsgm-section": "room",
+      "x-lsgm-order": 720,
+      "x-lsgm-source": "server_image_url_26_10_20_1",
+      "x-lsgm-source-key": "ServerImageURL",
+      "x-lsgm-source-surface": "config_file"
+    },
     "bind_ip": {
       "type": "string",
       "default": "0.0.0.0",

@@ -1151,7 +1151,7 @@
     "eac_enabled": {
       "type": "boolean",
       "title": "Easy Anti-Cheat",
-      "description": "Enable Easy Anti-Cheat for the server. Verified manual saving is unavailable with EAC enabled; automatic preparation preserves this setting and the normal server startup.",
+      "description": "Enable Easy Anti-Cheat for the server. Manual saving uses the native Telnet saveworld command and preserves this anti-cheat setting.",
       "default": false,
       "x-lsgm-section": "access",
       "x-lsgm-order": 506,

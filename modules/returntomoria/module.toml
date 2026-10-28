@@ -12,6 +12,7 @@ verification_path = "MoriaServer.exe"
 [process]
 executable = "MoriaServer.exe"
 args_template = [
+  "{{returntomoria.worker_thread_args}}",
   "{{launch.extra_args}}",
 ]
 working_directory_template = "{{paths.install_root}}"

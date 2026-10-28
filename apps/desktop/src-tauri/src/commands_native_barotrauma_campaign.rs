@@ -80,10 +80,10 @@ pub(super) async fn prepare<R: tauri::Runtime>(
     if !native.savepath.is_absolute() || native.savepath.canonicalize()? != config {
         return Err("Native config_player.xml does not force the fixture save root".into());
     }
-    let (default_multiplayer, must_exist) = default_multiplayer(&native, &config)?;
+    let (default_multiplayer, must_exist) = default_multiplayer(&native, &config, &fixture)?;
     // GetSaveFiles also enumerates its default despite a custom savepath. An
     // external KnownFolder must already exist and contain no user campaigns.
-    // Only the verified relative default may be created inside this fixture.
+    // Only a verified default inside this fixture may be newly created.
     require_empty_fallback(&default_multiplayer, must_exist)?;
     require_empty_fallback(&config.join("Data/Saves/Multiplayer"), false)?;
     let save = saves.join(format!("{SAVE_NAME}.save"));
@@ -182,9 +182,18 @@ pub(super) async fn prepare<R: tauri::Runtime>(
 fn default_multiplayer(
     native: &NativeRoots,
     config: &Path,
+    fixture: &Path,
 ) -> Result<(PathBuf, bool), Box<dyn std::error::Error>> {
     if native.default_multiplayer.is_absolute() && !native.local_app_data_empty {
-        return Ok((native.default_multiplayer.clone(), true));
+        // Native KnownFolder can resolve the disposable profile before its
+        // Multiplayer leaf exists. Only that exact owned location may be new;
+        // external profiles must already exist and pass the empty-save check.
+        let owned = fixture
+            .join("profile/AppData/Local")
+            .join(EMPTY_KNOWN_FOLDER);
+        let owned_default = selector_path_spelling(&native.default_multiplayer.to_string_lossy())
+            == selector_path_spelling(&owned.to_string_lossy());
+        return Ok((native.default_multiplayer.clone(), !owned_default));
     }
     if native.local_app_data_empty && native.default_multiplayer == Path::new(EMPTY_KNOWN_FOLDER) {
         // In the reviewed .NET 8 package, an unavailable KnownFolder yields

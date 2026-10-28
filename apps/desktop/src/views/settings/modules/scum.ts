@@ -1,6 +1,7 @@
 import type { TranslateFn } from "../../../i18n";
 import { ScumJsonSettingsRenderer, validateScumJsonSettings } from "../ScumJsonSettingsRenderer";
 import { ScumServerSettingsRenderer } from "../ScumServerSettingsRenderer";
+import { ScumCustomZonesRenderer } from "../ScumCustomZonesRenderer";
 import type { SettingsModuleDefinition, SettingsModuleFieldGroup } from "../module-types";
 import {
   buildScumNativePresentationFields,
@@ -17,6 +18,7 @@ const STEAM64_PATTERN = /^\d{17}$/;
 const NATIVE_SECTIONS = Object.keys(SCUM_SECTION_FIELDS) as ScumNativeSection[];
 
 const SCUM_SECTIONS: GuidedSettingsSection[] = [
+  { id: "custom-zones", title: "Custom Zones", description: "NPC damage to vehicles in existing world regions." },
   {
     id: "server-settings",
     title: "Server Settings",
@@ -140,6 +142,12 @@ const fieldPresentationOverrides = Object.fromEntries([
 ]);
 
 const specializedRenderers = Object.fromEntries([
+  ["scum-custom-zones", {
+    kind: "module-addon" as const,
+    sectionId: "custom-zones",
+    saveMode: "explicit" as const,
+    Renderer: ScumCustomZonesRenderer
+  }],
   ...SCUM_CORE_SECTION_IDS.map((sectionId) => [scumRendererId(sectionId), {
     kind: "module-addon" as const,
     sectionId,
@@ -176,7 +184,18 @@ export const scumSettingsDefinition: SettingsModuleDefinition = {
   fieldPresentationOverrides,
   specializedRenderers,
   getSections: buildScumSections,
-  getAdditionalPresentationFields: ({ t }) => buildScumNativePresentationFields(t),
+  getAdditionalPresentationFields: ({ t }) => [
+    ...buildScumNativePresentationFields(t),
+    ...["melee", "melee_weapon", "projectile"].map((field) => ({
+      key: `custom_zones.${field}`,
+      title: t(`scum.settings.customZones.fields.${field}.title`),
+      description: t(`scum.settings.customZones.fields.${field}.description`),
+      sectionId: "custom-zones",
+      sourceSurface: "save",
+      presentation: { state: "specialized" as const, owner: "configuration" as const,
+        sectionId: "custom-zones", rendererId: "scum-custom-zones" }
+    }))
+  ],
   buildFieldGroups: (sectionId, fields, _locale, t) => buildScumFieldGroups(sectionId, fields, t),
   getFieldCopy: (key, t) => buildScumFieldCopy(key, t),
   initializeSettings: (settings) => initializeScumSettings(settings),

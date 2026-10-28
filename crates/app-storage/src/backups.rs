@@ -460,7 +460,13 @@ where
     } else {
         None
     };
-    let stats = copy_directory_contents_with_hook(saves_dir, &staging_saves_path, before_copy)?;
+    // SQLite's WAL index is transient shared memory with byte-range locks on
+    // Windows. Preserve SCUM.db and its WAL together; SQLite rebuilds the index
+    // when the stopped backup is opened. Never omit other database sidecars.
+    let omitted =
+        (record.summary.module_id == "scum").then_some(Path::new("SaveFiles/SCUM.db-shm"));
+    let stats =
+        copy_directory_contents_excluding(saves_dir, &staging_saves_path, omitted, before_copy)?;
     if let Some(bytes) = dst_settings {
         if read_dst_backup_settings(&dst_settings_path)?.as_deref() != Some(bytes.as_slice()) {
             return Err(backup_confirmation_error(
@@ -999,6 +1005,18 @@ fn copy_directory_contents_with_hook<F>(
 where
     F: FnMut(&Path, &Path) -> std::io::Result<()>,
 {
+    copy_directory_contents_excluding(source_dir, target_dir, None, before_copy)
+}
+
+fn copy_directory_contents_excluding<F>(
+    source_dir: &Path,
+    target_dir: &Path,
+    omitted_relative_file: Option<&Path>,
+    before_copy: &mut F,
+) -> Result<DirectoryCopyStats, StorageError>
+where
+    F: FnMut(&Path, &Path) -> std::io::Result<()>,
+{
     let canonical_source = canonical_plain_directory(source_dir, source_dir)?;
     let canonical_target = canonical_plain_directory(target_dir, target_dir)?;
     copy_directory_contents_recursive(
@@ -1006,6 +1024,7 @@ where
         target_dir,
         &canonical_source,
         &canonical_target,
+        omitted_relative_file,
         before_copy,
     )
 }
@@ -1015,6 +1034,7 @@ fn copy_directory_contents_recursive<F>(
     target_dir: &Path,
     canonical_source_root: &Path,
     canonical_target_root: &Path,
+    omitted_relative_file: Option<&Path>,
     before_copy: &mut F,
 ) -> Result<DirectoryCopyStats, StorageError>
 where
@@ -1073,6 +1093,7 @@ where
                 &target_path,
                 canonical_source_root,
                 canonical_target_root,
+                omitted_relative_file,
                 before_copy,
             )?;
             stats.file_count += nested_stats.file_count;
@@ -1084,6 +1105,14 @@ where
                 path: source_path,
                 root: canonical_source_root.to_path_buf(),
             });
+        }
+
+        if omitted_relative_file.is_some_and(|omitted| {
+            canonical_source
+                .strip_prefix(canonical_source_root)
+                .is_ok_and(|relative| relative == omitted)
+        }) {
+            continue;
         }
 
         before_copy(&source_path, &target_path).map_err(|source| StorageError::CopyPath {

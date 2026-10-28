@@ -294,4 +294,6 @@ export const EN_US_RIMWORLD_MESSAGES: MessageCatalog = {
   "settings.schema.rimworld.enable_server_telemetry.description": "Sends server details, address, population, mod list and player names to the browser service. Disabling this also disables public discovery.",
   "settings.schema.rimworld.extra_launch_args.title": "Additional Launch Arguments",
   "settings.schema.rimworld.extra_launch_args.description": "Additional arguments passed to RTServer.exe.",
+  "settings.schema.rimworld.server_image_url.title": "Server Image URL",
+  "settings.schema.rimworld.server_image_url.description": "Optional HTTP or HTTPS image URL included in the server browser entry. Leave unset to preserve an existing native URL; save an empty value to remove it.",
 };

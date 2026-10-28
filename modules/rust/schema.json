@@ -923,6 +923,56 @@
       "x-lsgm-source-key": "decay.upkeep_lock_min_users",
       "x-lsgm-source-surface": "config_file"
     },
+    "vehicle_pad_repairs_required": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "boolean",
+      "title": "Require helipad repairs",
+      "description": "Require the Air Wolf helipad to be repaired before its vendor sells aircraft. Leave unset to preserve the native setting; the reviewed game default is enabled.",
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 830,
+      "x-lsgm-source": "native_livestock_build_26139947",
+      "x-lsgm-source-key": "vehicle.padrepairsrequired",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "powergrid_fuse_decay_low_pop": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "integer",
+      "title": "Heavy fuse low-population threshold",
+      "description": "At or below this connected player count, heavy fuses use the low-population decay multiplier. Leave unset to preserve the native setting; the reviewed game default is 10.",
+      "minimum": -2147483648,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 840,
+      "x-lsgm-source": "native_livestock_build_26139947",
+      "x-lsgm-source-key": "powergrid.fusedecaylowpop",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "powergrid_fuse_decay_high_pop": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "integer",
+      "title": "Heavy fuse normal-decay threshold",
+      "description": "At or above this connected player count, heavy fuses decay at the normal rate. The rate interpolates between the two thresholds. Leave unset to preserve the native setting; the reviewed game default is 100.",
+      "minimum": -2147483648,
+      "maximum": 2147483647,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 850,
+      "x-lsgm-source": "native_livestock_build_26139947",
+      "x-lsgm-source-key": "powergrid.fusedecayhighpop",
+      "x-lsgm-source-surface": "config_file"
+    },
+    "powergrid_fuse_decay_low_pop_scale": {
+      "x-lsgm-default-source": "existing_native_configuration",
+      "type": "number",
+      "title": "Heavy fuse low-population decay multiplier",
+      "description": "Multiplier on heavy fuse decay at or below the low-population threshold. 0.25 means one quarter of the normal decay rate; 1 removes population scaling. Leave unset to preserve the native setting; the reviewed game default is 0.25.",
+      "minimum": -3.4028234663852886e+38,
+      "maximum": 3.4028234663852886e+38,
+      "x-lsgm-section": "gamemode",
+      "x-lsgm-order": 860,
+      "x-lsgm-source": "native_livestock_build_26139947",
+      "x-lsgm-source-key": "powergrid.fusedecaylowpopscale",
+      "x-lsgm-source-surface": "config_file"
+    },
     "use_new_navmesh": {
       "type": "boolean",
       "title": "Use new navigation mesh",

@@ -1,6 +1,6 @@
-status = "exhaustive_verified"
-last_verified = "2026-07-13"
-notes = "Steam public branch build 21872765 (updated 2026-02-12 UTC) is current on 2026-07-13. A clean first launch of that Windows package generated the native sectioned MoriaServerConfig.ini used for this crosswalk, including DurinsFolk DLC fields, host retry settings, eight custom-difficulty keys, ServerFPS 60, and LoadedAreaLimit 12. The official Free Range Games guide independently confirms the config, rules, permissions, TCP/UDP 7777 traffic, eight-player fixed session limit, console commands, and Ctrl-C save-and-stop behavior."
+status = "best_effort_verified"
+last_verified = "2026-10-28"
+notes = "2026-10-28: The optional worker-thread launch override is based on the official 1.6.7 notes and deterministic configuration/argument tests, without a new native server run. Unset emits no worker-thread argument and preserves existing raw arguments or the game default 4; an explicit typed override cannot duplicate the same raw flag. Earlier exhaustive native evidence retains its original dates and labels. Steam public branch build 21872765 (updated 2026-02-12 UTC) is current on 2026-07-13. A clean first launch of that Windows package generated the native sectioned MoriaServerConfig.ini used for this crosswalk, including DurinsFolk DLC fields, host retry settings, eight custom-difficulty keys, ServerFPS 60, and LoadedAreaLimit 12. The official Free Range Games guide independently confirms the config, rules, permissions, TCP/UDP 7777 traffic, eight-player fixed session limit, console commands, and Ctrl-C save-and-stop behavior."
 
 [[sources]]
 id = "steam_public_build_21872765"
@@ -269,3 +269,16 @@ kind = "documentation"
 path = "https://www.returntomoria.com/news-updates/dedicated-server"
 authority = "first_party_documentation_and_installed_package_semantic_review"
 description = "Semantic review on 2026-09-30 of 24 active configuration fields in both languages. Player permissions are edited in the Players workspace using complete native text and username identities. Existing-world DLC upgrade is edited in Maintenance and saved explicitly while stopped; it takes effect on the next world load. The frame-rate limit uses frames per second. No fresh server/client run was performed; existing evidence dates and status remain unchanged."
+
+[[sources]]
+id = "official_patch_1_6_7"
+kind = "documentation"
+path = "https://www.returntomoria.com/news-updates/patch-1-6-7-release-notes"
+authority = "official_free_range_games_patch_notes"
+description = "Official patch 1.6.7 release notes dated 2026-02-12, checked on 2026-10-28: -NumServerWorkerThreads controls dedicated-server worker threads from 1 to 4, default 4. The game can use fewer if the CPU has fewer available threads. LanGame emits this as a launch argument only when set; it is not an INI key. Unset preserves existing raw arguments and the native default. An explicit override combined with a raw copy of the same flag is rejected before launch. This documentation and configuration check did not launch a server."
+
+[[items]]
+source = "official_patch_1_6_7"
+key = "-NumServerWorkerThreads"
+schema_key = "server_worker_threads"
+surface = "launch_arg"

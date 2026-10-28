@@ -3,6 +3,14 @@ last_verified = "2026-09-08"
 notes = "SteamCMD anonymous app_update 2430930 validate succeeded on 2026-07-13; the installed manifest reports buildid 24159508 and depot 2430931 manifest 2381721962790820553. On 2026-08-12 the pinned official Server configuration source (SHA256 72b00288f130913ad6dfac1b680c62c159e76e86c70b3f90a2369260d63d5f63) was exhaustively crosswalked: all 270 ASA Yes rows are classified, all 30 No and 244 Unknown rows have explicit exclusions, and every native row is bound to a typed schema field and edition-specific writer. Studio Wildcard patch evidence separately retains the anchored-vessel, aquatic-compartment, and Astraeos controls. ASE-only inherited controls and duplicate native aliases were removed. On 2026-09-07, 15 advanced Game.ini controls were added from independent ASA maintainer and Wildcard evidence. The overall module status is best_effort_verified: the earlier 270-row confirmed catalog remains completely classified, while the new settings have native-output contract coverage and have not been exercised on a v93.19 game server. Semantic review on 2026-09-30 compared all 273 settings and both rendered locales with the official ARK wiki crosswalk and native bindings. Corrected nearby text chat, resource-regrowth delay direction and structure pickup sections; replaced generic field help using canonical bilingual descriptions. No defaults or native keys changed in this semantic pass; gameplay effects were not newly exercised."
 
 [[sources]]
+id = "public_branch_review_20261028"
+kind = "documentation"
+path = "SteamCMD app_info_print 2430930 depots/branches/public"
+authority = "valve_official_anonymous_distribution_metadata"
+description = "Fresh anonymous app_info_update and app_info_print on 2026-10-28 identify public build 26068782 and depot manifests 1004/7604377918839582995 and 2430931/5862040015439121854, matching the retained installed package. The server executable SHA256 also matches its retained clean-package inventory. No newer stable package was offered. The publisher's 2026-10-24 Community Crunch 529 still describes Unreal Engine 5.8 as PTR work, separately from this public branch. This closes the current stable-package identity check, not exhaustive patch-note coverage, a new server run, client compatibility or renewed verification of historical settings. Portable details are recorded in reference-fixtures/2026-10-28-public-branch-build-26068782.json."
+url = "https://steamcommunity.com/games/2399830/announcements/detail/693149828915402453"
+
+[[sources]]
 id = "asa_query_port"
 kind = "documentation"
 authority = "epic_games_unreal_engine_5_5"

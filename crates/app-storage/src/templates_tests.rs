@@ -4,6 +4,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 #[path = "templates_rimworld_tests.rs"]
 mod rimworld;
 
+#[path = "templates_october_options_tests.rs"]
+mod october_options;
+
 #[path = "templates_projectzomboid_seed_tests.rs"]
 mod projectzomboid_seed;
 
@@ -653,7 +656,7 @@ fn rimworld_materializes_rendered_configs_to_runtime_root() {
             &fs::read(install_root.join("Configs").join("ServerConfig.json")).unwrap()
         )
         .unwrap(),
-        json!({"Name": "LanGame"})
+        json!({"Name": "LanGame", "ServerImageURL": ""})
     );
     assert_eq!(
         fs::read_to_string(install_root.join("Configs").join("WhitelistConfig.json")).unwrap(),

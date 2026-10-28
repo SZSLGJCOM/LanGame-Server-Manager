@@ -139,6 +139,8 @@ register_commands! {
     (read_instance_isolation, [crate::commands::commands_instance_isolation], Runtime, Allowed, Bounded),
     (read_dragonwilds_world_settings, [crate::commands::commands_dragonwilds_world], Runtime, Allowed, Bounded),
     (write_dragonwilds_world_settings, [crate::commands::commands_dragonwilds_world], Runtime, Allowed, Bounded),
+    (read_scum_custom_zones, [crate::commands::commands_scum_custom_zones], Runtime, Allowed, Bounded),
+    (write_scum_custom_zone_damage, [crate::commands::commands_scum_custom_zones], Runtime, Allowed, Owned),
     (read_astroneer_save_catalog, [crate::commands::commands_astroneer_saves], Runtime, Allowed, Bounded),
     (read_valheim_world_rules, [crate::commands::commands_valheim_world], Runtime, Allowed, Bounded),
     (prepare_valheim_player_control, [crate::commands::commands_valheim_control], Runtime, Allowed, Owned),

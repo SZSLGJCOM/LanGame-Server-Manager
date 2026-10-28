@@ -19,12 +19,22 @@ ordinary-file `SaveFiles.cs` from Core Keeper control.
 
 ## Native contract
 
-The admitted installed server is 1.13.4.0, build string
-`release/summer-update-2026-hotfix-1`, revision `6029cd01d7`. Both file hashes must
-match before initialization:
+The admitted packages are 1.13.4.0 (Steam build `23799137`, build string
+`release/summer-update-2026-hotfix-1`, revision `6029cd01d7`) and the
+[1.13.5.0 security patch](https://steamcommunity.com/games/602960/announcements/detail/685268529568554108)
+(Steam build `26144270`, informational revision
+`0a9af9a7f0efeef46d63a4fe80103b4446a21dee`). A complete pair must match before
+initialization; mixed versions and unknown packages are rejected.
+
+1.13.4.0:
 
 - `DedicatedServer.dll`: `18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c`
 - `BarotraumaCore.dll`: `72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3`
+
+1.13.5.0:
+
+- `DedicatedServer.dll`: `d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46`
+- `BarotraumaCore.dll`: `48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606`
 
 The reviewed public [CrossThread implementation](https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Utils/CrossThread.cs)
 and [native save implementation](https://github.com/FakeFishGames/Barotrauma/blob/ca7f5976fe16de7b153585ac4f6a12bdccbbbf8e/Barotrauma/BarotraumaShared/SharedSource/Utils/SaveUtil.cs)
@@ -60,6 +70,15 @@ one swallowed by the game or raised by a stream's disposal, leaves the outcome
 unknown. The observer is always removed before returning or propagating an
 exception; another worker thread cannot acknowledge or reject the request.
 
+On 2026-10-28 the actual 1.13.5.0 and 1.13.4.0 packages were compared with
+reflection and token-resolved IL. The task queue and save guard members retain
+their signatures. `ProcessTasks`, `SaveGame`, `CompressDirectory`,
+`CompressStringToFile`, `GameSession.Save`, `MultiPlayerCampaign.Save` and
+`IO.File.Open` match after normalizing only the game assembly version.
+`SafeXML.SaveSafe` adds `StripInvalidCharacters` before its existing write/error
+path; `GameSession.Save` still selects `throwExceptions=true` and `maxRetries=0`.
+The fixed extension preserves that native sanitizer and never bypasses it.
+
 The installed hash-pinned IL was checked through `SaveUtil.SaveGame`,
 `GameSession.Save`, `SafeXML.SaveSafe`, `SubmarineInfo.SaveAs`,
 `CompressStringToFile` and `CompressDirectory`. All early returns in this save
@@ -73,6 +92,18 @@ checkpoint between rounds, with the live-round guards still enforced.
 
 ## Verification
 
+On 2026-10-28, version 1.13.5.0 / build `26144270` passed the isolated
+`native_manual_save` acceptance using immutable test binary SHA-256
+`c77151d7fed1dcc138467a4e08dad621bee7cf74363db150c257250c22ca4dea`.
+A locked campaign primary caused the actual native compression write to fail;
+the new nonce/run/PID-correlated outcome was unknown and the primary SHA-256
+stayed unchanged. After releasing the lock, both managed runs confirmed native
+checkpoint completion and stopped normally with exit code 0. The fresh second
+process loaded the existing campaign. Fixture cleanup passed. There was no
+player client; power-loss durability, player progress and exact pre-shutdown
+checkpoint restoration were not assessed. The portable result is recorded in
+`../runtime-fixtures/2026-10-28-security-patch-native-save.json`.
+
 The production source compiles with the existing Framework C# compiler using
 `/langversion:5 /warn:4 /warnaserror+`. `BarotraumaControlTests.cs` compiles as an
 external `DedicatedServer.exe` with the production adapter and shared protocol
@@ -81,6 +112,16 @@ submarine-switch rejection, current-session binding, exactly one checkpoint
 invocation, swallowed and escaping I/O failures, unrelated-worker isolation,
 observer cleanup, bounded task publication, nonblocking busy-owner behavior and
 completed-event disposal. It does not replace real game acceptance.
+
+The optional real-file admission test compiles the same production verifier,
+accepts both supplied packages, rejects both cross-version pairs and rejects an
+unknown server DLL without starting a game. Use an external output directory:
+
+```powershell
+& modules/barotrauma/control/tests/Run.ps1 -OutputRoot <external-output> `
+    -PackageRoot <official-1.13.5.0-package> `
+    -PreviousPackageRoot <retained-1.13.4.0-package>
+```
 
 Real acceptance used an ordinary copied server with a newly generated,
 zero-player campaign, explicit private `config_player.xml` savepath and a real

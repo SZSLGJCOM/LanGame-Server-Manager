@@ -169,7 +169,11 @@ test("Return to Moria template uses the native build 21872765 sectioned config",
   assert.match(moduleToml, /\[\[runtime\.port_groups\]\]\s+id = "game_transport"\s+members = \["game", "game_tcp"\]/s);
   assert.match(moduleToml, /\{\{launch\.extra_args\}\}/);
   assert.doesNotMatch(moduleToml, /\{\{settings\.extra_launch_args\}\}/);
-  assert.match(sourceLedger, /status = "exhaustive_verified"/);
+  assert.match(sourceLedger, /^status = "best_effort_verified"$/m);
+  assert.match(sourceLedger, /^last_verified = "2026-10-28"$/m);
+  const historical = JSON.parse(read("modules/returntomoria/config-fixtures/2026-07-13-first_launch_defaults_21872765.json"));
+  assert.equal(historical.evidence.status, "exhaustive_verified");
+  assert.equal(historical.evidence.verified_at, "2026-07-13");
   assert.match(sourceLedger, /build 21872765/);
   assert.match(sourceLedger, /fixed eight-player simultaneous-session limit/);
 });

@@ -3,6 +3,14 @@ last_verified = "2026-09-08"
 notes = "The archived generated v7 baseline plus four official August 2026 additions provide 436 specialized controls and one generated version key. The four new keys and default values also match the existing installed build 25187656 configuration inspected read-only on 2026-09-28; this is not a new clean-launch verification. Three generated JSON contracts are structured. Player identity rosters remain in Player Access. Runtime still requires elevation. The later authorized elevated startup observation is separately dated below; it does not replace the configuration acceptance baseline."
 
 [[sources]]
+id = "custom_zone_npc_vehicle_damage_20261028"
+kind = "runtime_probe"
+path = "SCUM/Saved/SaveFiles/SCUM.db custom_zone_configuration_damage_handling_methods"
+authority = "official_patch_and_isolated_native_registry_readback"
+url = "https://steamcommunity.com/games/513710/announcements/detail/675133527946166822"
+description = "The 2026-10-05 publisher update adds three independent NPC-to-vehicle Custom Zone rules. On 2026-10-28, a disposable build 25803875 (1.3.4.2.161892) world and read-only native registry probe establish ArmedNPC actor 5, Vehicle receiver 11, channels Melee 6/WeaponMelee 5/Projectile 4 at slots 2/3/4. The schema-73 database stores two bits per slot (Ignore 0, Allow 1, Block 2); only mask 0x3f0 is editable. This is a separate stopped-world editor, not a ServerSettings.ini or JSON key. It edits only persisted configurations after exact-build verification, identity/revision checks and a pre-change backup. Synthetic SQLite regressions cover untouched bits/rows/world data, WAL-backed backup, stale/replaced databases and rejected writes. Native probe identity and limits are in custom-zones/native-contract.json; client combat effects are not claimed."
+
+[[sources]]
 id = "unreal_log_console_contract"
 kind = "documentation"
 path = "https://dev.epicgames.com/documentation/en-us/unreal-engine/command-line-arguments?application_version=4.27"

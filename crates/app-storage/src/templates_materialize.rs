@@ -814,13 +814,7 @@ fn materialize_rimworld_support_files(
     }
 
     super::rimworld::materialize_configuration(context, files)?;
-    let target_root = context.install_root.join("Configs");
-    merge_rendered_json_object_file(
-        &context.config_dir.join("ServerConfig.json"),
-        &target_root.join("ServerConfig.json"),
-        "rimworld",
-        files,
-    )?;
+    super::rimworld::materialize_server_config(context, files)?;
     Ok(())
 }
 

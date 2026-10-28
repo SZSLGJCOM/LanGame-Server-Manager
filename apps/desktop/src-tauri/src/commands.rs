@@ -301,6 +301,8 @@ pub mod commands_astroneer_saves;
 pub mod commands_dragonwilds_world;
 #[path = "commands_satisfactory_world.rs"]
 pub mod commands_satisfactory_world;
+#[path = "commands_scum_custom_zones.rs"]
+pub mod commands_scum_custom_zones;
 #[path = "commands_valheim_world.rs"]
 pub mod commands_valheim_world;
 pub use commands_live_players::{

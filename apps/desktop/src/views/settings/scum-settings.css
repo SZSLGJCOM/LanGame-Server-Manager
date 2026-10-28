@@ -27,6 +27,17 @@
   gap: 8px;
 }
 
+.scum-custom-zones__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.scum-custom-zones__regions {
+  overflow-wrap: anywhere;
+}
+
 .scum-json-settings-renderer .configuration-workspace__structured-list {
   display: grid;
   gap: 12px;

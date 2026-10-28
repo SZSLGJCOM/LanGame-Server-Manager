@@ -328,3 +328,69 @@ fn malformed_server_config_is_preserved_and_rolls_back_other_pending_writes() {
     assert_eq!(fs::read(path).unwrap(), original);
     assert!(!fixture.install.join("Configs/PasswordConfig.json").exists());
 }
+
+#[test]
+fn server_image_override_preserves_native_unset_updates_and_explicitly_clears() {
+    let fixture = RimWorldFixture::new();
+    let path = fixture.install.join("Configs/ServerConfig.json");
+    let native_url = "https://images.example.test/native.png";
+    let configured_url = "https://images.example.test/colony.png?caption=%22Colony%22&theme=dark";
+    let future = json!({"image_data":[false,0,{"keep":"native"}]});
+    fs::write(
+        &path,
+        serde_json::to_vec(&json!({"ServerImageURL":native_url,"FutureNative":future})).unwrap(),
+    )
+    .unwrap();
+    let mut settings = collect_schema_defaults_from_schema_json(
+        Some(include_str!("../../../modules/rimworld/schema.json")),
+        SchemaDefaultContext {
+            instance_id: Some("rimworld-password"),
+            instance_name: Some("Browser image"),
+        },
+    )
+    .unwrap();
+    assert!(!settings.contains_key("server_image_url"));
+    let ports = [PortBinding {
+        name: "game".into(),
+        protocol: "tcp".into(),
+        port: 25555,
+    }];
+    let templates = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../modules/rimworld/templates");
+    for (input, expected_url) in [
+        (None, native_url),
+        (Some(configured_url), configured_url),
+        (None, configured_url),
+        (Some(""), ""),
+        (None, ""),
+    ] {
+        settings.remove("server_image_url");
+        if let Some(url) = input {
+            settings.insert("server_image_url".into(), json!(url));
+        }
+        render_module_templates(
+            &templates,
+            &ModuleTemplateRenderInput {
+                config_dir: &fixture.config,
+                install_root: &fixture.install,
+                saves_dir: &fixture.root,
+                instance_id: "rimworld-password",
+                instance_name: "Browser image",
+                module_id: "rimworld",
+                bind_ip: "127.0.0.1",
+                autostart: false,
+                settings: &settings,
+                ports: &ports,
+            },
+        )
+        .unwrap();
+        let rendered: Value =
+            serde_json::from_slice(&fs::read(fixture.config.join("ServerConfig.json")).unwrap())
+                .unwrap();
+        assert_eq!(rendered["ServerImageURL"], input.unwrap_or_default());
+        materialize_module_support_files(&fixture.context(&settings)).unwrap();
+        let native: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(native["ServerImageURL"], expected_url);
+        assert_eq!(native["FutureNative"], future);
+        assert_eq!(native["Name"], "Browser image");
+    }
+}

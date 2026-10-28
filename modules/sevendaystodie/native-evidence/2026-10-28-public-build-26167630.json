@@ -1,0 +1,55 @@
+{
+  "reviewed_on": "2026-10-28",
+  "steam_app_id": 294420,
+  "branch": "public",
+  "build_id": "26167630",
+  "depot_manifest": "2709746199376235989",
+  "native_property_count": 68,
+  "added_properties": {},
+  "removed_properties": {},
+  "changed_defaults": {},
+  "files": {
+    "serverconfig.xml": {
+      "size": 13731,
+      "sha256": "21dd90603e12c2aa88c73edf4d1c44ee1bc60358b94275259c4aa24970a8d879"
+    },
+    "startdedicated.bat": {
+      "size": 1979,
+      "sha256": "fabe81fbd61eafc0aa4fb5a517c834e376001874b7dada45ac5f4fd8830f7aa9"
+    },
+    "7DaysToDieServer.exe": {
+      "size": 666624,
+      "sha256": "9062c57f7c742dd175d78934941d2f30beeddd70b01dd8ccc95ec73f22e21ab3"
+    },
+    "7DaysToDieServer_Data/Managed/Assembly-CSharp.dll": {
+      "size": 11957760,
+      "sha256": "2fd4bd1cefaa3b76ce3655539e2cb8bf2d579a05bc7b693f527d6cc14959b9ba"
+    }
+  },
+  "scope": "Official public package acquisition/validation and unchanged 68-property/default comparison, followed by isolated production start, native world readiness, Telnet save requests, normal stop, fresh-process reload, backup/restore, archive/recovery, uninstall and retained-data checks. Native save requests and stopped-file readbacks do not establish request-caused durable storage or player progress. No client joined and no user instance or save was used.",
+  "official_release_url": "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114045870",
+  "native_lifecycle": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_package_lifecycle",
+    "test_binary_sha256": "202b0461ae670c42c19e990e1f49419cd953d21df1ae47a27cdaafeac6fd091a",
+    "environment": "Non-elevated Windows; disposable private instance; independently validated public package; production prestart update/verification",
+    "exit_code": 0,
+    "native_ready_cycles": [
+      "initial",
+      "restart",
+      "after_restore",
+      "after_archive_restore"
+    ],
+    "normal_stops": 4,
+    "normal_exit_code": 0,
+    "crash_flags": false,
+    "manual_save_route": "declared native Telnet for the current managed run",
+    "manual_save_requests": 4,
+    "save_completion": "requested",
+    "manual_checkpoint_durability_assessed": false,
+    "player_progress_assessed": false,
+    "backup_restored_files": 70,
+    "archive_interrupted_commit_recovery": "passed",
+    "library_uninstall_and_instance_deletion_retention": "passed",
+    "fixture_cleanup": "passed"
+  }
+}

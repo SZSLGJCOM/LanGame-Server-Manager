@@ -59,8 +59,8 @@ const RETURNTOMORIA_FIELD_GROUPS = [
     id: "performance",
     sectionId: "advanced",
     title: "Performance",
-    description: "Set the server frame-rate limit and loaded-area budget.",
-    keys: ["server_fps", "loaded_area_limit"]
+    description: "Set the server frame-rate limit, worker threads and loaded-area budget.",
+    keys: ["server_fps", "server_worker_threads", "loaded_area_limit"]
   },
   {
     id: "advanced",

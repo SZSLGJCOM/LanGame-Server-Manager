@@ -1,0 +1,52 @@
+{
+  "fixture_version": 1,
+  "module_id": "returntomoria",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-28",
+    "build": "Official 1.6.7 worker-thread flag and deterministic launch/config rendering; no server execution",
+    "source_ids": [
+      "official_patch_1_6_7"
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "official_patch_1_6_7.-NumServerWorkerThreads"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "Worker thread acceptance",
+    "server_worker_threads": 2,
+    "extra_launch_args": "-log"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "MoriaServerConfig.ini",
+        "format": "ini",
+        "keys": {
+          "World.Name": "\"Worker thread acceptance\""
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "MoriaServer.exe",
+      "arguments": [
+        "-NumServerWorkerThreads=2",
+        "-log"
+      ]
+    }
+  }
+}

@@ -29,10 +29,7 @@ public static class StartupHook
         {
             string root = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string runtime = Path.GetDirectoryName(root);
-            NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"),
-                "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c");
-            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"),
-                "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3");
+            VerifyNativeBuild(runtime);
             main = NativeBinding.Type("DedicatedServer", "Barotrauma.GameMain");
             Type crossThread = NativeBinding.Type("DedicatedServer", "Barotrauma.CrossThread");
             taskType = crossThread.GetNestedType("Task", BindingFlags.NonPublic);
@@ -52,6 +49,24 @@ public static class StartupHook
             timer = new Timer(Enqueue, null, 200, 200);
         }
         catch (Exception error) { Fail(error); }
+    }
+    private static void VerifyNativeBuild(string runtime)
+    {
+        try
+        {
+            NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"),
+                "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c");
+            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"),
+                "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3");
+        }
+        catch (SaveFailure failure)
+        {
+            if (failure.Code != "unsupported_native_build") throw;
+            NativeBinding.VerifyFile(Path.Combine(runtime, "DedicatedServer.dll"),
+                "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46");
+            NativeBinding.VerifyFile(Path.Combine(runtime, "BarotraumaCore.dll"),
+                "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606");
+        }
     }
     private static object Member(Type type, object owner, string name, BindingFlags flags)
     {

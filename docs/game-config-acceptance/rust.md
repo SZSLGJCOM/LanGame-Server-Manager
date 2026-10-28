@@ -324,3 +324,76 @@
   }
 }
 ```
+
+## `2026-10-28-native_livestock_build_26139947.json`
+
+- Evidence: `best_effort_verified` at `2026-10-28` (build `Installed Rust build 26139947 read-only declarations and deterministic config rendering; no game execution`)
+- Sources: `native_livestock_build_26139947`
+- Coverage: editable `4`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Settings
+
+```json
+{
+  "banned_entries": "76561198022222222|Griefing|Repeated",
+  "custom_launch_flags": "",
+  "max_players": 250,
+  "moderator_entries": "76561198011111111|Moderator|Weekend",
+  "owner_entries": "76561198077777777|Host|Created by LanGame",
+  "powergrid_fuse_decay_high_pop": 150,
+  "powergrid_fuse_decay_low_pop": 0,
+  "powergrid_fuse_decay_low_pop_scale": 0.125,
+  "rcon_password": "acceptance-rust-rcon",
+  "rcon_web": true,
+  "server_description": "原生配置覆盖验收",
+  "server_name": "LanGame Rust 验收",
+  "skip_queue_entries": "76561198000000000|Priority Friend",
+  "vehicle_pad_repairs_required": false,
+  "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "text",
+      "fragments": [
+        "vehicle.padrepairsrequired false",
+        "powergrid.fusedecaylowpop 0",
+        "powergrid.fusedecayhighpop 150",
+        "powergrid.fusedecaylowpopscale 0.125"
+      ],
+      "path": "server/acceptance-rust/cfg/server.cfg",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [
+      "-batchmode",
+      "-nographics",
+      "-logfile",
+      "-",
+      "+server.ip",
+      "0.0.0.0",
+      "+server.identity",
+      "acceptance-rust",
+      "+world.configfile",
+      "world-config.json",
+      "+server.port",
+      "28015",
+      "+server.queryport",
+      "28017",
+      "+rcon.port",
+      "28016",
+      "+rcon.password",
+      "acceptance-rust-rcon",
+      "+rcon.web",
+      "true"
+    ],
+    "executable_suffix": "RustDedicated.exe"
+  }
+}
+```

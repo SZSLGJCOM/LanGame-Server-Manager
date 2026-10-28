@@ -29,7 +29,7 @@ const roomInventory = {
   palworld: ["server_name", "server_description", "max_players", "server_password", "community_server", "region", "show_player_list"],
   projectzomboid: ["server_name", "server_description", "welcome_message", "max_players", "public_server", "server_password"],
   returntomoria: ["server_name", "server_password", "world_file_name", "rules_message"],
-  rimworld: ["server_name", "server_description", "max_players", "enable_server_browser", "discord_url", "steam_workshop_url", "server_password", "chat_login_notifications", "chat_disconnect_notifications", "chat_enable_mo_td", "chat_message_of_the_day"]
+  rimworld: ["server_name", "server_description", "server_image_url", "max_players", "enable_server_browser", "discord_url", "steam_workshop_url", "server_password", "chat_login_notifications", "chat_disconnect_notifications", "chat_enable_mo_td", "chat_message_of_the_day"]
 };
 
 function parseModule(moduleId) {

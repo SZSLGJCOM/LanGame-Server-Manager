@@ -29,7 +29,7 @@ window.alert = window.confirm = window.prompt = () => { throw new Error("Unexpec
 
 const persisted = new Map<string, InstanceDetails>();
 const nativeInstances = new Map<string, InstanceDetails>();
-const nativeModuleIds = new Set(["runescapedragonwilds", "valheim", "astroneer", "satisfactory"]);
+const nativeModuleIds = new Set(["runescapedragonwilds", "valheim", "astroneer", "satisfactory", "scum"]);
 const saves: UpdateInstanceInput[] = [];
 const modules: Array<{ id: string; sections: number; configuration_fields: number; specialized_editors: number }> = [];
 let activeSchema: GuidedSettingsSchema | null = null;

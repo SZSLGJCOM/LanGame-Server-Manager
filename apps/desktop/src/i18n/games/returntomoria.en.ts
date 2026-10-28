@@ -19,7 +19,7 @@ export const EN_US_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.settings.groups.custom-difficulty.title": "Custom difficulty",
   "returntomoria.settings.groups.dlc.description": "Enable DLC when creating a new world.",
   "returntomoria.settings.groups.dlc.title": "World DLC",
-  "returntomoria.settings.groups.performance.description": "Set the server frame-rate limit and loaded-area budget.",
+  "returntomoria.settings.groups.performance.description": "Set the server frame-rate limit, worker threads and loaded-area budget.",
   "returntomoria.settings.groups.performance.title": "Performance",
   "returntomoria.settings.groups.world.description": "Choose the world type, seed, and preset used when the dedicated server creates a world.",
   "returntomoria.settings.groups.world.title": "World creation",
@@ -134,4 +134,6 @@ export const EN_US_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.workspace.upgradeWarning": "Upgrading cannot be undone. Back up the world first; players without the DLC cannot join after the upgrade.",
   "returntomoria.workspace.conflict": "This setting changed elsewhere. Discard edits and reload.",
   "returntomoria.workspace.schemaUnavailable": "Configuration definitions for this game are unavailable.",
+  "settings.schema.returntomoria.server_worker_threads.title": "Server Worker Threads",
+  "settings.schema.returntomoria.server_worker_threads.description": "Optional maximum worker CPU threads. Leave unset to preserve existing launch arguments or the native default 4; the game may use fewer threads when the CPU has fewer available. Set this control or -NumServerWorkerThreads in extra launch arguments, never both. Applies on the next server start.",
 };

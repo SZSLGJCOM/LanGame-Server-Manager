@@ -808,7 +808,7 @@ export function resolveGuidedFieldDefaultValue(
   field: GuidedSettingsField,
   context?: GuidedFieldDefaultContext
 ): unknown {
-  if (field.preserveNativeWhenUnset) return undefined;
+  if (field.preserveNativeWhenUnset || isOptionalBooleanOverride(field)) return undefined;
   switch (field.defaultSource) {
     case "instance_id":
       if (context?.instanceId) {

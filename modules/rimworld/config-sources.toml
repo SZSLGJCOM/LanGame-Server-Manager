@@ -838,3 +838,17 @@ kind = "documentation"
 path = "https://github.com/RimWorld-Together/Rimworld-Together/tree/26.8.31.1/Source/Server"
 authority = "source_and_native_contract_semantic_review"
 description = "Semantic review on 2026-09-30 checked all 117 fields against tagged 26.8.31.1 server source and read-only metadata/IL from the official RTClient and RTShared assemblies. Metadata documents market pricing, client-save choice, browser/telemetry dependency, road movement difficulty, silver costs/rewards, millisecond timers, map preview and custom-scenario behavior. Scenario cooldown is stored but not consumed by this release. Native types/defaults are retained; client gameplay was not launched."
+
+[[sources]]
+id = "server_image_url_26_10_20_1"
+kind = "config_file"
+path = "Configs/ServerConfig.json"
+url = "https://github.com/RimWorld-Together/Rimworld-Together/blob/26.10.20.1_(1)/Source/Server/Files/FL_ServerConfig.cs"
+authority = "official_tagged_server_source_and_read_only_installed_configuration"
+description = "2026-10-28: Tagged release 26.10.20.1_(1) FL_ServerConfig declares ServerImageURL as a string defaulting to string.Empty; the installed official package generated the same field. LanGame exposes an optional HTTP/HTTPS URL override using the existing URL length/whitespace/control-character rules. Unset preserves an existing native URL, explicit empty clears it, and rendered/materialized JSON retains all other native fields. This did not execute RTServer or test browser/client image loading, and the module continues targeting the existing RimWorld 1.7 unstable release."
+
+[[items]]
+source = "server_image_url_26_10_20_1"
+key = "ServerImageURL"
+schema_key = "server_image_url"
+surface = "config_file"

@@ -8,24 +8,55 @@ fn native_default_folder_accepts_only_the_verified_empty_knownfolder_literal() {
         default_multiplayer: EMPTY_KNOWN_FOLDER.into(),
         local_app_data_empty: true,
     };
-    let (folder, must_exist) = default_multiplayer(&native, &config).unwrap();
+    let (folder, must_exist) = default_multiplayer(&native, &config, &config).unwrap();
     assert_eq!(folder, config.join(EMPTY_KNOWN_FOLDER));
     assert!(folder.starts_with(&config));
     assert!(!must_exist);
     native.local_app_data_empty = false;
-    assert!(default_multiplayer(&native, &config).is_err());
+    assert!(default_multiplayer(&native, &config, &config).is_err());
     for path in ["../foreign/Multiplayer", "other/Multiplayer", ""] {
         native.default_multiplayer = path.into();
         native.local_app_data_empty = true;
-        assert!(default_multiplayer(&native, &config).is_err());
+        assert!(default_multiplayer(&native, &config, &config).is_err());
     }
     native.default_multiplayer = config.join("absolute_fallback");
-    assert!(default_multiplayer(&native, &config).is_err());
+    assert!(default_multiplayer(&native, &config, &config).is_err());
     native.local_app_data_empty = false;
     assert_eq!(
-        default_multiplayer(&native, &config).unwrap(),
+        default_multiplayer(&native, &config, &config).unwrap(),
         (native.default_multiplayer, true)
     );
+}
+
+#[test]
+fn missing_absolute_fallback_is_allowed_only_in_the_exact_disposable_profile() {
+    let fixture = std::env::temp_dir().join("baro_owned_fixture");
+    let config = fixture.join("barotrauma");
+    let owned = fixture
+        .join("profile/AppData/Local")
+        .join(EMPTY_KNOWN_FOLDER);
+    let mut native = NativeRoots {
+        savepath: config.clone(),
+        default_multiplayer: owned.clone(),
+        local_app_data_empty: false,
+    };
+    assert_eq!(
+        default_multiplayer(&native, &config, &fixture).unwrap(),
+        (owned, false)
+    );
+    for folder in [
+        fixture
+            .join("other-profile/AppData/Local")
+            .join(EMPTY_KNOWN_FOLDER),
+        fixture.join("profile/AppData/Local/../foreign/Multiplayer"),
+        std::env::temp_dir().join("external-profile/Multiplayer"),
+    ] {
+        native.default_multiplayer = folder.clone();
+        assert_eq!(
+            default_multiplayer(&native, &config, &fixture).unwrap(),
+            (folder, true)
+        );
+    }
 }
 
 #[test]

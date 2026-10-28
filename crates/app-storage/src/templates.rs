@@ -463,6 +463,9 @@ fn resolve_template_token(token: &str, context: &TemplateRenderContext<'_>) -> O
         "module_id" | "instance.module_id" | "module.id" => Some(String::from(context.module_id)),
         "bind_ip" | "instance.bind_ip" => Some(String::from(context.bind_ip)),
         "autostart" | "instance.autostart" => Some(context.autostart.to_string()),
+        "rimworld.server_image_url_json" => {
+            Some(rimworld::render_server_image_url_json(context.settings))
+        }
         "paths.install_root" => Some(context.install_root.to_string_lossy().into_owned()),
         "paths.instance_root" => Some(context.instance_root.to_string_lossy().into_owned()),
         "paths.config_dir" => Some(context.config_dir.to_string_lossy().into_owned()),
@@ -1271,6 +1274,26 @@ fn lookup_rust_template_token(settings: &Map<String, Value>, path: &str) -> Opti
             settings,
             "reports_server_endpoint_key",
             "server.reportsServerEndpointKey",
+        )),
+        "vehicle_pad_repairs_required_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "vehicle_pad_repairs_required",
+            "vehicle.padrepairsrequired",
+        )),
+        "powergrid_fuse_decay_low_pop_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "powergrid_fuse_decay_low_pop",
+            "powergrid.fusedecaylowpop",
+        )),
+        "powergrid_fuse_decay_high_pop_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "powergrid_fuse_decay_high_pop",
+            "powergrid.fusedecayhighpop",
+        )),
+        "powergrid_fuse_decay_low_pop_scale_line" => Some(render_rust_optional_setting_line(
+            settings,
+            "powergrid_fuse_decay_low_pop_scale",
+            "powergrid.fusedecaylowpopscale",
         )),
         _ => None,
     }

@@ -391,3 +391,122 @@
   }
 }
 ```
+
+## `2026-10-28-release_review_20261023.json`
+
+- Evidence: `best_effort_verified` at `2026-10-28` (build `Official RimWorld Together 26.10.20.1_(1) string contract and deterministic native merge; no browser/client execution`)
+- Sources: `server_image_url_26_10_20_1`, `release_review_20261023`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "{\"Name\": \"Native name\", \"ServerImageURL\": \"https://images.example.test/native.png\", \"FutureNative\": {\"image_data\": [false, 0, {\"keep\": \"native\"}]}}",
+      "path": "Configs/ServerConfig.json",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "server_name": "Browser image acceptance"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "FutureNative": {
+          "image_data": [
+            false,
+            0,
+            {
+              "keep": "native"
+            }
+          ]
+        },
+        "Name": "Browser image acceptance",
+        "ServerImageURL": "https://images.example.test/native.png"
+      },
+      "path": "Configs/ServerConfig.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "RTServer.exe"
+  }
+}
+```
+
+## `2026-10-28-server_image_url_26_10_20_1.json`
+
+- Evidence: `best_effort_verified` at `2026-10-28` (build `Official RimWorld Together 26.10.20.1_(1) string contract and deterministic native merge; no browser/client execution`)
+- Sources: `server_image_url_26_10_20_1`
+- Coverage: editable `1`, specialized `0`, derived `0`, generated `0`, excluded `0`
+
+### Initial native files
+
+```json
+{
+  "files": [
+    {
+      "content": "{\"Name\": \"Native name\", \"ServerImageURL\": \"https://images.example.test/native.png\", \"FutureNative\": {\"image_data\": [false, 0, {\"keep\": \"native\"}]}}",
+      "path": "Configs/ServerConfig.json",
+      "root": "install"
+    }
+  ]
+}
+```
+
+### Settings
+
+```json
+{
+  "server_image_url": "https://images.example.test/colony.png?caption=%22Colony%22&theme=dark",
+  "server_name": "Browser image acceptance"
+}
+```
+
+### Expected outputs
+
+```json
+{
+  "files": [
+    {
+      "format": "json",
+      "keys": {
+        "FutureNative": {
+          "image_data": [
+            false,
+            0,
+            {
+              "keep": "native"
+            }
+          ]
+        },
+        "Name": "Browser image acceptance",
+        "ServerImageURL": "https://images.example.test/colony.png?caption=%22Colony%22&theme=dark"
+      },
+      "path": "Configs/ServerConfig.json",
+      "root": "install"
+    }
+  ],
+  "launch": {
+    "arguments": [],
+    "executable_suffix": "RTServer.exe"
+  }
+}
+```

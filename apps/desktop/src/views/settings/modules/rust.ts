@@ -139,6 +139,20 @@ const RUST_GROUP_SPECS: Record<string, RustFieldGroupSpec[]> = {
       description: "Count cupboard and code-lock users, including recent authorization history.",
       layoutClass: "rust-upkeep-membership",
       keys: ["upkeep_group_window_hours", "upkeep_group_count_locks", "upkeep_lock_min_users", "upkeep_group_history_max"]
+    },
+    {
+      id: "helipad",
+      title: "Helipad access",
+      description: "Choose whether the aircraft vendor requires communal helipad repairs.",
+      layoutClass: "rust-helipad",
+      keys: ["vehicle_pad_repairs_required"]
+    },
+    {
+      id: "heavy-fuse-decay",
+      title: "Heavy fuse decay",
+      description: "Scale power-plant heavy fuse decay with connected player population.",
+      layoutClass: "rust-heavy-fuse-decay",
+      keys: ["powergrid_fuse_decay_low_pop", "powergrid_fuse_decay_high_pop", "powergrid_fuse_decay_low_pop_scale"]
     }
   ],
   creative: [

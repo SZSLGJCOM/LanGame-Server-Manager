@@ -1,0 +1,67 @@
+{
+  "fixture_version": 1,
+  "module_id": "rimworld",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-28",
+    "build": "Official RimWorld Together 26.10.20.1_(1) string contract and deterministic native merge; no browser/client execution",
+    "source_ids": [
+      "server_image_url_26_10_20_1"
+    ]
+  },
+  "coverage": {
+    "editable": 1,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "server_image_url_26_10_20_1.ServerImageURL"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "Browser image acceptance",
+    "server_image_url": "https://images.example.test/colony.png?caption=%22Colony%22&theme=dark"
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "Configs/ServerConfig.json",
+        "format": "json",
+        "keys": {
+          "Name": "Browser image acceptance",
+          "ServerImageURL": "https://images.example.test/colony.png?caption=%22Colony%22&theme=dark",
+          "FutureNative": {
+            "image_data": [
+              false,
+              0,
+              {
+                "keep": "native"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RTServer.exe",
+      "arguments": []
+    }
+  },
+  "initial": {
+    "files": [
+      {
+        "root": "install",
+        "path": "Configs/ServerConfig.json",
+        "content": "{\"Name\": \"Native name\", \"ServerImageURL\": \"https://images.example.test/native.png\", \"FutureNative\": {\"image_data\": [false, 0, {\"keep\": \"native\"}]}}"
+      }
+    ]
+  }
+}

@@ -27,6 +27,17 @@ pub(crate) fn preserve_retired_settings(
     }
 }
 
+pub(super) fn render_server_image_url_json(settings: &Map<String, Value>) -> String {
+    Value::String(
+        settings
+            .get("server_image_url")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
+    )
+    .to_string()
+}
+
 pub(super) fn render_rimworld_password_json(settings: &Map<String, Value>) -> String {
     let password = settings
         .get("server_password")
@@ -115,6 +126,47 @@ pub(super) fn materialize_configuration(
         replacement: serde_json::to_vec_pretty(&document)?,
     }])?;
     native::materialize(context, files)
+}
+
+pub(super) fn materialize_server_config(
+    context: &ModuleSupportMaterializationContext<'_>,
+    files: &mut ManagedConfigMutation,
+) -> Result<(), StorageError> {
+    let source = context.config_dir.join("ServerConfig.json");
+    let (rendered, _) = read_optional_json(&source)?
+        .ok_or_else(|| failure(&source, "Rendered RimWorld server configuration is missing"))?;
+    let mut rendered = rendered
+        .as_object()
+        .cloned()
+        .ok_or_else(|| failure(&source, "Rendered RimWorld configuration must be an object"))?;
+    // The complete template uses an empty string when this optional override is
+    // absent. Do not let that rendering fallback clear a native operator choice.
+    if context
+        .settings
+        .get("server_image_url")
+        .is_none_or(Value::is_null)
+    {
+        rendered.remove("ServerImageURL");
+    }
+    let destination = context.install_root.join("Configs/ServerConfig.json");
+    let (document, original) = read_optional_json(&destination)?
+        .map(|(value, bytes)| (value, Some(bytes)))
+        .unwrap_or_else(|| (Value::Object(Map::new()), None));
+    let mut document = document
+        .as_object()
+        .cloned()
+        .ok_or_else(|| failure(&destination, "RimWorld configuration must be an object"))?;
+    document.extend(rendered);
+    document
+        .entry("ServerImageURL".to_owned())
+        .or_insert_with(|| Value::String(String::new()));
+    let mut replacement = serde_json::to_vec_pretty(&document)?;
+    replacement.push(b'\n');
+    files.apply(vec![super::templates_materialize::ManagedConfigMergePlan {
+        destination_path: destination,
+        original,
+        replacement,
+    }])
 }
 
 pub(super) fn validate_before_start(

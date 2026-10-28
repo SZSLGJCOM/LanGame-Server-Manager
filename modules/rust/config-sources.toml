@@ -799,3 +799,35 @@ kind = "documentation"
 path = "https://rust.facepunch.com/news/maintenance"
 authority = "facepunch_official_release_notes"
 description = "2025-09-04: Removes server.secure. Insecure servers must pass -insecure at startup. Secure server-browser listing requires encryption level 2. Rechecked 2026-09-30 against the installed build 25454815 command registry."
+
+[[sources]]
+id = "native_livestock_build_26139947"
+kind = "documentation"
+path = "native-evidence/2026-10-28-livestock-build-26139947.json"
+url = "https://rust.facepunch.com/news/livestock"
+authority = "official_release_notes_and_read_only_installed_assembly_analysis"
+description = "2026-10-28: Read-only inspection of installed Steam app 258550 build 26139947, Assembly-CSharp.dll SHA256 71c50c6f0a48f67702cc2328e255e0000803919599c6fea6705cc22c3aa94601. ConsoleGen registers all four lowercase convars as saved variables. ConVar.vehicle declares padrepairsrequired bool=true; Powergrid declares fuseDecayLowPop int=10, fuseDecayHighPop int=100, fuseDecayLowPopScale float=0.25. PowergridManager.Server_GetPopDecayRateScale returns 1 at/above the high threshold and otherwise interpolates from the low-population multiplier. The schema limits numeric representation to native Int32/Single, without inventing narrower gameplay bounds. All four controls are optional overrides with no injected defaults; unset values emit no line. No game process, RCON mutation or gameplay test was performed."
+
+[[items]]
+source = "native_livestock_build_26139947"
+key = "vehicle.padrepairsrequired"
+schema_key = "vehicle_pad_repairs_required"
+surface = "config_file"
+
+[[items]]
+source = "native_livestock_build_26139947"
+key = "powergrid.fusedecaylowpop"
+schema_key = "powergrid_fuse_decay_low_pop"
+surface = "config_file"
+
+[[items]]
+source = "native_livestock_build_26139947"
+key = "powergrid.fusedecayhighpop"
+schema_key = "powergrid_fuse_decay_high_pop"
+surface = "config_file"
+
+[[items]]
+source = "native_livestock_build_26139947"
+key = "powergrid.fusedecaylowpopscale"
+schema_key = "powergrid_fuse_decay_low_pop_scale"
+surface = "config_file"

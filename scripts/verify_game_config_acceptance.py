@@ -63,6 +63,14 @@ def read_module_contract(module_root: Path) -> tuple[dict[str, Any], dict[str, A
     if not isinstance(schema, dict):
         raise ValueError("schema.json must contain an object")
     return manifest, schema, ledger
+def parse_evidence_date(value: Any) -> date | None:
+    if not isinstance(value, str) or DATE_RE.fullmatch(value) is None:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
 def validate_evidence(
     prefix: str,
     fixture: dict[str, Any],
@@ -73,20 +81,26 @@ def validate_evidence(
     if not isinstance(fixture.get("evidence"), dict):
         failures.append(f"{prefix}: evidence must be an object")
     status = evidence.get("status")
-    if status not in VALID_EVIDENCE_STATUSES:
+    valid_status = isinstance(status, str) and status in VALID_EVIDENCE_STATUSES
+    if not valid_status:
         failures.append(f"{prefix}: evidence.status is invalid")
-    if status != ledger.get("status"):
-        failures.append(f"{prefix}: evidence.status must match config-sources.toml status")
     verified_at = evidence.get("verified_at")
-    try:
-        valid_date = (
-            isinstance(verified_at, str)
-            and DATE_RE.fullmatch(verified_at) is not None
-            and date.fromisoformat(verified_at).isoformat() == verified_at
-        )
-    except ValueError:
-        valid_date = False
-    if not valid_date:
+    verified_on = parse_evidence_date(verified_at)
+    reviewed_on = parse_evidence_date(ledger.get("last_verified"))
+    module_status = ledger.get("status")
+    # A later review describes current coverage; it does not relabel an older
+    # fixture's evidence. Only valid, strictly dated history gets this exception.
+    historical_status = (
+        valid_status
+        and isinstance(module_status, str)
+        and module_status in VALID_EVIDENCE_STATUSES
+        and verified_on is not None
+        and reviewed_on is not None
+        and verified_on < reviewed_on
+    )
+    if status != module_status and not historical_status:
+        failures.append(f"{prefix}: evidence.status must match config-sources.toml status")
+    if verified_on is None:
         failures.append(f"{prefix}: evidence.verified_at must be a real YYYY-MM-DD date")
     if not isinstance(evidence.get("build"), str) or not evidence["build"].strip():
         failures.append(f"{prefix}: evidence.build must be a non-empty string")

@@ -1,0 +1,88 @@
+{
+  "fixture_version": 1,
+  "module_id": "rust",
+  "evidence": {
+    "status": "best_effort_verified",
+    "verified_at": "2026-10-28",
+    "build": "Installed Rust build 26139947 read-only declarations and deterministic config rendering; no game execution",
+    "source_ids": [
+      "native_livestock_build_26139947"
+    ]
+  },
+  "coverage": {
+    "editable": 4,
+    "specialized": 0,
+    "derived": 0,
+    "generated": 0,
+    "excluded": 0
+  },
+  "classifications": {
+    "editable": [
+      "native_livestock_build_26139947.vehicle.padrepairsrequired",
+      "native_livestock_build_26139947.powergrid.fusedecaylowpop",
+      "native_livestock_build_26139947.powergrid.fusedecayhighpop",
+      "native_livestock_build_26139947.powergrid.fusedecaylowpopscale"
+    ],
+    "specialized": [],
+    "derived": [],
+    "generated": [],
+    "excluded": []
+  },
+  "settings": {
+    "server_name": "LanGame Rust 验收",
+    "server_description": "原生配置覆盖验收",
+    "max_players": 250,
+    "rcon_password": "acceptance-rust-rcon",
+    "rcon_web": true,
+    "world_config_json": "{\n  \"MainRoads\": false,\n  \"FutureNative\": {\n    \"keep\": true\n  }\n}",
+    "owner_entries": "76561198077777777|Host|Created by LanGame",
+    "moderator_entries": "76561198011111111|Moderator|Weekend",
+    "skip_queue_entries": "76561198000000000|Priority Friend",
+    "banned_entries": "76561198022222222|Griefing|Repeated",
+    "custom_launch_flags": "",
+    "vehicle_pad_repairs_required": false,
+    "powergrid_fuse_decay_low_pop": 0,
+    "powergrid_fuse_decay_high_pop": 150,
+    "powergrid_fuse_decay_low_pop_scale": 0.125
+  },
+  "expected": {
+    "files": [
+      {
+        "root": "install",
+        "path": "server/acceptance-rust/cfg/server.cfg",
+        "format": "text",
+        "fragments": [
+          "vehicle.padrepairsrequired false",
+          "powergrid.fusedecaylowpop 0",
+          "powergrid.fusedecayhighpop 150",
+          "powergrid.fusedecaylowpopscale 0.125"
+        ]
+      }
+    ],
+    "launch": {
+      "executable_suffix": "RustDedicated.exe",
+      "arguments": [
+        "-batchmode",
+        "-nographics",
+        "-logfile",
+        "-",
+        "+server.ip",
+        "0.0.0.0",
+        "+server.identity",
+        "acceptance-rust",
+        "+world.configfile",
+        "world-config.json",
+        "+server.port",
+        "28015",
+        "+server.queryport",
+        "28017",
+        "+rcon.port",
+        "28016",
+        "+rcon.password",
+        "acceptance-rust-rcon",
+        "+rcon.web",
+        "true"
+      ]
+    }
+  }
+}

@@ -208,6 +208,9 @@ pub(super) fn pin_supported_native(
     if game.module == "corekeeper" && !select_corekeeper_files(&hashes[0], &mut files) {
         return Ok(None);
     }
+    if game.module == "barotrauma" && !select_barotrauma_files(&hashes[0], &hashes[1], &mut files) {
+        return Ok(None);
+    }
     Ok(files
         .iter()
         .zip(hashes)
@@ -242,6 +245,36 @@ fn select_corekeeper_files(primary: &str, files: &mut [(&'static str, &'static s
     }
     true
 }
+
+fn select_barotrauma_files(
+    primary: &str,
+    core: &str,
+    files: &mut [(&'static str, &'static str)],
+) -> bool {
+    let pair = match primary {
+        "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c" => (
+            "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
+            "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3",
+        ),
+        "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46" => (
+            "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
+            "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606",
+        ),
+        _ => return false,
+    };
+    // Both packages remain in use. Admit a complete reviewed release, never a
+    // mixture of independently known server and core assemblies.
+    if core != pair.1 {
+        return false;
+    }
+    files[0].1 = pair.0;
+    files[1].1 = pair.1;
+    true
+}
+
+#[cfg(test)]
+#[path = "commands_barotrauma_save_build_tests.rs"]
+mod barotrauma_tests;
 
 /// Remove only this extension's verified scan entries. Keep its receipt and
 /// control data so a supported build can use the ordinary publication path again.

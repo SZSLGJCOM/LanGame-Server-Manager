@@ -1,0 +1,39 @@
+{
+  "reviewed_at": "2026-10-28",
+  "steam_app_id": 258550,
+  "build_id": "26139947",
+  "assembly_path": "RustDedicated_Data/Managed/Assembly-CSharp.dll",
+  "assembly_sha256": "71c50c6f0a48f67702cc2328e255e0000803919599c6fea6705cc22c3aa94601",
+  "method": "Read-only ILSpy inspection of ConsoleGen, ConVar.vehicle, Powergrid and PowergridManager; no game execution.",
+  "fields": {
+    "vehicle.padrepairsrequired": {
+      "native_type": "System.Boolean",
+      "native_default": true,
+      "saved": true,
+      "manager_override_default": null
+    },
+    "powergrid.fusedecaylowpop": {
+      "native_type": "System.Int32",
+      "native_default": 10,
+      "saved": true,
+      "manager_override_default": null
+    },
+    "powergrid.fusedecayhighpop": {
+      "native_type": "System.Int32",
+      "native_default": 100,
+      "saved": true,
+      "manager_override_default": null
+    },
+    "powergrid.fusedecaylowpopscale": {
+      "native_type": "System.Single",
+      "native_default": 0.25,
+      "saved": true,
+      "manager_override_default": null
+    }
+  },
+  "native_population_rate": "playerCount >= fuseDecayHighPop ? 1 : Lerp(fuseDecayLowPopScale, 1, InverseLerp(fuseDecayLowPop, fuseDecayHighPop, playerCount))",
+  "boundaries": [
+    "Numeric schema bounds reflect native Int32/Single representation, not documented gameplay restrictions.",
+    "No real server startup, RCON mutation, player join or gameplay acceptance."
+  ]
+}

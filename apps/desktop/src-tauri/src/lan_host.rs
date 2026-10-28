@@ -795,6 +795,24 @@ pub(crate) fn dispatch_command<'a>(
                 .await?,
             )
         }),
+        "read_scum_custom_zones" => boxed_command(|| async move {
+            to_json(
+                commands::commands_scum_custom_zones::read_scum_custom_zones(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "instanceId", "instance_id")?,
+                )
+                .await?,
+            )
+        }),
+        "write_scum_custom_zone_damage" => boxed_command(|| async move {
+            to_json(
+                commands::commands_scum_custom_zones::write_scum_custom_zone_damage(
+                    app_handle.state::<DesktopState>(),
+                    arg(&args, "input", "input")?,
+                )
+                .await?,
+            )
+        }),
         "read_ark_cluster" => boxed_command(|| async move {
             to_json(
                 commands::commands_ark_clusters::read_ark_cluster(

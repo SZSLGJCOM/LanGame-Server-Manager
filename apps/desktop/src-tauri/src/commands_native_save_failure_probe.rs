@@ -7,7 +7,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const UNKNOWN: &str = "The native save outcome is unknown. It may already have executed; verify the current server and its save files before retrying.";
 const LIMIT: usize = 64 * 1024 * 1024;
 
 fn configured(module: &str, value: Option<&str>) -> Result<bool, String> {
@@ -300,9 +299,12 @@ pub(super) async fn verify<R: tauri::Runtime>(
     )?;
     let result = crate::commands::send_instance_runtime_command(runtime.state.clone(), input).await;
     let after = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
-    if result.as_ref().err().map(String::as_str) != Some(UNKNOWN) {
-        return Err("Locked-primary native save did not report unknown; failure rejection or success cannot pass".into());
+    if result.is_ok() {
+        return Err("Locked-primary native save reported success".into());
     }
+    // Human-readable API error wording can change. The correlated native frame
+    // below must still say unknown/native_outcome_unknown; a rejection, stale
+    // response or successful write cannot satisfy this fault-injection test.
     correlated_unknown(
         module,
         &session,

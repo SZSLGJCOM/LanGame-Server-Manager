@@ -19,7 +19,7 @@ export const ZH_CN_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.settings.groups.custom-difficulty.title": "自定义难度",
   "returntomoria.settings.groups.dlc.description": "创建新世界时启用的 DLC。",
   "returntomoria.settings.groups.dlc.title": "世界 DLC",
-  "returntomoria.settings.groups.performance.description": "设置服务器帧率上限和已加载区域上限。",
+  "returntomoria.settings.groups.performance.description": "设置服务器帧率上限、工作线程数及加载区域预算。",
   "returntomoria.settings.groups.performance.title": "性能",
   "returntomoria.settings.groups.world.description": "选择创建世界时使用的世界类型、种子和预设。",
   "returntomoria.settings.groups.world.title": "世界创建",
@@ -134,4 +134,6 @@ export const ZH_CN_RETURN_TO_MORIA_MESSAGES: MessageCatalog = {
   "returntomoria.workspace.upgradeWarning": "升级无法撤销。请先备份世界；升级后，没有对应 DLC 的玩家无法加入。",
   "returntomoria.workspace.conflict": "此设置已在其他位置更改，请放弃修改并重新加载。",
   "returntomoria.workspace.schemaUnavailable": "暂时无法读取此游戏的配置定义。",
+  "settings.schema.returntomoria.server_worker_threads.title": "服务器工作线程数",
+  "settings.schema.returntomoria.server_worker_threads.description": "可选的服务器最大 CPU 工作线程数。未设置时保留现有启动参数或原生默认值 4；CPU 可用线程较少时，实际使用数量可能更少。此控件与额外启动参数中的 -NumServerWorkerThreads 只能设置一处。下次启动服务器时生效。",
 };

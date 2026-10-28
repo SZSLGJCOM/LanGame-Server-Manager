@@ -4,6 +4,8 @@ import type { PlayerHistoryQuery } from "./player-history";
 import { readMockDailyMaintenance, updateMockDailyMaintenance } from "./maintenance-schedule-mock";
 import type { DailyMaintenanceAction, UpdateDailyMaintenanceScheduleInput } from "./maintenance-schedule";
 import { MockDragonwildsWorldSettings } from "./api-mock/dragonwilds-world-settings";
+import { MockScumCustomZones } from "./api-mock/scum-custom-zones";
+import type { WriteScumCustomZoneDamageInput } from "./scum-custom-zones";
 import { MockNativeBanStore } from "./api-mock/native-bans";
 import { buildMockAstroneerSaveCatalog } from "./api-mock/astroneer-saves";
 import { buildMockValheimWorldRules } from "./api-mock/valheim-world-rules";
@@ -139,6 +141,7 @@ function clone<T>(value: T): T {
 
 const mockInstanceDetailsStore = new Map<string, InstanceDetails>();
 const mockDragonwildsWorldSettings = new MockDragonwildsWorldSettings();
+const mockScumCustomZones = new MockScumCustomZones();
 const mockSatisfactoryWorldSettings = new MockSatisfactoryWorldSettings();
 const mockInstanceBackupsStore = new Map<string, InstanceBackupResult[]>();
 const mockLogDocumentStore = new Map<string, LogTailSnapshot>();
@@ -1168,6 +1171,14 @@ export async function invokeMock<T>(command: string, args?: Record<string, unkno
       const worldName = String(args?.worldName ?? args?.world_name ?? "");
       if (ensureMockInstanceDetails(instanceId).summary.module_id !== "valheim") throw new Error("Not a Valheim instance.");
       return buildMockValheimWorldRules(instanceId, worldName) as T;
+    }
+    case "read_scum_custom_zones": {
+      const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");
+      return mockScumCustomZones.read(ensureMockInstanceDetails(instanceId)) as T;
+    }
+    case "write_scum_custom_zone_damage": {
+      const input = args?.input as WriteScumCustomZoneDamageInput;
+      return mockScumCustomZones.write(ensureMockInstanceDetails(input.instance_id), input) as T;
     }
     case "read_dragonwilds_world_settings": {
       const instanceId = String(args?.instanceId ?? args?.instance_id ?? "");

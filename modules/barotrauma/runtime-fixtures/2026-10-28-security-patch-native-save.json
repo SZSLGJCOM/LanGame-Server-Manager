@@ -1,0 +1,140 @@
+{
+  "module_id": "barotrauma",
+  "verified_at": "2026-10-28",
+  "status": "best_effort_verified",
+  "official_release_url": "https://steamcommunity.com/games/602960/announcements/detail/685268529568554108",
+  "official_source_commit": "8e24b8991f7b282b8e471afd1c0960e5a51766bd",
+  "acquisition": {
+    "steam_app_id": 1026340,
+    "branch": "public",
+    "build_id": "26144270",
+    "state_flags": 4,
+    "update_result": 0,
+    "target_build_id": "26144270",
+    "command": "steamcmd +force_install_dir <isolated-package> +login anonymous +app_info_update 1 +app_info_print 1026340 +app_update 1026340 validate +quit",
+    "depots": {
+      "1004": "7604377918839582995",
+      "1026341": "2320289729988252632"
+    }
+  },
+  "packages": [
+    {
+      "native_version": "1.13.4.0",
+      "build_id": "23799137",
+      "sha256": {
+        "DedicatedServer.dll": "18278624996b543a2595a0ea9c0c4c14881d511ac307e1a69028d6579e67ad3c",
+        "BarotraumaCore.dll": "72acd77784b83a0e09584262ab1eea9ee40395b95f3a2e3ec3974da0bc0151b3"
+      }
+    },
+    {
+      "native_version": "1.13.5.0",
+      "build_id": "26144270",
+      "informational_revision": "0a9af9a7f0efeef46d63a4fe80103b4446a21dee",
+      "sha256": {
+        "DedicatedServer.dll": "d058bbde56286699aa3ffcdd95e87d4d1e430b184ecc3c4007ea442ee9518a46",
+        "BarotraumaCore.dll": "48d637d505a2af5136feaafa871e5057e1f280a56f502d08e52f372816efe606"
+      }
+    }
+  ],
+  "native_contract": {
+    "inspection": "Read-only reflection and IL operand resolution. Type/member tokens are resolved to names and signatures; only DedicatedServer assembly version is normalized. Instruction offsets, primitive operands and exception regions remain significant. Proprietary IL is not included.",
+    "normalized_methods_sha256": {
+      "Barotrauma.CrossThread::Void ProcessTasks()": {
+        "1.13.4.0": "95ccb36fcde6a2d305a5711567afa1ca30a8f4e7b60bd9902a5e5cd6d1622b3a",
+        "1.13.5.0": "95ccb36fcde6a2d305a5711567afa1ca30a8f4e7b60bd9902a5e5cd6d1622b3a"
+      },
+      "Barotrauma.SaveUtil::Void SaveGame(Barotrauma.CampaignDataPath, Boolean)": {
+        "1.13.4.0": "1dddd8f2606447a6d216cc61e1e5a7294304e49d179075a7e528b41ec7aab8d0",
+        "1.13.5.0": "1dddd8f2606447a6d216cc61e1e5a7294304e49d179075a7e528b41ec7aab8d0"
+      },
+      "Barotrauma.SaveUtil::Void CompressStringToFile(System.String, System.String)": {
+        "1.13.4.0": "f5f93ac931d73e8d7f8912e43d2aaae617cc4ddc6296394c3ce41f384623a3d6",
+        "1.13.5.0": "f5f93ac931d73e8d7f8912e43d2aaae617cc4ddc6296394c3ce41f384623a3d6"
+      },
+      "Barotrauma.SaveUtil::Void CompressDirectory(System.String, System.String)": {
+        "1.13.4.0": "4bd8ca5b0018926a213a0e1ccba9cb4bca2a3af693e9b16bdb5199a22b53a816",
+        "1.13.5.0": "4bd8ca5b0018926a213a0e1ccba9cb4bca2a3af693e9b16bdb5199a22b53a816"
+      },
+      "Barotrauma.IO.File::Barotrauma.IO.FileStream Open(System.String, System.IO.FileMode, System.IO.FileAccess, System.Nullable`1[System.IO.FileShare], Boolean)": {
+        "1.13.4.0": "c2560be05ec9d4cbc9ae69a5ea683dd6bb02e051cc2c69ce3b7523b79c249c28",
+        "1.13.5.0": "c2560be05ec9d4cbc9ae69a5ea683dd6bb02e051cc2c69ce3b7523b79c249c28"
+      },
+      "Barotrauma.IO.SafeXML::Void SaveSafe(System.Xml.Linq.XDocument, System.String, System.Xml.Linq.SaveOptions, Boolean, Int32)": {
+        "1.13.4.0": "eb1794662cadc4462ff0650f8cd47caa05e56d9f28a8d73b9d06f877c8c6bb19",
+        "1.13.5.0": "ffce0abfcd13bbf0c377c10200fb832708d059cf2d5e8c04b0e6fbe566e5a255"
+      },
+      "Barotrauma.IO.SafeXML::Void SaveSafe(System.Xml.Linq.XElement, System.String, Boolean)": {
+        "1.13.4.0": "0d1eb268776541441bbed3b375e433e16ff1f9a933aabc3a2568729e7cabfc7e",
+        "1.13.5.0": "6b640979b9a1b108a154d1c76d6ddaff0dd51dbe7b783580edad054eead76d91"
+      },
+      "Barotrauma.IO.SafeXML::Void SaveSafe(System.Xml.Linq.XDocument, Barotrauma.IO.XmlWriter)": {
+        "1.13.4.0": "14f888fbcf3d551a0dd6a5b87d1ee0210de8e04f67aba348c837232150319dad",
+        "1.13.5.0": "14f888fbcf3d551a0dd6a5b87d1ee0210de8e04f67aba348c837232150319dad"
+      },
+      "Barotrauma.GameSession::Void Save(System.String, Boolean)": {
+        "1.13.4.0": "812816dd8633cbfaed27a14417f4c7b26c18cd7d3349723ee832441544d2f5ad",
+        "1.13.5.0": "812816dd8633cbfaed27a14417f4c7b26c18cd7d3349723ee832441544d2f5ad"
+      },
+      "Barotrauma.MultiPlayerCampaign::Void Save(System.Xml.Linq.XElement, Boolean)": {
+        "1.13.4.0": "196d45d1127c16bfa2b5fe7140ebab748d246b3f73fae5cd4d6296a73e4cc782",
+        "1.13.5.0": "196d45d1127c16bfa2b5fe7140ebab748d246b3f73fae5cd4d6296a73e4cc782"
+      },
+      "Barotrauma.SubmarineInfo::Void SaveAs(System.String, System.IO.MemoryStream)": {
+        "1.13.4.0": "5d2c8443b65b23d4fc3c2249c7991f502ae62aa868c8acaa3109411b96dfedaa",
+        "1.13.5.0": "f5cf5328e3706befb9f6198d91d1386730a971492a4d1df36e0bb2385ba54326"
+      }
+    },
+    "changed_save_safe_behavior": "SafeXML.SaveSafe adds StripInvalidCharacters before the existing write and exception handling. GameSession.Save continues to pass throwExceptions=true and maxRetries=0. SubmarineInfo.SaveAs likewise sanitizes XML before CompressStringToFile; native serialization remains responsible for this behavior.",
+    "api_members_verified": [
+      "CrossThread.enqueuedTasks",
+      "CrossThread.TaskDelegate",
+      "CrossThread.Task(TaskDelegate)",
+      "CrossThread.Task.Done: bool",
+      "CrossThread.Task.Mre: ManualResetEvent",
+      "GameMain.MainThread",
+      "GameMain.Server",
+      "GameMain.GameSession",
+      "GameSession.IsRunning",
+      "GameSession.Campaign",
+      "GameSession.DataPath",
+      "GameSession.SubmarineInfo",
+      "NetworkMember.GameStarted",
+      "CampaignMode.PendingSubmarineSwitch",
+      "CampaignDataPath.SavePath"
+    ]
+  },
+  "deterministic_tests": {
+    "real_file_admission": "Both complete actual package tuples accepted; both mixed pairs and an unknown server rejected by the production C# initializer verifier.",
+    "production_policy": "No campaign, live round and submarine switch rejection; bound session, exactly one checkpoint call, swallowed and escaping I/O failures, unrelated worker isolation, observer cleanup, bounded owner queue and event disposal passed.",
+    "rust_regression": "barotrauma_save_admits_both_complete_packages_and_rejects_mixed_assemblies"
+  },
+  "scope": "Official package acquisition, native metadata/IL comparison, deterministic production adapter/admission checks and isolated two-run native campaign acceptance. A locked primary produced a correlated native unknown outcome without changing its SHA-256; after release, each run confirmed native checkpoint completion and exited normally with code 0. The new process loaded the existing campaign. This does not establish power-loss durability, player progress or restoration of an exact pre-shutdown manual checkpoint. No user installation, instance or save was changed.",
+  "native_runtime": {
+    "test": "commands::tests::manual_runtime_tests::native_lifecycle_tests::native_manual_save",
+    "test_binary_sha256": "c77151d7fed1dcc138467a4e08dad621bee7cf74363db150c257250c22ca4dea",
+    "environment": "Non-elevated Windows ConPTY; independent disposable instance; fresh zero-player native campaign; production startup/save/stop commands",
+    "exit_code": 0,
+    "native_ready_cycles": [
+      "initial",
+      "restart"
+    ],
+    "campaign_loaded_on_fresh_restart": true,
+    "normal_stops": 2,
+    "normal_exit_code": 0,
+    "crash_flags": false,
+    "locked_primary_failure": {
+      "native_write_attempt": "sharing violation in native compression",
+      "reply": "unknown/native_outcome_unknown",
+      "request_correlation": "fresh nonce, run, PID and request window verified",
+      "primary_sha256_unchanged": true,
+      "fault_request_retried": false
+    },
+    "formal_successful_requests": 2,
+    "save_completion": "confirmed",
+    "write_confirmation_pending": false,
+    "exact_pre_shutdown_checkpoint_restore_assessed": false,
+    "durable_storage_assessed": false,
+    "player_progress_assessed": false,
+    "fixture_cleanup": "passed"
+  }
+}

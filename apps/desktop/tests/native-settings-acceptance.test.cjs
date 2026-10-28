@@ -70,7 +70,11 @@ test("Return to Moria reference fixture retains configuration facts without upst
 
 test("Return to Moria matches normalized first-launch defaults and official operator surfaces", () => {
   const schema = readSchema("returntomoria");
-  assert.equal(Object.keys(schema.properties).length, 26);
+  assert.equal(Object.keys(schema.properties).length, 27);
+  assert.equal(schema.properties.server_worker_threads.type, "integer");
+  assert.equal(schema.properties.server_worker_threads.minimum, 1);
+  assert.equal(schema.properties.server_worker_threads.maximum, 4);
+  assert.equal(Object.hasOwn(schema.properties.server_worker_threads, "default"), false);
 
   const defaults = read("modules/returntomoria/reference-configs/server-defaults-build-21872765.ini");
   const rendered = read("modules/returntomoria/templates/MoriaServerConfig.ini.hbs");

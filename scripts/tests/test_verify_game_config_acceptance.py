@@ -105,6 +105,28 @@ class VerifyGameConfigAcceptanceTests(unittest.TestCase):
     def verify(self, *, mode: str = "check") -> list[str]:
         return acceptance.verify_repository(self.repo.root, ["alpha"], False, mode)
 
+    def evidence_failures(
+        self,
+        *,
+        status: object = "exhaustive_verified",
+        verified_at: object = "2026-07-13",
+        ledger: dict[str, object] | None = None,
+    ) -> list[str]:
+        evidence = {
+            "status": status,
+            "verified_at": verified_at,
+            "source_ids": ["official"],
+            "build": "historical-native-build",
+        }
+        module: dict[str, object] = {
+            "status": "best_effort_verified",
+            "sources": [{"id": "official"}],
+        }
+        module.update({"last_verified": "2026-10-28"} if ledger is None else ledger)
+        failures: list[str] = []
+        acceptance.validate_evidence("controlled-fixture", {"evidence": evidence}, module, failures)
+        return failures
+
     def test_rejects_malformed_fixture_version(self) -> None:
         for version in (2, True, "1"):
             with self.subTest(version=version):
@@ -359,6 +381,76 @@ surface = "config_file"
         self.repo.fixture()
         fixture_path.rename(fixture_path.with_name("not-versioned.json"))
         self.assert_contains(self.verify(), "fixture filename must be <verified-date>-<source-id>.json")
+
+    def test_preserves_historical_fixture_status_after_a_newer_module_review(self) -> None:
+        ledger_path = self.repo.modules / "alpha" / "config-sources.toml"
+        ledger_path.write_text(
+            ledger_path.read_text(encoding="utf-8").replace("2026-08-11", "2026-10-28"),
+            encoding="utf-8",
+        )
+        fixture_path = self.repo.fixture(evidence={
+            "status": "exhaustive_verified",
+            "verified_at": "2026-07-13",
+            "source_ids": ["official"],
+            "build": "historical-native-build",
+        })
+        fixture_path = fixture_path.rename(fixture_path.with_name("2026-07-13-official.json"))
+        original = fixture_path.read_bytes()
+        self.assertEqual(self.verify(mode="write"), [])
+        self.assertEqual(fixture_path.read_bytes(), original)
+        record = (self.repo.docs / "alpha.md").read_text(encoding="utf-8")
+        self.assertIn("`exhaustive_verified` at `2026-07-13`", record)
+        self.assertEqual(self.verify(), [])
+
+    def test_current_and_future_fixtures_must_match_module_status(self) -> None:
+        for verified_at in ("2026-10-28", "2026-10-29"):
+            with self.subTest(verified_at=verified_at):
+                self.assert_contains(
+                    self.evidence_failures(verified_at=verified_at),
+                    "evidence.status must match config-sources.toml status",
+                )
+
+    def test_historical_exception_needs_a_real_fixture_date_and_valid_status(self) -> None:
+        for status in ("unknown", "", None, [], {}):
+            with self.subTest(status=status):
+                failures = self.evidence_failures(status=status)
+                self.assert_contains(failures, "evidence.status is invalid")
+                self.assert_contains(failures, "evidence.status must match config-sources.toml status")
+        for verified_at in ("2026-02-29", "2026-07-1", "20260713", "", None, [], {}):
+            with self.subTest(verified_at=verified_at):
+                failures = self.evidence_failures(verified_at=verified_at)
+                self.assert_contains(failures, "evidence.verified_at must be a real YYYY-MM-DD date")
+                self.assert_contains(failures, "evidence.status must match config-sources.toml status")
+
+    def test_historical_exception_needs_a_real_module_review_date(self) -> None:
+        for ledger in (
+            {},
+            {"last_verified": "2026-02-29"},
+            {"last_verified": "2026-10-8"},
+            {"last_verified": "20261028"},
+            {"last_verified": ""},
+            {"last_verified": None},
+            {"last_verified": []},
+            {"last_verified": {}},
+            {"last_verified": "2026-10-28", "status": "unknown"},
+        ):
+            with self.subTest(ledger=ledger):
+                self.assert_contains(
+                    self.evidence_failures(ledger=ledger),
+                    "evidence.status must match config-sources.toml status",
+                )
+
+    def test_matching_evidence_status_keeps_existing_date_validation(self) -> None:
+        for ledger in (None, {}, {"last_verified": "invalid"}):
+            for verified_at in ("2026-07-13", "2026-10-28", "2026-10-29"):
+                with self.subTest(ledger=ledger, verified_at=verified_at):
+                    self.assertEqual(self.evidence_failures(
+                        status="best_effort_verified", verified_at=verified_at, ledger=ledger,
+                    ), [])
+        self.assert_contains(
+            self.evidence_failures(status="best_effort_verified", verified_at="2026-02-29"),
+            "evidence.verified_at must be a real YYYY-MM-DD date",
+        )
 
     def test_check_reports_stale_record_without_mutating_it(self) -> None:
         self.repo.fixture()

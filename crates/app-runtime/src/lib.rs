@@ -848,6 +848,13 @@ fn collect_module_launch_setting_issues(
         return collect_abioticfactor_launch_setting_issues(settings);
     }
     let (field, managed_options): (&str, &[&str]) = match module_id {
+        "returntomoria"
+            if settings
+                .get("server_worker_threads")
+                .is_some_and(|value| !value.is_null()) =>
+        {
+            ("extra_launch_args", &["-NumServerWorkerThreads"])
+        }
         "rust" => (
             "custom_launch_flags",
             &[

@@ -16,6 +16,10 @@ use launch_templates_abiotic::{render_abioticfactor_mod_args, render_abioticfact
 #[path = "launch_templates_abiotic_command_line_tests.rs"]
 mod abiotic_command_line_tests;
 
+#[cfg(test)]
+#[path = "launch_templates_returntomoria_tests.rs"]
+mod returntomoria_tests;
+
 pub(super) struct TemplateContext<'a> {
     pub(super) instance: &'a InstanceDetails,
     pub(super) settings: &'a Value,
@@ -286,6 +290,8 @@ pub(super) fn resolve_token(token: &str, context: &TemplateContext<'_>) -> Optio
                 lookup_extra_launch_args_token(context, path)
             } else if let Some(path) = token.strip_prefix("nightingale.") {
                 lookup_nightingale_launch_token(context, path)
+            } else if let Some(path) = token.strip_prefix("returntomoria.") {
+                lookup_returntomoria_launch_token(context, path)
             } else if let Some(path) = token.strip_prefix("romestead.") {
                 lookup_extra_launch_args_token(context, path)
             } else if let Some(path) = token.strip_prefix("runescapedragonwilds.") {
@@ -1000,6 +1006,20 @@ pub(super) fn lookup_nightingale_launch_token(
             context.settings,
             "extra_launch_args",
         )),
+        _ => None,
+    }
+}
+
+fn lookup_returntomoria_launch_token(context: &TemplateContext<'_>, path: &str) -> Option<String> {
+    match path {
+        "worker_thread_args" => Some(
+            context
+                .settings
+                .get("server_worker_threads")
+                .and_then(Value::as_i64)
+                .map(|count| format!("-NumServerWorkerThreads={count}"))
+                .unwrap_or_default(),
+        ),
         _ => None,
     }
 }

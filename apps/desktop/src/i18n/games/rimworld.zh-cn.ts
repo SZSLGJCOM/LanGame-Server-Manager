@@ -294,4 +294,6 @@ export const ZH_CN_RIMWORLD_MESSAGES: MessageCatalog = {
   "settings.schema.rimworld.enable_server_telemetry.description": "向服务器列表服务发送服务器资料、地址、人数、Mod 列表和玩家名称。关闭后也无法进行公开发现。",
   "settings.schema.rimworld.extra_launch_args.title": "附加启动参数",
   "settings.schema.rimworld.extra_launch_args.description": "传给 RTServer.exe 的附加启动参数。",
+  "settings.schema.rimworld.server_image_url.title": "服务器图片 URL",
+  "settings.schema.rimworld.server_image_url.description": "服务器浏览器条目使用的 HTTP 或 HTTPS 图片链接。未设置时保留现有原生链接；保存空值可移除现有链接。",
 };

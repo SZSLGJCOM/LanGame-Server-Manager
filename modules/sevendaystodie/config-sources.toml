@@ -1,6 +1,14 @@
 status = "best_effort_verified"
-last_verified = "2026-10-25"
+last_verified = "2026-10-28"
 notes = "Read-only review of installed app 294420 build 25661908, V3.3.0 (b18), confirms the packaged SandboxCode default and native version-A three-letter option framing. All 68 packaged serverconfig.xml properties remain covered; UserDataFolder is the additional instance-isolation property. This static review did not launch a server or repeat the earlier runtime/moderation checks. The V2.6 runtime-generated serveradmin.xml and build 24994542 blacklist-expiry observations remain separately dated below. Duration zero expires immediately; the online command explicitly bans for 10 years and records its confirmed native result. Blacklist removal sends the offline account unban command while running; arbitrary blacklist additions and edits remain restart-scoped."
+
+[[sources]]
+id = "public_v3_4_configuration_20261028"
+kind = "install_probe"
+path = "native-evidence/2026-10-28-public-build-26167630.json"
+authority = "official_steamcmd_public_package_and_native_xml_comparison"
+url = "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114045870"
+description = "An isolated anonymous SteamCMD update and validate on 2026-10-28 completed public app 294420 build 26167630 with StateFlags 4 and UpdateResult 0. The 68 packaged serverconfig.xml properties and defaults are unchanged from build 25661908/V3.3.0; the current template covers them, with UserDataFolder as the additional instance boundary. Executable, Assembly-CSharp, config and startup-file identities are recorded in the portable fixture. A separate non-elevated production lifecycle passed four native-ready runs and normal exit-0 stops, current-run Telnet save requests, fresh-process reload, 70-file backup restoration, archive/deferred-commit recovery, uninstall retention and fixture cleanup. Telnet receipts remain requested; no request-caused durable checkpoint, client join or player progress is claimed. The publisher identifies V3.4.0 Stable and separately warns about pre-3.4 shared-quest multiplayer crashes. Historical moderation evidence keeps its original scope."
 
 [[sources]]
 id = "sandbox_contract_build_25661908"
