@@ -55,8 +55,12 @@ pub(super) async fn connect(
     write: bool,
 ) -> Result<SqliteConnection, StorageError> {
     anchor.check_auxiliary_files()?;
+    // SQLite needs Windows' verbatim prefix for a long native save path. The
+    // anchor still retains the original path for validation and error context.
+    let filename = std::fs::canonicalize(&anchor.path)
+        .map_err(|error| invalid(&anchor.path, error.to_string()))?;
     let options = SqliteConnectOptions::new()
-        .filename(&anchor.path)
+        .filename(filename)
         .create_if_missing(false)
         .read_only(!write)
         .foreign_keys(true)

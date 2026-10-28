@@ -1019,12 +1019,25 @@ where
 {
     let canonical_source = canonical_plain_directory(source_dir, source_dir)?;
     let canonical_target = canonical_plain_directory(target_dir, target_dir)?;
+    // Resolve only the declared transient file, using the filesystem's own case
+    // semantics. Imported Windows saves can spell SaveFiles differently.
+    let omitted_canonical_file = match omitted_relative_file {
+        Some(relative) => {
+            let path = canonical_source.join(relative);
+            match fs::canonicalize(&path) {
+                Ok(path) => Some(path),
+                Err(source) if source.kind() == std::io::ErrorKind::NotFound => None,
+                Err(source) => return Err(StorageError::ReadPath { path, source }),
+            }
+        }
+        None => None,
+    };
     copy_directory_contents_recursive(
         source_dir,
         target_dir,
         &canonical_source,
         &canonical_target,
-        omitted_relative_file,
+        omitted_canonical_file.as_deref(),
         before_copy,
     )
 }
@@ -1034,7 +1047,7 @@ fn copy_directory_contents_recursive<F>(
     target_dir: &Path,
     canonical_source_root: &Path,
     canonical_target_root: &Path,
-    omitted_relative_file: Option<&Path>,
+    omitted_canonical_file: Option<&Path>,
     before_copy: &mut F,
 ) -> Result<DirectoryCopyStats, StorageError>
 where
@@ -1093,7 +1106,7 @@ where
                 &target_path,
                 canonical_source_root,
                 canonical_target_root,
-                omitted_relative_file,
+                omitted_canonical_file,
                 before_copy,
             )?;
             stats.file_count += nested_stats.file_count;
@@ -1107,11 +1120,7 @@ where
             });
         }
 
-        if omitted_relative_file.is_some_and(|omitted| {
-            canonical_source
-                .strip_prefix(canonical_source_root)
-                .is_ok_and(|relative| relative == omitted)
-        }) {
+        if omitted_canonical_file.is_some_and(|omitted| canonical_source == omitted) {
             continue;
         }
 

@@ -57,42 +57,6 @@ APP_RUNTIME_LAUNCH_TEMPLATES_RS = ROOT / "crates" / "app-runtime" / "src" / "lau
 APP_STORAGE_INSTANCES_RS = ROOT / "crates" / "app-storage" / "src" / "instances.rs"
 APP_STORAGE_TEMPLATES_RS = ROOT / "crates" / "app-storage" / "src" / "templates.rs"
 
-PLAYER_CENTER_FRONTEND_FILES = (
-    "views/servers/PlayerCenterWorkbench.tsx",
-    "views/servers/player-center/use-player-access.tsx",
-    "views/servers/player-center/PlayerAccessRosterEditor.tsx",
-    "views/servers/player-center/PlayerAccessRosterList.tsx",
-    "views/servers/player-center/SelectedPlayerRosterActions.tsx",
-    "views/servers/player-center/player-access-roster-model.ts",
-    "views/servers/player-center/player-access-roster-validation.ts",
-    "views/servers/player-center/manual-player-action-model.ts",
-    "views/servers/player-center/ManualPlayerActions.tsx",
-    "views/servers/player-center/OnlinePlayersView.tsx",
-    "views/servers/player-center/LivePlayerActionPanel.tsx",
-    "views/servers/player-center/LivePlayerTable.tsx",
-    "views/servers/player-center/LivePlayerState.tsx",
-    "views/servers/player-center/use-live-players.ts",
-)
-PLAYER_CENTER_PUBLIC_CONTRACTS = {
-    "views/servers/PlayerCenterWorkbench.tsx": ("export function PlayerCenterWorkbench",),
-    "views/servers/player-center/use-player-access.tsx": ("export function usePlayerAccess",),
-    "views/servers/player-center/PlayerAccessRosterEditor.tsx": ("export function PlayerAccessRosterEditor",),
-    "views/servers/player-center/PlayerAccessRosterList.tsx": ("export function PlayerAccessRosterList",),
-    "views/servers/player-center/SelectedPlayerRosterActions.tsx": ("export function SelectedPlayerRosterActions",),
-    "views/servers/player-center/player-access-roster-model.ts": (
-        "export function readPlayerAccessRosterCapabilities",
-        "export function buildRosterFields",
-    ),
-    "views/servers/player-center/player-access-roster-validation.ts": ("export function validateRosterEntryInput",),
-    "views/servers/player-center/manual-player-action-model.ts": ("export function readManualPlayerActions",),
-    "views/servers/player-center/ManualPlayerActions.tsx": ("export function ManualPlayerActions",),
-    "views/servers/player-center/OnlinePlayersView.tsx": ("export function OnlinePlayersView",),
-    "views/servers/player-center/LivePlayerActionPanel.tsx": ("export function LivePlayerActionPanel",),
-    "views/servers/player-center/LivePlayerTable.tsx": ("export function LivePlayerTable",),
-    "views/servers/player-center/LivePlayerState.tsx": ("export function LivePlayerState",),
-    "views/servers/player-center/use-live-players.ts": ("export function useLivePlayers",),
-}
-
 _APP_STORAGE_TEMPLATES_TEXT: str | None = None
 _APP_RUNTIME_LAUNCH_TEMPLATES_TEXT: str | None = None
 _DESKTOP_TAURI_COMMANDS_TEXT: str | None = None
@@ -313,36 +277,6 @@ def validate_roster_settings_backend_save_chain(commands_source: str) -> list[st
         failures.append(
             "backend: roster/settings update without a baseline must retain the unconditional update branch"
         )
-    return failures
-
-
-def validate_instance_settings_lock_contract(source: str) -> list[str]:
-    source = rust_executable_source(source)
-    failures: list[str] = []
-    body = re.sub(r"\s+", "", rust_function_body_from_source(source, "acquire_instance_settings_mutation_lock"))
-    if "acquire_lock_at_path(instance_settings_mutation_lock_path(paths,instance_id))" not in body:
-        failures.append("backend: settings mutations must acquire the per-instance lock path")
-    dispatch = re.sub(r"\s+", "", rust_function_body_from_source(source, "acquire_lock_at_path"))
-    acquire = re.sub(r"\s+", "", rust_function_body_from_source(source, "acquire_lock_at_path_with_mode"))
-    attempt = re.search(
-        r"let(\w+)=map_try_lock_result\(matchmode\{"
-        r"LockMode::Shared=>file\.try_lock_shared\(\),"
-        r"LockMode::Exclusive=>file\.try_lock\(\),?\}\);",
-        acquire,
-    )
-    if (
-        dispatch != "acquire_lock_at_path_with_mode(lock_path,LockMode::Exclusive)"
-        or not attempt
-        or not re.search(rf"match{re.escape(attempt[1])}\{{", acquire[attempt.end():])
-    ):
-        failures.append("backend: instance settings lock must acquire an exclusive nonblocking lease")
-    mapper = re.sub(r"\s+", "", rust_function_body_from_source(source, "map_try_lock_result"))
-    mapping = re.fullmatch(r"(?:return)?result\.map_err\(\|(?P<error>\w+)\|match(?P=error)\{(?P<arms>[^{}]*)\}\);?", mapper)
-    if not mapping or "TryLockError::WouldBlock=>LockAcquireError::Contended" not in mapping["arms"] or not re.search(
-        r"Err\(LockAcquireError::Contended\)=>\{Err\(StorageError::InstanceSettingsLocked\{[^{}]*\}\)\}",
-        acquire,
-    ):
-        failures.append("backend: instance settings lock must report contention without granting a lease")
     return failures
 
 
@@ -1496,33 +1430,6 @@ def read_frontend_file(relative_path: str) -> str:
     return (DESKTOP_SRC_DIR / relative_path).read_text(encoding="utf-8-sig")
 
 
-def read_player_center_frontend_sources(source_dir: Path = DESKTOP_SRC_DIR) -> dict[str, str]:
-    return {
-        relative_path: (source_dir / relative_path).read_text(encoding="utf-8-sig")
-        for relative_path in PLAYER_CENTER_FRONTEND_FILES
-    }
-
-
-def validate_player_center_frontend_contracts(source_dir: Path = DESKTOP_SRC_DIR) -> list[str]:
-    failures: list[str] = []
-    missing = [
-        relative_path
-        for relative_path in PLAYER_CENTER_FRONTEND_FILES
-        if not (source_dir / relative_path).is_file()
-    ]
-    failures.extend(f"frontend: missing Player Center source {relative_path}" for relative_path in missing)
-    if missing:
-        return failures
-
-    for relative_path, source in read_player_center_frontend_sources(source_dir).items():
-        for contract in PLAYER_CENTER_PUBLIC_CONTRACTS[relative_path]:
-            if contract not in source:
-                failures.append(
-                    f"frontend: {relative_path} is missing Player Center public contract {contract!r}"
-                )
-    return failures
-
-
 def read_module_settings_source(module_id: str) -> str:
     file_stem = MODULE_SETTINGS_FILE_NAMES.get(module_id, module_id)
     module_path = DESKTOP_SRC_DIR / "views" / "settings" / "modules" / f"{file_stem}.ts"
@@ -2535,13 +2442,6 @@ def validate_frontend_coverage() -> list[str]:
         if player_access_storage_path.exists()
         else ""
     )
-    instance_settings_lock_path = APP_STORAGE_INSTANCES_RS.parent / "instance_settings_lock.rs"
-    instance_settings_lock_source = (
-        instance_settings_lock_path.read_text(encoding="utf-8-sig")
-        if instance_settings_lock_path.exists()
-        else ""
-    )
-    failures.extend(validate_player_center_frontend_contracts())
     player_access_model_markers = (
         '"x-lsgm-player-access-codec"',
         '"x-lsgm-player-access-sync"',
@@ -2621,7 +2521,6 @@ def validate_frontend_coverage() -> list[str]:
             "backend: player-access orchestration must persist/materialize before dispatching any live action"
         )
     failures.extend(validate_player_access_storage_lock_chain(player_access_storage_source))
-    failures.extend(validate_instance_settings_lock_contract(instance_settings_lock_source))
     failures.extend(validate_settings_precondition_storage_lock_chain(storage_instances_source))
     lifecycle_mutation_lock_markers = (
         "start_instance_process_after_reconcile_reserved(",

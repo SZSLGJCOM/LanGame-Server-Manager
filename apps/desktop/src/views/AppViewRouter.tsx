@@ -28,7 +28,6 @@ import type {
   LaunchPlan,
   ModuleDetails,
   ModuleSummary,
-  OverlayFamily,
   RuntimeWindowSnapshot,
   RuntimeCommandDispatchOptions,
   SaveInstanceSettingsOptions,
@@ -59,8 +58,6 @@ interface AppViewRouterProps {
   assistantCanRun: boolean;
   bindAddressCandidates: BindAddressCandidate[];
   bootstrap: BootstrapResponse;
-  instanceDetailsById: Partial<Record<string, InstanceDetails>>;
-  instanceRuntimesById: Partial<Record<string, InstanceRuntimeOverview>>;
   instances: InstanceSummary[];
   moduleInstallations: Partial<Record<string, ServerModuleInstallation>>;
   instanceLaunchPlans: Partial<Record<string, LaunchPlan>>;
@@ -71,11 +68,9 @@ interface AppViewRouterProps {
   libraryPage: LibraryPageMode;
   librarySearch: string;
   modules: ModuleSummary[];
-  overlays: OverlayFamily[];
   runtimeRefreshIssue: RuntimeRefreshIssue | null;
   systemRefreshing?: boolean;
   onActivity: (value: UiMessage) => void;
-  search: string;
   selectedInstanceDetails: InstanceDetails | null;
   selectedPanelLoadState?: InstancePanelLoadState | null;
   selectedBackups: InstanceBackupResult[];
@@ -103,7 +98,6 @@ interface AppViewRouterProps {
   creationStartedAtByModule: ReadonlyMap<string, number>;
   onEnsureSteamCmd: () => void;
   onUninstallSteamCmd: () => void;
-  onEnsureStorageOnly: () => void;
   onInstallModule: (moduleId: string, validate: boolean, account?: SteamInstallationAccountContext) => Promise<void>;
   onLibraryCatalogFocusChange: (moduleId: string | null) => void;
   onLibraryCatalogScrollLeftChange: (scrollLeft: number) => void;
@@ -137,7 +131,6 @@ interface AppViewRouterProps {
   onSelectInstance: (instanceId: string) => void;
   onStartServer: (instanceId: string, expectedWorldStart?: DstWorldStartPreview) => void | Promise<void>;
   onStopServer: (instanceId: string) => void | Promise<void>;
-  onSyncStorageOnly: () => void;
 }
 
 export function AppViewRouter(props: AppViewRouterProps) {

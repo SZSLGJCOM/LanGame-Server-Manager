@@ -86,8 +86,8 @@ for (const [name, apiName, actionName, argumentsAfterId] of operations) {
       const originalB = [{ ...backup, backup_id: "backup-b" }];
       const refreshedA = [{ ...backup, backup_id: "refreshed-a" }];
       let currentSelection = initialSelection;
-      let cachedBackups = { a: originalA, b: originalB };
-      let selectedBackups = cachedBackups[initialSelection];
+      const originalBackups = { a: originalA, b: originalB };
+      let selectedBackups = originalBackups[initialSelection];
       let selectedWrites = 0;
       const activity = [];
       const actions = loadActions({
@@ -105,7 +105,6 @@ for (const [name, apiName, actionName, argumentsAfterId] of operations) {
         getCurrentInstanceId: () => currentSelection,
         instanceDetailsById: { a: { summary: { name: "Server A" } } },
         setInstanceDetailsById: () => {},
-        setInstanceBackupsById: (update) => { cachedBackups = update(cachedBackups); },
         setSelectedInstanceBackups: (value) => { selectedBackups = value; selectedWrites += 1; },
         setActivity: (value) => activity.push(value)
       });
@@ -114,13 +113,11 @@ for (const [name, apiName, actionName, argumentsAfterId] of operations) {
       mutation.resolve({ ...backup, safeguard_backup_id: "safeguard-a" });
       await listRequested.promise;
       currentSelection = finalSelection;
-      selectedBackups = finalSelection === null ? [] : cachedBackups[finalSelection];
+      selectedBackups = finalSelection === null ? [] : originalBackups[finalSelection];
       const selectedBeforeRefresh = selectedBackups;
       listing.resolve(refreshedA);
       await flight;
 
-      assert.equal(cachedBackups.a, refreshedA, "refresh the operated instance's cache");
-      assert.equal(cachedBackups.b, originalB, "preserve the other instance's cache");
       assert.equal(selectedWrites, finalSelection === "a" ? 1 : 0);
       assert.equal(selectedBackups, finalSelection === "a" ? refreshedA : selectedBeforeRefresh);
       assert.ok(!activity.at(-1).key.endsWith("Failed"), "the mutation must complete successfully");
@@ -139,7 +136,6 @@ test("rename receives the inline draft, trims it and allows clearing a custom na
     getCurrentInstanceId: () => "a",
     instanceDetailsById: { a: { summary: { name: "Server A" } } },
     setInstanceDetailsById: () => {},
-    setInstanceBackupsById: () => {},
     setSelectedInstanceBackups: () => {},
     setActivity: (value) => activities.push(value)
   });
@@ -176,8 +172,6 @@ test("confirmed instance deletion reaches the API without requesting another nat
     getCurrentInstanceId: () => "a",
     setActivity: (value) => activities.push(value),
     setInstanceDetailsById: () => {},
-    setInstanceBackupsById: () => {},
-    setInstanceRuntimesById: () => {},
     clearSelectedInstancePanel: () => { cleared = true; },
     setSelectedInstanceId: (value) => assert.equal(value, null),
     reloadBootstrap: async () => {}
@@ -202,7 +196,7 @@ test("archiving calls its own API and reports the retained external snapshot", a
         saves_archived_with_instance_root: false, preserved_external_saves_path: "external/world", external_saves_backup_id: "snapshot-a" };
     }
   })({ selectedInstanceId: null, getCurrentInstanceId: () => null, setActivity: (value) => activities.push(value),
-    setInstanceDetailsById: () => {}, setInstanceBackupsById: () => {}, setInstanceRuntimesById: () => {},
+    setInstanceDetailsById: () => {},
     reloadBootstrap: async () => { refreshed++; } });
   await actions.handleArchiveInstance("a");
   assert.deepEqual(archived, ["a"]);
@@ -217,7 +211,7 @@ test("successful instance deletion reports retained program cleanup without chan
     program_cleanup: { removed_install_roots: ["fixture/obsolete"], preserved_data_paths: [],
       retained_installs: [{ install_root: "fixture/archive-source", reason: "archive_dependency" }] } }) })({
     getCurrentInstanceId: () => null, setActivity: (value) => activities.push(value),
-    setInstanceDetailsById: () => {}, setInstanceBackupsById: () => {}, setInstanceRuntimesById: () => {},
+    setInstanceDetailsById: () => {},
     reloadBootstrap: async () => {}
   });
   await actions.handleDeleteInstance("a");
@@ -249,7 +243,7 @@ for (const kind of ["Archive", "Delete"]) {
     let refreshed = 0;
     const actions = loadActions({ [kind === "Archive" ? "archiveInstance" : "deleteInstance"]: () => { calls++; return operation.promise; } })({
       selectedInstanceId: "a", getCurrentInstanceId: () => current,
-      setActivity: () => {}, setInstanceDetailsById: () => {}, setInstanceBackupsById: () => {}, setInstanceRuntimesById: () => {},
+      setActivity: () => {}, setInstanceDetailsById: () => {},
       clearSelectedInstancePanel: () => assert.fail("The newer instance must stay selected"),
       setSelectedInstanceId: () => assert.fail("The newer selection must not be cleared"),
       reloadBootstrap: async () => { refreshed++; }
@@ -273,7 +267,7 @@ test("a refresh failure does not turn successful permanent deletion into a faile
   const actions = loadActions({ deleteInstance: async () => ({ instance_name: "A", preserved_external_saves_path: null,
     program_cleanup: emptyProgramCleanup() }) })({
     getCurrentInstanceId: () => null, setActivity: (value) => activities.push(value),
-    setInstanceDetailsById: () => {}, setInstanceBackupsById: () => {}, setInstanceRuntimesById: () => {},
+    setInstanceDetailsById: () => {},
     reloadBootstrap: async () => { throw new Error("Refresh unavailable"); }
   });
   await actions.handleDeleteInstance("a");

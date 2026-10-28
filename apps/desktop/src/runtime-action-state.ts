@@ -1,3 +1,5 @@
+import { normalizeInstanceStatus } from "./instance-status";
+
 export type RuntimeActionIntent = "start" | "stop";
 export type RuntimeActionPending = "starting" | "stopping";
 
@@ -28,18 +30,8 @@ interface InstanceActiveRunLike {
   processes?: RuntimeProcessStateLike[] | null;
 }
 
-function normalizeStatus(status: string | null | undefined): string {
-  const value = String(status ?? "").trim().toLowerCase();
-  if (!value) return "unknown";
-  if (value.includes("run")) return "running";
-  if (value.includes("stop")) return "stopped";
-  if (value.includes("start")) return "starting";
-  if (value.includes("error") || value.includes("fail") || value.includes("crash")) return "error";
-  return value;
-}
-
 export function runtimeProcessIsRunning(process: RuntimeProcessStateLike): boolean {
-  return normalizeStatus(process.status) === "running";
+  return normalizeInstanceStatus(process.status) === "running";
 }
 
 export function instanceHasRunningProcess(
@@ -50,7 +42,7 @@ export function instanceHasRunningProcess(
   if (processes.length > 0) {
     return processes.some(runtimeProcessIsRunning);
   }
-  return Number(summary.active_process_count ?? 0) > 0 || normalizeStatus(summary.status) === "running";
+  return Number(summary.active_process_count ?? 0) > 0 || normalizeInstanceStatus(summary.status) === "running";
 }
 
 export function runtimeProcessKeyIsRunning(
@@ -76,7 +68,7 @@ export function resolveServerRuntimeAction(
   pending: RuntimeActionPending | null | undefined,
   hasRunningProcess = false
 ): ServerRuntimeActionModel {
-  const normalizedStatus = normalizeStatus(status);
+  const normalizedStatus = normalizeInstanceStatus(status);
   const pendingState = pending ?? null;
 
   if (pendingState === "starting" || normalizedStatus === "starting") {

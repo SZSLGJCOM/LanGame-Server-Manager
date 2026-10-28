@@ -98,11 +98,11 @@ async function run() {
     const [name, setName] = useState("合作世界");
     actions = useInstanceActions({
       bindAddressCandidates: [], clearSelectedInstancePanel: noOperation,
-      getCurrentInstanceId: () => null, instanceBackupsById: {}, instanceDetailsById: {},
+      getCurrentInstanceId: () => null, instanceDetailsById: {},
       markRuntimeRefreshed: noOperation, modules: [selected],
       openInstanceView: (section, id) => { check(section === "settings", "Created instance must open settings"); opened.push(id); },
       onPanelLoaded: noOperation, onPanelProgress: noOperation, onPanelSettled: noOperation, selectedInstanceId: null,
-      setInstanceBackupsById: noOperation, setInstanceDetailsById: noOperation, setInstanceRuntimesById: noOperation,
+      setInstanceDetailsById: noOperation,
       setSelectedInstanceBackups: noOperation, setSelectedInstanceDetails: noOperation, setActivity,
       setBootstrap: noOperation, setSelectedModuleId: noOperation, setSelectedInstanceId: noOperation,
       reloadBootstrap: () => { refreshCalls++; return refresh.promise; },

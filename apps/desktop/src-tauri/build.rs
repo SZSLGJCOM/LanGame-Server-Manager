@@ -11,240 +11,40 @@ fn main() {
             "cargo:rerun-if-changed={}",
             root.join("scripts/build_control_output.ps1").display()
         );
-        let script = root.join("scripts/build_ark_tools.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/ark-tools").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        // MSVC counts the SDK's unnormalized relative includes against MAX_PATH.
-        // Keep this output leaf short in deeply nested release build directories.
-        .join("ark");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(&script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start the ARK extension builder");
-        if !result.status.success() {
-            panic!(
-                "ARK extension build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-        let script = root.join("scripts/build_theforest_control.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/theforest/control").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        .join("theforest-control");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start The Forest control builder");
-        if !result.status.success() {
-            panic!(
-                "The Forest control build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-        let script = root.join("scripts/build_enshrouded_control.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/enshrouded/control").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        .join("enshrouded-control");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start the Enshrouded control builder");
-        if !result.status.success() {
-            panic!(
-                "Enshrouded control build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-        let script = root.join("scripts/build_valheim_control.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/valheim/control").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        .join("valheim-control");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start the Valheim control builder");
-        if !result.status.success() {
-            panic!(
-                "Valheim control build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-        let script = root.join("scripts/build_dragonwilds_player_query.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/runescapedragonwilds/extensions")
-                .display()
-        );
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/runescapedragonwilds/control").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        .join("dragonwilds-player-query");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start the Dragonwilds player query builder");
-        if !result.status.success() {
-            panic!(
-                "Dragonwilds player query build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
-        }
-        let script = root.join("scripts/build_windrose_save_control.ps1");
-        println!("cargo:rerun-if-changed={}", script.display());
-        println!(
-            "cargo:rerun-if-changed={}",
-            root.join("modules/windrose/control").display()
-        );
-        let output = std::path::PathBuf::from(
-            std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-        )
-        .join("windrose-save-control");
-        let mut command = std::process::Command::new("powershell.exe");
-        command
-            .args([
-                "-NoLogo",
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-File",
-            ])
-            .arg(script)
-            .arg("-OutDir")
-            .arg(output);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-        }
-        let result = command
-            .output()
-            .expect("failed to start the Windrose save control builder");
-        if !result.status.success() {
-            panic!(
-                "Windrose save control build failed:\n{}\n{}",
-                String::from_utf8_lossy(&result.stdout),
-                String::from_utf8_lossy(&result.stderr)
-            );
+        // MSVC counts unnormalized SDK includes against MAX_PATH; retain the
+        // short ARK output leaf in deeply nested release build directories.
+        for (script, leaf, sources) in [
+            ("build_ark_tools.ps1", "ark", &["modules/ark-tools"][..]),
+            (
+                "build_theforest_control.ps1",
+                "theforest-control",
+                &["modules/theforest/control"][..],
+            ),
+            (
+                "build_enshrouded_control.ps1",
+                "enshrouded-control",
+                &["modules/enshrouded/control"][..],
+            ),
+            (
+                "build_valheim_control.ps1",
+                "valheim-control",
+                &["modules/valheim/control"][..],
+            ),
+            (
+                "build_dragonwilds_player_query.ps1",
+                "dragonwilds-player-query",
+                &[
+                    "modules/runescapedragonwilds/extensions",
+                    "modules/runescapedragonwilds/control",
+                ][..],
+            ),
+            (
+                "build_windrose_save_control.ps1",
+                "windrose-save-control",
+                &["modules/windrose/control"][..],
+            ),
+        ] {
+            build_control(&root, script, leaf, sources);
         }
     }
 
@@ -257,37 +57,7 @@ fn main() {
             ("build_scum_save_control.ps1", "scum-save-control"),
             ("build_unreal_loader_proxies.ps1", "unreal-loader-proxies"),
         ] {
-            let source = root.join("scripts").join(script);
-            println!("cargo:rerun-if-changed={}", source.display());
-            let output = std::path::PathBuf::from(
-                std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"),
-            )
-            .join(leaf);
-            let mut command = std::process::Command::new("powershell.exe");
-            command
-                .args([
-                    "-NoLogo",
-                    "-NoProfile",
-                    "-NonInteractive",
-                    "-ExecutionPolicy",
-                    "Bypass",
-                    "-File",
-                ])
-                .arg(source)
-                .arg("-OutDir")
-                .arg(output);
-            use std::os::windows::process::CommandExt;
-            command.creation_flags(0x0800_0000);
-            let result = command
-                .output()
-                .expect("failed to start native persistence adapter builder");
-            if !result.status.success() {
-                panic!(
-                    "Native persistence adapter build failed:\n{}\n{}",
-                    String::from_utf8_lossy(&result.stdout),
-                    String::from_utf8_lossy(&result.stderr)
-                );
-            }
+            build_control(&root, script, leaf, &[]);
         }
         for directory in [
             "modules/nightingale/control",
@@ -308,6 +78,46 @@ fn main() {
         .codegen(tauri_build::CodegenContext::new());
 
     tauri_build::try_build(attributes).expect("failed to run Tauri build script")
+}
+
+fn build_control(root: &std::path::Path, script: &str, leaf: &str, sources: &[&str]) {
+    let script = root.join("scripts").join(script);
+    println!("cargo:rerun-if-changed={}", script.display());
+    for source in sources {
+        println!("cargo:rerun-if-changed={}", root.join(source).display());
+    }
+    let output =
+        std::path::PathBuf::from(std::env::var_os("OUT_DIR").expect("Cargo OUT_DIR is missing"))
+            .join(leaf);
+    let mut command = std::process::Command::new("powershell.exe");
+    command
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+        ])
+        .arg(&script)
+        .arg("-OutDir")
+        .arg(output);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x0800_0000);
+    }
+    let result = command
+        .output()
+        .unwrap_or_else(|error| panic!("failed to start {}: {error}", script.display()));
+    if !result.status.success() {
+        panic!(
+            "{} failed:\n{}\n{}",
+            script.display(),
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        );
+    }
 }
 
 fn project_root() -> std::path::PathBuf {

@@ -21,7 +21,7 @@ function instanceActionFixture(overrides = {}) {
   const state = {
     selectedId: "a", selected: null, cache: {}, activity: [], progress: [], settled: [],
     calls: [], bootstrapRefreshes: 0, instances: [{ id: "a" }, { id: "b" }], retiring: new Set(),
-    detailsById: {}, backupsById: {}, opened: [], runtimeRefreshes: 0
+    detailsById: {}, opened: [], runtimeRefreshes: 0
   };
   const api = {
     readInstanceDetails: async () => details,
@@ -97,7 +97,6 @@ function instanceActionFixture(overrides = {}) {
     retirement: { isPending: () => false },
     instanceDetailsById: state.detailsById,
     setInstanceDetailsById: (update) => { state.detailsById = update(state.detailsById); },
-    setInstanceBackupsById: (update) => { state.backupsById = update(state.backupsById); },
     setSelectedInstanceBackups: (value) => { state.selectedBackups = value; },
     setSelectedInstanceId: (value) => { state.selectedId = value; },
     markRuntimeRefreshed: () => { state.runtimeRefreshes++; },

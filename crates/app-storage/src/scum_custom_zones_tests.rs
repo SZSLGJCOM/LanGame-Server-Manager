@@ -124,6 +124,65 @@ impl Drop for Fixture {
 #[tokio::test]
 async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_regions() {
     let fixture = Fixture::new().await;
+    verify_stopped_write_and_backup(&fixture).await;
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn sqlite_write_backs_up_case_variant_save_directory() {
+    let fixture = Fixture::new().await;
+    // Imported saves can retain a different spelling on the same Windows path.
+    // Change the real directory entry while keeping the stored instance path.
+    let directory = fixture.context.database.parent().unwrap();
+    let intermediate = directory.with_file_name("save-directory-case-change");
+    fs::rename(directory, &intermediate).unwrap();
+    fs::rename(&intermediate, directory.with_file_name("savefiles")).unwrap();
+    verify_stopped_write_and_backup(&fixture).await;
+}
+
+#[cfg(windows)]
+#[tokio::test]
+async fn sqlite_connections_preserve_committed_wal_at_a_long_windows_path() {
+    use std::os::windows::ffi::OsStrExt;
+
+    let fixture = Fixture::new().await;
+    let database = fixture
+        .root
+        .join("a".repeat(120))
+        .join("b".repeat(120))
+        .join("SCUM.db");
+    let path_characters = database.as_os_str().encode_wide().count();
+    assert!(path_characters > 260);
+    fs::create_dir_all(database.parent().unwrap()).unwrap();
+    fs::copy(&fixture.context.database, &database).unwrap();
+    assert!(!fs::read(&database).unwrap().is_empty());
+    let anchor = DatabaseAnchor::open(&database, true).unwrap();
+    let mut writer = db::connect(&anchor, true).await.unwrap_or_else(|error| {
+        panic!("SQLite rejected a {path_characters}-character path readable by std::fs: {error}")
+    });
+    sqlx::query("INSERT INTO retained_world VALUES(3,X'1234')")
+        .execute(&mut writer)
+        .await
+        .unwrap();
+    assert!(
+        fs::metadata(database.with_file_name("SCUM.db-wal"))
+            .unwrap()
+            .len()
+            > 0
+    );
+    let anchor = DatabaseAnchor::open(&database, false).unwrap();
+    let mut reader = db::connect(&anchor, false).await.unwrap();
+    let committed: Vec<u8> =
+        sqlx::query_scalar("SELECT unknown_data FROM retained_world WHERE id=3")
+            .fetch_one(&mut reader)
+            .await
+            .unwrap();
+    assert_eq!(committed, [18, 52]);
+    reader.close().await.unwrap();
+    writer.close().await.unwrap();
+}
+
+async fn verify_stopped_write_and_backup(fixture: &Fixture) {
     // Keep a real WAL connection alive: the backup must retain committed WAL
     // content while omitting only SQLite's locked, reconstructable WAL index.
     let mut retained = fixture.connection().await;
@@ -133,6 +192,14 @@ async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_r
         .unwrap();
     let unrelated_sidecar = fixture.context.database.with_file_name("audit.db-shm");
     fs::write(&unrelated_sidecar, b"retained unrelated sidecar").unwrap();
+    let nested_sidecar = fixture
+        .context
+        .database
+        .parent()
+        .unwrap()
+        .join("nested/SCUM.db-shm");
+    fs::create_dir_all(nested_sidecar.parent().unwrap()).unwrap();
+    fs::write(&nested_sidecar, b"retained nested sidecar").unwrap();
     let input = fixture.input().await;
     let result = write_stopped(&fixture.paths, &fixture.context, input)
         .await
@@ -189,6 +256,10 @@ async fn sqlite_write_changes_only_three_slots_and_preserves_unknown_world_and_r
     assert_eq!(
         fs::read(saved.with_file_name("audit.db-shm")).unwrap(),
         b"retained unrelated sidecar"
+    );
+    assert_eq!(
+        fs::read(saved.parent().unwrap().join("nested/SCUM.db-shm")).unwrap(),
+        b"retained nested sidecar"
     );
     let anchor = DatabaseAnchor::open(&saved, false).unwrap();
     let mut backup = db::connect(&anchor, false).await.unwrap();

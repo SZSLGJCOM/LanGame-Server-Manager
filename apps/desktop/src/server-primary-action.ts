@@ -31,8 +31,7 @@ export function resolveServerPrimaryAction(input: {
   pendingInstallation?: ServerInstallationIntent | null;
   jobs?: BackgroundJob[];
 }): ServerPrimaryActionModel {
-  const pendingRuntime = input.pendingRuntime ?? (input.status.toLowerCase() === "stopping" ? "stopping" : null);
-  const runtime = resolveServerRuntimeAction(input.status, pendingRuntime, input.hasRunningProcess);
+  const runtime = resolveServerRuntimeAction(input.status, input.pendingRuntime, input.hasRunningProcess);
   const base = { ...runtime, deleteBlocked: runtime.action === "stop" || runtime.ariaBusy };
   if (base.deleteBlocked) return base;
 

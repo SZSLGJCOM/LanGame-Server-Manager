@@ -11,6 +11,7 @@ import type {
   StorageStatus
 } from "./types";
 import { instanceHasRunningProcess } from "./runtime-action-state";
+import { normalizeInstanceStatus } from "./instance-status";
 import {
   formatCoreKeeperAllowedPlatform,
   formatCoreKeeperJoinMode,
@@ -70,18 +71,8 @@ export function valheimCrossplayJoinGuidance(
   };
 }
 
-export function normalizeStatus(status: string | null | undefined): string {
-  const value = String(status ?? "").trim().toLowerCase();
-  if (!value) return "unknown";
-  if (value.includes("run")) return "running";
-  if (value.includes("stop")) return "stopped";
-  if (value.includes("start")) return "starting";
-  if (value.includes("error") || value.includes("fail") || value.includes("crash")) return "error";
-  return value;
-}
-
 export function formatInstanceStatus(status: string | null | undefined, t: TranslateFn): string {
-  switch (normalizeStatus(status)) {
+  switch (normalizeInstanceStatus(status)) {
     case "running":
       return t("status.instance.running");
     case "stopped":
@@ -98,7 +89,7 @@ export function formatInstanceStatus(status: string | null | undefined, t: Trans
 }
 
 export function isRunningStatus(status: string | null | undefined): boolean {
-  return normalizeStatus(status) === "running";
+  return normalizeInstanceStatus(status) === "running";
 }
 
 export function countRunningInstances(instances: InstanceSummary[]): number {

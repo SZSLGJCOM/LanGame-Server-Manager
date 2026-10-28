@@ -153,8 +153,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
   const [steamCmdProgress, setSteamCmdProgress] = useState<SteamCmdPrepareSnapshot | null>(null);
   const [storageInitialization, setStorageInitialization] = useState(createStorageInitializationState);
   const [instanceDetailsById, setInstanceDetailsById] = useState<Partial<Record<string, InstanceDetails>>>({});
-  const [instanceBackupsById, setInstanceBackupsById] = useState<Partial<Record<string, InstanceBackupResult[]>>>({});
-  const [instanceRuntimesById, setInstanceRuntimesById] = useState<Partial<Record<string, InstanceRuntimeOverview>>>({});
   const [activity, setActivity] = useState<UiMessage>(message("activity.loadingDesktop"));
   const [libraryTaskPolling, setLibraryTaskPolling] = useState(false);
   const [runtimeRefreshMode, setRuntimeRefreshMode] = useState<"live" | "throttled">("live");
@@ -630,8 +628,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
 
   function cacheInstancePanel(instanceId: string, next: InstancePanelPatch) {
     if (next.details) setInstanceDetailsById((current) => ({ ...current, [instanceId]: next.details }));
-    if (next.backups) setInstanceBackupsById((current) => ({ ...current, [instanceId]: next.backups }));
-    if (next.runtime) setInstanceRuntimesById((current) => ({ ...current, [instanceId]: next.runtime }));
   }
 
   function applySelectedInstancePanel(next: InstancePanelPatch) {
@@ -1421,7 +1417,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     steamCmdStopError,
     handleUninstallSteamCmd,
     handleEnsureStorageOnly,
-    handleSyncStorageOnly,
     handleInstallModule,
     handleUninstallModule
   } = useLibraryActions({
@@ -1474,7 +1469,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     bindAddressCandidates,
     clearSelectedInstancePanel,
     getCurrentInstanceId: () => selectedInstanceCursor.current(),
-    instanceBackupsById,
     instanceDetailsById,
     markRuntimeRefreshed,
     modules,
@@ -1488,8 +1482,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
     setBootstrap,
     setInstanceDetailsById,
     setSelectedInstanceDetails,
-    setInstanceBackupsById,
-    setInstanceRuntimesById,
     setSelectedInstanceBackups,
     setSelectedInstanceId,
     setSelectedModuleId
@@ -1678,7 +1670,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         aiSettings={aiSettings}
         assistantCanRun={assistantCanRun}
         bootstrap={bootstrap}
-        overlays={overlays}
         bindAddressCandidates={bindAddressCandidates}
         modules={modules}
         instances={instances}
@@ -1710,9 +1701,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         systemRefreshing={systemRefreshing}
         onActivity={setActivity}
         librarySearch={librarySearch}
-        search=""
-        instanceDetailsById={instanceDetailsById}
-        instanceRuntimesById={instanceRuntimesById}
         moduleInstallations={serverInstallations.moduleInstallations}
         instanceLaunchPlans={serverInstallations.instanceLaunchPlans}
         instanceLaunchFailures={serverInstallations.instanceLaunchFailures}
@@ -1748,9 +1736,6 @@ function DesktopApp({ theme, onThemeChange }: DesktopAppProps) {
         onExecutePlayerAction={handleExecutePlayerAction}
         onStartServer={handleStartServerWithBroadcast}
         onStopServer={handleStopServerWithBroadcast}
-
-        onEnsureStorageOnly={() => void handleEnsureStorageOnly()}
-        onSyncStorageOnly={() => void handleSyncStorageOnly()}
 
         onOpenLocalPath={(path) => void handleOpenLocalPath(path)}
         onSendRuntimeCommand={(instanceId, command, processKey, options) =>

@@ -2,22 +2,43 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
-const vm = require("node:vm");
 const { transpileTypeScript } = require("../scripts/typescript_source_tools.cjs");
 
-function loadRuntimeActionState() {
-  const sourcePath = path.join(__dirname, "..", "src", "runtime-action-state.ts");
-  const source = fs.readFileSync(sourcePath, "utf8");
-  const outputText = transpileTypeScript(source, sourcePath);
-
-  const module = { exports: {} };
-  vm.runInNewContext(outputText, {
-    module,
-    exports: module.exports,
-    require
-  }, { filename: sourcePath });
-  return module.exports;
+for (const extension of [".ts", ".tsx"]) {
+  require.extensions[extension] = (module, filename) => {
+    module._compile(transpileTypeScript(fs.readFileSync(filename, "utf8"), filename), filename);
+  };
 }
+
+const loadRuntimeActionState = () => require(path.join(__dirname, "../src/runtime-action-state.ts"));
+const { formatInstanceStatus } = require("../src/view-models.ts");
+
+test("instance status labels distinguish stopping from stopped and preserve other states", () => {
+  for (const [status, label] of [
+    ["Stopped", "status.instance.stopped"],
+    ["Stopping", "status.instance.stopping"],
+    ["Starting", "status.instance.starting"],
+    ["Running", "status.instance.running"],
+    ["Failed", "status.instance.error"],
+    ["Error", "status.instance.error"],
+    ["Idle", "Idle"],
+    [null, "status.instance.unknown"]
+  ]) {
+    assert.equal(formatInstanceStatus(status, (key) => key), label, String(status));
+  }
+});
+
+test("a backend stopping status keeps runtime actions busy without a local request", () => {
+  const { resolveServerRuntimeAction } = loadRuntimeActionState();
+  for (const hasRunningProcess of [false, true]) {
+    const model = resolveServerRuntimeAction("Stopping", null, hasRunningProcess);
+    assert.equal(model.action, "stop");
+    assert.equal(model.displayedStatus, "Stopping");
+    assert.equal(model.disabled, true);
+    assert.equal(model.ariaBusy, true);
+    assert.equal(model.labelKey, "status.instance.stopping");
+  }
+});
 
 test("resolveServerRuntimeAction exposes a busy start state while the start request is pending", () => {
   const { resolveServerRuntimeAction } = loadRuntimeActionState();

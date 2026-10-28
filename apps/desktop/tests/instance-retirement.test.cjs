@@ -55,7 +55,7 @@ function harness(kind) {
   const state = {
     selectedId: "a", panel: "a", nativeCalls: 0,
     bootstrap: { state: { instances: [{ id: "a" }, { id: "b" }] } },
-    details: { a: {}, b: {} }, backups: { a: [], b: [] }, runtimes: { a: {}, b: {} }, activities: []
+    details: { a: {}, b: {} }, activities: []
   };
   const invoke = (id) => {
     assert.equal(retirement.isPending(id), true, "retirement owns the instance before native IPC starts");
@@ -79,8 +79,6 @@ function harness(kind) {
     clearSelectedInstancePanel: () => { state.panel = null; },
     setBootstrap: (update) => { state.bootstrap = update(state.bootstrap); },
     setInstanceDetailsById: (update) => { state.details = update(state.details); },
-    setInstanceBackupsById: (update) => { state.backups = update(state.backups); },
-    setInstanceRuntimesById: (update) => { state.runtimes = update(state.runtimes); },
     setActivity: (activity) => state.activities.push(activity),
     reloadBootstrap: () => { refreshStarted.resolve(); return refreshed.promise; }
   });

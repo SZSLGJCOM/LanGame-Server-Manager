@@ -21,15 +21,11 @@ import {
   startInstance,
   stopInstance,
   suppressInstanceRuntimeWindows,
-  syncModulesToStorage,
   uninstallModule,
   updateInstance,
   updateInstanceAutostart
 } from "../api";
-import {
-  describeError,
-  resolveSelectedId
-} from "../app-state";
+import { describeError } from "../app-state";
 import { message, programCleanupDetails, type UiMessage } from "../app-ui";
 import { useSteamCmdActions, type SteamCmdActionOptions } from "./useSteamCmdActions";
 import { isInstallationCancelled } from "../installation-cancellation";
@@ -54,7 +50,6 @@ import type {
   InstanceProvisioning,
   InstancePlayerAccessMutationInput,
   InstancePlayerAccessMutationResult,
-  InstanceRuntimeOverview,
   InstanceRuntimeCommandResult,
   ModuleSummary,
   RuntimeCommandDispatchOptions,
@@ -94,18 +89,6 @@ export function useLibraryActions(options: LibraryActionOptions) {
       options.setActivity(message("activity.storageInitialized", { version: storage.schema_version ?? 0 }));
     } catch (error) {
       options.setActivity(message("activity.initStorageFailed", { message: describeError(error) }));
-    }
-  }
-
-  async function handleSyncStorageOnly() {
-    options.setActivity(message("activity.syncingModules"));
-    try {
-      const syncedModules = await syncModulesToStorage();
-      options.setBootstrap((current) => ({ ...current, state: { ...current.state, modules: syncedModules } }));
-      options.setSelectedModuleId((current) => resolveSelectedId(current, syncedModules));
-      options.setActivity(message("activity.modulesSynced", { count: syncedModules.length }));
-    } catch (error) {
-      options.setActivity(message("activity.syncModulesFailed", { message: describeError(error) }));
     }
   }
 
@@ -180,7 +163,6 @@ export function useLibraryActions(options: LibraryActionOptions) {
   return {
     ...steamCmdActions,
     handleEnsureStorageOnly,
-    handleSyncStorageOnly,
     handleInstallModule,
     handleUninstallModule
   };
@@ -191,7 +173,6 @@ interface InstanceActionOptions extends SharedActionOptions {
   bindAddressCandidates: BindAddressCandidate[];
   clearSelectedInstancePanel: () => void;
   getCurrentInstanceId: () => string | null;
-  instanceBackupsById: Partial<Record<string, InstanceBackupResult[]>>;
   instanceDetailsById: Partial<Record<string, InstanceDetails>>;
   markRuntimeRefreshed: () => void;
   modules: ModuleSummary[];
@@ -200,9 +181,7 @@ interface InstanceActionOptions extends SharedActionOptions {
   onPanelProgress: (state: InstancePanelLoadState) => void;
   onPanelSettled: (state: InstancePanelLoadState) => void;
   selectedInstanceId: string | null;
-  setInstanceBackupsById: Setter<Partial<Record<string, InstanceBackupResult[]>>>;
   setInstanceDetailsById: Setter<Partial<Record<string, InstanceDetails>>>;
-  setInstanceRuntimesById: Setter<Partial<Record<string, InstanceRuntimeOverview>>>;
   setSelectedInstanceBackups: Setter<InstanceBackupResult[]>;
   setSelectedInstanceDetails: Setter<InstanceDetails | null>;
 }
@@ -266,8 +245,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
     });
   }
 
-  function cacheBackups(instanceId: string, backups: InstanceBackupResult[]) {
-    options.setInstanceBackupsById((current) => ({ ...current, [instanceId]: backups }));
+  function updateSelectedBackups(instanceId: string, backups: InstanceBackupResult[]) {
     if (options.getCurrentInstanceId() === instanceId) {
       options.setSelectedInstanceBackups(backups);
     }
@@ -290,14 +268,6 @@ export function useInstanceActions(options: InstanceActionOptions) {
 
   function removeCachedInstance(instanceId: string) {
     options.setInstanceDetailsById((current) => {
-      const { [instanceId]: _removed, ...rest } = current;
-      return rest;
-    });
-    options.setInstanceBackupsById((current) => {
-      const { [instanceId]: _removed, ...rest } = current;
-      return rest;
-    });
-    options.setInstanceRuntimesById((current) => {
       const { [instanceId]: _removed, ...rest } = current;
       return rest;
     });
@@ -661,7 +631,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
-      cacheBackups(instanceId, backups);
+      updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
     } catch (error) {
       reportOperationRefreshFailure(completed(), error);
@@ -683,7 +653,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
-      cacheBackups(instanceId, backups);
+      updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
     } catch (error) {
       reportOperationRefreshFailure(completed(), error);
@@ -716,7 +686,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
-      cacheBackups(instanceId, backups);
+      updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
     } catch (error) {
       reportOperationRefreshFailure(completed(), error);
@@ -739,7 +709,7 @@ export function useInstanceActions(options: InstanceActionOptions) {
       const details = options.instanceDetailsById[instanceId] ?? await readInstanceDetails(instanceId);
       options.setInstanceDetailsById((current) => ({ ...current, [instanceId]: details }));
       const backups = await listInstanceBackups(instanceId);
-      cacheBackups(instanceId, backups);
+      updateSelectedBackups(instanceId, backups);
       options.setActivity(completed(details.summary.name));
     } catch (error) {
       reportOperationRefreshFailure(completed(), error);
