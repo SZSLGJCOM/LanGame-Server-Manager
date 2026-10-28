@@ -317,7 +317,7 @@ pub(super) async fn prepare(
 ) -> Result<PreparedUpdate, StorageError> {
     let before = read(connection, anchor).await?;
     let (row_id, original, next) = before.replacement(input, anchor)?;
-    let trigger: Option<String> = sqlx::query_scalar("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='custom_zone_configuration_damage_handling_methods' LIMIT 1")
+    let trigger: Option<String> = sqlx::query_scalar("SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='custom_zone_configuration_damage_handling_methods' COLLATE NOCASE LIMIT 1")
         .fetch_optional(&mut *connection).await?;
     if trigger.is_some() {
         return Err(invalid(

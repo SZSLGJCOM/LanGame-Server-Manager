@@ -276,6 +276,72 @@ async fn verify_stopped_write_and_backup(fixture: &Fixture) {
 }
 
 #[tokio::test]
+async fn case_variant_damage_table_triggers_are_rejected_before_any_write() {
+    for (table_name, setup) in [
+        (
+            "custom_zone_configuration_damage_handling_methods",
+            "CREATE TRIGGER ZoneDamageWorldMutation AFTER UPDATE ON custom_zone_configuration_damage_handling_methods BEGIN
+    UPDATE retained_world SET unknown_data=X'DEADBEEF' WHERE id=1;
+END;",
+        ),
+        (
+            "CUSTOM_ZONE_CONFIGURATION_DAMAGE_HANDLING_METHODS",
+            "ALTER TABLE custom_zone_configuration_damage_handling_methods RENAME TO zone_damage_case_fixture;
+ALTER TABLE zone_damage_case_fixture RENAME TO CUSTOM_ZONE_CONFIGURATION_DAMAGE_HANDLING_METHODS;
+CREATE TRIGGER ZoneDamageWorldMutation AFTER UPDATE ON CUSTOM_ZONE_CONFIGURATION_DAMAGE_HANDLING_METHODS BEGIN
+    UPDATE retained_world SET unknown_data=X'DEADBEEF' WHERE id=1;
+END;",
+        ),
+        (
+            "CuStOm_ZoNe_Configuration_Damage_Handling_Methods",
+            "ALTER TABLE custom_zone_configuration_damage_handling_methods RENAME TO zone_damage_case_fixture;
+ALTER TABLE zone_damage_case_fixture RENAME TO CuStOm_ZoNe_Configuration_Damage_Handling_Methods;
+CREATE TRIGGER ZoneDamageWorldMutation AFTER UPDATE ON CuStOm_ZoNe_Configuration_Damage_Handling_Methods BEGIN
+    UPDATE retained_world SET unknown_data=X'DEADBEEF' WHERE id=1;
+END;",
+        ),
+    ] {
+        let fixture = Fixture::new().await;
+        let mut connection = fixture.connection().await;
+        sqlx::raw_sql(setup).execute(&mut connection).await.unwrap();
+        let trigger_table: String = sqlx::query_scalar(
+            "SELECT tbl_name FROM sqlite_master WHERE type='trigger' AND name='ZoneDamageWorldMutation'",
+        )
+        .fetch_one(&mut connection)
+        .await
+        .unwrap();
+        assert_eq!(trigger_table, table_name);
+        connection.close().await.unwrap();
+
+        let input = fixture.input().await;
+        let result = write_stopped(&fixture.paths, &fixture.context, input).await;
+        let mut connection = fixture.connection().await;
+        let world: Vec<u8> =
+            sqlx::query_scalar("SELECT unknown_data FROM retained_world WHERE id=1")
+                .fetch_one(&mut connection)
+                .await
+                .unwrap();
+        let damage: i64 = sqlx::query_scalar("SELECT damage_handling_methods FROM custom_zone_configuration_damage_handling_methods WHERE id=1")
+            .fetch_one(&mut connection).await.unwrap();
+        connection.close().await.unwrap();
+        assert_eq!(
+            world,
+            [0, 1, 254, 255],
+            "world data changed for {table_name}; write accepted: {}",
+            result.is_ok()
+        );
+        assert_eq!(damage, ORIGINAL);
+        assert!(result.unwrap_err().to_string().contains("Custom triggers"));
+        assert!(
+            crate::list_instance_backups(&fixture.paths, ID)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+    }
+}
+
+#[tokio::test]
 async fn stale_revision_or_replaced_database_is_rejected_before_backup() {
     let fixture = Fixture::new().await;
     let input = fixture.input().await;
